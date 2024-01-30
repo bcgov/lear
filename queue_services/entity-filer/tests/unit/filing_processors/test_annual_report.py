@@ -17,18 +17,14 @@ import datetime
 import random
 from unittest.mock import patch
 
+from business_model import Filing, LegalEntity
 from freezegun import freeze_time
-from business_model import LegalEntity, Filing
 from registry_schemas.example_data import ANNUAL_REPORT
 
 # from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
-from tests.unit import (
-    create_business,
-    create_filing,
-)
+from entity_filer.resources.worker import FilingMessage, process_filing
+from tests.unit import create_business, create_filing
 
 
 def test_process_ar_filing(app, session):

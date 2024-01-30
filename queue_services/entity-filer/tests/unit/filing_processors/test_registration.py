@@ -16,21 +16,20 @@
 import copy
 from datetime import datetime
 from http import HTTPStatus
-from unittest.mock import patch, call
+from unittest.mock import call, patch
 
 import pytest
-from business_model import LegalEntity, Filing, RegistrationBootstrap
+from business_model import Filing, LegalEntity, RegistrationBootstrap
 
 # from legal_api.services import NaicsService
 from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import registration
-from tests.unit import create_filing, nested_session
-
 from entity_filer.filing_processors.filing_components.legal_entity_info import (
     NaicsService,
 )
+from tests.unit import create_filing, nested_session
 
 now = "2023-01-08"
 

@@ -29,24 +29,23 @@ from typing import Dict
 import dpath
 
 # from entity_queue_common.service_utils import BusinessException
-from business_model import LegalEntity, Filing
-from entity_filer.utils.legislation_datetime import LegislationDatetime
+from business_model import Filing, LegalEntity
 
 from entity_filer.exceptions import BusinessException, DefaultException
 from entity_filer.filing_meta import FilingMeta
-
 from entity_filer.filing_processors.filing_components import (
     aliases,
     legal_entity_info,
     name_request,
     shares,
 )
-from entity_filer.filing_processors.filing_components.offices import update_offices
-from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 from entity_filer.filing_processors.filing_components.alternate_name import (
     update_partner_change,
     update_proprietor_change,
 )
+from entity_filer.filing_processors.filing_components.offices import update_offices
+from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 
 def process(

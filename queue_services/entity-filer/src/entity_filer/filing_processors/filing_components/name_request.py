@@ -17,10 +17,10 @@ from http import HTTPStatus
 
 import requests
 import sentry_sdk
+from business_model import Filing, LegalEntity, RegistrationBootstrap
 
 # from entity_filer.exceptions import DefaultException
 from flask import current_app
-from business_model import LegalEntity, Filing, RegistrationBootstrap
 
 # from legal_api.services.bootstrap import AccountService
 from entity_filer.services.utils import get_str

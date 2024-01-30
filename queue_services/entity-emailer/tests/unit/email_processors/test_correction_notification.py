@@ -28,7 +28,6 @@ from tests.unit import (
     prep_incorporation_correction_filing,
 )
 
-
 COMPLETED_SUBJECT_SUFIX = " - Correction Documents from the Business Registry"
 CP_IDENTIFIER = "CP1234567"
 SPECIAL_RESOLUTION_FILING_TYPE = "specialResolution"

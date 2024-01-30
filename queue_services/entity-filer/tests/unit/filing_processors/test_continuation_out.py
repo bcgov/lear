@@ -16,13 +16,12 @@ import copy
 import random
 from datetime import datetime
 
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import continuation_out
-
 from tests.unit import create_business, create_filing
 
 

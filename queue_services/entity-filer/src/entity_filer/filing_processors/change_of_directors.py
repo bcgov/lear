@@ -15,13 +15,13 @@
 from datetime import datetime
 from typing import Dict
 
-from entity_filer.exceptions import DefaultException, logger
 from business_model import LegalEntity, PartyRole
 
+from entity_filer.exceptions import DefaultException, logger
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
-    merge_party,
     create_role,
+    merge_party,
     update_director,
 )
 

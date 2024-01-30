@@ -16,9 +16,8 @@ import base64
 from http import HTTPStatus
 
 import requests
-from flask import current_app
-from flask import request
-from legal_api.models import LegalEntity, Filing
+from flask import current_app, request
+from legal_api.models import Filing, LegalEntity
 
 from entity_emailer.services.logging import structured_log
 

@@ -14,7 +14,6 @@
 """The Test Suites to ensure that the service is built and operating correctly."""
 import datetime
 
-
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)
 FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
 

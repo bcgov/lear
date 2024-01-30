@@ -18,9 +18,9 @@ import io
 import random
 
 import pytest
-from dateutil.parser import parse
-from business_model import LegalEntity, Document, Filing, EntityRole, DocumentType
+from business_model import Document, DocumentType, EntityRole, Filing, LegalEntity
 from business_model.utils import datetime
+from dateutil.parser import parse
 
 # from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
@@ -28,6 +28,7 @@ from registry_schemas.example_data import (
     CP_SPECIAL_RESOLUTION_TEMPLATE,
     FILING_HEADER,
 )
+
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import correction
 from entity_filer.resources.worker import process_filing

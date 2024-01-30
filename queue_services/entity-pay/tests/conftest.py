@@ -22,9 +22,9 @@ from typing import Final
 
 import psycopg2
 import pytest
+import sqlalchemy
 from flask import Flask
 from flask_migrate import Migrate, upgrade
-import sqlalchemy
 from sqlalchemy import event, text
 from sqlalchemy.schema import MetaData
 
@@ -33,7 +33,6 @@ from entity_pay import db as _db
 from entity_pay.config import Testing
 
 from . import FROZEN_DATETIME
-
 
 DB_TEST_NAME: Final = os.getenv("DATABASE_TEST_NAME")
 

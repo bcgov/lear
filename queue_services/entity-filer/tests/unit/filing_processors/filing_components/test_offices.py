@@ -18,7 +18,6 @@ from business_model import LegalEntity
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from tests import strip_keys_from_dict
 
-
 OFFICE_STRUCTURE = {
     "offices": {
         "recordsOffice": {

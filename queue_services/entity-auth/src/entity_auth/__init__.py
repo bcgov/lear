@@ -17,11 +17,10 @@ This module is the service worker for updating auth with business data.
 """
 from __future__ import annotations
 
-from flask import Flask
 from business_model import db
+from flask import Flask
 
-from .config import Config
-from .config import Production
+from .config import Config, Production
 from .resources import register_endpoints
 from .services import queue
 from .utils import get_run_version

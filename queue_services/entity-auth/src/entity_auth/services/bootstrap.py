@@ -21,10 +21,9 @@ from http import HTTPStatus
 from typing import Dict, Union
 
 import requests
+from business_model import RegistrationBootstrap
 from flask import current_app
 from sqlalchemy.orm.exc import FlushError  # noqa: I001
-
-from business_model import RegistrationBootstrap
 
 
 class RegistrationBootstrapService:

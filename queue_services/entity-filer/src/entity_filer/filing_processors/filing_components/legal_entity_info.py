@@ -17,13 +17,15 @@ from tokenize import String
 from typing import Dict
 
 import requests
+from business_model import (
+    EntityRole,
+    Filing,
+    LegalEntity,
+    LegalEntityIdentifier,
+    LegalEntityType,
+)
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
-from business_model import LegalEntityIdentifier
-from business_model import LegalEntityType
-from business_model import LegalEntity
-from business_model import Filing
-from business_model import EntityRole
 
 # from legal_api.services import NaicsService
 

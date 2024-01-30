@@ -2,10 +2,9 @@ import base64
 from contextlib import suppress
 from http import HTTPStatus
 
-import pytest
 import flask
-from simple_cloudevent import SimpleCloudEvent
-from simple_cloudevent import to_queue_message
+import pytest
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
 from entity_pay.services.gcp_queue import GcpQueue
 

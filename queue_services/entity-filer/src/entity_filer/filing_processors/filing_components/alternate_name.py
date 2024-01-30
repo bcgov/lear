@@ -15,13 +15,10 @@
 from __future__ import annotations
 
 import datetime
-import dpath
 from typing import Dict, List, Optional, Tuple
 
-from business_model import db
-from business_model import AlternateName
-from business_model import Filing
-from business_model import LegalEntity
+import dpath
+from business_model import AlternateName, Filing, LegalEntity, db
 
 from entity_filer import db
 from entity_filer.exceptions import DefaultException

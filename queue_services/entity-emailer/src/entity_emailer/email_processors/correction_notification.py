@@ -21,15 +21,14 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.models import Filing
 
-from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
 from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs
+from entity_emailer.services.logging import structured_log
 
 
 def _get_pdfs(

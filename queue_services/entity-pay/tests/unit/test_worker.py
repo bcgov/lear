@@ -41,12 +41,8 @@ import pytest
 from legal_api.models import Filing
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-from entity_pay.resources.worker import get_filing_by_payment_id
-from entity_pay.resources.worker import get_payment_token
-
-from tests.unit import create_legal_entity
-from tests.unit import create_filing
-from tests.unit import nested_session
+from entity_pay.resources.worker import get_filing_by_payment_id, get_payment_token
+from tests.unit import create_filing, create_legal_entity, nested_session
 
 
 def test_no_message(client):
@@ -137,7 +133,8 @@ def test_get_payment_token():
 
 def test_process_payment_failed(app, session, client, mocker):
     """Assert that an AR filling status is set to error if payment transaction failed."""
-    from legal_api.models import LegalEntity, Filing
+    from legal_api.models import Filing, LegalEntity
+
     from entity_pay.resources.worker import get_filing_by_payment_id
     from entity_pay.services import queue
 
@@ -183,6 +180,7 @@ def test_process_payment_failed(app, session, client, mocker):
 def test_process_payment(app, session, client, mocker):
     """Assert that an AR filling status is set to error if payment transaction failed."""
     from legal_api.models import Filing
+
     from entity_pay.resources.worker import get_filing_by_payment_id
     from entity_pay.services import queue
 

@@ -25,9 +25,7 @@ from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import conversion
-
-from tests.unit import create_filing
-from tests.unit import nested_session
+from tests.unit import create_filing, nested_session
 
 
 def test_conversion_process_with_nr(app, session):

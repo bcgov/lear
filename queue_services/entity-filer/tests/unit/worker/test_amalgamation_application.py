@@ -23,8 +23,7 @@ from business_model import Amalgamation, Filing, LegalEntity
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_entity, create_filing
 
 

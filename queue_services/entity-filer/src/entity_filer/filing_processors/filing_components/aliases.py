@@ -14,8 +14,8 @@
 """Manages the  names of a Business."""
 from typing import Dict
 
-from flask_babel import _ as babel  # noqa: N813
 from business_model import Alias, LegalEntity
+from flask_babel import _ as babel  # noqa: N813
 
 
 def update_aliases(business: LegalEntity, aliases) -> Dict:

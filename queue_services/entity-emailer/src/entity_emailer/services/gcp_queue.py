@@ -36,20 +36,22 @@ from __future__ import annotations
 
 import base64
 import json
-from concurrent.futures import CancelledError
 from concurrent.futures import TimeoutError  # pylint: disable=W0622
+from concurrent.futures import CancelledError
 from contextlib import suppress
 from typing import Optional
 
 from flask import Flask, current_app
-from werkzeug.local import LocalProxy
 from google.auth import jwt
 from google.cloud import pubsub_v1
-from simple_cloudevent import CloudEventVersionException
-from simple_cloudevent import InvalidCloudEventError
-from simple_cloudevent import SimpleCloudEvent
-from simple_cloudevent import from_queue_message
-from simple_cloudevent import to_queue_message
+from simple_cloudevent import (
+    CloudEventVersionException,
+    InvalidCloudEventError,
+    SimpleCloudEvent,
+    from_queue_message,
+    to_queue_message,
+)
+from werkzeug.local import LocalProxy
 
 
 class GcpQueue:

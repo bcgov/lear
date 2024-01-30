@@ -18,7 +18,7 @@ from datetime import datetime
 from typing import Final
 
 import pytest
-from business_model import LegalEntity, Filing, Document
+from business_model import Document, Filing, LegalEntity
 from business_model.models.document import DocumentType
 from registry_schemas.example_data import (
     ALTERATION,
@@ -30,10 +30,8 @@ from registry_schemas.example_data import (
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import alteration
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
-
 
 CONTACT_POINT = {"email": "no_one@never.get", "phone": "123-456-7890"}
 

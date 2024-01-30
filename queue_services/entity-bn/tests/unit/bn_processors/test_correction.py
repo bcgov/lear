@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the correction of registration or change of registration is operating correctly."""
-from http import HTTPStatus
 import uuid
 import xml.etree.ElementTree as Et
+from http import HTTPStatus
 
 import pytest
 from legal_api.models import RequestTracker
 
 from entity_bn.bn_processors import bn_note
 from tests.unit import create_filing, create_registration_data, get_json_message
-
 
 message_type = "bc.registry.business.correction"
 

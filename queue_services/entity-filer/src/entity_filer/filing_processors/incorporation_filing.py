@@ -18,15 +18,10 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-
-from entity_filer.exceptions import DefaultException
-from business_model import LegalEntity, Document, Filing, RegistrationBootstrap
+from business_model import Document, Filing, LegalEntity, RegistrationBootstrap
 from business_model.models.document import DocumentType
 
-# from legal_api.services.bootstrap import AccountService
-# from legal_api.services.minio import MinioService
-# from legal_api.services.pdf_service import RegistrarStampData
-
+from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     aliases,
@@ -36,6 +31,11 @@ from entity_filer.filing_processors.filing_components import (
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+
+# from legal_api.services.bootstrap import AccountService
+# from legal_api.services.minio import MinioService
+# from legal_api.services.pdf_service import RegistrarStampData
+
 
 # from entity_filer.utils import replace_file_with_certified_copy
 

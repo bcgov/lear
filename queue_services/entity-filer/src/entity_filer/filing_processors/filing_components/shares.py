@@ -16,8 +16,8 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from dateutil.parser import parse
 from business_model import LegalEntity, Resolution, ShareClass, ShareSeries
+from dateutil.parser import parse
 
 
 def update_share_structure(business: LegalEntity, share_structure: Dict) -> Optional[List]:

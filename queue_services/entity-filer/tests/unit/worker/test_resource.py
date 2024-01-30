@@ -4,8 +4,8 @@ import random
 from http import HTTPStatus
 
 import pytest
+from registry_schemas.example_data import FILING_HEADER, SPECIAL_RESOLUTION
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
-from registry_schemas.example_data import SPECIAL_RESOLUTION, FILING_HEADER
 
 from tests.unit import create_business, create_filing
 

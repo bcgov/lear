@@ -39,7 +39,7 @@ from datetime import datetime
 from random import randrange
 from unittest.mock import Mock
 
-from legal_api.models import LegalEntity, Filing, RegistrationBootstrap, User
+from legal_api.models import Filing, LegalEntity, RegistrationBootstrap, User
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
@@ -65,7 +65,6 @@ from registry_schemas.example_data import (
 from sqlalchemy_continuum import versioning_manager
 
 from tests import EPOCH_DATETIME
-
 
 FILING_TYPE_MAPPER = {
     # annual report structure is different than other 2

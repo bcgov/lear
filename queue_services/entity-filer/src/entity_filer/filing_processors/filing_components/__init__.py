@@ -17,13 +17,15 @@ from __future__ import annotations
 from typing import Dict
 
 import pycountry
-from business_model import Address
-from business_model import EntityRole
-from business_model import LegalEntity
-from business_model import Office
-from business_model import Party
-from business_model import ShareClass
-from business_model import ShareSeries
+from business_model import (
+    Address,
+    EntityRole,
+    LegalEntity,
+    Office,
+    Party,
+    ShareClass,
+    ShareSeries,
+)
 
 from entity_filer.filing_processors.filing_components import (
     aliases,
@@ -33,7 +35,6 @@ from entity_filer.filing_processors.filing_components import (
     resolutions,
     shares,
 )
-
 
 JSON_ROLE_CONVERTER = {
     "custodian": EntityRole.RoleTypes.custodian.value,

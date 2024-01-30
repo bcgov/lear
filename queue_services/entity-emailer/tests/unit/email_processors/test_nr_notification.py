@@ -22,7 +22,6 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from entity_emailer.email_processors import nr_notification
 from tests import MockResponse
 
-
 default_legal_name = "TEST COMP"
 default_names_array = [{"name": default_legal_name, "state": "NE"}]
 

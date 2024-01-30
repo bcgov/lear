@@ -25,7 +25,11 @@ from flask import current_app
 from jinja2 import Template
 from legal_api.models import Filing, LegalEntity
 
-from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
+from entity_emailer.email_processors import (
+    get_filing_info,
+    get_recipient_from_auth,
+    substitute_template_parts,
+)
 
 
 def _get_pdfs(token: str, business: dict, filing: Filing, filing_date_time: str, effective_date: str) -> list:

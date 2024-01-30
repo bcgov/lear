@@ -20,7 +20,6 @@ from importlib.metadata import version
 
 from entity_bn import utils
 
-
 PACKAGE_NAME = "entity_bn"
 
 

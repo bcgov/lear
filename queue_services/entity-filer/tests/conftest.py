@@ -20,13 +20,13 @@ import random
 import time
 from contextlib import contextmanager, suppress
 
+import business_model_migrations
 import pytest
 import requests
 import sqlalchemy
-import business_model_migrations
+from business_model import db as _db
 from flask import Flask, current_app
 from flask_migrate import Migrate, upgrade
-from business_model import db as _db
 
 # from legal_api import db as _db
 # from legal_api import jwt as _jwt

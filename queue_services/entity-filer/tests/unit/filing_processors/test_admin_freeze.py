@@ -35,13 +35,12 @@
 import copy
 import random
 
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 from registry_schemas.example_data import ADMIN_FREEZE, FILING_HEADER
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import admin_freeze
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 

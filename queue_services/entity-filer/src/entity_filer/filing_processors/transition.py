@@ -14,9 +14,9 @@
 """File processing rules and actions for the transition of a business."""
 from typing import Dict
 
-from entity_filer.exceptions import DefaultException
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 
+from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices

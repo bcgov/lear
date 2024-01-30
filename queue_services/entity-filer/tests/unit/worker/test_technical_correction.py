@@ -16,15 +16,14 @@ import copy
 import json
 import random
 
-from business_model import LegalEntity, Filing, PartyRole
+from business_model import Filing, LegalEntity, PartyRole
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     FILING_HEADER,
     SPECIAL_RESOLUTION,
 )
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 

@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the admin is operating correctly."""
-from http import HTTPStatus
 import secrets
 import string
 import uuid
 import xml.etree.ElementTree as Et
+from http import HTTPStatus
 
 import pytest
 from legal_api.models import LegalEntity, RequestTracker
 
 from tests.unit import create_registration_data, get_json_message
-
 
 acknowledgement_response = """<?xml version="1.0"?>
     <SBNAcknowledgement>

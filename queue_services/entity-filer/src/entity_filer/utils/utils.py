@@ -37,6 +37,7 @@ When deployed in OKD, it adds the last commit hash onto the version info.
 """
 import io
 import os
+from importlib.metadata import version
 
 # import PyPDF2
 
@@ -46,8 +47,6 @@ import os
 # from legal_api.services.pdf_service import RegistrarStampData
 # from legal_api.utils.legislation_datetime import LegislationDatetime
 
-import os
-from importlib.metadata import version
 
 
 def _get_commit_hash():

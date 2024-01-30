@@ -14,7 +14,6 @@
 """Application Common Error Messages."""
 from .codes import ErrorCode
 
-
 ERROR_MESSAGES: dict = {
     ErrorCode.FILING_NOT_FOUND: "Filing: {filing_id} not found for: {identifier}",
     ErrorCode.GENERAL_UNRECOVERABLE_ERROR: "Unrecoverable error for Filing: {filing_id}",

@@ -37,7 +37,6 @@ from entity_bn.exceptions import BNException, BNRetryExceededException
 from entity_bn.services import queue
 from entity_bn.services.logging import structured_log
 
-
 FIRMS = ("SP", "GP")
 CORPS = ("BEN", "BC", "ULC", "CC")
 

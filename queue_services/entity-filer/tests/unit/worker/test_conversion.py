@@ -14,32 +14,29 @@
 """The Unit Tests for the Conversion filing."""
 import copy
 import random
-
-import pytest
 from datetime import datetime
 from unittest.mock import patch
+
+import pytest
+from business_model import Address, EntityRole, Filing, LegalEntity
+from registry_schemas.example_data import (
+    CONVERSION_FILING_TEMPLATE,
+    COURT_ORDER,
+    FIRMS_CONVERSION,
+    REGISTRATION,
+)
 
 # from legal_api.services import NaicsService
 from entity_filer.filing_processors.filing_components.legal_entity_info import (
     NaicsService,
 )
-from business_model import Address, LegalEntity, Filing, EntityRole
-from registry_schemas.example_data import (
-    CONVERSION_FILING_TEMPLATE,
-    FIRMS_CONVERSION,
-    COURT_ORDER,
-    REGISTRATION,
-)
-
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import (
     create_entity,
-    create_filing,
     create_entity_person,
     create_entity_role,
+    create_filing,
 )
-
 
 CONTACT_POINT = {"email": "no_one@never.get", "phone": "123-456-7890"}
 

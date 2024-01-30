@@ -16,17 +16,18 @@ import datetime
 import os
 from contextlib import contextmanager, suppress
 from typing import Final
-from flask_migrate import Migrate, upgrade
 
 import pytest
 from business_model import db as _db
-from sqlalchemy import create_engine, event, exc as sqlalchemy_exc, text
-from entity_auth import create_app
+from flask_migrate import Migrate, upgrade
+from sqlalchemy import create_engine, event
+from sqlalchemy import exc as sqlalchemy_exc
+from sqlalchemy import text
 
+from entity_auth import create_app
 from entity_auth.config import Testing
 
 from . import FROZEN_DATETIME
-
 
 DB_TEST_NAME: Final = os.getenv("DATABASE_TEST_NAME")
 

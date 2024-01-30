@@ -15,7 +15,7 @@
 from typing import Dict
 
 # from entity_queue_common.service_utils import logger
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import name_request

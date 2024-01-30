@@ -17,34 +17,29 @@ import random
 from datetime import datetime
 from typing import Final
 from unittest.mock import patch
-from dateutil.parser import parse
 
 import pytest
-from business_model import Address, Alias, LegalEntity, Filing, EntityRole
+from business_model import Address, Alias, EntityRole, Filing, LegalEntity
+from dateutil.parser import parse
+from registry_schemas.example_data import COURT_ORDER, REGISTRATION
+from sql_versioning import versioned_session
 
 # from legal_api.services import NaicsService
 from entity_filer.filing_processors.filing_components.legal_entity_info import (
     NaicsService,
 )
-from registry_schemas.example_data import (
-    COURT_ORDER,
-    REGISTRATION,
-)
-
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import (
     create_alias,
     create_entity,
+    create_entity_person,
+    create_entity_role,
     create_filing,
     create_office,
     create_office_address,
-    create_entity_person,
-    create_entity_role,
     factory_completed_filing,
+    nested_session,
 )
-from tests.unit import nested_session
-from sql_versioning import versioned_session
 
 CONTACT_POINT = {"email": "no_one@never.get", "phone": "123-456-7890"}
 

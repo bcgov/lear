@@ -17,8 +17,7 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from business_model import Address, LegalEntity, Filing, Party, PartyRole
-from entity_filer.utils.legislation_datetime import LegislationDatetime
+from business_model import Address, Filing, LegalEntity, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -33,6 +32,7 @@ from entity_filer.filing_processors.filing_components import (
     update_address,
 )
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 
 def correct_business_data(

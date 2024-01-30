@@ -36,7 +36,6 @@
 Test-Suite to ensure that the Configuration Classes are working as expected.
 """
 import pytest
-
 from flask import current_app
 
 # testdata pattern is ({str: environment}, {expected return value})

@@ -17,9 +17,9 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from business_model import db, Address, AlternateName, LegalEntity, Filing
-from entity_filer.exceptions.default_exception import DefaultException
+from business_model import Address, AlternateName, Filing, LegalEntity, db
 
+from entity_filer.exceptions.default_exception import DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     filings,
@@ -27,12 +27,15 @@ from entity_filer.filing_processors.filing_components import (
     name_request,
     update_address,
 )
-from entity_filer.filing_processors.filing_components.parties import get_or_create_party, merge_all_parties
-from entity_filer.filing_processors.registration import get_partnership_name
 from entity_filer.filing_processors.filing_components.alternate_name import (
     update_partner_change,
     update_proprietor_change,
 )
+from entity_filer.filing_processors.filing_components.parties import (
+    get_or_create_party,
+    merge_all_parties,
+)
+from entity_filer.filing_processors.registration import get_partnership_name
 
 
 def process(

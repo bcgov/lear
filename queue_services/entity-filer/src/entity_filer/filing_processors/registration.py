@@ -19,23 +19,24 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
+from business_model import AlternateName, Filing, LegalEntity, RegistrationBootstrap
 
 # from entity_filer.exceptions import DefaultException
 from entity_filer.exceptions import DefaultException
-from business_model import LegalEntity, Filing, RegistrationBootstrap, AlternateName
+from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors.filing_components import filings, legal_entity_info
+from entity_filer.filing_processors.filing_components.alternate_name import (
+    get_partnership_name,
+)
+from entity_filer.filing_processors.filing_components.offices import update_offices
+from entity_filer.filing_processors.filing_components.parties import (
+    create_entity_with_addresses,
+    get_or_create_party,
+    merge_all_parties,
+)
 
 # from legal_api.services.bootstrap import AccountService
 from entity_filer.utils.legislation_datetime import LegislationDatetime
-
-from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import filings, legal_entity_info
-from entity_filer.filing_processors.filing_components.offices import update_offices
-from entity_filer.filing_processors.filing_components.parties import merge_all_parties
-from entity_filer.filing_processors.filing_components.parties import (
-    create_entity_with_addresses,
-)
-from entity_filer.filing_processors.filing_components.parties import get_or_create_party
-from entity_filer.filing_processors.filing_components.alternate_name import get_partnership_name
 
 
 def update_affiliation(business: LegalEntity, filing: Filing):

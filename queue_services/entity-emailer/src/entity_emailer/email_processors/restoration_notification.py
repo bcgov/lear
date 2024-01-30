@@ -19,13 +19,12 @@ import re
 from http import HTTPStatus
 
 import requests
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Environment, FileSystemLoader
-from legal_api.models import LegalEntity, CorpType, Filing
+from legal_api.models import CorpType, Filing, LegalEntity
 
-from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info
+from entity_emailer.services.logging import structured_log
 
 
 def _get_completed_pdfs(token: str, business: dict, filing: Filing) -> list:

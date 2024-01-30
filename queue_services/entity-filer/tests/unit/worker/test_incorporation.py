@@ -19,21 +19,20 @@ import random
 import secrets
 import string
 from http import HTTPStatus
-from unittest.mock import patch, call
+from unittest.mock import call, patch
 
 import pytest
-from flask import current_app
 
 # # from entity_queue_common.messages import get_data_from_msg
 # from entity_queue_common.service_utils import subscribe_to_queue
-from business_model import LegalEntity, Filing, EntityRole, RegistrationBootstrap
+from business_model import EntityRole, Filing, LegalEntity, RegistrationBootstrap
+from flask import current_app
 
 # from legal_api.services import RegistrationBootstrapService
 # from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 
 # from tests.pytest_marks import colin_api_integration, integration_affiliation, integration_namex_api
 from tests.unit import create_filing

@@ -20,8 +20,8 @@ from typing import Final
 
 import psycopg2
 import pytest
-from flask import Flask
 import sqlalchemy
+from flask import Flask
 from sqlalchemy import event, text
 
 from entity_emailer import create_app

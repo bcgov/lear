@@ -17,20 +17,16 @@ from __future__ import annotations
 import datetime
 from typing import Dict, List, Optional, Tuple
 
-from business_model import Address
-from business_model import ColinEntity
-from business_model import Filing
-from business_model import EntityRole
-from business_model import LegalEntity
+from business_model import Address, ColinEntity, EntityRole, Filing, LegalEntity
 
 from entity_filer import db
-from entity_filer.exceptions import BusinessException
-from entity_filer.exceptions import ErrorCode
-from entity_filer.exceptions import get_error_message
-from entity_filer.filing_processors.filing_components import create_address
-from entity_filer.filing_processors.filing_components import create_role
-from entity_filer.filing_processors.filing_components import merge_party
-from entity_filer.filing_processors.filing_components import legal_entity_info
+from entity_filer.exceptions import BusinessException, ErrorCode, get_error_message
+from entity_filer.filing_processors.filing_components import (
+    create_address,
+    create_role,
+    legal_entity_info,
+    merge_party,
+)
 
 
 def update_parties(

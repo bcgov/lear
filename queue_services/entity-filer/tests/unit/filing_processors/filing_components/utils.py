@@ -1,6 +1,6 @@
-from attrs import has, fields
+from attrs import fields, has
 from cattrs import Converter
-from cattrs.gen import make_dict_unstructure_fn, make_dict_structure_fn, override
+from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn, override
 
 converter = Converter()
 

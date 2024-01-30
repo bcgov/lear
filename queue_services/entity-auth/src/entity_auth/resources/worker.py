@@ -39,14 +39,12 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import Optional
 
-from flask import Blueprint, current_app
-from flask import request
+from business_model import EntityRole, Filing, LegalEntity
+from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
 from sqlalchemy.exc import OperationalError
 
-from business_model import EntityRole, Filing, LegalEntity
 from entity_auth.exceptions import AccountServiceException
-
 from entity_auth.services import name_request, queue
 from entity_auth.services.bootstrap import AccountService
 from entity_auth.services.logging import structured_log

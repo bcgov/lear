@@ -17,7 +17,7 @@ from __future__ import annotations
 from tokenize import String
 from typing import List, Optional
 
-from business_model import LegalEntity, Document, Filing
+from business_model import Document, Filing, LegalEntity
 
 # from legal_api.services.pdf_service import RegistrarStampData
 

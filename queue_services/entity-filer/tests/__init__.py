@@ -37,7 +37,6 @@ import datetime
 from collections.abc import MutableMapping, MutableSequence
 from typing import Dict, List
 
-
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)
 FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
 

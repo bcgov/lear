@@ -22,7 +22,6 @@ from legal_api.models import LegalEntity
 from entity_emailer.email_processors import special_resolution_notification
 from tests.unit import prep_cp_special_resolution_filing
 
-
 LEGAL_TYPE = LegalEntity.EntityTypes.COOP.value
 LEGAL_NAME = "test business"
 IDENTIFIER = "CP1234567"

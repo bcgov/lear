@@ -16,11 +16,12 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from business_model import LegalEntity, Comment, Filing
-from ..utils.legislation_datetime import LegislationDatetime
+from business_model import Comment, Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
+
+from ..utils.legislation_datetime import LegislationDatetime
 
 
 def process(

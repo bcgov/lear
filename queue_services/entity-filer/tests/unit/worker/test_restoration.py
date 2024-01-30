@@ -16,17 +16,14 @@ import copy
 import random
 
 import pytest
-from business_model import LegalEntity, Filing, EntityRole, OfficeType, Address
+from business_model import Address, EntityRole, Filing, LegalEntity, OfficeType
 from business_model.utils.datetime import datetime
 from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
-
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
-from tests.unit import create_business, create_filing
-
 from sql_versioning import versioned_session
-from tests.unit import nested_session
+
+from entity_filer.resources.worker import FilingMessage, process_filing
+from tests.unit import create_business, create_filing, nested_session
 
 legal_name = "old name"
 legal_type = "BC"

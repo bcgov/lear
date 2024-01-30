@@ -12,10 +12,9 @@
 """File processing rules and actions for Special Resolution filings."""
 from typing import Dict
 
-from dateutil.parser import parse
-
 # from entity_queue_common.service_utils import logger
-from business_model import LegalEntity, Filing, Resolution
+from business_model import Filing, LegalEntity, Resolution
+from dateutil.parser import parse
 
 
 def process(business: LegalEntity, filing: Dict, filing_rec: Filing):

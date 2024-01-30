@@ -19,17 +19,14 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from business_model import LegalEntity, Filing
+from business_model import DocumentType, Filing, LegalEntity
 from business_model.models.colin_event_id import ColinEventId
-from business_model import DocumentType
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import incorporation_filing
 from entity_filer.filing_processors.filing_components import legal_entity_info
-from tests.unit import create_filing
-from tests.unit import nested_session
-
+from tests.unit import create_filing, nested_session
 
 COOP_INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 del COOP_INCORPORATION_FILING_TEMPLATE["filing"]["incorporationApplication"]["offices"]["recordsOffice"]

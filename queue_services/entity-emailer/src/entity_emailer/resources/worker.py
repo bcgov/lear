@@ -38,18 +38,13 @@ import json
 from http import HTTPStatus
 
 import requests
-from flask import Blueprint
-from flask import Flask
-from flask import current_app
-from flask import request
+from flask import Blueprint, Flask, current_app, request
 from legal_api import db
 from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.flags import Flags
 from simple_cloudevent import SimpleCloudEvent
 
-from entity_emailer.services import queue
-from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
@@ -69,6 +64,8 @@ from entity_emailer.email_processors import (
     restoration_notification,
     special_resolution_notification,
 )
+from entity_emailer.services import queue
+from entity_emailer.services.logging import structured_log
 
 bp = Blueprint("worker", __name__)
 

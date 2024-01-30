@@ -18,9 +18,7 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from business_model import LegalEntity, Filing, EntityRole
-from entity_filer.utils.datetime import datetime
-from entity_filer.utils.legislation_datetime import LegislationDatetime
+from business_model import EntityRole, Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -31,6 +29,8 @@ from entity_filer.filing_processors.filing_components import (
 from entity_filer.filing_processors.filing_components.aliases import update_aliases
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
+from entity_filer.utils.datetime import datetime
+from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 
 def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):

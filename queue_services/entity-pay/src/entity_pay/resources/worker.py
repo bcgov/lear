@@ -41,14 +41,10 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
 
-from flask import Blueprint
-from flask import current_app
-from flask import jsonify
-from flask import request
+from flask import Blueprint, current_app, jsonify, request
 from legal_api.models import Filing
 from simple_cloudevent import SimpleCloudEvent
-from werkzeug.exceptions import UnsupportedMediaType
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 from entity_pay.services import queue
 from entity_pay.services.logging import structured_log

@@ -18,11 +18,10 @@ import copy
 import random
 
 import pytest
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 from registry_schemas.example_data import CP_SPECIAL_RESOLUTION_TEMPLATE
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_entity, create_filing
 
 

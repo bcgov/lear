@@ -15,8 +15,9 @@
 from contextlib import suppress
 from typing import Dict, Optional
 
-from flask_babel import _ as babel  # noqa: N813
 from business_model import Filing
+from flask_babel import _ as babel  # noqa: N813
+
 from ...utils.datetime import datetime
 
 

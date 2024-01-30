@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the entity auth is operating correctly."""
-from http import HTTPStatus
 import uuid
+from http import HTTPStatus
 
 import pytest
 from business_model import LegalEntity

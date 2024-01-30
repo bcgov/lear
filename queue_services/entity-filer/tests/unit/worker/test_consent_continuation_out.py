@@ -21,8 +21,7 @@ from business_model import ConsentContinuationOut, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPLATE
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 

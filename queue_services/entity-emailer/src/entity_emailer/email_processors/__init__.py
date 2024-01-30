@@ -22,10 +22,10 @@ from pathlib import Path
 from typing import Tuple
 
 import requests
-from flask import current_app
-from flask import request
-from legal_api.models import LegalEntity, Filing
+from flask import current_app, request
+from legal_api.models import Filing, LegalEntity
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
 from entity_emailer.services.logging import structured_log
 
 

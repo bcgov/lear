@@ -17,13 +17,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
 from legal_api.models import Filing, UserRoles
-
-from entity_emailer.services.logging import structured_log
-
 
 from entity_emailer.email_processors import (
     get_filing_info,
@@ -35,6 +31,7 @@ from entity_emailer.email_processors.special_resolution_helper import (
     get_completed_pdfs,
     get_paid_pdfs,
 )
+from entity_emailer.services.logging import structured_log
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches

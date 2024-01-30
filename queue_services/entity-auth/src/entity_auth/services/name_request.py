@@ -16,11 +16,12 @@ import json
 from http import HTTPStatus
 
 import requests
-from flask import current_app, request
 from business_model import Filing, LegalEntity, RegistrationBootstrap
+from flask import current_app, request
 
 from entity_auth.exceptions import NamexException
 from entity_auth.services.logging import structured_log
+
 from .bootstrap import AccountService
 
 

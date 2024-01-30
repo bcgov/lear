@@ -15,11 +15,11 @@
 import base64
 import copy
 from datetime import datetime
+
 from business_model import LegalEntity
-
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
-from entity_auth.services.bootstrap import RegistrationBootstrapService
 
+from entity_auth.services.bootstrap import RegistrationBootstrapService
 from tests import EPOCH_DATETIME
 
 

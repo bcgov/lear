@@ -16,16 +16,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
 
-from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import (
     get_filing_info,
     get_recipients,
     substitute_template_parts,
 )
+from entity_emailer.services.logging import structured_log
 
 
 def process(email_msg: dict) -> dict:

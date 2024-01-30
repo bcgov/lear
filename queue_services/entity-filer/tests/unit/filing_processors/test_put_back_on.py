@@ -15,8 +15,8 @@
 import copy
 import random
 
-from business_model import LegalEntity, Filing
-from registry_schemas.example_data import PUT_BACK_ON, FILING_HEADER
+from business_model import Filing, LegalEntity
+from registry_schemas.example_data import FILING_HEADER, PUT_BACK_ON
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import put_back_on

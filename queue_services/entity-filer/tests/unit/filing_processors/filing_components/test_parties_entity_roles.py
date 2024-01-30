@@ -41,33 +41,25 @@ D - If one exists and a new one is C, then delete the old one
  Proprietor            X        X                                    C
 
 """
-import json
 import datetime
+import json
 from contextlib import suppress
 from copy import deepcopy
 from random import randint
 
 import pytest
-from business_model import Address
-from business_model import EntityRole
-from business_model import Filing
-from business_model import LegalEntity
-from sql_versioning import history_cls
-from sql_versioning import versioned_session
+from business_model import Address, EntityRole, Filing, LegalEntity
+from sql_versioning import history_cls, versioned_session
 
-from tests.unit import nested_session
-
-from entity_filer.exceptions import BusinessException
-from entity_filer.exceptions import ErrorCode
-from entity_filer.exceptions import get_error_message
+from entity_filer.exceptions import BusinessException, ErrorCode, get_error_message
 from entity_filer.filing_processors.filing_components.parties import (
-    merge_entity_role_to_filing,
     create_entity_with_addresses,
     get_address_for_filing,
     map_schema_role_to_enum,
     merge_all_parties,
+    merge_entity_role_to_filing,
 )
-
+from tests.unit import nested_session
 
 BASE_TEMPLATE = {
     "roles": [],

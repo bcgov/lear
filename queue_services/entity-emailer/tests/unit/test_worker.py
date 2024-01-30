@@ -45,7 +45,6 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
 from entity_emailer import worker
-from entity_emailer.services import queue
 from entity_emailer.email_processors import (
     ar_reminder_notification,
     correction_notification,
@@ -54,14 +53,15 @@ from entity_emailer.email_processors import (
     nr_notification,
     special_resolution_notification,
 )
+from entity_emailer.services import queue
 from tests import MockResponse
 from tests.unit import (
+    nested_session,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,
     prep_incorp_filing,
     prep_maintenance_filing,
 )
-from tests.unit import nested_session
 
 
 def test_no_message(client):

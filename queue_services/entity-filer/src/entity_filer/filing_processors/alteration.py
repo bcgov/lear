@@ -17,7 +17,7 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (

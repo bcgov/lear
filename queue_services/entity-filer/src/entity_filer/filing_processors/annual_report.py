@@ -20,9 +20,10 @@ from typing import Dict
 # from entity_queue_common.service_utils import logger
 from business_model import LegalEntity
 
+from entity_filer.filing_meta import FilingMeta
+
 # from legal_api.services.filings import validations
 
-from entity_filer.filing_meta import FilingMeta
 
 
 def process(legal_entity: LegalEntity, filing: Dict, filing_meta: FilingMeta):

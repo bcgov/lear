@@ -37,9 +37,7 @@
 from contextlib import suppress
 from http import HTTPStatus
 
-from flask import Blueprint
-from flask import current_app
-from flask import request
+from flask import Blueprint, current_app, request
 from legal_api.models import Filing, LegalEntity
 from sentry_sdk import capture_message
 from simple_cloudevent import SimpleCloudEvent
