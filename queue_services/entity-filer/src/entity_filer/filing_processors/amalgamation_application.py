@@ -95,7 +95,7 @@ def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amal
         elif business := Business.find_by_identifier(identifier):
             amalgamating_business.business_id = business.id
             dissolve_amalgamating_business(business, filing_rec)
-            
+
         amalgamation.amalgamating_businesses.append(amalgamating_business)
 
 
