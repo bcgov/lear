@@ -305,6 +305,22 @@ from . import create_mock_message  # noqa: I003
                  'option': 'COMPLETED',
                  'filingId': '111222335'
              }
+         }),
+        ('amalgamationApplication_PAID_111222334',
+         {
+             'email': {
+                 'type': 'amalgamationApplication',
+                 'option': 'PAID',
+                 'filingId': '111222334'
+             }
+         }),
+        ('amalgamationApplication_COMPLETED_111222335',
+         {
+             'email': {
+                 'type': 'amalgamationApplication',
+                 'option': 'COMPLETED',
+                 'filingId': '111222335'
+             }
          })
     ]
 )
@@ -503,5 +519,5 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
     assert result
     assert result.status == 'FAILED'
     # check email retries not exceed the max retry limit
-    assert result.message_seen_count == 6
+    assert result.message_seen_count == 7
     assert expected_last_error in result.last_error
