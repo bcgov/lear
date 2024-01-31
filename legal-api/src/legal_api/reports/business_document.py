@@ -472,7 +472,7 @@ class BusinessDocument:
                         identifier = ting_business.identifier
                         business_legal_name = ting_business.legal_name
                     else:
-                        identifier = amalgamating_business.foreign_corp_num or "Not Available"
+                        identifier = amalgamating_business.foreign_identifier or "Not Available"
                         business_legal_name = amalgamating_business.foreign_name or "Not Available"
 
                     amalgamated_businesses_info = {"legalName": business_legal_name, "identifier": identifier}
