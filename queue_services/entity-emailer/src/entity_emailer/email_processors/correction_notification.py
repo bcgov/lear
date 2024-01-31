@@ -155,11 +155,12 @@ def _get_pdfs(
     return pdfs
 
 
+# pylint: disable-next=too-many-arguments
 def _get_template(
     prefix: str,
     status: str,
     filing_type: str,
-    filing: Filing,  # pylint: disable=too-many-arguments
+    filing: Filing,
     business: dict,
     leg_tmz_filing_date: str,
     leg_tmz_effective_date: str,

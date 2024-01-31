@@ -172,12 +172,11 @@ def process_cra_request(
 
     filing: Filing = Filing.find_by_id(msg.filing_id)
     if not filing:
-        raise Exception # pylint: disable=broad-exception-raised
+        raise Exception  # pylint: disable=broad-exception-raised
 
     legal_entity: LegalEntity = LegalEntity.find_by_internal_id(filing.legal_entity_id)
     if not legal_entity:
-        raise Exception # pylint: disable=broad-exception-raised
-
+        raise Exception  # pylint: disable=broad-exception-raised
 
     if filing.filing_type == "registration":
         registration.process(legal_entity)

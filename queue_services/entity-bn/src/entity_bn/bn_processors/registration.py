@@ -46,7 +46,7 @@ def process(
     is_admin: bool = False,
     msg: Message = None,
     skip_build=False,
-): # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
+):  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
     """Process the incoming registration request."""
     max_retry = current_app.config.get("BN_HUB_MAX_RETRY")
 
@@ -161,7 +161,7 @@ def _inform_cra(
     request_tracker: RequestTracker,
     business_number: str,
     skip_build: bool,
-): # pylint: disable=too-many-locals
+):  # pylint: disable=too-many-locals
     """Inform CRA about new registration."""
     if request_tracker.is_processed:
         return
@@ -248,7 +248,7 @@ def _get_bn(legal_entity: LegalEntity, request_tracker: RequestTracker, transact
     if status_code == HTTPStatus.OK:
         program_account_ref_no = str(response["program_account_ref_no"]).zfill(4)
         bn15 = f"{response['business_no']}{response['business_program_id']}{program_account_ref_no}"
-        alternate_name = legal_entity._alternate_names.first() # pylint: disable=protected-access
+        alternate_name = legal_entity._alternate_names.first()  # pylint: disable=protected-access
         alternate_name.bn15 = bn15
         legal_entity.save()
         request_tracker.is_processed = True

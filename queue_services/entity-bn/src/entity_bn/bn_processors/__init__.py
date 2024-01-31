@@ -30,6 +30,7 @@ from entity_bn.services.logging import structured_log
 @dataclass
 class Message:
     """Process message class"""
+
     id: Optional[str] = None
     type: Optional[str] = None
     filing_id: Optional[str] = None

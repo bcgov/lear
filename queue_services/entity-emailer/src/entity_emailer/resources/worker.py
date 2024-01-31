@@ -38,12 +38,10 @@ import json
 from http import HTTPStatus
 
 import requests
-from flask import Blueprint, Flask, current_app, request
-from legal_api import db
+from flask import Blueprint, current_app, request
 from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.flags import Flags
-from simple_cloudevent import SimpleCloudEvent
 
 from entity_emailer.email_processors import (
     affiliation_notification,
@@ -197,6 +195,7 @@ def process_email(email_msg: dict, token: str):  # pylint: disable=too-many-bran
             email = continuation_out_notification.process(email_msg["email"], token)
         elif etype == "specialResolution":
             email = special_resolution_notification.process(email_msg["email"], token)
+        # pylint: disable-next=consider-iterating-dictionary
         elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
             if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
                 return None
@@ -210,6 +209,7 @@ def process_email(email_msg: dict, token: str):  # pylint: disable=too-many-bran
 
 
 def send_email(email: dict, token: str):
+    """Send the email"""
     return requests.post(
         f'{current_app.get("NOTIFY_API_URL", "")}',
         json=email,

@@ -59,7 +59,7 @@ def process(legal_entity: LegalEntity, filing: Filing):  # pylint: disable=too-m
     program_account_status_code = {"putBackOn": "01", "dissolution": "02"}
     program_account_reason_code = {"putBackOn": None, "dissolution": "105"}
 
-    alternate_name = legal_entity._alternate_names.first() # pylint: disable=protected-access
+    alternate_name = legal_entity._alternate_names.first()  # pylint: disable=protected-access
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(
