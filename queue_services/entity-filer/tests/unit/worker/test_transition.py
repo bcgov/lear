@@ -16,11 +16,7 @@ import copy
 import random
 
 from business_model import EntityRole, Filing, LegalEntity
-from registry_schemas.example_data import (
-    FILING_HEADER,
-    TRANSITION,
-    TRANSITION_FILING_TEMPLATE,
-)
+from registry_schemas.example_data import FILING_HEADER, TRANSITION, TRANSITION_FILING_TEMPLATE
 
 from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing

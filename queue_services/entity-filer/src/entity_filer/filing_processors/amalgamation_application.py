@@ -18,24 +18,11 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-from business_model import (
-    AmalgamatingBusiness,
-    Amalgamation,
-    Document,
-    Filing,
-    LegalEntity,
-    RegistrationBootstrap,
-    db,
-)
+from business_model import AmalgamatingBusiness, Amalgamation, Document, Filing, LegalEntity, RegistrationBootstrap, db
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    filings,
-    legal_entity_info,
-    shares,
-)
+from entity_filer.filing_processors.filing_components import aliases, filings, legal_entity_info, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 

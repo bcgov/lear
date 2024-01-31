@@ -21,11 +21,7 @@ import sentry_sdk
 from business_model import EntityRole, Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
-    filings,
-    legal_entity_info,
-    name_request,
-)
+from entity_filer.filing_processors.filing_components import filings, legal_entity_info, name_request
 from entity_filer.filing_processors.filing_components.aliases import update_aliases
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties

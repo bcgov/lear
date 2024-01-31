@@ -20,10 +20,7 @@ from flask import current_app, request
 from jinja2 import Template
 from legal_api.models import CorpType, LegalEntity
 
-from entity_emailer.email_processors import (
-    get_recipient_from_auth,
-    substitute_template_parts,
-)
+from entity_emailer.email_processors import get_recipient_from_auth, substitute_template_parts
 from entity_emailer.services.logging import structured_log
 
 

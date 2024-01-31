@@ -25,9 +25,7 @@ from registry_schemas.example_data import COURT_ORDER, REGISTRATION
 from sql_versioning import versioned_session
 
 # from legal_api.services import NaicsService
-from entity_filer.filing_processors.filing_components.legal_entity_info import (
-    NaicsService,
-)
+from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
 from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import (
     create_alias,

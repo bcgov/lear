@@ -18,14 +18,7 @@ from http import HTTPStatus
 
 import dpath
 from flask import current_app
-from legal_api.models import (
-    Address,
-    EntityRole,
-    Filing,
-    LegalEntity,
-    RequestTracker,
-    db,
-)
+from legal_api.models import Address, EntityRole, Filing, LegalEntity, RequestTracker, db
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from sqlalchemy import and_

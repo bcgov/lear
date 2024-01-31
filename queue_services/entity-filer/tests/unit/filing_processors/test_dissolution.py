@@ -16,14 +16,7 @@ import copy
 from datetime import datetime
 
 import pytest
-from business_model import (
-    DocumentType,
-    EntityRole,
-    Filing,
-    LegalEntity,
-    Office,
-    OfficeType,
-)
+from business_model import DocumentType, EntityRole, Filing, LegalEntity, Office, OfficeType
 from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
 

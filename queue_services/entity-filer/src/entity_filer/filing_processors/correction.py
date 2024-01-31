@@ -21,9 +21,7 @@ from business_model import Comment, Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import name_request
-from entity_filer.filing_processors.filing_components.correction import (
-    correct_business_data,
-)
+from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 
 def process(

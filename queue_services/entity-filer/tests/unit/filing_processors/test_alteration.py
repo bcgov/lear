@@ -20,13 +20,7 @@ from typing import Final
 import pytest
 from business_model import Document, Filing, LegalEntity
 from business_model.models.document import DocumentType
-from registry_schemas.example_data import (
-    ALTERATION,
-    ALTERATION_FILING_TEMPLATE,
-    BUSINESS,
-    COURT_ORDER,
-    FILING_HEADER,
-)
+from registry_schemas.example_data import ALTERATION, ALTERATION_FILING_TEMPLATE, BUSINESS, COURT_ORDER, FILING_HEADER
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import alteration

@@ -24,11 +24,7 @@ from flask import current_app, request
 from jinja2 import Template
 from legal_api.models import Filing, LegalEntity
 
-from entity_emailer.email_processors import (
-    get_filing_info,
-    get_recipient_from_auth,
-    substitute_template_parts,
-)
+from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
 from entity_emailer.services.logging import structured_log
 
 

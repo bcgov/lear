@@ -21,12 +21,7 @@ from business_model import Address, ColinEntity, EntityRole, Filing, LegalEntity
 
 from entity_filer import db
 from entity_filer.exceptions import BusinessException, ErrorCode, get_error_message
-from entity_filer.filing_processors.filing_components import (
-    create_address,
-    create_role,
-    legal_entity_info,
-    merge_party,
-)
+from entity_filer.filing_processors.filing_components import create_address, create_role, legal_entity_info, merge_party
 
 
 def update_parties(

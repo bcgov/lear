@@ -21,12 +21,7 @@ from legal_api.models import Filing, LegalEntity, RequestTracker
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from entity_bn.bn_processors import (
-    bn_note,
-    build_input_xml,
-    get_splitted_business_number,
-    request_bn_hub,
-)
+from entity_bn.bn_processors import bn_note, build_input_xml, get_splitted_business_number, request_bn_hub
 from entity_bn.exceptions import BNException, BNRetryExceededException
 
 

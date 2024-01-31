@@ -17,13 +17,7 @@ from tokenize import String
 from typing import Dict
 
 import requests
-from business_model import (
-    EntityRole,
-    Filing,
-    LegalEntity,
-    LegalEntityIdentifier,
-    LegalEntityType,
-)
+from business_model import EntityRole, Filing, LegalEntity, LegalEntityIdentifier, LegalEntityType
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 

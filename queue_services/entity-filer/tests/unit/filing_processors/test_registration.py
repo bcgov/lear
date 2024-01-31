@@ -26,9 +26,7 @@ from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import registration
-from entity_filer.filing_processors.filing_components.legal_entity_info import (
-    NaicsService,
-)
+from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
 from tests.unit import create_filing, nested_session
 
 now = "2023-01-08"

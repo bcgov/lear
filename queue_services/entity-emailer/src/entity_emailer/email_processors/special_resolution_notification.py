@@ -27,10 +27,7 @@ from entity_emailer.email_processors import (
     get_user_email_from_auth,
     substitute_template_parts,
 )
-from entity_emailer.email_processors.special_resolution_helper import (
-    get_completed_pdfs,
-    get_paid_pdfs,
-)
+from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs, get_paid_pdfs
 from entity_emailer.services.logging import structured_log
 
 

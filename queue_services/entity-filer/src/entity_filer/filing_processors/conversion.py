@@ -33,12 +33,7 @@ from business_model import Filing, LegalEntity
 
 from entity_filer.exceptions import BusinessException, DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    legal_entity_info,
-    name_request,
-    shares,
-)
+from entity_filer.filing_processors.filing_components import aliases, legal_entity_info, name_request, shares
 from entity_filer.filing_processors.filing_components.alternate_name import (
     update_partner_change,
     update_proprietor_change,

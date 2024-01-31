@@ -23,12 +23,7 @@ from business_model.models.document import DocumentType
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    filings,
-    legal_entity_info,
-    shares,
-)
+from entity_filer.filing_processors.filing_components import aliases, filings, legal_entity_info, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 

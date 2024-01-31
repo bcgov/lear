@@ -25,9 +25,7 @@ from business_model import AlternateName, Filing, LegalEntity, RegistrationBoots
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings, legal_entity_info
-from entity_filer.filing_processors.filing_components.alternate_name import (
-    get_partnership_name,
-)
+from entity_filer.filing_processors.filing_components.alternate_name import get_partnership_name
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import (
     create_entity_with_addresses,

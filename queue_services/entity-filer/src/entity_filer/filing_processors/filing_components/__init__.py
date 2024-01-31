@@ -17,15 +17,7 @@ from __future__ import annotations
 from typing import Dict
 
 import pycountry
-from business_model import (
-    Address,
-    EntityRole,
-    LegalEntity,
-    Office,
-    Party,
-    ShareClass,
-    ShareSeries,
-)
+from business_model import Address, EntityRole, LegalEntity, Office, Party, ShareClass, ShareSeries
 
 from entity_filer.filing_processors.filing_components import (
     aliases,

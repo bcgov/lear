@@ -22,16 +22,10 @@ from business_model import Address, AlternateName, EntityRole, Filing, LegalEnti
 
 # from datetime import datetime
 from business_model.utils.datetime import datetime
-from registry_schemas.example_data import (
-    CHANGE_OF_REGISTRATION_TEMPLATE,
-    COURT_ORDER,
-    REGISTRATION,
-)
+from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, COURT_ORDER, REGISTRATION
 
 # from legal_api.services import NaicsService
-from entity_filer.filing_processors.filing_components.legal_entity_info import (
-    NaicsService,
-)
+from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
 from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import (
     create_entity,
