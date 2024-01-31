@@ -90,8 +90,9 @@ class GcpQueue:
                 self.credentials_pub = credentials.with_claims(
                     audience=publisher_audience)
             except Exception as error:  # noqa: B902
-                raise Exception("Unable to create a connection", error) \
-                    from error  # pylint: disable=W0719
+                raise Exception(  # pylint: disable=W0719
+                    "Unable to create a connection",
+                    error) from error
 
     @property
     def publisher(self):
@@ -125,8 +126,9 @@ class GcpQueue:
         return None
 
     @staticmethod
-    def get_simple_cloud_event(request: LocalProxy, return_raw: bool = False) \
-            -> type[SimpleCloudEvent | dict | None]:
+    def get_simple_cloud_event(request: LocalProxy,
+                               return_raw: bool = False) -> \
+            type[SimpleCloudEvent | dict | None]:
         """Return a SimpleCloudEvent if one is in session from the PubSub call.
 
         Parameters
@@ -179,8 +181,8 @@ class GcpQueue:
 
             return future.result()
         except (CancelledError, TimeoutError) as error:
-            raise Exception("Unable to post to queue", error) \
-                from error  # pylint: disable=W0719
+            raise Exception("Unable to post to queue",  # pylint: disable=W0719
+                            error) from error
 
     @staticmethod
     def to_queue_message(ce: SimpleCloudEvent):
