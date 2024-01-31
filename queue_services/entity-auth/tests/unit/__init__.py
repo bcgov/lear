@@ -16,7 +16,14 @@ import base64
 import copy
 from datetime import datetime
 
-from business_model import LegalEntity
+from business_model import (
+    Address,
+    AlternateName,
+    EntityRole,
+    Filing,
+    LegalEntity,
+    Office,
+)
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
 from entity_auth.services.bootstrap import RegistrationBootstrapService
@@ -30,8 +37,6 @@ def create_filing(
     filing_date=EPOCH_DATETIME,
 ):
     """Return a test filing."""
-    from business_model import Filing
-
     filing = Filing()
     filing.filing_date = filing_date
 
@@ -52,10 +57,8 @@ def create_legal_entity(
     bn9=None,
     tax_id=None,
     change_filing_id=None,
-):
+):  # pylint: disable=too-many-arguments
     """Return a test legal_entity."""
-    from business_model import LegalEntity
-
     legal_entity = LegalEntity()
     legal_entity.identifier = identifier
     legal_entity.entity_type = entity_type
@@ -74,8 +77,6 @@ def create_legal_entity(
 
 def create_alternate_name(operating_name, tax_id=None):
     """Create operating name."""
-    from business_model import AlternateName
-
     alternate_name = AlternateName(
         # identifier="BC1234567",
         name_type=AlternateName.NameType.OPERATING,
@@ -88,8 +89,6 @@ def create_alternate_name(operating_name, tax_id=None):
 
 def create_business_address(office_type="businessOffice", change_filing_id=None):
     """Create an address."""
-    from business_model import Address, Office
-
     office = Office(office_type=office_type)
     office.change_filing_id = change_filing_id
 
@@ -99,10 +98,8 @@ def create_business_address(office_type="businessOffice", change_filing_id=None)
     return office
 
 
-def create_office(type):
+def create_office(type):  # pylint: disable=redefined-builtin
     """Create an office."""
-    from business_model import Address
-
     address = Address(
         city="Test City",
         street="Test Street",
@@ -116,14 +113,14 @@ def create_office(type):
 
 def create_related_entity(related_entity_json):
     """Create a party."""
-    from business_model import Address, LegalEntity
-
     new_party = LegalEntity()
     new_party.first_name = related_entity_json["officer"].get("firstName", "").upper()
     new_party.last_name = related_entity_json["officer"].get("lastName", "").upper()
     new_party.middle_initial = related_entity_json["officer"].get("middleInitial", "").upper()
     new_party.title = related_entity_json.get("title", "").upper()
-    new_party._legal_name = related_entity_json["officer"].get("organizationName", "").upper()
+    new_party._legal_name = (
+        related_entity_json["officer"].get("organizationName", "").upper()
+    )  # pylint: disable=protected-access
     new_party.email = related_entity_json["officer"].get("email")
     new_party.entity_type = related_entity_json["officer"].get("entityType")
     new_party.identifier = related_entity_json["officer"].get("identifier")
@@ -154,7 +151,6 @@ def create_related_entity(related_entity_json):
 
 def create_entity_role(legal_entity, related_entity, roles, appointment_date=EPOCH_DATETIME):
     """Create party roles."""
-    from business_model import EntityRole
 
     for role in roles:
         entity_role = EntityRole(
@@ -242,8 +238,9 @@ def create_data(filing_type, entity_type, identifier, bn9=None, tax_id=None):
     return filing, legal_entity
 
 
-def get_json_message(filing_id, identifier, message_id, type):
-    CLOUD_EVENT = SimpleCloudEvent(
+def get_json_message(filing_id, identifier, message_id, type):  # pylint: disable=redefined-builtin
+    """Returns the json message data"""
+    cloud_event = SimpleCloudEvent(
         source="fake-for-tests",
         subject="fake-subject",
         id=message_id,
@@ -257,7 +254,7 @@ def get_json_message(filing_id, identifier, message_id, type):
     json_data = {
         "subscription": "projects/PUBSUB_PROJECT_ID/subscriptions/SUBSCRIPTION_ID",
         "message": {
-            "data": base64.b64encode(to_queue_message(CLOUD_EVENT)).decode("utf-8"),
+            "data": base64.b64encode(to_queue_message(cloud_event)).decode("utf-8"),
         },
     }
     return json_data

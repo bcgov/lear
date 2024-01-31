@@ -39,7 +39,7 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import Optional
 
-from business_model import EntityRole, Filing, LegalEntity
+from business_model import EntityRole, Filing, LegalEntity, RegistrationBootstrap
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
 from sqlalchemy.exc import OperationalError
@@ -135,11 +135,11 @@ def process_request(
 
     filing: Filing = Filing.find_by_id(msg.filing_id)
     if not filing:
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised
 
     legal_entity: LegalEntity = LegalEntity.find_by_internal_id(filing.legal_entity_id)
     if not legal_entity:
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised
 
     name_request.consume_nr(legal_entity, filing)
 
@@ -181,7 +181,6 @@ def process_request(
 
 def create_affiliation(legal_entity: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
-    from business_model import RegistrationBootstrap
 
     try:
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
@@ -227,10 +226,10 @@ def create_affiliation(legal_entity: LegalEntity, filing: Filing):
             or ("deaffiliation" in locals() and deaffiliation != HTTPStatus.OK)
             or ("bootstrap_update" in locals() and bootstrap_update != HTTPStatus.OK)
         ):
-            raise Exception
+            raise Exception  # pylint: disable=broad-exception-raised
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         current_app.logger.error(f"Queue Error: Affiliation error for filing:{filing.id}, with err:{err}")
-        raise AccountServiceException
+        raise AccountServiceException from err
 
 
 def get_firm_affiliation_passcode(legal_entity_id: int):

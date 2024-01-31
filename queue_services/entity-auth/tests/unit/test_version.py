@@ -17,6 +17,7 @@
 Test-Suite to ensure that the version utilities are working as expected.
 """
 from importlib.metadata import version
+from uuid import uuid4
 
 from entity_auth import utils
 
@@ -31,8 +32,6 @@ def test_get_version():
 
 def test_get_version_hash(monkeypatch):
     """Assert that the version also contains the git commit hash."""
-    from uuid import uuid4
-
     fake_hash = str(uuid4())
     monkeypatch.setenv("VCS_REF", fake_hash)
     rv = utils.get_run_version()

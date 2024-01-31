@@ -29,6 +29,7 @@ from tests.unit import create_data, get_json_message
         ("incorporationApplication", "BC", "BC1234567"),
     ],
 )
+# pylint: disable-next=too-many-arguments
 def test_new_legal_entity(app, session, client, mocker, filing_type, entity_type, identifier):
     """Test new legal entity."""
 
@@ -41,7 +42,7 @@ def test_new_legal_entity(app, session, client, mocker, filing_type, entity_type
         corp_type_code,
         pass_code,
         details,
-    ):
+    ):  # pylint: disable=too-many-arguments
         assert account == 1
         assert business_registration == legal_entity.identifier
         assert business_name == legal_entity.legal_name
@@ -108,6 +109,7 @@ def test_new_legal_entity(app, session, client, mocker, filing_type, entity_type
         ("restoration", "SP", "FM1234567"),
     ],
 )
+# pylint: disable-next=too-many-arguments
 def test_update_entity(app, session, client, mocker, filing_type, entity_type, identifier):
     """Test update entity."""
 

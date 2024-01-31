@@ -32,6 +32,7 @@ from . import FROZEN_DATETIME
 DB_TEST_NAME: Final = os.getenv("DATABASE_TEST_NAME")
 
 
+# pylint: disable-next=too-many-arguments
 def create_test_db(
     user: str = None,
     password: str = None,
@@ -59,15 +60,13 @@ def create_test_db(
         : bool
             If the create database succeeded.
     """
-    if database_uri:
-        DATABASE_URI = database_uri
-    else:
-        DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
+    if not database_uri:
+        database_uri = f"postgresql://{user}:{password}@{host}:{port}/{user}"
 
-    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
+    database_uri = database_uri[: database_uri.rfind("/")] + "/postgres"
 
     try:
-        with create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
+        with create_engine(database_uri, isolation_level="AUTOCOMMIT").connect() as conn:
             conn.execute(text(f"CREATE DATABASE {database}"))
 
         return True
@@ -76,6 +75,7 @@ def create_test_db(
         return False
 
 
+# pylint: disable-next=too-many-arguments
 def drop_test_db(
     user: str = None,
     password: str = None,
@@ -85,12 +85,10 @@ def drop_test_db(
     database_uri: str = None,
 ) -> bool:
     """Delete the database in our .devcontainer launched postgres DB."""
-    if database_uri:
-        DATABASE_URI = database_uri
-    else:
-        DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
+    if not database_uri:
+        database_uri = f"postgresql://{user}:{password}@{host}:{port}/{user}"
 
-    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
+    database_uri = database_uri[: database_uri.rfind("/")] + "/postgres"
 
     close_all = f"""
         SELECT pg_terminate_backend(pg_stat_activity.pid)
@@ -99,7 +97,7 @@ def drop_test_db(
         AND pid <> pg_backend_pid();
     """
     with suppress(sqlalchemy_exc.ProgrammingError, Exception):
-        with create_engine(DATABASE_URI, isolation_level="AUTOCOMMIT").connect() as conn:
+        with create_engine(database_uri, isolation_level="AUTOCOMMIT").connect() as conn:
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))
 
@@ -112,8 +110,8 @@ def not_raises(exception):
     """
     try:
         yield
-    except exception:
-        raise pytest.fail(f"DID RAISE {exception}")
+    except exception as exc:
+        raise pytest.fail(f"DID RAISE {exception}") from exc
 
 
 # fixture to freeze utcnow to a fixed date-time
@@ -124,6 +122,7 @@ def freeze_datetime_utcnow(monkeypatch):
     class _Datetime:
         @classmethod
         def utcnow(cls):
+            """Returns utc now"""
             return FROZEN_DATETIME
 
     monkeypatch.setattr(datetime, "datetime", _Datetime)
@@ -137,7 +136,7 @@ def app():
 
 
 @pytest.fixture
-def config(app):
+def config(app):  # pylint: disable=redefined-outer-name
     """Return the application config."""
     return app.config
 
@@ -186,9 +185,9 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         txn = conn.begin()
 
         try:
-            options = dict(bind=conn, binds={})
+            options = {"bind": conn, "binds": {}}
             # sess = db.create_scoped_session(options=options)
-            sess = db._make_scoped_session(options=options)
+            sess = db._make_scoped_session(options=options)  # pylint: disable=protected-access
         except Exception as err:
             print(err)
             print("done")
