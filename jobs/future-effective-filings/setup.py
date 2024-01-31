@@ -15,8 +15,4 @@
 
 from setuptools import find_packages, setup
 
-
-setup(
-    name='future-effective-filings',
-    packages=find_packages()
-)
+setup(name="future-effective-filings", packages=find_packages())

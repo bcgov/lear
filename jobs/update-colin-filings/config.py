@@ -41,7 +41,7 @@ def get_named_config(config_name: str = "production"):
     return config
 
 
-class _Config(object):  # pylint: disable=too-few-public-methods
+class _Config():  # pylint: disable=too-few-public-methods
     """Base class configuration."""
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))

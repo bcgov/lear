@@ -26,26 +26,23 @@ from legal_api.services.bootstrap import AccountService
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
 import config  # pylint: disable=import-error; false positive in gha only
-from utils.logging import setup_logging  # noqa: I001; pylint: disable=import-error; false positive in gha only
-# noqa: 1005
-setup_logging(os.path.join(
-    os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
-
-SENTRY_LOGGING = LoggingIntegration(
-    event_level=logging.ERROR  # send errors as events
+from utils.logging import (  # noqa: I001; pylint: disable=import-error; false positive in gha only
+    setup_logging,
 )
 
+# noqa: 1005
+setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))
 
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
+SENTRY_LOGGING = LoggingIntegration(event_level=logging.ERROR)  # send errors as events
+
+
+def create_app(run_mode=os.getenv("FLASK_ENV", "production")):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
     # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[SENTRY_LOGGING]
-        )
+    if app.config.get("SENTRY_DSN", None):
+        sentry_sdk.init(dsn=app.config.get("SENTRY_DSN"), integrations=[SENTRY_LOGGING])
 
     register_shellcontext(app)
 
@@ -54,20 +51,19 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
 def register_shellcontext(app):
     """Register shell context objects."""
+
     def shell_context():
         """Shell context objects."""
-        return {'app': app}
+        return {"app": app}
 
     app.shell_context_processor(shell_context)
 
 
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
-    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings',
-                       timeout=AccountService.timeout)
+    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings', timeout=AccountService.timeout)
     if not req or req.status_code != 200:
-        app.logger.error(
-            f'Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}')
+        app.logger.error(f"Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}")
         raise Exception  # pylint: disable=broad-exception-raised
     return req.json()
 
@@ -77,42 +73,40 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     token = AccountService.get_bearer_token()
     clean_none(filing)
 
-    filing_type = filing['filing']['header'].get('name', None)
-    identifier = filing['filing']['business'].get('identifier', None)
+    filing_type = filing["filing"]["header"].get("name", None)
+    identifier = filing["filing"]["business"].get("identifier", None)
     if identifier[:2] == LegalEntity.EntityTypes.COOP.value:
         entity_type = LegalEntity.EntityTypes.COOP.value
     else:
-        entity_type = filing['filing']['business'].get(
-            'legalType', LegalEntity.EntityTypes.BCOMP.value)
+        entity_type = filing["filing"]["business"].get("legalType", LegalEntity.EntityTypes.BCOMP.value)
 
     req = None
     if entity_type and identifier and filing_type:
-        req = requests.post(f'{app.config["COLIN_URL"]}/{entity_type}/{identifier}/filings/{filing_type}',
-                            headers={**AccountService.CONTENT_TYPE_JSON,
-                                     'Authorization': AccountService.BEARER + token},
-                            json=filing,
-                            timeout=AccountService.timeout)
+        req = requests.post(
+            f'{app.config["COLIN_URL"]}/{entity_type}/{identifier}/filings/{filing_type}',
+            headers={**AccountService.CONTENT_TYPE_JSON, "Authorization": AccountService.BEARER + token},
+            json=filing,
+            timeout=AccountService.timeout,
+        )
 
     if not req or req.status_code != 201:
-        app.logger.error(
-            f'Filing {filing_id} not created in colin {identifier}.')
+        app.logger.error(f"Filing {filing_id} not created in colin {identifier}.")
         # raise Exception
         return None
     # if it's an AR containing multiple filings it will have multiple colinIds
-    return req.json()['filing']['header']['colinIds']
+    return req.json()["filing"]["header"]["colinIds"]
 
 
 def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: dict = None):
     """Update the colin_id in the filings table."""
     req = requests.patch(
         f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
-        headers={'Authorization': f'Bearer {token}'},
-        json={'colinIds': colin_ids},
-        timeout=AccountService.timeout
+        headers={"Authorization": f"Bearer {token}"},
+        json={"colinIds": colin_ids},
+        timeout=AccountService.timeout,
     )
     if not req or req.status_code != 202:
-        app.logger.error(
-            f'Failed to update colin id in legal db for filing {filing_id} {req.status_code}')
+        app.logger.error(f"Failed to update colin id in legal db for filing {filing_id} {req.status_code}")
         return False
     return True
 
@@ -124,7 +118,7 @@ def clean_none(dictionary: dict = None):
             if isinstance(dictionary[key], dict):
                 clean_none(dictionary[key])
         elif dictionary[key] is None:
-            dictionary[key] = ''
+            dictionary[key] = ""
 
 
 def run():
@@ -139,37 +133,32 @@ def run():
             filings = get_filings(app=application)
             if not filings:
                 # pylint: disable=no-member; false positive
-                application.logger.debug(
-                    'No completed filings to send to colin.')
+                application.logger.debug("No completed filings to send to colin.")
             for filing in filings:
-                filing_id = filing['filingId']
-                identifier = filing['filing']['business']['identifier']
+                filing_id = filing["filingId"]
+                identifier = filing["filing"]["business"]["identifier"]
                 if identifier in corps_with_failed_filing:
                     # pylint: disable=no-member; false positive
-                    application.logger.debug(f'Skipping filing {filing_id} for'
-                                             f' {filing["filing"]["business"]["identifier"]}.')
+                    application.logger.debug(
+                        "Skipping filing %s for %s.", filing_id, filing["filing"]["business"]["identifier"]
+                    )
                 else:
-                    colin_ids = send_filing(
-                        app=application, filing=filing, filing_id=filing_id)
+                    colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
                     update = None
                     if colin_ids:
-                        update = update_colin_id(
-                            app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
+                        update = update_colin_id(app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
                     if update:
                         # pylint: disable=no-member; false positive
-                        application.logger.debug(
-                            f'Successfully updated filing {filing_id}')
+                        application.logger.debug("Successfully updated filing %s", filing_id)
                     else:
-                        corps_with_failed_filing.append(
-                            filing['filing']['business']['identifier'])
+                        corps_with_failed_filing.append(filing["filing"]["business"]["identifier"])
                         # pylint: disable=no-member; false positive
-                        application.logger.error(
-                            f'Failed to update filing {filing_id} with colin event id.')
+                        application.logger.error("Failed to update filing %s with colin event id.", filing_id)
 
         except Exception as err:  # noqa: B902
             # pylint: disable=no-member; false positive
             application.logger.error(err)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run()
