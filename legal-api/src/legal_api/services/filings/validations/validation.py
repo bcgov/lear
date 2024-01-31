@@ -195,7 +195,7 @@ def validate(business: any, filing_json: Dict, account_id=None) -> Error:
                     err = agm_extension_validate(business, filing_json)
 
                 elif k == Filing.FILINGS["amalgamationApplication"].get("name"):
-                    err = amalgamation_application_validate(business, filing_json, account_id)
+                    err = amalgamation_application_validate(filing_json, account_id)
 
                 if err:
                     return err
