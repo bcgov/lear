@@ -39,8 +39,7 @@ import os
 from werkzeug.local import LocalProxy
 
 
-def structured_log(request: LocalProxy,
-                   severity: str = "NOTICE", message: str = None):
+def structured_log(request: LocalProxy, severity: str = "NOTICE", message: str = None):
     """Function structured logging."""
     frm = inspect.stack()[1]
     mod = inspect.getmodule(frm[0])
@@ -54,15 +53,14 @@ def structured_log(request: LocalProxy,
 
         if trace_header and project:
             trace = trace_header.split("/")
-            global_log_fields["logging.googleapis.com/trace"] = \
-                f"projects/{project}/traces/{trace[0]}"
+            global_log_fields["logging.googleapis.com/trace"] = f"projects/{project}/traces/{trace[0]}"
 
     # Complete a structured log entry.
     entry = {
         "severity": severity,
         "message": message,
         # Log viewer accesses 'component' as jsonPayload.component'.
-        "component": f'{mod.__name__}.{frm.function}',
+        "component": f"{mod.__name__}.{frm.function}",
         **global_log_fields,
     }
 

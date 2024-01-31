@@ -25,5 +25,4 @@ def setup_logging(conf):
         logging.config.fileConfig(conf)
         print("Configure logging, from conf:{}".format(conf), file=sys.stdout)
     else:
-        print("Unable to configure logging, attempted conf:{}".format(conf),
-              file=sys.stderr)
+        print("Unable to configure logging, attempted conf:{}".format(conf), file=sys.stderr)
