@@ -14,7 +14,7 @@ defaults:
 
 jobs:
   business-update-colin-filings-ci:
-    uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "business-future-effective-filings"
       working_directory: "./jobs/update-colin-filings"
