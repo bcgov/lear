@@ -35,11 +35,13 @@ exclude_dirs = [".venv","tests"]
 skips = ["B104"]
 
 [tool.flake8]
-ignore = ["F401","E402", "Q000", "E203", "W503", "W504" ]
+ignore = ["F401","E402", "Q000", "E203"]
 exclude = [
     ".venv",
     ".git",
-    "*migrations*"
+    ".history",
+    "devops",
+    "*migrations*",
 ]
 per-file-ignores = [
     "__init__.py:F401",
@@ -50,18 +52,55 @@ docstring-min-length=10
 count = true
 
 [tool.black]
+target-version =  ["py310", "py311", "py312"]
 line-length = 120
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # The following are specific to Black, you probably don't want those.
+  migrations
+  | devops
+)/
+'''
 
 [tool.isort]
+atomic = true
 profile = "black"
+line_length = 120
+skip_gitignore = true
+skip_glob = ["migrations", "devops"]
 
-[tool.pylint.'MESSAGES CONTROL']
-ignore = [ "migrations", "test"]
-notes = ["FIXME","XXX","TODO"]
+[tool.pylint.main]
+fail-under = 10
+max-line-length = 120
+ignore = [ "migrations", "devops", "tests"]
+ignore-patterns = ["^\\.#"]
 ignored-modules= ["flask_sqlalchemy", "sqlalchemy", "SQLAlchemy" , "alembic", "scoped_session"]
 ignored-classes= "scoped_session"
-disable = "C0209,C0301,W0511,W0613,W0703,W1514,R0801,R0902,R0903,R0911,R0401,R1705,R1718,W3101"
+ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$"
 extension-pkg-whitelist = "pydantic"
+notes = ["FIXME","XXX","TODO"]
+overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
+confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFINED"]
+disable = "C0209,C0301,W0511,W0613,W0703,W1514,R0801,R0902,R0903,R0911,R0401,R1705,R1718,W3101"
+argument-naming-style = "snake_case"
+attr-naming-style = "snake_case"
+class-attribute-naming-style = "any"
+class-const-naming-style = "UPPER_CASE"
+class-naming-style = "PascalCase"
+const-naming-style = "UPPER_CASE"
+function-naming-style = "snake_case"
+inlinevar-naming-style = "any"
+method-naming-style = "snake_case"
+module-naming-style = "any"
+variable-naming-style = "snake_case"
+docstring-min-length = -1
+good-names = ["i", "j", "k", "ex", "Run", "_"]
+bad-names = ["foo", "bar", "baz", "toto", "tutu", "tata"]
+defining-attr-methods = ["__init__", "__new__", "setUp", "asyncSetUp", "__post_init__"]
+exclude-protected = ["_asdict", "_fields", "_replace", "_source", "_make", "os._exit"]
+valid-classmethod-first-arg = ["cls"]
+valid-metaclass-classmethod-first-arg = ["mcs"]
 
 [build-system]
 requires = ["poetry-core"]

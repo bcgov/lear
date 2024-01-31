@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   business-auth-ci:
-    uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "business-auth"
       working_directory: "./queue_services/entity-auth"
