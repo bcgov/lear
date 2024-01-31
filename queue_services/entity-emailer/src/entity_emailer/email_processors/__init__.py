@@ -89,7 +89,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
             "ERROR",
             f"Queue Error: No email in business {identifier} profile to send output to.",
         )
-        raise Exception # pylint: disable=broad-exception-raised
+        raise Exception  # pylint: disable=broad-exception-raised
 
     return contacts[0]["email"]
 

@@ -41,10 +41,9 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
 
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, request
 from legal_api.models import Filing
 from simple_cloudevent import SimpleCloudEvent
-from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
 from entity_pay.services import queue
 from entity_pay.services.logging import structured_log
@@ -121,6 +120,7 @@ def worker():
     # ##
     with suppress(Exception):
         mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
+        # pylint: disable-next=unused-variable
         ret = queue.publish(topic=mail_topic, payload=queue.to_queue_message(cloud_event))
         structured_log(request, "INFO", f"publish to emailer for pay-id: {payment_token.id}")
 
@@ -138,6 +138,8 @@ def worker():
 
 @dataclass
 class PaymentToken:
+    """Payment Token class"""
+
     id: Optional[str] = None
     status_code: Optional[str] = None
     filing_identifier: Optional[str] = None

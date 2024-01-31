@@ -47,21 +47,21 @@ def structured_log(request: LocalProxy, severity: str = "NOTICE", message: str =
     # Build structured log messages as an object.
     global_log_fields = {}
 
-    if PROJECT := os.environ.get("GOOGLE_CLOUD_PROJECT"):
+    if project := os.environ.get("GOOGLE_CLOUD_PROJECT"):
         # Add log correlation to nest all log messages.
         trace_header = request.headers.get("X-Cloud-Trace-Context")
 
-        if trace_header and PROJECT:
+        if trace_header and project:
             trace = trace_header.split("/")
-            global_log_fields["logging.googleapis.com/trace"] = f"projects/{PROJECT}/traces/{trace[0]}"
+            global_log_fields["logging.googleapis.com/trace"] = f"projects/{project}/traces/{trace[0]}"
 
     # Complete a structured log entry.
-    entry = dict(
-        severity=severity,
-        message=message,
+    entry = {
+        "severity": severity,
+        "message": message,
         # Log viewer accesses 'component' as jsonPayload.component'.
-        component=f"{mod.__name__}.{frm.function}",
+        "component": f"{mod.__name__}.{frm.function}",
         **global_log_fields,
-    )
+    }
 
     print(json.dumps(entry))

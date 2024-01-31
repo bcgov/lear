@@ -57,10 +57,10 @@ def structured_log(request: LocalProxy, severity: str = "NOTICE", message: str =
 
     # Complete a structured log entry.
     entry = {
-        "severity":severity,
-        "message":message,
+        "severity": severity,
+        "message": message,
         # Log viewer accesses 'component' as jsonPayload.component'.
-        "component":f"{mod.__name__}.{frm.function}",
+        "component": f"{mod.__name__}.{frm.function}",
         **global_log_fields,
     }
 
