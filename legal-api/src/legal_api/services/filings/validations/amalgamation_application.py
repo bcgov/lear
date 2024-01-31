@@ -105,8 +105,8 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
         if identifier in business_identifiers:
             duplicate_businesses.append(identifier)
             continue
-        else:
-            business_identifiers.append(identifier)
+
+        business_identifiers.append(identifier)
 
         # Check if its a foreign business
         if foreign_jurisdiction := amalgamating_business_json.get('foreignJurisdiction'):
@@ -269,7 +269,7 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
     elif amalgamation_type == Amalgamation.AmalgamationTypes.horizontal.name:
         if (is_any_foreign or is_any_expro_a):
             msg.append({
-                'error': f'A foreign corporation or extra-Pro cannot be part of a Horizontal amalgamation.',
+                'error': 'A foreign corporation or extra-Pro cannot be part of a Horizontal amalgamation.',
                 'path': amalgamating_businesses_path
             })
 
