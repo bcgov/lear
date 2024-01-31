@@ -85,20 +85,17 @@ def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amal
     amalgamating_businesses_json = amalgamation_filing.get("amalgamatingBusinesses", [])
     for amalgamating_business_json in amalgamating_businesses_json:
         amalgamating_business = AmalgamatingBusiness()
-        amalgamating_business.role = amalgamating_business_json.get("role")
-        if (identifier := amalgamating_business_json.get("identifier")) and (
-            business := LegalEntity.find_by_identifier(identifier)
-        ):
-            amalgamating_business.legal_entity_id = business.id
-            dissolve_amalgamating_business(business, filing_rec)
-        else:
-            amalgamating_business.foreign_identifier = amalgamating_business_json.get("corpNumber")
-            amalgamating_business.foreign_name = amalgamating_business_json.get("legalName")
-
-            foreign_jurisdiction = amalgamating_business_json.get("foreignJurisdiction")
-            amalgamating_business.foreign_jurisdiction = foreign_jurisdiction.get("country").upper()
-            if region := foreign_jurisdiction.get("region"):
+        amalgamating_business.role = amalgamating_business_json.get('role')
+        identifier = amalgamating_business_json.get('identifier')
+        if foreign_jurisdiction := amalgamating_business_json.get('foreignJurisdiction'):
+            amalgamating_business.foreign_identifier = identifier
+            amalgamating_business.foreign_name = amalgamating_business_json.get('legalName')
+            amalgamating_business.foreign_jurisdiction = foreign_jurisdiction.get('country').upper()
+            if region := foreign_jurisdiction.get('region'):
                 amalgamating_business.foreign_jurisdiction_region = region.upper()
+        elif business := LegalEntity.find_by_identifier(identifier):
+            amalgamating_business.business_id = business.id
+            dissolve_amalgamating_business(business, filing_rec)
 
         amalgamation.amalgamating_businesses.append(amalgamating_business)
 
