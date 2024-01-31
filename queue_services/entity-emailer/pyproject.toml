@@ -39,7 +39,7 @@ exclude_dirs = [".venv","tests"]
 skips = ["B104"]
 
 [tool.flake8]
-ignore = ["F401","E402", "Q000", "E203"]
+ignore = ["F401","E402", "Q000", "E203", "W503"]
 exclude = [
     ".venv",
     ".git",

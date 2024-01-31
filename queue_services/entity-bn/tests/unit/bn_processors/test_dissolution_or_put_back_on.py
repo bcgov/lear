@@ -22,7 +22,7 @@ from legal_api.models import RequestTracker
 from entity_bn.bn_processors import bn_note
 from tests.unit import create_filing, create_registration_data, get_json_message
 
-message_type = f"bc.registry.business."
+message_type = "bc.registry.business."
 
 
 @pytest.mark.parametrize(

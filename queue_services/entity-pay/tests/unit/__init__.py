@@ -70,7 +70,7 @@ def nested_session(session):
         sess = session.begin_nested()
         yield sess
         sess.rollback()
-    except:
+    except:  # noqa: E722
         pass
     finally:
         pass

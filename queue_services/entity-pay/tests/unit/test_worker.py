@@ -41,7 +41,7 @@ import pytest
 from legal_api.models import Filing
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-from entity_pay.resources.worker import get_filing_by_payment_id, get_payment_token
+from entity_pay.resources.worker import get_payment_token
 from tests.unit import create_filing, create_legal_entity, nested_session
 
 
