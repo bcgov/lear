@@ -173,7 +173,7 @@ def process_email(email_msg: dict, token: str):  # pylint: disable=too-many-bran
         elif etype == "incorporationApplication" and option == "mras":
             email = mras_notification.process(email_msg["email"])
         elif etype == "annualReport" and option == "reminder":
-            flag_on = flags.is_on("disable-specific-service-provider")
+            flag_on = flags.value("disable-specific-service-provider")
             email = ar_reminder_notification.process(email_msg["email"], token, flag_on)
         elif etype == "agmLocationChange" and option == Filing.Status.COMPLETED.value:
             email = agm_location_change_notification.process(email_msg["email"], token)

@@ -239,7 +239,8 @@ def change_address(
         )
 
 
-# TODO: Fix below functions (and add unit test) to check history data once we have clarity on the versioning changes
+# TODO: Fix below functions (and add unit test, and enable pylint) to check history data once we have clarity on the versioning changes
+# pylint: disable-all
 def has_previous_address(transaction_id: int, office_id: int, address_type: str) -> bool:
     """Has previous address for the given transaction and office id."""
     address_version = version_class(Address)

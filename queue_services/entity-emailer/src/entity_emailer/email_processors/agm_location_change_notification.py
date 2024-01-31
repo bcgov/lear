@@ -20,8 +20,7 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
-from flask import current_app
+from flask import current_app, request
 from jinja2 import Template
 from legal_api.models import Filing, LegalEntity
 
@@ -30,6 +29,8 @@ from entity_emailer.email_processors import (
     get_recipient_from_auth,
     substitute_template_parts,
 )
+
+from entity_emailer.services.logging import structured_log
 
 
 def _get_pdfs(token: str, business: dict, filing: Filing, filing_date_time: str, effective_date: str) -> list:
@@ -46,7 +47,7 @@ def _get_pdfs(token: str, business: dict, filing: Filing, filing_date_time: str,
         headers=headers,
     )
     if filing_pdf.status_code != HTTPStatus.OK:
-        logger.error("Failed to get pdf for filing: %s", filing.id)
+        structured_log(request, "ERROR", f"Failed to get pdf for filing: {filing.id}")
     else:
         filing_pdf_encoded = base64.b64encode(filing_pdf.content)
         pdfs.append(
@@ -74,7 +75,7 @@ def _get_pdfs(token: str, business: dict, filing: Filing, filing_date_time: str,
         headers=headers,
     )
     if receipt.status_code != HTTPStatus.CREATED:
-        logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+        structured_log(request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}")
     else:
         receipt_encoded = base64.b64encode(receipt.content)
         pdfs.append(
@@ -92,7 +93,7 @@ def _get_pdfs(token: str, business: dict, filing: Filing, filing_date_time: str,
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
     """Build the email for AGM Location Change notification."""
-    logger.debug("agm_location_change_notification: %s", email_info)
+    structured_log(request, "DEBUG", f"agm_location_change_notification: {email_info}")
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
