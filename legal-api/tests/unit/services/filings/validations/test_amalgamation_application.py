@@ -20,7 +20,7 @@ import pytest
 import datetime
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
-from legal_api.models import Business, Filing
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing
 from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER
 from legal_api.services.filings.validations.validation import validate
 
@@ -82,9 +82,9 @@ def test_invalid_nr_amalgamation(mocker, app, session):
 @pytest.mark.parametrize(
     'amalgamation_type, expected_msg',
     [
-        ('regular', 'At least one Director and a Completing Party is required.'),
-        ('vertical', 'A Completing Party is required.'),
-        ('horizontal', 'A Completing Party is required.'),
+        (Amalgamation.AmalgamationTypes.regular.name, 'At least one Director and a Completing Party is required.'),
+        (Amalgamation.AmalgamationTypes.vertical.name, 'A Completing Party is required.'),
+        (Amalgamation.AmalgamationTypes.horizontal.name, 'A Completing Party is required.'),
     ]
 )
 def test_invalid_party(mocker, app, session, amalgamation_type, expected_msg):
@@ -608,6 +608,39 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
 
 
 @pytest.mark.parametrize(
+    'amalgamation_type, expected_code',
+    [
+        (Amalgamation.AmalgamationTypes.regular.name, HTTPStatus.UNPROCESSABLE_ENTITY),
+        (Amalgamation.AmalgamationTypes.vertical.name, None),
+        (Amalgamation.AmalgamationTypes.horizontal.name, None),
+    ]
+)
+def test_validate_amalgamation_office_or_share_required(session, mocker, amalgamation_type, expected_code):
+    """Assert that amalgamation offices/shareStructure required can be validated."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['type'] = amalgamation_type
+
+    del filing['filing']['amalgamationApplication']['offices']
+    del filing['filing']['amalgamationApplication']['shareStructure']
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+
+    err = validate(None, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
     'test_status, file_number, effect_of_order, expected_code, expected_msg',
     [
         ('FAIL', '12345678901234567890', 'invalid', HTTPStatus.BAD_REQUEST, 'Invalid effectOfOrder.'),
@@ -731,11 +764,11 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC1234567'
         },
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC7654321'
         }
     ]
@@ -761,8 +794,10 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
         assert not err
     else:
         assert expected_code == err.code
-        assert f'{expected_msg[0]} is not affiliated with the currently selected BC Registries account.' == err.msg[0]['error']
-        assert f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' == err.msg[1]['error']
+        assert (f'{expected_msg[0]} is not affiliated with the currently selected BC Registries account.' ==
+                err.msg[0]['error'])
+        assert (f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' ==
+                err.msg[1]['error'])
 
 
 @pytest.mark.parametrize(
@@ -781,11 +816,11 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC1234567'
         },
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC7654321'
         }
     ]
@@ -835,11 +870,11 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC1234567'
         },
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC7654321'
         }
     ]
@@ -1070,17 +1105,17 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC1234567'
         },
         {
-            'role': 'amalgamating',
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
             'legalName': 'Foreign Co.',
             'foreignJurisdiction': {
                 'country': 'CA',
                 'region': 'BC'
             },
-            'corpNumber': 'A1234567' if test_status == 'FAIL' else '7654321'
+            'identifier': 'A1234567' if test_status == 'FAIL' else '7654321'
         }
     ]
 
@@ -1112,23 +1147,27 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
 
 
 @pytest.mark.parametrize(
-        'test_status, amalgamating_businesses, expected_code, expected_msg',
-        [
-            ('FAIL_BC', [
-                {'role': 'amalgamating','identifier': 'BC1234567'},
-                {'role': 'amalgamating','identifier': 'BC1234567'},
-                {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'}
-            ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating business entry found in list: BC1234567.'),
-            ('FAIL_EXPRO', [
-                {'role': 'amalgamating','identifier': 'BC1234567'},
-                {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'},
-                {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'}
-            ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating business entry found in list: 123456.'),
-            ('SUCCESS', [
-                {'role': 'amalgamating','identifier': 'BC1234567'},
-                {'role': 'amalgamating','legalName': 'Foreign Co.','foreignJurisdiction': {'country': 'CA'},'corpNumber': '123456'}
-            ], None, None)
-        ]
+    'test_status, amalgamating_businesses, expected_code, expected_msg',
+    [
+        ('FAIL_BC', [
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'legalName': 'Foreign Co.',
+             'foreignJurisdiction': {'country': 'CA'}, 'identifier': '123456'}
+        ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating business entry found in list: BC1234567.'),
+        ('FAIL_EXPRO', [
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'legalName': 'Foreign Co.',
+             'foreignJurisdiction': {'country': 'CA'}, 'identifier': '123456'},
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'legalName': 'Foreign Co.',
+             'foreignJurisdiction': {'country': 'CA'}, 'identifier': '123456'}
+        ], HTTPStatus.BAD_REQUEST, 'Duplicate amalgamating business entry found in list: 123456.'),
+        ('SUCCESS', [
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+            {'role': AmalgamatingBusiness.Role.amalgamating.name, 'legalName': 'Foreign Co.',
+             'foreignJurisdiction': {'country': 'CA'}, 'identifier': '123456'}
+        ], None, None)
+    ]
 )
 def test_duplicate_amalgamating_businesses(mocker, app, session, jwt, test_status, amalgamating_businesses,
                                            expected_code, expected_msg):
@@ -1153,7 +1192,7 @@ def test_duplicate_amalgamating_businesses(mocker, app, session, jwt, test_statu
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
 
     err = validate(None, filing, account_id)
-    
+
     # validate outcomes
     if test_status == 'SUCCESS':
         assert not err
@@ -1163,25 +1202,68 @@ def test_duplicate_amalgamating_businesses(mocker, app, session, jwt, test_statu
 
 
 @pytest.mark.parametrize(
-        'test_status, expected_code, expected_msg',
-        [
-            ('FAIL', HTTPStatus.BAD_REQUEST, 'Two or more amalgamating businesses required.'),
-            ('SUCCESS', None, None)
-        ]
+    'amalgamation_type, amalgamating_businesses, expected_code, expected_msg',
+    [
+        (Amalgamation.AmalgamationTypes.regular.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234568'}],
+         None, None),
+        (Amalgamation.AmalgamationTypes.regular.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'}],
+         HTTPStatus.BAD_REQUEST,
+         'Regular amalgamation must have 2 or more amalgamating businesses.'),
+        (Amalgamation.AmalgamationTypes.regular.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.holding.name, 'identifier': 'BC1234568'},
+          {'role': AmalgamatingBusiness.Role.primary.name, 'identifier': 'BC1234569'}],
+         HTTPStatus.BAD_REQUEST,
+         'Regular amalgamation must have 2 or more amalgamating businesses.'),
+        (Amalgamation.AmalgamationTypes.vertical.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.holding.name, 'identifier': 'BC1234568'}],
+         None, None),
+        (Amalgamation.AmalgamationTypes.vertical.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234568'}],
+         HTTPStatus.BAD_REQUEST,
+         'Vertical amalgamation must have a holding and 1 or more amalgamating businesses.'),
+        (Amalgamation.AmalgamationTypes.vertical.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.primary.name, 'identifier': 'BC1234568'}],
+         HTTPStatus.BAD_REQUEST,
+         'Vertical amalgamation must have a holding and 1 or more amalgamating businesses.'),
+        (Amalgamation.AmalgamationTypes.horizontal.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.primary.name, 'identifier': 'BC1234568'}],
+         None, None),
+        (Amalgamation.AmalgamationTypes.horizontal.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234568'}],
+         HTTPStatus.BAD_REQUEST,
+         'Horizontal amalgamation must have a primary and 1 or more amalgamating businesses.'),
+        (Amalgamation.AmalgamationTypes.horizontal.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.holding.name, 'identifier': 'BC1234568'}],
+         HTTPStatus.BAD_REQUEST,
+         'Horizontal amalgamation must have a primary and 1 or more amalgamating businesses.'),
+        (Amalgamation.AmalgamationTypes.horizontal.name,
+         [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+          {'role': AmalgamatingBusiness.Role.holding.name, 'identifier': '1234568',
+           'legalName': 'Foreign Co.', 'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}}],
+         HTTPStatus.BAD_REQUEST,
+         'A Foreign Co. foreign corporation cannot be marked as Primary or Holding.')
+    ]
 )
-def test_amalgamating_businesses_number(mocker, app, session, jwt, test_status, expected_code, expected_msg):
-    """Assert two or more amalgamating businesses required."""
+def test_amalgamating_business_roles(mocker, app, session, jwt, amalgamation_type,
+                                     amalgamating_businesses, expected_code, expected_msg):
+    """Assert amalgamating business roles are valid."""
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
-
-    if test_status == 'FAIL':
-        filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = []
-    else:
-        filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][1]['corpNumber']
-    
+    filing['filing']['amalgamationApplication']['type'] = amalgamation_type
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = amalgamating_businesses
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
@@ -1198,8 +1280,52 @@ def test_amalgamating_businesses_number(mocker, app, session, jwt, test_status, 
     err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
-        assert not err
-    else:
+    if expected_code:
         assert expected_code == err.code
         assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize(
+    'test_name, expected_code, expected_msg',
+    [
+        ('FAIL_FOREIGN', HTTPStatus.BAD_REQUEST,
+            'A foreign corporation or extra-Pro cannot be part of a Horizontal amalgamation.'),
+        ('FAIL_EXPRO', HTTPStatus.BAD_REQUEST,
+            'A foreign corporation or extra-Pro cannot be part of a Horizontal amalgamation.')
+    ]
+)
+def test_horizontal_amalgamation(mocker, app, session, jwt, test_name, expected_code, expected_msg):
+    """Assert horizontal amalgamation are valid."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.horizontal.name
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][0]['role'] = \
+        AmalgamatingBusiness.Role.primary.name
+    if test_name == 'FAIL_EXPRO':
+        filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][1]['foreignJurisdiction']['region'] = 'BC'
+
+    def mock_find_by_identifier(identifier):
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
+
+    err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if expected_code:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err

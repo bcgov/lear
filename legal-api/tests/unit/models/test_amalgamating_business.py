@@ -62,7 +62,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_jurisdiction="CA",
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
-        foreign_corp_num="123456789",
+        foreign_identifier="123456789",
         business_id=b.id,
         amalgamation_id=amalgamation.id
     )
@@ -73,7 +73,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_jurisdiction="CA",
         foreign_jurisdiction_region="AB",
         foreign_name="Testing123",
-        foreign_corp_num="123456789",
+        foreign_identifier="123456789",
         business_id=b.id,
         amalgamation_id=amalgamation.id
     )
