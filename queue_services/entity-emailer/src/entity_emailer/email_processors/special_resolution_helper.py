@@ -54,7 +54,7 @@ def get_completed_pdfs(
         structured_log(
             request,
             "ERROR",
-            f"Failed to get specialResolution pdf for filing: {filing.id}, status code: {special_resolution.status_code}",
+            f"Failed to get specialResolution pdf for filing: {filing.id}, status code: {special_resolution.status_code}",  # noqa: E501
         )
 
     # Change of Name
@@ -80,7 +80,7 @@ def get_completed_pdfs(
             structured_log(
                 request,
                 "ERROR",
-                f"Failed to get certificateOfNameChange pdf for filing: {filing.id}, status code: {name_change.status_code}",
+                f"Failed to get certificateOfNameChange pdf for filing: {filing.id}, status code: {name_change.status_code}",  # noqa: E501
             )
 
     # Certified Rules

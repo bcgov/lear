@@ -29,7 +29,6 @@ from entity_emailer.email_processors import (
     get_recipient_from_auth,
     substitute_template_parts,
 )
-
 from entity_emailer.services.logging import structured_log
 
 

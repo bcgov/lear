@@ -114,7 +114,7 @@ def worker():
             with suppress(Exception):
                 event_topic = current_app.config.get("ENTITY_EVENT_TOPIC", "filer")
                 # pylint: disable-next=unused-variable
-                ret = queue.publish(topic=event_topic, payload=queue.to_queue_message(cloud_event))
+                ret = queue.publish(topic=event_topic, payload=queue.to_queue_message(cloud_event))  # noqa: F841
                 structured_log(request, "INFO", f"publish to entity event: {message.identifier}")
 
         structured_log(request, "INFO", f"completed ce: {str(ce)}")
