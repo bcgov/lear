@@ -29,6 +29,7 @@ from entity_bn.services.logging import structured_log
 
 @dataclass
 class Message:
+    """Process message class"""
     id: Optional[str] = None
     type: Optional[str] = None
     filing_id: Optional[str] = None
@@ -37,9 +38,10 @@ class Message:
     business_number: Optional[str] = None
 
 
+# pylint: disable-next=invalid-name
 bn_note = (
     "Cannot inform CRA about this change before receiving "
-    + "Business Number (BN15). Modify the "  # pylint: disable=invalid-name
+    + "Business Number (BN15). Modify the "
     + "request xml by providing businessRegistrationNumber, businessProgramIdentifier and "
     + "businessProgramAccountReferenceNumber before resubmitting it."
 )

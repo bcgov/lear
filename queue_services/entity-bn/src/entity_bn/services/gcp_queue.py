@@ -55,7 +55,10 @@ from werkzeug.local import LocalProxy
 
 
 class GcpQueue:
+    """Provides Queue type services"""
+
     def __init__(self, app: Flask = None):
+        """Initializes the GCP Queue class"""
         self.audience = None
         self.credentials_pub = None
         self.gcp_auth_key = None
@@ -67,6 +70,7 @@ class GcpQueue:
             self.init_app(app)
 
     def init_app(self, app: Flask):
+        """Initializes the application"""
         self.gcp_auth_key = app.config.get("GCP_AUTH_KEY")
         if self.gcp_auth_key:
             try:
@@ -87,6 +91,7 @@ class GcpQueue:
 
     @property
     def publisher(self):
+        """Returns the publisher"""
         if not self._publisher and self.credentials_pub:
             self._publisher = pubsub_v1.PublisherClient(credentials=self.credentials_pub)
         else:
@@ -95,6 +100,7 @@ class GcpQueue:
 
     @staticmethod
     def is_valid_envelope(msg: dict):
+        """Checks if the envelope is valid"""
         if (
             msg.get("subscription")
             and (message := msg.get("message"))
@@ -106,6 +112,7 @@ class GcpQueue:
 
     @staticmethod
     def get_envelope(request: LocalProxy) -> Optional[dict]:
+        """Returns the envelope"""
         with suppress(Exception):
             if (envelope := request.get_json()) and GcpQueue.is_valid_envelope(envelope):
                 return envelope
@@ -168,8 +175,10 @@ class GcpQueue:
 
     @staticmethod
     def to_queue_message(ce: SimpleCloudEvent):
+        """Return a byte string of the CloudEvent in JSON format"""
         return to_queue_message(ce)
 
     @staticmethod
     def from_queue_message(data: dict):
+        """Convert a queue message back to a simple CloudEvent"""
         return from_queue_message(data)

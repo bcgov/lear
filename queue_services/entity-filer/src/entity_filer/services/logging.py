@@ -40,6 +40,7 @@ from werkzeug.local import LocalProxy
 
 
 def structured_log(request: LocalProxy, severity: str = "NOTICE", message: str = None):
+    """Prints structured log message"""
     frm = inspect.stack()[1]
     mod = inspect.getmodule(frm[0])
 

@@ -113,6 +113,7 @@ def worker():
             )
             with suppress(Exception):
                 event_topic = current_app.config.get("ENTITY_EVENT_TOPIC", "filer")
+                # pylint: disable-next=unused-variable
                 ret = queue.publish(topic=event_topic, payload=queue.to_queue_message(cloud_event))
                 structured_log(request, "INFO", f"publish to entity event: {message.identifier}")
 
@@ -171,11 +172,12 @@ def process_cra_request(
 
     filing: Filing = Filing.find_by_id(msg.filing_id)
     if not filing:
-        raise Exception
+        raise Exception # pylint: disable=broad-exception-raised
 
     legal_entity: LegalEntity = LegalEntity.find_by_internal_id(filing.legal_entity_id)
     if not legal_entity:
-        raise Exception
+        raise Exception # pylint: disable=broad-exception-raised
+
 
     if filing.filing_type == "registration":
         registration.process(legal_entity)

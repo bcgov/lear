@@ -28,7 +28,6 @@ from legal_api.models import (
 )
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from sql_versioning import history_cls
 from sqlalchemy import and_
 
 from entity_bn.bn_processors import (
@@ -114,7 +113,7 @@ def change_name(
     elif name_type == RequestTracker.RequestType.CHANGE_PARTY:
         new_name = legal_entity.legal_name
 
-    alternate_name = legal_entity._alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first() # pylint: disable=protected-access
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(
@@ -196,7 +195,7 @@ def change_address(
         else legal_entity.office_mailing_address
     )
 
-    alternate_name = legal_entity._alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first() # pylint: disable=protected-access
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(

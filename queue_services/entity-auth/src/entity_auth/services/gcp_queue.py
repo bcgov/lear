@@ -175,10 +175,10 @@ class GcpQueue:
 
     @staticmethod
     def to_queue_message(ce: SimpleCloudEvent):
-        """Return a byte string, of the CloudEvent in JSON format"""
+        """Return a byte string of the CloudEvent in JSON format"""
         return to_queue_message(ce)
 
     @staticmethod
     def from_queue_message(data: dict):
-        """onvert a queue message back to a simple CloudEvent"""
+        """Convert a queue message back to a simple CloudEvent"""
         return from_queue_message(data)
