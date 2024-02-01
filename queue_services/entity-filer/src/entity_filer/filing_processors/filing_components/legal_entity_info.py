@@ -17,13 +17,9 @@ from tokenize import String
 from typing import Dict
 
 import requests
+from business_model import EntityRole, Filing, LegalEntity, LegalEntityIdentifier, LegalEntityType
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
-from business_model import LegalEntityIdentifier
-from business_model import LegalEntityType
-from business_model import LegalEntity
-from business_model import Filing
-from business_model import EntityRole
 
 # from legal_api.services import NaicsService
 
@@ -70,15 +66,11 @@ def set_legal_name(corp_num: str, legal_entity: LegalEntity, legal_entity_info: 
         legal_entity.legal_name = legal_name
     else:
         entity_type = legal_entity_info.get("legalType", None)
-        numbered_legal_name_suffix = LegalEntity.BUSINESSES[entity_type][
-            "numberedBusinessNameSuffix"
-        ]
+        numbered_legal_name_suffix = LegalEntity.BUSINESSES[entity_type]["numberedBusinessNameSuffix"]
         legal_entity.legal_name = f"{corp_num[2:]} {numbered_legal_name_suffix}"
 
 
-def update_legal_entity_info(
-    corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict, filing: Filing
-):
+def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict, filing: Filing):
     """Format and update the legal_entity entity from incorporation filing."""
     if corp_num and legal_entity and legal_entity_info and filing:
         set_legal_name(corp_num, legal_entity, legal_entity_info)
@@ -96,8 +88,10 @@ def update_naics_info(legal_entity: LegalEntity, naics: Dict):
     # TODO update NAICS info
     legal_entity.naics_code = naics.get("naicsCode")
     if legal_entity.naics_code:
-        naics_structure = NaicsService.find_by_code(legal_entity.naics_code)
-        legal_entity.naics_key = naics_structure["naicsKey"]
+        # TODO: Uncomment next 2 lines when find_by_code implemented and delete "pass"
+        # naics_structure = NaicsService.find_by_code(legal_entity.naics_code)
+        # legal_entity.naics_key = naics_structure["naicsKey"]
+        pass
     else:
         legal_entity.naics_code = None
         legal_entity.naics_key = None

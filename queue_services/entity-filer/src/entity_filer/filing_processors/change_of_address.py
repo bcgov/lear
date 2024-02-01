@@ -17,10 +17,7 @@ from typing import Dict
 from business_model import LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
-    create_address,
-    update_address,
-)
+from entity_filer.filing_processors.filing_components import create_address, update_address
 
 
 def process(business: LegalEntity, filing: Dict, filing_meta: FilingMeta):

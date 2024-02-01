@@ -21,15 +21,14 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.models import Filing
 
-from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
 from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs
+from entity_emailer.services.logging import structured_log
 
 
 def _get_pdfs(
@@ -47,8 +46,9 @@ def _get_pdfs(
     attach_order = 1
     headers = {"Accept": "application/pdf", "Authorization": f"Bearer {token}"}
     entity_type = business.get("legalType", None)
-    is_cp_special_resolution = entity_type == 'CP' and is_special_resolution_correction_by_filing_json(
-        filing.filing_json['filing'])
+    is_cp_special_resolution = entity_type == "CP" and is_special_resolution_correction_by_filing_json(
+        filing.filing_json["filing"]
+    )
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
@@ -58,9 +58,7 @@ def _get_pdfs(
             headers=headers,
         )
         if filing_pdf.status_code != HTTPStatus.OK:
-            structured_log(
-                request, "ERROR", f"Failed to get pdf for filing: {filing.id}"
-            )
+            structured_log(request, "ERROR", f"Failed to get pdf for filing: {filing.id}")
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
@@ -79,18 +77,14 @@ def _get_pdfs(
             json={
                 "corpName": corp_name,
                 "filingDateTime": filing_date_time,
-                "effectiveDateTime": effective_date
-                if effective_date != filing_date_time
-                else "",
+                "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
                 "filingIdentifier": str(filing.id),
                 "businessNumber": business.get("taxId", ""),
             },
             headers=headers,
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            structured_log(
-                request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}"
-            )
+            structured_log(request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}")
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -135,9 +129,7 @@ def _get_pdfs(
                 headers=headers,
             )
             if noa.status_code != HTTPStatus.OK:
-                structured_log(
-                    request, "ERROR", f"Failed to get noa pdf for filing: {filing.id}"
-                )
+                structured_log(request, "ERROR", f"Failed to get noa pdf for filing: {filing.id}")
             else:
                 noa_encoded = base64.b64encode(noa.content)
                 pdfs.append(
@@ -152,29 +144,32 @@ def _get_pdfs(
         elif is_cp_special_resolution:
             rules_changed = bool(filing.filing_json["filing"]["correction"].get("rulesFileKey"))
             memorandum_changed = bool(filing.filing_json["filing"]["correction"].get("memorandumFileKey"))
-            pdfs = get_completed_pdfs(token, business, filing, name_changed,
-                                      rules_changed=rules_changed, memorandum_changed=memorandum_changed)
+            pdfs = get_completed_pdfs(
+                token,
+                business,
+                filing,
+                name_changed,
+                rules_changed=rules_changed,
+                memorandum_changed=memorandum_changed,
+            )
     return pdfs
 
 
+# pylint: disable-next=too-many-arguments
 def _get_template(
     prefix: str,
     status: str,
     filing_type: str,
-    filing: Filing,  # pylint: disable=too-many-arguments
+    filing: Filing,
     business: dict,
     leg_tmz_filing_date: str,
     leg_tmz_effective_date: str,
     name_changed: bool,
 ) -> str:
     """Return rendered template."""
-    filing_name = filing.filing_type[0].upper() + " ".join(
-        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
-    )
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/{prefix}-CRCTN-{status}.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/{prefix}-CRCTN-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -185,8 +180,7 @@ def _get_template(
         header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get("DASHBOARD_URL")
-        + business.get("identifier", ""),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.get("identifier", ""),
         email_header=filing_name.upper(),
         filing_type=filing_type,
         name_changed=name_changed,
@@ -205,9 +199,7 @@ def _get_recipients(filing: Filing) -> list:
                 break
 
     if filing.filing_json["filing"]["correction"].get("contactPoint"):
-        recipients.append(
-            filing.filing_json["filing"]["correction"]["contactPoint"]["email"]
-        )
+        recipients.append(filing.filing_json["filing"]["correction"]["contactPoint"]["email"])
 
     recipients = list(set(recipients))
     recipients = list(filter(None, recipients))
@@ -217,9 +209,9 @@ def _get_recipients(filing: Filing) -> list:
 def get_subject(status: str, prefix: str, business: dict) -> str:
     """Return subject."""
     subjects = {
-        Filing.Status.PAID.value: "Confirmation of correction"
-        if prefix == "CP-SR"
-        else "Confirmation of Filing from the Business Registry",
+        Filing.Status.PAID.value: (
+            "Confirmation of correction" if prefix == "CP-SR" else "Confirmation of Filing from the Business Registry"
+        ),
         Filing.Status.COMPLETED.value: "Correction Documents from the Business Registry",
     }
 
@@ -233,17 +225,13 @@ def get_subject(status: str, prefix: str, business: dict) -> str:
     return subject
 
 
-def process(
-    email_info: dict, token: str
-) -> Optional[dict]:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Correction notification."""
     structured_log(request, "DEBUG", f"correction_notification: {email_info}")
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
-        email_info["filingId"]
-    )
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
 
     prefix = "BC"
     entity_type = business.get("legalType", None)
@@ -252,18 +240,14 @@ def process(
     if entity_type in ["SP", "GP"]:
         prefix = "FIRM"
     elif entity_type in ["BC", "BEN", "CC", "ULC"]:
-        original_filing_type = filing.filing_json["filing"]["correction"][
-            "correctedFilingType"
-        ]
+        original_filing_type = filing.filing_json["filing"]["correction"]["correctedFilingType"]
         if original_filing_type in [
             "annualReport",
             "changeOfAddress",
             "changeOfDirectors",
         ]:
             return None
-    elif entity_type == "CP" and is_special_resolution_correction_by_filing_json(
-            filing.filing_json["filing"]
-    ):
+    elif entity_type == "CP" and is_special_resolution_correction_by_filing_json(filing.filing_json["filing"]):
         prefix = "CP-SR"
         name_changed = "requestType" in filing.filing_json["filing"]["correction"].get("nameRequest", {})
     else:

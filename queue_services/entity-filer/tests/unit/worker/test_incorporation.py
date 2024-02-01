@@ -19,21 +19,20 @@ import random
 import secrets
 import string
 from http import HTTPStatus
-from unittest.mock import patch, call
+from unittest.mock import call, patch
 
 import pytest
-from flask import current_app
 
 # # from entity_queue_common.messages import get_data_from_msg
 # from entity_queue_common.service_utils import subscribe_to_queue
-from business_model import LegalEntity, Filing, EntityRole, RegistrationBootstrap
+from business_model import EntityRole, Filing, LegalEntity
+from flask import current_app
 
 # from legal_api.services import RegistrationBootstrapService
 # from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 
 # from tests.pytest_marks import colin_api_integration, integration_affiliation, integration_namex_api
 from tests.unit import create_filing
@@ -46,9 +45,7 @@ def bootstrap(account):
 
     bootstrap = RegistrationBootstrap()
     allowed_encoded = string.ascii_letters + string.digits
-    bootstrap.identifier = "T" + "".join(
-        secrets.choice(allowed_encoded) for _ in range(9)
-    )
+    bootstrap.identifier = "T" + "".join(secrets.choice(allowed_encoded) for _ in range(9))
     bootstrap.save()
 
     yield bootstrap.identifier
@@ -60,9 +57,7 @@ def bootstrap(account):
 def test_incorporation_filing(app, session, bootstrap, requests_mock):
     """Assert we can retrieve a new corp number from COLIN and incorporate a business."""
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing["filing"]["incorporationApplication"]["nameRequest"][
-        "nrNumber"
-    ] = "NR 0000021"
+    filing["filing"]["incorporationApplication"]["nameRequest"]["nrNumber"] = "NR 0000021"
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     del filing["filing"]["incorporationApplication"]["parties"][0]["officer"]["id"]
     del filing["filing"]["incorporationApplication"]["parties"][1]["officer"]["id"]
@@ -75,9 +70,7 @@ def test_incorporation_filing(app, session, bootstrap, requests_mock):
     response = "1234567"
     with app.app_context():
         current_app.config["COLIN_API"] = "http://localhost"
-        requests_mock.post(
-            f'{current_app.config["COLIN_API"]}/BC', json={"corpNum": response}
-        )
+        requests_mock.post(f'{current_app.config["COLIN_API"]}/BC', json={"corpNum": response})
         process_filing(filing_msg)
 
     # Check outcome
@@ -89,28 +82,16 @@ def test_incorporation_filing(app, session, bootstrap, requests_mock):
     assert filing
     assert filing.status == Filing.Status.COMPLETED.value
     assert business.identifier == filing_json["filing"]["business"]["identifier"]
-    assert (
-        business.founding_date.isoformat()
-        == filing_json["filing"]["business"]["foundingDate"]
-    )
+    assert business.founding_date.isoformat() == filing_json["filing"]["business"]["foundingDate"]
     assert len(business.share_classes.all()) == len(
-        filing_json["filing"]["incorporationApplication"]["shareStructure"][
-            "shareClasses"
-        ]
+        filing_json["filing"]["incorporationApplication"]["shareStructure"]["shareClasses"]
     )
-    assert len(business.offices.all()) == len(
-        filing_json["filing"]["incorporationApplication"]["offices"]
-    )
+    assert len(business.offices.all()) == len(filing_json["filing"]["incorporationApplication"]["offices"])
 
     assert len(EntityRole.get_parties_by_role(business.id, "director")) == 1
     assert len(EntityRole.get_parties_by_role(business.id, "incorporator")) == 1
-    assert (
-        len(EntityRole.get_entity_roles_by_filing(filing.id, role="completing_party"))
-        == 1
-    )
+    assert len(EntityRole.get_entity_roles_by_filing(filing.id, role="completing_party")) == 1
     incorporator = (EntityRole.get_parties_by_role(business.id, "incorporator"))[0]
-    completing_party = (
-        EntityRole.get_entity_roles_by_filing(filing.id, role="completing_party")
-    )[0]
+    completing_party = (EntityRole.get_entity_roles_by_filing(filing.id, role="completing_party"))[0]
     assert incorporator.appointment_date
     assert completing_party.appointment_date

@@ -21,29 +21,34 @@ from entity_emailer.email_processors import agm_extension_notification
 from tests.unit import prep_agm_extension_filing
 
 
-@pytest.mark.parametrize("status,legal_name,is_numbered", [
-    ("COMPLETED", "test business", False),
-    ("COMPLETED", "BC1234567", True),
-])
+@pytest.mark.parametrize(
+    "status,legal_name,is_numbered",
+    [
+        ("COMPLETED", "test business", False),
+        ("COMPLETED", "BC1234567", True),
+    ],
+)
 def test_agm_extension_notification(app, session, status, legal_name, is_numbered):
     """Assert that the agm extension email processor works as expected."""
     # setup filing + business for email
-    filing = prep_agm_extension_filing(
-        "BC1234567", "1", LegalEntity.EntityTypes.COMP.value, legal_name)
+    filing = prep_agm_extension_filing("BC1234567", "1", LegalEntity.EntityTypes.COMP.value, legal_name)
     token = "token"
     # test processor
     with patch.object(agm_extension_notification, "_get_pdfs", return_value=[]) as mock_get_pdfs:
-        with patch.object(agm_extension_notification, "get_recipient_from_auth",
-                          return_value="recipient@email.com"):
+        with patch.object(agm_extension_notification, "get_recipient_from_auth", return_value="recipient@email.com"):
             email = agm_extension_notification.process(
-                {"filingId": filing.id, "type": "agmExtension", "option": status}, token)
+                {"filingId": filing.id, "type": "agmExtension", "option": status}, token
+            )
 
-            if (is_numbered):
-                assert email["content"]["subject"] == \
-                    "Numbered Company - AGM Extension Documents from the Business Registry"
+            if is_numbered:
+                assert (
+                    email["content"]["subject"]
+                    == "Numbered Company - AGM Extension Documents from the Business Registry"
+                )
             else:
-                assert email["content"]["subject"] == \
-                    legal_name + " - AGM Extension Documents from the Business Registry"
+                assert (
+                    email["content"]["subject"] == legal_name + " - AGM Extension Documents from the Business Registry"
+                )
 
             assert "recipient@email.com" in email["recipients"]
             assert email["content"]["body"]

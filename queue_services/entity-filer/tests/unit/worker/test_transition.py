@@ -15,15 +15,10 @@
 import copy
 import random
 
-from business_model import LegalEntity, Filing, EntityRole
-from registry_schemas.example_data import (
-    TRANSITION_FILING_TEMPLATE,
-    FILING_HEADER,
-    TRANSITION,
-)
+from business_model import EntityRole, Filing, LegalEntity
+from registry_schemas.example_data import FILING_HEADER, TRANSITION, TRANSITION_FILING_TEMPLATE
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 
@@ -62,12 +57,8 @@ def test_transition_filing(app, session):
     assert len(business.share_classes.all()) == len(
         filing_json["filing"]["transition"]["shareStructure"]["shareClasses"]
     )
-    assert len(business.offices.all()) == len(
-        filing_json["filing"]["transition"]["offices"]
-    )
-    assert len(business.aliases.all()) == len(
-        filing_json["filing"]["transition"]["nameTranslations"]
-    )
+    assert len(business.offices.all()) == len(filing_json["filing"]["transition"]["offices"])
+    assert len(business.aliases.all()) == len(filing_json["filing"]["transition"]["nameTranslations"])
     assert len(business.resolutions.all()) == len(
         filing_json["filing"]["transition"]["shareStructure"]["resolutionDates"]
     )

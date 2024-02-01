@@ -41,12 +41,8 @@ import pytest
 from legal_api.models import Filing
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-from entity_pay.resources.worker import get_filing_by_payment_id
 from entity_pay.resources.worker import get_payment_token
-
-from tests.unit import create_legal_entity
-from tests.unit import create_filing
-from tests.unit import nested_session
+from tests.unit import create_filing, create_legal_entity, nested_session
 
 
 def test_no_message(client):
@@ -137,7 +133,8 @@ def test_get_payment_token():
 
 def test_process_payment_failed(app, session, client, mocker):
     """Assert that an AR filling status is set to error if payment transaction failed."""
-    from legal_api.models import LegalEntity, Filing
+    from legal_api.models import Filing, LegalEntity
+
     from entity_pay.resources.worker import get_filing_by_payment_id
     from entity_pay.services import queue
 
@@ -158,9 +155,7 @@ def test_process_payment_failed(app, session, client, mocker):
         }
     }
 
-    message = helper_create_cloud_event_envelope(
-        source="sbc-pay", subject="payment", data=payment_token
-    )
+    message = helper_create_cloud_event_envelope(source="sbc-pay", subject="payment", data=payment_token)
 
     def mock_publish():
         return {}
@@ -185,6 +180,7 @@ def test_process_payment_failed(app, session, client, mocker):
 def test_process_payment(app, session, client, mocker):
     """Assert that an AR filling status is set to error if payment transaction failed."""
     from legal_api.models import Filing
+
     from entity_pay.resources.worker import get_filing_by_payment_id
     from entity_pay.services import queue
 
@@ -205,9 +201,7 @@ def test_process_payment(app, session, client, mocker):
         }
     }
 
-    message = helper_create_cloud_event_envelope(
-        source="sbc-pay", subject="payment", data=payment_token
-    )
+    message = helper_create_cloud_event_envelope(source="sbc-pay", subject="payment", data=payment_token)
     # keep track of topics called on the mock
     topics = []
 
@@ -258,9 +252,7 @@ def helper_create_cloud_event_envelope(
             }
         }
     if not ce:
-        ce = SimpleCloudEvent(
-            id=cloud_event_id, source=source, subject=subject, type=type, data=data
-        )
+        ce = SimpleCloudEvent(id=cloud_event_id, source=source, subject=subject, type=type, data=data)
     #
     # This needs to mimic the envelope created by GCP PubSb when call a resource
     #

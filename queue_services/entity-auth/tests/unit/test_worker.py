@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the entity auth is operating correctly."""
-from http import HTTPStatus
 import uuid
+from http import HTTPStatus
 
 import pytest
 from business_model import LegalEntity
@@ -29,9 +29,8 @@ from tests.unit import create_data, get_json_message
         ("incorporationApplication", "BC", "BC1234567"),
     ],
 )
-def test_new_legal_entity(
-    app, session, client, mocker, filing_type, entity_type, identifier
-):
+# pylint: disable-next=too-many-arguments
+def test_new_legal_entity(app, session, client, mocker, filing_type, entity_type, identifier):
     """Test new legal entity."""
 
     filing, legal_entity = create_data(filing_type, entity_type, identifier)
@@ -43,7 +42,7 @@ def test_new_legal_entity(
         corp_type_code,
         pass_code,
         details,
-    ):
+    ):  # pylint: disable=too-many-arguments
         assert account == 1
         assert business_registration == legal_entity.identifier
         assert business_name == legal_entity.legal_name
@@ -61,9 +60,7 @@ def test_new_legal_entity(
             assert details == {
                 "bootstrapIdentifier": filing.temp_reg,
                 "identifier": legal_entity.identifier,
-                "nrNumber": filing.filing_json["filing"][filing_type]["nameRequest"][
-                    "nrNumber"
-                ],
+                "nrNumber": filing.filing_json["filing"][filing_type]["nameRequest"]["nrNumber"],
             }
 
         return HTTPStatus.OK
@@ -90,9 +87,7 @@ def test_new_legal_entity(
     )
 
     message_id = str(uuid.uuid4())
-    json_data = get_json_message(
-        filing.id, identifier, message_id, f"bc.registry.business.{filing_type}"
-    )
+    json_data = get_json_message(filing.id, identifier, message_id, f"bc.registry.business.{filing_type}")
     rv = client.post("/", json=json_data)
     assert rv.status_code == HTTPStatus.OK
 
@@ -114,9 +109,8 @@ def test_new_legal_entity(
         ("restoration", "SP", "FM1234567"),
     ],
 )
-def test_update_entity(
-    app, session, client, mocker, filing_type, entity_type, identifier
-):
+# pylint: disable-next=too-many-arguments
+def test_update_entity(app, session, client, mocker, filing_type, entity_type, identifier):
     """Test update entity."""
 
     filing, legal_entity = create_data(filing_type, entity_type, identifier)
@@ -145,8 +139,6 @@ def test_update_entity(
     )
 
     message_id = str(uuid.uuid4())
-    json_data = get_json_message(
-        filing.id, identifier, message_id, f"bc.registry.business.{filing_type}"
-    )
+    json_data = get_json_message(filing.id, identifier, message_id, f"bc.registry.business.{filing_type}")
     rv = client.post("/", json=json_data)
     assert rv.status_code == HTTPStatus.OK

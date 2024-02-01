@@ -1,10 +1,9 @@
 import base64
 from contextlib import suppress
 
-import pytest
 import flask
-from simple_cloudevent import SimpleCloudEvent
-from simple_cloudevent import to_queue_message
+import pytest
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
 from entity_emailer.services.gcp_queue import GcpQueue
 
@@ -19,9 +18,7 @@ BASE_ENVELOPE = {
 }
 
 
-@pytest.mark.parametrize(
-    "test_name,msg,expected", [("invalid", {}, False), ("valid", BASE_ENVELOPE, True)]
-)
+@pytest.mark.parametrize("test_name,msg,expected", [("invalid", {}, False), ("valid", BASE_ENVELOPE, True)])
 def test_valid_envelope(test_name, msg, expected):
     """Test the validation the envelope."""
     rv = GcpQueue.is_valid_envelope(msg)

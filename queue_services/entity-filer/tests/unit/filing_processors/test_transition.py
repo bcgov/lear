@@ -43,15 +43,9 @@ def test_transition_filing_process(app, session):
 
     # Assertions
     assert business.restriction_ind is False
-    assert len(business.share_classes.all()) == len(
-        filing["filing"]["transition"]["shareStructure"]["shareClasses"]
-    )
+    assert len(business.share_classes.all()) == len(filing["filing"]["transition"]["shareStructure"]["shareClasses"])
     assert len(business.offices.all()) == len(filing["filing"]["transition"]["offices"])
-    assert len(business.aliases.all()) == len(
-        filing["filing"]["transition"]["nameTranslations"]
-    )
-    assert len(business.resolutions.all()) == len(
-        filing["filing"]["transition"]["shareStructure"]["resolutionDates"]
-    )
+    assert len(business.aliases.all()) == len(filing["filing"]["transition"]["nameTranslations"])
+    assert len(business.resolutions.all()) == len(filing["filing"]["transition"]["shareStructure"]["resolutionDates"])
     assert len(business.entity_roles.all()) == 1
     assert len(filing_rec.filing_entity_roles.all()) == 1

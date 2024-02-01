@@ -37,23 +37,23 @@ from entity_bn.exceptions import BNException, BNRetryExceededException
 from entity_bn.services import queue
 from entity_bn.services.logging import structured_log
 
-
 FIRMS = ("SP", "GP")
 CORPS = ("BEN", "BC", "ULC", "CC")
 
 
 def process(
-    legal_entity: LegalEntity,  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
+    legal_entity: LegalEntity,
     is_admin: bool = False,
     msg: Message = None,
     skip_build=False,
-):
+):  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
     """Process the incoming registration request."""
     max_retry = current_app.config.get("BN_HUB_MAX_RETRY")
 
     message_id, business_number = None, None
     if is_admin:
         if not msg:
+            # pylint: disable-next=broad-exception-raised
             raise Exception("code issue: msg is required for admin request")
 
         message_id = msg.id
@@ -77,9 +77,7 @@ def process(
         inform_cra_tracker.is_processed = False
         inform_cra_tracker.is_admin = is_admin
         inform_cra_tracker.message_id = message_id
-    elif (
-        inform_cra_tracker := request_trackers.pop()
-    ) and not inform_cra_tracker.is_processed:
+    elif (inform_cra_tracker := request_trackers.pop()) and not inform_cra_tracker.is_processed:
         inform_cra_tracker.last_modified = datetime.utcnow()
         inform_cra_tracker.retry_number += 1
 
@@ -149,11 +147,8 @@ def process(
         )
 
         mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
-        queue.publish(topic=mail_topic,
-                      payload=queue.to_queue_message(cloud_event))
-    except (
-        Exception
-    ) as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+        queue.publish(topic=mail_topic, payload=queue.to_queue_message(cloud_event))
+    except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
         structured_log(
             request,
             "ERROR",
@@ -162,11 +157,11 @@ def process(
 
 
 def _inform_cra(
-    legal_entity: LegalEntity,  # pylint: disable=too-many-locals
+    legal_entity: LegalEntity,
     request_tracker: RequestTracker,
     business_number: str,
     skip_build: bool,
-):
+):  # pylint: disable=too-many-locals
     """Inform CRA about new registration."""
     if request_tracker.is_processed:
         return
@@ -179,24 +174,17 @@ def _inform_cra(
 
         owner_legal_type = None
         business_owned = False  # True when SP is owned by org
-        founding_date = LegislationDatetime.as_legislation_timezone(
-            legal_entity.founding_date
-        ).strftime("%Y-%m-%d")
+        founding_date = LegislationDatetime.as_legislation_timezone(legal_entity.founding_date).strftime("%Y-%m-%d")
         parties = []
         if is_firms:
             parties = legal_entity.entity_roles.all()
             entity_role = parties[0]
             party = (
-                entity_role.related_colin_entity
-                if entity_role.is_related_colin_entity
-                else entity_role.related_entity
+                entity_role.related_colin_entity if entity_role.is_related_colin_entity else entity_role.related_entity
             )
 
             if legal_entity.entity_type == "SP" and (
-                (
-                    isinstance(party, LegalEntity)
-                    and party.entity_type == LegalEntity.EntityTypes.ORGANIZATION.value
-                )
+                (isinstance(party, LegalEntity) and party.entity_type == LegalEntity.EntityTypes.ORGANIZATION.value)
                 or isinstance(party, ColinEntity)
             ):
                 business_owned = True
@@ -211,9 +199,7 @@ def _inform_cra(
         (
             business_type_code,
             business_sub_type_code,
-        ) = get_business_type_and_sub_type_code(
-            legal_entity.entity_type, business_owned, owner_legal_type
-        )
+        ) = get_business_type_and_sub_type_code(legal_entity.entity_type, business_owned, owner_legal_type)
 
         retry_number = str(request_tracker.retry_number)
         if request_tracker.message_id:
@@ -251,23 +237,18 @@ def _inform_cra(
     request_tracker.save()
 
 
-def _get_bn(
-    legal_entity: LegalEntity, request_tracker: RequestTracker, transaction_id: str
-):
+def _get_bn(legal_entity: LegalEntity, request_tracker: RequestTracker, transaction_id: str):
     """Get business number from CRA."""
     if request_tracker.is_processed:
         return
 
     request_tracker.request_object = f"{legal_entity.identifier}/{transaction_id}"
 
-    status_code, response = _get_program_account(
-        legal_entity.identifier, transaction_id
-    )
+    status_code, response = _get_program_account(legal_entity.identifier, transaction_id)
     if status_code == HTTPStatus.OK:
-        program_account_ref_no = str(
-            response["program_account_ref_no"]).zfill(4)
+        program_account_ref_no = str(response["program_account_ref_no"]).zfill(4)
         bn15 = f"{response['business_no']}{response['business_program_id']}{program_account_ref_no}"
-        alternate_name = legal_entity._alternate_names.first()
+        alternate_name = legal_entity._alternate_names.first()  # pylint: disable=protected-access
         alternate_name.bn15 = bn15
         legal_entity.save()
         request_tracker.is_processed = True
@@ -283,10 +264,11 @@ def _get_program_account(identifier, transaction_id):
         # Use Test environment for testing.
         token = AccountService.get_bearer_token()
         url = f'{current_app.config["COLIN_API"]}/programAccount/{identifier}/{transaction_id}'
-        response = requests.get(url,
-                                headers={**AccountService.CONTENT_TYPE_JSON,
-                                         "Authorization": AccountService.BEARER + token},
-                                timeout=AccountService.timeout)
+        response = requests.get(
+            url,
+            headers={**AccountService.CONTENT_TYPE_JSON, "Authorization": AccountService.BEARER + token},
+            timeout=AccountService.timeout,
+        )
         return response.status_code, response.json()
     except requests.exceptions.RequestException as err:
         structured_log(request, "ERROR", str(err))

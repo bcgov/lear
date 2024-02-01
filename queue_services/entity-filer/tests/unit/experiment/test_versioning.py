@@ -1,7 +1,6 @@
 import datetime
 
 import pytest
-
 from business_model import LegalEntity
 
 SKIP_NON_MANUAL_RUN = True

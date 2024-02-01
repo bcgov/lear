@@ -19,17 +19,11 @@ import pytest
 from business_model import Filing
 from registry_schemas.example_data import AGM_EXTENSION, FILING_HEADER
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 
-@pytest.mark.parametrize(
-        "test_name",
-        [
-            ("general"), ("first_agm_year"), ("more_extension"), ("final_extension")
-        ]
-)
+@pytest.mark.parametrize("test_name", [("general"), ("first_agm_year"), ("more_extension"), ("final_extension")])
 def test_worker_agm_extension(app, session, mocker, test_name):
     """Assert that the agm extension object is correctly populated to model objects."""
     identifier = "BC1234567"

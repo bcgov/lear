@@ -30,14 +30,20 @@ def test_ar_reminder_notification(app, session):
     token = "token"
     flag_on = False
     # test processor
-    with patch.object(ar_reminder_notification, "get_recipient_from_auth", return_value="test@test.com") \
-            as mock_get_recipient_from_auth:
+    with patch.object(
+        ar_reminder_notification, "get_recipient_from_auth", return_value="test@test.com"
+    ) as mock_get_recipient_from_auth:
         email = ar_reminder_notification.process(
             {
                 "businessId": filing.business_id,
-                "type": "annualReport", "option": "reminder",
-                "arFee": "100", "arYear": 2021
-            }, token, flag_on)
+                "type": "annualReport",
+                "option": "reminder",
+                "arFee": "100",
+                "arYear": 2021,
+            },
+            token,
+            flag_on,
+        )
         assert email["content"]["subject"] == "test business 2021 Annual Report Reminder"
 
         assert "test@test.com" in email["recipients"]

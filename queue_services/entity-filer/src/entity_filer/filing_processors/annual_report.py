@@ -20,9 +20,9 @@ from typing import Dict
 # from entity_queue_common.service_utils import logger
 from business_model import LegalEntity
 
-# from legal_api.services.filings import validations
-
 from entity_filer.filing_meta import FilingMeta
+
+# from legal_api.services.filings import validations
 
 
 def process(legal_entity: LegalEntity, filing: Dict, filing_meta: FilingMeta):
@@ -35,9 +35,7 @@ def process(legal_entity: LegalEntity, filing: Dict, filing_meta: FilingMeta):
         ar_date = datetime.date.fromisoformat(ar_date)
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
-        print(
-            "No annualReportDate given for in annual report. Filing id: %s", filing.id
-        )
+        print("No annualReportDate given for in annual report. Filing id: %s", filing.id)
 
     legal_entity.last_ar_date = ar_date
     # Validations are on input
@@ -52,9 +50,7 @@ def process(legal_entity: LegalEntity, filing: Dict, filing_meta: FilingMeta):
             legal_entity.last_ar_date = agm_date
 
     legal_entity.last_ar_year = (
-        legal_entity.last_ar_year + 1
-        if legal_entity.last_ar_year
-        else legal_entity.founding_date.year + 1
+        legal_entity.last_ar_year + 1 if legal_entity.last_ar_year else legal_entity.founding_date.year + 1
     )
 
     # save the annual report date to the filing meta info

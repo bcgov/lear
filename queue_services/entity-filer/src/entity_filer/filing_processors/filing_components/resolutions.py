@@ -14,8 +14,8 @@
 """Manages the resolutions of a LegalEntity."""
 from typing import Dict, Optional
 
-from dateutil.parser import parse
 from business_model import LegalEntity, Party
+from dateutil.parser import parse
 
 
 def find_resolution_with_largest_id(resolutions) -> Optional[Dict]:

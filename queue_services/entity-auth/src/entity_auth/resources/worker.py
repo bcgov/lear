@@ -39,14 +39,12 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import Optional
 
-from flask import Blueprint, current_app
-from flask import request
+from business_model import EntityRole, Filing, LegalEntity, RegistrationBootstrap
+from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
 from sqlalchemy.exc import OperationalError
 
-from business_model import EntityRole, Filing, LegalEntity
 from entity_auth.exceptions import AccountServiceException
-
 from entity_auth.services import name_request, queue
 from entity_auth.services.bootstrap import AccountService
 from entity_auth.services.logging import structured_log
@@ -54,6 +52,8 @@ from entity_auth.services.logging import structured_log
 
 @dataclass
 class Message:
+    """Worker message class"""
+
     id: Optional[str] = None
     type: Optional[str] = None
     filing_id: Optional[str] = None
@@ -135,11 +135,11 @@ def process_request(
 
     filing: Filing = Filing.find_by_id(msg.filing_id)
     if not filing:
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised
 
     legal_entity: LegalEntity = LegalEntity.find_by_internal_id(filing.legal_entity_id)
     if not legal_entity:
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised
 
     name_request.consume_nr(legal_entity, filing)
 
@@ -181,7 +181,6 @@ def process_request(
 
 def create_affiliation(legal_entity: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
-    from business_model import RegistrationBootstrap
 
     try:
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
@@ -192,12 +191,7 @@ def create_affiliation(legal_entity: LegalEntity, filing: Filing):
         if legal_entity.entity_type in ["SP", "GP"]:
             corp_type_temp_code = "RTMP"
             pass_code = get_firm_affiliation_passcode(legal_entity.id)
-            nr_number = (
-                filing.filing_json.get("filing")
-                .get("registration", {})
-                .get("nameRequest", {})
-                .get("nrNumber")
-            )
+            nr_number = filing.filing_json.get("filing").get("registration", {}).get("nameRequest", {}).get("nrNumber")
 
             details = {
                 "bootstrapIdentifier": bootstrap.identifier,
@@ -215,9 +209,7 @@ def create_affiliation(legal_entity: LegalEntity, filing: Filing):
         )
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
-            deaffiliation = AccountService.delete_affiliation(
-                bootstrap.account, legal_entity.identifier
-            )
+            deaffiliation = AccountService.delete_affiliation(bootstrap.account, legal_entity.identifier)
             current_app.logger.error(
                 f"Queue Error: Unable to affiliate business:{legal_entity.identifier} for filing:{filing.id}"
             )
@@ -234,14 +226,10 @@ def create_affiliation(legal_entity: LegalEntity, filing: Filing):
             or ("deaffiliation" in locals() and deaffiliation != HTTPStatus.OK)
             or ("bootstrap_update" in locals() and bootstrap_update != HTTPStatus.OK)
         ):
-            raise Exception
-    except (
-        Exception
-    ) as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
-        current_app.logger.error(
-            f"Queue Error: Affiliation error for filing:{filing.id}, with err:{err}"
-        )
-        raise AccountServiceException
+            raise Exception  # pylint: disable=broad-exception-raised
+    except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+        current_app.logger.error(f"Queue Error: Affiliation error for filing:{filing.id}, with err:{err}")
+        raise AccountServiceException from err
 
 
 def get_firm_affiliation_passcode(legal_entity_id: int):

@@ -21,10 +21,133 @@ google-cloud-pubsub = "^2.17.1"
 pg8000 = "^1.29.8"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.3.0"
 pytest = "^7.4.0"
 pytest-mock = "^3.11.1"
+pytest-cov = "^4.0.0"
 requests-mock = "^1.11.0"
+black = "^23.12.1"
+pylint = "^3.0.3"
+bandit = "^1.7.6"
+flake8-pyproject = "^1.2.3"
+isort = "^5.13.2"
+
+[tool.bandit]
+exclude_dirs = [".venv","tests"]
+skips = ["B104"]
+
+[tool.flake8]
+ignore = ["F401","E402", "Q000", "E203", "W503"]
+exclude = [
+    ".venv",
+    ".git",
+    ".history",
+    "devops",
+    "*migrations*",
+]
+per-file-ignores = [
+    "__init__.py:F401",
+    "*.py:B902"
+]
+max-line-length = 120
+docstring-min-length=10
+count = true
+
+[tool.black]
+target-version =  ["py310", "py311", "py312"]
+line-length = 120
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # The following are specific to Black, you probably don't want those.
+  migrations
+  | devops
+)/
+'''
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 120
+skip_gitignore = true
+skip_glob = ["migrations", "devops"]
+
+[tool.pylint.main]
+fail-under = 10
+max-line-length = 120
+ignore = [ "migrations", "devops", "tests"]
+ignore-patterns = ["^\\.#"]
+ignored-modules= ["flask_sqlalchemy", "sqlalchemy", "SQLAlchemy" , "alembic", "scoped_session"]
+ignored-classes= "scoped_session"
+ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$"
+extension-pkg-whitelist = "pydantic"
+notes = ["FIXME","XXX","TODO"]
+overgeneral-exceptions = ["builtins.BaseException", "builtins.Exception"]
+confidence = ["HIGH", "CONTROL_FLOW", "INFERENCE", "INFERENCE_FAILURE", "UNDEFINED"]
+disable = "C0209,C0301,W0511,W0613,W0703,W1514,R0801,R0902,R0903,R0911,R0401,R1705,R1718,W3101"
+argument-naming-style = "snake_case"
+attr-naming-style = "snake_case"
+class-attribute-naming-style = "any"
+class-const-naming-style = "UPPER_CASE"
+class-naming-style = "PascalCase"
+const-naming-style = "UPPER_CASE"
+function-naming-style = "snake_case"
+inlinevar-naming-style = "any"
+method-naming-style = "snake_case"
+module-naming-style = "any"
+variable-naming-style = "snake_case"
+docstring-min-length = -1
+good-names = ["i", "j", "k", "ex", "Run", "_"]
+bad-names = ["foo", "bar", "baz", "toto", "tutu", "tata"]
+defining-attr-methods = ["__init__", "__new__", "setUp", "asyncSetUp", "__post_init__"]
+exclude-protected = ["_asdict", "_fields", "_replace", "_source", "_make", "os._exit"]
+valid-classmethod-first-arg = ["cls"]
+valid-metaclass-classmethod-first-arg = ["mcs"]
+
+[tool.pytest.ini_options]
+minversion = "2.0"
+testpaths = [
+   "tests",
+]
+addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+python_files = [
+   "test*.py"
+]
+norecursedirs = [
+   ".git", ".tox", "venv*", "requirements*", "build",
+]
+log_cli = true
+log_cli_level = "1"
+filterwarnings = [
+   "ignore::UserWarning"
+]
+markers = [
+   "slow",
+   "serial",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+   "src/entity-pay",
+]
+omit = [
+    "wsgi.py",
+    "gunicorn_config.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+   "pragma: no cover",
+   "from",
+   "import",
+   "def __repr__",
+   "if self.debug:",
+   "if settings.DEBUG",
+   "raise AssertionError",
+   "raise NotImplementedError",
+   "if 0:",
+   'if __name__ == "__main__":',
+]
 
 [build-system]
 requires = ["poetry-core"]

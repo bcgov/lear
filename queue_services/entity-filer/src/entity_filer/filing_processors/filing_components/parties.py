@@ -17,20 +17,11 @@ from __future__ import annotations
 import datetime
 from typing import Dict, List, Optional, Tuple
 
-from business_model import Address
-from business_model import ColinEntity
-from business_model import Filing
-from business_model import EntityRole
-from business_model import LegalEntity
+from business_model import Address, ColinEntity, EntityRole, Filing, LegalEntity
 
 from entity_filer import db
-from entity_filer.exceptions import BusinessException
-from entity_filer.exceptions import ErrorCode
-from entity_filer.exceptions import get_error_message
-from entity_filer.filing_processors.filing_components import create_address
-from entity_filer.filing_processors.filing_components import create_role
-from entity_filer.filing_processors.filing_components import merge_party
-from entity_filer.filing_processors.filing_components import legal_entity_info
+from entity_filer.exceptions import BusinessException, ErrorCode, get_error_message
+from entity_filer.filing_processors.filing_components import create_address, create_role, legal_entity_info, merge_party
 
 
 def update_parties(
@@ -66,9 +57,7 @@ def update_parties(
 
         try:
             for party_info in parties_structure:
-                party = merge_party(
-                    legal_entity_id=legal_entity.id, party_info=party_info, create=False
-                )
+                party = merge_party(legal_entity_id=legal_entity.id, party_info=party_info, create=False)
                 for role_type in party_info.get("roles"):
                     role_str = role_type.get("roleType", "").lower()
                     role = {
@@ -102,9 +91,7 @@ def delete_parties(legal_entity: LegalEntity):
             legal_entity.entity_roles.remove(role)
 
 
-def merge_all_parties(
-    legal_entity: LegalEntity, filing: Filing, parties: dict
-) -> [dict] | None:
+def merge_all_parties(legal_entity: LegalEntity, filing: Filing, parties: dict) -> [dict] | None:
     """Merge all parties supplied and return a dict of errors, or None
 
     This top level method does 4 things:
@@ -151,8 +138,7 @@ def merge_all_parties(
             (not party_identifier)
             and (party_id := party_dict.get("officer", {}).get("id"))
             and (
-                (party_le := LegalEntity.find_by_id(party_id))
-                 or (party_le := ColinEntity.find_by_identifier(party_id))
+                (party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_identifier(party_id))
             )
         ):
             existing_party = True
@@ -176,9 +162,7 @@ def merge_all_parties(
             delivery_address = get_address_for_filing(
                 party_le.entity_delivery_address, party_dict.get("deliveryAddress")
             )
-            mailing_address = get_address_for_filing(
-                party_le.entity_mailing_address, party_dict.get("mailingAddress")
-            )
+            mailing_address = get_address_for_filing(party_le.entity_mailing_address, party_dict.get("mailingAddress"))
         else:
             # New People and Orgs use the attached addresses
             if isinstance(party_le, ColinEntity):
@@ -264,17 +248,11 @@ def merge_all_parties(
                         )
 
                     case "Proprietor":
-                        print(f"Proprietor role being skipped.")
+                        print("Proprietor role being skipped.")
 
                     case _:
-                        errors.append(
-                            {
-                                "warning": f"role: {role_type} not assigned to party:{party_le}"
-                            }
-                        )
-                        print(
-                            f"no matching roles for party: {party_type} and role: {role_type}"
-                        )
+                        errors.append({"warning": f"role: {role_type} not assigned to party:{party_le}"})
+                        print(f"no matching roles for party: {party_type} and role: {role_type}")
 
     if memoize_existing_director_ids:
         delete_non_memoized_entity_role(
@@ -282,9 +260,7 @@ def merge_all_parties(
         )
 
     if memoize_existing_partners:
-        delete_non_memoized_entity_role(
-            legal_entity, filing, memoize_existing_partners, EntityRole.RoleTypes.partner
-        )
+        delete_non_memoized_entity_role(legal_entity, filing, memoize_existing_partners, EntityRole.RoleTypes.partner)
 
     return errors if len(errors) > 0 else None
 
@@ -364,9 +340,7 @@ def merge_entity_role_for_director(
         entity_role = EntityRole()
 
     # Blind updates
-    entity_role.appointment_date = (
-        role_dict.get("appointmentDate") or filing.effective_date
-    )
+    entity_role.appointment_date = role_dict.get("appointmentDate") or filing.effective_date
     entity_role.change_filing_id = filing.id
     # entity_role.delivery_address_id=delivery_address.id
     # entity_role.legal_entity_id=base_entity.id
@@ -425,9 +399,7 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
             country="CA",
             postal_code=party_dict["mailingAddress"]["postalCode"],
             region=party_dict["mailingAddress"]["addressRegion"],
-            delivery_instructions=party_dict["mailingAddress"].get(
-                "deliveryInstructions", ""
-            ),
+            delivery_instructions=party_dict["mailingAddress"].get("deliveryInstructions", ""),
         )
         # mailing_address.save()
         # new_party.mailing_address_id = mailing_address.id
@@ -440,9 +412,7 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
             country="CA",
             postal_code=party_dict["deliveryAddress"]["postalCode"],
             region=party_dict["deliveryAddress"]["addressRegion"],
-            delivery_instructions=party_dict["deliveryAddress"].get(
-                "deliveryInstructions", ""
-            ),
+            delivery_instructions=party_dict["deliveryAddress"].get("deliveryInstructions", ""),
         )
         # delivery_address.save()
         # new_party.delivery_address_id = delivery_address.id
@@ -461,8 +431,7 @@ def get_address_for_filing(party_address: Address, address_dict: dict) -> Addres
         and party_address.country == address_dict["addressCountry"]
         and party_address.postal_code == address_dict["postalCode"]
         and party_address.region == address_dict["addressRegion"]
-        and party_address.delivery_instructions
-        == address_dict.get("deliveryInstructions", "")
+        and party_address.delivery_instructions == address_dict.get("deliveryInstructions", "")
     ):
         return party_address
 
@@ -479,10 +448,7 @@ def get_address_for_filing(party_address: Address, address_dict: dict) -> Addres
 
 
 def delete_non_memoized_entity_role(
-    legal_entity: LegalEntity,
-    filing: Filing,
-    keep_list,
-    role: EntityRole.RoleTypes
+    legal_entity: LegalEntity, filing: Filing, keep_list, role: EntityRole.RoleTypes
 ) -> []:
     """Delete EntityRoles for role not in the keep_list."""
     candidates = EntityRole.get_parties_by_role(legal_entity.id, role)
@@ -511,10 +477,7 @@ def get_or_create_party(party_dict: dict, filing: Filing):
     ) or (
         (not party_identifier)
         and (party_id := party_dict.get("officer", {}).get("id"))
-        and (
-            (party_le := LegalEntity.find_by_id(party_id))
-            or (party_le := ColinEntity.find_by_identifier(party_id))
-        )
+        and ((party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_identifier(party_id)))
     ):
         existing_party = True
 
@@ -534,12 +497,8 @@ def get_or_create_party(party_dict: dict, filing: Filing):
     # for this set of roles
     if existing_party and party_type == "person":
         update_person_info(party_le, party_dict)
-        delivery_address = get_address_for_filing(
-            party_le.entity_delivery_address, party_dict.get("deliveryAddress")
-        )
-        mailing_address = get_address_for_filing(
-            party_le.entity_mailing_address, party_dict.get("mailingAddress")
-        )
+        delivery_address = get_address_for_filing(party_le.entity_delivery_address, party_dict.get("deliveryAddress"))
+        mailing_address = get_address_for_filing(party_le.entity_mailing_address, party_dict.get("mailingAddress"))
     else:
         # New People and Orgs use the attached addresses
         if isinstance(party_le, ColinEntity):
@@ -556,9 +515,7 @@ def update_person_info(party_le, party_dict):
     party_le.first_name = party_dict["officer"].get("firstName", "").upper()
     party_le.last_name = party_dict["officer"].get("lastName", "").upper()
     party_le.middle_initial = (
-        party_dict["officer"]
-        .get("middleInitial", party_dict["officer"].get("middleName", ""))
-        .upper()
+        party_dict["officer"].get("middleInitial", party_dict["officer"].get("middleName", "")).upper()
     )
     party_le.email = party_dict["officer"].get("email")
 

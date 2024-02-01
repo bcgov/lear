@@ -16,17 +16,14 @@ import copy
 import random
 
 import pytest
-from business_model import LegalEntity, Filing, EntityRole, OfficeType, Address
+from business_model import Address, EntityRole, Filing, LegalEntity, OfficeType
 from business_model.utils.datetime import datetime
 from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
-
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
-from tests.unit import create_business, create_filing
-
 from sql_versioning import versioned_session
-from tests.unit import nested_session
+
+from entity_filer.resources.worker import FilingMessage, process_filing
+from tests.unit import create_business, create_filing, nested_session
 
 legal_name = "old name"
 legal_type = "BC"
@@ -73,9 +70,7 @@ def test_restoration_business_update(app, session, mocker, restoration_type):
     assert business.dissolution_date is None
 
     if restoration_type in ("limitedRestoration", "limitedRestorationExtension"):
-        assert business.restoration_expiry_date == datetime.fromisoformat(
-            f"{expiry_date}T07:00:00+00:00"
-        )
+        assert business.restoration_expiry_date == datetime.fromisoformat(f"{expiry_date}T07:00:00+00:00")
 
         final_filing = Filing.find_by_id(filing_id)
         restoration = final_filing.meta_data.get("restoration", {})
@@ -126,9 +121,7 @@ def test_restoration_legal_name(app, session, mocker, test_name):
         assert restoration.get("toLegalName") == new_legal_name
         assert restoration.get("fromLegalName") == legal_name
     else:
-        numbered_legal_name_suffix = LegalEntity.BUSINESSES[legal_type][
-            "numberedBusinessNameSuffix"
-        ]
+        numbered_legal_name_suffix = LegalEntity.BUSINESSES[legal_type]["numberedBusinessNameSuffix"]
         new_legal_name = f"{identifier[2:]} {numbered_legal_name_suffix}"
         assert business.legal_name == new_legal_name
         assert restoration.get("toLegalName") == new_legal_name
@@ -174,17 +167,13 @@ def test_restoration_office_addresses(app, session, mocker):
     for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
         assert (
             changed_delivery_address.json[key]
-            == filing["filing"]["restoration"]["offices"]["registeredOffice"][
-                "deliveryAddress"
-            ][key]
+            == filing["filing"]["restoration"]["offices"]["registeredOffice"]["deliveryAddress"][key]
         )
     # changed_mailing_address = business.entity_mailing_address.one_or_none()
     for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
         assert (
             changed_mailing_address.json[key]
-            == filing["filing"]["restoration"]["offices"]["registeredOffice"][
-                "mailingAddress"
-            ][key]
+            == filing["filing"]["restoration"]["offices"]["registeredOffice"]["mailingAddress"][key]
         )
 
 
@@ -216,10 +205,7 @@ def test_restoration_court_order(app, session, mocker, approval_type):
     final_filing = Filing.find_by_id(filing_id)
     assert filing["filing"]["restoration"]["approvalType"] == final_filing.approval_type
     if approval_type == "courtOrder":
-        assert (
-            filing["filing"]["restoration"]["courtOrder"]["fileNumber"]
-            == final_filing.court_order_file_number
-        )
+        assert filing["filing"]["restoration"]["courtOrder"]["fileNumber"] == final_filing.court_order_file_number
     else:
         assert final_filing.court_order_file_number is None
 
@@ -258,18 +244,10 @@ def test_restoration_registrar(app, session, mocker, approval_type):
     final_filing = Filing.find_by_id(filing_id)
     assert filing["filing"]["restoration"]["approvalType"] == final_filing.approval_type
     if approval_type == "registrar":
-        assert final_filing.application_date == datetime.fromisoformat(
-            f"{application_date}T08:00:00+00:00"
-        )
-        assert final_filing.notice_date == datetime.fromisoformat(
-            f"{notice_date}T07:00:00+00:00"
-        )
-        assert application_date == LegislationDatetime.format_as_legislation_date(
-            final_filing.application_date
-        )
-        assert notice_date == LegislationDatetime.format_as_legislation_date(
-            final_filing.notice_date
-        )
+        assert final_filing.application_date == datetime.fromisoformat(f"{application_date}T08:00:00+00:00")
+        assert final_filing.notice_date == datetime.fromisoformat(f"{notice_date}T07:00:00+00:00")
+        assert application_date == LegislationDatetime.format_as_legislation_date(final_filing.application_date)
+        assert notice_date == LegislationDatetime.format_as_legislation_date(final_filing.notice_date)
     else:
         assert final_filing.application_date is None
         assert final_filing.notice_date is None
@@ -296,9 +274,7 @@ def test_restoration_name_translations(app, session, mocker):
     process_filing(filing_msg)
 
     # Check outcome
-    assert filing["filing"]["restoration"]["nameTranslations"] == [
-        {"name": "ABCD Ltd."}
-    ]
+    assert filing["filing"]["restoration"]["nameTranslations"] == [{"name": "ABCD Ltd."}]
     assert business.aliases is not None
 
 
@@ -308,9 +284,7 @@ def test_update_party(app, session, mocker):
     versioned_session(session)
     with nested_session(session):
         identifier = "BC1234567"
-        business = create_business(
-            identifier, legal_type=legal_type, legal_name=legal_name
-        )
+        business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
         business.save()
         business_id = business.id
         filing = copy.deepcopy(FILING_HEADER)
@@ -350,9 +324,7 @@ def test_update_party(app, session, mocker):
 
         # Check outcome
         # TODO by business not filing
-        historical_roles = EntityRole.get_entity_roles_history_for_entity(
-            entity_id=business_id
-        )
+        historical_roles = EntityRole.get_entity_roles_history_for_entity(entity_id=business_id)
         number_of_historical_roles = len(historical_roles)
         assert number_of_historical_roles == 2
         assert historical_roles[1].cessation_date
@@ -364,21 +336,15 @@ def test_update_party(app, session, mocker):
         assert party_role.role_type == EntityRole.RoleTypes.applicant.value
         assert (
             party_role.related_entity.first_name
-            == filing["filing"]["restoration"]["parties"][0]["officer"][
-                "firstName"
-            ].upper()
+            == filing["filing"]["restoration"]["parties"][0]["officer"]["firstName"].upper()
         )
         assert (
             party_role.delivery_address.street
-            == filing["filing"]["restoration"]["parties"][0]["deliveryAddress"][
-                "streetAddress"
-            ]
+            == filing["filing"]["restoration"]["parties"][0]["deliveryAddress"]["streetAddress"]
         )
         assert (
             party_role.mailing_address.street
-            == filing["filing"]["restoration"]["parties"][0]["mailingAddress"][
-                "streetAddress"
-            ]
+            == filing["filing"]["restoration"]["parties"][0]["mailingAddress"]["streetAddress"]
         )
 
 

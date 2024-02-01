@@ -16,13 +16,11 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from dateutil.parser import parse
 from business_model import LegalEntity, Resolution, ShareClass, ShareSeries
+from dateutil.parser import parse
 
 
-def update_share_structure(
-    business: LegalEntity, share_structure: Dict
-) -> Optional[List]:
+def update_share_structure(business: LegalEntity, share_structure: Dict) -> Optional[List]:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -79,9 +77,7 @@ def update_share_structure(
     return err
 
 
-def update_share_structure_correction(
-    business: LegalEntity, share_structure: Dict
-) -> Optional[List]:
+def update_share_structure_correction(business: LegalEntity, share_structure: Dict) -> Optional[List]:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -100,23 +96,17 @@ def update_share_structure_correction(
     if resolution_dates := share_structure.get("resolutionDates"):
         # Two lists of dates in datetime format
         business_dates = [item.resolution_date for item in business.resolutions]
-        parsed_dates = [
-            parse(resolution_dt).date() for resolution_dt in resolution_dates
-        ]
+        parsed_dates = [parse(resolution_dt).date() for resolution_dt in resolution_dates]
 
         # Dates in both db and json
         inclusion_entries = [
-            business.resolutions[index]
-            for index, date in enumerate(business_dates)
-            if date in parsed_dates
+            business.resolutions[index] for index, date in enumerate(business_dates) if date in parsed_dates
         ]
         if len(inclusion_entries) > 0:
             business.resolutions = inclusion_entries
 
         # Dates in json and not in db
-        exclusion_entries = [
-            date for date in parsed_dates if date not in business_dates
-        ]
+        exclusion_entries = [date for date in parsed_dates if date not in business_dates]
 
         resolution_dates = exclusion_entries
 
@@ -190,9 +180,7 @@ def create_share_class(share_class_info: dict) -> ShareClass:
     return share_class
 
 
-def update_business_share_class(
-    share_classes: list, business: LegalEntity, exclusion_entries: list
-):
+def update_business_share_class(share_classes: list, business: LegalEntity, exclusion_entries: list):
     """Update existing ones in both db if they are present in json."""
     share_class_db_ids = [item.id for item in business.share_classes]
 

@@ -37,9 +37,7 @@ from tests import strip_keys_from_dict
         ),
     ],
 )
-def test_manage_share_structure__resolution_dates(
-    app, session, test_name, resolution_dates, expected_error
-):
+def test_manage_share_structure__resolution_dates(app, session, test_name, resolution_dates, expected_error):
     """Assert that the corp share resolution date gets set."""
     new_data = {"shareStructure": {"resolutionDates": resolution_dates}}
 
@@ -55,9 +53,7 @@ def test_manage_share_structure__resolution_dates(
         assert err == expected_error
     else:
         assert len(check_resolution) == len(resolution_dates)
-        assert set(resolution_dates) == set(
-            [x.resolution_date.isoformat() for x in check_resolution]
-        )
+        assert set(resolution_dates) == set([x.resolution_date.isoformat() for x in check_resolution])
 
 
 SINGLE_SHARE_CLASS = {
@@ -91,9 +87,7 @@ SINGLE_SHARE_CLASS = {
     "test_name,share_structure,expected_error",
     [("valid single_share_class", SINGLE_SHARE_CLASS, None)],
 )
-def test_manage_share_structure__share_classes(
-    app, session, test_name, share_structure, expected_error
-):
+def test_manage_share_structure__share_classes(app, session, test_name, share_structure, expected_error):
     """Assert that the corp share classes gets set."""
     business = LegalEntity()
     business.save()

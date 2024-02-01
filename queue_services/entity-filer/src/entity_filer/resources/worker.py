@@ -40,29 +40,17 @@ import uuid
 from contextlib import suppress
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Dict
-from typing import Optional
-
-from flask import Blueprint
-from flask import request
-
-from entity_filer import db
+from typing import Dict, Optional
 
 # from legal_api.core import Filing as FilingCore
-from business_model import LegalEntity, Filing
-
-# from legal_api.services.bootstrap import AccountService
-from entity_filer.utils.datetime import datetime
-from sqlalchemy.exc import OperationalError
+from business_model import Filing, LegalEntity
+from flask import Blueprint, request
 from simple_cloudevent import SimpleCloudEvent
-from werkzeug.exceptions import UnsupportedMediaType
-from werkzeug.exceptions import BadRequest
+from sqlalchemy.exc import OperationalError
+from werkzeug.exceptions import BadRequest, UnsupportedMediaType
 
-from entity_filer.services import queue
-from entity_filer.services.logging import structured_log
-from entity_filer.exceptions import BusinessException
-from entity_filer.exceptions import DefaultException
-from entity_filer import config
+from entity_filer import config, db
+from entity_filer.exceptions import BusinessException, DefaultException
 from entity_filer.filing_meta import FilingMeta, json_serial
 from entity_filer.filing_processors import (
     admin_freeze,
@@ -91,7 +79,11 @@ from entity_filer.filing_processors import (
     transition,
 )
 from entity_filer.filing_processors.filing_components import name_request
+from entity_filer.services import queue
+from entity_filer.services.logging import structured_log
 
+# from legal_api.services.bootstrap import AccountService
+from entity_filer.utils.datetime import datetime
 
 bp = Blueprint("worker", __name__)
 
@@ -121,10 +113,8 @@ def worker():
     # ##
     try:
         process_filing(filing_message)
-    except (AttributeError, BusinessException, DefaultException) as err:
-        return {
-            "error": f"Unable to process filing: {filing_message}"
-        }, HTTPStatus.BAD_REQUEST
+    except (AttributeError, BusinessException, DefaultException) as err:  # noqa F841
+        return {"error": f"Unable to process filing: {filing_message}"}, HTTPStatus.BAD_REQUEST
 
     structured_log(request, "INFO", f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
@@ -149,6 +139,7 @@ def get_filing_message(ce: SimpleCloudEvent):
         fm = FilingMessage(**converted)
         return fm
     return None
+
 
 def dict_keys_to_snake_case(d: dict):
     """Convert the keys of a dict to snake_case"""
@@ -207,9 +198,7 @@ async def publish_event(business: LegalEntity, filing: Filing):
             payload["tempidentifier"] = filing.temp_reg
         # subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         # await qsm.service.publish(subject, payload)
-    except (
-        Exception
-    ) as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
+    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         print(
             "Queue Publish Event Error: filing.id=" + str(filing.id) + str(err),
             level="error",
@@ -223,9 +212,7 @@ def process_filing(
     """Render the filings contained in the submission."""
     if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
         structured_log(request, "ERROR", f"No filing found for: {filing_message}")
-        raise DefaultException(
-            error_text=f"filing not found for {filing_message.filing_identifier}"
-        )
+        raise DefaultException(error_text=f"filing not found for {filing_message.filing_identifier}")
 
     if filing_submission.status == Filing.Status.COMPLETED:
         structured_log(request, "INFO", f"Filing already processed for: {filing_message}")
@@ -249,21 +236,15 @@ def process_filing(
     #         # if not(filing_type := 'alteration'):
     #         #     break
 
-    worker_filing_json = (
-        filing_submission.tech_correction_json or filing_submission.filing_json
-    )
+    worker_filing_json = filing_submission.tech_correction_json or filing_submission.filing_json
     # worker_filing_json = filing_submission.filing_json
 
     legal_filings = [
-        x
-        for x in [x for x in worker_filing_json.get("filing", {}).keys()]
-        if Filing.FILINGS.get(x) is not None
+        x for x in [x for x in worker_filing_json.get("filing", {}).keys()] if Filing.FILINGS.get(x) is not None
     ]
 
     business = LegalEntity.find_by_internal_id(filing_submission.legal_entity_id)
-    filing_meta = FilingMeta(
-        application_date=filing_submission.effective_date, legal_filings=legal_filings
-    )
+    filing_meta = FilingMeta(application_date=filing_submission.effective_date, legal_filings=legal_filings)
 
     # for filing_type, filing in filing_submission.filing_json['filing'].items():
     for filing_type, filing in worker_filing_json["filing"].items():
@@ -272,9 +253,7 @@ def process_filing(
 
         match filing_type:
             case "adminFreeze":
-                admin_freeze.process(
-                    business, {filing_type: filing}, filing_submission, filing_meta
-                )
+                admin_freeze.process(business, {filing_type: filing}, filing_submission, filing_meta)
 
             case "agmExtension":
                 agm_extension.process(filing, filing_meta)
@@ -288,9 +267,7 @@ def process_filing(
                 )
 
             case "alteration":
-                alteration.process(
-                    business, filing_submission, {filing_type: filing}, filing_meta
-                )
+                alteration.process(business, filing_submission, {filing_type: filing}, filing_meta)
 
             case "annualReport":
                 annual_report.process(business, {filing_type: filing}, filing_meta)
@@ -300,27 +277,19 @@ def process_filing(
 
             case "changeOfDirectors":
                 filing["colinIds"] = filing_submission.colin_event_ids
-                change_of_directors.process(
-                    business, {filing_type: filing}, filing_meta
-                )
+                change_of_directors.process(business, {filing_type: filing}, filing_meta)
 
             case "changeOfName":
                 change_of_name.process(business, {filing_type: filing}, filing_meta)
 
             case "changeOfRegistration":
-                change_of_registration.process(
-                    business, filing_submission, {filing_type: filing}, filing_meta
-                )
+                change_of_registration.process(business, filing_submission, {filing_type: filing}, filing_meta)
 
             case "consentContinuationOut":
-                consent_continuation_out.process(
-                    business, filing_submission, {filing_type: filing}, filing_meta
-                )
+                consent_continuation_out.process(business, filing_submission, {filing_type: filing}, filing_meta)
 
             case "continuationOut":
-                continuation_out.process(
-                    business, filing_submission, {filing_type: filing}, filing_meta
-                )
+                continuation_out.process(business, filing_submission, {filing_type: filing}, filing_meta)
 
             case "conversion":
                 business, filing_submission = conversion.process(
@@ -328,19 +297,13 @@ def process_filing(
                 )
 
             case "correction":
-                filing_submission = correction.process(
-                    filing_submission, {filing_type: filing}, filing_meta, business
-                )
+                filing_submission = correction.process(filing_submission, {filing_type: filing}, filing_meta, business)
 
             case "courtOrder":
-                court_order.process(
-                    business, filing_submission, {filing_type: filing}, filing_meta
-                )
+                court_order.process(business, filing_submission, {filing_type: filing}, filing_meta)
 
             case "dissolution":
-                dissolution.process(
-                    business, {filing_type: filing}, filing_submission, filing_meta
-                )
+                dissolution.process(business, {filing_type: filing}, filing_submission, filing_meta)
 
             case "incorporationApplication":
                 business, filing_submission, filing_meta = incorporation_filing.process(
@@ -348,19 +311,13 @@ def process_filing(
                 )
 
             case "putBackOn":
-                put_back_on.process(
-                    business, {filing_type: filing}, filing_submission, filing_meta
-                )
+                put_back_on.process(business, {filing_type: filing}, filing_submission, filing_meta)
 
             case "registrarsNotation":
-                registrars_notation.process(
-                    filing_submission, {filing_type: filing}, filing_meta
-                )
+                registrars_notation.process(filing_submission, {filing_type: filing}, filing_meta)
 
             case "registrarsOrder":
-                registrars_order.process(
-                    filing_submission, {filing_type: filing}, filing_meta
-                )
+                registrars_order.process(filing_submission, {filing_type: filing}, filing_meta)
 
             case "registration":
                 business, filing_submission, filing_meta = registration.process(
@@ -368,28 +325,18 @@ def process_filing(
                 )
 
             case "restoration":
-                restoration.process(
-                    business, {filing_type: filing}, filing_submission, filing_meta
-                )
+                restoration.process(business, {filing_type: filing}, filing_submission, filing_meta)
 
             case "specialResolution":
-                special_resolution.process(
-                    business, {filing_type: filing}, filing_submission
-                )
+                special_resolution.process(business, {filing_type: filing}, filing_submission)
 
             case "transition":
-                filing_submission = transition.process(
-                    business, filing_submission, {filing_type: filing}, filing_meta
-                )
+                filing_submission = transition.process(business, filing_submission, {filing_type: filing}, filing_meta)
 
             case _:
                 raise Exception()
 
-    business_type = (
-        business.entity_type
-        if business
-        else filing_submission["business"]["legal_type"]
-    )
+    business_type = business.entity_type if business else filing_submission["business"]["legal_type"]
     filing_submission.set_processed(business_type)
 
     filing_submission._meta_data = json.loads(  # pylint: disable=W0212
@@ -494,7 +441,7 @@ def process_filing(
         # name_request.consume_nr(business, filing_submission, 'registration')
         # registration.post_process(business, filing_submission)
 
-    if any('amalgamationApplication' in x for x in legal_filings):
+    if any("amalgamationApplication" in x for x in legal_filings):
         filing_submission.legal_entity_id = business.id
         db.session.add(filing_submission)
         db.session.commit()

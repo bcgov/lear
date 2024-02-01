@@ -23,26 +23,24 @@ There are no corrections for a conversion filing.
 """
 # pylint: disable=superfluous-parens; as pylance requires it
 from contextlib import suppress
+from http import HTTPStatus
 from typing import Dict
 
 import dpath
 
 # from entity_queue_common.service_utils import BusinessException
-from business_model import LegalEntity, Filing
-from entity_filer.utils.legislation_datetime import LegislationDatetime
+from business_model import Filing, LegalEntity
 
 from entity_filer.exceptions import BusinessException, DefaultException
 from entity_filer.filing_meta import FilingMeta
-
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    legal_entity_info,
-    name_request,
-    shares,
+from entity_filer.filing_processors.filing_components import aliases, legal_entity_info, name_request, shares
+from entity_filer.filing_processors.filing_components.alternate_name import (
+    update_partner_change,
+    update_proprietor_change,
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
-from entity_filer.filing_processors.filing_components.alternate_name import update_partner_change, update_proprietor_change
+from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 
 def process(
@@ -56,22 +54,21 @@ def process(
     filing_meta.conversion = {}
     if not (conversion_filing := filing.get("filing", {}).get("conversion")):
         raise BusinessException(
-            f"CONVL legal_filing:conversion missing from {filing_rec.id}"
+            error=f"CONVL legal_filing:conversion missing from {filing_rec.id}", status_code=HTTPStatus.BAD_REQUEST
         )
     # if legal_entity and legal_entity.entity_type in ['SP', 'GP']:
     if filing["filing"]["business"]["legalType"] in ["SP", "GP"]:
-        if legal_entity and not legal_entity.entity_type in [
-            LegalEntity.EntityTypes.PERSON,
-            LegalEntity.EntityTypes.PARTNERSHIP,
-        ]:
-            raise DefaultException(
-                f"Filing business type and entity don't match, filing{filing_rec.id}"
-            )
+        if legal_entity and not (
+            legal_entity.entity_type
+            in [
+                LegalEntity.EntityTypes.PERSON,
+                LegalEntity.EntityTypes.PARTNERSHIP,
+            ]
+        ):
+            raise DefaultException(f"Filing business type and entity don't match, filing{filing_rec.id}")
         _process_firms_conversion(legal_entity, filing, filing_rec, filing_meta)
     else:
-        legal_entity = _process_corps_conversion(
-            legal_entity, conversion_filing, filing, filing_rec
-        )
+        legal_entity = _process_corps_conversion(legal_entity, conversion_filing, filing, filing_rec)
 
     return legal_entity, filing_rec
 
@@ -79,11 +76,12 @@ def process(
 def _process_corps_conversion(legal_entity, conversion_filing, filing, filing_rec):
     if legal_entity:
         raise BusinessException(
-            f"Business Already Exist: CONVL legal_filing:conversion {filing_rec.id}"
+            error=f"Business Already Exist: CONVL legal_filing:conversion {filing_rec.id}",
+            status_code=HTTPStatus.FORBIDDEN,
         )
     if not (corp_num := filing.get("filing", {}).get("business", {}).get("identifier")):
         raise BusinessException(
-            f"conversion {filing_rec.id} missing the legal_entity identifier."
+            error=f"conversion {filing_rec.id} missing the legal_entity identifier.", status_code=HTTPStatus.BAD_REQUEST
         )
     # Initial insert of the legal_entity record
     legal_entity_info_obj = conversion_filing.get("nameRequest")
@@ -93,7 +91,8 @@ def _process_corps_conversion(legal_entity, conversion_filing, filing, filing_re
         )
     ):
         raise BusinessException(
-            f"CONVL conversion {filing_rec.id}, Unable to create legal_entity."
+            error=f"CONVL conversion {filing_rec.id}, Unable to create legal_entity.",
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
         )
     if offices := conversion_filing.get("offices"):
         update_offices(legal_entity, offices)
@@ -119,14 +118,14 @@ def _process_firms_conversion(
                 filing_type="conversion",
                 change_filing_rec=filing_rec,
                 change_filing=conversion_filing,
-                filing_meta=filing_meta.conversion
+                filing_meta=filing_meta.conversion,
             )
-        case _: # LegalEntity.EntityTypes.PERSON: # legal_entity might be a proprietor?
+        case _:  # LegalEntity.EntityTypes.PERSON: # legal_entity might be a proprietor?
             update_proprietor_change(
                 filing_type="conversion",
                 change_filing_rec=filing_rec,
                 change_filing=conversion_filing,
-                filing_meta=filing_meta.conversion
+                filing_meta=filing_meta.conversion,
             )
 
     # Update legal_entity office if present
@@ -141,14 +140,10 @@ def _process_firms_conversion(
 
     # update legal_entity start date, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        legal_entity_start_date = dpath.util.get(
-            conversion_filing, "/filing/conversion/startDate"
-        )
+        legal_entity_start_date = dpath.util.get(conversion_filing, "/filing/conversion/startDate")
         if legal_entity_start_date:
-            legal_entity.start_date = (
-                LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                    legal_entity_start_date
-                )
+            legal_entity.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+                legal_entity_start_date
             )
 
 

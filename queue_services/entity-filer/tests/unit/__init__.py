@@ -17,11 +17,12 @@ import uuid
 from contextlib import contextmanager
 
 import sqlalchemy
+from business_model import Filing, db
+from business_model.models.colin_event_id import ColinEventId
 from freezegun import freeze_time
+
 from entity_filer.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
-from business_model import db, Filing
-from business_model.models.colin_event_id import ColinEventId
 
 AR_FILING = {
     "filing": {
@@ -384,12 +385,8 @@ def create_filing(
     if json_filing:
         # filing.filing_json = json_filing
         filing._filing_json = json_filing
-        filing._filing_type = (
-            json_filing.get("filing", {}).get("header", {}).get("name")
-        )
-        filing._filing_sub_type = filing.get_filings_sub_type(
-            filing._filing_type, json_filing
-        )
+        filing._filing_type = json_filing.get("filing", {}).get("header", {}).get("name")
+        filing._filing_sub_type = filing.get_filings_sub_type(filing._filing_type, json_filing)
     if business_id:
         filing.legal_entity_id = business_id
     if bootstrap_id:
@@ -530,9 +527,7 @@ def create_entity_person(party_json):
             country="CA",
             postal_code=party_json["mailingAddress"]["postalCode"],
             region=party_json["mailingAddress"]["addressRegion"],
-            delivery_instructions=party_json["mailingAddress"]
-            .get("deliveryInstructions", "")
-            .upper(),
+            delivery_instructions=party_json["mailingAddress"].get("deliveryInstructions", "").upper(),
         )
         new_party.entity_mailing_address = mailing_address
     if party_json.get("deliveryAddress"):
@@ -542,9 +537,7 @@ def create_entity_person(party_json):
             country="CA",
             postal_code=party_json["deliveryAddress"]["postalCode"],
             region=party_json["deliveryAddress"]["addressRegion"],
-            delivery_instructions=party_json["deliveryAddress"]
-            .get("deliveryInstructions", "")
-            .upper(),
+            delivery_instructions=party_json["deliveryAddress"].get("deliveryInstructions", "").upper(),
         )
         new_party.entity_delivery_address = delivery_address
     new_party.save()
@@ -582,9 +575,7 @@ def factory_completed_filing(
 ):
     """Create a completed filing."""
     if not payment_token:
-        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace(
-            "=", ""
-        )
+        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace("=", "")
 
     with freeze_time(filing_date):
         filing = Filing()

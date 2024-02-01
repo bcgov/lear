@@ -17,22 +17,20 @@ from http import HTTPStatus
 
 import requests
 import sentry_sdk
+from business_model import Filing, LegalEntity, RegistrationBootstrap
 
 # from entity_filer.exceptions import DefaultException
 from flask import current_app
-from business_model import LegalEntity, Filing, RegistrationBootstrap
 
 # from legal_api.services.bootstrap import AccountService
 from entity_filer.services.utils import get_str
 
 
-def consume_nr(
-    business: LegalEntity, filing: Filing, filing_type="incorporationApplication"
-):
+def consume_nr(business: LegalEntity, filing: Filing, filing_type="incorporationApplication"):
     """Update the nr to a consumed state."""
     try:
         # skip this if none (nrNumber will not be available for numbered company)
-        if nr_num := get_str(
+        if nr_num := get_str(  # noqa F841; remove this comment when below is done
             filing.filing_json, f"/filing/{filing_type}/nameRequest/nrNumber"
         ):
             pass
@@ -59,12 +57,8 @@ def consume_nr(
             #     AccountService.delete_affiliation(bootstrap.account, nr_num)
     except KeyError:
         pass  # return
-    except (
-        Exception
-    ):  # pylint: disable=broad-except; note out any exception, but don't fail the call
-        sentry_sdk.print(
-            f"Queue Error: Consume NR error for filing:{filing.id}", level="error"
-        )
+    except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+        sentry_sdk.print(f"Queue Error: Consume NR error for filing:{filing.id}", level="error")
 
 
 def set_legal_name(business: LegalEntity, name_request_info: dict):

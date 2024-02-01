@@ -35,13 +35,12 @@
 import copy
 import random
 
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 from registry_schemas.example_data import ADMIN_FREEZE, FILING_HEADER
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import admin_freeze
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 
@@ -68,7 +67,7 @@ def test_worker_admin_freeze(app, session, mocker):
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
 
-    assert business.admin_freeze == True
+    assert business.admin_freeze is True
     assert business.state_filing_id is None
     assert business.dissolution_date is None
     assert filing_json["filing"]["adminFreeze"]["details"] == final_filing.order_details

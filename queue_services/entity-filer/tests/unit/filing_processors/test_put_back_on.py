@@ -15,8 +15,8 @@
 import copy
 import random
 
-from business_model import LegalEntity, Filing
-from registry_schemas.example_data import PUT_BACK_ON, FILING_HEADER
+from business_model import Filing, LegalEntity
+from registry_schemas.example_data import FILING_HEADER, PUT_BACK_ON
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import put_back_on
@@ -35,8 +35,6 @@ def test_worker_put_back_on(app, session):
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = create_filing(payment_id, filing_json, business_id=business.id)
-
-    filing_msg = {"filing": {"id": filing.id}}
 
     filing_meta = FilingMeta()
     filing = create_filing("123", filing_json)

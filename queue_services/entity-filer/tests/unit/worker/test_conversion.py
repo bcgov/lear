@@ -14,32 +14,17 @@
 """The Unit Tests for the Conversion filing."""
 import copy
 import random
-
-import pytest
 from datetime import datetime
 from unittest.mock import patch
 
+import pytest
+from business_model import Address, EntityRole, Filing, LegalEntity
+from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE, COURT_ORDER, FIRMS_CONVERSION, REGISTRATION
+
 # from legal_api.services import NaicsService
-from entity_filer.filing_processors.filing_components.legal_entity_info import (
-    NaicsService,
-)
-from business_model import Address, LegalEntity, Filing, EntityRole
-from registry_schemas.example_data import (
-    CONVERSION_FILING_TEMPLATE,
-    FIRMS_CONVERSION,
-    COURT_ORDER,
-    REGISTRATION,
-)
-
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
-from tests.unit import (
-    create_entity,
-    create_filing,
-    create_entity_person,
-    create_entity_role,
-)
-
+from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
+from entity_filer.resources.worker import FilingMessage, process_filing
+from tests.unit import create_entity, create_entity_person, create_entity_role, create_filing
 
 CONTACT_POINT = {"email": "no_one@never.get", "phone": "123-456-7890"}
 
@@ -129,16 +114,12 @@ def test_conversion(
     assert business.offices.first().office_type == "businessOffice"
 
     assert (
-        business.naics_description
-        == filing_template["filing"]["conversion"]["business"]["naics"][
-            "naicsDescription"
-        ]
+        business.naics_description == filing_template["filing"]["conversion"]["business"]["naics"]["naicsDescription"]
     )
 
 
 def test_worker_proprietor_new_address(app, session, mocker):
     """Assert the worker process the party new address correctly."""
-    identifier = "FM1234567"
 
     party = create_entity_person(SP_CONVERSION["filing"]["conversion"]["parties"][0])
     party_id = party.id
@@ -153,12 +134,8 @@ def test_worker_proprietor_new_address(app, session, mocker):
     filing = copy.deepcopy(SP_CONVERSION)
     filing["filing"]["conversion"]["contactPoint"] = CONTACT_POINT
     filing["filing"]["conversion"]["parties"][0]["officer"]["id"] = party_id
-    filing["filing"]["conversion"]["parties"][0]["mailingAddress"][
-        "streetAddress"
-    ] = "New Name"
-    filing["filing"]["conversion"]["parties"][0]["deliveryAddress"][
-        "streetAddress"
-    ] = "New Name"
+    filing["filing"]["conversion"]["parties"][0]["mailingAddress"]["streetAddress"] = "New Name"
+    filing["filing"]["conversion"]["parties"][0]["deliveryAddress"]["streetAddress"] = "New Name"
 
     del filing["filing"]["conversion"]["nameRequest"]
 
@@ -184,13 +161,9 @@ def test_worker_proprietor_new_address(app, session, mocker):
     assert party.entity_roles.all()[0].role_type == EntityRole.RoleTypes.proprietor
     assert (
         party.entity_delivery_address.street
-        == filing["filing"]["conversion"]["parties"][0]["deliveryAddress"][
-            "streetAddress"
-        ]
+        == filing["filing"]["conversion"]["parties"][0]["deliveryAddress"]["streetAddress"]
     )
     assert (
         party.entity_mailing_address.street
-        == filing["filing"]["conversion"]["parties"][0]["mailingAddress"][
-            "streetAddress"
-        ]
+        == filing["filing"]["conversion"]["parties"][0]["mailingAddress"]["streetAddress"]
     )

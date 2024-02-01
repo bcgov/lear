@@ -18,8 +18,7 @@ import random
 from business_model import DocumentType, Filing
 from registry_schemas.example_data import COURT_ORDER_FILING_TEMPLATE
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 
@@ -41,14 +40,8 @@ def test_worker_court_order(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert (
-        filing["filing"]["courtOrder"]["fileNumber"]
-        == final_filing.court_order_file_number
-    )
-    assert (
-        filing["filing"]["courtOrder"]["effectOfOrder"]
-        == final_filing.court_order_effect_of_order
-    )
+    assert filing["filing"]["courtOrder"]["fileNumber"] == final_filing.court_order_file_number
+    assert filing["filing"]["courtOrder"]["effectOfOrder"] == final_filing.court_order_effect_of_order
     assert filing["filing"]["courtOrder"]["orderDetails"] == final_filing.order_details
 
     court_order_file = final_filing.documents.one_or_none()

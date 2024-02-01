@@ -18,17 +18,9 @@ from http import HTTPStatus
 
 import dpath
 from flask import current_app
-from legal_api.models import (
-    Address,
-    EntityRole,
-    Filing,
-    LegalEntity,
-    RequestTracker,
-    db,
-)
+from legal_api.models import Address, EntityRole, Filing, LegalEntity, RequestTracker, db
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from sql_versioning import history_cls
 from sqlalchemy import and_
 
 from entity_bn.bn_processors import (
@@ -41,25 +33,19 @@ from entity_bn.bn_processors import (
 from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
-def process(
-    legal_entity: LegalEntity, filing: Filing
-):  # pylint: disable=too-many-branches
+def process(legal_entity: LegalEntity, filing: Filing):  # pylint: disable=too-many-branches
     """Process the incoming change of registration request."""
-    if filing.meta_data and filing.meta_data.get("changeOfRegistration", {}).get(
-        "toBusinessName"
-    ):
+    if filing.meta_data and filing.meta_data.get("changeOfRegistration", {}).get("toBusinessName"):
         change_name(legal_entity, filing, RequestTracker.RequestType.CHANGE_NAME)
 
     with suppress(KeyError, ValueError):
-        if dpath.util.get(
-            filing.filing_json, "filing/changeOfRegistration/parties"
-        ) and has_party_name_changed(legal_entity, filing):
+        if dpath.util.get(filing.filing_json, "filing/changeOfRegistration/parties") and has_party_name_changed(
+            legal_entity, filing
+        ):
             change_name(legal_entity, filing, RequestTracker.RequestType.CHANGE_PARTY)
 
     with suppress(KeyError, ValueError):
-        if dpath.util.get(
-            filing.filing_json, "filing/changeOfRegistration/offices/businessOffice"
-        ):
+        if dpath.util.get(filing.filing_json, "filing/changeOfRegistration/offices/businessOffice"):
             if has_previous_address(
                 filing.id,
                 legal_entity.office_delivery_address.one_or_none().office_id,
@@ -90,9 +76,7 @@ def change_name(
 ):
     """Inform CRA about change of name."""
     max_retry = current_app.config.get("BN_HUB_MAX_RETRY")
-    request_trackers = RequestTracker.find_by(
-        legal_entity.id, RequestTracker.ServiceName.BN_HUB, name_type, filing.id
-    )
+    request_trackers = RequestTracker.find_by(legal_entity.id, RequestTracker.ServiceName.BN_HUB, name_type, filing.id)
     if not request_trackers:
         request_tracker = RequestTracker()
         request_tracker.legal_entity_id = legal_entity.id
@@ -101,9 +85,7 @@ def change_name(
         request_tracker.service_name = RequestTracker.ServiceName.BN_HUB
         request_tracker.retry_number = 0
         request_tracker.is_processed = False
-    elif (
-        request_tracker := request_trackers.pop()
-    ) and not request_tracker.is_processed:
+    elif (request_tracker := request_trackers.pop()) and not request_tracker.is_processed:
         request_tracker.last_modified = datetime.utcnow()
         request_tracker.retry_number += 1
 
@@ -124,7 +106,7 @@ def change_name(
     elif name_type == RequestTracker.RequestType.CHANGE_PARTY:
         new_name = legal_entity.legal_name
 
-    alternate_name = legal_entity._alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first()  # pylint: disable=protected-access
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(
@@ -192,25 +174,21 @@ def change_address(
         request_tracker.service_name = RequestTracker.ServiceName.BN_HUB
         request_tracker.retry_number = 0
         request_tracker.is_processed = False
-    elif (
-        request_tracker := request_trackers.pop()
-    ) and not request_tracker.is_processed:
+    elif (request_tracker := request_trackers.pop()) and not request_tracker.is_processed:
         request_tracker.last_modified = datetime.utcnow()
         request_tracker.retry_number += 1
 
     if request_tracker.is_processed:
         return
 
-    effective_date = LegislationDatetime.as_legislation_timezone(
-        filing.effective_date
-    ).strftime("%Y-%m-%d")
+    effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date).strftime("%Y-%m-%d")
     address = (
         legal_entity.office_delivery_address
         if address_type == RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS
         else legal_entity.office_mailing_address
     )
 
-    alternate_name = legal_entity._alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first()  # pylint: disable=protected-access
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(
@@ -255,9 +233,9 @@ def change_address(
 
 
 # TODO: Fix below functions (and add unit test) to check history data once we have clarity on the versioning changes
-def has_previous_address(
-    transaction_id: int, office_id: int, address_type: str
-) -> bool:
+# pylint: disable-all; delete this line once functions fixed
+# flake8: noqa; delete this line once functions fixed
+def has_previous_address(transaction_id: int, office_id: int, address_type: str) -> bool:
     """Has previous address for the given transaction and office id."""
     address_version = version_class(Address)
     address = (
@@ -280,23 +258,17 @@ def has_party_name_changed(legal_entity: LegalEntity, filing: Filing) -> bool:
         .filter(party_role_version.transaction_id == filing.transaction_id)
         .filter(party_role_version.operation_type != 2)
         .filter(party_role_version.business_id == business.id)
-        .filter(
-            party_role_version.role
-            in (PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value)
-        )
+        .filter(party_role_version.role in (PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value))
         .all()
     )
 
-    if (
-        len(party_roles) > 0
-    ):  # New party added or party deleted by setting cessation_date
+    if len(party_roles) > 0:  # New party added or party deleted by setting cessation_date
         return True
 
     party_names = {}
     for party_role in business.party_roles.all():
         if (
-            party_role.role.lower()
-            in (PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value)
+            party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value)
             and party_role.cessation_date is None
         ):
             party_names[party_role.party.id] = party_role.party.name
@@ -313,11 +285,7 @@ def _get_name(party) -> str:
     """Return the full name of the party for comparison."""
     if party.party_type == Party.PartyTypes.PERSON.value:
         if party.middle_initial:
-            return (
-                " ".join((party.first_name, party.middle_initial, party.last_name))
-                .strip()
-                .upper()
-            )
+            return " ".join((party.first_name, party.middle_initial, party.last_name)).strip().upper()
         return " ".join((party.first_name, party.last_name)).strip().upper()
     return party.organization_name.strip().upper()
 

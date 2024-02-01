@@ -17,17 +17,14 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
+from business_model import Filing, LegalEntity
 
-# from entity_filer.exceptions import DefaultException, logger
-from business_model import LegalEntity, Filing
-
+from entity_filer.exceptions import DefaultException, logger
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(
-    business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta
-):
+def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the put back on filing unto the model objects."""
     if not (put_back_on_filing := filing.get("putBackOn")):
         print("Could not find putBackOn in: %s", filing)

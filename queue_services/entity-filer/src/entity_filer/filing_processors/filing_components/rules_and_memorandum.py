@@ -17,7 +17,8 @@ from __future__ import annotations
 from tokenize import String
 from typing import List, Optional
 
-from business_model import LegalEntity, Document, Filing
+from business_model import Document, Filing, LegalEntity
+
 # from legal_api.services.pdf_service import RegistrarStampData
 
 # from business_model.document import DocumentType
@@ -72,7 +73,7 @@ def update_memorandum(
         # if nothing is passed in, we don't care and it's not an error
         return None
 
-    is_correction = filing.filing_type == "correction"
+    is_correction = filing.filing_type == "correction"  # noqa F841; remove this comment when below is done
     # create certified copy for memorandum document
     # memorandum_file = MinioService.get_file(memorandum_file_key)
     # registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)

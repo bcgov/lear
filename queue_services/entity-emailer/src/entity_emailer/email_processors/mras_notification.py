@@ -16,16 +16,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
 
+from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 from entity_emailer.services.logging import structured_log
-from entity_emailer.email_processors import (
-    get_filing_info,
-    get_recipients,
-    substitute_template_parts,
-)
 
 
 def process(email_msg: dict) -> dict:
@@ -33,14 +28,10 @@ def process(email_msg: dict) -> dict:
     structured_log(request, "DEBUG", f"mras_notification: {email_msg}")
     filing_type = email_msg["type"]
     # get template and fill in parts
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()
     filled_template = substitute_template_parts(template)
     # get template info from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
-        email_msg["filingId"]
-    )
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg["filingId"])
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)

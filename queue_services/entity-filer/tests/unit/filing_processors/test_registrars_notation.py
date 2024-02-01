@@ -18,8 +18,7 @@ import random
 from business_model import Filing
 from registry_schemas.example_data import REGISTRARS_NOTATION_FILING_TEMPLATE
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 
@@ -41,15 +40,6 @@ def test_worker_registrars_notation(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert (
-        filing["filing"]["registrarsNotation"]["fileNumber"]
-        == final_filing.court_order_file_number
-    )
-    assert (
-        filing["filing"]["registrarsNotation"]["effectOfOrder"]
-        == final_filing.court_order_effect_of_order
-    )
-    assert (
-        filing["filing"]["registrarsNotation"]["orderDetails"]
-        == final_filing.order_details
-    )
+    assert filing["filing"]["registrarsNotation"]["fileNumber"] == final_filing.court_order_file_number
+    assert filing["filing"]["registrarsNotation"]["effectOfOrder"] == final_filing.court_order_effect_of_order
+    assert filing["filing"]["registrarsNotation"]["orderDetails"] == final_filing.order_details

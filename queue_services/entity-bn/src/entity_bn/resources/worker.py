@@ -37,9 +37,7 @@
 from contextlib import suppress
 from http import HTTPStatus
 
-from flask import Blueprint
-from flask import current_app
-from flask import request
+from flask import Blueprint, current_app, request
 from legal_api.models import Filing, LegalEntity
 from sentry_sdk import capture_message
 from simple_cloudevent import SimpleCloudEvent
@@ -115,12 +113,9 @@ def worker():
             )
             with suppress(Exception):
                 event_topic = current_app.config.get("ENTITY_EVENT_TOPIC", "filer")
-                ret = queue.publish(
-                    topic=event_topic, payload=queue.to_queue_message(cloud_event)
-                )
-                structured_log(
-                    request, "INFO", f"publish to entity event: {message.identifier}"
-                )
+                # pylint: disable-next=unused-variable
+                ret = queue.publish(topic=event_topic, payload=queue.to_queue_message(cloud_event))  # noqa: F841
+                structured_log(request, "INFO", f"publish to entity event: {message.identifier}")
 
         structured_log(request, "INFO", f"completed ce: {str(ce)}")
         return {}, HTTPStatus.OK
@@ -177,11 +172,11 @@ def process_cra_request(
 
     filing: Filing = Filing.find_by_id(msg.filing_id)
     if not filing:
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised
 
     legal_entity: LegalEntity = LegalEntity.find_by_internal_id(filing.legal_entity_id)
     if not legal_entity:
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised
 
     if filing.filing_type == "registration":
         registration.process(legal_entity)

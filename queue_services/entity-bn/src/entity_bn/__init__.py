@@ -23,8 +23,7 @@ from legal_api.models import db
 from legal_api.utils.run_version import get_run_version
 from sentry_sdk.integrations.flask import FlaskIntegration
 
-from .config import Config
-from .config import Production
+from .config import Config, Production
 from .resources import register_endpoints
 from .services import queue
 

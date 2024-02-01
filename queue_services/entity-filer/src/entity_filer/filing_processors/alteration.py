@@ -17,7 +17,7 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from business_model import LegalEntity, Filing
+from business_model import Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -105,9 +105,7 @@ def process(
         rules_file_key = dpath.util.get(filing, "/alteration/rulesFileKey")
         rules_file_name = dpath.util.get(filing, "/alteration/rulesFileName")
         if rules_file_key:
-            rules_and_memorandum.update_rules(
-                business, filing_submission, rules_file_key, rules_file_name
-            )
+            rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
             filing_meta.alteration = {
                 **filing_meta.alteration,
                 **{"uploadNewRules": True},
@@ -115,9 +113,7 @@ def process(
 
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(filing, "/alteration/memorandumFileKey")
-        rules_and_memorandum.update_memorandum(
-            business, filing_submission, memorandum_file_key
-        )
+        rules_and_memorandum.update_memorandum(business, filing_submission, memorandum_file_key)
 
 
 def post_process(business: LegalEntity, filing: Filing, correction: bool = False):

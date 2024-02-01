@@ -17,21 +17,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
 
+from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 from entity_emailer.services.logging import structured_log
-from entity_emailer.email_processors import (
-    get_filing_info,
-    get_recipients,
-    substitute_template_parts,
-)
 
 
-def process(
-    email_info: dict, token: str
-) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Affiliation notification."""
     structured_log(request, "DEBUG", f"filing_notification: {email_info}")
 
@@ -41,13 +34,9 @@ def process(
     )
     filing_type = filing.filing_type
     status = filing.status
-    filing_name = filing.filing_type[0].upper() + " ".join(
-        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
-    )
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/BC-ALT-DRAFT.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-ALT-DRAFT.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)

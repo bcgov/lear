@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test Suites to ensure that the admin is operating correctly."""
-from http import HTTPStatus
 import secrets
 import string
 import uuid
 import xml.etree.ElementTree as Et
+from http import HTTPStatus
 
 import pytest
 from legal_api.models import LegalEntity, RequestTracker
 
 from tests.unit import create_registration_data, get_json_message
-
 
 acknowledgement_response = """<?xml version="1.0"?>
     <SBNAcknowledgement>
@@ -66,9 +65,7 @@ def test_admin_bn15(app, session, client, mocker, request_type, business_number)
         if root.tag == "SBNCreateProgramAccountRequest":
             return 200, acknowledgement_response
 
-    mocker.patch(
-        "entity_bn.bn_processors.registration.request_bn_hub", side_effect=side_effect
-    )
+    mocker.patch("entity_bn.bn_processors.registration.request_bn_hub", side_effect=side_effect)
 
     business_program_id = "BC"
     program_account_ref_no = 1
@@ -153,9 +150,7 @@ def test_admin_resubmit(app, session, client, mocker, request_type, request_xml)
     """Test resubmit CRA request."""
     identifier = "FM" + "".join(secrets.choice(string.digits) for _ in range(7))
     message_id = str(uuid.uuid4())
-    filing_id, legal_entity_id = create_registration_data(
-        "SP", identifier=identifier, tax_id="993775204BC0001"
-    )
+    filing_id, legal_entity_id = create_registration_data("SP", identifier=identifier, tax_id="993775204BC0001")
     request_tracker = RequestTracker(
         request_type=request_type,
         retry_number=-1,
@@ -170,9 +165,7 @@ def test_admin_resubmit(app, session, client, mocker, request_type, request_xml)
     def side_effect(input_xml):
         return 200, acknowledgement_response
 
-    mocker.patch(
-        "entity_bn.bn_processors.admin.request_bn_hub", side_effect=side_effect
-    )
+    mocker.patch("entity_bn.bn_processors.admin.request_bn_hub", side_effect=side_effect)
 
     legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
 

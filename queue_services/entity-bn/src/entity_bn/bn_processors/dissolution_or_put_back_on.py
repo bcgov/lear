@@ -21,18 +21,11 @@ from legal_api.models import Filing, LegalEntity, RequestTracker
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from entity_bn.bn_processors import (
-    bn_note,
-    build_input_xml,
-    get_splitted_business_number,
-    request_bn_hub,
-)
+from entity_bn.bn_processors import bn_note, build_input_xml, get_splitted_business_number, request_bn_hub
 from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
-def process(
-    legal_entity: LegalEntity, filing: Filing
-):  # pylint: disable=too-many-branches
+def process(legal_entity: LegalEntity, filing: Filing):  # pylint: disable=too-many-branches
     """Process the incoming dissolution/putBackOn request (SP/GP)."""
     max_retry = current_app.config.get("BN_HUB_MAX_RETRY")
     request_trackers = RequestTracker.find_by(
@@ -49,23 +42,19 @@ def process(
         request_tracker.service_name = RequestTracker.ServiceName.BN_HUB
         request_tracker.retry_number = 0
         request_tracker.is_processed = False
-    elif (
-        request_tracker := request_trackers.pop()
-    ) and not request_tracker.is_processed:
+    elif (request_tracker := request_trackers.pop()) and not request_tracker.is_processed:
         request_tracker.last_modified = datetime.utcnow()
         request_tracker.retry_number += 1
 
     if request_tracker.is_processed:
         return
 
-    effective_date = LegislationDatetime.as_legislation_timezone(
-        filing.effective_date
-    ).strftime("%Y-%m-%d")
+    effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date).strftime("%Y-%m-%d")
 
     program_account_status_code = {"putBackOn": "01", "dissolution": "02"}
     program_account_reason_code = {"putBackOn": None, "dissolution": "105"}
 
-    alternate_name = legal_entity._alternate_names.first()
+    alternate_name = legal_entity._alternate_names.first()  # pylint: disable=protected-access
     bn15 = alternate_name.bn15
 
     input_xml = build_input_xml(

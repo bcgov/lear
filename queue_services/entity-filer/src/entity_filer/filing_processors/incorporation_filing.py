@@ -18,24 +18,19 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-
-# from entity_filer.exceptions import DefaultException
-from business_model import LegalEntity, Document, Filing, RegistrationBootstrap
+from business_model import Document, Filing, LegalEntity, RegistrationBootstrap
 from business_model.models.document import DocumentType
+
+from entity_filer.exceptions import DefaultException
+from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors.filing_components import aliases, filings, legal_entity_info, shares
+from entity_filer.filing_processors.filing_components.offices import update_offices
+from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 # from legal_api.services.bootstrap import AccountService
 # from legal_api.services.minio import MinioService
 # from legal_api.services.pdf_service import RegistrarStampData
 
-from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    filings,
-    legal_entity_info,
-    shares,
-)
-from entity_filer.filing_processors.filing_components.offices import update_offices
-from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
 # from entity_filer.utils import replace_file_with_certified_copy
 
@@ -80,7 +75,7 @@ def update_affiliation(business: LegalEntity, filing: Filing):
 
 
 def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Filing):
-    cooperative_obj = incorp_filing.get("cooperative", None)
+    cooperative_obj = incorp_filing.get("cooperative", None)  # noqa F841; remove this comment when below is done
     # TODO remove all this
     # if cooperative_obj:
     #     # create certified copy for rules document
@@ -104,7 +99,6 @@ def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Fili
     #     registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
     #     replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
 
-
     #     document = Document()
     #     document.type = DocumentType.COOP_MEMORANDUM.value
     #     document.file_key = memorandum_file_key
@@ -127,13 +121,9 @@ def process(
     filing_meta.incorporation_application = {}
 
     if not incorp_filing:
-        raise DefaultException(
-            f"IA legal_filing:incorporationApplication missing from {filing_rec.id}"
-        )
+        raise DefaultException(f"IA legal_filing:incorporationApplication missing from {filing_rec.id}")
     if business:
-        raise DefaultException(
-            f"Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}"
-        )
+        raise DefaultException(f"Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}")
 
     business_info_obj = incorp_filing.get("nameRequest")
 
@@ -149,9 +139,7 @@ def process(
 
     # Initial insert of the business record
     business = LegalEntity()
-    business = legal_entity_info.update_legal_entity_info(
-        corp_num, business, business_info_obj, filing_rec
-    )
+    business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
     business = _update_cooperative(incorp_filing, business, filing_rec)
     business.state = LegalEntity.State.ACTIVE
 
@@ -165,9 +153,7 @@ def process(
         }
 
     if not business:
-        raise DefaultException(
-            f"IA incorporationApplication {filing_rec.id}, Unable to create business."
-        )
+        raise DefaultException(f"IA incorporationApplication {filing_rec.id}, Unable to create business.")
 
     if offices := incorp_filing["offices"]:
         update_offices(business, offices)
@@ -191,12 +177,8 @@ def process(
             ia_json["filing"]["business"] = {}
         ia_json["filing"]["business"]["identifier"] = business.identifier
         ia_json["filing"]["business"]["legalType"] = business.entity_type
-        ia_json["filing"]["business"][
-            "foundingDate"
-        ] = business.founding_date.isoformat()
-        filing_rec._filing_json = (
-            ia_json  # pylint: disable=protected-access; bypass to update filing data
-        )
+        ia_json["filing"]["business"]["foundingDate"] = business.founding_date.isoformat()
+        filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
     return business, filing_rec, filing_meta
 
 

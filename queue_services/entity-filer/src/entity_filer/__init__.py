@@ -36,16 +36,15 @@
 This module is the service worker for applying filings to the Business Database structure.
 """
 import sentry_sdk
-from flask import Flask
 from business_model import db
+from flask import Flask
 
-# from sentry_sdk.integrations.flask import FlaskIntegration
-
-from .config import Config
-from .config import Production
+from .config import Config, Production
 from .resources import register_endpoints
 from .services import queue
 from .translations import babel
+
+# from sentry_sdk.integrations.flask import FlaskIntegration
 
 
 def create_app(environment: Config = Production, **kwargs) -> Flask:

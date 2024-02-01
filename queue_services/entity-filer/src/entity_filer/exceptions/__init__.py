@@ -24,7 +24,6 @@ from .business_exception import BusinessException
 from .default_exception import DefaultException
 from .error_messages import ErrorCode, get_error_message
 
-
 __all__ = (
     "ApiConnectionException",
     "BusinessException",

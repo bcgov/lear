@@ -4,8 +4,8 @@ import random
 from http import HTTPStatus
 
 import pytest
+from registry_schemas.example_data import FILING_HEADER, SPECIAL_RESOLUTION
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
-from registry_schemas.example_data import SPECIAL_RESOLUTION, FILING_HEADER
 
 from tests.unit import create_business, create_filing
 
@@ -85,9 +85,7 @@ def test_process_simple_filing(client, session):
     business = create_business(identifier, legal_type=legal_type)
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (
-        create_filing(payment_id, filing_submission, business_id=business.id)
-    ).id
+    filing_id = (create_filing(payment_id, filing_submission, business_id=business.id)).id
 
     ce = SimpleCloudEvent(
         id="fake-id",

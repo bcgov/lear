@@ -17,14 +17,11 @@ from typing import Dict
 
 import pytz
 import sentry_sdk
-
-from business_model import LegalEntity, Comment, Filing
+from business_model import Comment, Filing, LegalEntity
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import name_request
-from entity_filer.filing_processors.filing_components.correction import (
-    correct_business_data,
-)
+from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 
 def process(
@@ -59,17 +56,12 @@ def process(
     )
 
     corrected_filing_type = filing["correction"]["correctedFilingType"]
-    if (
-        business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"]
-        and corrected_filing_type != "conversion"
-    ):
+    if business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"] and corrected_filing_type != "conversion":
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
         # set correction filing to PENDING_CORRECTION, for manual intervention
         # - include flag so that listener in Filing model does not change state automatically to COMPLETE
-        correction_filing._status = (
-            Filing.Status.PENDING_CORRECTION.value
-        )  # pylint: disable=protected-access
+        correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
         setattr(correction_filing, "skip_status_listener", True)
 
     original_filing.save_to_session()

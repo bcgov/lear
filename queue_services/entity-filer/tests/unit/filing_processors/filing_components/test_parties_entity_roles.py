@@ -37,37 +37,29 @@ D - If one exists and a new one is C, then delete the old one
  Director              X                                            CUD
  Incorporator          X        X                      CU           CU
  Liquidator            X                                            CUD
- Partner               X        X                                   CUD 
+ Partner               X        X                                   CUD
  Proprietor            X        X                                    C
 
 """
-import json
 import datetime
+import json
 from contextlib import suppress
 from copy import deepcopy
 from random import randint
 
 import pytest
-from business_model import Address
-from business_model import EntityRole
-from business_model import Filing
-from business_model import LegalEntity
-from sql_versioning import history_cls
-from sql_versioning import versioned_session
+from business_model import Address, EntityRole, Filing, LegalEntity
+from sql_versioning import history_cls, versioned_session
 
-from tests.unit import nested_session
-
-from entity_filer.exceptions import BusinessException
-from entity_filer.exceptions import ErrorCode
-from entity_filer.exceptions import get_error_message
+from entity_filer.exceptions import BusinessException, ErrorCode, get_error_message
 from entity_filer.filing_processors.filing_components.parties import (
-    merge_entity_role_to_filing,
     create_entity_with_addresses,
     get_address_for_filing,
     map_schema_role_to_enum,
     merge_all_parties,
+    merge_entity_role_to_filing,
 )
-
+from tests.unit import nested_session
 
 BASE_TEMPLATE = {
     "roles": [],
@@ -318,9 +310,7 @@ def test_person_and_role_exists(session, test_name, schema_role, template):
 
 
 @pytest.mark.parametrize("test_name,schema_role,template", TEST_PARTY_ROLES)
-def test_person_and_role_exists_cessation_date_set(
-    session, test_name, schema_role, template
-):
+def test_person_and_role_exists_cessation_date_set(session, test_name, schema_role, template):
     """Test where the person and role exists and the role is ceased.
 
     Assumption: Entity exists.
@@ -376,23 +366,13 @@ def test_person_and_role_exists_cessation_date_set(
             entity_roles = EntityRole.get_entity_roles_by_filing(filing_id=filing.id)
             assert len(entity_roles) == 0
 
-            historical_roles = EntityRole.get_entity_roles_history_by_filing(
-                filing_id=filing.id
-            )
+            historical_roles = EntityRole.get_entity_roles_history_by_filing(filing_id=filing.id)
             number_of_historical_roles = len(historical_roles)
             assert number_of_historical_roles >= 2
-            assert historical_roles[
-                number_of_historical_roles - 1
-            ].role_type == map_schema_role_to_enum(schema_role)
+            assert historical_roles[number_of_historical_roles - 1].role_type == map_schema_role_to_enum(schema_role)
+            assert historical_roles[number_of_historical_roles - 1].related_entity_id == person.id
             assert (
-                historical_roles[number_of_historical_roles - 1].related_entity_id
-                == person.id
-            )
-            assert (
-                historical_roles[number_of_historical_roles - 1].cessation_date.replace(
-                    tzinfo=None
-                )
-                == cessation_date
+                historical_roles[number_of_historical_roles - 1].cessation_date.replace(tzinfo=None) == cessation_date
             )
 
 
@@ -445,9 +425,7 @@ def test_directors_exist_but_not_in_filing(session):
 
         assert len(current_entity_roles) == 1
 
-        historical_roles = EntityRole.get_entity_roles_history_by_filing(
-            filing_id=filing.id
-        )
+        historical_roles = EntityRole.get_entity_roles_history_by_filing(filing_id=filing.id)
         number_of_historical_roles = len(historical_roles)
         # Should be at least 2 records for each historical role.
         assert number_of_historical_roles == 4

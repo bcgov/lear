@@ -19,12 +19,11 @@ from tests.unit import prep_incorp_filing
 def test_mras_notification(app, session):
     """Assert that the legal name is changed."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'mras')
+    filing = prep_incorp_filing(session, "BC1234567", "1", "mras")
     # run processor
-    email = mras_notification.process(
-        {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'})
+    email = mras_notification.process({"filingId": filing.id, "type": "incorporationApplication", "option": "mras"})
     # check email values
-    assert email['recipients'] == 'test@test.com'
-    assert email['content']['subject'] == 'BC Business Registry Partner Information'
-    assert email['content']['body']
-    assert email['content']['attachments'] == []
+    assert email["recipients"] == "test@test.com"
+    assert email["content"]["subject"] == "BC Business Registry Partner Information"
+    assert email["content"]["body"]
+    assert email["content"]["attachments"] == []

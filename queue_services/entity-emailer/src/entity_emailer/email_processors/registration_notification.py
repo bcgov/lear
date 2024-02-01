@@ -20,13 +20,12 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
-from legal_api.models import LegalEntity, CorpType, Filing
+from legal_api.models import CorpType, Filing, LegalEntity
 
-from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info, substitute_template_parts
+from entity_emailer.services.logging import structured_log
 
 
 def _get_pdfs(
@@ -52,20 +51,14 @@ def _get_pdfs(
             json={
                 "corpName": corp_name,
                 "filingDateTime": filing_date_time,
-                "effectiveDateTime": effective_date
-                if effective_date != filing_date_time
-                else "",
+                "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
                 "filingIdentifier": str(filing.id),
-                "businessNumber": business_data.tax_id
-                if business_data and business_data.tax_id
-                else "",
+                "businessNumber": business_data.tax_id if business_data and business_data.tax_id else "",
             },
             headers=headers,
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            structured_log(
-                request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}"
-            )
+            structured_log(request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}")
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -83,9 +76,7 @@ def _get_pdfs(
             headers=headers,
         )
         if filing_pdf.status_code != HTTPStatus.OK:
-            structured_log(
-                request, "ERROR", f"Failed to get pdf for filing: {filing.id}"
-            )
+            structured_log(request, "ERROR", f"Failed to get pdf for filing: {filing.id}")
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
@@ -101,30 +92,20 @@ def _get_pdfs(
     return pdfs
 
 
-def process(
-    email_info: dict, token: str
-) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Registration notification."""
     structured_log(request, "DEBUG", f"registration_notification: {email_info}")
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
-        email_info["filingId"]
-    )
-    filing_name = filing.filing_type[0].upper() + " ".join(
-        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
-    )
-    business = (
-        business if business else filing.json["filing"]["registration"]["business"]
-    )
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
+    business = business if business else filing.json["filing"]["registration"]["business"]
     identifier = business.get("identifier")
     name_request = filing.json["filing"]["registration"]["nameRequest"]
     corp_type = CorpType.find_by_id(name_request.get("legalType"))
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/REG-{status}.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/REG-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -143,9 +124,7 @@ def process(
     )
 
     # get attachments
-    pdfs = _get_pdfs(
-        status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date
-    )
+    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
     # get recipients
     recipients = []
@@ -157,9 +136,7 @@ def process(
                 break
 
     if status == Filing.Status.COMPLETED.value:
-        recipients.append(
-            filing.filing_json["filing"]["registration"]["contactPoint"]["email"]
-        )
+        recipients.append(filing.filing_json["filing"]["registration"]["contactPoint"]["email"])
 
         for party in filing.filing_json["filing"]["registration"]["parties"]:
             for role in party["roles"]:

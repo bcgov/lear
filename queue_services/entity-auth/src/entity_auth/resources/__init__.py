@@ -41,6 +41,7 @@ from .worker import bp as worker_endpoint
 
 
 def register_endpoints(app: Flask):
+    """Register endpoints with the flask application"""
     # Allow base route to match with, and without a trailing slash
     app.url_map.strict_slashes = False
 

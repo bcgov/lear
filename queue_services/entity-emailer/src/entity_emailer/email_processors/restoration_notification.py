@@ -19,13 +19,12 @@ import re
 from http import HTTPStatus
 
 import requests
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Environment, FileSystemLoader
-from legal_api.models import LegalEntity, CorpType, Filing
+from legal_api.models import CorpType, Filing, LegalEntity
 
-from entity_emailer.services.logging import structured_log
 from entity_emailer.email_processors import get_filing_info
+from entity_emailer.services.logging import structured_log
 
 
 def _get_completed_pdfs(token: str, business: dict, filing: Filing) -> list:
@@ -42,9 +41,7 @@ def _get_completed_pdfs(token: str, business: dict, filing: Filing) -> list:
         headers=headers,
     )
     if noa.status_code != HTTPStatus.OK:
-        structured_log(
-            request, "ERROR", f"Failed to get noa pdf for filing: {filing.id}"
-        )
+        structured_log(request, "ERROR", f"Failed to get noa pdf for filing: {filing.id}")
     else:
         noa_encoded = base64.b64encode(noa.content)
         pdfs.append(
@@ -63,9 +60,7 @@ def _get_completed_pdfs(token: str, business: dict, filing: Filing) -> list:
         headers=headers,
     )
     if certificate.status_code != HTTPStatus.OK:
-        structured_log(
-            request, "ERROR", f"Failed to get certificate pdf for filing: {filing.id}"
-        )
+        structured_log(request, "ERROR", f"Failed to get certificate pdf for filing: {filing.id}")
     else:
         certificate_encoded = base64.b64encode(certificate.content)
         pdfs.append(
@@ -119,20 +114,14 @@ def _get_paid_pdfs(
         json={
             "corpName": corp_name,
             "filingDateTime": filing_date_time,
-            "effectiveDateTime": effective_date
-            if effective_date != filing_date_time
-            else "",
+            "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
             "filingIdentifier": str(filing.id),
-            "businessNumber": business_data.tax_id
-            if business_data and business_data.tax_id
-            else "",
+            "businessNumber": business_data.tax_id if business_data and business_data.tax_id else "",
         },
         headers=headers,
     )
     if receipt.status_code != HTTPStatus.CREATED:
-        structured_log(
-            request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}"
-        )
+        structured_log(request, "ERROR", f"Failed to get receipt pdf for filing: {filing.id}")
     else:
         receipt_encoded = base64.b64encode(receipt.content)
         pdfs.append(
@@ -148,20 +137,14 @@ def _get_paid_pdfs(
     return pdfs
 
 
-def process(
-    email_info: dict, token: str
-) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Restoration notification."""
     structured_log(request, "DEBUG", f"registration_notification: {email_info}")
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(
-        email_info["filingId"]
-    )
-    filing_name = filing.filing_type[0].upper() + " ".join(
-        re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:])
-    )
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
     business = business if business else filing.json["filing"]["business"]
     identifier = business.get("identifier")
     filing_business = filing.json["filing"]["business"]
@@ -175,9 +158,7 @@ def process(
     )
     # look for a template in this format RES-fullRestoration-PAID.html
     # if the template doesn't exists use RES-PAID.html
-    template = jinja_env.select_template(
-        [f"RES-{restoration_type}-{status}.jinja2", f"RES-{status}.jinja2"]
-    )
+    template = jinja_env.select_template([f"RES-{restoration_type}-{status}.jinja2", f"RES-{status}.jinja2"])
 
     filing_data = filing.json["filing"][f"{filing_type}"]
     html_out = template.render(
@@ -195,9 +176,7 @@ def process(
 
     # get attachments
     if status == Filing.Status.PAID.value:
-        pdfs = _get_paid_pdfs(
-            token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date
-        )
+        pdfs = _get_paid_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
     if status == Filing.Status.COMPLETED.value:
         pdfs = _get_completed_pdfs(token, business, filing)
 

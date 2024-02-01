@@ -16,15 +16,10 @@ import copy
 import json
 import random
 
-from business_model import LegalEntity, Filing, PartyRole
-from registry_schemas.example_data import (
-    ANNUAL_REPORT,
-    FILING_HEADER,
-    SPECIAL_RESOLUTION,
-)
+from business_model import Filing, LegalEntity, PartyRole
+from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, SPECIAL_RESOLUTION
 
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_business, create_filing
 
 
@@ -64,9 +59,7 @@ def test_technical_correction_ar(app, session):
 
     # subvert the filing
     technical_correction_filing = copy.deepcopy(FILING_HEADER)
-    technical_correction_filing["filing"]["specialResolution"] = copy.deepcopy(
-        SPECIAL_RESOLUTION
-    )
+    technical_correction_filing["filing"]["specialResolution"] = copy.deepcopy(SPECIAL_RESOLUTION)
     filing.tech_correction_json = technical_correction_filing
     # over ride the state and skip state setting listeners for this test
     filing.skip_status_listener = True

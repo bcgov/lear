@@ -37,7 +37,6 @@ import datetime
 from collections.abc import MutableMapping, MutableSequence
 from typing import Dict, List
 
-
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)
 FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
 
@@ -69,9 +68,7 @@ def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
                     if rv := scan_list(value, keys):
                         modified_dict[key] = rv
                 else:
-                    modified_dict[
-                        key
-                    ] = value  # or copy.deepcopy(value) if a copy is desired for non-dicts.
+                    modified_dict[key] = value  # or copy.deepcopy(value) if a copy is desired for non-dicts.
         return modified_dict
 
     def scan_list(orig_list, keys):

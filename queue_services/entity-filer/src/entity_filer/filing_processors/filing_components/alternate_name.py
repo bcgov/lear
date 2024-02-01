@@ -15,13 +15,10 @@
 from __future__ import annotations
 
 import datetime
-import dpath
 from typing import Dict, List, Optional, Tuple
 
-from business_model import db
-from business_model import AlternateName
-from business_model import Filing
-from business_model import LegalEntity
+import dpath
+from business_model import AlternateName, Filing, LegalEntity
 
 from entity_filer import db
 from entity_filer.exceptions import DefaultException
@@ -32,11 +29,11 @@ from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 
 def update_partner_change(
-        legal_entity: LegalEntity,
-        filing_type: str,
-        change_filing_rec: Filing,
-        change_filing: Dict,
-        filing_meta: Dict,
+    legal_entity: LegalEntity,
+    filing_type: str,
+    change_filing_rec: Filing,
+    change_filing: Dict,
+    filing_meta: Dict,
 ):
     name_request = dpath.util.get(change_filing, f"/{filing_type}/nameRequest", default=None)
     if name_request and (to_legal_name := name_request.get("legalName")):
@@ -50,9 +47,7 @@ def update_partner_change(
         alternate_name.change_filing_id = change_filing_rec.id
 
         if start := change_filing.get("filing", {}).get(f"{filing_type}", {}).get("startDate"):
-            start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                start
-            )
+            start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(start)
         else:
             start_date = alternate_name.start_date
         # alternate_name.delete()
@@ -60,7 +55,6 @@ def update_partner_change(
         db.session.commit()
         db.session.delete(alternate_name)
         db.session.commit()
-
 
         new_alternate_name = AlternateName(
             bn15=alternate_name.bn15,
@@ -81,11 +75,9 @@ def update_partner_change(
         }
 
     # Update Nature of LegalEntity
-    if (
-        naics := change_filing.get(f"{filing_type}", {})
-        .get("business", {})
-        .get("naics")
-    ) and (naics_code := naics.get("naicsCode")):
+    if (naics := change_filing.get(f"{filing_type}", {}).get("business", {}).get("naics")) and (
+        naics_code := naics.get("naicsCode")
+    ):
         if legal_entity.naics_code != naics_code:
             filing_meta = {
                 **filing_meta,
@@ -99,10 +91,10 @@ def update_partner_change(
 
 
 def update_proprietor_change(
-        filing_type: str,
-        change_filing_rec: Filing,
-        change_filing: Dict,
-        filing_meta: Dict,
+    filing_type: str,
+    change_filing_rec: Filing,
+    change_filing: Dict,
+    filing_meta: Dict,
 ):
     name_request = dpath.util.get(change_filing, f"/{filing_type}/nameRequest", default=None)
     identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
@@ -121,22 +113,14 @@ def update_proprietor_change(
                 break
 
         if not proprietor_dict:
-            raise DefaultException(
-                f"No Proprietor in the SP {filing_type} for filing:{change_filing_rec.id}"
-            )
+            raise DefaultException(f"No Proprietor in the SP {filing_type} for filing:{change_filing_rec.id}")
 
-        proprietor, delivery_address, mailing_address = get_or_create_party(
-            proprietor_dict, change_filing_rec
-        )
+        proprietor, delivery_address, mailing_address = get_or_create_party(proprietor_dict, change_filing_rec)
         if not proprietor:
-            raise DefaultException(
-                f"No Proprietor in the SP {filing_type} for filing:{change_filing_rec.id}"
-            )
-        
+            raise DefaultException(f"No Proprietor in the SP {filing_type} for filing:{change_filing_rec.id}")
+
         if start := change_filing.get("filing", {}).get(f"{filing_type}", {}).get("startDate"):
-            start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                start
-            )
+            start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(start)
         else:
             start_date = alternate_name.start_date
 

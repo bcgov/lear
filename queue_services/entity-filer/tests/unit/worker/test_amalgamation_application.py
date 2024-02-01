@@ -23,8 +23,7 @@ from business_model import Amalgamation, Filing, LegalEntity
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import create_entity, create_filing
 
 
@@ -40,18 +39,17 @@ def test_amalgamation_application_process(app, session):
     amalgamating_business_2_id = create_entity(amalgamating_identifier_2, "BC", "amalgamating business 2").id
 
     filing = {"filing": {}}
-    filing["filing"]["header"] = {"name": filing_type, "date": "2019-04-08",
-                                  "certifiedBy": "full name", "email": "no_one@never.get", "filingId": 1}
+    filing["filing"]["header"] = {
+        "name": filing_type,
+        "date": "2019-04-08",
+        "certifiedBy": "full name",
+        "email": "no_one@never.get",
+        "filingId": 1,
+    }
     filing["filing"][filing_type] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing["filing"][filing_type]["amalgamatingBusinesses"] = [
-        {
-            "role": "amalgamating",
-            "identifier": amalgamating_identifier_1
-        },
-        {
-            "role": "amalgamating",
-            "identifier": amalgamating_identifier_2
-        }
+        {"role": "amalgamating", "identifier": amalgamating_identifier_1},
+        {"role": "amalgamating", "identifier": amalgamating_identifier_2},
     ]
 
     filing["filing"][filing_type]["nameRequest"]["nrNumber"] = nr_identifier

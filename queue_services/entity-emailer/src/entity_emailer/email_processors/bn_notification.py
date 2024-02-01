@@ -16,17 +16,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from flask import current_app
-from flask import request
+from flask import current_app, request
 from jinja2 import Template
-from legal_api.models import LegalEntity, CorpType, Filing, PartyRole
+from legal_api.models import CorpType, Filing, LegalEntity, PartyRole
 
+from entity_emailer.email_processors import get_recipient_from_auth, get_recipients, substitute_template_parts
 from entity_emailer.services.logging import structured_log
-from entity_emailer.email_processors import (
-    get_recipient_from_auth,
-    get_recipients,
-    substitute_template_parts,
-)
 
 
 def process(email_msg: dict) -> dict:
@@ -45,9 +40,7 @@ def process(email_msg: dict) -> dict:
         LegalEntity.EntityTypes.PARTNERSHIP.value,
     ]:
         filing_type = "registration"
-    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(
-        business.id, filing_type
-    )
+    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, filing_type)
     corp_type = CorpType.find_by_id(business.entity_type)
 
     # render template with vars
@@ -58,9 +51,7 @@ def process(email_msg: dict) -> dict:
     )
 
     # get recipients
-    recipients = get_recipients(
-        email_msg["option"], filing.filing_json, filing_type=filing_type
-    )
+    recipients = get_recipients(email_msg["option"], filing.filing_json, filing_type=filing_type)
     return {
         "recipients": recipients,
         "requestBy": "BCRegistries@gov.bc.ca",
@@ -77,9 +68,7 @@ def process_bn_move(email_msg: dict, token: str) -> dict:
     structured_log(request, "DEBUG", f"bn move notification: {email_msg}")
 
     # get template and fill in parts
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/BN-MOVE.html'
-    ).read_text()
+    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BN-MOVE.html').read_text()
     filled_template = substitute_template_parts(template)
 
     # get filing and business json
@@ -96,9 +85,7 @@ def process_bn_move(email_msg: dict, token: str) -> dict:
     )
 
     recipients = []
-    recipients.append(
-        get_recipient_from_auth(business.identifier, token)
-    )  # business email
+    recipients.append(get_recipient_from_auth(business.identifier, token))  # business email
 
     role = ""
     if business.entity_type == LegalEntity.EntityTypes.SOLE_PROP.value:

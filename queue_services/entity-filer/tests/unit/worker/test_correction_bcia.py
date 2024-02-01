@@ -17,34 +17,27 @@ import random
 from datetime import datetime
 from typing import Final
 from unittest.mock import patch
-from dateutil.parser import parse
 
 import pytest
-from business_model import Address, Alias, LegalEntity, Filing, EntityRole
+from business_model import Address, Alias, EntityRole, Filing, LegalEntity
+from dateutil.parser import parse
+from registry_schemas.example_data import COURT_ORDER, REGISTRATION
+from sql_versioning import versioned_session
 
 # from legal_api.services import NaicsService
-from entity_filer.filing_processors.filing_components.legal_entity_info import (
-    NaicsService,
-)
-from registry_schemas.example_data import (
-    COURT_ORDER,
-    REGISTRATION,
-)
-
-from entity_filer.resources.worker import process_filing
-from entity_filer.resources.worker import FilingMessage
+from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
+from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import (
     create_alias,
     create_entity,
+    create_entity_person,
+    create_entity_role,
     create_filing,
     create_office,
     create_office_address,
-    create_entity_person,
-    create_entity_role,
     factory_completed_filing,
+    nested_session,
 )
-from tests.unit import nested_session
-from sql_versioning import versioned_session
 
 CONTACT_POINT = {"email": "no_one@never.get", "phone": "123-456-7890"}
 
@@ -138,9 +131,7 @@ BC_CORRECTION = {
                         "postalCode": "H0H0H0",
                         "addressRegion": "BC",
                     },
-                    "roles": [
-                        {"roleType": "Director", "appointmentDate": "2022-01-01"}
-                    ],
+                    "roles": [{"roleType": "Director", "appointmentDate": "2022-01-01"}],
                 },
                 {
                     "officer": {
@@ -256,9 +247,7 @@ def test_correction_name_change(
 
     filing = copy.deepcopy(filing_template)
 
-    corrected_filing_id = factory_completed_filing(
-        business, BC_CORRECTION_APPLICATION
-    ).id
+    corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_APPLICATION).id
     filing["filing"]["correction"]["correctedFilingId"] = corrected_filing_id
     del filing["filing"]["correction"]["parties"][0]["officer"]["id"]
     del filing["filing"]["correction"]["parties"][1]["officer"]["id"]
@@ -331,9 +320,7 @@ def test_correction_name_translation(app, session, mocker, test_name, legal_type
     alias = create_alias(business, "ABCD")
     filing["filing"]["correction"]["nameTranslations"][0]["id"] = str(alias.id)
 
-    corrected_filing_id = factory_completed_filing(
-        business, BC_CORRECTION_APPLICATION
-    ).id
+    corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_APPLICATION).id
     filing["filing"]["correction"]["correctedFilingId"] = corrected_filing_id
     filing["filing"]["correction"]["correctedFilingType"] = "incorporationApplication"
 
@@ -385,9 +372,7 @@ def test_correction_name_translation(app, session, mocker, test_name, legal_type
         ("ulc_address_change", "ULC", "Test Firm", BC_CORRECTION),
     ],
 )
-def test_correction_business_address(
-    app, session, mocker, test_name, legal_type, legal_name, filing_template
-):
+def test_correction_business_address(app, session, mocker, test_name, legal_type, legal_name, filing_template):
     """Assert the worker process calls the business address change correctly."""
     identifier = "BC1234567"
     business = create_entity(identifier, legal_type, legal_name)
@@ -404,21 +389,19 @@ def test_correction_business_address(
 
     filing = copy.deepcopy(filing_template)
 
-    corrected_filing_id = factory_completed_filing(
-        business, BC_CORRECTION_APPLICATION
-    ).id
+    corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_APPLICATION).id
     filing["filing"]["correction"]["correctedFilingId"] = corrected_filing_id
 
     del filing["filing"]["correction"]["nameRequest"]
     del filing["filing"]["correction"]["parties"][0]["officer"]["id"]
     del filing["filing"]["correction"]["parties"][1]["officer"]["id"]
 
-    filing["filing"]["correction"]["offices"]["registeredOffice"][
-        "deliveryAddress"
-    ] = Address.find_by_id(office_delivery_address_id).json
-    filing["filing"]["correction"]["offices"]["registeredOffice"][
-        "mailingAddress"
-    ] = Address.find_by_id(office_mailing_address_id).json
+    filing["filing"]["correction"]["offices"]["registeredOffice"]["deliveryAddress"] = Address.find_by_id(
+        office_delivery_address_id
+    ).json
+    filing["filing"]["correction"]["offices"]["registeredOffice"]["mailingAddress"] = Address.find_by_id(
+        office_mailing_address_id
+    ).json
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -445,17 +428,13 @@ def test_correction_business_address(
     for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
         assert (
             changed_delivery_address.json[key]
-            == filing["filing"]["correction"]["offices"]["registeredOffice"][
-                "deliveryAddress"
-            ][key]
+            == filing["filing"]["correction"]["offices"]["registeredOffice"]["deliveryAddress"][key]
         )
     changed_mailing_address = Address.find_by_id(office_mailing_address_id)
     for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
         assert (
             changed_mailing_address.json[key]
-            == filing["filing"]["correction"]["offices"]["registeredOffice"][
-                "mailingAddress"
-            ][key]
+            == filing["filing"]["correction"]["offices"]["registeredOffice"]["mailingAddress"][key]
         )
 
 
@@ -468,9 +447,7 @@ def test_correction_business_address(
         ("ulc_court_order", "ULC", BC_CORRECTION),
     ],
 )
-def test_worker_correction_court_order(
-    app, session, mocker, test_name, legal_type, filing_template
-):
+def test_worker_correction_court_order(app, session, mocker, test_name, legal_type, filing_template):
     """Assert the worker process process the court order correctly."""
     identifier = "BC1234567"
     business = create_entity(identifier, legal_type, "Test Entity")
@@ -537,9 +514,7 @@ def test_worker_correction_court_order(
         ("ulc_delete_director", "ULC"),
     ],
 )
-def test_worker_director_name_and_address_change(
-    app, session, mocker, test_name, legal_type
-):
+def test_worker_director_name_and_address_change(app, session, mocker, test_name, legal_type):
     """Assert the worker processes the court order correctly."""
     identifier = "BC1234567"
     versioned_session(session)
@@ -548,13 +523,9 @@ def test_worker_director_name_and_address_change(
         business = create_entity(identifier, legal_type, "Test Entity")
         business_id = business.id
 
-        party1 = create_entity_person(
-            BC_CORRECTION["filing"]["correction"]["parties"][0]
-        )
+        party1 = create_entity_person(BC_CORRECTION["filing"]["correction"]["parties"][0])
         party_id_1 = party1.id
-        party2 = create_entity_person(
-            BC_CORRECTION["filing"]["correction"]["parties"][1]
-        )
+        party2 = create_entity_person(BC_CORRECTION["filing"]["correction"]["parties"][1])
         party_id_2 = party2.id
 
         create_entity_role(business, party1, ["director"], datetime.utcnow())
@@ -573,27 +544,17 @@ def test_worker_director_name_and_address_change(
         if "add_director" in test_name:
             # filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
             # filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
-            new_party_json = copy.deepcopy(
-                BC_CORRECTION["filing"]["correction"]["parties"][1]
-            )
+            new_party_json = copy.deepcopy(BC_CORRECTION["filing"]["correction"]["parties"][1])
             del new_party_json["officer"]["id"]
             new_party_json["officer"]["firstName"] = "New Name"
             filing["filing"]["correction"]["parties"].append(new_party_json)
 
         if "edit_director_name_and_address" in test_name:
             # filing['filing']['correction']['parties'][0]['officer']['id'] = party_id_1
-            filing["filing"]["correction"]["parties"][0]["officer"][
-                "firstName"
-            ] = "New Name a"
-            filing["filing"]["correction"]["parties"][0]["officer"][
-                "middleInitial"
-            ] = "New Name a"
-            filing["filing"]["correction"]["parties"][0]["mailingAddress"][
-                "streetAddress"
-            ] = "New Name"
-            filing["filing"]["correction"]["parties"][0]["deliveryAddress"][
-                "streetAddress"
-            ] = "New Name"
+            filing["filing"]["correction"]["parties"][0]["officer"]["firstName"] = "New Name a"
+            filing["filing"]["correction"]["parties"][0]["officer"]["middleInitial"] = "New Name a"
+            filing["filing"]["correction"]["parties"][0]["mailingAddress"]["streetAddress"] = "New Name"
+            filing["filing"]["correction"]["parties"][0]["deliveryAddress"]["streetAddress"] = "New Name"
             # filing['filing']['correction']['parties'][1]['officer']['id'] = party_id_2
 
         if "delete_director" in test_name:
@@ -637,23 +598,14 @@ def test_worker_director_name_and_address_change(
                     party_role = candidate
                     break
 
-            assert (
-                party.first_name
-                == filing["filing"]["correction"]["parties"][0]["officer"][
-                    "firstName"
-                ].upper()
-            )
+            assert party.first_name == filing["filing"]["correction"]["parties"][0]["officer"]["firstName"].upper()
             assert (
                 party_role.delivery_address.street
-                == filing["filing"]["correction"]["parties"][0]["deliveryAddress"][
-                    "streetAddress"
-                ]
+                == filing["filing"]["correction"]["parties"][0]["deliveryAddress"]["streetAddress"]
             )
             assert (
                 party_role.mailing_address.street
-                == filing["filing"]["correction"]["parties"][0]["mailingAddress"][
-                    "streetAddress"
-                ]
+                == filing["filing"]["correction"]["parties"][0]["mailingAddress"]["streetAddress"]
             )
             assert business.entity_roles.all()[0].cessation_date is None
             assert business.entity_roles.all()[1].cessation_date is None
@@ -700,12 +652,8 @@ def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_t
     business = create_entity(identifier, legal_type, "Test Entity")
     business_id = business.id
 
-    resolution_dates_json1 = BC_CORRECTION["filing"]["correction"]["shareStructure"][
-        "resolutionDates"
-    ][0]
-    resolution_dates_json2 = BC_CORRECTION["filing"]["correction"]["shareStructure"][
-        "resolutionDates"
-    ][1]
+    resolution_dates_json1 = BC_CORRECTION["filing"]["correction"]["shareStructure"]["resolutionDates"][0]
+    resolution_dates_json2 = BC_CORRECTION["filing"]["correction"]["shareStructure"]["resolutionDates"][1]
 
     filing = copy.deepcopy(BC_CORRECTION)
 
@@ -716,9 +664,7 @@ def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_t
 
     if "add_resolution_dates" in test_name:
         new_resolution_dates = "2022-09-01"
-        filing["filing"]["correction"]["shareStructure"]["resolutionDates"].append(
-            new_resolution_dates
-        )
+        filing["filing"]["correction"]["shareStructure"]["resolutionDates"].append(new_resolution_dates)
 
     if "delete_resolution_dates" in test_name:
         del filing["filing"]["correction"]["shareStructure"]["resolutionDates"][0]
@@ -730,19 +676,12 @@ def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_t
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    if (
-        "update_existing_resolution_dates" in test_name
-        or "update_with_new_resolution_dates" in test_name
-    ):
+    if "update_existing_resolution_dates" in test_name or "update_with_new_resolution_dates" in test_name:
         updated_resolution_dates = "2022-09-01"
         if "update_existing_resolution_dates" in test_name:
-            filing["filing"]["correction"]["shareStructure"]["resolutionDates"][
-                1
-            ] = updated_resolution_dates
+            filing["filing"]["correction"]["shareStructure"]["resolutionDates"][1] = updated_resolution_dates
         else:
-            filing["filing"]["correction"]["shareStructure"]["resolutionDates"] = [
-                updated_resolution_dates
-            ]
+            filing["filing"]["correction"]["shareStructure"]["resolutionDates"] = [updated_resolution_dates]
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
@@ -811,20 +750,14 @@ def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_t
         ("ulc_delete_share_class", "ULC"),
     ],
 )
-def test_worker_share_class_and_series_change(
-    app, session, mocker, test_name, legal_type
-):
+def test_worker_share_class_and_series_change(app, session, mocker, test_name, legal_type):
     """Assert the worker processes the court order correctly."""
     identifier = "BC1234567"
     business = create_entity(identifier, legal_type, "Test Entity")
     business_id = business.id
 
-    share_class_json1 = BC_CORRECTION["filing"]["correction"]["shareStructure"][
-        "shareClasses"
-    ][0]
-    share_class_json2 = BC_CORRECTION["filing"]["correction"]["shareStructure"][
-        "shareClasses"
-    ][1]
+    share_class_json1 = BC_CORRECTION["filing"]["correction"]["shareStructure"]["shareClasses"][0]
+    share_class_json2 = BC_CORRECTION["filing"]["correction"]["shareStructure"]["shareClasses"][1]
 
     filing = copy.deepcopy(BC_CORRECTION)
 
@@ -834,14 +767,10 @@ def test_worker_share_class_and_series_change(
     filing["filing"]["correction"]["contactPoint"] = CONTACT_POINT
 
     if "add_share_class" in test_name:
-        new_share_class_json = copy.deepcopy(
-            BC_CORRECTION["filing"]["correction"]["shareStructure"]["shareClasses"][1]
-        )
+        new_share_class_json = copy.deepcopy(BC_CORRECTION["filing"]["correction"]["shareStructure"]["shareClasses"][1])
         del new_share_class_json["id"]
         new_share_class_json["name"] = "New Share Class"
-        filing["filing"]["correction"]["shareStructure"]["shareClasses"].append(
-            new_share_class_json
-        )
+        filing["filing"]["correction"]["shareStructure"]["shareClasses"].append(new_share_class_json)
 
     if "delete_share_class" in test_name:
         del filing["filing"]["correction"]["shareStructure"]["shareClasses"][0]
@@ -853,10 +782,7 @@ def test_worker_share_class_and_series_change(
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    if (
-        "update_existing_share_class" in test_name
-        or "update_with_new_share_class" in test_name
-    ):
+    if "update_existing_share_class" in test_name or "update_with_new_share_class" in test_name:
         updated_share_series = [
             {
                 "id": 1,
@@ -888,13 +814,9 @@ def test_worker_share_class_and_series_change(
             "series": updated_share_series,
         }
         if "update_existing_share_class" in test_name:
-            filing["filing"]["correction"]["shareStructure"]["shareClasses"][
-                0
-            ] = updated_share_class
+            filing["filing"]["correction"]["shareStructure"]["shareClasses"][0] = updated_share_class
         else:
-            filing["filing"]["correction"]["shareStructure"]["shareClasses"] = [
-                updated_share_class
-            ]
+            filing["filing"]["correction"]["shareStructure"]["shareClasses"] = [updated_share_class]
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
@@ -927,26 +849,15 @@ def test_worker_share_class_and_series_change(
     if "update_existing_share_class" in test_name:
         assert len(business.share_classes.all()) == 2
         assert business.share_classes.all()[0].name == updated_share_class["name"]
-        assert (
-            business.share_classes.all()[0].special_rights_flag
-            == updated_share_class["hasRightsOrRestrictions"]
-        )
+        assert business.share_classes.all()[0].special_rights_flag == updated_share_class["hasRightsOrRestrictions"]
         assert business.share_classes.all()[1].name == share_class_json2["name"]
-        assert [
-            item.json for item in business.share_classes.all()[1].series
-        ] == share_class_json2["series"]
+        assert [item.json for item in business.share_classes.all()[1].series] == share_class_json2["series"]
 
     if "update_with_new_share_class" in test_name:
         assert len(business.share_classes.all()) == 1
         assert business.share_classes.all()[0].name == updated_share_class["name"]
-        assert (
-            business.share_classes.all()[0].par_value_flag
-            == updated_share_class["hasParValue"]
-        )
-        assert (
-            business.share_classes.all()[0].special_rights_flag
-            == updated_share_class["hasRightsOrRestrictions"]
-        )
+        assert business.share_classes.all()[0].par_value_flag == updated_share_class["hasParValue"]
+        assert business.share_classes.all()[0].special_rights_flag == updated_share_class["hasRightsOrRestrictions"]
         share_series = [item.json for item in business.share_classes.all()[0].series]
         for key in share_series[0].keys():
             if key != "id":
@@ -957,14 +868,7 @@ def test_worker_share_class_and_series_change(
         assert len(business.share_classes.all()) == 1
         assert business.share_classes.all()[0].name == share_class_json2["name"]
         assert business.share_classes.all()[0].priority == share_class_json2["priority"]
-        assert (
-            business.share_classes.all()[0].max_shares
-            == share_class_json2["maxNumberOfShares"]
-        )
-        assert (
-            business.share_classes.all()[0].par_value == share_class_json2["parValue"]
-        )
+        assert business.share_classes.all()[0].max_shares == share_class_json2["maxNumberOfShares"]
+        assert business.share_classes.all()[0].par_value == share_class_json2["parValue"]
         assert business.share_classes.all()[0].currency == share_class_json2["currency"]
-        assert [
-            item.json for item in business.share_classes.all()[0].series
-        ] == share_class_json2["series"]
+        assert [item.json for item in business.share_classes.all()[0].series] == share_class_json2["series"]

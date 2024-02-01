@@ -41,14 +41,9 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
 
-from flask import Blueprint
-from flask import current_app
-from flask import jsonify
-from flask import request
+from flask import Blueprint, current_app, request
 from legal_api.models import Filing
 from simple_cloudevent import SimpleCloudEvent
-from werkzeug.exceptions import UnsupportedMediaType
-from werkzeug.exceptions import BadRequest
 
 from entity_pay.services import queue
 from entity_pay.services.logging import structured_log
@@ -89,10 +84,7 @@ def worker():
 
     # 2. Get payment information
     # ##
-    if (
-        not (payment_token := get_payment_token(ce))
-        or payment_token.status_code != "COMPLETED"
-    ):
+    if not (payment_token := get_payment_token(ce)) or payment_token.status_code != "COMPLETED":
         # no payment info, or not a payment COMPLETED token, take off Q
         return {}, HTTPStatus.OK
 
@@ -109,9 +101,7 @@ def worker():
     structured_log(request, "INFO", f"processing payment: {payment_token.id}")
 
     # setting the payment_completion_date, marks the filing as paid
-    filing.payment_completion_date = datetime.datetime.utcnow().replace(
-        tzinfo=datetime.timezone.utc
-    )
+    filing.payment_completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
     filing.save()
 
     # None of these should bail as the filing has been marked PAID
@@ -130,24 +120,17 @@ def worker():
     # ##
     with suppress(Exception):
         mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
-        ret = queue.publish(
-            topic=mail_topic, payload=queue.to_queue_message(cloud_event)
-        )
-        structured_log(
-            request, "INFO", f"publish to emailer for pay-id: {payment_token.id}"
-        )
+        # pylint: disable-next=unused-variable
+        ret = queue.publish(topic=mail_topic, payload=queue.to_queue_message(cloud_event))
+        structured_log(request, "INFO", f"publish to emailer for pay-id: {payment_token.id}")
 
     # 5. Publish to filer Q, if the filing is not a FED (Effective date > now())
     # ##
     with suppress(Exception):
         if filing.effective_date <= filing.payment_completion_date:
             filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
-            ret = queue.publish(
-                topic=filer_topic, payload=queue.to_queue_message(cloud_event)
-            )
-            structured_log(
-                request, "INFO", f"publish to filer for pay-id: {payment_token.id}"
-            )
+            ret = queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))  # noqa: F841
+            structured_log(request, "INFO", f"publish to filer for pay-id: {payment_token.id}")
 
     structured_log(request, "INFO", f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
@@ -155,6 +138,8 @@ def worker():
 
 @dataclass
 class PaymentToken:
+    """Payment Token class"""
+
     id: Optional[str] = None
     status_code: Optional[str] = None
     filing_identifier: Optional[str] = None

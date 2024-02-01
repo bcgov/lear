@@ -25,9 +25,7 @@ from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import conversion
-
-from tests.unit import create_filing
-from tests.unit import nested_session
+from tests.unit import create_filing, nested_session
 
 
 def test_conversion_process_with_nr(app, session):
@@ -51,18 +49,10 @@ def test_conversion_process_with_nr(app, session):
     # Assertions
     assert business.identifier == identifier
     assert business.founding_date == effective_date
-    assert (
-        business.entity_type
-        == filing["filing"]["conversion"]["nameRequest"]["legalType"]
-    )
-    assert (
-        business.legal_name
-        == filing["filing"]["conversion"]["nameRequest"]["legalName"]
-    )
+    assert business.entity_type == filing["filing"]["conversion"]["nameRequest"]["legalType"]
+    assert business.legal_name == filing["filing"]["conversion"]["nameRequest"]["legalName"]
     assert len(business.share_classes.all()) == 2
-    assert (
-        len(business.offices.all()) == 2
-    )  # One office is created in create_business method.
+    assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
 
 def test_conversion_process_no_nr(app, session):
@@ -82,15 +72,10 @@ def test_conversion_process_no_nr(app, session):
     # Assertions
     assert business.identifier == identifier
     assert business.founding_date == effective_date
-    assert (
-        business.entity_type
-        == filing["filing"]["conversion"]["nameRequest"]["legalType"]
-    )
+    assert business.entity_type == filing["filing"]["conversion"]["nameRequest"]["legalType"]
     assert business.legal_name == business.identifier[2:] + " B.C. LTD."
     assert len(business.share_classes.all()) == 2
-    assert (
-        len(business.offices.all()) == 2
-    )  # One office is created in create_business method.
+    assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
 
 def test_conversion_coop_from_colin(app, session):
@@ -125,17 +110,10 @@ def test_conversion_coop_from_colin(app, session):
 
     # Assertions
     assert business.identifier == identifier
-    assert business.founding_date.replace(tzinfo=None) == effective_date.replace(
-        tzinfo=None
-    )
-    assert (
-        business.entity_type
-        == filing["filing"]["conversion"]["nameRequest"]["legalType"]
-    )
+    assert business.founding_date.replace(tzinfo=None) == effective_date.replace(tzinfo=None)
+    assert business.entity_type == filing["filing"]["conversion"]["nameRequest"]["legalType"]
     assert business.legal_name == "Test"
-    assert (
-        len(business.offices.all()) == 2
-    )  # One office is created in create_business method.
+    assert len(business.offices.all()) == 2  # One office is created in create_business method.
 
 
 @pytest.mark.parametrize(
@@ -175,17 +153,10 @@ def test_conversion_bc_company_from_colin(app, session, legal_type, legal_name_s
 
         # Assertions
         assert business.identifier == identifier
-        assert business.founding_date.replace(tzinfo=None) == effective_date.replace(
-            tzinfo=None
-        )
-        assert (
-            business.entity_type
-            == filing["filing"]["conversion"]["nameRequest"]["legalType"]
-        )
+        assert business.founding_date.replace(tzinfo=None) == effective_date.replace(tzinfo=None)
+        assert business.entity_type == filing["filing"]["conversion"]["nameRequest"]["legalType"]
         assert business.legal_name == f"{business.identifier[2:]} {legal_name_suffix}"
-        assert (
-            len(business.offices.all()) == 2
-        )  # One office is created in create_business method.
+        assert len(business.offices.all()) == 2  # One office is created in create_business method.
         assert len(business.share_classes.all()) == 2
         assert len(business.entity_roles.all()) == 2
         assert len(filing_rec.filing_entity_roles.all()) == 3

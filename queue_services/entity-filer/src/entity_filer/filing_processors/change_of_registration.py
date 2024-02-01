@@ -17,22 +17,20 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from business_model import db, Address, AlternateName, LegalEntity, Filing
-from entity_filer.exceptions.default_exception import DefaultException
+from business_model import Address, AlternateName, Filing, LegalEntity, db
 
+from entity_filer.exceptions.default_exception import DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
-    filings,
-    legal_entity_info,
-    name_request,
-    update_address,
+from entity_filer.filing_processors.filing_components import filings, legal_entity_info, name_request, update_address
+from entity_filer.filing_processors.filing_components.alternate_name import (
+    update_partner_change,
+    update_proprietor_change,
 )
 from entity_filer.filing_processors.filing_components.parties import get_or_create_party, merge_all_parties
 from entity_filer.filing_processors.registration import get_partnership_name
-from entity_filer.filing_processors.filing_components.alternate_name import update_partner_change, update_proprietor_change
 
 
-def  process(
+def process(
     legal_entity: LegalEntity,
     change_filing_rec: Filing,
     change_filing: Dict,
@@ -47,22 +45,19 @@ def  process(
                 filing_type="changeOfRegistration",
                 change_filing_rec=change_filing_rec,
                 change_filing=change_filing,
-                filing_meta=filing_meta.change_of_registration
+                filing_meta=filing_meta.change_of_registration,
             )
-        case _: # LegalEntity.EntityTypes.SOLE_PROP: # legal_entity might be a proprietor?
+        case _:  # LegalEntity.EntityTypes.SOLE_PROP: # legal_entity might be a proprietor?
             update_proprietor_change(
-                legal_entity=legal_entity,
                 filing_type="changeOfRegistration",
                 change_filing_rec=change_filing_rec,
                 change_filing=change_filing,
-                filing_meta=filing_meta.change_of_registration
+                filing_meta=filing_meta.change_of_registration,
             )
-        
+
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
-        business_office_json = dpath.util.get(
-            change_filing, "/changeOfRegistration/offices/businessOffice"
-        )
+        business_office_json = dpath.util.get(change_filing, "/changeOfRegistration/offices/businessOffice")
         for updated_address in business_office_json.values():
             if updated_address.get("id", None):
                 address = Address.find_by_id(updated_address.get("id"))
@@ -76,9 +71,7 @@ def  process(
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(
-            change_filing, "/changeOfRegistration/courtOrder"
-        )
+        court_order_json = dpath.util.get(change_filing, "/changeOfRegistration/courtOrder")
         filings.update_filing_court_order(change_filing_rec, court_order_json)
 
 

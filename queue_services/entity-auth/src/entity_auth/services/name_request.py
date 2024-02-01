@@ -16,11 +16,12 @@ import json
 from http import HTTPStatus
 
 import requests
-from flask import current_app, request
 from business_model import Filing, LegalEntity, RegistrationBootstrap
+from flask import current_app, request
 
 from entity_auth.exceptions import NamexException
 from entity_auth.services.logging import structured_log
+
 from .bootstrap import AccountService
 
 
@@ -52,13 +53,9 @@ def consume_nr(legal_entity: LegalEntity, filing: Filing):
                 raise NamexException
 
             # remove the NR from the account
-            if filing.temp_reg and (
-                bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-            ):
+            if filing.temp_reg and (bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)):
                 AccountService.delete_affiliation(bootstrap.account, nr_num)
-    except (
-        Exception
-    ):  # pylint: disable=broad-except; note out any exception, but don't fail the call
+    except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         structured_log(
             request,
             "ERROR",

@@ -13,16 +13,14 @@
 # limitations under the License.
 """The Unit Tests for the Special Resolution filing."""
 import copy
-import pytest
 
-from registry_schemas.example_data import (
-    SPECIAL_RESOLUTION as special_resolution_json,
-    FILING_HEADER,
-)
+import pytest
+from business_model import Resolution
+from registry_schemas.example_data import FILING_HEADER
+from registry_schemas.example_data import SPECIAL_RESOLUTION as special_resolution_json
 
 from entity_filer.filing_processors import special_resolution
 from tests.unit import create_business, create_filing
-from business_model import Resolution
 
 
 @pytest.mark.parametrize(
@@ -31,9 +29,7 @@ from business_model import Resolution
         ("CP", "CP1234567", "specialResolution"),
     ],
 )
-def test_special_resolution(
-    app, session, legal_type, identifier, special_resolution_type
-):
+def test_special_resolution(app, session, legal_type, identifier, special_resolution_type):
     """Assert that the resolution is processed."""
     # setup
     filing_json = copy.deepcopy(FILING_HEADER)

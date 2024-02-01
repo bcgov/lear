@@ -14,8 +14,8 @@
 """Manages the  names of a Business."""
 from typing import Dict
 
-from flask_babel import _ as babel  # noqa: N813
 from business_model import Alias, LegalEntity
+from flask_babel import _ as babel  # noqa: N813
 
 
 def update_aliases(business: LegalEntity, aliases) -> Dict:
@@ -25,15 +25,11 @@ def update_aliases(business: LegalEntity, aliases) -> Dict:
 
     for alias in aliases:
         if (alias_id := alias.get("id")) and (
-            existing_alias := next(
-                (x for x in business.aliases.all() if str(x.id) == alias_id), None
-            )
+            existing_alias := next((x for x in business.aliases.all() if str(x.id) == alias_id), None)
         ):
             existing_alias.alias = alias["name"].upper()
         else:
-            new_alias = Alias(
-                alias=alias["name"].upper(), type=Alias.AliasType.TRANSLATION.value
-            )
+            new_alias = Alias(alias=alias["name"].upper(), type=Alias.AliasType.TRANSLATION.value)
             business.aliases.append(new_alias)
 
     for current_alias in business.aliases.all():
