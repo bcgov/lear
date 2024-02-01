@@ -30,9 +30,9 @@ def consume_nr(business: LegalEntity, filing: Filing, filing_type="incorporation
     """Update the nr to a consumed state."""
     try:
         # skip this if none (nrNumber will not be available for numbered company)
-        if nr_num := get_str(
+        if nr_num := get_str(  # noqa F841; remove this comment when below is done
             filing.filing_json, f"/filing/{filing_type}/nameRequest/nrNumber"
-        ):  # noqa F841; remove this comment when below is done
+        ):
             pass
 
             # TODO Consume NR

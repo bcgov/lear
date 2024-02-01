@@ -41,9 +41,9 @@ def update_affiliation(business: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-        pass_code = legal_entity_info.get_firm_affiliation_passcode(
+        pass_code = legal_entity_info.get_firm_affiliation_passcode(  # noqa F841; remove this when below is done
             business.id
-        )  # noqa F841; remove this comment when below is done
+        )
 
         nr_number = filing.filing_json.get("filing").get("registration", {}).get("nameRequest", {}).get("nrNumber")
         details = {  # noqa F841; remove this comment when below is done
