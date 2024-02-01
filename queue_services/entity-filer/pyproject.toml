@@ -144,9 +144,12 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = [
-   ".",
+   "src/entity-filer",
 ]
-omit = []
+omit = [
+    "wsgi.py",
+    "gunicorn_config.py"
+]
 
 [tool.coverage.report]
 exclude_lines = [
