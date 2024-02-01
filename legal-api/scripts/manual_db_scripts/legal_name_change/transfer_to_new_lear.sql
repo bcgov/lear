@@ -963,6 +963,9 @@ SELECT setval('legal_entity_identifier_coop', (select MAX(CAST(substring(identif
 SELECT setval('legal_entity_identifier_sp_gp', (select MAX(CAST(substring(identifier, '(1[0-9]{6})') AS INTEGER)) + 1
                                                 from legal_entities
                                                 where entity_type in ('SP', 'GP')));
+SELECT setval('legal_entity_identifier_person', (select MAX(CAST(substring(identifier, '(1[0-9]{6})') AS INTEGER)) + 1
+                                                from legal_entities
+                                                where lower(entity_type) = 'person'));
 SELECT setval('filings_id_seq', (select coalesce(max(id) + 1, 1) FROM public.filings));
 SELECT setval('addresses_id_seq', (select coalesce(max(id) + 1, 1) FROM public.addresses));
 SELECT setval('aliases_id_seq', (select coalesce(max(id) + 1, 1) FROM public.aliases));

@@ -1487,6 +1487,43 @@ $$ LANGUAGE plpgsql;
 
 SELECT update_legal_name();
 
+
+-- Update all identifiers for person LEs in legal_entities to use format 'P1234567'
+UPDATE legal_entities
+SET identifier = 'P' || LPAD(nextval('legal_entity_identifier_person')::text, 7, '0')
+WHERE LOWER(entity_type) = 'person';
+
+
+-- Update all identifiers for person LEs in legal_entities_history with corresponding identifiers in legal_entities
+WITH legal_entities_person AS (
+    SELECT
+        leh.id, le.identifier, le.entity_type
+    FROM legal_entities_history leh
+    LEFT JOIN legal_entities le ON leh.id = le.id 
+)
+UPDATE legal_entities_history leh
+SET identifier = lep.identifier, entity_type = lep.entity_type
+FROM legal_entities_person lep
+WHERE leh.id = lep.id AND LOWER(lep.entity_type) = 'person';
+
+
+-- Update all identifiers for person LEs that only exist in legal_entities_history
+WITH legal_entities_history_person AS (
+    SELECT 
+        temp.id, nextval('legal_entity_identifier_person') as seq_value
+    FROM(
+        SELECT
+            DISTINCT leh.id
+        FROM legal_entities_history leh
+        WHERE leh.identifier IS NULL and LOWER(leh.entity_type) = 'person'
+    ) AS temp
+)
+UPDATE legal_entities_history leh
+SET identifier = 'P' || LPAD(seq_value::text, 7, '0')
+FROM legal_entities_history_person lehp
+WHERE leh.id = lehp.id;
+
+
 -- TODO: create update_legal_name_history() to update legal_name for legal_entities_history
 
 
