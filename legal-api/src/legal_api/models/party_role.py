@@ -127,7 +127,7 @@ class PartyRole(db.Model):
         """Return the parties that match the filter conditions."""
         party_roles = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id)
-        
+
         if end_date is not None:
             party_roles = party_roles.filter(cast(PartyRole.appointment_date, Date) <= end_date). \
                 filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
