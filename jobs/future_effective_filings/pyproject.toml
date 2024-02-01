@@ -5,7 +5,6 @@ description = ""
 authors = ["karimjazzar <karim@jazzar.ca>"]
 license = "Apache 2.0"
 readme = "README.md"
-packages = [{include = "future_effective_filings"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
