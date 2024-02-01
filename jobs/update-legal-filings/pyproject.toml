@@ -124,6 +124,49 @@ exclude-protected = ["_asdict", "_fields", "_replace", "_source", "_make", "os._
 valid-classmethod-first-arg = ["cls"]
 valid-metaclass-classmethod-first-arg = ["mcs"]
 
+[tool.pytest.ini_options]
+minversion = "2.0"
+testpaths = [
+   "tests",
+]
+addopts = "--verbose --strict -p no:warnings --cov=. --cov-report html:htmlcov --cov-report xml:coverage.xml"
+python_files = [
+   "test*.py"
+]
+norecursedirs = [
+   ".git", ".tox", "venv*", "requirements*", "build",
+]
+log_cli = true
+log_cli_level = "1"
+filterwarnings = [
+   "ignore::UserWarning"
+]
+markers = [
+   "slow",
+   "serial",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+   ".",
+]
+omit = []
+
+[tool.coverage.report]
+exclude_lines = [
+   "pragma: no cover",
+   "from",
+   "import",
+   "def __repr__",
+   "if self.debug:",
+   "if settings.DEBUG",
+   "raise AssertionError",
+   "raise NotImplementedError",
+   "if 0:",
+   'if __name__ == "__main__":',
+]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
