@@ -41,6 +41,7 @@ pg8000 = "^1.29.8"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
+pytest-cov = "^4.0.0"
 pytest-mock = "^3.11.1"
 requests-mock = "^1.11.0"
 black = "^23.12.1"
