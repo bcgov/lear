@@ -56,6 +56,8 @@ def get_parties(identifier, party_id=None):
             if request.args.get("date")
             else datetime.utcnow().date()
         )
+        if str(request.args.get('all', None)).lower() == 'true':
+            end_date = None
         party_roles = EntityRole.get_entity_roles(business.id, end_date, request.args.get("role"))
 
     party_role_dict = {}
