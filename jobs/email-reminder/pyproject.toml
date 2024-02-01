@@ -54,11 +54,13 @@ exclude_dirs = [".venv","tests"]
 skips = ["B104"]
 
 [tool.flake8]
-ignore = ["F401","E402", "Q000", "E203", "W503", "W504" ]
+ignore = ["F401","E402", "Q000", "E203", "W503"]
 exclude = [
     ".venv",
     ".git",
-    "*migrations*"
+    ".history",
+    "devops",
+    "*migrations*",
 ]
 per-file-ignores = [
     "__init__.py:F401",
@@ -69,10 +71,23 @@ docstring-min-length=10
 count = true
 
 [tool.black]
+target-version =  ["py310", "py311", "py312"]
 line-length = 120
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # The following are specific to Black, you probably don't want those.
+  migrations
+  | devops
+)/
+'''
 
 [tool.isort]
+atomic = true
 profile = "black"
+line_length = 120
+skip_gitignore = true
+skip_glob = ["migrations", "devops"]
 
 [tool.pylint.main]
 fail-under = 10
