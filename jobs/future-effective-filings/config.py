@@ -43,7 +43,6 @@ import sys
 
 from dotenv import find_dotenv, load_dotenv
 
-
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
@@ -55,7 +54,7 @@ CONFIGURATION = {
 }
 
 
-class Config(object):  # pylint: disable=too-few-public-methods
+class Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -68,12 +67,8 @@ class Config(object):  # pylint: disable=too-few-public-methods
 
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     ENTITY_FILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "filer")
-    AUDIENCE = os.getenv(
-        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
-    )
-    PUBLISHER_AUDIENCE = os.getenv(
-        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
-    )
+    AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
+    PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
 
     # API Endpoints
     BUSINESS_API_URL = os.getenv("BUSINESS_API_URL", "")
