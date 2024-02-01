@@ -4,18 +4,18 @@ on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "jobs/future_effective_filings/**"
+      - "jobs/future-effective-filings/**"
   workflow_dispatch:
 
 defaults:
   run:
     shell: bash
-    working-directory: ./jobs/future_effective_filings
+    working-directory: ./jobs/future-effective-filings
 
 jobs:
   business-future-effective-filings-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "business-future_effective_filings"
-      working_directory: "./jobs/future_effective_filings"
+      working_directory: "./jobs/future-effective-filings"
       codecov_flag: "futureeffective"

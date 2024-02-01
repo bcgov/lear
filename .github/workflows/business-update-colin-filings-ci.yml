@@ -4,18 +4,18 @@ on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "jobs/update_colin_filings/**"
+      - "jobs/update-colin-filings/**"
   workflow_dispatch:
 
 defaults:
   run:
     shell: bash
-    working-directory: ./jobs/update_colin_filings
+    working-directory: ./jobs/update-colin-filings
 
 jobs:
   business-update-colin-filings-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "business-future-effective-filings"
-      working_directory: "./jobs/update_colin_filings"
+      working_directory: "./jobs/update-colin-filings"
       codecov_flag: "updatecolin"
