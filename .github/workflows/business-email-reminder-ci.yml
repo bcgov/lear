@@ -4,18 +4,18 @@ on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "jobs/email-reminder/**"
+      - "jobs/email_reminder/**"
   workflow_dispatch:
 
 defaults:
   run:
     shell: bash
-    working-directory: ./jobs/email-reminder
+    working-directory: ./jobs/email_reminder
 
 jobs:
   business-email-reminder-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "business-email-reminder"
-      working_directory: "./jobs/email-reminder"
+      working_directory: "./jobs/email_reminder"
       codecov_flag: "emailreminder"
