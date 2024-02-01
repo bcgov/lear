@@ -16,6 +16,6 @@ jobs:
   business-update-colin-filings-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
-      app_name: "business-future-effective-filings"
+      app_name: "business-update-colin-filings"
       working_directory: "./jobs/update-colin-filings"
       codecov_flag: "updatecolin"
