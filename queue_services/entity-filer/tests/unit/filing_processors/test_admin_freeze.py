@@ -67,7 +67,7 @@ def test_worker_admin_freeze(app, session, mocker):
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
 
-    assert business.admin_freeze == True
+    assert business.admin_freeze is True
     assert business.state_filing_id is None
     assert business.dissolution_date is None
     assert filing_json["filing"]["adminFreeze"]["details"] == final_filing.order_details

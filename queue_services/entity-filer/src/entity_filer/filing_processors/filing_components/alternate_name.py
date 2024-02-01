@@ -18,7 +18,7 @@ import datetime
 from typing import Dict, List, Optional, Tuple
 
 import dpath
-from business_model import AlternateName, Filing, LegalEntity, db
+from business_model import AlternateName, Filing, LegalEntity
 
 from entity_filer import db
 from entity_filer.exceptions import DefaultException

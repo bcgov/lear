@@ -248,7 +248,7 @@ def merge_all_parties(legal_entity: LegalEntity, filing: Filing, parties: dict) 
                         )
 
                     case "Proprietor":
-                        print(f"Proprietor role being skipped.")
+                        print("Proprietor role being skipped.")
 
                     case _:
                         errors.append({"warning": f"role: {role_type} not assigned to party:{party_le}"})

@@ -85,7 +85,6 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
         legal_entity_id=business.id,
     )
     party_role.save()
-    curr_roles = len(business.entity_roles.all())
 
     business.dissolution_date = None
     business_id = business.id
@@ -104,7 +103,6 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
     assert business.state == LegalEntity.State.HISTORICAL
     assert business.state_filing_id == filing.id
     assert len(business.entity_roles.all()) == 2
-    entity_roles = filing.filing_entity_roles.all()
     assert len(filing.filing_entity_roles.all()) == 2
 
     custodial_office = (
@@ -187,7 +185,6 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
         legal_entity_id=business.id,
     )
     party_role.save()
-    curr_roles = len(business.entity_roles.all())
 
     business.dissolution_date = None
     business_id = business.id

@@ -207,7 +207,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
 
         dir_path = os.path.dirname(business_model_migrations.__file__)
 
-        migrate = Migrate(app, _db, directory=dir_path, **{"dialect_name": "postgres"})
+        migrate = Migrate(app, _db, directory=dir_path, **{"dialect_name": "postgres"})  # noqa F841
         upgrade()
 
         yield _db

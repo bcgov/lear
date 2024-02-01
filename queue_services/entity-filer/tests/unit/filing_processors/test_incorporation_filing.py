@@ -62,7 +62,9 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     with nested_session(session):
-        with patch.object(legal_entity_info, "get_next_corp_num", return_value=next_corp_num) as mock_get_next_corp_num:
+        with patch.object(
+            legal_entity_info, "get_next_corp_num", return_value=next_corp_num
+        ) as mock_get_next_corp_num:  # noqa F841
             identifier = "NR 1234567"
             filing["filing"]["incorporationApplication"]["nameRequest"]["nrNumber"] = identifier
             filing["filing"]["incorporationApplication"]["nameRequest"]["legalType"] = legal_type
@@ -109,7 +111,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
                 # assert len(documents) == 2
                 # for document in documents:
                 #     if document.type == DocumentType.COOP_RULES.value:
-                #         original_rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+                #         original_rules_key = filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']  # noqa E501; line too long
                 #         assert document.file_key == original_rules_key
                 #         assert MinioService.get_file(document.file_key)
                 #     elif document.type == DocumentType.COOP_MEMORANDUM.value:

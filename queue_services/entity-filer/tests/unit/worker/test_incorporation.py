@@ -25,7 +25,7 @@ import pytest
 
 # # from entity_queue_common.messages import get_data_from_msg
 # from entity_queue_common.service_utils import subscribe_to_queue
-from business_model import EntityRole, Filing, LegalEntity, RegistrationBootstrap
+from business_model import EntityRole, Filing, LegalEntity
 from flask import current_app
 
 # from legal_api.services import RegistrationBootstrapService

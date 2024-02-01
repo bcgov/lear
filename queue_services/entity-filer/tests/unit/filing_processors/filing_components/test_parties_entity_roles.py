@@ -37,7 +37,7 @@ D - If one exists and a new one is C, then delete the old one
  Director              X                                            CUD
  Incorporator          X        X                      CU           CU
  Liquidator            X                                            CUD
- Partner               X        X                                   CUD 
+ Partner               X        X                                   CUD
  Proprietor            X        X                                    C
 
 """

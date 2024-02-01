@@ -120,7 +120,6 @@ def test_conversion(
 
 def test_worker_proprietor_new_address(app, session, mocker):
     """Assert the worker process the party new address correctly."""
-    identifier = "FM1234567"
 
     party = create_entity_person(SP_CONVERSION["filing"]["conversion"]["parties"][0])
     party_id = party.id

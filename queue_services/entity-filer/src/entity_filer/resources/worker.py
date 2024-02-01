@@ -113,7 +113,7 @@ def worker():
     # ##
     try:
         process_filing(filing_message)
-    except (AttributeError, BusinessException, DefaultException) as err:
+    except (AttributeError, BusinessException, DefaultException) as err:  # noqa F841
         return {"error": f"Unable to process filing: {filing_message}"}, HTTPStatus.BAD_REQUEST
 
     structured_log(request, "INFO", f"completed ce: {str(ce)}")

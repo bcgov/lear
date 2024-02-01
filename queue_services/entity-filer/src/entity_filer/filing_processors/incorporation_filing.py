@@ -75,7 +75,7 @@ def update_affiliation(business: LegalEntity, filing: Filing):
 
 
 def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Filing):
-    cooperative_obj = incorp_filing.get("cooperative", None)
+    cooperative_obj = incorp_filing.get("cooperative", None)  # noqa F841; remove this comment when below is done
     # TODO remove all this
     # if cooperative_obj:
     #     # create certified copy for rules document

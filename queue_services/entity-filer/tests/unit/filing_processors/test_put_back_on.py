@@ -36,8 +36,6 @@ def test_worker_put_back_on(app, session):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = create_filing(payment_id, filing_json, business_id=business.id)
 
-    filing_msg = {"filing": {"id": filing.id}}
-
     filing_meta = FilingMeta()
     filing = create_filing("123", filing_json)
 

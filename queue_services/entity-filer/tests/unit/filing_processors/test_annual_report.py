@@ -37,7 +37,6 @@ def test_process_ar_filing(app, session):
 
     # setup
     business = create_business(identifier, "CP")
-    business_id = business.id
     now = datetime.date(2020, 9, 17)
     ar_date = datetime.date(2020, 8, 5)
     agm_date = datetime.date(2020, 7, 1)
@@ -51,8 +50,6 @@ def test_process_ar_filing(app, session):
     # TEST
     with freeze_time(now):
         filing = create_filing(payment_id, ar, business.id)
-        filing_id = filing.id
-        filing_msg = FilingMessage(filing_identifier=filing_id)
         annual_report.process(business, filing.filing_json["filing"], filing_meta=filing_meta)
 
     # check it out

@@ -124,8 +124,7 @@ def merge_party(legal_entity_id: int, party_info: dict, create: bool = True) -> 
 
 def create_entity_party(legal_entity_id: int, party_info: dict, create: bool = True) -> LegalEntity:
     """Create a new party or get them if they already exist."""
-    # HERE
-    legal_entity = None
+
     if not (middle_initial := party_info["officer"].get("middleInitial")):
         middle_initial = party_info["officer"].get("middleName", "")
 

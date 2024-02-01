@@ -58,10 +58,13 @@ def process(
         )
     # if legal_entity and legal_entity.entity_type in ['SP', 'GP']:
     if filing["filing"]["business"]["legalType"] in ["SP", "GP"]:
-        if legal_entity and not legal_entity.entity_type in [
-            LegalEntity.EntityTypes.PERSON,
-            LegalEntity.EntityTypes.PARTNERSHIP,
-        ]:
+        if legal_entity and not (
+            legal_entity.entity_type
+            in [
+                LegalEntity.EntityTypes.PERSON,
+                LegalEntity.EntityTypes.PARTNERSHIP,
+            ]
+        ):
             raise DefaultException(f"Filing business type and entity don't match, filing{filing_rec.id}")
         _process_firms_conversion(legal_entity, filing, filing_rec, filing_meta)
     else:
