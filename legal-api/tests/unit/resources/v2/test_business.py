@@ -491,7 +491,8 @@ def test_post_affiliated_businesses(session, client, jwt):
             json_data["filing"]["header"]["identifier"] = draft_business[0]
             json_data["filing"]["header"]["legalType"] = draft_business[2]
             if draft_business[3]:
-                json_data["filing"][filing_name] = {"nameRequest": {"nrNumber": draft_business[3]}}
+                json_data["filing"][filing_name] = {"nameRequest": {"nrNumber": draft_business[3],
+                                'legalName': 'name example'}}
             if filing_name == "amalgamationApplication":
                 json_data["filing"][filing_name] = {**json_data["filing"][filing_name], "type": "regular"}
             filing = factory_pending_filing(None, json_data)
@@ -510,6 +511,16 @@ def test_post_affiliated_businesses(session, client, jwt):
         assert len(rv.json["businessEntities"]) == len(businesses)
         assert len(rv.json["draftEntities"]) == len(draft_businesses) - len(old_draft_businesses)
 
+    # verify 'legalName' for each draft entity
+    for draft_entity in rv.json['draftEntities']:
+        identifier = draft_entity['identifier']
+        expected_draft_business = next((draftb for draftb in draft_businesses if draftb[0] == identifier), None)
+        if expected_draft_business and expected_draft_business[3]:
+            # if NR number is present, assert 'legalName' is also expected to be present
+            assert 'legalName' in draft_entity
+        else:
+            # assert 'legalName' is None or empty if no NR number is provided
+            assert draft_entity.get('legalName') is None or draft_entity.get('legalName') == ''
 
 def test_post_affiliated_businesses_unathorized(session, client, jwt):
     """Assert that the affiliated businesses endpoint unauthorized if not a system token."""
