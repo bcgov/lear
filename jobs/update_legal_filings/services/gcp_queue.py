@@ -56,6 +56,7 @@ from werkzeug.local import LocalProxy
 
 class GcpQueue:
     """This class representing a GcpQueue"""
+
     def __init__(self, app: Flask = None):
         self.audience = None
         self.credentials_pub = None

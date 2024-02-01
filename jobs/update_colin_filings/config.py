@@ -28,7 +28,20 @@ CONFIGURATION = {
 }
 
 
-class _Config():  # pylint: disable=too-few-public-methods
+def get_named_config(config_name: str = "production"):
+    """Return the configuration object based on the name."""
+    if config_name in ["production", "staging", "default"]:
+        config = ProdConfig()
+    elif config_name == "testing":
+        config = TestConfig()
+    elif config_name == "development":
+        config = DevConfig()
+    else:
+        raise KeyError(f"Unknown configuration '{config_name}'")
+    return config
+
+
+class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration."""
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -51,13 +64,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_ID")
     ACCOUNT_SVC_TIMEOUT = os.getenv("KEYCLOAK_TIMEOUT")
-
-    # GCP QUEUE
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
-    ENTITY_MAILER_TOPIC = os.getenv("ENTITY_MAILER_TOPIC", "mailer")
-    ENTITY_EVENTS_TOPIC = os.getenv("ENTITY_EVENTS_TOPIC", "events")
-    AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
-    PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
 
     TESTING = False
     DEBUG = False

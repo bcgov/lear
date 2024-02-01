@@ -287,8 +287,9 @@ async def publish_queue_events(tax_ids: dict, application: Flask):  # pylint: di
                 data={"filingId": None, "type": "businessNumber", "option": "bn", "identifier": identifier},
             )
             mail_topic = application.config.get("ENTITY_EMAILER_TOPIC", "mailer")
-            qsm.publish(topic=mail_topic,  # pylint: disable=used-before-assignment
-                        payload=qsm.to_queue_message(cloud_event))
+            qsm.publish(  # pylint: disable=used-before-assignment
+                topic=mail_topic, payload=qsm.to_queue_message(cloud_event)
+            )
         except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
             # mark any failure for human review
             application.logger.debug(err)
