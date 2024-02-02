@@ -174,10 +174,11 @@ def search_businesses():
                 'identifier': x.temp_reg,
                 'legalType': x.json_legal_type,
                 **({'nrNumber': x.json_nr} if x.json_nr else {}),
-                **({'legalName': x.filing_json.get('filing', {})
-                    .get(x.filing_type, {})
-                    .get('nameRequest', {})
-                    .get('legalName')})
+                'legalName': (x.filing_json.get('filing', {})
+                              .get(x.filing_type, {})
+                              .get('nameRequest', {})
+                              .get('legalName')),
+                'draftType': Filing.FILINGS[x.filing_type]['temporaryCorpTypeCode']
             } for x in draft_query.all()]
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
