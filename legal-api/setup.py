@@ -23,8 +23,8 @@ from setuptools import find_packages, setup
 _version_re = re.compile(r"__version__\s+=\s+(.*)")  # pylint: disable=invalid-name
 
 with open("src/legal_api/version.py", "rb") as f:
-    version = str(
-        ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1))  # pylint: disable=invalid-name
+    version = str(  # pylint: disable=invalid-name
+        ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1))
     )
 
 

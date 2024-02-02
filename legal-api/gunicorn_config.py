@@ -17,7 +17,7 @@
 
 import os
 
-import gunicorn_server
+import gunicorn_server  # pylint: disable=import-error
 
 workers = int(os.environ.get("GUNICORN_PROCESSES", "1"))  # pylint: disable=invalid-name
 threads = int(os.environ.get("GUNICORN_THREADS", "1"))  # pylint: disable=invalid-name
