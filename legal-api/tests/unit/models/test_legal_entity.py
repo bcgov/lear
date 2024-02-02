@@ -32,7 +32,7 @@ from legal_api.models import (
     ColinEntity,
     EntityRole,
     Filing,
-    LegalEntity
+    LegalEntity,
 )
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
@@ -501,42 +501,45 @@ def test_continued_in_business(session):
     )
 
 
-@pytest.mark.parametrize('test_name,existing_business_state', [
-    ('EXIST', LegalEntity.State.HISTORICAL),
-    ('NOT_EXIST', LegalEntity.State.ACTIVE),
-])
+@pytest.mark.parametrize(
+    "test_name,existing_business_state",
+    [
+        ("EXIST", LegalEntity.State.HISTORICAL),
+        ("NOT_EXIST", LegalEntity.State.ACTIVE),
+    ],
+)
 def test_amalgamated_into_business_json(session, test_name, existing_business_state):
     """Assert that the amalgamated into is in json."""
     filing = Filing()
     filing.save()
 
     existing_business = LegalEntity(
-        legal_name='Test - Amalgamating Legal Name',
-        legal_type='BC',
+        legal_name="Test - Amalgamating Legal Name",
+        legal_type="BC",
         founding_date=datetime.utcfromtimestamp(0),
         dissolution_date=datetime.now(),
-        identifier='BC1234567',
+        identifier="BC1234567",
         state=existing_business_state,
-        state_filing_id=filing.id
+        state_filing_id=filing.id,
     )
     existing_business.save()
 
-    if test_name == 'EXIST':
+    if test_name == "EXIST":
         business = LegalEntity(
-            legal_name='Test - Legal Name',
-            legal_type='BC',
+            legal_name="Test - Legal Name",
+            legal_type="BC",
             founding_date=datetime.utcfromtimestamp(0),
-            identifier='BC1234568',
+            identifier="BC1234568",
             state=LegalEntity.State.ACTIVE,
         )
         amalgamation = Amalgamation()
         amalgamation.filing_id = filing.id
-        amalgamation.amalgamation_type = 'regular'
+        amalgamation.amalgamation_type = "regular"
         amalgamation.amalgamation_date = datetime.now()
         amalgamation.court_approval = True
 
         amalgamating_business = AmalgamatingBusiness()
-        amalgamating_business.role = 'amalgamating'
+        amalgamating_business.role = "amalgamating"
         amalgamating_business.legal_entity_id = existing_business.id
         amalgamation.amalgamating_businesses.append(amalgamating_business)
 
@@ -545,17 +548,17 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
 
     business_json = existing_business.json()
 
-    if test_name == 'EXIST':
-        assert not 'stateFiling' in business_json
-        assert 'amalgamatedInto' in business_json
-        assert business_json['amalgamatedInto']['amalgamationDate'] == amalgamation.amalgamation_date.isoformat()
-        assert business_json['amalgamatedInto']['amalgamationType'] == amalgamation.amalgamation_type.name
-        assert business_json['amalgamatedInto']['courtApproval'] == amalgamation.court_approval
-        assert business_json['amalgamatedInto']['identifier'] == business.identifier
-        assert business_json['amalgamatedInto']['legalName'] == business.legal_name
+    if test_name == "EXIST":
+        assert "stateFiling" not in business_json
+        assert "amalgamatedInto" in business_json
+        assert business_json["amalgamatedInto"]["amalgamationDate"] == amalgamation.amalgamation_date.isoformat()
+        assert business_json["amalgamatedInto"]["amalgamationType"] == amalgamation.amalgamation_type.name
+        assert business_json["amalgamatedInto"]["courtApproval"] == amalgamation.court_approval
+        assert business_json["amalgamatedInto"]["identifier"] == business.identifier
+        assert business_json["amalgamatedInto"]["legalName"] == business.legal_name
     else:
-        assert not 'amalgamatedInto' in business_json
-        assert 'stateFiling' in business_json
+        assert "amalgamatedInto" not in business_json
+        assert "stateFiling" in business_json
 
 
 @pytest.mark.parametrize("entity_type", [("CP"), ("BEN"), ("BC"), ("ULC"), ("CC")])

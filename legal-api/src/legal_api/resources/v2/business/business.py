@@ -109,7 +109,7 @@ def post_businesses():
     valid_filing_types = [
         Filing.FILINGS["incorporationApplication"]["name"],
         Filing.FILINGS["registration"]["name"],
-        Filing.FILINGS["amalgamationApplication"]["name"]
+        Filing.FILINGS["amalgamationApplication"]["name"],
     ]
 
     try:
@@ -127,8 +127,7 @@ def post_businesses():
             title = Filing.FILINGS[filing_type][filing_sub_type]["title"]
         else:
             title = Filing.FILINGS[filing_type]["title"]
-        return {"error": babel("Unable to create {0} Filing.".format(title))}, \
-            HTTPStatus.SERVICE_UNAVAILABLE
+        return {"error": babel("Unable to create {0} Filing.".format(title))}, HTTPStatus.SERVICE_UNAVAILABLE
 
     try:
         business_name = json_input["filing"][filing_type]["nameRequest"]["nrNumber"]

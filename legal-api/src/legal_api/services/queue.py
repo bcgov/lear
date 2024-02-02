@@ -63,7 +63,7 @@ class QueueService:
             "name": self.name,
             "io_loop": self.loop,
             "servers": self.nats_servers,
-            "connect_timeout": app.config.get("NATS_CONNECT_TIMEOUT", DEFAULT_CONNECT_TIMEOUT),
+            # "connect_timeout": app.config.get("NATS_CONNECT_TIMEOUT", DEFAULT_CONNECT_TIMEOUT),
             # NATS handlers
             "error_cb": self.on_error,
             "closed_cb": self.on_close,
@@ -103,8 +103,9 @@ class QueueService:
         ctx = _app_ctx_stack.top
         if ctx:
             if not hasattr(ctx, "nats"):
-                ctx.nats = NATS()
-                ctx.stan = STAN()
+                # ctx.nats = NATS()
+                # ctx.stan = STAN()
+                pass
 
             if not ctx.nats.is_connected:
                 self.stan_options = {**self.stan_options, **{"nats": ctx.nats}}

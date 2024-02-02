@@ -21,12 +21,7 @@ from http import HTTPStatus
 
 import pytest
 
-from legal_api.services.authz import (
-    ACCOUNT_IDENTITY,
-    PUBLIC_USER,
-    STAFF_ROLE,
-    SYSTEM_ROLE,
-)
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit.models import Address, Office, factory_legal_entity
 from tests.unit.services.utils import create_header
 

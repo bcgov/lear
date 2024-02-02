@@ -19,9 +19,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import LegalEntity
-from legal_api.services.filings.validations.common_validations import (
-    validate_name_request,
-)
+from legal_api.services.filings.validations.common_validations import validate_name_request
 from legal_api.services.filings.validations.registration import (
     validate_naics,
     validate_offices,

@@ -25,9 +25,7 @@ from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.utils.util import build_schema_error_response
 
-from .comment import (  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
-    Comment,
-)
+from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .db import db  # noqa: I001
 
 
@@ -62,22 +60,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         "agmExtension": {
             "name": "agmExtension",
             "title": "AGM Extension",
-            "codes": {
-                "BC": "AGMDT",
-                "BEN": "AGMDT",
-                "ULC": "AGMDT",
-                "CC": "AGMDT"
-            }
+            "codes": {"BC": "AGMDT", "BEN": "AGMDT", "ULC": "AGMDT", "CC": "AGMDT"},
         },
         "agmLocationChange": {
             "name": "agmLocationChange",
             "title": "AGM Change of Location",
-            "codes": {
-                "BC": "AGMLC",
-                "BEN": "AGMLC",
-                "ULC": "AGMLC",
-                "CC": "AGMLC"
-            }
+            "codes": {"BC": "AGMLC", "BEN": "AGMLC", "ULC": "AGMLC", "CC": "AGMLC"},
         },
         "alteration": {
             "name": "alteration",
@@ -90,33 +78,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             "regular": {
                 "name": "regularAmalgamation",
                 "title": "Regular Amalgamation",
-                "codes": {
-                    "BEN": "AMALR",
-                    "BC": "AMALR",
-                    "ULC": "AMALR",
-                    "CC": "AMALR"
-                },
+                "codes": {"BEN": "AMALR", "BC": "AMALR", "ULC": "AMALR", "CC": "AMALR"},
             },
             "vertical": {
                 "name": "verticalAmalgamation",
                 "title": "Vertical Amalgamation",
-                "codes": {
-                    "BEN": "AMALV",
-                    "BC": "AMALV",
-                    "ULC": "AMALV",
-                    "CC": "AMALV"
-                },
+                "codes": {"BEN": "AMALV", "BC": "AMALV", "ULC": "AMALV", "CC": "AMALV"},
             },
             "horizontal": {
                 "name": "horizontalAmalgamation",
                 "title": "Horizontal Amalgamation",
-                "codes": {
-                    "BEN": "AMALH",
-                    "BC": "AMALH",
-                    "ULC": "AMALH",
-                    "CC": "AMALH"
-                },
-            }
+                "codes": {"BEN": "AMALH", "BC": "AMALH", "ULC": "AMALH", "CC": "AMALH"},
+            },
         },
         "annualReport": {
             "name": "annualReport",
@@ -260,7 +233,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
         "dissolution": "dissolutionType",
         "restoration": "type",
-        "amalgamationApplication": "type"
+        "amalgamationApplication": "type",
     }
 
     __tablename__ = "filings"
@@ -307,7 +280,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             "tech_correction_json",
             "temp_reg",
             "transaction_id",
-            "alternate_name_id"
+            "alternate_name_id",
         ]
     }
 
@@ -531,7 +504,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             self._completion_date = datetime.utcnow()
         if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
             self.effective_date is None
-            or (self.payment_completion_date and self.effective_date < self.payment_completion_date)  # pylint: disable=W0143; hybrid property  # noqa: E501
+            or (
+                self.payment_completion_date
+                and self.effective_date  # pylint: disable=W0143
+                < self.payment_completion_date  # pylint: disable=W0143; hybrid property  # noqa: E501
+            )
         ):
             self.effective_date = self.payment_completion_date
 
@@ -581,7 +558,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def comments_count(self):
         """Return comments count expression for this filing."""
         return (
-            select([func.count(Comment.legal_entity_id)])
+            select([func.count(Comment.legal_entity_id)])  # pylint: disable=not-callable
             .where(Comment.legal_entity_id == self.id)
             .label("comments_count")
         )
@@ -808,9 +785,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        from .legal_entity import (  # noqa: F401; pylint: disable=import-outside-toplevel
-            LegalEntity,
-        )
+        from .legal_entity import LegalEntity  # noqa: F401; pylint: disable=import-outside-toplevel
 
         filings = (
             db.session.query(Filing)

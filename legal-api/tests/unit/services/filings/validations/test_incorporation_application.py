@@ -20,11 +20,7 @@ from unittest.mock import patch
 import datedelta
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import (
-    COURT_ORDER,
-    INCORPORATION,
-    INCORPORATION_FILING_TEMPLATE,
-)
+from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORATION_FILING_TEMPLATE
 from registry_schemas.example_data.schema_data import FILING_HEADER
 from reportlab.lib.pagesizes import letter
 

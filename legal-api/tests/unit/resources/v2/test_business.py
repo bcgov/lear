@@ -31,20 +31,11 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
-from legal_api.services.authz import (
-    ACCOUNT_IDENTITY,
-    PUBLIC_USER,
-    STAFF_ROLE,
-    SYSTEM_ROLE,
-)
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit import nested_session
-from tests.unit.models import (
-    factory_completed_filing,
-    factory_legal_entity,
-    factory_pending_filing,
-)
+from tests.unit.models import factory_completed_filing, factory_legal_entity, factory_pending_filing
 from tests.unit.services.utils import create_header
 from tests.unit.services.warnings import create_business
 
@@ -88,11 +79,7 @@ def test_create_bootstrap_failure_filing(client, jwt):
 
 
 @integration_affiliation
-@pytest.mark.parametrize("filing_name", [
-    "incorporationApplication",
-    "registration",
-    "amalgamationApplication"
-])
+@pytest.mark.parametrize("filing_name", ["incorporationApplication", "registration", "amalgamationApplication"])
 def test_create_bootstrap_minimal_draft_filing(client, jwt, filing_name):
     """Assert that a minimal filing can be used to create a draft filing."""
     filing = {"filing": {"header": {"name": filing_name, "accountId": 28}}}
@@ -390,7 +377,7 @@ def test_post_affiliated_businesses(session, client, jwt):
         draft_businesses = [
             (identifiers[2], "registration", LegalEntity.EntityTypes.GP.value, None),
             (identifiers[3], "incorporationApplication", LegalEntity.EntityTypes.SOLE_PROP.value, "NR 1234567"),
-            (identifiers[4], "amalgamationApplication", LegalEntity.EntityTypes.COMP.value, "NR 1234567")
+            (identifiers[4], "amalgamationApplication", LegalEntity.EntityTypes.COMP.value, "NR 1234567"),
         ]
 
         # NB: these are real businesses now so temp should not get returned
@@ -421,10 +408,7 @@ def test_post_affiliated_businesses(session, client, jwt):
             if draft_business[3]:
                 json_data["filing"][filing_name] = {"nameRequest": {"nrNumber": draft_business[3]}}
             if filing_name == "amalgamationApplication":
-                json_data["filing"][filing_name] = {
-                    **json_data["filing"][filing_name],
-                    "type": "regular"
-                }
+                json_data["filing"][filing_name] = {**json_data["filing"][filing_name], "type": "regular"}
             filing = factory_pending_filing(None, json_data)
             filing.temp_reg = draft_business[0]
             if draft_business[0] in old_draft_businesses:

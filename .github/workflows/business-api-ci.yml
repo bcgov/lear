@@ -14,7 +14,7 @@ defaults:
 
 jobs:
   business-api-ci:
-    uses: bcgov/bcregistry-sre/.github/workflows/api-ci.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "business-api"
       working_directory: "./legal-api"

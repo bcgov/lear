@@ -28,9 +28,9 @@ import pytest
 from dateutil.parser import parse
 from flask import current_app
 from registry_schemas.example_data import (
-    ALTERATION_FILING_TEMPLATE,
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
+    ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
@@ -57,9 +57,7 @@ from legal_api.core import FILINGS, Filing, FilingMeta
 from legal_api.models import Comment
 from legal_api.models import Filing as FilingStorage
 from legal_api.models import LegalEntity, UserRoles
-from legal_api.resources.v2.business.business_filings.business_filings import (
-    ListFilingResource,
-)
+from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import api_v2, integration_payment
@@ -1514,120 +1512,117 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION["rulesInResolution"] = True
             "2017-10-01",
         ),
         (
-            'ben_agmExtension_completed',
-            'BC7654321',
+            "ben_agmExtension_completed",
+            "BC7654321",
             LegalEntity.EntityTypes.BCOMP.value,
-            'agmExtension',
+            "agmExtension",
             AGM_EXTENSION,
             None,
             None,
             Filing.Status.COMPLETED,
             {
-                'documents': {
-                    'letterOfAgmExtension': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
-                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                "documents": {
+                    "letterOfAgmExtension": "https://LEGAL_API_BASE_URL/api/v2/businesses\
+                        /BC7654321/filings/documents/letterOfAgmExtension",
+                    "receipt": f"{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt",
                 }
             },
             HTTPStatus.OK,
-            '2017-10-01'
+            "2017-10-01",
         ),
         (
-            'ben_agmLocationChange_paid',
-            'BC7654321',
+            "ben_agmLocationChange_paid",
+            "BC7654321",
             LegalEntity.EntityTypes.BCOMP.value,
-            'agmExtension',
+            "agmExtension",
             AGM_EXTENSION,
             None,
             None,
             Filing.Status.PAID,
-            {
-                'documents': {
-                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-                }
-            },
+            {"documents": {"receipt": f"{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt"}},
             HTTPStatus.OK,
-            '2017-10-01'
+            "2017-10-01",
         ),
         (
-            'ben_agmLocationChange_completed',
-            'BC7654321',
+            "ben_agmLocationChange_completed",
+            "BC7654321",
             LegalEntity.EntityTypes.BCOMP.value,
-            'agmLocationChange',
+            "agmLocationChange",
             AGM_LOCATION_CHANGE,
             None,
             None,
             Filing.Status.COMPLETED,
             {
-                'documents': {
-                    'letterOfAgmLocationChange': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
-                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                "documents": {
+                    "letterOfAgmLocationChange": "https://LEGAL_API_BASE_URL/api/v2/businesses\
+                        /BC7654321/filings/documents/letterOfAgmLocationChange",
+                    "receipt": f"{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt",
                 }
             },
             HTTPStatus.OK,
-            '2017-10-01'
+            "2017-10-01",
         ),
         (
-            'ben_agmLocationChange_paid',
-            'BC7654321',
+            "ben_agmLocationChange_paid",
+            "BC7654321",
             LegalEntity.EntityTypes.BCOMP.value,
-            'agmLocationChange',
+            "agmLocationChange",
             AGM_LOCATION_CHANGE,
             None,
             None,
             Filing.Status.PAID,
-            {
-                'documents': {
-                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-                }
-            },
+            {"documents": {"receipt": f"{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt"}},
             HTTPStatus.OK,
-            '2017-10-01'
+            "2017-10-01",
         ),
         (
-            'ben_amalgamation_completed',
-            'BC7654321',
+            "ben_amalgamation_completed",
+            "BC7654321",
             LegalEntity.EntityTypes.BCOMP.value,
-            'amalgamationApplication',
+            "amalgamationApplication",
             AMALGAMATION_APPLICATION,
             None,
             None,
             Filing.Status.COMPLETED,
             {
-                'documents': {
-                    'certificateOfAmalgamation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfAmalgamation',
-                    'legalFilings': [
+                "documents": {
+                    "certificateOfAmalgamation": f"{base_url}/api/v2/businesses\
+                        /BC7654321/filings/1/documents/certificateOfAmalgamation",
+                    "legalFilings": [
                         {
-                            'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
+                            "amalgamationApplication": f"{base_url}/api/v2/businesses\
+                                /BC7654321/filings/1/documents/amalgamationApplication"
                         }
                     ],
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                    "noticeOfArticles": f"{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles",
+                    "receipt": f"{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt",
                 }
             },
             HTTPStatus.OK,
-            '2017-10-01'
+            "2017-10-01",
         ),
         (
-            'ben_amalgamation_paid',
-            'BC7654321',
+            "ben_amalgamation_paid",
+            "BC7654321",
             LegalEntity.EntityTypes.BCOMP.value,
-            'amalgamationApplication',
+            "amalgamationApplication",
             AMALGAMATION_APPLICATION,
             None,
             None,
             Filing.Status.PAID,
             {
-                'documents': {
-                    'legalFilings': [
+                "documents": {
+                    "legalFilings": [
                         {
-                            'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
+                            "amalgamationApplication": f"{base_url}/api/v2/businesses\
+                                /BC7654321/filings/1/documents/amalgamationApplication"
                         }
                     ],
-                    'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+                    "receipt": f"{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt",
                 }
             },
             HTTPStatus.OK,
-            '2017-10-01'
+            "2017-10-01",
         ),
         (
             "ben_changeOfAddress",
@@ -2070,30 +2065,31 @@ def test_document_list_for_various_filing_states(
 
 def filer_action(filing_name, filing_json, meta_data, business):
     """Helper function for test_document_list_for_various_filing_states."""
-    if filing_name == 'alteration' and \
-            (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
-        meta_data['alteration'] = {}
-        meta_data['alteration']['fromLegalName'] = business.legal_name
-        meta_data['alteration']['toLegalName'] = legal_name
+    if filing_name == "alteration" and (
+        legal_name := filing_json["filing"]["alteration"].get("nameRequest", {}).get("legalName")
+    ):
+        meta_data["alteration"] = {}
+        meta_data["alteration"]["fromLegalName"] = business.legal_name
+        meta_data["alteration"]["toLegalName"] = legal_name
 
-    if filing_name == 'correction' and business.legal_type == 'CP':
-        meta_data['correction'] = {}
-        if (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
-            meta_data['correction']['fromLegalName'] = business.legal_name
-            meta_data['correction']['toLegalName'] = legal_name
+    if filing_name == "correction" and business.legal_type == "CP":
+        meta_data["correction"] = {}
+        if legal_name := filing_json["filing"]["correction"].get("nameRequest", {}).get("legalName"):
+            meta_data["correction"]["fromLegalName"] = business.legal_name
+            meta_data["correction"]["toLegalName"] = legal_name
 
-        if filing_json['filing']['correction'].get('rulesFileKey'):
-            meta_data['correction']['uploadNewRules'] = True
+        if filing_json["filing"]["correction"].get("rulesFileKey"):
+            meta_data["correction"]["uploadNewRules"] = True
 
-        if filing_json['filing']['correction'].get('memorandumFileKey'):
-            meta_data['correction']['uploadNewMemorandum'] = True
+        if filing_json["filing"]["correction"].get("memorandumFileKey"):
+            meta_data["correction"]["uploadNewMemorandum"] = True
 
-        if filing_json['filing']['correction'].get('resolution'):
-            meta_data['correction']['hasResolution'] = True
+        if filing_json["filing"]["correction"].get("resolution"):
+            meta_data["correction"]["hasResolution"] = True
 
-    if filing_name == 'specialResolution' and business.legal_type == 'CP':
-        meta_data['alteration'] = {}
-        meta_data['alteration']['uploadNewRules'] = True
+    if filing_name == "specialResolution" and business.legal_type == "CP":
+        meta_data["alteration"] = {}
+        meta_data["alteration"]["uploadNewRules"] = True
 
     return meta_data
 
@@ -2101,9 +2097,7 @@ def filer_action(filing_name, filing_json, meta_data, business):
 def test_get_receipt(session, client, jwt, requests_mock):
     """Assert that a receipt is generated."""
     with nested_session(session):
-        from legal_api.resources.v2.business.business_filings.business_documents import (
-            _get_receipt,
-        )
+        from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
 
         # Setup
         identifier = "CP7654321"
@@ -2142,9 +2136,7 @@ def test_get_receipt(session, client, jwt, requests_mock):
 def test_get_receipt_request_mock(session, client, jwt, requests_mock):
     """Assert that a receipt is generated."""
     with nested_session(session):
-        from legal_api.resources.v2.business.business_filings.business_documents import (
-            _get_receipt,
-        )
+        from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
 
         # Setup
         identifier = "CP7654321"

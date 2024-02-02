@@ -21,20 +21,9 @@ from http import HTTPStatus
 
 import pytest
 
-from legal_api.services.authz import (
-    ACCOUNT_IDENTITY,
-    PUBLIC_USER,
-    STAFF_ROLE,
-    SYSTEM_ROLE,
-)
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit import nested_session
-from tests.unit.models import (
-    Address,
-    EntityRole,
-    LegalEntity,
-    factory_legal_entity,
-    factory_party_role,
-)
+from tests.unit.models import Address, EntityRole, LegalEntity, factory_legal_entity, factory_party_role
 from tests.unit.services.utils import create_header
 
 

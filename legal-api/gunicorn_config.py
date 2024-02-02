@@ -16,6 +16,7 @@
 """
 
 import os
+
 import gunicorn_server
 
 workers = int(os.environ.get("GUNICORN_PROCESSES", "1"))  # pylint: disable=invalid-name

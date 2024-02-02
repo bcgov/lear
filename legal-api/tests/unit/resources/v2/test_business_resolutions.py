@@ -21,12 +21,7 @@ from http import HTTPStatus
 import pytest
 
 from legal_api.models import LegalEntity, Party, Resolution
-from legal_api.services.authz import (
-    ACCOUNT_IDENTITY,
-    PUBLIC_USER,
-    STAFF_ROLE,
-    SYSTEM_ROLE,
-)
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests import FROZEN_DATETIME
 from tests.unit import nested_session
 from tests.unit.models import factory_legal_entity

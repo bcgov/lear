@@ -19,10 +19,14 @@ class DCRevocationReason(Enum):
     """Digital Credential Revocation Reasons."""
 
     ADMINISTRATIVE_REVOCATION = "Your credential was revoked."
-    UPDATED_INFORMATION = "You were offered a new credential with updated information " \
-        "and that revoked all previous copies."
-    VOLUNTARY_DISSOLUTION = "You chose to dissolve your business. " \
+    UPDATED_INFORMATION = (
+        "You were offered a new credential with updated information ",
+        "and that revoked all previous copies.",
+    )
+    VOLUNTARY_DISSOLUTION = (
+        "You chose to dissolve your business. "
         "A new credential was offered that reflects the new company status and that revoked all previous copies."
+    )
     ADMINISTRATIVE_DISSOLUTION = "Your business was dissolved by the Registrar."
     PUT_BACK_ON = "Your business was put back on the Registry. "
     SELF_REISSUANCE = "You chose to issue yourself a new credential and that revoked all previous copies."

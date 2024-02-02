@@ -18,10 +18,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from registry_schemas.example_data import (
-    CORRECTION_INCORPORATION,
-    INCORPORATION_FILING_TEMPLATE,
-)
+from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
@@ -263,9 +260,7 @@ def test_parties_correction(session, test_name, entity_type, correction_type, er
 )
 def test_validate_correction_effective_date(test_name, json1, json2, expected):
     """Assert that a corrected effective date."""
-    from legal_api.services.filings.validations.incorporation_application import (
-        validate_correction_effective_date,
-    )
+    from legal_api.services.filings.validations.incorporation_application import validate_correction_effective_date
 
     err = validate_correction_effective_date(json1, json2)
 

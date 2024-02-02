@@ -51,7 +51,7 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
             "dateOfIssue": self.date_of_issue.isoformat() if self.date_of_issue else None,
             "isRevoked": self.is_revoked,
             "credentialRevocationId": self.credential_revocation_id,
-            "revocationRegistryId": self.revocation_registry_id
+            "revocationRegistryId": self.revocation_registry_id,
         }
         return dc_issued_credential
 
@@ -88,8 +88,7 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
         """Return the issued credential matching the credential id."""
         dc_issued_credential = None
         if credential_id:
-            dc_issued_credential = cls.query. \
-                filter(DCIssuedCredential.credential_id == credential_id).one_or_none()
+            dc_issued_credential = cls.query.filter(DCIssuedCredential.credential_id == credential_id).one_or_none()
         return dc_issued_credential
 
     @classmethod

@@ -15,11 +15,7 @@
 import copy
 from http import HTTPStatus
 
-from registry_schemas.example_data import (
-    CHANGE_OF_ADDRESS,
-    CORRECTION_COA,
-    FILING_TEMPLATE,
-)
+from registry_schemas.example_data import CHANGE_OF_ADDRESS, CORRECTION_COA, FILING_TEMPLATE
 
 from legal_api.services.filings import validate
 from tests.unit.models import factory_completed_filing, factory_legal_entity

@@ -16,19 +16,13 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
-from flask_babel import (  # noqa: N813, I004, I001; importing camelcase '_' as a name
-    _ as babel,
-)
+from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import ConsentContinuationOut, LegalEntity
-from legal_api.services.filings.validations.common_validations import (
-    validate_court_order,
-)
-from legal_api.services.filings.validations.continuation_out import (
-    validate_foreign_jurisdiction,
-)
+from legal_api.services.filings.validations.common_validations import validate_court_order
+from legal_api.services.filings.validations.continuation_out import validate_foreign_jurisdiction
 
 # noqa: I003;
 

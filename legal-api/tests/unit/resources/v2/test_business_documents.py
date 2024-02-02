@@ -20,21 +20,13 @@ import copy
 from http import HTTPStatus
 
 from flask import current_app
-from registry_schemas.example_data import (
-    ALTERATION,
-    FILING_HEADER,
-    INCORPORATION_FILING_TEMPLATE,
-)
+from registry_schemas.example_data import ALTERATION, FILING_HEADER, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.models.document import Document, DocumentType
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_reports
 from tests.unit import nested_session
-from tests.unit.models import (
-    factory_completed_filing,
-    factory_incorporation_filing,
-    factory_legal_entity,
-)
+from tests.unit.models import factory_completed_filing, factory_incorporation_filing, factory_legal_entity
 from tests.unit.services.utils import create_header
 
 

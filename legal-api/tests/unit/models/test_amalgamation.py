@@ -15,11 +15,8 @@
 """Tests to assure the Amalgamation Model.
 Test-Suite to ensure that the Amalgamation Model is working as expected.
 """
-from tests.unit.models import (
-    factory_legal_entity,
-    factory_filing,
-)
-from legal_api.models import Amalgamation
+from datetime import datetime
+
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
@@ -29,13 +26,15 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     SPECIAL_RESOLUTION,
 )
-from datetime import datetime
+
+from legal_api.models import Amalgamation
+from tests.unit.models import factory_filing, factory_legal_entity
 
 
 def test_valid_amalgamation_save(session):
     """Assert that a valid amalgamation can be saved."""
 
-    b = factory_legal_entity('CP1234567')
+    b = factory_legal_entity("CP1234567")
 
     b.save()
 
@@ -48,7 +47,7 @@ def test_valid_amalgamation_save(session):
         legal_entity_id=b.id,
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
-        court_approval=True
+        court_approval=True,
     )
 
     amalgamation_1.save()
@@ -58,7 +57,7 @@ def test_valid_amalgamation_save(session):
         legal_entity_id=b.id,
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
-        court_approval=True
+        court_approval=True,
     )
 
     amalgamation_2.save()
@@ -68,7 +67,7 @@ def test_valid_amalgamation_save(session):
         legal_entity_id=b.id,
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
-        court_approval=True
+        court_approval=True,
     )
 
     amalgamation_3.save()
@@ -78,6 +77,8 @@ def test_valid_amalgamation_save(session):
     assert amalgamation_2.id
     assert amalgamation_3.id
     for type in Amalgamation.AmalgamationTypes:
-        assert type in [Amalgamation.AmalgamationTypes.horizontal,
-                        Amalgamation.AmalgamationTypes.vertical,
-                        Amalgamation.AmalgamationTypes.regular]
+        assert type in [
+            Amalgamation.AmalgamationTypes.horizontal,
+            Amalgamation.AmalgamationTypes.vertical,
+            Amalgamation.AmalgamationTypes.regular,
+        ]

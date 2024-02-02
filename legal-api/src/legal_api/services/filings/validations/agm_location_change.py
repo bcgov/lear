@@ -16,11 +16,13 @@ from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+
 # noqa: I003
 from legal_api.errors import Error
 from legal_api.models import LegalEntity
 from legal_api.services.utils import get_int
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
 # noqa: I003
 
 

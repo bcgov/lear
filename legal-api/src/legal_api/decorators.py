@@ -30,6 +30,7 @@ from legal_api.utils.auth import jwt
 
 def requires_traction_auth(f):
     """Check for a valid Traction token and refresh if needed."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not (traction_api_url := current_app.config["TRACTION_API_URL"]):
@@ -52,18 +53,22 @@ def requires_traction_auth(f):
                 raise pyjwt.ExpiredSignatureError
         except ExpiredSignatureError:
             current_app.logger.info("JWT token expired or is missing, requesting new token")
-            response = requests.post(f"{traction_api_url}/multitenancy/tenant/{traction_tenant_id}/token",
-                                     headers={"Content-Type": "application/json"},
-                                     data=json.dumps({"api_key": traction_api_key}))
+            response = requests.post(
+                f"{traction_api_url}/multitenancy/tenant/{traction_tenant_id}/token",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps({"api_key": traction_api_key}),
+            )
             response.raise_for_status()
             current_app.api_token = response.json()["token"]
 
         return f(*args, **kwargs)
+
     return decorated_function
 
 
 def can_access_digital_credentials(f):
     """Ensure the business can has access to digital credentials."""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
         identifier = kwargs.get("identifier", None)
@@ -75,4 +80,5 @@ def can_access_digital_credentials(f):
             return jsonify({"message": f"digital credential not available for: {identifier}."}), HTTPStatus.UNAUTHORIZED
 
         return f(*args, **kwargs)
+
     return decorated_function

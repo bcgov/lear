@@ -19,14 +19,7 @@ Test-Suite to ensure that the PartyRole Model is working as expected.
 import datetime
 import json
 
-from legal_api.models import (
-    ColinEntity,
-    EntityRole,
-    Filing,
-    LegalEntity,
-    Party,
-    PartyRole,
-)
+from legal_api.models import ColinEntity, EntityRole, Filing, LegalEntity, Party, PartyRole
 from tests.unit.models import factory_legal_entity
 
 

@@ -20,7 +20,8 @@ from flask_cors import cross_origin
 from sentry_sdk import capture_message
 
 from legal_api.models import LegalEntity, UserRoles
-from legal_api.services import queue
+
+# from legal_api.services import queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
 
@@ -46,7 +47,7 @@ def publish_entity_event(
 ):
     """Publish the admin message on to the NATS events subject."""
     try:
-        payload = {
+        payload = {  # pylint: disable=unused-variable;  # noqa: F841
             "specversion": "1.x-wip",
             "type": "bc.registry.admin.bn",
             "source": "".join([current_app.config.get("LEGAL_API_BASE_URL"), "/", legal_entity.identifier]),
@@ -59,8 +60,8 @@ def publish_entity_event(
                 "business": {"identifier": legal_entity.identifier},
             },
         }
-        subject = current_app.config.get("NATS_ENTITY_EVENT_SUBJECT")
-        queue.publish_json(payload, subject)
+        subject = current_app.config.get("NATS_ENTITY_EVENT_SUBJECT")  # pylint: disable=unused-variable;  # noqa: F841
+        # queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message(
             "Queue Publish Admin Event Error: legal_entity.id=" + str(legal_entity.id) + str(err), level="error"

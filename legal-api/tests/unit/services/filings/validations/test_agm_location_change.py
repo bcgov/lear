@@ -21,46 +21,45 @@ from registry_schemas.example_data import AGM_LOCATION_CHANGE, FILING_HEADER
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
 from tests.unit.models import factory_legal_entity
 
 
 @pytest.mark.parametrize(
-    'test_name, expected_code, message',
+    "test_name, expected_code, message",
     [
-        ('INVALID_YEAR', HTTPStatus.BAD_REQUEST, 'Invalid AGM year.'),
-        ('FAIL_YEAR-3', HTTPStatus.BAD_REQUEST, 'AGM year must be between -2 or +1 year from current year.'),
-        ('FAIL_YEAR+2', HTTPStatus.BAD_REQUEST, 'AGM year must be between -2 or +1 year from current year.'),
-        ('SUCCESS-2', None, None),
-        ('SUCCESS+1', None, None),
-        ('SUCCESS', None, None)
-    ]
+        ("INVALID_YEAR", HTTPStatus.BAD_REQUEST, "Invalid AGM year."),
+        ("FAIL_YEAR-3", HTTPStatus.BAD_REQUEST, "AGM year must be between -2 or +1 year from current year."),
+        ("FAIL_YEAR+2", HTTPStatus.BAD_REQUEST, "AGM year must be between -2 or +1 year from current year."),
+        ("SUCCESS-2", None, None),
+        ("SUCCESS+1", None, None),
+        ("SUCCESS", None, None),
+    ],
 )
 def test_validate_agm_year(session, mocker, test_name, expected_code, message):
     """Assert validate agm year."""
-    business = factory_legal_entity(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
+    business = factory_legal_entity(identifier="BC1234567", entity_type="BC", founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
-    filing['filing']['header']['name'] = 'agmLocationChange'
+    filing["filing"]["agmLocationChange"] = copy.deepcopy(AGM_LOCATION_CHANGE)
+    filing["filing"]["header"]["name"] = "agmLocationChange"
 
-    if test_name == 'INVALID_YEAR':
-        filing['filing']['agmLocationChange']['year'] = 'invalid'
-    elif test_name == 'FAIL_YEAR-3':
-        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year - 3)
-    elif test_name == 'FAIL_YEAR+2':
-        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year + 2)
-    elif test_name == 'SUCCESS-2':
-        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year - 2)
-    elif test_name == 'SUCCESS+1':
-        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year + 1)
-    elif test_name == 'SUCCESS':
-        filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year)
+    if test_name == "INVALID_YEAR":
+        filing["filing"]["agmLocationChange"]["year"] = "invalid"
+    elif test_name == "FAIL_YEAR-3":
+        filing["filing"]["agmLocationChange"]["year"] = str(LegislationDatetime.now().year - 3)
+    elif test_name == "FAIL_YEAR+2":
+        filing["filing"]["agmLocationChange"]["year"] = str(LegislationDatetime.now().year + 2)
+    elif test_name == "SUCCESS-2":
+        filing["filing"]["agmLocationChange"]["year"] = str(LegislationDatetime.now().year - 2)
+    elif test_name == "SUCCESS+1":
+        filing["filing"]["agmLocationChange"]["year"] = str(LegislationDatetime.now().year + 1)
+    elif test_name == "SUCCESS":
+        filing["filing"]["agmLocationChange"]["year"] = str(LegislationDatetime.now().year)
     err = validate(business, filing)
 
     # validate outcomes
-    if not test_name.startswith('SUCCESS'):
+    if not test_name.startswith("SUCCESS"):
         assert expected_code == err.code
         if message:
-            assert message == err.msg[0]['error']
+            assert message == err.msg[0]["error"]
     else:
         assert not err

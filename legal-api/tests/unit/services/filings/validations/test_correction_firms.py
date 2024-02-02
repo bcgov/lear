@@ -20,10 +20,7 @@ from unittest.mock import patch
 
 import pytest
 from dateutil.relativedelta import relativedelta
-from registry_schemas.example_data import (
-    CHANGE_OF_REGISTRATION_TEMPLATE,
-    CORRECTION_REGISTRATION,
-)
+from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, CORRECTION_REGISTRATION
 
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
@@ -294,8 +291,20 @@ def test_firms_correction_invalid_parties(mocker, app, session, jwt, test_name, 
         ),
     ],
 )
-def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, existing_naics_code, existing_naics_desc,
-                                correction_naics_code, correction_naics_desc, naics_response, expected_msg):
+def test_firms_correction_naics(
+    mocker,
+    app,
+    session,
+    jwt,
+    test_name,
+    filing,
+    existing_naics_code,
+    existing_naics_desc,
+    correction_naics_code,
+    correction_naics_desc,
+    naics_response,
+    expected_msg,
+):
     """Test that NAICS code and description are correctly validated."""
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=False)  # Client
     # setup
@@ -339,34 +348,183 @@ def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, ex
         assert None is err
 
 
-@pytest.mark.parametrize("test_name, filing, username, roles, founding_date_str, delta_date, is_valid",
-                         [
-                             ("sp_no_correction_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", None, True),
-                             ("gp_no_correction_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", None, True),
-                             ("sp_correction_greater_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=90), True),
-                             ("gp_correction_greater_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=90), True),
-                             ("sp_correction_invalid_greater_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=91), False),
-                             ("gp_correction_invalid_greater_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", timedelta(days=91), False),
-                             ("sp_correction_lesser_by_staff", SP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", relativedelta(years=-20), True),
-                             ("gp_correction_lesser_by_staff", GP_CORRECTION_REGISTRATION_APPLICATION, "staff", STAFF_ROLE, "2022-01-01", relativedelta(years=-20), True),
-
-                             ("sp_no_correction_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", None, True),
-                             ("gp_no_correction_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", None, True),
-                             ("sp_correction_greater_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=90), True),
-                             ("gp_correction_greater_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=90), True),
-                             ("sp_correction_invalid_greater_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=91), False),
-                             ("gp_correction_invalid_greater_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", timedelta(days=91), False),
-                             ("sp_correction_lesser_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10), True),
-                             ("gp_correction_lesser_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10), True),
-                             ("sp_correction_invalid_lesser_by_general_user", SP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10, days=-1), False),
-                             ("gp_correction_invalid_lesser_by_general_user", GP_CORRECTION_REGISTRATION_APPLICATION, "general user", [BASIC_USER], "2022-01-01", relativedelta(years=-10, days=-1), False),
-                         ])
-def test_firms_correction_start_date(mocker, app, session, jwt, test_name, filing, username, roles, founding_date_str, delta_date, is_valid):
+@pytest.mark.parametrize(
+    "test_name, filing, username, roles, founding_date_str, delta_date, is_valid",
+    [
+        (
+            "sp_no_correction_by_staff",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            None,
+            True,
+        ),
+        (
+            "gp_no_correction_by_staff",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            None,
+            True,
+        ),
+        (
+            "sp_correction_greater_by_staff",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            timedelta(days=90),
+            True,
+        ),
+        (
+            "gp_correction_greater_by_staff",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            timedelta(days=90),
+            True,
+        ),
+        (
+            "sp_correction_invalid_greater_by_staff",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            timedelta(days=91),
+            False,
+        ),
+        (
+            "gp_correction_invalid_greater_by_staff",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            timedelta(days=91),
+            False,
+        ),
+        (
+            "sp_correction_lesser_by_staff",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            relativedelta(years=-20),
+            True,
+        ),
+        (
+            "gp_correction_lesser_by_staff",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "staff",
+            STAFF_ROLE,
+            "2022-01-01",
+            relativedelta(years=-20),
+            True,
+        ),
+        (
+            "sp_no_correction_by_general_user",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            None,
+            True,
+        ),
+        (
+            "gp_no_correction_by_general_user",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            None,
+            True,
+        ),
+        (
+            "sp_correction_greater_by_general_user",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            timedelta(days=90),
+            True,
+        ),
+        (
+            "gp_correction_greater_by_general_user",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            timedelta(days=90),
+            True,
+        ),
+        (
+            "sp_correction_invalid_greater_by_general_user",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            timedelta(days=91),
+            False,
+        ),
+        (
+            "gp_correction_invalid_greater_by_general_user",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            timedelta(days=91),
+            False,
+        ),
+        (
+            "sp_correction_lesser_by_general_user",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            relativedelta(years=-10),
+            True,
+        ),
+        (
+            "gp_correction_lesser_by_general_user",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            relativedelta(years=-10),
+            True,
+        ),
+        (
+            "sp_correction_invalid_lesser_by_general_user",
+            SP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            relativedelta(years=-10, days=-1),
+            False,
+        ),
+        (
+            "gp_correction_invalid_lesser_by_general_user",
+            GP_CORRECTION_REGISTRATION_APPLICATION,
+            "general user",
+            [BASIC_USER],
+            "2022-01-01",
+            relativedelta(years=-10, days=-1),
+            False,
+        ),
+    ],
+)
+def test_firms_correction_start_date(
+    mocker, app, session, jwt, test_name, filing, username, roles, founding_date_str, delta_date, is_valid
+):
     """Test that start date of firms is correctly validated."""
+
     def mock_validate_roles(required_roles):
         if roles in required_roles:
             return True
         return False
+
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", side_effect=mock_validate_roles)  # Client
 
     identifier = "FM1234567"

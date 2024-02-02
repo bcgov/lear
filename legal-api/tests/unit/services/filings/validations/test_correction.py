@@ -18,11 +18,7 @@ from http import HTTPStatus
 from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
 
 from legal_api.services.filings import validate
-from tests.unit.models import (
-    factory_completed_filing,
-    factory_filing,
-    factory_legal_entity,
-)
+from tests.unit.models import factory_completed_filing, factory_filing, factory_legal_entity
 
 
 def test_valid_correction(session):

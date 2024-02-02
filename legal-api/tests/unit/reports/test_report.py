@@ -40,10 +40,7 @@ from sqlalchemy_continuum import versioning_manager
 from legal_api.models import db  # noqa:I001
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
-from tests.unit.models import (  # noqa:E501,I001
-    factory_completed_filing,
-    factory_legal_entity,
-)
+from tests.unit.models import factory_completed_filing, factory_legal_entity  # noqa:E501,I001
 
 
 def create_report(identifier, entity_type, report_type, filing_type, template):

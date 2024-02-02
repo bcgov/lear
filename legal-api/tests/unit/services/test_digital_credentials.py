@@ -18,11 +18,11 @@ Test suite to ensure that the Digital Credentials service are working as expecte
 from unittest.mock import MagicMock
 
 import pytest
+
 from legal_api.models import DCDefinition, DCIssuedBusinessUserCredential, EntityRole
 from legal_api.services import digital_credentials
-
-from tests.unit import nested_session
 from legal_api.services.digital_credentials import DigitalCredentialsHelpers, DigitalCredentialsService
+from tests.unit import nested_session
 from tests.unit.models import factory_legal_entity, factory_user
 
 schema_id = "test_schema_id"
@@ -47,70 +47,68 @@ def test_init_app(app, session):
         assert not definition.is_deleted
 
 
-@pytest.mark.parametrize("test_data", [{
-    "business": {
-        "identifier": "FM1234567",
-        "entity_type": "SP",
-        "founding_date": "2010-01-01",
-        "state": "ACTIVE",
-    },
-    "business_extra": {
-        "legal_name": "Test Business",
-        "tax_id": "000000000000001",
-    },
-    "party_roles": [{
-        "role": "proprietor"
-    }],
-    "user": {
-        "username": "test",
-        "lastname": "Last",
-        "firstname": "First",
-    },
-    "user_extra": {
-        "middlename": "Middle",
-    },
-    "expected": [
-        {"name": "credential_id", "value": ""},
-        {"name": "identifier", "value": "FM1234567"},
-        {"name": "business_name", "value": "Test Business"},
-        {"name": "business_type", "value": "BC Sole Proprietorship"},
-        {"name": "cra_business_number", "value": "000000000000001"},
-        {"name": "registered_on_dateint", "value": "20100101"},
-        {"name": "company_status", "value": "ACTIVE"},
-        {"name": "family_name", "value": "LAST"},
-        {"name": "given_names", "value": "FIRST MIDDLE"},
-        {"name": "role", "value": "Proprietor"}
-    ]
-}, {
-    "business": {
-        "identifier": "FM1234567"
-    },
-    "business_extra": {
-        "legal_name": "",
-        "tax_id": "",
-    },
-    "party_roles": [{
-        "role": ""
-    }],
-    "user": {
-        "username": "test"
-    },
-    "user_extra": {
-        "middlename": "",
-    },
-    "expected": [
-        {"name": "credential_id", "value": ""},
-        {"name": "identifier", "value": "FM1234567"},
-        {"name": "business_name", "value": ""},
-        {"name": "business_type", "value": "BC Cooperative Association"},
-        {"name": "cra_business_number", "value": ""},
-        {"name": "registered_on_dateint", "value": "19700101"},
-        {"name": "company_status", "value": "ACTIVE"},
-        {"name": "family_name", "value": ""},
-        {"name": "given_names", "value": ""},
-        {"name": "role", "value": ""}
-    ]
-}])
+@pytest.mark.parametrize(
+    "test_data",
+    [
+        {
+            "business": {
+                "identifier": "FM1234567",
+                "entity_type": "SP",
+                "founding_date": "2010-01-01",
+                "state": "ACTIVE",
+            },
+            "business_extra": {
+                "legal_name": "Test Business",
+                "tax_id": "000000000000001",
+            },
+            "party_roles": [{"role": "proprietor"}],
+            "user": {
+                "username": "test",
+                "lastname": "Last",
+                "firstname": "First",
+            },
+            "user_extra": {
+                "middlename": "Middle",
+            },
+            "expected": [
+                {"name": "credential_id", "value": ""},
+                {"name": "identifier", "value": "FM1234567"},
+                {"name": "business_name", "value": "Test Business"},
+                {"name": "business_type", "value": "BC Sole Proprietorship"},
+                {"name": "cra_business_number", "value": "000000000000001"},
+                {"name": "registered_on_dateint", "value": "20100101"},
+                {"name": "company_status", "value": "ACTIVE"},
+                {"name": "family_name", "value": "LAST"},
+                {"name": "given_names", "value": "FIRST MIDDLE"},
+                {"name": "role", "value": "Proprietor"},
+            ],
+        },
+        {
+            "business": {"identifier": "FM1234567"},
+            "business_extra": {
+                "legal_name": "",
+                "tax_id": "",
+            },
+            "party_roles": [{"role": ""}],
+            "user": {"username": "test"},
+            "user_extra": {
+                "middlename": "",
+            },
+            "expected": [
+                {"name": "credential_id", "value": ""},
+                {"name": "identifier", "value": "FM1234567"},
+                {"name": "business_name", "value": ""},
+                {"name": "business_type", "value": "BC Cooperative Association"},
+                {"name": "cra_business_number", "value": ""},
+                {"name": "registered_on_dateint", "value": "19700101"},
+                {"name": "company_status", "value": "ACTIVE"},
+                {"name": "family_name", "value": ""},
+                {"name": "given_names", "value": ""},
+                {"name": "role", "value": ""},
+            ],
+        },
+    ],
+)
 def test_data_helper(app, session, test_data):
     """Assert that the data helper returns the correct data."""
     # Arrange

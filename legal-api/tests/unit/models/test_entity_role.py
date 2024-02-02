@@ -23,11 +23,7 @@ from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Address, ColinEntity, LegalEntity
 from legal_api.models.entity_role import EntityRole
-from tests.unit.models import (
-    factory_address,
-    factory_completed_filing,
-    factory_legal_entity,
-)
+from tests.unit.models import factory_address, factory_completed_filing, factory_legal_entity
 
 
 def test_valid_related_entity_save(session):

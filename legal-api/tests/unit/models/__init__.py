@@ -187,11 +187,14 @@ def factory_legal_entity_mailing_address(legal_entity):
     return legal_entity
 
 
-def factory_filing(legal_entity, data_dict,
-                   filing_date=FROZEN_DATETIME,
-                   filing_type=None,
-                   filing_sub_type=None,
-                   is_future_effective=False):
+def factory_filing(
+    legal_entity,
+    data_dict,
+    filing_date=FROZEN_DATETIME,
+    filing_type=None,
+    filing_sub_type=None,
+    is_future_effective=False,
+):
     """Create a filing."""
     filing = Filing()
     filing.legal_entity_id = legal_entity.id

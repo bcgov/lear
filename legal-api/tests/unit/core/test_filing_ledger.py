@@ -22,11 +22,7 @@ from registry_schemas.example_data import FILING_TEMPLATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Comment, Filing, LegalEntity
 from legal_api.utils.datetime import datetime
-from tests.unit.models import (
-    factory_completed_filing,
-    factory_legal_entity,
-    factory_user,
-)
+from tests.unit.models import factory_completed_filing, factory_legal_entity, factory_user
 from tests.unit.services.utils import helper_create_jwt
 
 
@@ -122,7 +118,8 @@ def test_common_ledger_items(session):
     assert common_ledger_items["displayLedger"] is True
 
     filing["filing"]["header"]["name"] = "adminFreeze"
-    completed_filing = \
-        factory_completed_filing(legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1), filing_type="adminFreeze")
+    completed_filing = factory_completed_filing(
+        legal_entity, filing, filing_date=founding_date + datedelta.datedelta(months=1), filing_type="adminFreeze"
+    )
     common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
     assert common_ledger_items["displayLedger"] is False

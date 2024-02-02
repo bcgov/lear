@@ -22,9 +22,7 @@ from sqlalchemy import event
 from legal_api.exceptions import BusinessException
 from legal_api.utils.enum import BaseEnum, auto
 
-from .address import (  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
-    Address,
-)
+from .address import Address  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
 from .db import db  # noqa: I001
 
 

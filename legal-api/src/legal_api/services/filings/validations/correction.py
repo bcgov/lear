@@ -29,9 +29,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_pdf,
     validate_share_structure,
 )
-from legal_api.services.filings.validations.incorporation_application import (
-    validate_offices as validate_corp_offices,
-)
+from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
 from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
     validate_parties_names,

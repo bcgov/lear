@@ -21,11 +21,7 @@ from registry_schemas.example_data import ANNUAL_REPORT
 from legal_api.core import Filing
 from legal_api.models.user import UserRoles
 from legal_api.utils.datetime import datetime, timezone
-from tests.unit.models import (
-    factory_completed_filing,
-    factory_legal_entity,
-    factory_user,
-)
+from tests.unit.models import factory_completed_filing, factory_legal_entity, factory_user
 
 
 def test_filing_raw():

@@ -440,7 +440,7 @@ class Filing:
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
-            "displayLedger": Filing._is_display_ledger(filing_storage),
+            "displayLedger": Filing._is_display_ledger(filing_storage),  # pylint: disable=E1120
             "commentsCount": filing_storage.comments_count,
             "commentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/comments",
             "documentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents"
@@ -464,7 +464,7 @@ class Filing:
             ledger_filing["data"] = {}
         ledger_filing["data"]["order"] = court_order_data
 
-    def _is_display_ledger(filing: FilingStorage) -> bool:
+    def _is_display_ledger(self, filing: FilingStorage) -> bool:
         """Return boolean that display the ledger."""
         return filing.filing_type != Filing.FilingTypes.ADMIN_FREEZE
 
