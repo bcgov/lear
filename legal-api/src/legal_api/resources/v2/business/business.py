@@ -188,7 +188,7 @@ def search_businesses():
                 "legalName": (
                     x.filing_json.get("filing", {}).get(x.filing_type, {}).get("nameRequest", {}).get("legalName")
                 ),
-                "draftType": Filing.FILINGS[x.filing_type]["temporaryCorpTypeCode"],
+                "draftType": Filing.FILINGS.get(x.filing_type, {}).get("temporaryCorpTypeCode"),
             }
             for x in draft_query.all()
         ]
