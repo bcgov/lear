@@ -178,7 +178,7 @@ def search_businesses():
                               .get(x.filing_type, {})
                               .get('nameRequest', {})
                               .get('legalName')),
-                'draftType': Filing.FILINGS[x.filing_type]['temporaryCorpTypeCode']
+                'draftType': Filing.FILINGS.get(x.filing_type, {}).get('temporaryCorpTypeCode')
             } for x in draft_query.all()]
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
