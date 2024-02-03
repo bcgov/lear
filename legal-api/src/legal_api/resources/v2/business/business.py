@@ -180,18 +180,22 @@ def search_businesses():
         # parse results
         bus_le_results = [x.json(slim=True) for x in bus_le_query.all()]
         bus_an_results = [x.json(slim=True) for x in bus_an_query.all()]
-        draft_results = [
-            {
-                "identifier": x.temp_reg,
-                "legalType": x.json_legal_type,
-                **({"nrNumber": x.json_nr} if x.json_nr else {}),
-                "legalName": (
-                    x.filing_json.get("filing", {}).get(x.filing_type, {}).get("nameRequest", {}).get("legalName")
-                ),
-                "draftType": Filing.FILINGS.get(x.filing_type, {}).get("temporaryCorpTypeCode"),
+        draft_results = []
+        for draft_dao in draft_query.all():
+            draft = {
+                'identifier': draft_dao.temp_reg,  
+                'legalType': draft_dao.json_legal_type
             }
-            for x in draft_query.all()
-        ]
+            if draft_dao.json_nr:
+                draft['nrNumber'] = draft_dao.json_nr
+            draft['legalName'] = (draft_dao.filing_json.get('filing', {})
+                                        .get(draft_dao.filing_type, {})
+                                        .get('nameRequest', {})
+                                        .get('legalName'))
+            draft['draftType'] = Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode')
+            if draft['draftType'] == 'ATMP' and draft['legalName'] is None:
+                draft['legalName'] = 'Numbered Amalgamated Company'
+            draft_results.append(draft)
 
         return (
             jsonify({"businessEntities": bus_le_results + bus_an_results, "draftEntities": draft_results}),
