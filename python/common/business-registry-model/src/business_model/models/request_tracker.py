@@ -17,9 +17,9 @@ from __future__ import annotations
 from enum import auto
 from typing import List
 
-from ..utils.enum import BaseEnum
-from ..utils.datetime import datetime
-from ..utils.legislation_datetime import LegislationDatetime
+from legal_api.utils.base import BaseEnum
+from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 
@@ -68,6 +68,9 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     filing_id = db.Column(
         "filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
     )
+    alternate_name_id = db.Column(
+        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True
+    )
 
     @property
     def json(self) -> dict:
@@ -97,8 +100,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         return request_tracker
 
     @classmethod
-    def find_by(
-        cls,  # pylint: disable=too-many-arguments
+    def find_by(  # pylint: disable=too-many-arguments
+        cls,
         legal_entity_id: int,
         service_name: ServiceName,
         request_type: RequestType = None,

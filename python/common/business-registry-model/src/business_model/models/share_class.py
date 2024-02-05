@@ -19,7 +19,7 @@ from http import HTTPStatus
 from sql_versioning import Versioned
 from sqlalchemy import event
 
-from ..exceptions import BusinessException
+from legal_api.exceptions import BusinessException
 
 from .db import db
 from .share_series import ShareSeries  # noqa: F401 pylint: disable=unused-import

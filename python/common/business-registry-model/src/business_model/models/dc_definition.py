@@ -16,8 +16,7 @@ from __future__ import annotations
 
 from sqlalchemy import text
 
-from ..utils.enum import BaseEnum
-from ..utils.enum import auto
+from legal_api.utils.enum import BaseEnum, auto
 
 from .db import db
 
@@ -87,17 +86,22 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def find_by(
-        cls, credential_type: CredentialType, schema_name: str, schema_version: str
+        cls,
+        credential_type: CredentialType,
+        schema_id: str,
+        credential_definition_id: str,
     ) -> DCDefinition:
         """Return the digital credential definition matching the filter."""
         query = (
             db.session.query(DCDefinition)
+            .filter(
+                DCDefinition.is_deleted == False
+            )  # noqa: E712 # pylint: disable=singleton-comparison
             .filter(DCDefinition.credential_type == credential_type)
-            .filter(DCDefinition.schema_name == schema_name)
-            .filter(DCDefinition.schema_version == schema_version)
+            .filter(DCDefinition.schema_id == schema_id)
+            .filter(DCDefinition.credential_definition_id == credential_definition_id)
         )
-
-        return query.first()
+        return query.one_or_none()
 
     @classmethod
     def deactivate(cls, credential_type: CredentialType):

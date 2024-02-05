@@ -14,6 +14,7 @@
 """This module holds data for digital credentials connection."""
 from __future__ import annotations
 
+from enum import Enum
 from typing import List
 
 from .db import db
@@ -21,6 +22,18 @@ from .db import db
 
 class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the digital credentials connection."""
+
+    class State(Enum):
+        """Enum of the connection states."""
+
+        INIT = "init"
+        INVITATION = "invitation"
+        REQUEST = "request"
+        RESPONSE = "response"
+        ACTIVE = "active"
+        COMPLETED = "completed"
+        INACTIVE = "inactive"
+        ERROR = "error"
 
     __tablename__ = "dc_connections"
 
@@ -37,12 +50,16 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
     )
 
+    alternate_name_id = db.Column(
+        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id")
+    )
+
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         dc_connection = {
             "id": self.id,
-            "businessId": self.legal_entity_id,
+            "businessId": self.legal_entity_id or self.alternate_name_id,
             "connectionId": self.connection_id,
             "invitationUrl": self.invitation_url,
             "isActive": self.is_active,
@@ -53,6 +70,11 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Delete the object from the database immediately."""
+        db.session.delete(self)
         db.session.commit()
 
     @classmethod

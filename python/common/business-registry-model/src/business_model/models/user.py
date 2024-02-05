@@ -21,8 +21,8 @@ from datetime import datetime
 from flask import current_app
 from sql_versioning import Versioned
 
-from ..exceptions import BusinessException
-from ..utils.enum import BaseEnum, auto
+from legal_api.exceptions import BusinessException
+from legal_api.utils.enum import BaseEnum, auto
 
 from .db import db
 

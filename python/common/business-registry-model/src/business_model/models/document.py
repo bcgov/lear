@@ -18,11 +18,10 @@ Documents which are static in nature are stored in file server and details will 
 
 from __future__ import annotations
 
-from ..utils.enum import BaseEnum, auto
-
 from sql_versioning import Versioned
 from sqlalchemy import Column, String, desc
 
+from ..utils.enum import BaseEnum, auto
 from .db import db
 
 
@@ -46,6 +45,7 @@ class Document(Versioned, db.Model):
             "filing_id",
             "legal_entity_id",
             "type",
+            "alternate_name_id",
         ]
     }
 
@@ -59,6 +59,9 @@ class Document(Versioned, db.Model):
     )
     filing_id = db.Column(
         "filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
+    )
+    alternate_name_id = db.Column(
+        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True
     )
 
     def save(self):

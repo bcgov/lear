@@ -42,6 +42,7 @@ class Comment(db.Model):
             "legal_entity_id",
             "staff_id",
             "timestamp",
+            "alternate_name_id",
         ]
     }
 
@@ -59,6 +60,9 @@ class Comment(db.Model):
     filing_id = db.Column(
         "filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
     )
+    alternate_name_id = db.Column(
+        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True
+    )
 
     # Relationships - Users
     staff = db.relationship(
@@ -75,7 +79,7 @@ class Comment(db.Model):
                 "submitterDisplayName": user.display_name if user else None,
                 "comment": self.comment,
                 "filingId": self.filing_id,
-                "businessId": self.legal_entity_id,
+                "businessId": self.legal_entity_id or self.alternate_name_id,
                 "timestamp": self.timestamp.isoformat(),
             }
         }

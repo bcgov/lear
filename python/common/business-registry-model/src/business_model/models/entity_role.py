@@ -102,9 +102,10 @@ class EntityRole(Versioned, db.Model):
     )
 
     legal_entity = db.relationship("LegalEntity", foreign_keys=[legal_entity_id])
-    # related_entity = db.relationship('LegalEntity', backref='legal_entities_related_entity',
+        # related_entity = db.relationship('LegalEntity', backref='legal_entities_related_entity',
     related_entity = db.relationship(
-        "LegalEntity",  # backref='legal_entities_related_entity',
+        "LegalEntity",
+        backref="legal_entities_related_entity",
         foreign_keys=[related_entity_id],
     )
     related_colin_entity = db.relationship(
@@ -201,8 +202,7 @@ class EntityRole(Versioned, db.Model):
         org_name: str,
     ):
         """Return a Party connected to the given legal_entity_id by the given name."""
-        from .legal_entity import LegalEntity
-        from .colin_entity import ColinEntity
+        from legal_api.models import ColinEntity, LegalEntity
 
         party = None
 
@@ -279,14 +279,17 @@ class EntityRole(Versioned, db.Model):
         legal_entity_id: int, end_date: datetime = None, role: str = None
     ) -> list:
         """Return the parties that match the filter conditions."""
-        entity_roles = db.session.query(EntityRole).filter(
-            EntityRole.legal_entity_id == legal_entity_id
-        )
-
-        if end_date:
-            entity_roles = entity_roles.filter(
-                cast(EntityRole.appointment_date, Date) <= end_date
+        entity_roles = (
+            db.session.query(EntityRole)
+            .filter(EntityRole.legal_entity_id == legal_entity_id)
+            .filter(cast(EntityRole.appointment_date, Date) <= end_date)
+            .filter(
+                or_(
+                    EntityRole.cessation_date.is_(None),
+                    cast(EntityRole.cessation_date, Date) > end_date,
+                )
             )
+        )
 
         if role is not None:
             try:
@@ -319,16 +322,19 @@ class EntityRole(Versioned, db.Model):
         filing_id: int, end_date: datetime = None, role: str = None
     ) -> list:
         """Return the parties that match the filter conditions."""
-        entity_roles = db.session.query(EntityRole).filter(
-            EntityRole.filing_id == filing_id
+        entity_roles = (
+            db.session.query(EntityRole)
+            .filter(EntityRole.filing_id == filing_id)
+            .filter(cast(EntityRole.appointment_date, Date) <= end_date)
+            .filter(
+                or_(
+                    EntityRole.cessation_date.is_(None),
+                    cast(EntityRole.cessation_date, Date) > end_date,
+                )
+            )
         )
 
-        if end_date:
-            entity_roles = entity_roles.filter(
-                cast(EntityRole.appointment_date, Date) <= end_date
-            )
-
-        if role:
+        if role is not None:
             try:
                 _ = EntityRole.RoleTypes[role.lower()]
             except KeyError:
@@ -400,7 +406,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_related_person(self):
         """Return if entity role is for individual entity in legal_entities table."""
-        from . import LegalEntity
+        from legal_api.models import LegalEntity
 
         if (
             self.related_entity_id
@@ -413,7 +419,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_related_organization(self):
         """Return if entity role is a business in legal_entities table."""
-        from . import LegalEntity
+        from legal_api.models import LegalEntity
 
         if (
             self.related_entity_id
@@ -431,7 +437,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_filing_related_person(self):
         """Return if entity role is for individual entity in legal_entities table."""
-        from . import LegalEntity
+        from legal_api.models import LegalEntity
 
         if (
             self.filing_id
@@ -445,7 +451,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_filing_related_organization(self):
         """Return if entity role is a business in legal_entities table."""
-        from . import LegalEntity
+        from legal_api.models import LegalEntity
 
         if (
             self.filing_id

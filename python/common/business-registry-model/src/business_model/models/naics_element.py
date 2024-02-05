@@ -17,7 +17,7 @@ Element types can be examples, illustrative examples, inclusions and exclusions.
 """
 from enum import auto
 
-from ..utils.enum import BaseEnum
+from legal_api.utils.base import BaseEnum
 
 from .db import db  # noqa: I001
 

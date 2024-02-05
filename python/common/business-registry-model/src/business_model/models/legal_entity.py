@@ -15,9 +15,6 @@
 
 The Business class and Schema are held in this module
 """
-from __future__ import annotations
-
-import re
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Final, Optional
@@ -25,52 +22,51 @@ from typing import Final, Optional
 import datedelta
 from flask import current_app
 from sql_versioning import Versioned
-from sqlalchemy import event, text, case
+from sqlalchemy import case, event, text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, aliased
+from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql.functions import func
 
-from ..exceptions import BusinessException
-from ..utils.enum import BaseEnum, BaseMeta
-from ..utils.datetime import datetime, timezone
-from ..utils.legislation_datetime import LegislationDatetime
+from legal_api.exceptions import BusinessException
+from legal_api.utils.base import BaseEnum
+from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from .db import db  # noqa: I001
-from .share_class import (
-    ShareClass,
-)  # noqa: F401,I001,I003 pylint: disable=unused-import
-
-
-from .alternate_name import (
-    AlternateName,
-)  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
-
-
-from .address import (
+from .address import (  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     Address,
-)  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .alias import (
+)
+from .alias import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     Alias,
-)  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .entity_role import (
+)
+from .alternate_name import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+    AlternateName,
+)
+from .amalgamation import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+    Amalgamation,
+)
+from .db import db  # noqa: I001
+from .entity_role import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     EntityRole,
-)  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .filing import (
+)
+from .filing import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
     Filing,
-)  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .office import (
+)
+from .office import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     Office,
-)  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .resolution import (
+)
+from .resolution import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
     Resolution,
-)  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .role_address import (
+)
+from .role_address import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
     RoleAddress,
-)  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .user import (
+)
+from .share_class import (  # noqa: F401,I001,I003 pylint: disable=unused-import
+    ShareClass,
+)
+from .user import (  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
     User,
-)  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
+)
 
 
 class LegalEntity(
@@ -291,7 +287,6 @@ class LegalEntity(
     last_ar_reminder_year = db.Column("last_ar_reminder_year", db.Integer)
     association_type = db.Column("association_type", db.String(50))
     state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
-    state_filing_id = db.Column("state_filing_id", db.Integer)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     submitter_userid = db.Column(
         "submitter_userid", db.Integer, db.ForeignKey("users.id")
@@ -332,6 +327,9 @@ class LegalEntity(
     change_filing_id = db.Column(
         "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
     )
+    state_filing_id = db.Column(
+        "state_filing_id", db.Integer, db.ForeignKey("filings.id")
+    )
 
     # relationships
     change_filing = db.relationship("Filing", foreign_keys=[change_filing_id])
@@ -361,7 +359,7 @@ class LegalEntity(
         lazy="dynamic",
         overlaps="legal_entity",
     )
-    alternate_names = db.relationship(
+    _alternate_names = db.relationship(
         "AlternateName", back_populates="legal_entity", lazy="dynamic"
     )
     role_addresses = db.relationship("RoleAddress", lazy="dynamic")
@@ -381,6 +379,8 @@ class LegalEntity(
         foreign_keys="Resolution.signing_legal_entity_id",
         lazy="dynamic",
     )
+    amalgamating_businesses = db.relationship("AmalgamatingBusiness", lazy="dynamic")
+    amalgamation = db.relationship("Amalgamation", lazy="dynamic")
 
     @hybrid_property
     def identifier(self):
@@ -528,6 +528,7 @@ class LegalEntity(
           3. If there are more than two matching proprietor/partners, append ', et al'
           4. Return final legal_name result
         """
+
         match self.entity_type:
             case self.EntityTypes.PARTNERSHIP:
                 return self._legal_name
@@ -543,7 +544,7 @@ class LegalEntity(
 
                 return person_full_name
 
-        from . import ColinEntity
+        from . import ColinEntity  # pylint: disable=import-outside-toplevel
 
         if self.is_firm:
             related_le_alias = aliased(LegalEntity, name="related_le_alias")
@@ -562,7 +563,7 @@ class LegalEntity(
                         (
                             related_le_alias.entity_type == "organization",
                             related_le_alias._legal_name,
-                        ),
+                        ),  # pylint: disable=protected-access  # noqa: E501
                         else_=None,
                     ).label("sortName"),
                     case(
@@ -578,7 +579,7 @@ class LegalEntity(
                         (
                             related_le_alias.entity_type == "organization",
                             related_le_alias._legal_name,
-                        ),
+                        ),  # pylint: disable=protected-access  # noqa: E501
                         else_=None,
                     ).label("legalName"),
                 )
@@ -628,7 +629,7 @@ class LegalEntity(
         if not self.is_firm:
             return self._legal_name
 
-        if alternate_name := self.alternate_names.filter_by(
+        if alternate_name := self._alternate_names.filter_by(
             identifier=self.identifier
         ).one_or_none():
             return alternate_name.name
@@ -772,9 +773,17 @@ class LegalEntity(
                 self.fiscal_year_end_date
             ).isoformat()
         if self.state_filing_id:
-            d[
-                "stateFiling"
-            ] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            if self.state == LegalEntity.State.HISTORICAL and (
+                amalgamating_business := self.amalgamating_businesses.one_or_none()
+            ):
+                amalgamation = Amalgamation.find_by_id(
+                    amalgamating_business.amalgamation_id
+                )
+                d["amalgamatedInto"] = amalgamation.json()
+            else:
+                d[
+                    "stateFiling"
+                ] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         if self.start_date:
             d["startDate"] = LegislationDatetime.format_as_legislation_date(
@@ -936,6 +945,7 @@ class LegalEntity(
             return None
 
         legal_entity = None
+
         if identifier.startswith("FM"):
             if alt_name := AlternateName.find_by_identifier(identifier):
                 legal_entity = cls.find_by_id(alt_name.legal_entity_id)
@@ -944,6 +954,7 @@ class LegalEntity(
                 LegalEntity.EntityTypes.PERSON.value,
                 LegalEntity.EntityTypes.ORGANIZATION.value,
             ]
+
             legal_entity = (
                 cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types))
                 .filter_by(identifier=identifier)
@@ -1057,7 +1068,10 @@ class LegalEntity(
                 return False
 
         if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
-            if not (self.first_name or self.middle_initial or self.last_name):
+            if (
+                not (self.first_name or self.middle_initial or self.last_name)
+                or self.legal_name
+            ):
                 return False
         return True
 

@@ -1,11 +1,8 @@
 # Copyright © 2019 Province of British Columbia
-#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-#
 #     http://www.apache.org/licenses/LICENSE-2.0
-#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,18 +20,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
-from ..exceptions import BusinessException
-from ..models.colin_event_id import ColinEventId
-from ..schemas import build_schema_error_response
-from ..schemas import rsbc_schemas
+from legal_api.exceptions import BusinessException
+from legal_api.models.colin_event_id import ColinEventId
+from legal_api.schemas import rsbc_schemas
+from legal_api.utils.util import build_schema_error_response
 
-from .db import db  # noqa: I001
-
-
-from .comment import (
+from .comment import (  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
     Comment,
-)  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
-
+)
+from .db import db  # noqa: I001
 
 class DissolutionTypes(str, Enum):
     """Dissolution types."""
@@ -113,10 +107,39 @@ class Filing(
             "title": "Affidavit",
             "codes": {"CP": "AFDVT"},
         },
+        "agmExtension": {
+            "name": "agmExtension",
+            "title": "AGM Extension",
+            "codes": {"BC": "AGMDT", "BEN": "AGMDT", "ULC": "AGMDT", "CC": "AGMDT"},
+        },
+        "agmLocationChange": {
+            "name": "agmLocationChange",
+            "title": "AGM Change of Location",
+            "codes": {"BC": "AGMLC", "BEN": "AGMLC", "ULC": "AGMLC", "CC": "AGMLC"},
+        },
         "alteration": {
             "name": "alteration",
             "title": "Notice of Alteration Filing",
             "codes": {"BC": "ALTER", "BEN": "ALTER", "ULC": "ALTER", "CC": "ALTER"},
+        },
+        "amalgamationApplication": {
+            "name": "amalgamationApplication",
+            "temporaryCorpTypeCode": "ATMP",
+            "regular": {
+                "name": "regularAmalgamation",
+                "title": "Regular Amalgamation",
+                "codes": {"BEN": "AMALR", "BC": "AMALR", "ULC": "AMALR", "CC": "AMALR"},
+            },
+            "vertical": {
+                "name": "verticalAmalgamation",
+                "title": "Vertical Amalgamation",
+                "codes": {"BEN": "AMALV", "BC": "AMALV", "ULC": "AMALV", "CC": "AMALV"},
+            },
+            "horizontal": {
+                "name": "horizontalAmalgamation",
+                "title": "Horizontal Amalgamation",
+                "codes": {"BEN": "AMALH", "BC": "AMALH", "ULC": "AMALH", "CC": "AMALH"},
+            },
         },
         "annualReport": {
             "name": "annualReport",
@@ -308,6 +331,7 @@ class Filing(
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
         "dissolution": "dissolutionType",
         "restoration": "type",
+        "amalgamationApplication": "type",
     }
 
     __tablename__ = "filings"
@@ -347,13 +371,14 @@ class Filing(
             "notice_date",
             "order_details",
             "paper_only",
-            "parent_filing_id",  # FUTURE: parent_filing_id should no longer be used for correction filings and will be removed
+            "parent_filing_id",  # FUTURE: this id should no longer be used for correction filings and will be removed
             "payment_account",
             "submitter_id",
             "submitter_roles",
             "tech_correction_json",
             "temp_reg",
             "transaction_id",
+            "alternate_name_id",
         ]
     }
 
@@ -402,6 +427,9 @@ class Filing(
     #    db.ForeignKey('transaction.id'))
     legal_entity_id = db.Column(
         "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
+    )
+    alternate_name_id = db.Column(
+        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id")
     )
     temp_reg = db.Column(
         "temp_reg", db.String(10), db.ForeignKey("registration_bootstrap.identifier")
@@ -612,7 +640,6 @@ class Filing(
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
-            self._status = Filing.Status.COMPLETED.value
         if not self.effective_date_can_be_before_payment_completion_date(
             business_type
         ) and (
@@ -620,8 +647,8 @@ class Filing(
             or (
                 self.payment_completion_date
                 and self.effective_date < self.payment_completion_date
-            )
-        ):  # pylint: disable=W0143; hybrid property
+            )  # pylint: disable=W0143; hybrid property  # noqa: E501
+        ):
             self.effective_date = self.payment_completion_date
 
     def effective_date_can_be_before_payment_completion_date(self, business_type):
@@ -943,9 +970,9 @@ class Filing(
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        from .legal_entity import (
+        from .legal_entity import (  # noqa: F401; pylint: disable=import-outside-toplevel
             LegalEntity,
-        )  # noqa: F401; pylint: disable=import-outside-toplevel
+        )
 
         filings = (
             db.session.query(Filing)
@@ -1068,8 +1095,10 @@ class Filing(
         for k in filing["filing"].keys():  # pylint: disable=unsubscriptable-object
             if Filing.FILINGS.get(k, None):
                 legal_filings.append(
-                    {k: copy.deepcopy(filing["filing"].get(k))}
-                )  # pylint: disable=unsubscriptable-object
+                    {
+                        k: copy.deepcopy(filing["filing"].get(k))
+                    }  # pylint: disable=unsubscriptable-object
+                )
 
         return legal_filings
 
@@ -1100,21 +1129,16 @@ def receive_before_change(
     # because it's been set to PENDING_CORRECTION by the entity filer.
     if hasattr(filing, "skip_status_listener") and filing.skip_status_listener:
         return
-
     # changes are part of the class and are not externalized
     if filing.filing_type == "lear_epoch":
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
-
-    elif filing._completion_date:
+    elif filing.transaction_id:
         filing._status = (
             Filing.Status.COMPLETED.value
         )  # pylint: disable=protected-access
-
     elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:
         filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
-
     elif filing.payment_token:
         filing._status = Filing.Status.PENDING.value  # pylint: disable=protected-access
-
     else:
         filing._status = Filing.Status.DRAFT.value  # pylint: disable=protected-access

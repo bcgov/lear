@@ -14,19 +14,18 @@
 """This module holds data for corp parties (people/organizations)."""
 from __future__ import annotations
 
-from enum import Enum
 from http import HTTPStatus
 
 from sql_versioning import Versioned
 from sqlalchemy import event
 
-from ..exceptions import BusinessException
-from ..utils.enum import BaseEnum, auto
+from legal_api.exceptions import BusinessException
+from legal_api.utils.enum import BaseEnum, auto
 
-from .db import db  # noqa: I001
-from .address import (
+from .address import (  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
     Address,
-)  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
+)
+from .db import db  # noqa: I001
 
 
 class Party(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
