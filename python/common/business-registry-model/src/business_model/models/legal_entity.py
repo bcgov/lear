@@ -23,7 +23,7 @@ from typing import Final, Optional
 import datedelta
 from flask import current_app
 from legal_api.exceptions import BusinessException
-from legal_api.utils.base import BaseEnum
+from legal_api.utils.base import BaseEnum, BaseMeta
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from sql_versioning import Versioned

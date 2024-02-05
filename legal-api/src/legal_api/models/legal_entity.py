@@ -30,7 +30,7 @@ from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql.functions import func
 
 from legal_api.exceptions import BusinessException
-from legal_api.utils.base import BaseEnum
+from legal_api.utils.base import BaseEnum, BaseMeta
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -820,7 +820,7 @@ class LegalEntity(
         return legal_entity
 
     @classmethod
-    def find_by_operating_name(cls, operating_name: str = None) -> LegalEntity | None:
+    def find_by_operating_name(cls, operating_name: str = None):
         """Given a operating_name, this will return an Active LegalEntity."""
         if not operating_name:
             return None
