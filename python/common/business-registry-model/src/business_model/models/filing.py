@@ -30,6 +30,7 @@ from .comment import (  # noqa: I001,F401,I003 pylint: disable=unused-import; ne
 )
 from .db import db  # noqa: I001
 
+
 class DissolutionTypes(str, Enum):
     """Dissolution types."""
 

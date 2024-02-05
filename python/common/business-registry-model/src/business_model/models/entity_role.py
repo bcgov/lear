@@ -102,7 +102,7 @@ class EntityRole(Versioned, db.Model):
     )
 
     legal_entity = db.relationship("LegalEntity", foreign_keys=[legal_entity_id])
-        # related_entity = db.relationship('LegalEntity', backref='legal_entities_related_entity',
+    # related_entity = db.relationship('LegalEntity', backref='legal_entities_related_entity',
     related_entity = db.relationship(
         "LegalEntity",
         backref="legal_entities_related_entity",
