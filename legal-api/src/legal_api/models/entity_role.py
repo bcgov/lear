@@ -24,7 +24,7 @@ from ..utils.enum import BaseEnum
 from .db import db
 
 
-# pylint: disable=import-outside-toplevel
+# pylint: disable=import-outside-toplevel, too-many-public-methods
 class EntityRole(Versioned, db.Model):
     """This class manages the entity roles."""
 
@@ -98,12 +98,13 @@ class EntityRole(Versioned, db.Model):
     @property
     @classmethod
     def valid_org_roles(cls):
+        """Returns valid org role types"""
         return [
-            RoleTypes.completing_party,
-            RoleTypes.custodian,
-            RoleTypes.incorporator,
-            RoleTypes.proprietor,
-            RoleTypes.partner,
+            cls.RoleTypes.completing_party,
+            cls.RoleTypes.custodian,
+            cls.RoleTypes.incorporator,
+            cls.RoleTypes.proprietor,
+            cls.RoleTypes.partner,
         ]
 
     def save(self):

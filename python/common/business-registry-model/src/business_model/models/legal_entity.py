@@ -15,6 +15,7 @@
 
 The Business class and Schema are held in this module
 """
+import re
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Final, Optional
@@ -46,7 +47,9 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class LegalEntity(
+    Versioned, db.Model
+):  # pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines
     """This class manages all of the base data about a LegalEntity.
 
     A business is base form of any entity that can interact directly

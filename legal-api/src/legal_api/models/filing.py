@@ -29,7 +29,7 @@ from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-impo
 from .db import db  # noqa: I001
 
 
-class DissolutionTypes(str, Enum):
+class DissolutionTypes(str, Enum):  # pylint: disable=too-many-lines
     """Dissolution types."""
 
     ADMINISTRATIVE = "administrative"
