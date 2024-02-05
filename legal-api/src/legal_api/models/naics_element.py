@@ -48,7 +48,12 @@ class NaicsElement(db.Model):
     element_description = db.Column("element_description", db.String(500), index=True, nullable=False)
 
     # parent keys
-    naics_structure_id = db.Column("naics_structure_id", db.Integer, db.ForeignKey("naics_structures.id"), index=True)
+    naics_structure_id = db.Column(
+        "naics_structure_id",
+        db.Integer,
+        db.ForeignKey("naics_structures.id"),
+        index=True,
+    )
 
     # json serializer
     @property

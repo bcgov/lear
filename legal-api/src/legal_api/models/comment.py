@@ -21,8 +21,7 @@ from http import HTTPStatus
 from sqlalchemy import event
 from sqlalchemy.orm import backref
 
-from legal_api.exceptions import BusinessException
-
+from ..exceptions import BusinessException
 from .db import db
 from .user import User
 

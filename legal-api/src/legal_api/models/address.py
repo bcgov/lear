@@ -69,17 +69,26 @@ class Address(Versioned, db.Model):  # pylint: disable=too-many-instance-attribu
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
     change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
-    office_id = db.Column("office_id", db.Integer, db.ForeignKey("offices.id", ondelete="CASCADE"), nullable=True)
+    office_id = db.Column(
+        "office_id",
+        db.Integer,
+        db.ForeignKey("offices.id", ondelete="CASCADE"),
+        nullable=True,
+    )
     # Relationships - Users
     # business_mailing_address = db.relationship('Business',
     #                                            backref=backref('business_mailing_address', uselist=False),
     #                                            foreign_keys=[legal_entity_id])
 
     legal_entity_delivery_address = db.relationship(
-        "LegalEntity", back_populates="entity_delivery_address", foreign_keys="LegalEntity.delivery_address_id"
+        "LegalEntity",
+        back_populates="entity_delivery_address",
+        foreign_keys="LegalEntity.delivery_address_id",
     )
     legal_entity_mailing_address = db.relationship(
-        "LegalEntity", back_populates="entity_mailing_address", foreign_keys="LegalEntity.mailing_address_id"
+        "LegalEntity",
+        back_populates="entity_mailing_address",
+        foreign_keys="LegalEntity.mailing_address_id",
     )
 
     def save(self):

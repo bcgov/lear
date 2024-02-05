@@ -26,19 +26,17 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
 
     id = db.Column(db.Integer, primary_key=True)
 
-    dc_definition_id = db.Column(
-        "dc_definition_id", db.Integer, db.ForeignKey("dc_definitions.id")
-    )
-    dc_connection_id = db.Column(
-        "dc_connection_id", db.Integer, db.ForeignKey("dc_connections.id")
-    )
+    dc_definition_id = db.Column("dc_definition_id", db.Integer, db.ForeignKey("dc_definitions.id"))
+    dc_connection_id = db.Column("dc_connection_id", db.Integer, db.ForeignKey("dc_connections.id"))
 
     credential_exchange_id = db.Column("credential_exchange_id", db.String(100))
-    credential_id = db.Column("credential_id", db.String(100))  # not in use
+    credential_id = db.Column("credential_id", db.String(10))
     is_issued = db.Column("is_issued", db.Boolean, default=False)
     date_of_issue = db.Column("date_of_issue", db.DateTime(timezone=True))
 
     is_revoked = db.Column("is_revoked", db.Boolean, default=False)
+    credential_revocation_id = db.Column("credential_revocation_id", db.String(10))
+    revocation_registry_id = db.Column("revocation_registry_id", db.String(200))
 
     @property
     def json(self):
@@ -48,9 +46,12 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
             "dcDefinitionId": self.dc_definition_id,
             "dcConnectionId": self.dc_connection_id,
             "credentialExchangeId": self.credential_exchange_id,
+            "credentialId": self.credential_id,
             "isIssued": self.is_issued,
-            "dateOfIssue": self.date_of_issue.isoformat(),
+            "dateOfIssue": self.date_of_issue.isoformat() if self.date_of_issue else None,
             "isRevoked": self.is_revoked,
+            "credentialRevocationId": self.credential_revocation_id,
+            "revocationRegistryId": self.revocation_registry_id,
         }
         return dc_issued_credential
 
@@ -59,21 +60,22 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
         db.session.add(self)
         db.session.commit()
 
+    def delete(self):
+        """Delete the object from the database immediately."""
+        db.session.delete(self)
+        db.session.commit()
+
     @classmethod
     def find_by_id(cls, dc_issued_credential_id: str) -> DCIssuedCredential:
         """Return the issued credential matching the id."""
         dc_issued_credential = None
         if dc_issued_credential_id:
-            dc_issued_credential = cls.query.filter_by(
-                id=dc_issued_credential_id
-            ).one_or_none()
+            dc_issued_credential = cls.query.filter_by(id=dc_issued_credential_id).one_or_none()
         return dc_issued_credential
 
     @classmethod
-    def find_by_credential_exchange_id(
-        cls, credential_exchange_id: str
-    ) -> DCIssuedCredential:
-        """Return the issued credential matching the id."""
+    def find_by_credential_exchange_id(cls, credential_exchange_id: str) -> DCIssuedCredential:
+        """Return the issued credential matching the credential exchange id."""
         dc_issued_credential = None
         if credential_exchange_id:
             dc_issued_credential = cls.query.filter(
@@ -82,20 +84,22 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
         return dc_issued_credential
 
     @classmethod
-    def find_by(
-        cls, dc_definition_id: int = None, dc_connection_id: int = None
-    ) -> List[DCIssuedCredential]:
+    def find_by_credential_id(cls, credential_id: str) -> DCIssuedCredential:
+        """Return the issued credential matching the credential id."""
+        dc_issued_credential = None
+        if credential_id:
+            dc_issued_credential = cls.query.filter(DCIssuedCredential.credential_id == credential_id).one_or_none()
+        return dc_issued_credential
+
+    @classmethod
+    def find_by(cls, dc_definition_id: int = None, dc_connection_id: int = None) -> List[DCIssuedCredential]:
         """Return the issued credential matching the filter."""
         query = db.session.query(DCIssuedCredential)
 
         if dc_definition_id:
-            query = query.filter(
-                DCIssuedCredential.dc_definition_id == dc_definition_id
-            )
+            query = query.filter(DCIssuedCredential.dc_definition_id == dc_definition_id)
 
         if dc_connection_id:
-            query = query.filter(
-                DCIssuedCredential.dc_connection_id == dc_connection_id
-            )
+            query = query.filter(DCIssuedCredential.dc_connection_id == dc_connection_id)
 
         return query.all()

@@ -17,17 +17,12 @@ The RegistrationBoostrap class and Schema are held in this module
 """
 from datetime import datetime
 
+from legal_api.exceptions import BusinessException
 from sqlalchemy.ext.hybrid import hybrid_property
 
-from ..exceptions import BusinessException
-
 from .db import db
-from .filing import (
-    Filing,
-)  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .user import (
-    User,
-)  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .filing import Filing  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -44,9 +39,7 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
 
     _identifier = db.Column("identifier", db.String(10), primary_key=True)
     account = db.Column("account", db.Integer, index=True)
-    last_modified = db.Column(
-        "last_modified", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
 
     # relationships
     filings = db.relationship("Filing", lazy="dynamic")

@@ -48,26 +48,16 @@ class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
 
     id = db.Column(db.Integer, primary_key=True)
     resolution_date = db.Column("resolution_date", db.Date, nullable=False)
-    resolution_type = db.Column(
-        "type", db.String(20), default=ResolutionType.SPECIAL, nullable=False
-    )
+    resolution_type = db.Column("type", db.String(20), default=ResolutionType.SPECIAL, nullable=False)
     resolution_sub_type = db.Column("sub_type", db.String(20))
     signing_date = db.Column("signing_date", db.Date)
     resolution = db.Column(db.Text)
 
     # parent keys
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
-    signing_party_id = db.Column(
-        "signing_party_id", db.Integer, db.ForeignKey("parties.id")
-    )
-    signing_legal_entity_id = db.Column(
-        "signing_legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    signing_party_id = db.Column("signing_party_id", db.Integer, db.ForeignKey("parties.id"))
+    signing_legal_entity_id = db.Column("signing_legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
 
     # relationships
     party = db.relationship("Party")
@@ -98,16 +88,10 @@ class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
             resolution_json["signingDate"] = self.signing_date.isoformat()
         if self.signing_legal_entity_id:
             resolution_json["signatory"] = {}
-            resolution_json["signatory"][
-                "givenName"
-            ] = self.signing_legal_entity.first_name
-            resolution_json["signatory"][
-                "familyName"
-            ] = self.signing_legal_entity.last_name
+            resolution_json["signatory"]["givenName"] = self.signing_legal_entity.first_name
+            resolution_json["signatory"]["familyName"] = self.signing_legal_entity.last_name
             if self.signing_legal_entity.middle_initial:
-                resolution_json["signatory"][
-                    "additionalName"
-                ] = self.signing_legal_entity.middle_initial
+                resolution_json["signatory"]["additionalName"] = self.signing_legal_entity.middle_initial
         return resolution_json
 
     @classmethod

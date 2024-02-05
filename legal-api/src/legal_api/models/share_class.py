@@ -123,11 +123,13 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     if share_class.par_value_flag:
         if not share_class.par_value:
             raise BusinessException(
-                error=f"The share class {share_class.name} must specify par value.", status_code=HTTPStatus.BAD_REQUEST
+                error=f"The share class {share_class.name} must specify par value.",
+                status_code=HTTPStatus.BAD_REQUEST,
             )
         if not share_class.currency:
             raise BusinessException(
-                error=f"The share class {share_class.name} must specify currency.", status_code=HTTPStatus.BAD_REQUEST
+                error=f"The share class {share_class.name} must specify currency.",
+                status_code=HTTPStatus.BAD_REQUEST,
             )
     else:
         share_class.par_value = None

@@ -18,11 +18,10 @@ Documents which are static in nature are stored in file server and details will 
 
 from __future__ import annotations
 
-from ..utils.enum import BaseEnum, auto
-
 from sql_versioning import Versioned
 from sqlalchemy import Column, String, desc
 
+from ..utils.enum import BaseEnum, auto
 from .db import db
 
 
@@ -46,6 +45,7 @@ class Document(Versioned, db.Model):
             "filing_id",
             "legal_entity_id",
             "type",
+            "alternate_name_id",
         ]
     }
 
@@ -54,12 +54,9 @@ class Document(Versioned, db.Model):
     file_key = Column("file_key", String(100), nullable=False)
 
     # parent keys
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True
-    )
-    filing_id = db.Column(
-        "filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True)
 
     def save(self):
         """Save the object to the database immediately."""
@@ -72,9 +69,7 @@ class Document(Versioned, db.Model):
         return cls.query.filter_by(id=document_id).one_or_none()
 
     @classmethod
-    def find_by_legal_entity_id_and_type(
-        cls, legal_entity_id: int, document_type: String
-    ):
+    def find_by_legal_entity_id_and_type(cls, legal_entity_id: int, document_type: String):
         """Return the document matching the business id and type."""
         return (
             cls.query.filter_by(legal_entity_id=legal_entity_id, type=document_type)

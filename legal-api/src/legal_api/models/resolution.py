@@ -62,7 +62,9 @@ class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
     # relationships
     party = db.relationship("Party")
     signing_legal_entity = db.relationship(
-        "LegalEntity", back_populates="resolution_signing_legal_entity", foreign_keys=[signing_legal_entity_id]
+        "LegalEntity",
+        back_populates="resolution_signing_legal_entity",
+        foreign_keys=[signing_legal_entity_id],
     )
 
     def save(self):
@@ -73,7 +75,11 @@ class Resolution(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
-        resolution_json = {"id": self.id, "type": self.resolution_type, "date": self.resolution_date.isoformat()}
+        resolution_json = {
+            "id": self.id,
+            "type": self.resolution_type,
+            "date": self.resolution_date.isoformat(),
+        }
         if self.resolution:
             resolution_json["resolution"] = self.resolution
         if self.resolution_sub_type:

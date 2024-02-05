@@ -21,9 +21,7 @@ from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
 from .db import db  # noqa: I001
-from .party import (
-    Party,
-)  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
+from .party import Party  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
 class PartyRole(Versioned, db.Model):
@@ -59,9 +57,7 @@ class PartyRole(Versioned, db.Model):
     appointment_date = db.Column("appointment_date", db.DateTime(timezone=True))
     cessation_date = db.Column("cessation_date", db.DateTime(timezone=True))
 
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
     filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
     party_id = db.Column("party_id", db.Integer, db.ForeignKey("parties.id"))
 
@@ -79,9 +75,7 @@ class PartyRole(Versioned, db.Model):
         party = {
             **self.party.json,
             "appointmentDate": datetime.date(self.appointment_date).isoformat(),
-            "cessationDate": datetime.date(self.cessation_date).isoformat()
-            if self.cessation_date
-            else None,
+            "cessationDate": datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
             "role": self.role,
         }
 
@@ -113,9 +107,7 @@ class PartyRole(Versioned, db.Model):
         if org_name:
             search_name = org_name
         elif middle_initial:
-            search_name = " ".join(
-                (first_name.strip(), middle_initial.strip(), last_name.strip())
-            )
+            search_name = " ".join((first_name.strip(), middle_initial.strip(), last_name.strip()))
         else:
             search_name = " ".join((first_name.strip(), last_name.strip()))
 
@@ -158,9 +150,7 @@ class PartyRole(Versioned, db.Model):
         return directors
 
     @staticmethod
-    def get_party_roles(
-        legal_entity_id: int, end_date: datetime, role: str = None
-    ) -> list:
+    def get_party_roles(legal_entity_id: int, end_date: datetime, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         party_roles = (
             db.session.query(PartyRole)
@@ -192,9 +182,7 @@ class PartyRole(Versioned, db.Model):
         return party_roles
 
     @staticmethod
-    def get_party_roles_by_filing(
-        filing_id: int, end_date: datetime, role: str = None
-    ) -> list:
+    def get_party_roles_by_filing(filing_id: int, end_date: datetime, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         party_roles = (
             db.session.query(PartyRole)

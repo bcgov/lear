@@ -29,6 +29,16 @@ from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-impo
 from .db import db  # noqa: I001
 
 
+class DissolutionTypes(str, Enum):  # pylint: disable=too-many-lines
+    """Dissolution types."""
+
+    ADMINISTRATIVE = "administrative"
+    COURT_ORDERED_LIQUIDATION = "courtOrderedLiquidation"
+    INVOLUNTARY = "involuntary"
+    VOLUNTARY = "voluntary"
+    VOLUNTARY_LIQUIDATION = "voluntaryLiquidation"
+
+
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
     """Immutable filing record.
@@ -54,9 +64,46 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         COLIN = "COLIN"
         LEAR = "LEAR"
 
+    class FilingTypes(str, Enum):
+        """Render an Enum of all Filing Types."""
+
+        ADMIN_FREEZE = "adminFreeze"
+        ALTERATION = "alteration"
+        AMALGAMATIONAPPLICATION = "amalgamationApplication"
+        AMENDEDAGM = "amendedAGM"
+        AMENDEDANNUALREPORT = "amendedAnnualReport"
+        AMENDEDCHANGEOFDIRECTORS = "amendedChangeOfDirectors"
+        ANNUALREPORT = "annualReport"
+        APPOINTRECEIVER = "appointReceiver"
+        CHANGEOFADDRESS = "changeOfAddress"
+        CHANGEOFDIRECTORS = "changeOfDirectors"
+        CHANGEOFNAME = "changeOfName"
+        CHANGEOFREGISTRATION = "changeOfRegistration"
+        CONSENTCONTINUATIONOUT = "consentContinuationOut"
+        CONTINUATIONOUT = "continuationOut"
+        CONTINUEDOUT = "continuedOut"
+        CONVERSION = "conversion"
+        CORRECTION = "correction"
+        COURTORDER = "courtOrder"
+        DISSOLUTION = "dissolution"
+        DISSOLVED = "dissolved"
+        INCORPORATIONAPPLICATION = "incorporationApplication"
+        PUTBACKON = "putBackOn"
+        REGISTRARSNOTATION = "registrarsNotation"
+        REGISTRARSORDER = "registrarsOrder"
+        REGISTRATION = "registration"
+        RESTORATION = "restoration"
+        RESTORATIONAPPLICATION = "restorationApplication"
+        SPECIALRESOLUTION = "specialResolution"
+        TRANSITION = "transition"
+
     # TODO: get legal types from defined class once table is made (getting it from Business causes circ import)
     FILINGS = {
-        "affidavit": {"name": "affidavit", "title": "Affidavit", "codes": {"CP": "AFDVT"}},
+        "affidavit": {
+            "name": "affidavit",
+            "title": "Affidavit",
+            "codes": {"CP": "AFDVT"},
+        },
         "agmExtension": {
             "name": "agmExtension",
             "title": "AGM Extension",
@@ -94,18 +141,44 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         "annualReport": {
             "name": "annualReport",
             "title": "Annual Report Filing",
-            "codes": {"CP": "OTANN", "BEN": "BCANN", "BC": "BCANN", "ULC": "BCANN", "CC": "BCANN"},
+            "codes": {
+                "CP": "OTANN",
+                "BEN": "BCANN",
+                "BC": "BCANN",
+                "ULC": "BCANN",
+                "CC": "BCANN",
+            },
         },
         "changeOfAddress": {
             "name": "changeOfAddress",
             "title": "Change of Address Filing",
-            "codes": {"CP": "OTADD", "BEN": "BCADD", "BC": "BCADD", "ULC": "BCADD", "CC": "BCADD"},
+            "codes": {
+                "CP": "OTADD",
+                "BEN": "BCADD",
+                "BC": "BCADD",
+                "ULC": "BCADD",
+                "CC": "BCADD",
+            },
         },
         "changeOfDirectors": {
             "name": "changeOfDirectors",
             "title": "Change of Directors Filing",
-            "codes": {"CP": "OTCDR", "BEN": "BCCDR", "BC": "BCCDR", "ULC": "BCCDR", "CC": "BCCDR"},
-            "free": {"codes": {"CP": "OTFDR", "BEN": "BCFDR", "BC": "BCFDR", "ULC": "BCFDR", "CC": "BCFDR"}},
+            "codes": {
+                "CP": "OTCDR",
+                "BEN": "BCCDR",
+                "BC": "BCCDR",
+                "ULC": "BCCDR",
+                "CC": "BCCDR",
+            },
+            "free": {
+                "codes": {
+                    "CP": "OTFDR",
+                    "BEN": "BCFDR",
+                    "BC": "BCFDR",
+                    "ULC": "BCFDR",
+                    "CC": "BCFDR",
+                }
+            },
         },
         "changeOfName": {
             "name": "changeOfName",
@@ -181,7 +254,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         "incorporationApplication": {
             "name": "incorporationApplication",
             "title": "Incorporation Application",
-            "codes": {"BEN": "BCINC", "BC": "BCINC", "ULC": "BCINC", "CC": "BCINC", "CP": "OTINC"},
+            "codes": {
+                "BEN": "BCINC",
+                "BC": "BCINC",
+                "ULC": "BCINC",
+                "CC": "BCINC",
+                "CP": "OTINC",
+            },
             "temporaryCorpTypeCode": "TMP",
         },
         "registration": {
@@ -213,7 +292,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 "codes": {"BC": "RESXF", "BEN": "RESXF", "ULC": "RESXF", "CC": "RESXF"},
             },
         },
-        "specialResolution": {"name": "specialResolution", "title": "Special Resolution", "codes": {"CP": "SPRLN"}},
+        "specialResolution": {
+            "name": "specialResolution",
+            "title": "Special Resolution",
+            "codes": {"CP": "SPRLN"},
+        },
         "transition": {
             "name": "transition",
             "title": "Transition",
@@ -221,11 +304,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
-        "adminFreeze": {"name": "adminFreeze", "title": "Admin Freeze", "code": "NOFEE"},
+        "adminFreeze": {
+            "name": "adminFreeze",
+            "title": "Admin Freeze",
+            "code": "NOFEE",
+        },
         "courtOrder": {"name": "courtOrder", "title": "Court Order", "code": "NOFEE"},
         "putBackOn": {"name": "putBackOn", "title": "Put Back On", "code": "NOFEE"},
-        "registrarsNotation": {"name": "registrarsNotation", "title": "Registrars Notation", "code": "NOFEE"},
-        "registrarsOrder": {"name": "registrarsOrder", "title": "Registrars Order", "code": "NOFEE"},
+        "registrarsNotation": {
+            "name": "registrarsNotation",
+            "title": "Registrars Notation",
+            "code": "NOFEE",
+        },
+        "registrarsOrder": {
+            "name": "registrarsOrder",
+            "title": "Registrars Order",
+            "code": "NOFEE",
+        },
     }
 
     FILING_SUB_TYPE_KEYS: Final = {
@@ -321,7 +416,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     submitter_id = db.Column("submitter_id", db.Integer, db.ForeignKey("users.id"))
 
     filing_submitter = db.relationship(
-        "User", backref=backref("filing_submitter", uselist=False), foreign_keys=[submitter_id]
+        "User",
+        backref=backref("filing_submitter", uselist=False),
+        foreign_keys=[submitter_id],
     )
 
     colin_event_ids = db.relationship("ColinEventId", lazy="select")
@@ -424,7 +521,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Property containing the filing source."""
         if source not in [x.value for x in self.Source]:
             raise BusinessException(
-                error="Tried to update the filing with an invalid source.", status_code=HTTPStatus.BAD_REQUEST
+                error="Tried to update the filing with an invalid source.",
+                status_code=HTTPStatus.BAD_REQUEST,
             )
         self._source = source
 
@@ -522,7 +620,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def _raise_default_lock_exception():
         raise BusinessException(
-            error="Filings cannot be changed after the invoice is created.", status_code=HTTPStatus.FORBIDDEN
+            error="Filings cannot be changed after the invoice is created.",
+            status_code=HTTPStatus.FORBIDDEN,
         )
 
     @property
@@ -695,14 +794,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     @staticmethod
     def get_filings_by_type_pairs(
-        legal_entity_id: int, filing_type_pairs: list, status: list, return_unique_pairs=False
+        legal_entity_id: int,
+        filing_type_pairs: list,
+        status: list,
+        return_unique_pairs=False,
     ):
         """Return the filings of particular filing type/sub-type pairs as well as statuses.
 
         If return_unique_pairs is True, only return one instance of each filing type/sub-type pair.
         """
         filing_type_conditions = [
-            and_(Filing._filing_type == filing_type, Filing._filing_sub_type == filing_sub_type).self_group()
+            and_(
+                Filing._filing_type == filing_type,
+                Filing._filing_sub_type == filing_sub_type,
+            ).self_group()
             for filing_type, filing_sub_type in filing_type_pairs
         ]
 
@@ -716,7 +821,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         # pylint: disable=W0212; prevent infinite loop
         if return_unique_pairs:
             subquery = (
-                base_query.with_entities(Filing._filing_type, Filing._filing_sub_type, func.max(Filing.id).label("id"))
+                base_query.with_entities(
+                    Filing._filing_type,
+                    Filing._filing_sub_type,
+                    func.max(Filing.id).label("id"),
+                )
                 .group_by(Filing._filing_type, Filing._filing_sub_type)
                 .subquery()
             )
@@ -762,7 +871,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         )
         if filing_type:
             expr = Filing._filing_json[("filing", filing_type)]
-            query = query.filter(or_(Filing._filing_type == filing_type, expr.label("legal_filing_type").isnot(None)))
+            query = query.filter(
+                or_(
+                    Filing._filing_type == filing_type,
+                    expr.label("legal_filing_type").isnot(None),
+                )
+            )
         max_filing = query.subquery()
 
         filing = (
@@ -792,7 +906,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             .join(LegalEntity, Filing.legal_entity_id == LegalEntity.id)
             .filter(
                 ~LegalEntity.entity_type.in_(
-                    [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]
+                    [
+                        LegalEntity.EntityTypes.SOLE_PROP.value,
+                        LegalEntity.EntityTypes.PARTNERSHIP.value,
+                    ]
                 ),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,

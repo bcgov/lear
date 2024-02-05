@@ -33,9 +33,7 @@ class ColinLastUpdate(db.Model):  # pylint: disable=too-few-public-methods
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    last_update = db.Column(
-        "last_update", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    last_update = db.Column("last_update", db.DateTime(timezone=True), default=datetime.utcnow)
     last_event_id = db.Column("last_event_id", db.Integer, unique=False, nullable=False)
 
     @property

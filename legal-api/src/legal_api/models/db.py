@@ -18,14 +18,5 @@ These will get initialized by the application using the models
 from flask_sqlalchemy import SQLAlchemy
 from sql_versioning import versioned_session
 
-# from sqlalchemy_continuum import make_versioned
-
-
-# by convention in the Flask community these are lower case,
-# whereas pylint wants them upper case
 db = SQLAlchemy()  # pylint: disable=invalid-name
-
-# make_versioned(user_cls=None, plugins=[FlaskPlugin()])
-# make_versioned(user_cls=None)
-# add versioning support to the active FlaskSqlAlchemy session
 versioned_session(db.session)

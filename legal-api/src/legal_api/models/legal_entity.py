@@ -15,6 +15,7 @@
 
 The Business class and Schema are held in this module
 """
+import re
 from enum import Enum, auto
 from http import HTTPStatus
 from typing import Final, Optional
@@ -29,7 +30,7 @@ from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql.functions import func
 
 from legal_api.exceptions import BusinessException
-from legal_api.utils.base import BaseEnum
+from legal_api.utils.base import BaseEnum, BaseMeta
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -47,7 +48,9 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class LegalEntity(
+    Versioned, db.Model
+):  # pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines
     """This class manages all of the base data about a LegalEntity.
 
     A business is base form of any entity that can interact directly
@@ -249,7 +252,11 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     submitter_userid = db.Column("submitter_userid", db.Integer, db.ForeignKey("users.id"))
-    submitter = db.relationship("User", backref=backref("submitter", uselist=False), foreign_keys=[submitter_userid])
+    submitter = db.relationship(
+        "User",
+        backref=backref("submitter", uselist=False),
+        foreign_keys=[submitter_userid],
+    )
     send_ar_ind = db.Column("send_ar_ind", db.Boolean, unique=False, default=True)
     bn9 = db.Column("bn9", db.String(9))
     first_name = db.Column("first_name", db.String(30), index=True)
@@ -290,15 +297,22 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     documents = db.relationship("Document", lazy="dynamic")
     consent_continuation_outs = db.relationship("ConsentContinuationOut", lazy="dynamic")
     entity_roles = db.relationship(
-        "EntityRole", foreign_keys="EntityRole.legal_entity_id", lazy="dynamic", overlaps="legal_entity"
+        "EntityRole",
+        foreign_keys="EntityRole.legal_entity_id",
+        lazy="dynamic",
+        overlaps="legal_entity",
     )
     _alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy="dynamic")
     role_addresses = db.relationship("RoleAddress", lazy="dynamic")
     entity_delivery_address = db.relationship(
-        "Address", back_populates="legal_entity_delivery_address", foreign_keys=[delivery_address_id]
+        "Address",
+        back_populates="legal_entity_delivery_address",
+        foreign_keys=[delivery_address_id],
     )
     entity_mailing_address = db.relationship(
-        "Address", back_populates="legal_entity_mailing_address", foreign_keys=[mailing_address_id]
+        "Address",
+        back_populates="legal_entity_mailing_address",
+        foreign_keys=[mailing_address_id],
     )
     resolution_signing_legal_entity = db.relationship(
         "Resolution",
@@ -413,7 +427,10 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     @property
     def is_firm(self):
         """Return if is firm, otherwise false."""
-        return self.entity_type in [self.EntityTypes.SOLE_PROP.value, self.EntityTypes.PARTNERSHIP.value]
+        return self.entity_type in [
+            self.EntityTypes.SOLE_PROP.value,
+            self.EntityTypes.PARTNERSHIP.value,
+        ]
 
     @property
     def good_standing(self):
@@ -443,6 +460,22 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
           3. If there are more than two matching proprietor/partners, append ', et al'
           4. Return final legal_name result
         """
+
+        match self.entity_type:
+            case self.EntityTypes.PARTNERSHIP:
+                return self._legal_name
+
+            case self.EntityTypes.PERSON:
+                person_full_name = ""
+                for token in [self.first_name, self.middle_initial, self.last_name]:
+                    if token:
+                        if len(person_full_name) > 0:
+                            person_full_name = f"{person_full_name} {token}"
+                        else:
+                            person_full_name = token
+
+                return person_full_name
+
         from . import ColinEntity  # pylint: disable=import-outside-toplevel
 
         if self.is_firm:
@@ -484,13 +517,17 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
                 )
                 .select_from(LegalEntity)
                 .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id)
-                .join(related_le_alias, related_le_alias.id == EntityRole.related_entity_id)
+                .join(
+                    related_le_alias,
+                    related_le_alias.id == EntityRole.related_entity_id,
+                )
                 .filter(LegalEntity.id == self.id)
             )
 
             related_colin_entity_stmt = (
                 db.session.query(
-                    ColinEntity.organization_name.label("sortName"), ColinEntity.organization_name.label("legalName")
+                    ColinEntity.organization_name.label("sortName"),
+                    ColinEntity.organization_name.label("legalName"),
                 )
                 .select_from(LegalEntity)
                 .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id)
@@ -510,6 +547,11 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
 
         return self._legal_name
 
+    @legal_name.setter
+    def legal_name(self, value):
+        """Set the legal_name of the LegalEntity."""
+        self._legal_name = value
+
     @property
     def business_name(self):
         """Return operating name for firms and legal name for non-firm entities."""
@@ -522,32 +564,31 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
 
         return None
 
-    @property
-    def alternate_names(self):
+    # @property
+    def alternate_names_json(self):
         """Return operating names for a business if any."""
-        le_alias = aliased(LegalEntity)
-        alternate_names = (
-            db.session.query(
-                AlternateName.identifier,
-                AlternateName.name,
-                AlternateName.start_date,
-                le_alias.entity_type,
-                le_alias.founding_date,
-            )
-            .join(le_alias, AlternateName.identifier == le_alias.identifier)
-            .filter(~le_alias.entity_type.in_(LegalEntity.NON_BUSINESS_ENTITY_TYPES))
-            .filter(AlternateName.legal_entity_id == self.id)
-            .all()
-        )
+        # le_alias = aliased(LegalEntity)
+        # alternate_names = (
+        #     db.session.query(AlternateName.identifier,
+        #                      AlternateName.name,
+        #                      AlternateName.start_date,
+        #                      le_alias.entity_type,
+        #                      le_alias.founding_date)
+        #     .join(le_alias, AlternateName.identifier == le_alias.identifier)
+        # .filter(~le_alias.entity_type.in_(LegalEntity.NON_BUSINESS_ENTITY_TYPES))
+        # .filter(AlternateName.legal_entity_id == self.id)
+        #     .all()
+        # )
 
-        if alternate_names:
+        if alternate_names := self.alternate_names.all():
             names = [
                 {
                     "identifier": alternate_name.identifier,
                     "operatingName": alternate_name.name,
-                    "entityType": alternate_name.entity_type,
+                    # 'entityType': alternate_name.name_type,
+                    "entityType": self.entity_type,
                     "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
-                    "nameRegisteredDate": alternate_name.founding_date.isoformat(),
+                    "nameRegisteredDate": alternate_name.registration_date.isoformat(),
                 }
                 for alternate_name in alternate_names
             ]
@@ -623,7 +664,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             d["taxId"] = self.tax_id
 
         if self.alternate_names:
-            d["alternateNames"] = self.alternate_names
+            d["alternateNames"] = self.alternate_names_json()
 
         return d
 
@@ -779,6 +820,15 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         return legal_entity
 
     @classmethod
+    def find_by_operating_name(cls, operating_name: str = None):
+        """Given a operating_name, this will return an Active LegalEntity."""
+        if not operating_name:
+            return None
+        if alternate_name := AlternateName.find_by_name(operating_name):
+            return cls.find_by_id(alternate_name.legal_entity_id)
+        return None
+
+    @classmethod
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
         if not identifier or not cls.validate_identifier(entity_type=None, identifier=identifier):
@@ -850,6 +900,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         sequence_mapping = {
             "CP": "legal_entity_identifier_coop",
             "FM": "legal_entity_identifier_sp_gp",
+            "P": "legal_entity_identifier_person",
         }
         if sequence_name := sequence_mapping.get(business_type, None):
             return db.session.execute(text(f"SELECT nextval('{sequence_name}')")).scalar()
@@ -868,7 +919,11 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
             ie: CP1234567 or XCP1234567
 
         """
-        if entity_type and entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if (
+            entity_type
+            and entity_type == LegalEntity.EntityTypes.PERSON.value
+            and (identifier and identifier.startswith("P") or not identifier)
+        ):
             return True
 
         if identifier[:2] == "NR":
@@ -884,7 +939,7 @@ class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-att
         except ValueError:
             return False
         # TODO This is not correct for entity types that are not Coops
-        if identifier[:-7] not in ("CP", "XCP", "BC", "FM"):
+        if identifier[:-7] not in ("BC", "CP", "FM", "P", "XCP"):
             return False
 
         return True
@@ -923,7 +978,8 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 
     if not party.valid_party_type_data:
         raise BusinessException(
-            error=f"Attempt to change/add {party.entity_type} had invalid data.", status_code=HTTPStatus.BAD_REQUEST
+            error=f"Attempt to change/add {party.entity_type} had invalid data.",
+            status_code=HTTPStatus.BAD_REQUEST,
         )
 
 
@@ -934,3 +990,51 @@ ASSOCIATION_TYPE_DESC: Final = {
     LegalEntity.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: "Sole Proprietorship",
     LegalEntity.AssociationTypes.SP_DOING_BUSINESS_AS.value: "Sole Proprietorship (DBA)",
 }
+
+
+class LegalEntityType(str, Enum, metaclass=BaseMeta):
+    """The business type."""
+
+    COOPERATIVE = "CP"
+    INDIVIDUAL = "FP"
+    PARTNERSHIP_AND_SOLE_PROP = "FM"
+    PERSON = "P"
+    TRUST = "TRUST"
+    OTHER = "OT"
+    DEFAULT = "OT"
+
+    @classmethod
+    def get_enum_by_value(cls, value: str) -> Optional[str]:
+        """Return the enum by value."""
+        for enum_value in cls:
+            if enum_value.value == value:
+                return enum_value
+        return None
+
+
+MAX_IDENTIFIER_NUM_LENGTH: Final[int] = 7
+
+
+class LegalEntityIdentifier:
+    """The business identifier."""
+
+    @staticmethod
+    def validate_format(value: str) -> bool:
+        """Validate the business identifier."""
+        legal_type = value[: re.search(r"\d", value).start()]
+
+        if legal_type not in LegalEntityType or (not value[value.find(legal_type) + len(legal_type) :].isdigit()):
+            return False
+
+        return True
+
+    @staticmethod
+    def next_identifier(legal_entity_type: LegalEntityType) -> Optional[str]:
+        """Get the next identifier."""
+        if not (
+            legal_entity_type in LegalEntityType
+            and (sequence_val := LegalEntity.get_next_value_from_sequence(legal_entity_type))
+        ):
+            return None
+
+        return f"{legal_entity_type.value}{str(sequence_val).zfill(MAX_IDENTIFIER_NUM_LENGTH)}"

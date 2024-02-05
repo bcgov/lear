@@ -17,14 +17,14 @@ from __future__ import annotations
 from datetime import datetime
 from enum import auto
 
-from sql_versioning import Versioned
+from sql_versioning import Versioned, history_cls
 from sqlalchemy import Date, cast, or_
 
-from ..utils.base import BaseEnum
+from ..utils.enum import BaseEnum
 from .db import db
 
 
-# pylint: disable=import-outside-toplevel
+# pylint: disable=import-outside-toplevel, too-many-public-methods
 class EntityRole(Versioned, db.Model):
     """This class manages the entity roles."""
 
@@ -73,22 +73,53 @@ class EntityRole(Versioned, db.Model):
     related_colin_entity_id = db.Column("related_colin_entity_id", db.Integer, db.ForeignKey("colin_entities.id"))
 
     # relationships
-    filing = db.relationship("Filing", foreign_keys=[filing_id], primaryjoin="(EntityRole.filing_id==Filing.id)")
+    filing = db.relationship(
+        "Filing",
+        foreign_keys=[filing_id],
+        primaryjoin="(EntityRole.filing_id==Filing.id)",
+    )
     change_filing = db.relationship(
-        "Filing", foreign_keys=[change_filing_id], primaryjoin="(EntityRole.change_filing_id==Filing.id)"
+        "Filing",
+        foreign_keys=[change_filing_id],
+        primaryjoin="(EntityRole.change_filing_id==Filing.id)",
     )
 
     legal_entity = db.relationship("LegalEntity", foreign_keys=[legal_entity_id])
+    # related_entity = db.relationship('LegalEntity', backref='legal_entities_related_entity',
     related_entity = db.relationship(
-        "LegalEntity", backref="legal_entities_related_entity", foreign_keys=[related_entity_id]
+        "LegalEntity",
+        backref="legal_entities_related_entity",
+        foreign_keys=[related_entity_id],
     )
     related_colin_entity = db.relationship("ColinEntity", foreign_keys=[related_colin_entity_id])
-    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id], cascade="all, delete")
-    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id], cascade="all, delete")
+    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
+    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
+
+    @property
+    @classmethod
+    def valid_org_roles(cls):
+        """Returns valid org role types"""
+        return [
+            cls.RoleTypes.completing_party,
+            cls.RoleTypes.custodian,
+            cls.RoleTypes.incorporator,
+            cls.RoleTypes.proprietor,
+            cls.RoleTypes.partner,
+        ]
 
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
+        db.session.commit()
+
+    def delete(self):
+        """Delete the role.
+
+        It stutters (add & then delete), to push pending changes to history.
+        """
+        db.session.add(self)
+        db.session.commit()
+        db.session.delete(self)
         db.session.commit()
 
     @classmethod
@@ -99,10 +130,54 @@ class EntityRole(Versioned, db.Model):
             party_role = cls.query.filter_by(id=internal_id).one_or_none()
         return party_role
 
+    @classmethod
+    def find_party_by_party_id(cls, party_id: int, legal_entity_id: int):
+        """Return a LegalEntity that is a party of the base LegalEntity."""
+        if (
+            entity_roles := cls.query.filter(EntityRole.legal_entity_id == legal_entity_id)
+            .filter(EntityRole.related_entity_id == party_id)
+            .first()
+        ):
+            entity = entity_roles.related_entity
+            return entity
+        return None
+
+    @classmethod
+    def find_by_party_id_and_role(
+        cls,
+        party_id: int,
+        legal_entity_id: int,
+        role: EntityRole.RoleTypes,
+    ) -> EntityRole:
+        """Return an EntityRole by role, party and base LegalEntity ."""
+        entity_role = (
+            cls.query.filter(EntityRole.legal_entity_id == legal_entity_id)
+            .filter(EntityRole.related_entity_id == party_id)
+            .filter(EntityRole.role_type == role)
+            .one_or_none()
+        )
+        return entity_role
+
+    @classmethod
+    def find_by_related_entity_role(cls, party_id: int, legal_entity_id: int, role: EntityRole.RoleTypes) -> EntityRole:
+        """Return an EntityRole that is a party of the base LegalEntity."""
+        entity_roles = (
+            cls.query.filter(EntityRole.legal_entity_id == legal_entity_id)
+            .filter(EntityRole.related_entity_id == party_id)
+            .filter(EntityRole.role_type == role)
+            .one_or_none()
+        )
+        return entity_roles
+
     # pylint: disable=too-many-arguments; one too many
     @classmethod
     def find_party_by_name(
-        cls, legal_entity_id: int, first_name: str, last_name: str, middle_initial: str, org_name: str
+        cls,
+        legal_entity_id: int,
+        first_name: str,
+        last_name: str,
+        middle_initial: str,
+        org_name: str,
     ):
         """Return a Party connected to the given legal_entity_id by the given name."""
         from legal_api.models import ColinEntity, LegalEntity
@@ -163,19 +238,29 @@ class EntityRole(Versioned, db.Model):
             .filter(EntityRole.legal_entity_id == legal_entity_id)
             .filter(EntityRole.role_type == EntityRole.RoleTypes.director)
             .filter(cast(EntityRole.appointment_date, Date) <= end_date)
-            .filter(or_(EntityRole.cessation_date.is_(None), cast(EntityRole.cessation_date, Date) > end_date))
+            .filter(
+                or_(
+                    EntityRole.cessation_date.is_(None),
+                    cast(EntityRole.cessation_date, Date) > end_date,
+                )
+            )
             .all()
         )
         return directors
 
     @staticmethod
-    def get_entity_roles(legal_entity_id: int, end_date: datetime, role: str = None) -> list:
+    def get_entity_roles(legal_entity_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         entity_roles = (
             db.session.query(EntityRole)
             .filter(EntityRole.legal_entity_id == legal_entity_id)
             .filter(cast(EntityRole.appointment_date, Date) <= end_date)
-            .filter(or_(EntityRole.cessation_date.is_(None), cast(EntityRole.cessation_date, Date) > end_date))
+            .filter(
+                or_(
+                    EntityRole.cessation_date.is_(None),
+                    cast(EntityRole.cessation_date, Date) > end_date,
+                )
+            )
         )
 
         if role is not None:
@@ -194,19 +279,29 @@ class EntityRole(Versioned, db.Model):
         entity_roles = (
             db.session.query(EntityRole)
             .filter(EntityRole.legal_entity_id == legal_entity_id)
-            .filter(or_(EntityRole.related_entity_id == party_id, EntityRole.related_colin_entity_id == party_id))
+            .filter(
+                or_(
+                    EntityRole.related_entity_id == party_id,
+                    EntityRole.related_colin_entity_id == party_id,
+                )
+            )
             .all()
         )
         return entity_roles
 
     @staticmethod
-    def get_entity_roles_by_filing(filing_id: int, end_date: datetime, role: str = None) -> list:
+    def get_entity_roles_by_filing(filing_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         entity_roles = (
             db.session.query(EntityRole)
             .filter(EntityRole.filing_id == filing_id)
             .filter(cast(EntityRole.appointment_date, Date) <= end_date)
-            .filter(or_(EntityRole.cessation_date.is_(None), cast(EntityRole.cessation_date, Date) > end_date))
+            .filter(
+                or_(
+                    EntityRole.cessation_date.is_(None),
+                    cast(EntityRole.cessation_date, Date) > end_date,
+                )
+            )
         )
 
         if role is not None:
@@ -215,6 +310,44 @@ class EntityRole(Versioned, db.Model):
             except KeyError:
                 return []
             entity_roles = entity_roles.filter(EntityRole.role_type == role.lower())
+
+        entity_roles = entity_roles.all()
+        return entity_roles
+
+    @classmethod
+    def get_entity_roles_history_by_filing(cls, filing_id: int, end_date: datetime = None, role: str = None) -> list:
+        """Return the parties that match the filter conditions."""
+        history_version = history_cls(cls)
+        entity_roles = db.session.query(history_version).filter(history_version.filing_id == filing_id)
+
+        if end_date:
+            entity_roles = entity_roles.filter(cast(history_version.appointment_date, Date) <= end_date)
+
+        if role:
+            try:
+                _ = EntityRole.RoleTypes[role.lower()]
+            except KeyError:
+                return []
+            entity_roles = entity_roles.filter(history_version.role_type == role.lower())
+
+        entity_roles = entity_roles.all()
+        return entity_roles
+
+    @classmethod
+    def get_entity_roles_history_for_entity(cls, entity_id: int, end_date: datetime = None, role: str = None) -> list:
+        """Return the parties that match the filter conditions."""
+        history_version = history_cls(cls)
+        entity_roles = db.session.query(history_version).filter(history_version.legal_entity_id == entity_id)
+
+        if end_date:
+            entity_roles = entity_roles.filter(cast(history_version.appointment_date, Date) <= end_date)
+
+        if role:
+            try:
+                _ = EntityRole.RoleTypes[role.lower()]
+            except KeyError:
+                return []
+            entity_roles = entity_roles.filter(history_version.role_type == role.lower())
 
         entity_roles = entity_roles.all()
         return entity_roles

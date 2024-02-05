@@ -48,17 +48,13 @@ class NaicsStructure(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     naics_key = db.Column("naics_key", UUID, nullable=False, default=uuid.uuid4)
     level = db.Column("level", db.Integer, index=True, nullable=False)
-    hierarchical_structure = db.Column(
-        "hierarchical_structure", db.String(25), nullable=False
-    )
+    hierarchical_structure = db.Column("hierarchical_structure", db.String(25), nullable=False)
     code = db.Column("code", db.String(10), index=True, nullable=False)
     year = db.Column("year", db.Integer, index=True, nullable=False)
     version = db.Column("version", db.Integer, index=True, nullable=False)
     class_title = db.Column("class_title", db.String(150), index=True, nullable=False)
     superscript = db.Column("superscript", db.String(5), nullable=True)
-    class_definition = db.Column(
-        "class_definition", db.String(5100), index=True, nullable=False
-    )
+    class_definition = db.Column("class_definition", db.String(5100), index=True, nullable=False)
 
     # relationships
     naics_elements = db.relationship("NaicsElement")
@@ -90,9 +86,7 @@ class NaicsStructure(db.Model):
         There are two main queries which can be used to return search results.  The determining factor of which query
         will be used depends on whether the search term has at least one exact match in NaicsStructure.class_title.
         """
-        has_exact_match_class_title_match = cls.has_exact_match_class_title_match(
-            search_term
-        )
+        has_exact_match_class_title_match = cls.has_exact_match_class_title_match(search_term)
 
         if has_exact_match_class_title_match:
             query = cls.get_exact_match_query(search_term)
@@ -195,9 +189,7 @@ class NaicsStructure(db.Model):
         search_terms = search_term.split(" ")
         search_terms = [f"%{x}%" for x in search_terms]
         search_term = f"%{search_term}%"
-        naics_element_class_desc_ilike_filters = [
-            NaicsElement.element_description.ilike(x) for x in search_terms
-        ]
+        naics_element_class_desc_ilike_filters = [NaicsElement.element_description.ilike(x) for x in search_terms]
 
         # query used to retrieve query matching 6 digit NAICS codes along with relevant NAICS elements
         query = (

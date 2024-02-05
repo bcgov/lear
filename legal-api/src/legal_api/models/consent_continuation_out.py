@@ -44,7 +44,10 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
 
     @staticmethod
     def get_active_cco(
-        legal_entity_id, expiry_date, foreign_jurisdiction=None, foreign_jurisdiction_region=None
+        legal_entity_id,
+        expiry_date,
+        foreign_jurisdiction=None,
+        foreign_jurisdiction_region=None,
     ) -> list[ConsentContinuationOut]:
         """Get a list of active consent_continuation_outs linked to the given legal_entity_id."""
         query = (

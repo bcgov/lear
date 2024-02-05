@@ -17,9 +17,9 @@ from __future__ import annotations
 from enum import auto
 from typing import List
 
-from ..utils.enum import BaseEnum
-from ..utils.datetime import datetime
-from ..utils.legislation_datetime import LegislationDatetime
+from legal_api.utils.base import BaseEnum
+from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 
@@ -52,22 +52,15 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     response_object = db.Column(db.Text)
     retry_number = db.Column("retry_number", db.Integer, default=0, nullable=False)
     service_name = db.Column("service_name", db.Enum(ServiceName), nullable=False)
-    creation_date = db.Column(
-        "creation_date", db.DateTime(timezone=True), default=datetime.utcnow
-    )
-    last_modified = db.Column(
-        "last_modified", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    creation_date = db.Column("creation_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
     is_admin = db.Column("is_admin", db.Boolean, default=False)
     message_id = db.Column("message_id", db.String(60))
 
     # parent keys
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True
-    )
-    filing_id = db.Column(
-        "filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True)
 
     @property
     def json(self) -> dict:
@@ -78,9 +71,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
             "isProcessed": self.is_processed,
             "serviceName": self.service_name.name,
             "isAdmin": self.is_admin,
-            "creationDate": LegislationDatetime.as_legislation_timezone(
-                self.creation_date
-            ).isoformat(),
+            "creationDate": LegislationDatetime.as_legislation_timezone(self.creation_date).isoformat(),
         }
 
     def save(self):
@@ -97,8 +88,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         return request_tracker
 
     @classmethod
-    def find_by(
-        cls,  # pylint: disable=too-many-arguments
+    def find_by(  # pylint: disable=too-many-arguments
+        cls,
         legal_entity_id: int,
         service_name: ServiceName,
         request_type: RequestType = None,

@@ -73,8 +73,8 @@ class Party(Versioned, db.Model):  # pylint: disable=too-many-instance-attribute
     mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # Relationships - Address
-    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id], cascade="all, delete")
-    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id], cascade="all, delete")
+    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
+    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 
     def save(self):
         """Save the object to the database immediately."""
@@ -166,5 +166,6 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 
     if not party.valid_party_type_data:
         raise BusinessException(
-            error=f"Attempt to change/add {party.party_type} had invalid data.", status_code=HTTPStatus.BAD_REQUEST
+            error=f"Attempt to change/add {party.party_type} had invalid data.",
+            status_code=HTTPStatus.BAD_REQUEST,
         )
