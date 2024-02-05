@@ -44,12 +44,8 @@ class NaicsElement(db.Model):
     year = db.Column("year", db.Integer, index=True, nullable=False)
     version = db.Column("version", db.Integer, index=True, nullable=False)
     class_title = db.Column("class_title", db.String(150), index=True, nullable=False)
-    element_type = db.Column(
-        "element_type", db.Enum(ElementType), index=True, nullable=False
-    )
-    element_description = db.Column(
-        "element_description", db.String(500), index=True, nullable=False
-    )
+    element_type = db.Column("element_type", db.Enum(ElementType), index=True, nullable=False)
+    element_description = db.Column("element_description", db.String(500), index=True, nullable=False)
 
     # parent keys
     naics_structure_id = db.Column(

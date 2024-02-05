@@ -20,8 +20,7 @@ class DCRevocationReason(Enum):
 
     ADMINISTRATIVE_REVOCATION = "Your credential was revoked."
     UPDATED_INFORMATION = (
-        "You were offered a new credential with updated information "
-        "and that revoked all previous copies."
+        "You were offered a new credential with updated information " "and that revoked all previous copies."
     )
     VOLUNTARY_DISSOLUTION = (
         "You chose to dissolve your business. "

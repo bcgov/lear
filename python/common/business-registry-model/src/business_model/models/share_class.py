@@ -16,10 +16,9 @@ from __future__ import annotations
 
 from http import HTTPStatus
 
+from legal_api.exceptions import BusinessException
 from sql_versioning import Versioned
 from sqlalchemy import event
-
-from legal_api.exceptions import BusinessException
 
 from .db import db
 from .share_series import ShareSeries  # noqa: F401 pylint: disable=unused-import
@@ -48,31 +47,19 @@ class ShareClass(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column("name", db.String(1000), index=True)
     priority = db.Column("priority", db.Integer, nullable=True)
-    max_share_flag = db.Column(
-        "max_share_flag", db.Boolean, unique=False, default=False
-    )
+    max_share_flag = db.Column("max_share_flag", db.Boolean, unique=False, default=False)
     max_shares = db.Column("max_shares", db.Integer, nullable=True)
-    par_value_flag = db.Column(
-        "par_value_flag", db.Boolean, unique=False, default=False
-    )
+    par_value_flag = db.Column("par_value_flag", db.Boolean, unique=False, default=False)
     par_value = db.Column("par_value", db.Float, nullable=True)
     currency = db.Column("currency", db.String(10), nullable=True)
-    special_rights_flag = db.Column(
-        "special_rights_flag", db.Boolean, unique=False, default=False
-    )
+    special_rights_flag = db.Column("special_rights_flag", db.Boolean, unique=False, default=False)
 
     # parent keys
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
 
     # Relationships
-    series = db.relationship(
-        "ShareSeries", backref="share_class", cascade="all, delete, delete-orphan"
-    )
+    series = db.relationship("ShareSeries", backref="share_class", cascade="all, delete, delete-orphan")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -114,18 +101,13 @@ class ShareClass(Versioned, db.Model):  # pylint: disable=too-many-instance-attr
 
 @event.listens_for(ShareClass, "before_insert")
 @event.listens_for(ShareClass, "before_update")
-def receive_before_change(
-    mapper, connection, target
-):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Run checks/updates before adding/changing the share class."""
     share_class = target
 
     # skip this status updater if the flag is set
     # Scenario: used for COLIN corp data migration as there is data that do not pass the following checks
-    if (
-        hasattr(share_class, "skip_share_class_listener")
-        and share_class.skip_share_class_listener
-    ):
+    if hasattr(share_class, "skip_share_class_listener") and share_class.skip_share_class_listener:
         return
 
     if share_class.max_share_flag:

@@ -41,15 +41,9 @@ class ColinEntity(Versioned, db.Model):
     email = db.Column("email", db.String(254), index=True)
 
     # parent keys
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
-    delivery_address_id = db.Column(
-        "delivery_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
-    mailing_address_id = db.Column(
-        "mailing_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    delivery_address_id = db.Column("delivery_address_id", db.Integer, db.ForeignKey("addresses.id"))
+    mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # relationships
     delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])

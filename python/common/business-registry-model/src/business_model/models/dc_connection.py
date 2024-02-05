@@ -46,13 +46,9 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     # [init / invitation / request / response / active / error / inactive]
     connection_state = db.Column("connection_state", db.String(50))
 
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
 
-    alternate_name_id = db.Column(
-        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id")
-    )
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"))
 
     @property
     def json(self):
@@ -90,9 +86,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the connection_id."""
         dc_connection = None
         if connection_id:
-            dc_connection = cls.query.filter(
-                DCConnection.connection_id == connection_id
-            ).one_or_none()
+            dc_connection = cls.query.filter(DCConnection.connection_id == connection_id).one_or_none()
         return dc_connection
 
     @classmethod
@@ -102,17 +96,13 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         if legal_entity_id:
             dc_connection = (
                 cls.query.filter(DCConnection.legal_entity_id == legal_entity_id)
-                .filter(
-                    DCConnection.is_active == True
-                )  # noqa: E712 # pylint: disable=singleton-comparison
+                .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
                 .one_or_none()
             )
         return dc_connection
 
     @classmethod
-    def find_by(
-        cls, legal_entity_id: int = None, connection_state: str = None
-    ) -> List[DCConnection]:
+    def find_by(cls, legal_entity_id: int = None, connection_state: str = None) -> List[DCConnection]:
         """Return the digital credential connection matching the filter."""
         query = db.session.query(DCConnection)
 

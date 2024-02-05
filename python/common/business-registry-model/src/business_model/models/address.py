@@ -67,12 +67,8 @@ class Address(Versioned, db.Model):  # pylint: disable=too-many-instance-attribu
     delivery_instructions = db.Column("delivery_instructions", db.String(4096))
 
     # parent keys
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True
-    )
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
     office_id = db.Column(
         "office_id",
         db.Integer,
@@ -124,9 +120,7 @@ class Address(Versioned, db.Model):  # pylint: disable=too-many-instance-attribu
         address.street_additional = new_info.get("streetAddressAdditional")
         address.city = new_info.get("addressCity")
         address.region = new_info.get("addressRegion")
-        address.country = pycountry.countries.search_fuzzy(
-            new_info.get("addressCountry")
-        )[0].alpha_2
+        address.country = pycountry.countries.search_fuzzy(new_info.get("addressCountry"))[0].alpha_2
         address.postal_code = new_info.get("postalCode")
         address.delivery_instructions = new_info.get("deliveryInstructions")
 

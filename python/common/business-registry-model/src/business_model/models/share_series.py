@@ -15,10 +15,9 @@
 
 from http import HTTPStatus
 
+from legal_api.exceptions import BusinessException
 from sql_versioning import Versioned
 from sqlalchemy import event
-
-from legal_api.exceptions import BusinessException
 
 from .db import db
 
@@ -43,21 +42,13 @@ class ShareSeries(Versioned, db.Model):  # pylint: disable=too-many-instance-att
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column("name", db.String(1000), index=True)
     priority = db.Column("priority", db.Integer, nullable=True)
-    max_share_flag = db.Column(
-        "max_share_flag", db.Boolean, unique=False, default=False
-    )
+    max_share_flag = db.Column("max_share_flag", db.Boolean, unique=False, default=False)
     max_shares = db.Column("max_shares", db.Integer, nullable=True)
-    special_rights_flag = db.Column(
-        "special_rights_flag", db.Boolean, unique=False, default=False
-    )
+    special_rights_flag = db.Column("special_rights_flag", db.Boolean, unique=False, default=False)
 
     # parent keys
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
-    share_class_id = db.Column(
-        "share_class_id", db.Integer, db.ForeignKey("share_classes.id")
-    )
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    share_class_id = db.Column("share_class_id", db.Integer, db.ForeignKey("share_classes.id"))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -80,18 +71,13 @@ class ShareSeries(Versioned, db.Model):  # pylint: disable=too-many-instance-att
 
 @event.listens_for(ShareSeries, "before_insert")
 @event.listens_for(ShareSeries, "before_update")
-def receive_before_change(
-    mapper, connection, target
-):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Run checks/updates before adding/changing the share series."""
     share_series = target
 
     # skip this status updater if the flag is set
     # Scenario: used for COLIN corp data migration as there is data that do not pass the following checks
-    if (
-        hasattr(share_series, "skip_share_series_listener")
-        and share_series.skip_share_series_listener
-    ):
+    if hasattr(share_series, "skip_share_series_listener") and share_series.skip_share_series_listener:
         return
 
     if share_series.max_share_flag:

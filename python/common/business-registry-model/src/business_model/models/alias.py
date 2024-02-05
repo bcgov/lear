@@ -43,17 +43,11 @@ class Alias(Versioned, db.Model):  # pylint: disable=too-many-instance-attribute
 
     id = db.Column(db.Integer, primary_key=True)
     alias = db.Column("alias", db.String(1000), index=True, nullable=False)
-    type = db.Column(
-        "type", db.String(20), default=AliasType.TRANSLATION, nullable=False
-    )
+    type = db.Column("type", db.String(20), default=AliasType.TRANSLATION, nullable=False)
 
     # parent keys
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
 
     def save(self):
         """Save the object to the database immediately."""

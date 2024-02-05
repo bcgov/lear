@@ -38,25 +38,15 @@ class Office(Versioned, db.Model):  # pylint: disable=too-few-public-methods
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    office_type = db.Column(
-        "office_type", db.String(75), db.ForeignKey("office_types.identifier")
-    )
-    deactivated_date = db.Column(
-        "deactivated_date", db.DateTime(timezone=True), default=None
-    )
+    office_type = db.Column("office_type", db.String(75), db.ForeignKey("office_types.identifier"))
+    deactivated_date = db.Column("deactivated_date", db.DateTime(timezone=True), default=None)
 
     # Parent Keys
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True
-    )
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
 
     # Relationships
-    addresses = db.relationship(
-        "Address", lazy="dynamic", cascade="all, delete, delete-orphan"
-    )
+    addresses = db.relationship("Address", lazy="dynamic", cascade="all, delete, delete-orphan")
 
 
 class OfficeType(db.Model):  # pylint: disable=too-few-public-methods

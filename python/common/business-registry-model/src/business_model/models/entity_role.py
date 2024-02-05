@@ -17,8 +17,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import auto
 
-from sql_versioning import Versioned
-from sql_versioning import history_cls
+from sql_versioning import Versioned, history_cls
 from sqlalchemy import Date, cast, or_
 
 from ..utils.enum import BaseEnum
@@ -61,33 +60,17 @@ class EntityRole(Versioned, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     role_type = db.Column("role_type", db.Enum(RoleTypes), nullable=False)
-    appointment_date = db.Column(
-        "appointment_date", db.DateTime(timezone=True), nullable=True
-    )
-    cessation_date = db.Column(
-        "cessation_date", db.DateTime(timezone=True), nullable=True
-    )
+    appointment_date = db.Column("appointment_date", db.DateTime(timezone=True), nullable=True)
+    cessation_date = db.Column("cessation_date", db.DateTime(timezone=True), nullable=True)
 
     # parent keys
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id")
-    )
-    delivery_address_id = db.Column(
-        "delivery_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"))
+    delivery_address_id = db.Column("delivery_address_id", db.Integer, db.ForeignKey("addresses.id"))
     filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
-    mailing_address_id = db.Column(
-        "mailing_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
-    related_entity_id = db.Column(
-        "related_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
-    related_colin_entity_id = db.Column(
-        "related_colin_entity_id", db.Integer, db.ForeignKey("colin_entities.id")
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
+    related_entity_id = db.Column("related_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    related_colin_entity_id = db.Column("related_colin_entity_id", db.Integer, db.ForeignKey("colin_entities.id"))
 
     # relationships
     filing = db.relationship(
@@ -108,9 +91,7 @@ class EntityRole(Versioned, db.Model):
         backref="legal_entities_related_entity",
         foreign_keys=[related_entity_id],
     )
-    related_colin_entity = db.relationship(
-        "ColinEntity", foreign_keys=[related_colin_entity_id]
-    )
+    related_colin_entity = db.relationship("ColinEntity", foreign_keys=[related_colin_entity_id])
     delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
     mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 
@@ -152,9 +133,7 @@ class EntityRole(Versioned, db.Model):
     def find_party_by_party_id(cls, party_id: int, legal_entity_id: int):
         """Return a LegalEntity that is a party of the base LegalEntity."""
         if (
-            entity_roles := cls.query.filter(
-                EntityRole.legal_entity_id == legal_entity_id
-            )
+            entity_roles := cls.query.filter(EntityRole.legal_entity_id == legal_entity_id)
             .filter(EntityRole.related_entity_id == party_id)
             .first()
         ):
@@ -179,9 +158,7 @@ class EntityRole(Versioned, db.Model):
         return entity_role
 
     @classmethod
-    def find_by_related_entity_role(
-        cls, party_id: int, legal_entity_id: int, role: EntityRole.RoleTypes
-    ) -> EntityRole:
+    def find_by_related_entity_role(cls, party_id: int, legal_entity_id: int, role: EntityRole.RoleTypes) -> EntityRole:
         """Return an EntityRole that is a party of the base LegalEntity."""
         entity_roles = (
             cls.query.filter(EntityRole.legal_entity_id == legal_entity_id)
@@ -211,9 +188,7 @@ class EntityRole(Versioned, db.Model):
         if org_name:
             search_name = org_name
         elif middle_initial:
-            search_name = " ".join(
-                (first_name.strip(), middle_initial.strip(), last_name.strip())
-            )
+            search_name = " ".join((first_name.strip(), middle_initial.strip(), last_name.strip()))
         else:
             search_name = " ".join((first_name.strip(), last_name.strip()))
 
@@ -230,9 +205,7 @@ class EntityRole(Versioned, db.Model):
                 return party
 
         entity_roles_colin = (
-            cls.query.join(
-                ColinEntity, EntityRole.related_colin_entity_id == ColinEntity.id
-            )
+            cls.query.join(ColinEntity, EntityRole.related_colin_entity_id == ColinEntity.id)
             .filter(EntityRole.legal_entity_id == legal_entity_id)
             .all()
         )
@@ -275,9 +248,7 @@ class EntityRole(Versioned, db.Model):
         return directors
 
     @staticmethod
-    def get_entity_roles(
-        legal_entity_id: int, end_date: datetime = None, role: str = None
-    ) -> list:
+    def get_entity_roles(legal_entity_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         entity_roles = (
             db.session.query(EntityRole)
@@ -318,9 +289,7 @@ class EntityRole(Versioned, db.Model):
         return entity_roles
 
     @staticmethod
-    def get_entity_roles_by_filing(
-        filing_id: int, end_date: datetime = None, role: str = None
-    ) -> list:
+    def get_entity_roles_by_filing(filing_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         entity_roles = (
             db.session.query(EntityRole)
@@ -345,55 +314,39 @@ class EntityRole(Versioned, db.Model):
         return entity_roles
 
     @classmethod
-    def get_entity_roles_history_by_filing(
-        cls, filing_id: int, end_date: datetime = None, role: str = None
-    ) -> list:
+    def get_entity_roles_history_by_filing(cls, filing_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         history_version = history_cls(cls)
-        entity_roles = db.session.query(history_version).filter(
-            history_version.filing_id == filing_id
-        )
+        entity_roles = db.session.query(history_version).filter(history_version.filing_id == filing_id)
 
         if end_date:
-            entity_roles = entity_roles.filter(
-                cast(history_version.appointment_date, Date) <= end_date
-            )
+            entity_roles = entity_roles.filter(cast(history_version.appointment_date, Date) <= end_date)
 
         if role:
             try:
                 _ = EntityRole.RoleTypes[role.lower()]
             except KeyError:
                 return []
-            entity_roles = entity_roles.filter(
-                history_version.role_type == role.lower()
-            )
+            entity_roles = entity_roles.filter(history_version.role_type == role.lower())
 
         entity_roles = entity_roles.all()
         return entity_roles
 
     @classmethod
-    def get_entity_roles_history_for_entity(
-        cls, entity_id: int, end_date: datetime = None, role: str = None
-    ) -> list:
+    def get_entity_roles_history_for_entity(cls, entity_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
         history_version = history_cls(cls)
-        entity_roles = db.session.query(history_version).filter(
-            history_version.legal_entity_id == entity_id
-        )
+        entity_roles = db.session.query(history_version).filter(history_version.legal_entity_id == entity_id)
 
         if end_date:
-            entity_roles = entity_roles.filter(
-                cast(history_version.appointment_date, Date) <= end_date
-            )
+            entity_roles = entity_roles.filter(cast(history_version.appointment_date, Date) <= end_date)
 
         if role:
             try:
                 _ = EntityRole.RoleTypes[role.lower()]
             except KeyError:
                 return []
-            entity_roles = entity_roles.filter(
-                history_version.role_type == role.lower()
-            )
+            entity_roles = entity_roles.filter(history_version.role_type == role.lower())
 
         entity_roles = entity_roles.all()
         return entity_roles
@@ -408,10 +361,7 @@ class EntityRole(Versioned, db.Model):
         """Return if entity role is for individual entity in legal_entities table."""
         from legal_api.models import LegalEntity
 
-        if (
-            self.related_entity_id
-            and self.related_entity.entity_type == LegalEntity.EntityTypes.PERSON.value
-        ):
+        if self.related_entity_id and self.related_entity.entity_type == LegalEntity.EntityTypes.PERSON.value:
             return True
 
         return False
@@ -421,10 +371,7 @@ class EntityRole(Versioned, db.Model):
         """Return if entity role is a business in legal_entities table."""
         from legal_api.models import LegalEntity
 
-        if (
-            self.related_entity_id
-            and self.related_entity.entity_type != LegalEntity.EntityTypes.PERSON.value
-        ):
+        if self.related_entity_id and self.related_entity.entity_type != LegalEntity.EntityTypes.PERSON.value:
             return True
 
         return False
@@ -466,17 +413,11 @@ class EntityRole(Versioned, db.Model):
     def json(self) -> dict:
         """Return the party member as a json object."""
 
-        party_json = (
-            self.related_colin_entity.json
-            if self.is_related_colin_entity
-            else self.related_entity.party_json
-        )
+        party_json = self.related_colin_entity.json if self.is_related_colin_entity else self.related_entity.party_json
         party = {
             **party_json,
             "appointmentDate": datetime.date(self.appointment_date).isoformat(),
-            "cessationDate": datetime.date(self.cessation_date).isoformat()
-            if self.cessation_date
-            else None,
+            "cessationDate": datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
             "role": self.role_type.name,
         }
 

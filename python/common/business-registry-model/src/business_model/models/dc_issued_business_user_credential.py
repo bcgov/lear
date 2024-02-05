@@ -19,9 +19,7 @@ from typing import List
 from .db import db
 
 
-class DCIssuedBusinessUserCredential(
-    db.Model
-):  # pylint: disable=too-many-instance-attributes
+class DCIssuedBusinessUserCredential(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the issued credential IDs for a user of a business."""
 
     __tablename__ = "dc_issued_business_user_credentials"
@@ -29,12 +27,8 @@ class DCIssuedBusinessUserCredential(
     id = db.Column(db.Integer, primary_key=True)
 
     user_id = db.Column("user_id", db.Integer, db.ForeignKey("users.id"))
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
-    alternate_name_id = db.Column(
-        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id")
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -42,28 +36,20 @@ class DCIssuedBusinessUserCredential(
         db.session.commit()
 
     @classmethod
-    def find_by_id(
-        cls, dc_issued_business_user_id: str
-    ) -> DCIssuedBusinessUserCredential:
+    def find_by_id(cls, dc_issued_business_user_id: str) -> DCIssuedBusinessUserCredential:
         """Return the issued business user credential matching the id."""
         dc_issued_business_user = None
         if dc_issued_business_user_id:
-            dc_issued_business_user = cls.query.filter_by(
-                id=dc_issued_business_user_id
-            ).one_or_none()
+            dc_issued_business_user = cls.query.filter_by(id=dc_issued_business_user_id).one_or_none()
         return dc_issued_business_user
 
     @classmethod
-    def find_by(
-        cls, legal_entity_id: int = None, user_id: int = None
-    ) -> List[DCIssuedBusinessUserCredential]:
+    def find_by(cls, legal_entity_id: int = None, user_id: int = None) -> List[DCIssuedBusinessUserCredential]:
         """Return the issued business user credential matching the user_id and buisness_id."""
         dc_issued_business_user_credential = None
         if legal_entity_id and user_id:
             dc_issued_business_user_credential = (
-                cls.query.filter(
-                    DCIssuedBusinessUserCredential.legal_entity_id == legal_entity_id
-                )
+                cls.query.filter(DCIssuedBusinessUserCredential.legal_entity_id == legal_entity_id)
                 .filter(DCIssuedBusinessUserCredential.user_id == user_id)
                 .one_or_none()
             )

@@ -16,15 +16,12 @@ from __future__ import annotations
 
 from http import HTTPStatus
 
+from legal_api.exceptions import BusinessException
+from legal_api.utils.enum import BaseEnum, auto
 from sql_versioning import Versioned
 from sqlalchemy import event
 
-from legal_api.exceptions import BusinessException
-from legal_api.utils.enum import BaseEnum, auto
-
-from .address import (  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
-    Address,
-)
+from .address import Address  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
 from .db import db  # noqa: I001
 
 
@@ -70,15 +67,9 @@ class Party(Versioned, db.Model):  # pylint: disable=too-many-instance-attribute
     email = db.Column(db.String(254))
 
     # parent keys
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
-    delivery_address_id = db.Column(
-        "delivery_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
-    mailing_address_id = db.Column(
-        "mailing_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    delivery_address_id = db.Column("delivery_address_id", db.Integer, db.ForeignKey("addresses.id"))
+    mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # Relationships - Address
     delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
@@ -136,11 +127,7 @@ class Party(Versioned, db.Model):  # pylint: disable=too-many-instance-attribute
         """Return the full name of the party for comparison."""
         if self.party_type == Party.PartyTypes.PERSON.value:
             if self.middle_initial:
-                return (
-                    " ".join((self.first_name, self.middle_initial, self.last_name))
-                    .strip()
-                    .upper()
-                )
+                return " ".join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
             return " ".join((self.first_name, self.last_name)).strip().upper()
         return self.organization_name.strip().upper()
 
@@ -148,18 +135,11 @@ class Party(Versioned, db.Model):  # pylint: disable=too-many-instance-attribute
     def valid_party_type_data(self) -> bool:
         """Validate the model based on the party type (person/organization)."""
         if self.party_type == Party.PartyTypes.ORGANIZATION.value:
-            if (
-                not self.organization_name
-                or self.first_name
-                or self.middle_initial
-                or self.last_name
-            ):
+            if not self.organization_name or self.first_name or self.middle_initial or self.last_name:
                 return False
 
         elif self.party_type == Party.PartyTypes.PERSON.value:
-            if self.organization_name or not (
-                self.first_name or self.middle_initial or self.last_name
-            ):
+            if self.organization_name or not (self.first_name or self.middle_initial or self.last_name):
                 return False
         return True
 
@@ -174,9 +154,7 @@ class Party(Versioned, db.Model):  # pylint: disable=too-many-instance-attribute
 
 @event.listens_for(Party, "before_insert")
 @event.listens_for(Party, "before_update")
-def receive_before_change(
-    mapper, connection, target
-):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Run checks/updates before adding/changing the party model data."""
     party = target
 

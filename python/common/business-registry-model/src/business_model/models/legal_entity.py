@@ -21,6 +21,10 @@ from typing import Final, Optional
 
 import datedelta
 from flask import current_app
+from legal_api.exceptions import BusinessException
+from legal_api.utils.base import BaseEnum
+from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from sql_versioning import Versioned
 from sqlalchemy import case, event, text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
@@ -28,50 +32,21 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql.functions import func
 
-from legal_api.exceptions import BusinessException
-from legal_api.utils.base import BaseEnum
-from legal_api.utils.datetime import datetime, timezone
-from legal_api.utils.legislation_datetime import LegislationDatetime
-
-from .address import (  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-    Address,
-)
-from .alias import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-    Alias,
-)
-from .alternate_name import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
-    AlternateName,
-)
-from .amalgamation import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
-    Amalgamation,
-)
+from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .alternate_name import AlternateName  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .db import db  # noqa: I001
-from .entity_role import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-    EntityRole,
-)
-from .filing import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-    Filing,
-)
-from .office import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-    Office,
-)
-from .resolution import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-    Resolution,
-)
-from .role_address import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-    RoleAddress,
-)
-from .share_class import (  # noqa: F401,I001,I003 pylint: disable=unused-import
-    ShareClass,
-)
-from .user import (  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
-    User,
-)
+from .entity_role import EntityRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .role_address import RoleAddress  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
+from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class LegalEntity(
-    Versioned, db.Model
-):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a LegalEntity.
 
     A business is base form of any entity that can interact directly
@@ -248,49 +223,31 @@ class LegalEntity(
     # }
 
     id = db.Column(db.Integer, primary_key=True)
-    last_modified = db.Column(
-        "last_modified", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
     last_ledger_id = db.Column("last_ledger_id", db.Integer)
     last_remote_ledger_id = db.Column("last_remote_ledger_id", db.Integer, default=0)
-    last_ledger_timestamp = db.Column(
-        "last_ledger_timestamp", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    last_ledger_timestamp = db.Column("last_ledger_timestamp", db.DateTime(timezone=True), default=datetime.utcnow)
     last_ar_date = db.Column("last_ar_date", db.DateTime(timezone=True))
     last_agm_date = db.Column("last_agm_date", db.DateTime(timezone=True))
     last_coa_date = db.Column("last_coa_date", db.DateTime(timezone=True))
     last_cod_date = db.Column("last_cod_date", db.DateTime(timezone=True))
     _legal_name = db.Column("legal_name", db.String(1000), index=True)
     entity_type = db.Column("entity_type", db.String(15), index=True)
-    founding_date = db.Column(
-        "founding_date", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    founding_date = db.Column("founding_date", db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column("start_date", db.DateTime(timezone=True))
-    restoration_expiry_date = db.Column(
-        "restoration_expiry_date", db.DateTime(timezone=True)
-    )
-    dissolution_date = db.Column(
-        "dissolution_date", db.DateTime(timezone=True), default=None
-    )
-    continuation_out_date = db.Column(
-        "continuation_out_date", db.DateTime(timezone=True)
-    )
+    restoration_expiry_date = db.Column("restoration_expiry_date", db.DateTime(timezone=True))
+    dissolution_date = db.Column("dissolution_date", db.DateTime(timezone=True), default=None)
+    continuation_out_date = db.Column("continuation_out_date", db.DateTime(timezone=True))
     _identifier = db.Column("identifier", db.String(10), index=True)
     tax_id = db.Column("tax_id", db.String(15), index=True)
-    fiscal_year_end_date = db.Column(
-        "fiscal_year_end_date", db.DateTime(timezone=True), default=datetime.utcnow
-    )
-    restriction_ind = db.Column(
-        "restriction_ind", db.Boolean, unique=False, default=False
-    )
+    fiscal_year_end_date = db.Column("fiscal_year_end_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    restriction_ind = db.Column("restriction_ind", db.Boolean, unique=False, default=False)
     last_ar_year = db.Column("last_ar_year", db.Integer)
     last_ar_reminder_year = db.Column("last_ar_reminder_year", db.Integer)
     association_type = db.Column("association_type", db.String(50))
     state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
-    submitter_userid = db.Column(
-        "submitter_userid", db.Integer, db.ForeignKey("users.id")
-    )
+    submitter_userid = db.Column("submitter_userid", db.Integer, db.ForeignKey("users.id"))
     submitter = db.relationship(
         "User",
         backref=backref("submitter", uselist=False),
@@ -309,27 +266,17 @@ class LegalEntity(
     naics_description = db.Column(db.String(300))
 
     jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
-    foreign_jurisdiction_region = db.Column(
-        "foreign_jurisdiction_region", db.String(10)
-    )
+    foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
     foreign_identifier = db.Column(db.String(15))
     foreign_legal_name = db.Column(db.String(1000))
     foreign_legal_type = db.Column(db.String(10))
     foreign_incorporation_date = db.Column(db.DateTime(timezone=True))
 
     # parent keys
-    delivery_address_id = db.Column(
-        "delivery_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
-    mailing_address_id = db.Column(
-        "mailing_address_id", db.Integer, db.ForeignKey("addresses.id")
-    )
-    change_filing_id = db.Column(
-        "change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
-    state_filing_id = db.Column(
-        "state_filing_id", db.Integer, db.ForeignKey("filings.id")
-    )
+    delivery_address_id = db.Column("delivery_address_id", db.Integer, db.ForeignKey("addresses.id"))
+    mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    state_filing_id = db.Column("state_filing_id", db.Integer, db.ForeignKey("filings.id"))
 
     # relationships
     change_filing = db.relationship("Filing", foreign_keys=[change_filing_id])
@@ -339,29 +286,19 @@ class LegalEntity(
         foreign_keys="Filing.legal_entity_id",
         #   primaryjoin="(Filing.id==Address.user_id)",
     )
-    offices = db.relationship(
-        "Office", lazy="dynamic", cascade="all, delete, delete-orphan"
-    )
-    share_classes = db.relationship(
-        "ShareClass", lazy="dynamic", cascade="all, delete, delete-orphan"
-    )
+    offices = db.relationship("Office", lazy="dynamic", cascade="all, delete, delete-orphan")
+    share_classes = db.relationship("ShareClass", lazy="dynamic", cascade="all, delete, delete-orphan")
     aliases = db.relationship("Alias", lazy="dynamic")
-    resolutions = db.relationship(
-        "Resolution", lazy="dynamic", foreign_keys="Resolution.legal_entity_id"
-    )
+    resolutions = db.relationship("Resolution", lazy="dynamic", foreign_keys="Resolution.legal_entity_id")
     documents = db.relationship("Document", lazy="dynamic")
-    consent_continuation_outs = db.relationship(
-        "ConsentContinuationOut", lazy="dynamic"
-    )
+    consent_continuation_outs = db.relationship("ConsentContinuationOut", lazy="dynamic")
     entity_roles = db.relationship(
         "EntityRole",
         foreign_keys="EntityRole.legal_entity_id",
         lazy="dynamic",
         overlaps="legal_entity",
     )
-    _alternate_names = db.relationship(
-        "AlternateName", back_populates="legal_entity", lazy="dynamic"
-    )
+    _alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy="dynamic")
     role_addresses = db.relationship("RoleAddress", lazy="dynamic")
     entity_delivery_address = db.relationship(
         "Address",
@@ -425,9 +362,7 @@ class LegalEntity(
             self.EntityTypes.BC_CCC.value,
         ]:
             # For BCOMP min date is next anniversary date.
-            ar_min_date = datetime(
-                next_ar_year, self.founding_date.month, self.founding_date.day
-            ).date()
+            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
 
         if ar_max_date > datetime.utcnow().date():
@@ -470,9 +405,7 @@ class LegalEntity(
             .one_or_none()
         )
         if registered_office:
-            return registered_office.addresses.filter(
-                Address.address_type == "delivery"
-            )
+            return registered_office.addresses.filter(Address.address_type == "delivery")
         elif (
             business_office := db.session.query(Office)  # SP/GP
             .filter(Office.legal_entity_id == self.id)
@@ -506,14 +439,9 @@ class LegalEntity(
         # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
         if self.state == LegalEntity.State.ACTIVE:
             if self.restoration_expiry_date:
-                return (
-                    False  # A business in limited restoration is not in good standing
-                )
+                return False  # A business in limited restoration is not in good standing
             else:
-                return (
-                    last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
-                    > datetime.utcnow()
-                )
+                return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
 
     @property
@@ -603,9 +531,7 @@ class LegalEntity(
                 .filter(LegalEntity.id == self.id)
             )
 
-            result_query = related_le_stmt.union(related_colin_entity_stmt).order_by(
-                "sortName"
-            )
+            result_query = related_le_stmt.union(related_colin_entity_stmt).order_by("sortName")
 
             results = result_query.all()
             if results and len(results) > 2:
@@ -629,9 +555,7 @@ class LegalEntity(
         if not self.is_firm:
             return self._legal_name
 
-        if alternate_name := self._alternate_names.filter_by(
-            identifier=self.identifier
-        ).one_or_none():
+        if alternate_name := self._alternate_names.filter_by(identifier=self.identifier).one_or_none():
             return alternate_name.name
 
         return None
@@ -659,9 +583,7 @@ class LegalEntity(
                     "operatingName": alternate_name.name,
                     # 'entityType': alternate_name.name_type,
                     "entityType": self.entity_type,
-                    "nameStartDate": LegislationDatetime.format_as_legislation_date(
-                        alternate_name.start_date
-                    ),
+                    "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
                     "nameRegisteredDate": alternate_name.registration_date.isoformat(),
                 }
                 for alternate_name in alternate_names
@@ -704,14 +626,8 @@ class LegalEntity(
             "hasRestrictions": self.restriction_ind,
             "complianceWarnings": self.compliance_warnings,
             "warnings": self.warnings,
-            "lastAnnualGeneralMeetingDate": datetime.date(
-                self.last_agm_date
-            ).isoformat()
-            if self.last_agm_date
-            else "",
-            "lastAnnualReportDate": datetime.date(self.last_ar_date).isoformat()
-            if self.last_ar_date
-            else "",
+            "lastAnnualGeneralMeetingDate": datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else "",
+            "lastAnnualReportDate": datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else "",
             "lastLedgerTimestamp": self.last_ledger_timestamp.isoformat(),
             "lastAddressChangeDate": "",
             "lastDirectorChangeDate": "",
@@ -719,9 +635,7 @@ class LegalEntity(
             "naicsKey": self.naics_key,
             "naicsCode": self.naics_code,
             "naicsDescription": self.naics_description,
-            "nextAnnualReport": LegislationDatetime.as_legislation_timezone_from_date(
-                self.next_anniversary
-            )
+            "nextAnnualReport": LegislationDatetime.as_legislation_timezone_from_date(self.next_anniversary)
             .astimezone(timezone.utc)
             .isoformat(),
             "associationType": self.association_type,
@@ -755,49 +669,31 @@ class LegalEntity(
         base_url = current_app.config.get("LEGAL_API_BASE_URL")
 
         if self.last_coa_date:
-            d["lastAddressChangeDate"] = LegislationDatetime.format_as_legislation_date(
-                self.last_coa_date
-            )
+            d["lastAddressChangeDate"] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
         if self.last_cod_date:
-            d[
-                "lastDirectorChangeDate"
-            ] = LegislationDatetime.format_as_legislation_date(self.last_cod_date)
+            d["lastDirectorChangeDate"] = LegislationDatetime.format_as_legislation_date(self.last_cod_date)
 
         if self.dissolution_date:
-            d["dissolutionDate"] = LegislationDatetime.format_as_legislation_date(
-                self.dissolution_date
-            )
+            d["dissolutionDate"] = LegislationDatetime.format_as_legislation_date(self.dissolution_date)
 
         if self.fiscal_year_end_date:
-            d["fiscalYearEndDate"] = datetime.date(
-                self.fiscal_year_end_date
-            ).isoformat()
+            d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
             if self.state == LegalEntity.State.HISTORICAL and (
                 amalgamating_business := self.amalgamating_businesses.one_or_none()
             ):
-                amalgamation = Amalgamation.find_by_id(
-                    amalgamating_business.amalgamation_id
-                )
+                amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
                 d["amalgamatedInto"] = amalgamation.json()
             else:
-                d[
-                    "stateFiling"
-                ] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+                d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         if self.start_date:
-            d["startDate"] = LegislationDatetime.format_as_legislation_date(
-                self.start_date
-            )
+            d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)
 
         if self.restoration_expiry_date:
-            d["restorationExpiryDate"] = LegislationDatetime.format_as_legislation_date(
-                self.restoration_expiry_date
-            )
+            d["restorationExpiryDate"] = LegislationDatetime.format_as_legislation_date(self.restoration_expiry_date)
         if self.continuation_out_date:
-            d["continuationOutDate"] = LegislationDatetime.format_as_legislation_date(
-                self.continuation_out_date
-            )
+            d["continuationOutDate"] = LegislationDatetime.format_as_legislation_date(self.continuation_out_date)
 
         if self.jurisdiction:
             d["jurisdiction"] = self.jurisdiction
@@ -806,9 +702,7 @@ class LegalEntity(
             d["foreignLegalName"] = self.foreign_legal_name
             d["foreignLegalType"] = self.foreign_legal_type
             d["foreignIncorporationDate"] = (
-                LegislationDatetime.format_as_legislation_date(
-                    self.foreign_incorporation_date
-                )
+                LegislationDatetime.format_as_legislation_date(self.foreign_incorporation_date)
                 if self.foreign_incorporation_date
                 else None
             )
@@ -897,11 +791,7 @@ class LegalEntity(
         """Return the full name of the party for comparison."""
         if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
             if self.middle_initial:
-                return (
-                    " ".join((self.first_name, self.middle_initial, self.last_name))
-                    .strip()
-                    .upper()
-                )
+                return " ".join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
             return " ".join((self.first_name, self.last_name)).strip().upper()
         return self.legal_name
 
@@ -917,9 +807,7 @@ class LegalEntity(
         if legal_name:
             try:
                 legal_entity = (
-                    cls.query.filter_by(_legal_name=legal_name)
-                    .filter_by(dissolution_date=None)
-                    .one_or_none()
+                    cls.query.filter_by(_legal_name=legal_name).filter_by(dissolution_date=None).one_or_none()
                 )
             except (OperationalError, ResourceClosedError):
                 # TODO: This usually means a misconfigured database.
@@ -939,9 +827,7 @@ class LegalEntity(
     @classmethod
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
-        if not identifier or not cls.validate_identifier(
-            entity_type=None, identifier=identifier
-        ):
+        if not identifier or not cls.validate_identifier(entity_type=None, identifier=identifier):
             return None
 
         legal_entity = None
@@ -989,11 +875,7 @@ class LegalEntity(
             LegalEntity.EntityTypes.PERSON.value,
             LegalEntity.EntityTypes.ORGANIZATION.value,
         ]
-        legal_entities = (
-            cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types))
-            .filter_by(tax_id=None)
-            .all()
-        )
+        legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
 
     @classmethod
@@ -1017,9 +899,7 @@ class LegalEntity(
             "P": "legal_entity_identifier_person",
         }
         if sequence_name := sequence_mapping.get(business_type, None):
-            return db.session.execute(
-                text(f"SELECT nextval('{sequence_name}')")
-            ).scalar()
+            return db.session.execute(text(f"SELECT nextval('{sequence_name}')")).scalar()
         return None
 
     @staticmethod
@@ -1068,10 +948,7 @@ class LegalEntity(
                 return False
 
         if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
-            if (
-                not (self.first_name or self.middle_initial or self.last_name)
-                or self.legal_name
-            ):
+            if not (self.first_name or self.middle_initial or self.last_name) or self.legal_name:
                 return False
         return True
 
@@ -1086,9 +963,7 @@ class LegalEntity(
 
 @event.listens_for(LegalEntity, "before_insert")
 @event.listens_for(LegalEntity, "before_update")
-def receive_before_change(
-    mapper, connection, target
-):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Run checks/updates before adding/changing the party model data."""
     party = target
 
@@ -1144,9 +1019,7 @@ class LegalEntityIdentifier:
         """Validate the business identifier."""
         legal_type = value[: re.search(r"\d", value).start()]
 
-        if legal_type not in LegalEntityType or (
-            not value[value.find(legal_type) + len(legal_type) :].isdigit()
-        ):
+        if legal_type not in LegalEntityType or (not value[value.find(legal_type) + len(legal_type) :].isdigit()):
             return False
 
         return True
@@ -1156,11 +1029,7 @@ class LegalEntityIdentifier:
         """Get the next identifier."""
         if not (
             legal_entity_type in LegalEntityType
-            and (
-                sequence_val := LegalEntity.get_next_value_from_sequence(
-                    legal_entity_type
-                )
-            )
+            and (sequence_val := LegalEntity.get_next_value_from_sequence(legal_entity_type))
         ):
             return None
 

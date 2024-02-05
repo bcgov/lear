@@ -30,9 +30,7 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
         ]
     }
 
-    colin_event_id = db.Column(
-        "colin_event_id", db.Integer, unique=True, primary_key=True
-    )
+    colin_event_id = db.Column("colin_event_id", db.Integer, unique=True, primary_key=True)
     filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
 
     def save(self):
@@ -43,11 +41,7 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_by_filing_id(filing_id):
         """Get the list of colin_event_ids linked to the given filing_id."""
-        colin_event_id_objs = (
-            db.session.query(ColinEventId)
-            .filter(ColinEventId.filing_id == filing_id)
-            .all()
-        )
+        colin_event_id_objs = db.session.query(ColinEventId).filter(ColinEventId.filing_id == filing_id).all()
         id_list = []
         for obj in colin_event_id_objs:
             id_list.append(obj.colin_event_id)
@@ -57,8 +51,6 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
     def get_by_colin_id(colin_id):
         """Get the ColinEventId obj with the given colin id."""
         colin_event_id_obj = (
-            db.session.query(ColinEventId)
-            .filter(ColinEventId.colin_event_id == colin_id)
-            .one_or_none()
+            db.session.query(ColinEventId).filter(ColinEventId.colin_event_id == colin_id).one_or_none()
         )
         return colin_event_id_obj

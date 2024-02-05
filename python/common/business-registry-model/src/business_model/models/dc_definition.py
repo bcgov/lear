@@ -14,9 +14,8 @@
 """This module holds data for digital credentials schema and credential definition."""
 from __future__ import annotations
 
-from sqlalchemy import text
-
 from legal_api.utils.enum import BaseEnum, auto
+from sqlalchemy import text
 
 from .db import db
 
@@ -34,9 +33,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         business_relationship = auto()
 
     id = db.Column(db.Integer, primary_key=True)
-    credential_type = db.Column(
-        "credential_type", db.Enum(CredentialType), nullable=False
-    )
+    credential_type = db.Column("credential_type", db.Enum(CredentialType), nullable=False)
     schema_id = db.Column("schema_id", db.String(100))
     schema_name = db.Column("schema_name", db.String(50))
     schema_version = db.Column("schema_version", db.String(10))
@@ -76,9 +73,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         dc_definition = None
         if credential_type:
             dc_definition = (
-                cls.query.filter(
-                    DCDefinition.is_deleted == False
-                )  # noqa: E712 # pylint: disable=singleton-comparison
+                cls.query.filter(DCDefinition.is_deleted == False)  # noqa: E712 # pylint: disable=singleton-comparison
                 .filter(DCDefinition.credential_type == credential_type)
                 .first()
             )
@@ -94,9 +89,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential definition matching the filter."""
         query = (
             db.session.query(DCDefinition)
-            .filter(
-                DCDefinition.is_deleted == False
-            )  # noqa: E712 # pylint: disable=singleton-comparison
+            .filter(DCDefinition.is_deleted == False)  # noqa: E712 # pylint: disable=singleton-comparison
             .filter(DCDefinition.credential_type == credential_type)
             .filter(DCDefinition.schema_id == schema_id)
             .filter(DCDefinition.credential_definition_id == credential_definition_id)
@@ -107,7 +100,5 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
     def deactivate(cls, credential_type: CredentialType):
         """Deactivate all definition for the specific credential type."""
         db.session.execute(
-            text(
-                f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'"
-            )
+            text(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'")
         )

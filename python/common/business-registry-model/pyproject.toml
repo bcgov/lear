@@ -26,10 +26,29 @@ flask-babel = "^3.1.0"
 python-dotenv = "^1.0.0"
 pytest = "^7.4.0"
 pytest-mock = "^3.11.1"
-black = "^23.7.0"
+black = "^23.12.1"
+isort = "^5.13.2"
 pg8000 = "^1.29.8"
 freezegun = "^1.2.2"
 
+[tool.black]
+target-version =  ["py310", "py311", "py312"]
+line-length = 120
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # The following are specific to Black, you probably don't want those.
+  migrations
+  | devops
+)/
+'''
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 120
+skip_gitignore = true
+skip_glob = ["migrations", "devops"]
 
 [build-system]
 requires = ["poetry-core"]

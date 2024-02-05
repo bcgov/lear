@@ -19,10 +19,9 @@ here as a convenience for audit and db reporting.
 from datetime import datetime
 
 from flask import current_app
-from sql_versioning import Versioned
-
 from legal_api.exceptions import BusinessException
 from legal_api.utils.enum import BaseEnum, auto
+from sql_versioning import Versioned
 
 from .db import db
 
@@ -32,9 +31,7 @@ class UserRoles(BaseEnum):
 
     # pragma warning disable S5720; # noqa: E265
     # disable sonar cloud complaining about this signature
-    def _generate_next_value_(
-        name, start, count, last_values
-    ):  # pylint: disable=W0221,E0213 # noqa: N805
+    def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
         """Return the name of the key."""
         return name
 
@@ -74,9 +71,7 @@ class User(Versioned, db.Model):
         If there is actual name info, return that; otherwise username.
         """
         if self.firstname or self.lastname or self.middlename:
-            return " ".join(
-                filter(None, [self.firstname, self.middlename, self.lastname])
-            ).strip()
+            return " ".join(filter(None, [self.firstname, self.middlename, self.lastname])).strip()
 
         # parse off idir\ or @idir
         if self.username[:4] == "idir":
@@ -117,9 +112,7 @@ class User(Versioned, db.Model):
                 idp_userid=token["idp_userid"],
                 login_source=token["loginSource"],
             )
-            current_app.logger.debug(
-                "Creating user from JWT:{}; User:{}".format(token, user)
-            )
+            current_app.logger.debug("Creating user from JWT:{}; User:{}".format(token, user))
             db.session.add(user)
             db.session.commit()
             return user
@@ -133,9 +126,7 @@ class User(Versioned, db.Model):
             user = User.find_by_jwt_token(jwt_oidc_token)
             current_app.logger.debug(f"finding user: {jwt_oidc_token}")
             if not user:
-                current_app.logger.debug(
-                    f"didnt find user, attempting to create new user:{jwt_oidc_token}"
-                )
+                current_app.logger.debug(f"didnt find user, attempting to create new user:{jwt_oidc_token}")
                 user = User.create_from_jwt_token(jwt_oidc_token)
 
             return user
@@ -150,11 +141,7 @@ class User(Versioned, db.Model):
     @classmethod
     def find_by_username(cls, username):
         """Return the oldest User record for the provided username."""
-        return (
-            cls.query.filter_by(username=username)
-            .order_by(User.creation_date.desc())
-            .first()
-        )
+        return cls.query.filter_by(username=username).order_by(User.creation_date.desc()).first()
 
     @classmethod
     def find_by_sub(cls, sub):

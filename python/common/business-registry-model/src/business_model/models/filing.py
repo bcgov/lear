@@ -15,19 +15,16 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
 
+from legal_api.exceptions import BusinessException
+from legal_api.models.colin_event_id import ColinEventId
+from legal_api.schemas import rsbc_schemas
+from legal_api.utils.util import build_schema_error_response
 from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
-from legal_api.exceptions import BusinessException
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.schemas import rsbc_schemas
-from legal_api.utils.util import build_schema_error_response
-
-from .comment import (  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
-    Comment,
-)
+from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .db import db  # noqa: I001
 
 
@@ -41,9 +38,7 @@ class DissolutionTypes(str, Enum):
     VOLUNTARY_LIQUIDATION = "voluntaryLiquidation"
 
 
-class Filing(
-    db.Model
-):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     # allowing the model to be deep.
     """Immutable filing record.
 
@@ -385,39 +380,27 @@ class Filing(
 
     id = db.Column(db.Integer, primary_key=True)
     _completion_date = db.Column("completion_date", db.DateTime(timezone=True))
-    _filing_date = db.Column(
-        "filing_date", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    _filing_date = db.Column("filing_date", db.DateTime(timezone=True), default=datetime.utcnow)
     _filing_type = db.Column("filing_type", db.String(30))
     _filing_sub_type = db.Column("filing_sub_type", db.String(30))
     _filing_json = db.Column("filing_json", JSONB)
     _meta_data = db.Column("meta_data", JSONB)
     _payment_status_code = db.Column("payment_status_code", db.String(50))
     _payment_token = db.Column("payment_id", db.String(4096))
-    _payment_completion_date = db.Column(
-        "payment_completion_date", db.DateTime(timezone=True)
-    )
+    _payment_completion_date = db.Column("payment_completion_date", db.DateTime(timezone=True))
     _status = db.Column("status", db.String(20), default=Status.DRAFT)
     _source = db.Column("source", db.String(15), default=Source.LEAR.value)
     paper_only = db.Column("paper_only", db.Boolean, unique=False, default=False)
     colin_only = db.Column("colin_only", db.Boolean, unique=False, default=False)
     payment_account = db.Column("payment_account", db.String(30))
-    effective_date = db.Column(
-        "effective_date", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    effective_date = db.Column("effective_date", db.DateTime(timezone=True), default=datetime.utcnow)
     submitter_roles = db.Column("submitter_roles", db.String(200))
     tech_correction_json = db.Column("tech_correction_json", JSONB)
     court_order_file_number = db.Column("court_order_file_number", db.String(20))
-    court_order_date = db.Column(
-        "court_order_date", db.DateTime(timezone=True), default=None
-    )
-    court_order_effect_of_order = db.Column(
-        "court_order_effect_of_order", db.String(500)
-    )
+    court_order_date = db.Column("court_order_date", db.DateTime(timezone=True), default=None)
+    court_order_effect_of_order = db.Column("court_order_effect_of_order", db.String(500))
     order_details = db.Column("order_details", db.String(2000))
-    deletion_locked = db.Column(
-        "deletion_locked", db.Boolean, unique=False, default=False
-    )
+    deletion_locked = db.Column("deletion_locked", db.Boolean, unique=False, default=False)
     approval_type = db.Column("approval_type", db.String(15))
     application_date = db.Column("application_date", db.DateTime(timezone=True))
     notice_date = db.Column("notice_date", db.DateTime(timezone=True))
@@ -426,15 +409,9 @@ class Filing(
     # # relationships
     # transaction_id = db.Column('transaction_id', db.BigInteger,
     #    db.ForeignKey('transaction.id'))
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id")
-    )
-    alternate_name_id = db.Column(
-        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id")
-    )
-    temp_reg = db.Column(
-        "temp_reg", db.String(10), db.ForeignKey("registration_bootstrap.identifier")
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"))
+    temp_reg = db.Column("temp_reg", db.String(10), db.ForeignKey("registration_bootstrap.identifier"))
     submitter_id = db.Column("submitter_id", db.Integer, db.ForeignKey("users.id"))
 
     filing_submitter = db.relationship(
@@ -447,15 +424,11 @@ class Filing(
 
     comments = db.relationship("Comment", lazy="dynamic")
     documents = db.relationship("Document", lazy="dynamic")
-    filing_entity_roles = db.relationship(
-        "EntityRole", lazy="dynamic", primaryjoin="(Filing.id==EntityRole.filing_id)"
-    )
+    filing_entity_roles = db.relationship("EntityRole", lazy="dynamic", primaryjoin="(Filing.id==EntityRole.filing_id)")
 
     # FUTURE: parent_filing_id and parent_filing should no longer be used for correction filings and will be removed
     parent_filing_id = db.Column(db.Integer, db.ForeignKey("filings.id"))
-    parent_filing = db.relationship(
-        "Filing", remote_side=[id], backref=backref("children")
-    )
+    parent_filing = db.relationship("Filing", remote_side=[id], backref=backref("children"))
 
     # properties
     @property
@@ -564,15 +537,11 @@ class Filing(
             self._raise_default_lock_exception()
 
         try:
-            self._filing_type = (
-                json_data.get("filing", {}).get("header", {}).get("name")
-            )
+            self._filing_type = json_data.get("filing", {}).get("header", {}).get("name")
             if not self._filing_type:
                 raise Exception  # pylint: disable=broad-exception-raised
         except Exception as err:
-            raise BusinessException(
-                error="No filings found.", status_code=HTTPStatus.UNPROCESSABLE_ENTITY
-            ) from err
+            raise BusinessException(error="No filings found.", status_code=HTTPStatus.UNPROCESSABLE_ENTITY) from err
 
         self._filing_sub_type = self.get_filings_sub_type(self._filing_type, json_data)
 
@@ -582,9 +551,7 @@ class Filing(
                 self._filing_type = None
                 self._payment_token = None
                 errors = build_schema_error_response(err)
-                raise BusinessException(
-                    error=f"{errors}", status_code=HTTPStatus.UNPROCESSABLE_ENTITY
-                )
+                raise BusinessException(error=f"{errors}", status_code=HTTPStatus.UNPROCESSABLE_ENTITY)
 
             self._status = Filing.Status.PENDING.value
         self._filing_json = json_data
@@ -595,21 +562,14 @@ class Filing(
         filing = self._filing_json.get("filing", {})
         legal_type = filing.get("business", {}).get("legalType", None)
         if legal_type is None:
-            legal_type = (
-                filing.get(self.filing_type, {})
-                .get("nameRequest")
-                .get("legalType", None)
-            )
+            legal_type = filing.get(self.filing_type, {}).get("nameRequest").get("legalType", None)
         return legal_type
 
     @property
     def json_nr(self):
         """Return the NR Number from a filing_json or None."""
         return (
-            self._filing_json.get("filing", {})
-            .get(self.filing_type, {})
-            .get("nameRequest", {})
-            .get("nrNumber", None)
+            self._filing_json.get("filing", {}).get(self.filing_type, {}).get("nameRequest", {}).get("nrNumber", None)
         )
 
     @property
@@ -630,9 +590,7 @@ class Filing(
         insp = inspect(self)
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
-        if (
-            self._payment_token and not attr_state.history.added
-        ) or self.colin_event_ids:
+        if (self._payment_token and not attr_state.history.added) or self.colin_event_ids:
             return True
 
         return False
@@ -641,13 +599,10 @@ class Filing(
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
-        if not self.effective_date_can_be_before_payment_completion_date(
-            business_type
-        ) and (
+        if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
             self.effective_date is None
             or (
-                self.payment_completion_date
-                and self.effective_date < self.payment_completion_date
+                self.payment_completion_date and self.effective_date < self.payment_completion_date
             )  # pylint: disable=W0143; hybrid property  # noqa: E501
         ):
             self.effective_date = self.payment_completion_date
@@ -672,8 +627,7 @@ class Filing(
         if (
             # FUTURE: parent_filing should no longer be used for correction filings and will be removed
             self.parent_filing
-            and self.parent_filing.filing_type
-            == Filing.FILINGS["correction"].get("name")
+            and self.parent_filing.filing_type == Filing.FILINGS["correction"].get("name")
             and self.parent_filing.status == Filing.Status.COMPLETED.value
         ):
             return True
@@ -685,8 +639,7 @@ class Filing(
         if (
             # FUTURE: parent_filing should no longer be used for correction filings and will be removed
             self.parent_filing
-            and self.parent_filing.filing_type
-            == Filing.FILINGS["correction"].get("name")
+            and self.parent_filing.filing_type == Filing.FILINGS["correction"].get("name")
             and self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value
         ):
             return True
@@ -716,53 +669,35 @@ class Filing(
             json_submission["filing"]["header"]["filingId"] = self.id
             json_submission["filing"]["header"]["name"] = self.filing_type
             json_submission["filing"]["header"]["status"] = self.status
-            json_submission["filing"]["header"][
-                "availableOnPaperOnly"
-            ] = self.paper_only
+            json_submission["filing"]["header"]["availableOnPaperOnly"] = self.paper_only
             json_submission["filing"]["header"]["inColinOnly"] = self.colin_only
             json_submission["filing"]["header"]["deletionLocked"] = self.deletion_locked
 
             if self.effective_date:  # pylint: disable=using-constant-test
                 json_submission["filing"]["header"][
                     "effectiveDate"
-                ] = (
-                    self.effective_date.isoformat()
-                )  # noqa: E501 pylint: disable=no-member, line-too-long
+                ] = self.effective_date.isoformat()  # noqa: E501 pylint: disable=no-member, line-too-long
             if self._payment_status_code:
-                json_submission["filing"]["header"][
-                    "paymentStatusCode"
-                ] = self.payment_status_code
+                json_submission["filing"]["header"]["paymentStatusCode"] = self.payment_status_code
             if self._payment_token:
                 json_submission["filing"]["header"]["paymentToken"] = self.payment_token
             if self.submitter_id:
-                json_submission["filing"]["header"][
-                    "submitter"
-                ] = self.filing_submitter.username
+                json_submission["filing"]["header"]["submitter"] = self.filing_submitter.username
             if self.payment_account:
-                json_submission["filing"]["header"][
-                    "paymentAccount"
-                ] = self.payment_account
+                json_submission["filing"]["header"]["paymentAccount"] = self.payment_account
 
             # add colin_event_ids
-            json_submission["filing"]["header"][
-                "colinIds"
-            ] = ColinEventId.get_by_filing_id(self.id)
+            json_submission["filing"]["header"]["colinIds"] = ColinEventId.get_by_filing_id(self.id)
 
             # add comments
-            json_submission["filing"]["header"]["comments"] = [
-                comment.json for comment in self.comments
-            ]
+            json_submission["filing"]["header"]["comments"] = [comment.json for comment in self.comments]
 
             # add affected filings list
-            json_submission["filing"]["header"]["affectedFilings"] = [
-                filing.id for filing in self.children
-            ]
+            json_submission["filing"]["header"]["affectedFilings"] = [filing.id for filing in self.children]
 
             # add corrected flags
             json_submission["filing"]["header"]["isCorrected"] = self.is_corrected
-            json_submission["filing"]["header"][
-                "isCorrectionPending"
-            ] = self.is_correction_pending
+            json_submission["filing"]["header"]["isCorrectionPending"] = self.is_correction_pending
 
             return json_submission
         except Exception as err:  # noqa: B901, E722
@@ -790,15 +725,11 @@ class Filing(
     @staticmethod
     def get_filing_by_payment_token(token: str):
         """Return a Filing by it's payment token."""
-        filing = (
-            db.session.query(Filing).filter(Filing.payment_token == token).one_or_none()
-        )
+        filing = db.session.query(Filing).filter(Filing.payment_token == token).one_or_none()
         return filing
 
     @staticmethod
-    def get_filings_by_status(
-        legal_entity_id: int, status: list, after_date: date = None
-    ):
+    def get_filings_by_status(legal_entity_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         query = (
             db.session.query(Filing)
@@ -840,9 +771,7 @@ class Filing(
         return filings
 
     @staticmethod
-    def get_incomplete_filings_by_types(
-        legal_entity_id: int, filing_types: list, excluded_statuses: list = None
-    ):
+    def get_incomplete_filings_by_types(legal_entity_id: int, filing_types: list, excluded_statuses: list = None):
         """Return the filings of particular types and statuses.
 
         excluded_statuses is a list of filing statuses that will be excluded from the query for incomplete filings
@@ -919,9 +848,7 @@ class Filing(
         max_filing = max_filing.subquery()
 
         filing = (
-            Filing.query.join(
-                max_filing, Filing._filing_date == max_filing.c.last_filing_date
-            )
+            Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date)
             .filter(Filing.legal_entity_id == legal_entity_id)
             .filter(Filing._filing_type == filing_type)
             .filter(Filing._status == Filing.Status.COMPLETED.value)
@@ -950,9 +877,7 @@ class Filing(
         max_filing = query.subquery()
 
         filing = (
-            Filing.query.join(
-                max_filing, Filing._filing_date == max_filing.c.last_filing_date
-            )
+            Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date)
             .filter(Filing.legal_entity_id == legal_entity_id)
             .filter(Filing._status == Filing.Status.COMPLETED.value)
             .order_by(Filing.id.desc())
@@ -971,9 +896,7 @@ class Filing(
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        from .legal_entity import (  # noqa: F401; pylint: disable=import-outside-toplevel
-            LegalEntity,
-        )
+        from .legal_entity import LegalEntity  # noqa: F401; pylint: disable=import-outside-toplevel
 
         filings = (
             db.session.query(Filing)
@@ -985,11 +908,9 @@ class Filing(
                         LegalEntity.EntityTypes.PARTNERSHIP.value,
                     ]
                 ),
-                Filing.colin_event_ids
-                == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
-                Filing.effective_date
-                != None,  # pylint: disable=singleton-comparison # noqa: E711;
+                Filing.effective_date != None,  # pylint: disable=singleton-comparison # noqa: E711;
             )
             .order_by(Filing.filing_date)
             .all()
@@ -1069,9 +990,7 @@ class Filing(
     def delete(self):
         """Raise an error if the filing is locked."""
         if self.locked:
-            raise BusinessException(
-                error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN
-            )
+            raise BusinessException(error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN)
         db.session.delete(self)
         db.session.commit()
 
@@ -1096,32 +1015,24 @@ class Filing(
         for k in filing["filing"].keys():  # pylint: disable=unsubscriptable-object
             if Filing.FILINGS.get(k, None):
                 legal_filings.append(
-                    {
-                        k: copy.deepcopy(filing["filing"].get(k))
-                    }  # pylint: disable=unsubscriptable-object
+                    {k: copy.deepcopy(filing["filing"].get(k))}  # pylint: disable=unsubscriptable-object
                 )
 
         return legal_filings
 
 
 @event.listens_for(Filing, "before_delete")
-def block_filing_delete_listener_function(
-    mapper, connection, target
-):  # pylint: disable=unused-argument
+def block_filing_delete_listener_function(mapper, connection, target):  # pylint: disable=unused-argument
     """Raise an error when a delete is attempted on a Filing."""
     filing = target
 
     if filing.locked or filing.deletion_locked:
-        raise BusinessException(
-            error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN
-        )
+        raise BusinessException(error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN)
 
 
 @event.listens_for(Filing, "before_insert")
 @event.listens_for(Filing, "before_update")
-def receive_before_change(
-    mapper, connection, target
-):  # pylint: disable=unused-argument; SQLAlchemy callback signature
+def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Set the state of the filing, based upon column values."""
     filing = target
 
@@ -1134,9 +1045,7 @@ def receive_before_change(
     if filing.filing_type == "lear_epoch":
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
     elif filing.transaction_id:
-        filing._status = (
-            Filing.Status.COMPLETED.value
-        )  # pylint: disable=protected-access
+        filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
     elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:
         filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
     elif filing.payment_token:

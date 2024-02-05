@@ -22,7 +22,6 @@ from sqlalchemy import event
 from sqlalchemy.orm import backref
 
 from ..exceptions import BusinessException
-
 from .db import db
 from .user import User
 
@@ -48,26 +47,16 @@ class Comment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     comment = db.Column(db.String(4096))
-    timestamp = db.Column(
-        "timestamp", db.DateTime(timezone=True), default=datetime.utcnow
-    )
+    timestamp = db.Column("timestamp", db.DateTime(timezone=True), default=datetime.utcnow)
 
     # parent keys
-    legal_entity_id = db.Column(
-        "legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True
-    )
+    legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
     staff_id = db.Column("staff_id", db.Integer, db.ForeignKey("users.id"), index=True)
-    filing_id = db.Column(
-        "filing_id", db.Integer, db.ForeignKey("filings.id"), index=True
-    )
-    alternate_name_id = db.Column(
-        "alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True
-    )
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), index=True)
 
     # Relationships - Users
-    staff = db.relationship(
-        "User", backref=backref("staff_comments"), foreign_keys=[staff_id]
-    )
+    staff = db.relationship("User", backref=backref("staff_comments"), foreign_keys=[staff_id])
 
     @property
     def json(self):
@@ -96,14 +85,10 @@ class Comment(db.Model):
     @staticmethod
     def delete():
         """Delete this object. WILL throw a BusinessException using the SQLAlchemy Listener framework."""
-        raise BusinessException(
-            error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN
-        )
+        raise BusinessException(error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN)
 
 
 @event.listens_for(Comment, "before_delete")
 def block_comment_delete_listener_function(*arg):  # pylint: disable=unused-argument
     """Raise an error when trying to delete a Comment."""
-    raise BusinessException(
-        error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN
-    )
+    raise BusinessException(error="Deletion not allowed.", status_code=HTTPStatus.FORBIDDEN)
