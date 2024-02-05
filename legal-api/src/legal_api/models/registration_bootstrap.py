@@ -22,12 +22,8 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from legal_api.exceptions import BusinessException
 
 from .db import db
-from .filing import (  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
-    Filing,
-)
-from .user import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-    User,
-)
+from .filing import Filing  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attributes

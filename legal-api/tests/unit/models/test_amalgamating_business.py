@@ -30,15 +30,12 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import AmalgamatingBusiness, Amalgamation, LegalEntity
-from tests.unit.models import (
-    factory_legal_entity,
-    factory_filing,
-)
+from tests.unit.models import factory_filing, factory_legal_entity
 
 
 def test_valid_amalgamating_business_save(session):
     """Assert that a valid amalgamating business can be saved."""
-    b = factory_legal_entity('CP1234567')
+    b = factory_legal_entity("CP1234567")
     b.save()
 
     filing = factory_filing(b, ANNUAL_REPORT)
@@ -49,7 +46,7 @@ def test_valid_amalgamating_business_save(session):
         legal_entity_id=b.id,
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
-        court_approval=True
+        court_approval=True,
     )
 
     amalgamation.save()
@@ -61,7 +58,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_name="Testing123",
         foreign_corp_num="123456789",
         legal_entity_id=b.id,
-        amalgamation_id=amalgamation.id
+        amalgamation_id=amalgamation.id,
     )
     amalgamating_business_1.save()
 
@@ -72,7 +69,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_name="Testing123",
         foreign_corp_num="123456789",
         legal_entity_id=b.id,
-        amalgamation_id=amalgamation.id
+        amalgamation_id=amalgamation.id,
     )
     amalgamating_business_2.save()
 
@@ -80,6 +77,8 @@ def test_valid_amalgamating_business_save(session):
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
     for type in AmalgamatingBusiness.Role:
-        assert type in [AmalgamatingBusiness.Role.holding,
-                        AmalgamatingBusiness.Role.amalgamating,
-                        AmalgamatingBusiness.Role.primary]
+        assert type in [
+            AmalgamatingBusiness.Role.holding,
+            AmalgamatingBusiness.Role.amalgamating,
+            AmalgamatingBusiness.Role.primary,
+        ]

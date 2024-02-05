@@ -7,10 +7,10 @@ from typing import Optional
 class BaseMeta(EnumMeta):
     """Meta class for the enum."""
 
-    def __contains__(self, other):
+    def __contains__(self, other):  # pylint: disable=C0203
         """Return True if 'in' the Enum."""
         try:
-            self(other)
+            self(other)  # pylint: disable=no-value-for-parameter
         except ValueError:
             return False
         else:
@@ -36,6 +36,7 @@ class BaseEnum(str, Enum, metaclass=BaseMeta):
                 return enum_value
         return None
 
+    # pylint: disable-next=no-self-argument
     def _generate_next_value_(name, start, count, last_values):
         """Return the name of the key."""
         return name

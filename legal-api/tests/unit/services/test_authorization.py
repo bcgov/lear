@@ -21,10 +21,10 @@ import random
 from datetime import datetime as _datetime
 from enum import Enum
 from http import HTTPStatus
-import jwt as pyjwt
+from unittest.mock import MagicMock, PropertyMock, patch
 
+import jwt as pyjwt
 import pytest
-from unittest.mock import patch, PropertyMock, MagicMock
 from flask import jsonify
 from registry_schemas.example_data import (
     AGM_EXTENSION,
@@ -200,66 +200,161 @@ EXPECTED_DATA = {
     FilingKey.COD_CP: {"displayName": "Director Change", "feeCode": "OTCDR", "name": "changeOfDirectors"},
     FilingKey.COD_CORPS: {"displayName": "Director Change", "feeCode": "BCCDR", "name": "changeOfDirectors"},
     FilingKey.CORRCTN: {"displayName": "Register Correction Application", "feeCode": "CRCTN", "name": "correction"},
-    FilingKey.CORRCTN_FIRMS: {"displayName": "Register Correction Application", "feeCode": "FMCORR",
-                              "name": "correction"},
+    FilingKey.CORRCTN_FIRMS: {
+        "displayName": "Register Correction Application",
+        "feeCode": "FMCORR",
+        "name": "correction",
+    },
     FilingKey.COURT_ORDER: {"displayName": "Court Order", "feeCode": "NOFEE", "name": "courtOrder"},
-    FilingKey.VOL_DISS: {"displayName": "Voluntary Dissolution", "feeCode": "DIS_VOL",
-                         "name": "dissolution", "type": "voluntary"},
-    FilingKey.ADM_DISS: {"displayName": "Administrative Dissolution", "feeCode": "DIS_ADM",
-                         "name": "dissolution", "type": "administrative"},
-    FilingKey.VOL_DISS_FIRMS: {"displayName": "Statement of Dissolution", "feeCode": "DIS_VOL",
-                               "name": "dissolution", "type": "voluntary"},
-    FilingKey.ADM_DISS_FIRMS: {"displayName": "Statement of Dissolution", "feeCode": "DIS_ADM",
-                               "name": "dissolution", "type": "administrative"},
-    FilingKey.REGISTRARS_NOTATION: {"displayName": "Registrar's Notation", "feeCode": "NOFEE",
-                                    "name": "registrarsNotation"},
+    FilingKey.VOL_DISS: {
+        "displayName": "Voluntary Dissolution",
+        "feeCode": "DIS_VOL",
+        "name": "dissolution",
+        "type": "voluntary",
+    },
+    FilingKey.ADM_DISS: {
+        "displayName": "Administrative Dissolution",
+        "feeCode": "DIS_ADM",
+        "name": "dissolution",
+        "type": "administrative",
+    },
+    FilingKey.VOL_DISS_FIRMS: {
+        "displayName": "Statement of Dissolution",
+        "feeCode": "DIS_VOL",
+        "name": "dissolution",
+        "type": "voluntary",
+    },
+    FilingKey.ADM_DISS_FIRMS: {
+        "displayName": "Statement of Dissolution",
+        "feeCode": "DIS_ADM",
+        "name": "dissolution",
+        "type": "administrative",
+    },
+    FilingKey.REGISTRARS_NOTATION: {
+        "displayName": "Registrar's Notation",
+        "feeCode": "NOFEE",
+        "name": "registrarsNotation",
+    },
     FilingKey.REGISTRARS_ORDER: {"displayName": "Registrar's Order", "feeCode": "NOFEE", "name": "registrarsOrder"},
-    FilingKey.SPECIAL_RESOLUTION: {"displayName": "Special Resolution", "feeCode": "SPRLN", "name": "specialResolution"},
+    FilingKey.SPECIAL_RESOLUTION: {
+        "displayName": "Special Resolution",
+        "feeCode": "SPRLN",
+        "name": "specialResolution",
+    },
     FilingKey.AGM_EXTENSION: {"displayName": "Request for AGM Extension", "feeCode": "AGMDT", "name": "agmExtension"},
-    FilingKey.AGM_LOCATION_CHANGE: {"displayName": "AGM Location Change", "feeCode": "AGMLC", "name": "agmLocationChange"},
+    FilingKey.AGM_LOCATION_CHANGE: {
+        "displayName": "AGM Location Change",
+        "feeCode": "AGMLC",
+        "name": "agmLocationChange",
+    },
     FilingKey.ALTERATION: {"displayName": "Alteration", "feeCode": "ALTER", "name": "alteration"},
-    FilingKey.CONSENT_CONTINUATION_OUT: {"displayName": "6-Month Consent to Continue Out", "feeCode": "CONTO",
-                                         "name": "consentContinuationOut"},
+    FilingKey.CONSENT_CONTINUATION_OUT: {
+        "displayName": "6-Month Consent to Continue Out",
+        "feeCode": "CONTO",
+        "name": "consentContinuationOut",
+    },
     FilingKey.CONTINUATION_OUT: {"displayName": "Continuation Out", "feeCode": "COUTI", "name": "continuationOut"},
     FilingKey.TRANSITION: {"displayName": "Transition Application", "feeCode": "TRANS", "name": "transition"},
-    FilingKey.IA_CP: {"displayName": "Incorporation Application", "feeCode": "OTINC",
-                      "name": "incorporationApplication"},
-    FilingKey.IA_BC: {"displayName": "BC Limited Company Incorporation Application", "feeCode": "BCINC",
-                      "name": "incorporationApplication"},
-    FilingKey.IA_BEN: {"displayName": "BC Benefit Company Incorporation Application", "feeCode": "BCINC",
-                       "name": "incorporationApplication"},
-    FilingKey.IA_CC: {"displayName": "BC Community Contribution Company Incorporation Application", "feeCode": "BCINC",
-                      "name": "incorporationApplication"},
-    FilingKey.IA_ULC: {"displayName": "BC Unlimited Liability Company Incorporation Application", "feeCode": "BCINC",
-                       "name": "incorporationApplication"},
-    FilingKey.REG_SP: {"displayName": "BC Sole Proprietorship Registration", "feeCode": "FRREG",
-                       "name": "registration"},
-    FilingKey.REG_GP: {"displayName": "BC General Partnership Registration", "feeCode": "FRREG",
-                       "name": "registration"},
-    FilingKey.CHANGE_OF_REGISTRATION: {"displayName": "Change of Registration Application", "feeCode": "FMCHANGE",
-                                       "name": "changeOfRegistration"},
+    FilingKey.IA_CP: {
+        "displayName": "Incorporation Application",
+        "feeCode": "OTINC",
+        "name": "incorporationApplication",
+    },
+    FilingKey.IA_BC: {
+        "displayName": "BC Limited Company Incorporation Application",
+        "feeCode": "BCINC",
+        "name": "incorporationApplication",
+    },
+    FilingKey.IA_BEN: {
+        "displayName": "BC Benefit Company Incorporation Application",
+        "feeCode": "BCINC",
+        "name": "incorporationApplication",
+    },
+    FilingKey.IA_CC: {
+        "displayName": "BC Community Contribution Company Incorporation Application",
+        "feeCode": "BCINC",
+        "name": "incorporationApplication",
+    },
+    FilingKey.IA_ULC: {
+        "displayName": "BC Unlimited Liability Company Incorporation Application",
+        "feeCode": "BCINC",
+        "name": "incorporationApplication",
+    },
+    FilingKey.REG_SP: {
+        "displayName": "BC Sole Proprietorship Registration",
+        "feeCode": "FRREG",
+        "name": "registration",
+    },
+    FilingKey.REG_GP: {
+        "displayName": "BC General Partnership Registration",
+        "feeCode": "FRREG",
+        "name": "registration",
+    },
+    FilingKey.CHANGE_OF_REGISTRATION: {
+        "displayName": "Change of Registration Application",
+        "feeCode": "FMCHANGE",
+        "name": "changeOfRegistration",
+    },
     FilingKey.CONV_FIRMS: {"displayName": "Record Conversion", "feeCode": "FMCONV", "name": "conversion"},
-    FilingKey.RESTRN_FULL_CORPS: {"displayName": "Full Restoration Application", "feeCode": "RESTF",
-                                  "name": "restoration", "type": "fullRestoration"},
-    FilingKey.RESTRN_LTD_CORPS: {"displayName": "Limited Restoration Application", "feeCode": "RESTL",
-                                 "name": "restoration", "type": "limitedRestoration"},
-    FilingKey.RESTRN_LTD_EXT_CORPS: {"displayName": "Limited Restoration Extension Application", "feeCode": "RESXL",
-                                     "name": "restoration", "type": "limitedRestorationExtension"},
-    FilingKey.RESTRN_LTD_TO_FULL_CORPS: {"displayName": "Conversion to Full Restoration Application", "feeCode": "RESXF",
-                                         "name": "restoration", "type": "limitedRestorationToFull"},
-    FilingKey.RESTRN_LTD_EXT_LLC: {"displayName": "Limited Restoration Extension Application", "feeCode": None,
-                                   "name": "restoration", "type": "limitedRestorationExtension"},
-    FilingKey.RESTRN_LTD_TO_FULL_LLC: {"displayName": "Conversion to Full Restoration Application", "feeCode": None,
-                                       "name": "restoration", "type": "limitedRestorationToFull"},
+    FilingKey.RESTRN_FULL_CORPS: {
+        "displayName": "Full Restoration Application",
+        "feeCode": "RESTF",
+        "name": "restoration",
+        "type": "fullRestoration",
+    },
+    FilingKey.RESTRN_LTD_CORPS: {
+        "displayName": "Limited Restoration Application",
+        "feeCode": "RESTL",
+        "name": "restoration",
+        "type": "limitedRestoration",
+    },
+    FilingKey.RESTRN_LTD_EXT_CORPS: {
+        "displayName": "Limited Restoration Extension Application",
+        "feeCode": "RESXL",
+        "name": "restoration",
+        "type": "limitedRestorationExtension",
+    },
+    FilingKey.RESTRN_LTD_TO_FULL_CORPS: {
+        "displayName": "Conversion to Full Restoration Application",
+        "feeCode": "RESXF",
+        "name": "restoration",
+        "type": "limitedRestorationToFull",
+    },
+    FilingKey.RESTRN_LTD_EXT_LLC: {
+        "displayName": "Limited Restoration Extension Application",
+        "feeCode": None,
+        "name": "restoration",
+        "type": "limitedRestorationExtension",
+    },
+    FilingKey.RESTRN_LTD_TO_FULL_LLC: {
+        "displayName": "Conversion to Full Restoration Application",
+        "feeCode": None,
+        "name": "restoration",
+        "type": "limitedRestorationToFull",
+    },
     FilingKey.PUT_BACK_ON: {"displayName": "Correction - Put Back On", "feeCode": "NOFEE", "name": "putBackOn"},
-    FilingKey.AMALGAMATION_REGULAR: {"name": "amalgamationApplication", "type": "regular", "displayName": "Regular Amalgamation", "feeCode": "AMALR"},
-    FilingKey.AMALGAMATION_VERTICAL: {"name": "amalgamationApplication", "type": "vertical", "displayName": "Vertical Amalgamation", "feeCode": "AMALV"},
-    FilingKey.AMALGAMATION_HORIZONTAL: {"name": "amalgamationApplication", "type": "horizontal", "displayName": "Horizontal Amalgamation", "feeCode": "AMALH"}
+    FilingKey.AMALGAMATION_REGULAR: {
+        "name": "amalgamationApplication",
+        "type": "regular",
+        "displayName": "Regular Amalgamation",
+        "feeCode": "AMALR",
+    },
+    FilingKey.AMALGAMATION_VERTICAL: {
+        "name": "amalgamationApplication",
+        "type": "vertical",
+        "displayName": "Vertical Amalgamation",
+        "feeCode": "AMALV",
+    },
+    FilingKey.AMALGAMATION_HORIZONTAL: {
+        "name": "amalgamationApplication",
+        "type": "horizontal",
+        "displayName": "Horizontal Amalgamation",
+        "feeCode": "AMALH",
+    },
 }
 
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()
-BLOCKER_FILING_STATUSES_AND_ADDITIONAL = factory_incomplete_statuses(["unknown_status_1",
-                                                                      "unknown_status_2"])
+BLOCKER_FILING_STATUSES_AND_ADDITIONAL = factory_incomplete_statuses(["unknown_status_1", "unknown_status_2"])
 BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG = [Filing.Status.PENDING.value, Filing.Status.PAID.value]
 BLOCKER_FILING_TYPES = ["alteration", "correction"]
 
@@ -661,15 +756,37 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, user
     "test_name,state,filing_type,sub_filing_type,legal_types,username,roles,expected",
     [
         # active business
-        ("staff_active_allowed", LegalEntity.State.ACTIVE, "agmExtension", None,
-         ["BC", "BEN", "ULC", "CC"], "staff", [STAFF_ROLE], True),
-        ("staff_active", LegalEntity.State.ACTIVE, "agmExtension", None,
-         ["CP", "LLC"], "staff", [STAFF_ROLE], False),
-
-        ("staff_active_allowed", LegalEntity.State.ACTIVE, "agmLocationChange", None,
-         ["BC", "BEN", "ULC", "CC"], "staff", [STAFF_ROLE], True),
-        ("staff_active", LegalEntity.State.ACTIVE, "agmLocationChange", None,
-         ["CP", "LLC"], "staff", [STAFF_ROLE], False),
+        (
+            "staff_active_allowed",
+            LegalEntity.State.ACTIVE,
+            "agmExtension",
+            None,
+            ["BC", "BEN", "ULC", "CC"],
+            "staff",
+            [STAFF_ROLE],
+            True,
+        ),
+        ("staff_active", LegalEntity.State.ACTIVE, "agmExtension", None, ["CP", "LLC"], "staff", [STAFF_ROLE], False),
+        (
+            "staff_active_allowed",
+            LegalEntity.State.ACTIVE,
+            "agmLocationChange",
+            None,
+            ["BC", "BEN", "ULC", "CC"],
+            "staff",
+            [STAFF_ROLE],
+            True,
+        ),
+        (
+            "staff_active",
+            LegalEntity.State.ACTIVE,
+            "agmLocationChange",
+            None,
+            ["CP", "LLC"],
+            "staff",
+            [STAFF_ROLE],
+            False,
+        ),
         (
             "staff_active_allowed",
             LegalEntity.State.ACTIVE,
@@ -917,15 +1034,37 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, user
             [STAFF_ROLE],
             True,
         ),
-        ("user_active_allowed", LegalEntity.State.ACTIVE, "agmExtension", None,
-         ["BC", "BEN", "ULC", "CC"], "general", [BASIC_USER], True),
-        ("user_active", LegalEntity.State.ACTIVE, "agmExtension", None,
-         ["CP", "LLC"], "general", [BASIC_USER], False),
-
-        ("user_active_allowed", LegalEntity.State.ACTIVE, "agmLocationChange", None,
-         ["BC", "BEN", "ULC", "CC"], "general", [BASIC_USER], True),
-        ("user_active", LegalEntity.State.ACTIVE, "agmLocationChange", None,
-         ["CP", "LLC"], "general", [BASIC_USER], False),
+        (
+            "user_active_allowed",
+            LegalEntity.State.ACTIVE,
+            "agmExtension",
+            None,
+            ["BC", "BEN", "ULC", "CC"],
+            "general",
+            [BASIC_USER],
+            True,
+        ),
+        ("user_active", LegalEntity.State.ACTIVE, "agmExtension", None, ["CP", "LLC"], "general", [BASIC_USER], False),
+        (
+            "user_active_allowed",
+            LegalEntity.State.ACTIVE,
+            "agmLocationChange",
+            None,
+            ["BC", "BEN", "ULC", "CC"],
+            "general",
+            [BASIC_USER],
+            True,
+        ),
+        (
+            "user_active",
+            LegalEntity.State.ACTIVE,
+            "agmLocationChange",
+            None,
+            ["CP", "LLC"],
+            "general",
+            [BASIC_USER],
+            False,
+        ),
         (
             "user_active_allowed",
             LegalEntity.State.ACTIVE,
@@ -1527,74 +1666,127 @@ def test_is_allowed(
     "test_name,business_exists,state,legal_types,username,roles,expected",
     [
         # active business - staff user
-        ("staff_active_cp", True, LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("staff_active_corps", True, LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+        (
+            "staff_active_cp",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AR_CP,
+                    FilingKey.COA_CP,
+                    FilingKey.COD_CP,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.SPECIAL_RESOLUTION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("staff_active_llc", True, LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE], []),
-        ("staff_active_firms", True, LegalEntity.State.ACTIVE, ["SP", "GP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.CONV_FIRMS,
-                          FilingKey.CORRCTN_FIRMS,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS_FIRMS,
-                          FilingKey.ADM_DISS_FIRMS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-
+        (
+            "staff_active_firms",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.CHANGE_OF_REGISTRATION,
+                    FilingKey.CONV_FIRMS,
+                    FilingKey.CORRCTN_FIRMS,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS_FIRMS,
+                    FilingKey.ADM_DISS_FIRMS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
         # active business - general user
-        ("general_user_cp", True, LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.VOL_DISS,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("general_user_corps", True, LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.VOL_DISS,
-                          FilingKey.TRANSITION])),
+        (
+            "general_user_cp",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [FilingKey.AR_CP, FilingKey.COA_CP, FilingKey.COD_CP, FilingKey.VOL_DISS, FilingKey.SPECIAL_RESOLUTION]
+            ),
+        ),
+        (
+            "general_user_corps",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.VOL_DISS,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("general_user_llc", True, LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER], []),
-        ("general_user_firms", True, LegalEntity.State.ACTIVE, ["SP", "GP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.VOL_DISS_FIRMS])),
-
+        (
+            "general_user_firms",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup([FilingKey.CHANGE_OF_REGISTRATION, FilingKey.VOL_DISS_FIRMS]),
+        ),
         # historical business - staff user
         (
             "staff_historical_cp",
@@ -1682,132 +1874,313 @@ def test_get_allowed_actions(
     "test_name,business_exists,state,legal_types,username,roles,expected",
     [
         # no business - staff user
-        ("staff_no_business_cp", False, LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.IA_CP])),
-        ("staff_no_business_bc", False, LegalEntity.State.ACTIVE, ["BC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_BC])),
-        ("staff_no_business_ben", False, LegalEntity.State.ACTIVE, ["BEN"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_BEN])),
-        ("staff_no_business_cc", False, LegalEntity.State.ACTIVE, ["CC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_CC])),
-        ("staff_no_business_ulc", False, LegalEntity.State.ACTIVE, ["ULC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_ULC])),
+        (
+            "staff_no_business_cp",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.IA_CP]),
+        ),
+        (
+            "staff_no_business_bc",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["BC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_BC,
+                ]
+            ),
+        ),
+        (
+            "staff_no_business_ben",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["BEN"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_BEN,
+                ]
+            ),
+        ),
+        (
+            "staff_no_business_cc",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["CC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_CC,
+                ]
+            ),
+        ),
+        (
+            "staff_no_business_ulc",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_ULC,
+                ]
+            ),
+        ),
         ("staff_no_business_llc", False, LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE], []),
-        ("staff_no_business_sp", False, LegalEntity.State.ACTIVE, ["SP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.REG_SP])),
-        ("staff_no_business_gp", False, LegalEntity.State.ACTIVE, ["GP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.REG_GP])),
-
+        (
+            "staff_no_business_sp",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["SP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.REG_SP]),
+        ),
+        (
+            "staff_no_business_gp",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.REG_GP]),
+        ),
         # no business - general user
-        ("general_user_no_business_cp", False, LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.IA_CP])),
-        ("general_user_no_business_bc", False, LegalEntity.State.ACTIVE, ["BC"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_BC])),
-        ("general_user_no_business_ben", False, LegalEntity.State.ACTIVE, ["BEN"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_BEN])),
-        ("general_user_no_business_cc", False, LegalEntity.State.ACTIVE, ["CC"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_CC])),
-        ("general_user_no_business_ulc", False, LegalEntity.State.ACTIVE, ["ULC"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.IA_ULC])),
+        (
+            "general_user_no_business_cp",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup([FilingKey.IA_CP]),
+        ),
+        (
+            "general_user_no_business_bc",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["BC"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_BC,
+                ]
+            ),
+        ),
+        (
+            "general_user_no_business_ben",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["BEN"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_BEN,
+                ]
+            ),
+        ),
+        (
+            "general_user_no_business_cc",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["CC"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_CC,
+                ]
+            ),
+        ),
+        (
+            "general_user_no_business_ulc",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["ULC"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.IA_ULC,
+                ]
+            ),
+        ),
         ("general_user_no_business_llc", False, LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER], []),
-        ("general_user_no_business_sp", False, LegalEntity.State.ACTIVE, ["SP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.REG_SP])),
-        ("general_user_no_business_gp", False, LegalEntity.State.ACTIVE, ["GP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.REG_GP])),
-
+        (
+            "general_user_no_business_sp",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["SP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup([FilingKey.REG_SP]),
+        ),
+        (
+            "general_user_no_business_gp",
+            False,
+            LegalEntity.State.ACTIVE,
+            ["GP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup([FilingKey.REG_GP]),
+        ),
         # active business - staff user
-        ("staff_active_cp", True, LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("staff_active_corps", True, LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+        (
+            "staff_active_cp",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AR_CP,
+                    FilingKey.COA_CP,
+                    FilingKey.COD_CP,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.SPECIAL_RESOLUTION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("staff_active_llc", True, LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE], []),
-        ("staff_active_firms", True, LegalEntity.State.ACTIVE, ["SP", "GP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.CONV_FIRMS,
-                          FilingKey.CORRCTN_FIRMS,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS_FIRMS,
-                          FilingKey.ADM_DISS_FIRMS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-
+        (
+            "staff_active_firms",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.CHANGE_OF_REGISTRATION,
+                    FilingKey.CONV_FIRMS,
+                    FilingKey.CORRCTN_FIRMS,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS_FIRMS,
+                    FilingKey.ADM_DISS_FIRMS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
         # active business - general user
-        ("general_user_cp", True, LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.VOL_DISS,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("general_user_corps", True, LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.VOL_DISS,
-                          FilingKey.TRANSITION])),
+        (
+            "general_user_cp",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [FilingKey.AR_CP, FilingKey.COA_CP, FilingKey.COD_CP, FilingKey.VOL_DISS, FilingKey.SPECIAL_RESOLUTION]
+            ),
+        ),
+        (
+            "general_user_corps",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.VOL_DISS,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("general_user_llc", True, LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER], []),
-        ("general_user_firms", True, LegalEntity.State.ACTIVE, ["SP", "GP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.VOL_DISS_FIRMS])),
-
+        (
+            "general_user_firms",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup([FilingKey.CHANGE_OF_REGISTRATION, FilingKey.VOL_DISS_FIRMS]),
+        ),
         # historical business - staff user
         (
             "staff_historical_cp",
@@ -2048,89 +2421,178 @@ def test_get_allowed_filings_blocker_admin_freeze(
     "test_name,business_exists,state,legal_types,username,roles,expected",
     [
         # active business - staff user
-        ("staff_active_cp", True, LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("staff_active_corps", True, LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+        (
+            "staff_active_cp",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AR_CP,
+                    FilingKey.COA_CP,
+                    FilingKey.COD_CP,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.SPECIAL_RESOLUTION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("staff_active_llc", True, LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE], []),
-        ("staff_active_firms", True, LegalEntity.State.ACTIVE, ["SP", "GP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.CONV_FIRMS,
-                          FilingKey.CORRCTN_FIRMS,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.ADM_DISS_FIRMS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-
+        (
+            "staff_active_firms",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.CHANGE_OF_REGISTRATION,
+                    FilingKey.CONV_FIRMS,
+                    FilingKey.CORRCTN_FIRMS,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.ADM_DISS_FIRMS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
         # active business - general user
-        ("general_user_cp", True, LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("general_user_corps", True, LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.TRANSITION])),
+        (
+            "general_user_cp",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup([FilingKey.AR_CP, FilingKey.COA_CP, FilingKey.COD_CP, FilingKey.SPECIAL_RESOLUTION]),
+        ),
+        (
+            "general_user_corps",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("general_user_llc", True, LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER], []),
-        ("general_user_firms", True, LegalEntity.State.ACTIVE, ["SP", "GP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
-
+        (
+            "general_user_firms",
+            True,
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup([FilingKey.CHANGE_OF_REGISTRATION]),
+        ),
         # historical business - staff user
-        ("staff_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-        ("staff_historical_corps", True, LegalEntity.State.HISTORICAL, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CORPS,
-                          FilingKey.RESTRN_LTD_CORPS])),
+        (
+            "staff_historical_cp",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+        ),
+        (
+            "staff_historical_corps",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.RESTRN_FULL_CORPS,
+                    FilingKey.RESTRN_LTD_CORPS,
+                ]
+            ),
+        ),
         ("staff_historical_llc", True, LegalEntity.State.HISTORICAL, ["LLC"], "staff", [STAFF_ROLE], []),
-        ("staff_historical_firms", True, LegalEntity.State.HISTORICAL, ["SP", "GP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-
+        (
+            "staff_historical_firms",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+        ),
         # historical business - general user
         ("general_user_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
-        ("general_user_historical_corps", True, LegalEntity.State.HISTORICAL, ["BC", "BEN", "CC", "ULC"], "general",
-         [BASIC_USER], []),
+        (
+            "general_user_historical_corps",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            [],
+        ),
         ("general_user_historical_llc", True, LegalEntity.State.HISTORICAL, ["LLC"], "general", [BASIC_USER], []),
-        ("general_user_historical_firms", True, LegalEntity.State.HISTORICAL, ["SP", "GP"], "general", [BASIC_USER], []),
-    ]
+        (
+            "general_user_historical_firms",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            [],
+        ),
+    ],
 )
-def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, session, jwt, test_name, business_exists, state,
-                                                          legal_types, username, roles, expected):
+def test_get_allowed_filings_blocker_not_in_good_standing(
+    monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username, roles, expected
+):
     """Assert that get allowed returns valid filings when business is not in good standing."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
     headers = {"Authorization": "Bearer " + token}
@@ -2144,9 +2606,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
         for legal_type in legal_types:
             business = None
             identifier = (f"BC{random.SystemRandom().getrandbits(0x58)}")[:9]
-            business = factory_legal_entity(identifier=identifier,
-                                            entity_type=legal_type,
-                                            state=state)
+            business = factory_legal_entity(identifier=identifier, entity_type=legal_type, state=state)
             with patch.object(type(business), "good_standing", new_callable=PropertyMock) as mock_good_standing:
                 mock_good_standing.return_value = False
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
@@ -2157,39 +2617,83 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
     "test_name,state,legal_types,username,roles,filing_statuses,expected",
     [
         # active business - staff user
-        ("staff_active_cp", LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE], BLOCKER_FILING_STATUSES,
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-        ("staff_active_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         BLOCKER_FILING_STATUSES,
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+        (
+            "staff_active_cp",
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            BLOCKER_FILING_STATUSES,
+            expected_lookup(
+                [FilingKey.ADMN_FRZE, FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]
+            ),
+        ),
+        (
+            "staff_active_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            BLOCKER_FILING_STATUSES,
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("staff_active_llc", LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE], BLOCKER_FILING_STATUSES, []),
-        ("staff_active_firms", LegalEntity.State.ACTIVE, ["SP", "GP"], "staff", [STAFF_ROLE], BLOCKER_FILING_STATUSES,
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CONV_FIRMS,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-
+        (
+            "staff_active_firms",
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            BLOCKER_FILING_STATUSES,
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.CONV_FIRMS,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
         # active business - general user
         ("general_user_cp", LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER], BLOCKER_FILING_STATUSES, []),
-        ("general_user_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         BLOCKER_FILING_STATUSES, expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                                                   FilingKey.AMALGAMATION_VERTICAL,
-                                                   FilingKey.AMALGAMATION_HORIZONTAL,
-                                                   FilingKey.TRANSITION, ])),
+        (
+            "general_user_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            BLOCKER_FILING_STATUSES,
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("general_user_llc", LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER], BLOCKER_FILING_STATUSES, []),
-        ("general_user_firms", LegalEntity.State.ACTIVE, ["SP", "GP"], "general", [BASIC_USER], BLOCKER_FILING_STATUSES,
-         []),
+        (
+            "general_user_firms",
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            BLOCKER_FILING_STATUSES,
+            [],
+        ),
         # historical business - staff user
         (
             "staff_historical_cp",
@@ -2305,44 +2809,115 @@ def test_allowed_filings_blocker_filing_incomplete(
     "test_name,state,legal_types,username,roles,filing_types,filing_statuses,expected",
     [
         # active business - staff user
-        ("staff_active_cp", LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE],
-         BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-        ("staff_active_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-        ("staff_active_llc", LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE],
-         BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ("staff_active_firms", LegalEntity.State.ACTIVE, ["SP", "GP"], "staff", [STAFF_ROLE],
-         BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CONV_FIRMS,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
+        (
+            "staff_active_cp",
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            expected_lookup(
+                [FilingKey.ADMN_FRZE, FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]
+            ),
+        ),
+        (
+            "staff_active_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_llc",
+            LegalEntity.State.ACTIVE,
+            ["LLC"],
+            "staff",
+            [STAFF_ROLE],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            [],
+        ),
+        (
+            "staff_active_firms",
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.CONV_FIRMS,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
         # active business - general user
-        ("general_user_cp", LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER],
-         BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ("general_user_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         BLOCKER_FILING_TYPES, BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
-         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.TRANSITION])),
-        ("general_user_llc", LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER], BLOCKER_FILING_TYPES,
-         BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
-        ("general_user_firms", LegalEntity.State.ACTIVE, ["SP", "GP"], "general", [BASIC_USER], BLOCKER_FILING_TYPES,
-         BLOCKER_FILING_STATUSES_AND_ADDITIONAL, []),
+        (
+            "general_user_cp",
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "general",
+            [BASIC_USER],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            [],
+        ),
+        (
+            "general_user_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            expected_lookup(
+                [
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+        (
+            "general_user_llc",
+            LegalEntity.State.ACTIVE,
+            ["LLC"],
+            "general",
+            [BASIC_USER],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            [],
+        ),
+        (
+            "general_user_firms",
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            BLOCKER_FILING_TYPES,
+            BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
+            [],
+        ),
         # historical business - staff user
         (
             "staff_historical_cp",
@@ -2483,26 +3058,57 @@ def test_allowed_filings_blocker_filing_specific_incomplete(
     "test_name,state,legal_types,username,roles,filing_types,filing_statuses,is_fed,expected",
     [
         # active business - staff user
-        ("staff_active_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         ["dissolution.voluntary", "dissolution.administrative"], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-
+        (
+            "staff_active_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            ["dissolution.voluntary", "dissolution.administrative"],
+            BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG,
+            True,
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         # active business - general user
-        ("general_user_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         ["dissolution.voluntary", "dissolution.administrative"], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
-         expected_lookup([FilingKey.TRANSITION]))
-    ]
+        (
+            "general_user_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            ["dissolution.voluntary", "dissolution.administrative"],
+            BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG,
+            True,
+            expected_lookup([FilingKey.TRANSITION]),
+        ),
+    ],
 )
-def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session, jwt, test_name, state,
-                                                      legal_types, username, roles, filing_types, filing_statuses,
-                                                      is_fed, expected):
+def test_allowed_filings_blocker_filing_amalgamations(
+    monkeypatch,
+    app,
+    session,
+    jwt,
+    test_name,
+    state,
+    legal_types,
+    username,
+    roles,
+    filing_types,
+    filing_statuses,
+    is_fed,
+    expected,
+):
     """Assert that get allowed returns valid filings when amalgamating business has blocker filings.
 
-       A blocker filing in this instance is a pending future effective dissolution filing.
+    A blocker filing in this instance is a pending future effective dissolution filing.
     """
     token = helper_create_jwt(jwt, roles=roles, username=username)
     headers = {"Authorization": "Bearer " + token}
@@ -2519,13 +3125,15 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                     filing_type, filing_sub_type = filing.split(".")
                     business = create_business(legal_type, state)
                     filing_dict = FILING_DATA.get(filing_type, None)
-                    create_incomplete_filing(business=business,
-                                             filing_name=filing_type,
-                                             filing_status=filing_status,
-                                             filing_dict=filing_dict,
-                                             filing_type=filing_type,
-                                             filing_sub_type=filing_sub_type,
-                                             is_future_effective=is_fed)
+                    create_incomplete_filing(
+                        business=business,
+                        filing_name=filing_type,
+                        filing_status=filing_status,
+                        filing_dict=filing_dict,
+                        filing_type=filing_type,
+                        filing_sub_type=filing_sub_type,
+                        is_future_effective=is_fed,
+                    )
                     allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
                     assert allowed_filing_types == expected
 
@@ -2534,65 +3142,108 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
     "test_name,state,legal_types,username,roles,expected",
     [
         # active business - staff user
-        ("staff_active_cp", LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("staff_active_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+        (
+            "staff_active_cp",
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AR_CP,
+                    FilingKey.COA_CP,
+                    FilingKey.COD_CP,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.SPECIAL_RESOLUTION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("staff_active_llc", LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE], []),
-        ("staff_active_firms", LegalEntity.State.ACTIVE, ["SP", "GP"], "staff", [STAFF_ROLE],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CONV_FIRMS,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-
+        (
+            "staff_active_firms",
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.CONV_FIRMS,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
         # active business - general user
-        ("general_user_cp", LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.VOL_DISS,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("general_user_corps", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         expected_lookup([FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.VOL_DISS,
-                          FilingKey.TRANSITION])),
+        (
+            "general_user_cp",
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [FilingKey.AR_CP, FilingKey.COA_CP, FilingKey.COD_CP, FilingKey.VOL_DISS, FilingKey.SPECIAL_RESOLUTION]
+            ),
+        ),
+        (
+            "general_user_corps",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            expected_lookup(
+                [
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.VOL_DISS,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
         ("general_user_llc", LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER], []),
         ("general_user_firms", LegalEntity.State.ACTIVE, ["SP", "GP"], "general", [BASIC_USER], []),
         # historical business - staff user
@@ -2667,111 +3318,194 @@ def test_allowed_filings_warnings(
     "test_name,state,legal_types,username,roles,state_filing_types,state_filing_sub_types,expected",
     [
         # active business - staff user
-        ("staff_active_cp_unaffected", LegalEntity.State.ACTIVE, ["CP"], "staff", [STAFF_ROLE],
-         ["restoration", "restoration", None, "restoration"],
-         ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.SPECIAL_RESOLUTION])),
-
-        ("staff_active_corps_valid_state_filing_success", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff",
-         [STAFF_ROLE], ["restoration", "restoration"], ["limitedRestoration", "limitedRestorationExtension"],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION,
-                          FilingKey.RESTRN_LTD_EXT_CORPS,
-                          FilingKey.RESTRN_LTD_TO_FULL_CORPS])),
-        ("staff_active_corps_valid_state_filing_fail", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff",
-         [STAFF_ROLE], [None, "restoration"], [None, "fullRestoration"],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-        ("staff_active_llc_valid_state_filing_success", LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE],
-         ["restoration", "restoration"], ["limitedRestoration", "limitedRestorationExtension"], []),
-        ("staff_active_llc_valid_state_filing_fail", LegalEntity.State.ACTIVE, ["LLC"], "staff", [STAFF_ROLE],
-         [None, "restoration"], [None, "fullRestoration"], []),
-
-        ("staff_active_firms_unaffected", LegalEntity.State.ACTIVE, ["SP", "GP"], "staff", [STAFF_ROLE],
-         ["putBackOn", None], [None, None],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.CONV_FIRMS,
-                          FilingKey.CORRCTN_FIRMS,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS_FIRMS,
-                          FilingKey.ADM_DISS_FIRMS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
-
+        (
+            "staff_active_cp_unaffected",
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            ["restoration", "restoration", None, "restoration"],
+            ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AR_CP,
+                    FilingKey.COA_CP,
+                    FilingKey.COD_CP,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.SPECIAL_RESOLUTION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps_valid_state_filing_success",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            ["restoration", "restoration"],
+            ["limitedRestoration", "limitedRestorationExtension"],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                    FilingKey.RESTRN_LTD_EXT_CORPS,
+                    FilingKey.RESTRN_LTD_TO_FULL_CORPS,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps_valid_state_filing_fail",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            [None, "restoration"],
+            [None, "fullRestoration"],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_llc_valid_state_filing_success",
+            LegalEntity.State.ACTIVE,
+            ["LLC"],
+            "staff",
+            [STAFF_ROLE],
+            ["restoration", "restoration"],
+            ["limitedRestoration", "limitedRestorationExtension"],
+            [],
+        ),
+        (
+            "staff_active_llc_valid_state_filing_fail",
+            LegalEntity.State.ACTIVE,
+            ["LLC"],
+            "staff",
+            [STAFF_ROLE],
+            [None, "restoration"],
+            [None, "fullRestoration"],
+            [],
+        ),
+        (
+            "staff_active_firms_unaffected",
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            ["putBackOn", None],
+            [None, None],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.CHANGE_OF_REGISTRATION,
+                    FilingKey.CONV_FIRMS,
+                    FilingKey.CORRCTN_FIRMS,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS_FIRMS,
+                    FilingKey.ADM_DISS_FIRMS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
         # active business - general user
-        ("general_user_cp_unaffected", LegalEntity.State.ACTIVE, ["CP"], "general", [BASIC_USER],
-         ["restoration", "restoration", None, "restoration"],
-         ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"],
-         expected_lookup([FilingKey.AR_CP,
-                          FilingKey.COA_CP,
-                          FilingKey.COD_CP,
-                          FilingKey.VOL_DISS,
-                          FilingKey.SPECIAL_RESOLUTION])),
-        ("general_user_corps_unaffected", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "general", [BASIC_USER],
-         ["restoration", "restoration", None, "restoration"],
-         ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"],
-         expected_lookup([FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.VOL_DISS,
-                          FilingKey.TRANSITION])),
-        ("general_user_llc_unaffected", LegalEntity.State.ACTIVE, ["LLC"], "general", [BASIC_USER],
-         ["restoration", "restoration", None, "restoration"],
-         ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"], []),
-        ("general_user_firms_unaffected", LegalEntity.State.ACTIVE, ["SP", "GP"], "general", [BASIC_USER],
-         ["putBackOn", None], [None, None],
-         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
-                          FilingKey.VOL_DISS_FIRMS])),
+        (
+            "general_user_cp_unaffected",
+            LegalEntity.State.ACTIVE,
+            ["CP"],
+            "general",
+            [BASIC_USER],
+            ["restoration", "restoration", None, "restoration"],
+            ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"],
+            expected_lookup(
+                [FilingKey.AR_CP, FilingKey.COA_CP, FilingKey.COD_CP, FilingKey.VOL_DISS, FilingKey.SPECIAL_RESOLUTION]
+            ),
+        ),
+        (
+            "general_user_corps_unaffected",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            ["restoration", "restoration", None, "restoration"],
+            ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"],
+            expected_lookup(
+                [
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.VOL_DISS,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+        (
+            "general_user_llc_unaffected",
+            LegalEntity.State.ACTIVE,
+            ["LLC"],
+            "general",
+            [BASIC_USER],
+            ["restoration", "restoration", None, "restoration"],
+            ["limitedRestoration", "limitedRestorationExtension", None, "fullRestoration"],
+            [],
+        ),
+        (
+            "general_user_firms_unaffected",
+            LegalEntity.State.ACTIVE,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            ["putBackOn", None],
+            [None, None],
+            expected_lookup([FilingKey.CHANGE_OF_REGISTRATION, FilingKey.VOL_DISS_FIRMS]),
+        ),
         # historical business - staff user
         (
             "staff_historical_cp_unaffected",
@@ -3062,69 +3796,117 @@ def test_is_allowed_ignore_draft_filing(
     "test_name,state,legal_types,username,roles,filing_types,filing_sub_types,is_completed,expected",
     [
         # active business - staff user
-        ("staff_active_corps_completed_filing_success", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff",
-         [STAFF_ROLE], ["consentContinuationOut", "consentContinuationOut"], [None, None], [True, True],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-        ("staff_active_corps_completed_filing_success", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff",
-         [STAFF_ROLE], ["consentContinuationOut", "consentContinuationOut"], [None, None], [True, False],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.CONTINUATION_OUT,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-        ("staff_active_corps_completed_filing_fail", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff",
-         [STAFF_ROLE], ["consentContinuationOut", "consentContinuationOut"], [None, None], [False, False],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-        ("staff_active_corps_completed_filing_fail", LegalEntity.State.ACTIVE, ["BC", "BEN", "CC", "ULC"], "staff",
-         [STAFF_ROLE], [None, None], [None, None], [False, False],
-         expected_lookup([FilingKey.ADMN_FRZE,
-                          FilingKey.AGM_EXTENSION,
-                          FilingKey.AGM_LOCATION_CHANGE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AMALGAMATION_REGULAR,
-                          FilingKey.AMALGAMATION_VERTICAL,
-                          FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CONSENT_CONTINUATION_OUT,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.VOL_DISS,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
-    ]
+        (
+            "staff_active_corps_completed_filing_success",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            ["consentContinuationOut", "consentContinuationOut"],
+            [None, None],
+            [True, True],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.CONTINUATION_OUT,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps_completed_filing_success",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            ["consentContinuationOut", "consentContinuationOut"],
+            [None, None],
+            [True, False],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.CONTINUATION_OUT,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps_completed_filing_fail",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            ["consentContinuationOut", "consentContinuationOut"],
+            [None, None],
+            [False, False],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+        (
+            "staff_active_corps_completed_filing_fail",
+            LegalEntity.State.ACTIVE,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            [None, None],
+            [None, None],
+            [False, False],
+            expected_lookup(
+                [
+                    FilingKey.ADMN_FRZE,
+                    FilingKey.AGM_EXTENSION,
+                    FilingKey.AGM_LOCATION_CHANGE,
+                    FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
+                    FilingKey.AR_CORPS,
+                    FilingKey.COA_CORPS,
+                    FilingKey.COD_CORPS,
+                    FilingKey.CONSENT_CONTINUATION_OUT,
+                    FilingKey.CORRCTN,
+                    FilingKey.COURT_ORDER,
+                    FilingKey.VOL_DISS,
+                    FilingKey.ADM_DISS,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                    FilingKey.TRANSITION,
+                ]
+            ),
+        ),
+    ],
 )
 def test_allowed_filings_completed_filing_check(
     monkeypatch,
@@ -3164,12 +3946,14 @@ def test_allowed_filings_completed_filing_check(
                         create_filing(business, filing_type, filing_sub_type)
                     else:
                         filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
-                        create_incomplete_filing(business=business,
-                                                 filing_name="unknown",
-                                                 filing_status=Filing.Status.DRAFT.value,
-                                                 filing_dict=filing_dict,
-                                                 filing_type=filing_type,
-                                                 filing_sub_type=filing_sub_type)
+                        create_incomplete_filing(
+                            business=business,
+                            filing_name="unknown",
+                            filing_status=Filing.Status.DRAFT.value,
+                            filing_dict=filing_dict,
+                            filing_type=filing_type,
+                            filing_sub_type=filing_sub_type,
+                        )
 
             allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected
@@ -3319,14 +4103,12 @@ def test_is_self_registered_owner_operator_false_when_no_registration_filing(app
 def test_is_self_registered_owner_operator_false_when_no_proprietors(app, session):
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
-    completing_party_role = create_party_role(
-        EntityRole.RoleTypes.completing_party,
-        **create_test_user()
-    )
+    completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user())
     filing = factory_completed_filing(
         business=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
-        filing_date=_datetime.utcnow(), filing_type="registration"
+        filing_date=_datetime.utcnow(),
+        filing_type="registration",
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
@@ -3335,19 +4117,18 @@ def test_is_self_registered_owner_operator_false_when_no_proprietors(app, sessio
     assert is_self_registered_owner_operator(business, user) is False
 
 
-@patch("legal_api.models.EntityRole.get_parties_by_role",
-       return_value=[EntityRole(role=EntityRole.RoleTypes.proprietor)])
+@patch(
+    "legal_api.models.EntityRole.get_parties_by_role", return_value=[EntityRole(role=EntityRole.RoleTypes.proprietor)]
+)
 def test_is_self_registered_owner_operator_false_when_no_proprietor(app, session):
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
-    completing_party_role = create_party_role(
-        EntityRole.RoleTypes.completing_party,
-        **create_test_user()
-    )
+    completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user())
     filing = factory_completed_filing(
         business=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
-        filing_date=_datetime.utcnow(), filing_type="registration"
+        filing_date=_datetime.utcnow(),
+        filing_type="registration",
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
@@ -3360,25 +4141,21 @@ def test_is_self_registered_owner_operator_false_when_no_proprietor(app, session
 def test_is_self_registered_owner_operator_false_when_no_completing_parties(app, session):
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
-    proprietor_party_role = create_party_role(
-        EntityRole.RoleTypes.proprietor,
-        **create_test_user()
-    )
+    proprietor_party_role = create_party_role(EntityRole.RoleTypes.proprietor, **create_test_user())
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
 
     assert is_self_registered_owner_operator(business, user) is False
 
 
-@patch("legal_api.models.EntityRole.get_party_roles_by_filing",
-       return_value=[EntityRole(role=EntityRole.RoleTypes.completing_party)])
+@patch(
+    "legal_api.models.EntityRole.get_party_roles_by_filing",
+    return_value=[EntityRole(role=EntityRole.RoleTypes.completing_party)],
+)
 def test_is_self_registered_owner_operator_false_when_no_completing_party(app, session):
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
-    proprietor_party_role = create_party_role(
-        EntityRole.RoleTypes.PROPRIETOR,
-        **create_test_user()
-    )
+    proprietor_party_role = create_party_role(EntityRole.RoleTypes.PROPRIETOR, **create_test_user())
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
 
@@ -3388,23 +4165,18 @@ def test_is_self_registered_owner_operator_false_when_no_completing_party(app, s
 def test_is_self_registered_owner_operator_false_when_parties_not_matching(app, session):
     user = factory_user(username="test", firstname="Test1", lastname="User1")
     business = create_business("SP", LegalEntity.State.ACTIVE)
-    completing_party_role = create_party_role(
-        EntityRole.RoleTypes.completing_party,
-        **create_test_user("1")
-    )
+    completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user("1"))
     filing = factory_completed_filing(
         business=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
-        filing_date=_datetime.utcnow(), filing_type="registration"
+        filing_date=_datetime.utcnow(),
+        filing_type="registration",
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
-    proprietor_party_role = create_party_role(
-        EntityRole.RoleTypes.proprietor,
-        **create_test_user("2")
-    )
+    proprietor_party_role = create_party_role(EntityRole.RoleTypes.proprietor, **create_test_user("2"))
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
 
@@ -3414,23 +4186,18 @@ def test_is_self_registered_owner_operator_false_when_parties_not_matching(app, 
 def test_is_self_registered_owner_operator_false_when_user_not_matching(app, session):
     user = factory_user(username="test", firstname="Test1", lastname="User1")
     business = create_business("SP", LegalEntity.State.ACTIVE)
-    completing_party_role = create_party_role(
-        EntityRole.RoleTypes.completing_party,
-        **create_test_user("2")
-    )
+    completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user("2"))
     filing = factory_completed_filing(
         business=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
-        filing_date=_datetime.utcnow(), filing_type="registration"
+        filing_date=_datetime.utcnow(),
+        filing_type="registration",
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
-    proprietor_party_role = create_party_role(
-        EntityRole.RoleTypes.proprietor,
-        **create_test_user("2")
-    )
+    proprietor_party_role = create_party_role(EntityRole.RoleTypes.proprietor, **create_test_user("2"))
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
 
@@ -3441,21 +4208,20 @@ def test_is_self_registered_owner_operator_false_when_proprietor_uses_middle_nam
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(
-        EntityRole.RoleTypes.completing_party,
-        **create_test_user(first_name="TEST", last_name="USER")
+        EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST", last_name="USER")
     )
     filing = factory_completed_filing(
         business=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
-        filing_date=_datetime.utcnow(), filing_type="registration"
+        filing_date=_datetime.utcnow(),
+        filing_type="registration",
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
     proprietor_party_role = create_party_role(
-        EntityRole.RoleTypes.proprietor,
-        **create_test_user(first_name="TEST", middle_initial="TU", last_name="USER")
+        EntityRole.RoleTypes.proprietor, **create_test_user(first_name="TEST", middle_initial="TU", last_name="USER")
     )
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
@@ -3467,21 +4233,20 @@ def test_is_self_registered_owner_operator_true_when_proprietor_and_user_uses_mi
     user = factory_user(username="test", firstname="Test Tu", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(
-        EntityRole.RoleTypes.completing_party,
-        **create_test_user(first_name="TEST TU", last_name="USER")
+        EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST TU", last_name="USER")
     )
     filing = factory_completed_filing(
         business=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
-        filing_date=_datetime.utcnow(), filing_type="registration"
+        filing_date=_datetime.utcnow(),
+        filing_type="registration",
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
     proprietor_party_role = create_party_role(
-        EntityRole.RoleTypes.proprietor,
-        **create_test_user(first_name="TEST", middle_initial="TU", last_name="USER")
+        EntityRole.RoleTypes.proprietor, **create_test_user(first_name="TEST", middle_initial="TU", last_name="USER")
     )
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
@@ -3493,21 +4258,20 @@ def test_is_self_registered_owner_operator_true(app, session):
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(
-        EntityRole.RoleTypes.completing_party,
-        **create_test_user(first_name="TEST", last_name="USER")
+        EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST", last_name="USER")
     )
     filing = factory_completed_filing(
         business=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
-        filing_date=_datetime.utcnow(), filing_type="registration"
+        filing_date=_datetime.utcnow(),
+        filing_type="registration",
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
     proprietor_party_role = create_party_role(
-        EntityRole.RoleTypes.proprietor,
-        **create_test_user(first_name="TEST", last_name="USER")
+        EntityRole.RoleTypes.proprietor, **create_test_user(first_name="TEST", last_name="USER")
     )
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
@@ -3532,16 +4296,18 @@ def create_incomplete_filing(
     filing_dict: dict = copy.deepcopy(ANNUAL_REPORT),
     filing_type=None,
     filing_sub_type=None,
-    is_future_effective=False
+    is_future_effective=False,
 ):
     """Create an incomplete filing of a given status."""
     filing_dict["filing"]["header"]["name"] = filing_name
     if filing_dict:
         filing_dict = copy.deepcopy(filing_dict)
-    filing = factory_filing(legal_entity=legal_entity,
-                            data_dict=filing_dict,
-                            filing_sub_type=filing_sub_type,
-                            is_future_effective=is_future_effective)
+    filing = factory_filing(
+        legal_entity=legal_entity,
+        data_dict=filing_dict,
+        filing_sub_type=filing_sub_type,
+        is_future_effective=is_future_effective,
+    )
     filing.skip_status_listener = True
     filing._status = filing_status
     filing._filing_type = filing_type
@@ -3565,38 +4331,22 @@ def create_filing(legal_entity, filing_type, filing_sub_type=None):
     return filing
 
 
-def create_party_role(role=EntityRole.RoleTypes.completing_party,
-                      first_name=None, last_name=None, middle_initial=None):
+def create_party_role(role=EntityRole.RoleTypes.completing_party, first_name=None, last_name=None, middle_initial=None):
     completing_party_address = Address(city="Test Mailing City", address_type=Address.DELIVERY)
     officer = {
         "firstName": first_name or "TEST",
         "middleInitial": middle_initial or "TU",
         "lastName": last_name or "USER",
         "partyType": "person",
-        "organizationName": ""
+        "organizationName": "",
     }
-    party_role = factory_party_role(
-        completing_party_address,
-        None,
-        officer,
-        _datetime.utcnow(),
-        None,
-        role
-    )
+    party_role = factory_party_role(completing_party_address, None, officer, _datetime.utcnow(), None, role)
     return party_role
 
 
 def create_test_user(suffix=""):
-    return {
-        "first_name": f"TEST{suffix}",
-        "last_name": f"USER{suffix}",
-        "middle_initial": f"TU{suffix}"
-    }
+    return {"first_name": f"TEST{suffix}", "last_name": f"USER{suffix}", "middle_initial": f"TU{suffix}"}
 
 
-def create_test_user(first_name=None, last_name=None, middle_initial=None):
-    return {
-        "first_name": first_name,
-        "last_name": last_name,
-        "middle_initial": middle_initial
-    }
+def create_test_user(first_name=None, last_name=None, middle_initial=None):  # noqa: F811
+    return {"first_name": first_name, "last_name": last_name, "middle_initial": middle_initial}

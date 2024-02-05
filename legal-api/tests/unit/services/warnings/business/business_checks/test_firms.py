@@ -19,10 +19,7 @@ from unittest.mock import patch
 import pytest
 
 from legal_api.models import Address, EntityRole, LegalEntity, Office, PartyRole
-from legal_api.services.warnings.business.business_checks import (
-    BusinessWarningReferers,
-    firms,
-)
+from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
 from legal_api.services.warnings.business.business_checks.firms import (
     check_address,
     check_business,
@@ -52,16 +49,39 @@ from tests.unit.services.warnings import (
     [
         # business office mailing address checks
         ("SUCCESS", "mailing", None, BusinessWarningReferers.BUSINESS_OFFICE, None, None),
-        ("FAIL_NO_STREET", "mailing", "street", BusinessWarningReferers.BUSINESS_OFFICE,
-         "NO_BUSINESS_OFFICE_MAILING_ADDRESS_STREET", "Street is required for business office mailing address."),
-        ("FAIL_NO_CITY", "mailing", "city", BusinessWarningReferers.BUSINESS_OFFICE,
-         "NO_BUSINESS_OFFICE_MAILING_ADDRESS_CITY", "City is required for business office mailing address."),
-        ("FAIL_NO_COUNTRY", "mailing", "country", BusinessWarningReferers.BUSINESS_OFFICE,
-         "NO_BUSINESS_OFFICE_MAILING_ADDRESS_COUNTRY", "Country is required for business office mailing address."),
-        ("FAIL_NO_POSTAL_CODE", "mailing", "postal_code", BusinessWarningReferers.BUSINESS_OFFICE,
-         "NO_BUSINESS_OFFICE_MAILING_ADDRESS_POSTAL_CODE", "Postal code is required for business office mailing address."),
-        ("SUCCESS", "mailing", "region", BusinessWarningReferers.BUSINESS_OFFICE,
-         None, None),
+        (
+            "FAIL_NO_STREET",
+            "mailing",
+            "street",
+            BusinessWarningReferers.BUSINESS_OFFICE,
+            "NO_BUSINESS_OFFICE_MAILING_ADDRESS_STREET",
+            "Street is required for business office mailing address.",
+        ),
+        (
+            "FAIL_NO_CITY",
+            "mailing",
+            "city",
+            BusinessWarningReferers.BUSINESS_OFFICE,
+            "NO_BUSINESS_OFFICE_MAILING_ADDRESS_CITY",
+            "City is required for business office mailing address.",
+        ),
+        (
+            "FAIL_NO_COUNTRY",
+            "mailing",
+            "country",
+            BusinessWarningReferers.BUSINESS_OFFICE,
+            "NO_BUSINESS_OFFICE_MAILING_ADDRESS_COUNTRY",
+            "Country is required for business office mailing address.",
+        ),
+        (
+            "FAIL_NO_POSTAL_CODE",
+            "mailing",
+            "postal_code",
+            BusinessWarningReferers.BUSINESS_OFFICE,
+            "NO_BUSINESS_OFFICE_MAILING_ADDRESS_POSTAL_CODE",
+            "Postal code is required for business office mailing address.",
+        ),
+        ("SUCCESS", "mailing", "region", BusinessWarningReferers.BUSINESS_OFFICE, None, None),
         # business office delivery address checks
         ("SUCCESS", "delivery", None, BusinessWarningReferers.BUSINESS_OFFICE, None, None),
         (
@@ -106,30 +126,76 @@ from tests.unit.services.warnings import (
         ),
         # business office mailing address checks
         ("SUCCESS", "mailing", None, BusinessWarningReferers.BUSINESS_PARTY, None, None),
-        ("FAIL_NO_STREET", "mailing", "street", BusinessWarningReferers.BUSINESS_PARTY,
-         "NO_BUSINESS_PARTY_MAILING_ADDRESS_STREET", "Street is required for business party mailing address."),
-        ("FAIL_NO_CITY", "mailing", "city", BusinessWarningReferers.BUSINESS_PARTY,
-         "NO_BUSINESS_PARTY_MAILING_ADDRESS_CITY", "City is required for business party mailing address."),
-        ("FAIL_NO_COUNTRY", "mailing", "country", BusinessWarningReferers.BUSINESS_PARTY,
-         "NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY", "Country is required for business party mailing address."),
-        ("FAIL_NO_POSTAL_CODE", "mailing", "postal_code", BusinessWarningReferers.BUSINESS_PARTY,
-         "NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE", "Postal code is required for business party mailing address."),
-        ("SUCCESS", "mailing", "region", BusinessWarningReferers.BUSINESS_PARTY,
-         None, None),
-
+        (
+            "FAIL_NO_STREET",
+            "mailing",
+            "street",
+            BusinessWarningReferers.BUSINESS_PARTY,
+            "NO_BUSINESS_PARTY_MAILING_ADDRESS_STREET",
+            "Street is required for business party mailing address.",
+        ),
+        (
+            "FAIL_NO_CITY",
+            "mailing",
+            "city",
+            BusinessWarningReferers.BUSINESS_PARTY,
+            "NO_BUSINESS_PARTY_MAILING_ADDRESS_CITY",
+            "City is required for business party mailing address.",
+        ),
+        (
+            "FAIL_NO_COUNTRY",
+            "mailing",
+            "country",
+            BusinessWarningReferers.BUSINESS_PARTY,
+            "NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY",
+            "Country is required for business party mailing address.",
+        ),
+        (
+            "FAIL_NO_POSTAL_CODE",
+            "mailing",
+            "postal_code",
+            BusinessWarningReferers.BUSINESS_PARTY,
+            "NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE",
+            "Postal code is required for business party mailing address.",
+        ),
+        ("SUCCESS", "mailing", "region", BusinessWarningReferers.BUSINESS_PARTY, None, None),
         # completing party mailing address checks
         ("SUCCESS", "mailing", None, BusinessWarningReferers.COMPLETING_PARTY, None, None),
-        ("FAIL_NO_STREET", "mailing", "street", BusinessWarningReferers.COMPLETING_PARTY,
-         "NO_COMPLETING_PARTY_MAILING_ADDRESS_STREET", "Street is required for completing party mailing address."),
-        ("FAIL_NO_CITY", "mailing", "city", BusinessWarningReferers.COMPLETING_PARTY,
-         "NO_COMPLETING_PARTY_MAILING_ADDRESS_CITY", "City is required for completing party mailing address."),
-        ("FAIL_NO_COUNTRY", "mailing", "country", BusinessWarningReferers.COMPLETING_PARTY,
-         "NO_COMPLETING_PARTY_MAILING_ADDRESS_COUNTRY", "Country is required for completing party mailing address."),
-        ("FAIL_NO_POSTAL_CODE", "mailing", "postal_code", BusinessWarningReferers.COMPLETING_PARTY,
-         "NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE", "Postal code is required for completing party mailing address."),
-        ("SUCCESS", "mailing", "region", BusinessWarningReferers.COMPLETING_PARTY,
-         None, None),
-    ])
+        (
+            "FAIL_NO_STREET",
+            "mailing",
+            "street",
+            BusinessWarningReferers.COMPLETING_PARTY,
+            "NO_COMPLETING_PARTY_MAILING_ADDRESS_STREET",
+            "Street is required for completing party mailing address.",
+        ),
+        (
+            "FAIL_NO_CITY",
+            "mailing",
+            "city",
+            BusinessWarningReferers.COMPLETING_PARTY,
+            "NO_COMPLETING_PARTY_MAILING_ADDRESS_CITY",
+            "City is required for completing party mailing address.",
+        ),
+        (
+            "FAIL_NO_COUNTRY",
+            "mailing",
+            "country",
+            BusinessWarningReferers.COMPLETING_PARTY,
+            "NO_COMPLETING_PARTY_MAILING_ADDRESS_COUNTRY",
+            "Country is required for completing party mailing address.",
+        ),
+        (
+            "FAIL_NO_POSTAL_CODE",
+            "mailing",
+            "postal_code",
+            BusinessWarningReferers.COMPLETING_PARTY,
+            "NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE",
+            "Postal code is required for completing party mailing address.",
+        ),
+        ("SUCCESS", "mailing", "region", BusinessWarningReferers.COMPLETING_PARTY, None, None),
+    ],
+)
 def test_check_address(session, test_name, address_type, null_addr_field_name, referer, expected_code, expected_msg):
     """Assert that business address checks functions properly."""
 

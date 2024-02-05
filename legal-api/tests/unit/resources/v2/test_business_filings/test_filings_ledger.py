@@ -62,7 +62,7 @@ from tests.unit.models import (  # noqa:E501,I001
 )
 from tests.unit.services.utils import create_header
 
-REGISTER_CORRECTION_APPLICATION = 'Register Correction Application'
+REGISTER_CORRECTION_APPLICATION = "Register Correction Application"
 
 
 def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):

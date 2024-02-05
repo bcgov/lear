@@ -28,13 +28,9 @@ from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
 from flask_pydantic import validate as pydantic_validate
 from html_sanitizer import Sanitizer  # noqa: I001
-from pydantic import (  # noqa: I001; pylint: disable=E0611,C0412; not sure why pylint is unable to scan module
-    BaseModel,
-)
+from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611,C0412; not sure why pylint is unable to scan module
 from pydantic.generics import GenericModel
-from requests import (  # noqa: I001; grouping out of order to make both pylint & isort happy
-    exceptions,
-)
+from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from sqlalchemy import text
 from werkzeug.local import LocalProxy
 
@@ -42,16 +38,7 @@ import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import (
-    Address,
-    ColinLastUpdate,
-    Filing,
-    LegalEntity,
-    RegistrationBootstrap,
-    User,
-    UserRoles,
-    db,
-)
+from legal_api.models import Address, ColinLastUpdate, Filing, LegalEntity, RegistrationBootstrap, User, UserRoles, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -62,10 +49,10 @@ from legal_api.services import (
     RegistrationBootstrapService,
     authorized,
     namex,
-    queue,
 )
 from legal_api.services.authz import COLIN_SVC_ROLE, is_allowed
 from legal_api.services.filings import validate
+from legal_api.services.queue import QueueService
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
@@ -142,9 +129,11 @@ def saving_filings(  # pylint: disable=too-many-return-statements,too-many-local
     # get header params
     payment_account_id = request.headers.get("account-id", request.headers.get("accountId", None))
 
-    if not query.draft \
-            and not ListFilingResource.is_historical_colin_filing(json_input) \
-            and not ListFilingResource.is_before_epoch_filing(json_input, legal_entity):
+    if (
+        not query.draft
+        and not ListFilingResource.is_historical_colin_filing(json_input)
+        and not ListFilingResource.is_before_epoch_filing(json_input, legal_entity)
+    ):
         if identifier.startswith("T"):
             business_validate = RegistrationBootstrap.find_by_identifier(identifier)
         else:
@@ -459,11 +448,15 @@ class ListFilingResource:
         if not filing_type:
             return ({"message": "filing/header/name is a required property"}, HTTPStatus.BAD_REQUEST)
 
-        if filing_type not in [
-            Filing.FILINGS["incorporationApplication"]["name"],
-            Filing.FILINGS["registration"]["name"],
-            Filing.FILINGS["amalgamationApplication"]["name"]
-        ] and legal_entity is None:
+        if (
+            filing_type
+            not in [
+                Filing.FILINGS["incorporationApplication"]["name"],
+                Filing.FILINGS["registration"]["name"],
+                Filing.FILINGS["amalgamationApplication"]["name"],
+            ]
+            and legal_entity is None
+        ):
             return ({"message": "A valid business is required."}, HTTPStatus.BAD_REQUEST)
 
         return None, None
@@ -538,7 +531,7 @@ class ListFilingResource:
                 filing.save()
             else:
                 payload = {"filing": {"id": filing.id}}
-                queue.publish_json(payload)
+                QueueService.publish_json(payload)
 
             return {"filing": {"id": filing.id}}, HTTPStatus.CREATED
         except KeyError:
@@ -699,7 +692,7 @@ class ListFilingResource:
         if filing_type in (
             Filing.FILINGS["incorporationApplication"]["name"],
             Filing.FILINGS["registration"]["name"],
-            Filing.FILINGS["amalgamationApplication"]["name"]
+            Filing.FILINGS["amalgamationApplication"]["name"],
         ):
             entity_type = filing_json["filing"][filing_type]["nameRequest"]["legalType"]
         else:
@@ -784,18 +777,18 @@ class ListFilingResource:
                     )
                 elif filing_type_code:
                     if k == "alteration":
-                        filing_types.append({
-                            "filingTypeCode": filing_type_code,
-                            "futureEffective": ListFilingResource.is_future_effective_filing(filing_json),
-                            "priority": priority,
-                            "waiveFees": waive_fees_flag
-                        })
+                        filing_types.append(
+                            {
+                                "filingTypeCode": filing_type_code,
+                                "futureEffective": ListFilingResource.is_future_effective_filing(filing_json),
+                                "priority": priority,
+                                "waiveFees": waive_fees_flag,
+                            }
+                        )
                     else:
-                        filing_types.append({
-                            "filingTypeCode": filing_type_code,
-                            "priority": priority,
-                            "waiveFees": waive_fees_flag
-                        })
+                        filing_types.append(
+                            {"filingTypeCode": filing_type_code, "priority": priority, "waiveFees": waive_fees_flag}
+                        )
         return filing_types
 
     # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -821,12 +814,15 @@ class ListFilingResource:
         if filing.filing_type in (
             Filing.FILINGS["incorporationApplication"]["name"],
             Filing.FILINGS["registration"]["name"],
-            Filing.FILINGS["amalgamationApplication"]["name"]
+            Filing.FILINGS["amalgamationApplication"]["name"],
         ):
-            if filing.filing_type in [Filing.FILINGS["incorporationApplication"]["name"],
-                                      Filing.FILINGS["amalgamationApplication"]["name"]]:
+            if filing.filing_type in [
+                Filing.FILINGS["incorporationApplication"]["name"],
+                Filing.FILINGS["amalgamationApplication"]["name"],
+            ]:
                 mailing_address = Address.create_address(
-                    filing.json["filing"][filing.filing_type]["offices"]["registeredOffice"]["mailingAddress"])
+                    filing.json["filing"][filing.filing_type]["offices"]["registeredOffice"]["mailingAddress"]
+                )
             elif filing.filing_type == Filing.FILINGS["registration"]["name"]:
                 mailing_address = Address.create_address(
                     filing.json["filing"]["registration"]["offices"]["businessOffice"]["mailingAddress"]
@@ -941,7 +937,7 @@ class ListFilingResource:
         if filing_type in (
             Filing.FILINGS["incorporationApplication"]["name"],
             Filing.FILINGS["registration"]["name"],
-            Filing.FILINGS["amalgamationApplication"]["name"]
+            Filing.FILINGS["amalgamationApplication"]["name"],
         ):
             if fe_date := filing.filing_json["filing"]["header"].get("futureEffectiveDate"):
                 filing.effective_date = datetime.datetime.fromisoformat(fe_date)

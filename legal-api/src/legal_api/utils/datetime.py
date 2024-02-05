@@ -15,9 +15,7 @@
 # from datetime import datetime, timezone
 import time as _time
 from datetime import date  # pylint: disable=unused-import # noqa: F401, I001, I005
-from datetime import (  # pylint: disable=unused-import # noqa: F401, I001, I005
-    datetime as _datetime,
-)
+from datetime import datetime as _datetime  # pylint: disable=unused-import # noqa: F401, I001, I005
 from datetime import timezone
 
 # noqa: I003,I005

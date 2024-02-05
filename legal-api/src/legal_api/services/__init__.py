@@ -39,6 +39,7 @@ from .minio import MinioService
 from .naics import NaicsService
 from .namex import NameXService
 from .pdf_service import PdfService
+
 # from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
@@ -52,7 +53,7 @@ digital_credentials = DigitalCredentialsService()
 def publish_event(legal_entity: LegalEntity, event_type: str, data: dict, subject: str, message_id: str = None):
     """Publish the event message onto the given NATS subject."""
     try:
-        payload = {
+        payload = {  # pylint: disable=unused-variable;  # noqa: F841
             "specversion": "1.x-wip",
             "type": event_type,
             "source": "".join([current_app.config.get("LEGAL_API_BASE_URL"), "/", legal_entity.identifier]),
@@ -62,7 +63,7 @@ def publish_event(legal_entity: LegalEntity, event_type: str, data: dict, subjec
             "identifier": legal_entity.identifier,
             "data": data,
         }
-        queue.publish_json(payload, subject)
+        # queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
         capture_message(
             f"Legal-api queue publish {subject} error: legal_entity.id=" + str(legal_entity.id) + str(err),

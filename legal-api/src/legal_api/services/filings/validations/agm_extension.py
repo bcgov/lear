@@ -17,11 +17,14 @@ from typing import Dict, Optional
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+
 # noqa: I003
 from legal_api.errors import Error
 from legal_api.models import LegalEntity
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
 from ...utils import get_bool, get_int, get_str  # noqa: I003
+
 # noqa: I003
 
 AGM_EXTENSION_PATH = "/filing/agmExtension"
@@ -61,8 +64,7 @@ def first_agm_validation(legal_entity: LegalEntity, filing: Dict) -> list:
         now = LegislationDatetime.datenow()
         latest_ext_date = founding_date + relativedelta(months=18, days=5)
         if now > latest_ext_date:
-            msg.append({"error": EXPIRED_ERROR,
-                        "path": f"{AGM_EXTENSION_PATH}/isFirstAgm"})
+            msg.append({"error": EXPIRED_ERROR, "path": f"{AGM_EXTENSION_PATH}/isFirstAgm"})
         else:
             total_approved_ext = get_int(filing, f"{AGM_EXTENSION_PATH}/totalApprovedExt")
             extension_duration = get_int(filing, f"{AGM_EXTENSION_PATH}/extensionDuration")
@@ -71,29 +73,37 @@ def first_agm_validation(legal_entity: LegalEntity, filing: Dict) -> list:
     else:
         # first AGM, second extension or more
         if not (curr_ext_expire_date_str := get_str(filing, f"{AGM_EXTENSION_PATH}/expireDateCurrExt")):
-            return [{"error": "Expiry date for current extension is required.",
-                     "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"}]
+            return [
+                {
+                    "error": "Expiry date for current extension is required.",
+                    "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt",
+                }
+            ]
 
-        curr_ext_expire_date =\
-            LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str).date()
+        curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+            curr_ext_expire_date_str
+        ).date()
         allowable_ext_date = founding_date + relativedelta(months=30)
         now = LegislationDatetime.datenow()
         if curr_ext_expire_date >= allowable_ext_date:
-            msg.append({"error": "Company has received the maximum 12 months of allowable extensions.",
-                        "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"})
+            msg.append(
+                {
+                    "error": "Company has received the maximum 12 months of allowable extensions.",
+                    "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt",
+                }
+            )
         elif now > curr_ext_expire_date + relativedelta(days=5):
-            msg.append({"error": EXPIRED_ERROR,
-                        "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"})
+            msg.append({"error": EXPIRED_ERROR, "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"})
         else:
             total_approved_ext = get_int(filing, f"{AGM_EXTENSION_PATH}/totalApprovedExt")
             extension_duration = get_int(filing, f"{AGM_EXTENSION_PATH}/extensionDuration")
 
             baseline = founding_date + relativedelta(months=18)
-            expected_total_approved_ext, expected_extension_duration =\
-                _calculate_granted_ext(curr_ext_expire_date, baseline)
+            expected_total_approved_ext, expected_extension_duration = _calculate_granted_ext(
+                curr_ext_expire_date, baseline
+            )
 
-            if expected_total_approved_ext != total_approved_ext or\
-                    expected_extension_duration != extension_duration:
+            if expected_total_approved_ext != total_approved_ext or expected_extension_duration != extension_duration:
                 msg.append({"error": babel(GRANT_FAILURE)})
 
     return msg
@@ -105,19 +115,21 @@ def subsequent_agm_validation(filing: Dict) -> list:
 
     has_ext_req_for_agm_year = filing["filing"]["agmExtension"]["extReqForAgmYear"]
     if not (prev_agm_ref_date_str := get_str(filing, f"{AGM_EXTENSION_PATH}/prevAgmRefDate")):
-        return [{"error": "Previous AGM date or a reference date is required.",
-                 "path": f"{AGM_EXTENSION_PATH}/prevAgmRefDate"}]
+        return [
+            {
+                "error": "Previous AGM date or a reference date is required.",
+                "path": f"{AGM_EXTENSION_PATH}/prevAgmRefDate",
+            }
+        ]
 
-    prev_agm_ref_date =\
-        LegislationDatetime.as_legislation_timezone_from_date_str(prev_agm_ref_date_str).date()
+    prev_agm_ref_date = LegislationDatetime.as_legislation_timezone_from_date_str(prev_agm_ref_date_str).date()
 
     if not has_ext_req_for_agm_year:
         # subsequent AGM, first extension
         now = LegislationDatetime.datenow()
         latest_ext_date = prev_agm_ref_date + relativedelta(months=15, days=5)
         if now > latest_ext_date:
-            msg.append({"error": EXPIRED_ERROR,
-                        "path": f"{AGM_EXTENSION_PATH}/prevAgmRefDate"})
+            msg.append({"error": EXPIRED_ERROR, "path": f"{AGM_EXTENSION_PATH}/prevAgmRefDate"})
         else:
             total_approved_ext = get_int(filing, f"{AGM_EXTENSION_PATH}/totalApprovedExt")
             extension_duration = get_int(filing, f"{AGM_EXTENSION_PATH}/extensionDuration")
@@ -126,30 +138,38 @@ def subsequent_agm_validation(filing: Dict) -> list:
     else:
         # subsequent AGM, second extension or more
         if not (curr_ext_expire_date_str := get_str(filing, f"{AGM_EXTENSION_PATH}/expireDateCurrExt")):
-            return [{"error": "Expiry date for current extension is required.",
-                     "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"}]
+            return [
+                {
+                    "error": "Expiry date for current extension is required.",
+                    "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt",
+                }
+            ]
 
-        curr_ext_expire_date =\
-            LegislationDatetime.as_legislation_timezone_from_date_str(curr_ext_expire_date_str).date()
+        curr_ext_expire_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+            curr_ext_expire_date_str
+        ).date()
 
         allowable_ext_date = prev_agm_ref_date + relativedelta(months=12)
         now = LegislationDatetime.datenow()
 
         if curr_ext_expire_date >= allowable_ext_date:
-            msg.append({"error": "Company has received the maximum 12 months of allowable extensions.",
-                        "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"})
+            msg.append(
+                {
+                    "error": "Company has received the maximum 12 months of allowable extensions.",
+                    "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt",
+                }
+            )
         elif now > curr_ext_expire_date + relativedelta(days=5):
-            msg.append({"error": EXPIRED_ERROR,
-                        "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"})
+            msg.append({"error": EXPIRED_ERROR, "path": f"{AGM_EXTENSION_PATH}/expireDateCurrExt"})
         else:
             total_approved_ext = get_int(filing, f"{AGM_EXTENSION_PATH}/totalApprovedExt")
             extension_duration = get_int(filing, f"{AGM_EXTENSION_PATH}/extensionDuration")
 
-            expected_total_approved_ext, expected_extension_duration =\
-                _calculate_granted_ext(curr_ext_expire_date, prev_agm_ref_date)
+            expected_total_approved_ext, expected_extension_duration = _calculate_granted_ext(
+                curr_ext_expire_date, prev_agm_ref_date
+            )
 
-            if expected_total_approved_ext != total_approved_ext or\
-                    expected_extension_duration != extension_duration:
+            if expected_total_approved_ext != total_approved_ext or expected_extension_duration != extension_duration:
                 msg.append({"error": babel(GRANT_FAILURE)})
 
     return msg

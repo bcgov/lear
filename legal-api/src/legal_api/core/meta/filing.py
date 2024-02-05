@@ -19,9 +19,7 @@ from typing import Final, MutableMapping, Optional
 
 from legal_api.models import Filing as FilingStorage
 from legal_api.models import LegalEntity
-from legal_api.services import (  # noqa: I005
-    VersionedBusinessDetailsService as VersionService,
-)
+from legal_api.services import VersionedBusinessDetailsService as VersionService  # noqa: I005
 
 
 class AutoName(str, Enum):
@@ -75,32 +73,32 @@ FILINGS: Final = {
     "adminFreeze": {"name": "adminFreeze", "title": "Admin Freeze", "displayName": "Admin Freeze", "code": "NOFEE"},
     "affidavit": {"name": "affidavit", "title": "Affidavit", "codes": {"CP": "AFDVT"}},
     "agmExtension": {
-            "name": "agmExtension",
-            "title": "AGM Extension",
-            "displayName": "Request for AGM Extension",
-            "codes": {
-                "BC": "AGMDT",
-                "BEN": "AGMDT",
-                "ULC": "AGMDT",
-                "CC": "AGMDT"
+        "name": "agmExtension",
+        "title": "AGM Extension",
+        "displayName": "Request for AGM Extension",
+        "codes": {"BC": "AGMDT", "BEN": "AGMDT", "ULC": "AGMDT", "CC": "AGMDT"},
+        "additional": [
+            {
+                "types": "BC, BEN, CC, ULC",
+                "outputs": [
+                    "letterOfAgmExtension",
+                ],
             },
-            "additional": [
-                {"types": "BC, BEN, CC, ULC", "outputs": ["letterOfAgmExtension", ]},
-            ],
-        },
+        ],
+    },
     "agmLocationChange": {
         "name": "agmLocationChange",
         "title": "AGM Location Change",
         "displayName": "AGM Location Change",
-        "codes": {
-            "BC": "AGMLC",
-            "BEN": "AGMLC",
-            "ULC": "AGMLC",
-            "CC": "AGMLC"
-        },
+        "codes": {"BC": "AGMLC", "BEN": "AGMLC", "ULC": "AGMLC", "CC": "AGMLC"},
         "additional": [
-            {"types": "BC, BEN, CC, ULC", "outputs": ["letterOfAgmLocationChange", ]},
-        ]
+            {
+                "types": "BC, BEN, CC, ULC",
+                "outputs": [
+                    "letterOfAgmLocationChange",
+                ],
+            },
+        ],
     },
     "alteration": {
         "name": "alteration",
@@ -125,35 +123,20 @@ FILINGS: Final = {
             "name": "regularAmalgamation",
             "title": "Regular Amalgamation",
             "displayName": "Regular Amalgamation",
-            "codes": {
-                "BEN": "AMALR",
-                "BC": "AMALR",
-                "ULC": "AMALR",
-                "CC": "AMALR"
-            }
+            "codes": {"BEN": "AMALR", "BC": "AMALR", "ULC": "AMALR", "CC": "AMALR"},
         },
         "vertical": {
             "name": "verticalAmalgamation",
             "title": "Vertical Amalgamation",
             "displayName": "Vertical Amalgamation",
-            "codes": {
-                "BEN": "AMALV",
-                "BC": "AMALV",
-                "ULC": "AMALV",
-                "CC": "AMALV"
-            }
+            "codes": {"BEN": "AMALV", "BC": "AMALV", "ULC": "AMALV", "CC": "AMALV"},
         },
         "horizontal": {
             "name": "horizontalAmalgamation",
             "title": "Horizontal Amalgamation",
             "displayName": "Horizontal Amalgamation",
-            "codes": {
-                "BEN": "AMALH",
-                "BC": "AMALH",
-                "ULC": "AMALH",
-                "CC": "AMALH"
-            }
-        }
+            "codes": {"BEN": "AMALH", "BC": "AMALH", "ULC": "AMALH", "CC": "AMALH"},
+        },
     },
     "annualReport": {
         "name": "annualReport",

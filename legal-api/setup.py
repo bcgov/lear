@@ -14,17 +14,18 @@
 """Installer and setup for this module
 """
 import ast
+import re
 from glob import glob
 from os.path import basename, splitext
-import re
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
-_version_re = re.compile(r'__version__\s+=\s+(.*)')  # pylint: disable=invalid-name
+_version_re = re.compile(r"__version__\s+=\s+(.*)")  # pylint: disable=invalid-name
 
-with open('src/legal_api/version.py', 'rb') as f:
-    version = str(ast.literal_eval(_version_re.search(  # pylint: disable=invalid-name
-        f.read().decode('utf-8')).group(1)))
+with open("src/legal_api/version.py", "rb") as f:
+    version = str(  # pylint: disable=invalid-name
+        ast.literal_eval(_version_re.search(f.read().decode("utf-8")).group(1))
+    )
 
 
 def read_requirements(filename):
@@ -33,9 +34,9 @@ def read_requirements(filename):
     the requirements.txt file.
     :return: Python requirements
     """
-    with open(filename, 'r') as req:
+    with open(filename, "r") as req:
         requirements = req.readlines()
-    install_requires = [r.strip() for r in requirements if r.find('git+') != 0]
+    install_requires = [r.strip() for r in requirements if r.find("git+") != 0]
     return install_requires
 
 
@@ -45,25 +46,29 @@ def read(filepath):
     :param str filepath: path to the file to be read
     :return: file contents
     """
-    with open(filepath, 'r') as file_handle:
+    with open(filepath, "r") as file_handle:
         content = file_handle.read()
     return content
 
 
-REQUIREMENTS = read_requirements('requirements.txt')
+REQUIREMENTS = read_requirements("requirements.txt")
 
 setup(
     name="legal_api",
     version=version,
-    author_email='thor@wolpert.ca',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
+    author_email="thor@wolpert.ca",
+    packages=find_packages("src"),
+    package_dir={"": "src"},
+    py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     include_package_data=True,
-    license=read('LICENSE'),
-    long_description=read('README.md'),
+    license=read("LICENSE"),
+    long_description=read("README.md"),
     zip_safe=False,
     install_requires=REQUIREMENTS,
-    setup_requires=["pytest-runner", ],
-    tests_require=["pytest", ],
+    setup_requires=[
+        "pytest-runner",
+    ],
+    tests_require=[
+        "pytest",
+    ],
 )

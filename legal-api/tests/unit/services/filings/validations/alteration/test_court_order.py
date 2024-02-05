@@ -14,9 +14,7 @@
 """Tests to assure the Court Order is validated properly."""
 import pytest
 
-from legal_api.services.filings.validations.common_validations import (
-    validate_court_order,
-)
+from legal_api.services.filings.validations.common_validations import validate_court_order
 
 
 @pytest.mark.parametrize(

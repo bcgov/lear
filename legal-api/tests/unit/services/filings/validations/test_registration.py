@@ -269,15 +269,17 @@ def test_invalid_business_address(mocker, app, session, jwt, test_name, filing):
         ("general_user_greater", "general", [BASIC_USER], timedelta(days=90), True),
         ("general_user_invalid_greater", "general", [BASIC_USER], timedelta(days=91), False),
         ("general_user_lesser", "general", [BASIC_USER], relativedelta(years=-10), True),
-        ("general_user_invalid_lesser", "general", [BASIC_USER], relativedelta(years=-10, days=-1), False)
-    ]
+        ("general_user_invalid_lesser", "general", [BASIC_USER], relativedelta(years=-10, days=-1), False),
+    ],
 )
 def test_validate_start_date(mocker, app, session, jwt, test_name, username, roles, delta_date, is_valid):
     """Assert that start date is validated."""
+
     def mock_validate_roles(required_roles):
         if roles in required_roles:
             return True
         return False
+
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", side_effect=mock_validate_roles)  # Client
 
     start_date = LegislationDatetime.now()
@@ -307,7 +309,9 @@ def test_validate_start_date(mocker, app, session, jwt, test_name, username, rol
         ("SUCCESS", "12345678901234567890", "planOfArrangement", None, None),
     ],
 )
-def test_registration_court_orders(mocker, app, session, jwt, test_status, file_number, effect_of_order, expected_code, expected_msg):
+def test_registration_court_orders(
+    mocker, app, session, jwt, test_status, file_number, effect_of_order, expected_code, expected_msg
+):
     """Assert valid court orders."""
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=False)
     filing = copy.deepcopy(GP_REGISTRATION)

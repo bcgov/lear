@@ -39,14 +39,7 @@ class Document(Versioned, db.Model):
 
     __tablename__ = "documents"
     __mapper_args__ = {
-        "include_properties": [
-            "id",
-            "file_key",
-            "filing_id",
-            "legal_entity_id",
-            "type",
-            "alternate_name_id"
-        ]
+        "include_properties": ["id", "file_key", "filing_id", "legal_entity_id", "type", "alternate_name_id"]
     }
 
     id = Column(db.Integer, primary_key=True)

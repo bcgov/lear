@@ -188,13 +188,13 @@ def validate(legal_entity: LegalEntity, filing_json: Dict, account_id=None) -> E
                 elif k == Filing.FILINGS["continuationOut"].get("name"):
                     err = continuation_out_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['agmLocationChange'].get('name'):
+                elif k == Filing.FILINGS["agmLocationChange"].get("name"):
                     err = agm_location_change_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['agmExtension'].get('name'):
+                elif k == Filing.FILINGS["agmExtension"].get("name"):
                     err = agm_extension_validate(legal_entity, filing_json)
 
-                elif k == Filing.FILINGS['amalgamationApplication'].get('name'):
+                elif k == Filing.FILINGS["amalgamationApplication"].get("name"):
                     err = amalgamation_application_validate(legal_entity, filing_json, account_id)
 
                 if err:

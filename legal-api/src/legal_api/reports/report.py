@@ -25,14 +25,7 @@ from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS
-from legal_api.models import (
-    ConsentContinuationOut,
-    CorpType,
-    Document,
-    EntityRole,
-    Filing,
-    LegalEntity,
-)
+from legal_api.models import ConsentContinuationOut, CorpType, Document, EntityRole, Filing, LegalEntity
 from legal_api.models.legal_entity import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService
@@ -66,11 +59,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
         response = MinioService.get_file(document.file_key)
-        return current_app.response_class(
-            response=response.data,
-            status=response.status,
-            mimetype="application/pdf"
-        )
+        return current_app.response_class(response=response.data, status=response.status, mimetype="application/pdf")
 
     def _get_report(self):
         if self._filing.legal_entity_id:
@@ -90,9 +79,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             return jsonify(message=str(response.content)), response.status_code
 
         return current_app.response_class(
-            response=response.content,
-            status=response.status_code,
-            mimetype="application/pdf"
+            response=response.content, status=response.status_code, mimetype="application/pdf"
         )
 
     def _get_report_filename(self):
@@ -219,7 +206,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if ReportMeta.reports[self._report_key].get("hasDifferentTemplates", False):
             # Get template specific to legal type
             file_name = None
-            specific_template = ReportMeta.reports[self._report_key].get(self._business.legal_type, None)
+            specific_template = ReportMeta.reports[self._report_key].get(
+                self._business.legal_type, None  # pylint: disable=no-member
+            )
             if file_name is None:
                 # Fallback to default if specific template not found
                 file_name = (
@@ -504,7 +493,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         with suppress(KeyError):
             self._format_address(filing["registration"]["offices"]["businessOffice"]["deliveryAddress"])
         with suppress(KeyError):
-
             self._format_address(filing["registration"]["offices"]["businessOffice"]["mailingAddress"])
         self._format_directors(filing["registration"]["parties"])
         self._set_party_name(filing["registration"]["parties"])
@@ -555,6 +543,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             business_dissolution.dissolution_date
         )
 
+    # pylint: disable=no-member
     def _format_dissolution_data(self, filing):
         if self._business.legal_type in ["SP", "GP"] and filing["dissolution"]["dissolutionType"] == "voluntary":
             filing["dissolution"]["dissolution_date_str"] = LegislationDatetime.as_legislation_timezone_from_date_str(
@@ -623,13 +612,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         number_words = ["one", "two", "three", "four", "five", "six"]
         duration_numeric = meta_data.get("agmExtension", {}).get("extensionDuration", "")
         filing["duration_numeric"] = duration_numeric
-        filing["duration_spelling"] = number_words[int(duration_numeric)-1]
+        filing["duration_spelling"] = number_words[int(duration_numeric) - 1]
 
         if is_first_agm:
             founding_date_json = self._filing.filing_json["filing"].get("business", {}).get("foundingDate", "")
             founding_date = founding_date_json[0:10]
-            original_date_time = LegislationDatetime.\
-                as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
+            original_date_time = LegislationDatetime.as_legislation_timezone_from_date_str(
+                founding_date
+            ) + relativedelta(months=18)
             filing["original_agm_date"] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
         else:
             expire_date_current_string = meta_data.get("agmExtension", {}).get("expireDateCurrExt", "")
@@ -640,8 +630,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             date_approved_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_approved_string)
             filing["extended_agm_date"] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
 
-        filing["offices"] = VersionedBusinessDetailsService.\
-            get_office_revision(self._filing.transaction_id, self._business.id)
+        filing["offices"] = VersionedBusinessDetailsService.get_office_revision(
+            self._filing.transaction_id, self._business.id  # pylint: disable=no-member
+        )
         with suppress(KeyError):
             self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
 
@@ -650,8 +641,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         filing["location"] = self._filing.filing_json["filing"].get("agmLocationChange", {}).get("agmLocation", "")
 
-        filing["offices"] = VersionedBusinessDetailsService.\
-            get_office_revision(self._filing.transaction_id, self._business.id)
+        filing["offices"] = VersionedBusinessDetailsService.get_office_revision(
+            self._filing.transaction_id, self._business.id  # pylint: disable=no-member
+        )
 
         with suppress(KeyError):
             self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
@@ -705,8 +697,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # FUTURE: format logic for certificate of amalgamation
         return
 
-    def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-
+    def _format_change_of_registration_data(
+        self, filing, filing_type
+    ):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(
             prev_completed_filing, self._legal_entity.id
@@ -903,9 +896,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             prev_completed_filing, self._legal_entity.id
         )
         filing["previousNameTranslations"] = versioned_name_translations
-        filing["nameTranslationsChange"] = \
-            sorted([translation["name"] for translation in filing["listOfTranslations"]]) != \
-            sorted([translation["name"] for translation in versioned_name_translations])
+        filing["nameTranslationsChange"] = sorted(
+            [translation["name"] for translation in filing["listOfTranslations"]]
+        ) != sorted([translation["name"] for translation in versioned_name_translations])
 
     def _format_office_data(self, filing, prev_completed_filing: Filing):
         filing["offices"] = {}
@@ -1058,7 +1051,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["uploadNewRules"] = meta_data.get(filing_source, {}).get("uploadNewRules")
         filing["uploadNewMemorandum"] = meta_data.get(filing_source, {}).get("uploadNewMemorandum")
         filing["memorandumInResolution"] = filing.get(filing_source, {}).get("memorandumInResolution")
-        if (resolution_date_str := filing.get(filing_source, {}).get("resolutionDate", None)):
+        if resolution_date_str := filing.get(filing_source, {}).get("resolutionDate", None):
             resolution_date = LegislationDatetime.as_legislation_timezone_from_date_str(resolution_date_str)
             filing[filing_source]["resolutionDate"] = resolution_date.strftime(OUTPUT_DATE_FORMAT)
 
@@ -1157,11 +1150,11 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     reports = {
         "amalgamationApplication": {
             "filingDescription": "Amalgamation Application",
-            "fileName": "amalgamationApplication"
+            "fileName": "amalgamationApplication",
         },
         "certificateOfAmalgamation": {
             "filingDescription": "Certificate Of Amalgamation",
-            "fileName": "certificateOfAmalgamation"
+            "fileName": "certificateOfAmalgamation",
         },
         "certificate": {"filingDescription": "Certificate of Incorporation", "fileName": "certificateOfIncorporation"},
         "incorporationApplication": {
@@ -1228,13 +1221,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "restoration": {"filingDescription": "Restoration Application", "fileName": "restoration"},
         "letterOfConsent": {"filingDescription": "Letter Of Consent", "fileName": "letterOfConsent"},
-        "letterOfAgmExtension": {
-            "filingDescription": "Letter Of AGM Extension",
-            "fileName": "letterOfAgmExtension"
-        },
+        "letterOfAgmExtension": {"filingDescription": "Letter Of AGM Extension", "fileName": "letterOfAgmExtension"},
         "letterOfAgmLocationChange": {
             "filingDescription": "Letter Of AGM Location Change",
-            "fileName": "letterOfAgmLocationChange"
+            "fileName": "letterOfAgmLocationChange",
         },
     }
 

@@ -22,9 +22,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Address, LegalEntity, PartyRole
 
-from ...utils import (  # noqa: I003; needed as the linter gets confused from the babel override above.
-    get_str,
-)
+from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 from .common_validations import validate_court_order, validate_pdf
 
 CORP_TYPES: Final = [

@@ -16,19 +16,12 @@ from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 from dateutil.relativedelta import relativedelta
-from flask_babel import (  # noqa: N813, I004, I001; importing camelcase '_' as a name
-    _ as babel,
-)
+from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
 from legal_api.models import Filing, LegalEntity, PartyRole
-from legal_api.services.filings.validations.common_validations import (
-    validate_court_order,
-    validate_name_request,
-)
-from legal_api.services.filings.validations.incorporation_application import (
-    validate_offices,
-)
+from legal_api.services.filings.validations.common_validations import validate_court_order, validate_name_request
+from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 

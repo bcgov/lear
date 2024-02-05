@@ -83,12 +83,14 @@ class PdfService:
 
         image_x_margin = doc_width - 130
         image_y_margin = doc_height - 150
-        can.drawImage(registrar_info["signatureAndText"],
-                      image_x_margin,
-                      image_y_margin,
-                      width=100,
-                      preserveAspectRatio=True,
-                      mask="auto")
+        can.drawImage(
+            registrar_info["signatureAndText"],
+            image_x_margin,
+            image_y_margin,
+            width=100,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
 
         certify_date = LegislationDatetime.as_legislation_timezone(data.certify_date)
         text = "Filed on " + LegislationDatetime.format_as_report_string(certify_date)

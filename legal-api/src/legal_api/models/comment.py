@@ -42,7 +42,7 @@ class Comment(db.Model):
             "legal_entity_id",
             "staff_id",
             "timestamp",
-            "alternate_name_id"
+            "alternate_name_id",
         ]
     }
 

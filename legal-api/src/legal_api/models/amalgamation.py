@@ -35,19 +35,19 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
         horizontal = auto()
 
     # __versioned__ = {}
-    __tablename__ = 'amalgamation'
+    __tablename__ = "amalgamation"
 
     id = db.Column(db.Integer, primary_key=True)
-    amalgamation_type = db.Column('amalgamation_type', db.Enum(AmalgamationTypes), nullable=False)
-    amalgamation_date = db.Column('amalgamation_date', db.DateTime(timezone=True), nullable=False)
-    court_approval = db.Column('court_approval', db.Boolean())
+    amalgamation_type = db.Column("amalgamation_type", db.Enum(AmalgamationTypes), nullable=False)
+    amalgamation_date = db.Column("amalgamation_date", db.DateTime(timezone=True), nullable=False)
+    court_approval = db.Column("court_approval", db.Boolean())
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), nullable=False)
 
     # Relationships
-    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
+    amalgamating_businesses = db.relationship("AmalgamatingBusiness", lazy="dynamic")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -65,12 +65,13 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     def json(self):
         """Return amalgamation json."""
         from .legal_entity import LegalEntity  # pylint: disable=import-outside-toplevel
+
         legal_entity = LegalEntity.find_by_internal_id(self.legal_entity_id)
 
         return {
-            'amalgamationDate': self.amalgamation_date.isoformat(),
-            'amalgamationType': self.amalgamation_type.name,
-            'courtApproval': self.court_approval,
-            'identifier': legal_entity.identifier,
-            'legalName': legal_entity.legal_name
+            "amalgamationDate": self.amalgamation_date.isoformat(),
+            "amalgamationType": self.amalgamation_type.name,
+            "courtApproval": self.court_approval,
+            "identifier": legal_entity.identifier,
+            "legalName": legal_entity.legal_name,
         }

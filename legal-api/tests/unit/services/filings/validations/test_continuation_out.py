@@ -18,11 +18,7 @@ from http import HTTPStatus
 import datedelta
 import pycountry
 import pytest
-from registry_schemas.example_data import (
-    CONSENT_CONTINUATION_OUT,
-    CONTINUATION_OUT,
-    FILING_HEADER,
-)
+from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, CONTINUATION_OUT, FILING_HEADER
 
 from legal_api.models import ConsentContinuationOut, LegalEntity
 from legal_api.services.filings.validations.validation import validate

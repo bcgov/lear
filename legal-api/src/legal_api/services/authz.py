@@ -59,9 +59,9 @@ class BusinessBlocker(str, Enum):
 class BusinessRequirement(str, Enum):
     """Define an enum for business requirement scenarios."""
 
-    EXIST = 'EXIST'
-    NOT_EXIST = 'NOT_EXIST'
-    NO_RESTRICTION = 'NO_RESTRICTION'
+    EXIST = "EXIST"
+    NOT_EXIST = "NOT_EXIST"
+    NO_RESTRICTION = "NO_RESTRICTION"
 
 
 def authorized(  # pylint: disable=too-many-return-statements
@@ -141,15 +141,11 @@ def get_allowable_filings_dict():
                 },
                 "agmExtension": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC"],
-                    "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                    }
+                    "blockerChecks": {"business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]},
                 },
                 "agmLocationChange": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC"],
-                    "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                    }
+                    "blockerChecks": {"business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]},
                 },
                 "alteration": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC"],
@@ -161,26 +157,32 @@ def get_allowable_filings_dict():
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.BUSINESS_FROZEN],
-                            "futureEffectiveFilings": [filing_types_compact.DISSOLUTION_VOLUNTARY,
-                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
-                        }
+                            "futureEffectiveFilings": [
+                                filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
+                            ],
+                        },
                     },
                     "vertical": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.BUSINESS_FROZEN],
-                            "futureEffectiveFilings": [filing_types_compact.DISSOLUTION_VOLUNTARY,
-                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
-                        }
+                            "futureEffectiveFilings": [
+                                filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
+                            ],
+                        },
                     },
                     "horizontal": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.BUSINESS_FROZEN],
-                            "futureEffectiveFilings": [filing_types_compact.DISSOLUTION_VOLUNTARY,
-                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
-                        }
-                    }
+                            "futureEffectiveFilings": [
+                                filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
+                            ],
+                        },
+                    },
                 },
                 "annualReport": {
                     "legalTypes": ["CP", "BEN", "BC", "ULC", "CC"],
@@ -240,14 +242,14 @@ def get_allowable_filings_dict():
                 "incorporationApplication": {
                     "legalTypes": ["CP", "BC", "BEN", "ULC", "CC"],
                     # only show filing when providing allowable filings not specific to a business
-                    "businessRequirement": BusinessRequirement.NOT_EXIST
+                    "businessRequirement": BusinessRequirement.NOT_EXIST,
                 },
                 "registrarsNotation": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
                 "registrarsOrder": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
                 "registration": {
                     "legalTypes": ["SP", "GP"],
                     # only show filing when providing allowable filings not specific to a business
-                    "businessRequirement": BusinessRequirement.NOT_EXIST
+                    "businessRequirement": BusinessRequirement.NOT_EXIST,
                 },
                 "specialResolution": {"legalTypes": ["CP"], "blockerChecks": {"business": [BusinessBlocker.DEFAULT]}},
                 "transition": {"legalTypes": ["BC", "BEN", "CC", "ULC"]},
@@ -300,15 +302,11 @@ def get_allowable_filings_dict():
             LegalEntity.State.ACTIVE: {
                 "agmExtension": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC"],
-                    "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                    }
+                    "blockerChecks": {"business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]},
                 },
                 "agmLocationChange": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC"],
-                    "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
-                    }
+                    "blockerChecks": {"business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]},
                 },
                 "alteration": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC"],
@@ -320,26 +318,32 @@ def get_allowable_filings_dict():
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.BUSINESS_FROZEN],
-                            "futureEffectiveFilings": [filing_types_compact.DISSOLUTION_VOLUNTARY,
-                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
-                        }
+                            "futureEffectiveFilings": [
+                                filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
+                            ],
+                        },
                     },
                     "vertical": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.BUSINESS_FROZEN],
-                            "futureEffectiveFilings": [filing_types_compact.DISSOLUTION_VOLUNTARY,
-                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
-                        }
+                            "futureEffectiveFilings": [
+                                filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
+                            ],
+                        },
                     },
                     "horizontal": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.BUSINESS_FROZEN],
-                            "futureEffectiveFilings": [filing_types_compact.DISSOLUTION_VOLUNTARY,
-                                                       filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
-                        }
-                    }
+                            "futureEffectiveFilings": [
+                                filing_types_compact.DISSOLUTION_VOLUNTARY,
+                                filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
+                            ],
+                        },
+                    },
                 },
                 "annualReport": {
                     "legalTypes": ["CP", "BEN", "BC", "ULC", "CC"],
@@ -378,12 +382,12 @@ def get_allowable_filings_dict():
                 "incorporationApplication": {
                     "legalTypes": ["CP", "BC", "BEN", "ULC", "CC"],
                     # only show filing when providing allowable filings not specific to a business
-                    "businessRequirement": BusinessRequirement.NOT_EXIST
+                    "businessRequirement": BusinessRequirement.NOT_EXIST,
                 },
                 "registration": {
                     "legalTypes": ["SP", "GP"],
                     # only show filing when providing allowable filings not specific to a business
-                    "businessRequirement": BusinessRequirement.NOT_EXIST
+                    "businessRequirement": BusinessRequirement.NOT_EXIST,
                 },
                 "specialResolution": {"legalTypes": ["CP"], "blockerChecks": {"business": [BusinessBlocker.DEFAULT]}},
                 "transition": {"legalTypes": ["BC", "BEN", "CC", "ULC"]},
@@ -427,11 +431,8 @@ def get_allowable_actions(jwt: JwtManager, legal_entity: LegalEntity):
     allowed_filings = get_allowed_filings(legal_entity, legal_entity.state, legal_entity.entity_type, jwt)
     filing_submission_url = urljoin(base_url, f"{legal_entity.identifier}/filings")
     result = {
-        "filing": {
-            "filingSubmissionLink": filing_submission_url,
-            "filingTypes": allowed_filings
-        },
-        "digitalBusinessCard": are_digital_credentials_allowed(legal_entity, jwt)
+        "filing": {"filingSubmissionLink": filing_submission_url, "filingTypes": allowed_filings},
+        "digitalBusinessCard": are_digital_credentials_allowed(legal_entity, jwt),
     }
     return result
 
@@ -465,10 +466,11 @@ def get_allowed_filings(
         # skip if business does not exist and filing is not required
         # skip if this filing does not need to be returned for existing businesses
 
-        business_status = allowable_filing_value.get('businessRequirement', BusinessRequirement.EXIST)
+        business_status = allowable_filing_value.get("businessRequirement", BusinessRequirement.EXIST)
 
-        if business_status != BusinessRequirement.NO_RESTRICTION and \
-                bool(legal_entity) ^ (business_status == BusinessRequirement.EXIST):
+        if business_status != BusinessRequirement.NO_RESTRICTION and bool(legal_entity) ^ (
+            business_status == BusinessRequirement.EXIST
+        ):
             continue
 
         allowable_filing_legal_types = allowable_filing_value.get("legalTypes", [])
@@ -487,21 +489,24 @@ def get_allowed_filings(
             )
             continue
 
-        filing_sub_type_items = \
-            filter(lambda x: isinstance(x[1], dict) and legal_type in
-                   x[1].get("legalTypes", []), allowable_filing_value.items())
+        filing_sub_type_items = filter(
+            lambda x: isinstance(x[1], dict) and legal_type in x[1].get("legalTypes", []),
+            allowable_filing_value.items(),
+        )
 
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            is_allowable = not has_blocker(legal_entity, state_filing, filing_sub_type_item_value, business_blocker_dict)
+            is_allowable = not has_blocker(
+                legal_entity, state_filing, filing_sub_type_item_value, business_blocker_dict
+            )
             allowable_filing_sub_type = {
                 "name": allowable_filing_key,
                 "type": filing_sub_type_item_key,
                 "displayName": FilingMeta.get_display_name(legal_type, allowable_filing_key, filing_sub_type_item_key),
                 "feeCode": Filing.get_fee_code(legal_type, allowable_filing_key, filing_sub_type_item_key),
             }
-            allowable_filing_types = add_allowable_filing_type(is_allowable,
-                                                               allowable_filing_types,
-                                                               allowable_filing_sub_type)
+            allowable_filing_types = add_allowable_filing_type(
+                is_allowable, allowable_filing_types, allowable_filing_sub_type
+            )
 
     return allowable_filing_types
 
@@ -637,15 +642,14 @@ def has_blocker_completed_filing(legal_entity: LegalEntity, blocker_checks: dict
 
 def has_blocker_future_effective_filing(legal_entity: LegalEntity, blocker_checks: dict):
     """Check if business has a future effective filing."""
-    if not (fed_filing_types := blocker_checks.get('futureEffectiveFilings', [])):
+    if not (fed_filing_types := blocker_checks.get("futureEffectiveFilings", [])):
         return False
 
     filing_type_pairs = [(parse_filing_info(x)) for x in fed_filing_types]
 
-    pending_filings = Filing.get_filings_by_type_pairs(legal_entity.id,
-                                                       filing_type_pairs,
-                                                       [Filing.Status.PENDING.value, Filing.Status.PAID.value],
-                                                       True)
+    pending_filings = Filing.get_filings_by_type_pairs(
+        legal_entity.id, filing_type_pairs, [Filing.Status.PENDING.value, Filing.Status.PAID.value], True
+    )
 
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
     is_fed = any(f.effective_date > now for f in pending_filings)
@@ -704,8 +708,11 @@ def get_allowed(state: LegalEntity.State, legal_type: str, jwt: JwtManager):
             if legal_type in legal_types:
                 allowable_filing_types.append(allowable_filing_key)
         else:
-            sub_filing_types = [x for x in allowable_filing_value.items()
-                                if isinstance(x[1], dict) and legal_type in x[1].get("legalTypes")]
+            sub_filing_types = [
+                x
+                for x in allowable_filing_value.items()
+                if isinstance(x[1], dict) and legal_type in x[1].get("legalTypes")
+            ]
             if sub_filing_types:
                 allowable_filing_types.append(
                     {allowable_filing_key: [sub_filing_type[0] for sub_filing_type in sub_filing_types]}
@@ -882,18 +889,18 @@ def get_role(jwt: JwtManager, account_id) -> str:
 
 def are_digital_credentials_allowed(legal_entity: LegalEntity, jwt: JwtManager):
     """Return True if the business is allowed to have/view a digital business card."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
+    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={"verify_signature": False})):
         return False
 
     if not (user := User.find_by_jwt_token(token)):
         return False
 
-    is_staff = jwt.contains_role([STAFF_ROLE])
+    is_staff = jwt.contains_role([STAFF_ROLE])  # pylint: disable=redefined-outer-name
 
     # TODO: cannot identify SOLE_PROP by checking legal_entity.entity_type
     is_sole_prop = legal_entity and legal_entity.entity_type == LegalEntity.EntityTypes.SOLE_PROP.value
 
-    is_login_source_bcsc = user.login_source == 'BCSC'
+    is_login_source_bcsc = user.login_source == "BCSC"
 
     is_owner_operator = is_self_registered_owner_operator(legal_entity, user)
 
@@ -905,12 +912,17 @@ def is_self_registered_owner_operator(legal_entity, user):
     if not (registration_filing := get_registration_filing(legal_entity)):
         return False
 
-    if len(proprietors := EntityRole.get_parties_by_role(
-            legal_entity.id, EntityRole.RoleTypes.proprietor)) <= 0:
+    if len(proprietors := EntityRole.get_parties_by_role(legal_entity.id, EntityRole.RoleTypes.proprietor)) <= 0:
         return False
 
-    if len(completing_parties := EntityRole.get_entity_roles_by_filing(
-            registration_filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party)) <= 0:
+    if (
+        len(
+            completing_parties := EntityRole.get_entity_roles_by_filing(
+                registration_filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party
+            )
+        )
+        <= 0
+    ):
         return False
 
     if not ((proprietor := proprietors[0].related_entity) and proprietor.is_related_person):
@@ -919,22 +931,22 @@ def is_self_registered_owner_operator(legal_entity, user):
     if not (completing_party := completing_parties[0].related_entity):
         return False
 
-    completing_party_first_name = (completing_party.first_name or '').lower()
-    completing_party_last_name = (completing_party.last_name or '').lower()
-    proprietor_first_name = (proprietor.first_name or '').lower()
-    proprietor_middle_initial = (proprietor.middle_initial or '').lower()
+    completing_party_first_name = (completing_party.first_name or "").lower()
+    completing_party_last_name = (completing_party.last_name or "").lower()
+    proprietor_first_name = (proprietor.first_name or "").lower()
+    proprietor_middle_initial = (proprietor.middle_initial or "").lower()
     if proprietor_middle_initial:
-        proprietor_first_name = f'{proprietor_first_name} {proprietor_middle_initial}'
-    proprietor_last_name = (proprietor.last_name or '').lower()
-    user_first_name = (user.firstname or '').lower()
-    user_last_name = (user.lastname or '').lower()
+        proprietor_first_name = f"{proprietor_first_name} {proprietor_middle_initial}"
+    proprietor_last_name = (proprietor.last_name or "").lower()
+    user_first_name = (user.firstname or "").lower()
+    user_last_name = (user.lastname or "").lower()
 
     return (
-        registration_filing.submitter_id == user.id and
-        completing_party_first_name == proprietor_first_name and
-        completing_party_last_name == proprietor_last_name and
-        proprietor_first_name == user_first_name and
-        proprietor_last_name == user_last_name
+        registration_filing.submitter_id == user.id
+        and completing_party_first_name == proprietor_first_name
+        and completing_party_last_name == proprietor_last_name
+        and proprietor_first_name == user_first_name
+        and proprietor_last_name == user_last_name
     )
 
 
