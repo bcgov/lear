@@ -21,7 +21,9 @@ from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
 from .db import db  # noqa: I001
-from .party import Party  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
+from .party import (  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
+    Party,
+)
 
 
 class PartyRole(Versioned, db.Model):

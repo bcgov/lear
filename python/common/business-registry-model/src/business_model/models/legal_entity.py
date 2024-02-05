@@ -32,18 +32,40 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql.functions import func
 
-from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .alternate_name import AlternateName  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
-from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+from .address import (  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+    Address,
+)
+from .alias import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+    Alias,
+)
+from .alternate_name import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+    AlternateName,
+)
+from .amalgamation import (  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+    Amalgamation,
+)
 from .db import db  # noqa: I001
-from .entity_role import EntityRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .role_address import RoleAddress  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
-from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .entity_role import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+    EntityRole,
+)
+from .filing import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+    Filing,
+)
+from .office import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+    Office,
+)
+from .resolution import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+    Resolution,
+)
+from .role_address import (  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+    RoleAddress,
+)
+from .share_class import (  # noqa: F401,I001,I003 pylint: disable=unused-import
+    ShareClass,
+)
+from .user import (  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
+    User,
+)
 
 
 class LegalEntity(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
