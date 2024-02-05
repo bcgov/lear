@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from sql_versioning import Versioned
+from sqlalchemy.dialects.postgresql import UUID
 
 from legal_api.utils.datetime import datetime
 
@@ -25,10 +26,18 @@ from .db import db
 class AlternateName(Versioned, db.Model):
     """This class manages the alternate names."""
 
+    class EntityType(BaseEnum):
+        """Render an Enum of the types of aliases."""
+
+        DBA = "DBA"
+        SP = "DBA"
+        GP = "DBA"
+
     class NameType(BaseEnum):
         """Enum for the name type."""
 
         OPERATING = auto()
+        TRANSLATION = auto()
 
     class State(BaseEnum):
         """Enum for the Business state."""
@@ -67,9 +76,10 @@ class AlternateName(Versioned, db.Model):
     name = db.Column("name", db.String(1000), nullable=False, index=True)
     bn15 = db.Column("bn15", db.String(20), nullable=True)
     start_date = db.Column("start_date", db.DateTime(timezone=True), nullable=False)
+    registration_date = db.Column("registration_date", db.DateTime(timezone=True), nullable=False)
     end_date = db.Column("end_date", db.DateTime(timezone=True), nullable=True)
-    naics_key = db.Column("naics_key", db.String(50), nullable=True)
     naics_code = db.Column("naics_code", db.String(10), nullable=True)
+    naics_key = db.Column("naics_key", UUID, nullable=True)
     naics_description = db.Column("naics_description", db.String(300), nullable=True)
     business_start_date = db.Column("business_start_date", db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column("dissolution_date", db.DateTime(timezone=True), default=None)
@@ -83,17 +93,25 @@ class AlternateName(Versioned, db.Model):
     state_filing_id = db.Column("state_filing_id", db.Integer, db.ForeignKey("filings.id"))
 
     # relationships
-    legal_entity = db.relationship("LegalEntity", back_populates="_alternate_names")
+    legal_entity = db.relationship("LegalEntity", back_populates="alternate_names")
     filings = db.relationship("Filing", lazy="dynamic", foreign_keys="Filing.alternate_name_id")
     documents = db.relationship("Document", lazy="dynamic")
-
-    def save(self):
-        """Save the object to the database immediately."""
-        db.session.add(self)
-        db.session.commit()
 
     @classmethod
     def find_by_identifier(cls, identifier: str) -> AlternateName | None:
         """Return None or the AlternateName found by its registration number."""
         alternate_name = cls.query.filter_by(identifier=identifier).one_or_none()
         return alternate_name
+
+    @classmethod
+    def find_by_name(cls, name: str = None):
+        """Given a name, this will return an AlternateName."""
+        if not name:
+            return None
+        alternate_name = cls.query.filter_by(name=name).filter_by(end_date=None).one_or_none()
+        return alternate_name
+
+    def save(self):
+        """Save the object to the database immediately."""
+        db.session.add(self)
+        db.session.commit()

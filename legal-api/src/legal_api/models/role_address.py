@@ -45,8 +45,8 @@ class RoleAddress(Versioned, db.Model):
     mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # relationships
-    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id], cascade="all, delete")
-    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id], cascade="all, delete")
+    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
+    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 
     def save(self):
         """Save the object to the database immediately."""

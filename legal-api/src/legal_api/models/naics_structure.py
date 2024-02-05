@@ -138,13 +138,19 @@ class NaicsStructure(db.Model):
                         and_(
                             NaicsStructure.class_title.ilike(search_term),
                             NaicsElement.element_type.in_(
-                                [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                                [
+                                    NaicsElement.ElementType.ALL_EXAMPLES,
+                                    NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES,
+                                ]
                             ),
                         ).self_group(),
                         and_(
                             NaicsStructure.class_title.notilike(search_term),
                             NaicsElement.element_type.in_(
-                                [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                                [
+                                    NaicsElement.ElementType.ALL_EXAMPLES,
+                                    NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES,
+                                ]
                             ),
                             NaicsElement.element_description.ilike(search_term),
                         ).self_group(),
@@ -160,7 +166,10 @@ class NaicsStructure(db.Model):
                     or_(NaicsStructure.class_title.ilike(search_term)).self_group(),
                     and_(
                         NaicsElement.element_type.in_(
-                            [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                            [
+                                NaicsElement.ElementType.ALL_EXAMPLES,
+                                NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES,
+                            ]
                         ),
                         NaicsElement.element_description.ilike(search_term),
                     ).self_group(),
@@ -192,7 +201,10 @@ class NaicsStructure(db.Model):
                     NaicsElement.naics_structure_id == NaicsStructure.id,
                     or_(*naics_element_class_desc_ilike_filters),
                     NaicsElement.element_type.in_(
-                        [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                        [
+                            NaicsElement.ElementType.ALL_EXAMPLES,
+                            NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES,
+                        ]
                     ),
                 ).self_group(),
             )
@@ -204,7 +216,10 @@ class NaicsStructure(db.Model):
             .filter(NaicsStructure.class_title.notilike(search_term))
             .filter(
                 NaicsElement.element_type.in_(
-                    [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                    [
+                        NaicsElement.ElementType.ALL_EXAMPLES,
+                        NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES,
+                    ]
                 )
             )
         )
@@ -226,7 +241,10 @@ class NaicsStructure(db.Model):
             .filter(NaicsStructure.code == code)
             .filter(
                 NaicsElement.element_type.in_(
-                    [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                    [
+                        NaicsElement.ElementType.ALL_EXAMPLES,
+                        NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES,
+                    ]
                 )
             )
         )
@@ -244,7 +262,10 @@ class NaicsStructure(db.Model):
             .filter(NaicsStructure.naics_key == naics_key)
             .filter(
                 NaicsElement.element_type.in_(
-                    [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                    [
+                        NaicsElement.ElementType.ALL_EXAMPLES,
+                        NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES,
+                    ]
                 )
             )
         )

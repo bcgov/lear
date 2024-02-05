@@ -46,7 +46,10 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
     amalgamation_id = db.Column(
-        "amalgamation_id", db.Integer, db.ForeignKey("amalgamation.id", ondelete="CASCADE"), nullable=False
+        "amalgamation_id",
+        db.Integer,
+        db.ForeignKey("amalgamation.id", ondelete="CASCADE"),
+        nullable=False,
     )
 
     def save(self):

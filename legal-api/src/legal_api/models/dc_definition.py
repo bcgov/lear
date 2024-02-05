@@ -81,7 +81,12 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         return dc_definition
 
     @classmethod
-    def find_by(cls, credential_type: CredentialType, schema_id: str, credential_definition_id: str) -> DCDefinition:
+    def find_by(
+        cls,
+        credential_type: CredentialType,
+        schema_id: str,
+        credential_definition_id: str,
+    ) -> DCDefinition:
         """Return the digital credential definition matching the filter."""
         query = (
             db.session.query(DCDefinition)

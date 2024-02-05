@@ -92,7 +92,12 @@ class PartyRole(Versioned, db.Model):
     # pylint: disable=too-many-arguments; one too many
     @classmethod
     def find_party_by_name(
-        cls, legal_entity_id: int, first_name: str, last_name: str, middle_initial: str, org_name: str
+        cls,
+        legal_entity_id: int,
+        first_name: str,
+        last_name: str,
+        middle_initial: str,
+        org_name: str,
     ) -> Party:
         """Return a Party connected to the given legal_entity_id by the given name."""
         party_roles = cls.query.filter_by(legal_entity_id=legal_entity_id).all()
@@ -134,7 +139,12 @@ class PartyRole(Versioned, db.Model):
             .filter(PartyRole.legal_entity_id == legal_entity_id)
             .filter(PartyRole.role == PartyRole.RoleTypes.DIRECTOR.value)
             .filter(cast(PartyRole.appointment_date, Date) <= end_date)
-            .filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+            .filter(
+                or_(
+                    PartyRole.cessation_date.is_(None),
+                    cast(PartyRole.cessation_date, Date) > end_date,
+                )
+            )
             .all()
         )
         return directors
@@ -146,7 +156,12 @@ class PartyRole(Versioned, db.Model):
             db.session.query(PartyRole)
             .filter(PartyRole.legal_entity_id == legal_entity_id)
             .filter(cast(PartyRole.appointment_date, Date) <= end_date)
-            .filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+            .filter(
+                or_(
+                    PartyRole.cessation_date.is_(None),
+                    cast(PartyRole.cessation_date, Date) > end_date,
+                )
+            )
         )
 
         if role is not None:
@@ -173,7 +188,12 @@ class PartyRole(Versioned, db.Model):
             db.session.query(PartyRole)
             .filter(PartyRole.filing_id == filing_id)
             .filter(cast(PartyRole.appointment_date, Date) <= end_date)
-            .filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+            .filter(
+                or_(
+                    PartyRole.cessation_date.is_(None),
+                    cast(PartyRole.cessation_date, Date) > end_date,
+                )
+            )
         )
 
         if role is not None:
