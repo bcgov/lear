@@ -30,8 +30,8 @@ class AlternateName(Versioned, db.Model):
         """Render an Enum of the types of aliases."""
 
         DBA = "DBA"
-        SP = "DBA"
-        GP = "DBA"
+        SP = "SP"
+        GP = "GP"
 
     class NameType(BaseEnum):
         """Enum for the name type."""
