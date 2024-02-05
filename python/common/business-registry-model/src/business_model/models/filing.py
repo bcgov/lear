@@ -24,9 +24,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 
-from .comment import (  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
-    Comment,
-)
+from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .db import db  # noqa: I001
 
 
@@ -898,9 +896,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
-        from .legal_entity import (  # noqa: F401; pylint: disable=import-outside-toplevel
-            LegalEntity,
-        )
+        from .legal_entity import LegalEntity  # noqa: F401; pylint: disable=import-outside-toplevel
 
         filings = (
             db.session.query(Filing)
