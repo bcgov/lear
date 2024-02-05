@@ -120,16 +120,23 @@ select le.id,
        f.effective_date                            as start_date,
        null                                        as end_date,
        null                                        as next_filing_id,
+       le.version,
        le.naics_key,
        le.naics_code,
        le.naics_description,
-       le.version
+       le.start_date                               as business_start_date,
+       le.dissolution_date,
+       le.admin_freeze,
+       le.state,
+       le.state_filing_id,
+       le.last_modified
 from legal_entities le
          left join filings f on f.id = le.change_filing_id
          left join (select id, max(version) as max_version from legal_entities_history group by id) prev_leh_version
                    on le.id = prev_leh_version.id
          left join legal_entities_history prev_leh
                    on prev_leh.id = prev_leh_version.id and prev_leh.version = prev_leh_version.max_version
+where le.entity_type in ('SP', 'GP')
 UNION
 select leh.id,
        leh.identifier,
@@ -149,10 +156,16 @@ select leh.id,
        f.effective_date                            as start_date,
        next_leh.end_date,
        next_leh.next_filing_id,
+       leh.version,
        leh.naics_key,
        leh.naics_code,
        leh.naics_description,
-       leh.version
+       leh.start_date                              as business_start_date,
+       leh.dissolution_date,
+       leh.admin_freeze,
+       leh.state,
+       leh.state_filing_id,
+       leh.last_modified
 from legal_entities_history leh
          left join filings f on f.id = leh.change_filing_id
          left join legal_entities_history prev_leh
@@ -187,8 +200,9 @@ where leh.entity_type in ('SP', 'GP')
 
 -- Insert last name change entry for SP/GPs in legal_entities_history table into alternate_names
 INSERT
-INTO alternate_names(legal_entity_id, identifier, name, bn15, start_date, end_date, name_type, change_filing_id,
-                     naics_key, naics_code, naics_description, version)
+INTO alternate_names(legal_entity_id, identifier, name, bn15, start_date, end_date, name_type,
+                     naics_key, naics_code, naics_description, business_start_date, dissolution_date,
+                     admin_freeze, state, state_filing_id, last_modified, change_filing_id, version)
 select lnc.id                as legal_entity_id,
        identifier,
        legal_name            as name,
@@ -196,10 +210,16 @@ select lnc.id                as legal_entity_id,
        start_date,
        end_date,
        'OPERATING'::nametype as name_type,
+       CASE WHEN lnc.entity_type = 'SP' THEN naics_key ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN naics_code ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN naics_description ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN business_start_date ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN dissolution_date ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN admin_freeze ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN state ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN state_filing_id ELSE NULL END,
+       CASE WHEN lnc.entity_type = 'SP' THEN last_modified ELSE NULL END,
        lnc.filing_id         as change_filing_id,
-       naics_key,
-       naics_code,
-       naics_description,
        1                     as version
 from temp_legal_name_changes lnc
          join (select id,
@@ -224,7 +244,8 @@ WITH id_values AS (SELECT nextval('alternate_names_id_seq') as an_seq_id, lnc.*
                      and lnc.filing_id != an.change_filing_id)
 INSERT
 INTO alternate_names_history(id, legal_entity_id, identifier, name, bn15, start_date, end_date, name_type,
-                             naics_key, naics_code, naics_description, version, change_filing_id, changed)
+                             naics_key, naics_code, naics_description, business_start_date, dissolution_date,
+                             admin_freeze, state, state_filing_id, last_modified, version, change_filing_id, changed)
 SELECT id_values.an_seq_id   as id,
        id_values.id          as legal_entity_id,
        id_values.identifier,
@@ -233,9 +254,15 @@ SELECT id_values.an_seq_id   as id,
        id_values.start_date,
        NULL                  as end_date,
        'OPERATING'::nametype as name_type,
-       id_values.naics_key,
-       id_values.naics_code,
-       id_values.naics_description,
+       CASE WHEN id_values.entity_type = 'SP' THEN naics_key ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN naics_code ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN naics_description ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN business_start_date ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN dissolution_date ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN admin_freeze ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN state ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN state_filing_id ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN last_modified ELSE NULL END,
        1                     as version,
        id_values.filing_id   as change_filing_id,
        id_values.start_date  as changed
@@ -251,9 +278,15 @@ SELECT id_values.an_seq_id      as id,
        id_values.start_date,
        id_values.end_date       as end_date,
        'OPERATING'::nametype    as name_type,
-       id_values.naics_key,
-       id_values.naics_code,
-       id_values.naics_description,
+       CASE WHEN id_values.entity_type = 'SP' THEN naics_key ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN naics_code ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN naics_description ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN business_start_date ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN dissolution_date ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN admin_freeze ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN state ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN state_filing_id ELSE NULL END,
+       CASE WHEN id_values.entity_type = 'SP' THEN last_modified ELSE NULL END,
        2                        as version,
        id_values.next_filing_id as change_filing_id,
        id_values.end_date       as changed
@@ -325,6 +358,7 @@ SET legal_name=NULL
 where le.entity_type in ('SP', 'GP')
   and le.identifier like 'FM%'
 ;
+
 
 CREATE TABLE temp_parties_legal_name AS
 select distinct ph.id                                                                        as party_id,
@@ -553,7 +587,8 @@ with subquery as
                    join temp_parties_legal_name maxTp
                         on max_version.party_id = maxTp.party_id and max_version.version = maxTp.version
           where not maxTp.is_business_party_colin_entity
-            and not maxTp.is_proprietor_person),
+            and not maxTp.is_proprietor_person
+         ),
      max_versions as
          (select id, max(version) as max_version
           from subquery sq
@@ -562,6 +597,7 @@ select sq.*
 from subquery sq
          left join max_versions mv on mv.id = sq.id
 where sq.version != mv.max_version;
+
 
 
 -- Populate signing_legal_entity_id with corresponding legal entity id into resolutions_history table.
@@ -773,8 +809,8 @@ SELECT insert_into_leh(
                        'change_filing_id', tp.change_filing_id,
                        'changed', tp.change_filing_effective_date,
                        'version', tp.version + 1
-                   )
-           )
+               )
+       )
 FROM temp_parties_legal_name tp
          LEFT JOIN legal_entities_history leh
                    ON tp.new_legal_entity_id = leh.id AND tp.change_filing_id = leh.change_filing_id
@@ -997,8 +1033,8 @@ WITH unmatched_entries AS
                      WHERE le.id = ue.new_legal_entity_id),
                     jsonb_build_object(
                             'version', 1
-                        )
-                )
+                    )
+            )
      FROM unmatched_entries ue
               LEFT JOIN previous_history_entries phe ON ue.new_legal_entity_id = phe.id
      WHERE phe.id IS NULL)
@@ -1038,8 +1074,8 @@ WITH unmatched_entries AS
                                 'change_filing_id', ue.change_filing_id,
                                 'changed', ue.change_filing_effective_date,
                                 'version', phe.version + 1
-                            )
-                    )
+                        )
+                )
          FROM unmatched_entries ue
                   JOIN previous_history_entries phe ON ue.new_legal_entity_id = phe.id)
 SELECT COUNT(*)
@@ -1272,7 +1308,8 @@ with subquery as
                    join temp_parties_legal_name tp on tpr.party_id = tp.party_id and tp.version = tp.max_version
           where not tp.is_business_party_colin_entity
             and not tp.is_resolution_party
-            and not tp.is_proprietor_person),
+            and not tp.is_proprietor_person
+         ),
      max_versions as
          (select id, max(version) as max_version
           from subquery sq
@@ -1444,7 +1481,7 @@ DECLARE
     results        RECORD;
     result_count   INTEGER;
 BEGIN
-    FOR rec IN SELECT * FROM legal_entities WHERE entity_type IN ('SP', 'GP')
+    FOR rec IN SELECT * FROM legal_entities WHERE entity_type IN ('GP')
         LOOP
             result_count := 0;
             legal_name_str := '';
@@ -1482,10 +1519,293 @@ BEGIN
             legal_name_str := rtrim(legal_name_str, ', '); -- Remove trailing comma and space
             UPDATE legal_entities SET legal_name = legal_name_str WHERE id = rec.id;
         END LOOP;
+    update legal_entities
+    set legal_name = concat_ws(' ',
+                               nullif(first_name, ''),
+                               nullif(middle_initial, ''),
+                               nullif(last_name, ''))
+    where entity_type = 'person';
+
 END;
 $$ LANGUAGE plpgsql;
 
 SELECT update_legal_name();
+
+-- TODO: create update_legal_name_history() to update legal_name for legal_entities_history
+
+
+-- Move all associations for SP(firm owner is person or firm owner is org(LEAR or COLIN) LE records to
+-- alternate names table
+UPDATE filings f
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE f.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+
+UPDATE comments c
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE c.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+
+UPDATE request_tracker rt
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE rt.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+
+UPDATE dc_connections dcc
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE dcc.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+
+UPDATE dc_issued_business_user_credentials dcibuuc
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE dcibuuc.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+
+UPDATE documents_history dh
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE dh.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+UPDATE documents d
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE d.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+
+-- TODO offices/offices_history addresses can linked to alternate_names when alternate_name_id has been added to
+--  offices table.  Businesses addresses should already be linked for SP persons
+
+
+CREATE TABLE temp_sp_person_entity_role AS
+select le.id          as sp_id,
+       le.entity_type as sp_entity_type,
+       le.identifier  as sp_identifer,
+       le.first_name,
+       le.middle_initial,
+       le.last_name,
+       le.legal_name
+from legal_entities le
+where le.entity_type = 'SP'
+  and (first_name is not null or middle_initial is not null or last_name is not null);
+
+update legal_entities_history leh
+set entity_type = 'person'
+where leh.id in (select sp_id from temp_sp_person_entity_role);
+
+update legal_entities le
+set entity_type = 'person'
+where le.id in (select sp_id from temp_sp_person_entity_role);
+
+
+-- Move remaining SP DBA LEAR associations that need to reside with alternate_names
+CREATE TABLE temp_sp_dba_entity_role AS
+select le.id                as sp_id,
+       le.entity_type       as sp_entity_type,
+       le.identifier        as sp_identifer,
+       er.id                as er_id,
+       er.role_type         as er_role_type,
+       ler.id               as related_entity_id,
+       ler.entity_type      as related_entity_type,
+       ler.identifier       as related_identifier,
+       le_match.id          as le_match_id,
+       le_match.entity_type as le_match_entity_type
+from legal_entities le
+         join entity_roles er on le.id = er.legal_entity_id
+         join legal_entities ler on er.related_entity_id = ler.id
+         left join legal_entities le_match on le_match.identifier = ler.identifier and
+                                              le_match.entity_type in ('CP', 'BEN', 'BC', 'ULC', 'CC', 'SP', 'GP')
+where le.entity_type = 'SP'
+  and er.role_type = 'proprietor'
+  and ler.entity_type = 'organization'
+  and ler.identifier is not null
+  and ler.identifier <> '';
+
+-- TODO update temp_sp_dba_entity_role to include address & email fields from ler record and update corresponding
+--      alternate_name entry to use these values.  This populates the business address for the SP LEAR DBA.
+
+UPDATE alternate_names an
+SET legal_entity_id = temp.le_match_id
+FROM (SELECT sp_id, le_match_id
+      FROM temp_sp_dba_entity_role) AS temp
+WHERE an.legal_entity_id = temp.sp_id;
+
+
+UPDATE alternate_names_history anh
+SET legal_entity_id = temp.le_match_id
+FROM (SELECT sp_id, le_match_id
+      FROM temp_sp_dba_entity_role) AS temp
+WHERE anh.legal_entity_id = temp.sp_id;
+
+
+DELETE
+FROM entity_roles_history
+WHERE id IN (SELECT er_id
+             FROM temp_sp_dba_entity_role);
+
+DELETE
+FROM entity_roles
+WHERE id IN (SELECT er_id
+             FROM temp_sp_dba_entity_role);
+
+DELETE
+FROM legal_entities_history
+WHERE id IN (SELECT related_entity_id
+             FROM temp_sp_dba_entity_role);
+
+DELETE
+FROM legal_entities
+WHERE id IN (SELECT related_entity_id
+             FROM temp_sp_dba_entity_role);
+
+DELETE
+FROM party_roles
+WHERE legal_entity_id IN (SELECT sp_id
+                          FROM temp_sp_dba_entity_role);
+
+-- TODO: can be removed once address info is moved to alternate name entry
+DELETE
+FROM offices_history
+WHERE legal_entity_id IN (SELECT sp_id
+                          FROM temp_sp_dba_entity_role);
+
+DELETE
+FROM offices
+WHERE legal_entity_id IN (SELECT sp_id
+                          FROM temp_sp_dba_entity_role);
+
+DELETE
+FROM legal_entities_history
+WHERE id IN (SELECT sp_id
+             FROM temp_sp_dba_entity_role);
+
+DELETE
+FROM legal_entities
+WHERE id IN (SELECT sp_id
+             FROM temp_sp_dba_entity_role);
+
+
+-- Move remaining SP DBA COLIN associations that need to reside with alternate_names
+CREATE TABLE temp_sp_dba_colin_entity_role AS
+select le.id          as sp_id,
+       le.entity_type as sp_entity_type,
+       le.identifier  as sp_identifer,
+       er.id          as er_id,
+       er.role_type   as er_role_type,
+       ce.id          as related_colin_entity_id,
+       ce.identifier  as related_colin_identifier
+from legal_entities le
+         join entity_roles er on le.id = er.legal_entity_id
+         join colin_entities ce on er.related_colin_entity_id = ce.id
+where le.entity_type = 'SP'
+  and er.role_type = 'proprietor';
+
+-- TODO update temp_sp_dba_colin_entity_role to include address & email fields from ler record and update corresponding
+--      alternate_name entry to use these values.  This populates the business address for the SP COLIN DBA.
+
+UPDATE alternate_names an
+SET legal_entity_id = null,
+    colin_entity_id = related_colin_entity_id
+FROM (SELECT sp_id, related_colin_entity_id
+      FROM temp_sp_dba_colin_entity_role) AS temp
+WHERE an.legal_entity_id = temp.sp_id;
+
+
+UPDATE alternate_names_history anh
+SET legal_entity_id = null,
+    colin_entity_id = related_colin_entity_id
+FROM (SELECT sp_id, related_colin_entity_id
+      FROM temp_sp_dba_colin_entity_role) AS temp
+WHERE anh.legal_entity_id = temp.sp_id;
+
+
+DELETE
+FROM entity_roles_history
+WHERE id IN (SELECT er_id
+             FROM temp_sp_dba_colin_entity_role);
+
+DELETE
+FROM entity_roles
+WHERE id IN (SELECT er_id
+             FROM temp_sp_dba_colin_entity_role);
+
+
+DELETE
+FROM party_roles
+WHERE legal_entity_id IN (SELECT sp_id
+                          FROM temp_sp_dba_colin_entity_role);
+
+-- TODO: can be removed once address info is moved to alternate name entry
+DELETE
+FROM offices_history
+WHERE legal_entity_id IN (SELECT sp_id
+                          FROM temp_sp_dba_colin_entity_role);
+
+DELETE
+FROM offices
+WHERE legal_entity_id IN (SELECT sp_id
+                          FROM temp_sp_dba_colin_entity_role);
+
+DELETE
+FROM legal_entities_history
+WHERE id IN (SELECT sp_id
+             FROM temp_sp_dba_colin_entity_role);
+
+DELETE
+FROM legal_entities
+WHERE id IN (SELECT sp_id
+             FROM temp_sp_dba_colin_entity_role);
+
+
+
+-- Set fields that do not need to be populated for proprietor individuals to null
+update public.legal_entities
+set naics_key=null,
+    naics_code=null,
+    naics_description=null,
+    dissolution_date=null,
+    identifier=null,
+    state=null,
+    state_filing_id=null,
+    start_date=null
+where id in (select id from legal_entities le where le.entity_type = 'person' and le.identifier like 'FM%');
+
+
+update public.legal_entities_history
+set naics_key=null,
+    naics_code=null,
+    naics_description=null,
+    dissolution_date=null,
+    identifier=null,
+    state=null,
+    state_filing_id=null,
+    start_date=null
+where id in (select id from legal_entities_history le where le.entity_type = 'person' and le.identifier like 'FM%');
 
 
 -- Update all identifiers for person LEs in legal_entities to use format 'P1234567'
@@ -1499,7 +1819,7 @@ WITH legal_entities_person AS (
     SELECT
         leh.id, le.identifier, le.entity_type
     FROM legal_entities_history leh
-    LEFT JOIN legal_entities le ON leh.id = le.id 
+             LEFT JOIN legal_entities le ON leh.id = le.id
 )
 UPDATE legal_entities_history leh
 SET identifier = lep.identifier, entity_type = lep.entity_type
@@ -1509,14 +1829,14 @@ WHERE leh.id = lep.id AND LOWER(lep.entity_type) = 'person';
 
 -- Update all identifiers for person LEs that only exist in legal_entities_history
 WITH legal_entities_history_person AS (
-    SELECT 
+    SELECT
         temp.id, nextval('legal_entity_identifier_person') as seq_value
     FROM(
-        SELECT
-            DISTINCT leh.id
-        FROM legal_entities_history leh
-        WHERE leh.identifier IS NULL and LOWER(leh.entity_type) = 'person'
-    ) AS temp
+            SELECT
+                DISTINCT leh.id
+            FROM legal_entities_history leh
+            WHERE leh.identifier IS NULL and LOWER(leh.entity_type) = 'person'
+        ) AS temp
 )
 UPDATE legal_entities_history leh
 SET identifier = 'P' || LPAD(seq_value::text, 7, '0')
@@ -1524,13 +1844,13 @@ FROM legal_entities_history_person lehp
 WHERE leh.id = lehp.id;
 
 
--- TODO: create update_legal_name_history() to update legal_name for legal_entities_history
-
-
 -- DROP temporarily created columns, functions and tables
 DROP TABLE temp_legal_name_changes;
 DROP TABLE temp_parties_legal_name;
 DROP TABLE temp_party_roles_legal_name;
+DROP TABLE temp_sp_person_entity_role;
+DROP TABLE temp_sp_dba_entity_role;
+DROP TABLE temp_sp_dba_colin_entity_role;
 DROP FUNCTION has_non_legal_name_change;
 DROP FUNCTION update_filing_json_party_ids;
 DROP FUNCTION rename_jsonb_key;
