@@ -75,7 +75,6 @@ class AlternateName(Versioned, db.Model):
     name = db.Column("name", db.String(1000), nullable=False, index=True)
     bn15 = db.Column("bn15", db.String(20), nullable=True)
     start_date = db.Column("start_date", db.DateTime(timezone=True), nullable=False)
-    registration_date = db.Column("registration_date", db.DateTime(timezone=True), nullable=False)
     end_date = db.Column("end_date", db.DateTime(timezone=True), nullable=True)
     naics_code = db.Column("naics_code", db.String(10), nullable=True)
     naics_key = db.Column("naics_key", UUID, nullable=True)

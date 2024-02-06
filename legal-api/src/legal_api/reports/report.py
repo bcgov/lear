@@ -24,7 +24,6 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from legal_api.core.meta.filing import FILINGS
 from legal_api.models import ConsentContinuationOut, CorpType, Document, EntityRole, Filing, LegalEntity
 from legal_api.models.legal_entity import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
@@ -1071,6 +1070,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_special_resolution(self, filing):
         """For special resolutions."""
+        # importing here to avoid circular dependencies
+        # pylint: disable=import-outside-toplevel
+        from legal_api.core.meta.filing import FILINGS
+
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
             display_name = display_name.get(self._legal_entity.entity_type)
