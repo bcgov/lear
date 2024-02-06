@@ -122,10 +122,10 @@ def dissolve_amalgamating_business(business: Business, filing_rec: Filing):
     db.session.add(business)
 
 
-def process(business: Business,  # pylint: disable=too-many-branches
+def process(business: Business,  # pylint: disable=too-many-branches, too-many-locals
             filing: Dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
+            filing_meta: FilingMeta):
     """Process the incoming amalgamation application filing."""
     # Extract the filing information for amalgamation
     amalgamation_filing = filing.get('filing', {}).get('amalgamationApplication')
