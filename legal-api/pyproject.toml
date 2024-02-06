@@ -160,7 +160,7 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = [
-   "src/legal-api",
+   "src/legal_api",
 ]
 omit = [
     "wsgi.py",
