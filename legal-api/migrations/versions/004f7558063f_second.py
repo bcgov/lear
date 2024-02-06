@@ -279,10 +279,15 @@ def upgrade():
                     sa.Column('legal_entity_id', sa.Integer(), nullable=True),
                     sa.Column('colin_entity_id', sa.Integer(), nullable=True),
                     sa.Column('change_filing_id', sa.Integer(), nullable=True),
+                    sa.Column('email', sa.String(length=254), autoincrement=False, nullable=True),
+                    sa.Column('delivery_address_id', sa.Integer(), autoincrement=False, nullable=True),
+                    sa.Column('mailing_address_id', sa.Integer(), autoincrement=False, nullable=True),
                     sa.Column('naics_key', sa.String(length=50), autoincrement=False, nullable=True),
                     sa.Column('naics_code', sa.String(length=10), autoincrement=False, nullable=True),
                     sa.Column('naics_description', sa.String(length=300), autoincrement=False, nullable=True),
                     sa.Column('version', sa.Integer(), nullable=False),
+                    sa.ForeignKeyConstraint(['delivery_address_id'], ['addresses.id'], ),
+                    sa.ForeignKeyConstraint(['mailing_address_id'], ['addresses.id'], ),
                     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
                     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
                     sa.ForeignKeyConstraint(['colin_entity_id'], ['colin_entities.id'], ),
@@ -312,11 +317,16 @@ def upgrade():
                     sa.Column('legal_entity_id', sa.Integer(), autoincrement=False, nullable=True),
                     sa.Column('colin_entity_id', sa.Integer(), autoincrement=False, nullable=True),
                     sa.Column('change_filing_id', sa.Integer(), autoincrement=False, nullable=True),
+                    sa.Column('email', sa.String(length=254), autoincrement=False, nullable=True),
+                    sa.Column('delivery_address_id', sa.Integer(), autoincrement=False, nullable=True),
+                    sa.Column('mailing_address_id', sa.Integer(), autoincrement=False, nullable=True),
                     sa.Column('naics_key', sa.String(length=50), autoincrement=False, nullable=True),
                     sa.Column('naics_code', sa.String(length=10), autoincrement=False, nullable=True),
                     sa.Column('naics_description', sa.String(length=300), autoincrement=False, nullable=True),
                     sa.Column('version', sa.Integer(), autoincrement=False, nullable=False),
                     sa.Column('changed', sa.DateTime(), nullable=True),
+                    sa.ForeignKeyConstraint(['delivery_address_id'], ['addresses.id'], ),
+                    sa.ForeignKeyConstraint(['mailing_address_id'], ['addresses.id'], ),
                     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
                     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
                     sa.ForeignKeyConstraint(['colin_entity_id'], ['colin_entities.id'], ),
@@ -501,10 +511,12 @@ def upgrade():
     sa.Column('deactivated_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
     sa.Column('change_filing_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('legal_entity_id', sa.Integer(), autoincrement=False, nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('version', sa.Integer(), autoincrement=False, nullable=False),
     sa.Column('changed', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.ForeignKeyConstraint(['office_type'], ['office_types.identifier'], ),
     sa.PrimaryKeyConstraint('id', 'version'),
     sqlite_autoincrement=True
@@ -512,6 +524,7 @@ def upgrade():
     with op.batch_alter_table('offices_history', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_offices_history_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_offices_history_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_offices_history_alternate_name_id'), ['alternate_name_id'], unique=False)
 
     op.create_table('parties',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -961,12 +974,15 @@ def upgrade():
         batch_op.add_column(sa.Column('deactivated_date', sa.DateTime(timezone=True), nullable=True))
         batch_op.add_column(sa.Column('change_filing_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('legal_entity_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('alternate_name_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('version', sa.Integer(), nullable=False))
         batch_op.create_index(batch_op.f('ix_offices_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_offices_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_offices_alternate_name_id'), ['alternate_name_id'], unique=False)
         batch_op.create_foreign_key(None, 'filings', ['change_filing_id'], ['id'])
         batch_op.create_foreign_key(None, 'office_types', ['office_type'], ['identifier'])
         batch_op.create_foreign_key(None, 'legal_entities', ['legal_entity_id'], ['id'])
+        batch_op.create_foreign_key(None, 'alternate_names', ['alternate_name_id'], ['id'])
 
     # ### end Alembic commands ###
 
@@ -977,15 +993,19 @@ def downgrade():
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_index(batch_op.f('ix_offices_legal_entity_id'))
         batch_op.drop_index(batch_op.f('ix_offices_change_filing_id'))
+        batch_op.drop_index(batch_op.f('ix_offices_alternate_name_id'))
         batch_op.drop_column('version')
         batch_op.drop_column('legal_entity_id')
         batch_op.drop_column('change_filing_id')
+        batch_op.drop_column('alternate_name_id')
         batch_op.drop_column('deactivated_date')
         batch_op.drop_column('office_type')
 
     with op.batch_alter_table('legal_entities', schema=None) as batch_op:
+        batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
@@ -1143,6 +1163,7 @@ def downgrade():
     with op.batch_alter_table('offices_history', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_offices_history_legal_entity_id'))
         batch_op.drop_index(batch_op.f('ix_offices_history_change_filing_id'))
+        batch_op.drop_index(batch_op.f('ix_offices_history_alternate_name_id'))
 
     op.drop_table('offices_history')
     with op.batch_alter_table('naics_elements', schema=None) as batch_op:
