@@ -1,4 +1,4 @@
-# Copyright © 2022 Province of British Columbia
+# Copyright © 2024 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Service to check compliancy for a LegalEntity."""
+"""This provides the service for businesses(legal entities and alternate name entities."""
 from legal_api.models import LegalEntity
 
-from .firms import check_business as firms_check  # noqa: I003
 
+class BusinessService:
+    """Provides services to retrieve correct businesses."""
 
-def check_business(business: any) -> list:
-    """Check business for warnings."""
-    result = []
+    def fetch_business(self, identifier):
+        """Fetches appropriate business.
 
-    if (
-        business.is_legal_entity and business.entity_type == LegalEntity.EntityTypes.PARTNERSHIP.value
-    ) or business.is_alternate_name_entity:
-        result = firms_check(business)
-
-    return result
+        This can be an instance of legal entity or alternate name.
+        """
+        legal_entity, alternate_name_entity = LegalEntity.find_by_identifier(identifier)
+        if alternate_name_entity:
+            return alternate_name_entity
+        return legal_entity

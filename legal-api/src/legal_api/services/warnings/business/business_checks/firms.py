@@ -22,23 +22,24 @@ from . import BusinessWarnings  # noqa: I001
 from . import get_address_business_warning  # noqa: I001
 
 
-def check_business(legal_entity: LegalEntity) -> list:
+def check_business(business: any) -> list:
     """Check for missing business data."""
     result = []
 
-    legal_type = legal_entity.entity_type
+    # TODO update to work with legal entities and alternate names
+    # legal_type = legal_entity.entity_type
 
-    result.extend(check_office(legal_entity))
-    result.extend(check_parties(legal_type, legal_entity))
-    result.extend(check_start_date(legal_entity))
+    result.extend(check_office(business))
+    # result.extend(check_parties(legal_type, legal_entity))
+    result.extend(check_start_date(business))
 
     return result
 
 
-def check_start_date(legal_entity: LegalEntity) -> list:
+def check_start_date(business: any) -> list:
     """Check for business start date."""
     result = []
-    if not legal_entity.start_date:
+    if not business.start_date:
         result.append(
             {
                 **WARNING_MESSAGE_BASE,
@@ -49,11 +50,13 @@ def check_start_date(legal_entity: LegalEntity) -> list:
     return result
 
 
-def check_office(legal_entity: LegalEntity) -> list:
+def check_office(business: any) -> list:
     """Check for missing office data."""
     result = []
+    business_office = None
 
-    business_office = legal_entity.offices.filter(Office.office_type == "businessOffice").one_or_none()
+    if business.is_legal_entity:
+        business_office = business.offices.filter(Office.office_type == "businessOffice").one_or_none()
 
     if not business_office:
         result.append(

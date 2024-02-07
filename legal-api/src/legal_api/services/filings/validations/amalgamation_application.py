@@ -90,13 +90,13 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
 
             amalgamating_businesses[identifier] = legal_entity
 
-            if legal_entity.entity_type == LegalEntity.EntityTypes.BCOMP.value:
+            if legal_entity._entity_type == LegalEntity.EntityTypes.BCOMP.value:
                 is_any_ben = True
-            elif legal_entity.entity_type == LegalEntity.EntityTypes.COMP.value:
+            elif legal_entity._entity_type == LegalEntity.EntityTypes.COMP.value:
                 is_any_limited = True
-            elif legal_entity.entity_type == LegalEntity.EntityTypes.BC_CCC.value:
+            elif legal_entity._entity_type == LegalEntity.EntityTypes.BC_CCC.value:
                 is_any_ccc = True
-            elif legal_entity.entity_type == LegalEntity.EntityTypes.BC_ULC_COMPANY.value:
+            elif legal_entity._entity_type == LegalEntity.EntityTypes.BC_ULC_COMPANY.value:
                 is_any_ulc = True
         elif (corp_number := amalgamating_business_json.get("corpNumber")) and corp_number.startswith("A"):
             if (

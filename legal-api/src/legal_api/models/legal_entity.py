@@ -38,6 +38,7 @@ from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; n
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alternate_name import AlternateName  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+from .business_common import BusinessCommon
 from .db import db  # noqa: I001
 from .entity_role import EntityRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
@@ -49,7 +50,7 @@ from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed 
 
 
 class LegalEntity(
-    Versioned, db.Model
+    Versioned, db.Model, BusinessCommon
 ):  # pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines
     """This class manages all of the base data about a LegalEntity.
 
@@ -236,7 +237,7 @@ class LegalEntity(
     last_coa_date = db.Column("last_coa_date", db.DateTime(timezone=True))
     last_cod_date = db.Column("last_cod_date", db.DateTime(timezone=True))
     _legal_name = db.Column("legal_name", db.String(1000), index=True)
-    entity_type = db.Column("entity_type", db.String(15), index=True)
+    _entity_type = db.Column("entity_type", db.String(15), index=True)
     founding_date = db.Column("founding_date", db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column("start_date", db.DateTime(timezone=True))
     restoration_expiry_date = db.Column("restoration_expiry_date", db.DateTime(timezone=True))
@@ -302,7 +303,7 @@ class LegalEntity(
         lazy="dynamic",
         overlaps="legal_entity",
     )
-    _alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy="dynamic")
+    alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy="dynamic")
     role_addresses = db.relationship("RoleAddress", lazy="dynamic")
     entity_delivery_address = db.relationship(
         "Address",
@@ -331,7 +332,7 @@ class LegalEntity(
     @identifier.setter
     def identifier(self, value: str):
         """Set the business identifier."""
-        if LegalEntity.validate_identifier(self.entity_type, value):
+        if LegalEntity.validate_identifier(self._entity_type, value):
             self._identifier = value
         else:
             raise BusinessException("invalid-identifier-format", 406)
@@ -350,7 +351,7 @@ class LegalEntity(
         ar_min_date = datetime(next_ar_year, 1, 1).date()
         ar_max_date = datetime(next_ar_year, 12, 31).date()
 
-        if self.entity_type == self.EntityTypes.COOP.value:
+        if self._entity_type == self.EntityTypes.COOP.value:
             # This could extend by moving it into a table with start and end date against each year when extension
             # is required. We need more discussion to understand different scenario's which can come across in future.
             if next_ar_year == 2020:
@@ -359,7 +360,7 @@ class LegalEntity(
             else:
                 # If this is a CO-OP, set the max date as April 30th next year.
                 ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
-        elif self.entity_type in [
+        elif self._entity_type in [
             self.EntityTypes.BCOMP.value,
             self.EntityTypes.COMP.value,
             self.EntityTypes.BC_ULC_COMPANY.value,
@@ -427,7 +428,7 @@ class LegalEntity(
     @property
     def is_firm(self):
         """Return if is firm, otherwise false."""
-        return self.entity_type in [
+        return self._entity_type in [
             self.EntityTypes.SOLE_PROP.value,
             self.EntityTypes.PARTNERSHIP.value,
         ]
@@ -461,7 +462,7 @@ class LegalEntity(
           4. Return final legal_name result
         """
 
-        match self.entity_type:
+        match self._entity_type:
             case self.EntityTypes.PARTNERSHIP:
                 return self._legal_name
 
@@ -484,7 +485,7 @@ class LegalEntity(
                 db.session.query(
                     case(
                         (
-                            related_le_alias.entity_type == "person",
+                            related_le_alias._entity_type == "person",
                             func.concat_ws(
                                 " ",
                                 func.nullif(related_le_alias.last_name, ""),
@@ -493,14 +494,14 @@ class LegalEntity(
                             ),
                         ),
                         (
-                            related_le_alias.entity_type == "organization",
+                            related_le_alias._entity_type == "organization",
                             related_le_alias._legal_name,  # pylint: disable=protected-access  # noqa: E501
                         ),
                         else_=None,
                     ).label("sortName"),
                     case(
                         (
-                            related_le_alias.entity_type == "person",
+                            related_le_alias._entity_type == "person",
                             func.concat_ws(
                                 " ",
                                 func.nullif(related_le_alias.first_name, ""),
@@ -509,7 +510,7 @@ class LegalEntity(
                             ),
                         ),
                         (
-                            related_le_alias.entity_type == "organization",
+                            related_le_alias._entity_type == "organization",
                             related_le_alias._legal_name,  # pylint: disable=protected-access  # noqa: E501
                         ),
                         else_=None,
@@ -586,9 +587,9 @@ class LegalEntity(
                     "identifier": alternate_name.identifier,
                     "operatingName": alternate_name.name,
                     # 'entityType': alternate_name.name_type,
-                    "entityType": self.entity_type,
+                    "entityType": self._entity_type,
                     "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
-                    "nameRegisteredDate": alternate_name.registration_date.isoformat(),
+                    # "nameRegisteredDate": alternate_name.registration_date.isoformat(),
                 }
                 for alternate_name in alternate_names
             ]
@@ -656,7 +657,7 @@ class LegalEntity(
             "goodStanding": self.good_standing,
             "identifier": self.identifier,
             "legalName": self.legal_name,
-            "legalType": self.entity_type,
+            "legalType": self._entity_type,
             "state": self.state.name if self.state else LegalEntity.State.ACTIVE.name,
         }
 
@@ -717,11 +718,11 @@ class LegalEntity(
     @property
     def party_json(self) -> dict:
         """Return the party member as a json object."""
-        if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if self._entity_type == LegalEntity.EntityTypes.PERSON.value:
             member = {
                 "officer": {
                     "id": self.id,
-                    "partyType": self.entity_type,
+                    "partyType": self._entity_type,
                     "firstName": self.first_name,
                     "lastName": self.last_name,
                 }
@@ -734,7 +735,7 @@ class LegalEntity(
             member = {
                 "officer": {
                     "id": self.id,
-                    "partyType": self.entity_type,
+                    "partyType": self._entity_type,
                     "organizationName": self.legal_name,
                     "identifier": self.identifier,
                 }
@@ -757,52 +758,13 @@ class LegalEntity(
         return member
 
     @property
-    def compliance_warnings(self):
-        """Return compliance warnings."""
-        if not hasattr(self, "_compliance_warnings"):
-            return []
-
-        return self._compliance_warnings
-
-    @compliance_warnings.setter
-    def compliance_warnings(self, value):
-        """Set compliance warnings."""
-        self._compliance_warnings = value
-
-    @property
-    def warnings(self):
-        """Return warnings."""
-        if not hasattr(self, "_warnings"):
-            return []
-
-        return self._warnings
-
-    @warnings.setter
-    def warnings(self, value):
-        """Set warnings."""
-        self._warnings = value
-
-    @property
-    def allowable_actions(self):
-        """Return warnings."""
-        if not hasattr(self, "_allowable_actions"):
-            return {}
-
-        return self._allowable_actions
-
-    @property
     def name(self) -> str:
         """Return the full name of the party for comparison."""
-        if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if self._entity_type == LegalEntity.EntityTypes.PERSON.value:
             if self.middle_initial:
                 return " ".join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
             return " ".join((self.first_name, self.last_name)).strip().upper()
         return self.legal_name
-
-    @allowable_actions.setter
-    def allowable_actions(self, value):
-        """Set warnings."""
-        self._allowable_actions = value
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -836,9 +798,13 @@ class LegalEntity(
 
         legal_entity = None
 
+        alternate_name_entity = None
         if identifier.startswith("FM"):
             if alt_name := AlternateName.find_by_identifier(identifier):
                 legal_entity = cls.find_by_id(alt_name.legal_entity_id)
+                alternate_name_entity = (
+                    alt_name if legal_entity.entity_type != LegalEntity.EntityTypes.PARTNERSHIP.value else None
+                )
         else:
             non_entity_types = [
                 LegalEntity.EntityTypes.PERSON.value,
@@ -846,12 +812,12 @@ class LegalEntity(
             ]
 
             legal_entity = (
-                cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types))
+                cls.query.filter(~LegalEntity._entity_type.in_(non_entity_types))
                 .filter_by(identifier=identifier)
                 .one_or_none()
             )
 
-        return legal_entity
+        return legal_entity, alternate_name_entity
 
     @classmethod
     def find_by_internal_id(cls, internal_id: int = None):
@@ -879,7 +845,7 @@ class LegalEntity(
             LegalEntity.EntityTypes.PERSON.value,
             LegalEntity.EntityTypes.ORGANIZATION.value,
         ]
-        legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
+        legal_entities = cls.query.filter(~LegalEntity._entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
 
     @classmethod
@@ -947,11 +913,11 @@ class LegalEntity(
     @property
     def valid_party_type_data(self) -> bool:
         """Validate the model based on the party type (person/organization)."""
-        if self.entity_type != LegalEntity.EntityTypes.PERSON.value:
+        if self._entity_type != LegalEntity.EntityTypes.PERSON.value:
             if self.first_name or self.middle_initial or self.last_name:
                 return False
 
-        if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if self._entity_type == LegalEntity.EntityTypes.PERSON.value:
             if not (self.first_name or self.middle_initial or self.last_name) or self.legal_name:
                 return False
         return True
@@ -978,7 +944,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 
     if not party.valid_party_type_data:
         raise BusinessException(
-            error=f"Attempt to change/add {party.entity_type} had invalid data.",
+            error=f"Attempt to change/add {party._entity_type} had invalid data.",
             status_code=HTTPStatus.BAD_REQUEST,
         )
 

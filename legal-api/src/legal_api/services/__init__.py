@@ -32,6 +32,9 @@ from .authz import (
 )
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
+
+# from .queue import QueueService
+from .business_service import BusinessService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
 from .flags import Flags
@@ -39,8 +42,6 @@ from .minio import MinioService
 from .naics import NaicsService
 from .namex import NameXService
 from .pdf_service import PdfService
-
-# from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
 
@@ -48,6 +49,7 @@ flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case
 # queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()
+business_service = BusinessService()
 
 
 def publish_event(legal_entity: LegalEntity, event_type: str, data: dict, subject: str, message_id: str = None):
