@@ -22,27 +22,27 @@ import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from legal_api import db
 from legal_api.models import (
-  AmalgamatingBusiness,
-  Amalgamation,
-  Business,
-  Filing,
-  OfficeType,
-  PartyRole,
-  RegistrationBootstrap,
+    AmalgamatingBusiness,
+    Amalgamation,
+    Business,
+    Filing,
+    OfficeType,
+    PartyRole,
+    RegistrationBootstrap,
 )
 from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
-  aliases,
-  business_info,
-  business_profile,
-  filings,
-  shares,
-  JSON_ROLE_CONVERTER,
+    JSON_ROLE_CONVERTER,
+    aliases,
+    business_info,
+    business_profile,
+    filings,
+    shares,
+    update_offices,
+    update_parties,
 )
-from entity_filer.filing_processors.filing_components.offices import update_offices
-from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
 def update_affiliation(business: Business, filing: Filing):
@@ -172,8 +172,8 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
                              Amalgamation.AmalgamationTypes.vertical.name]:
         # Include/Replace director, office and shares by finding holding or primary business (won't be a foreign)
         amalgamating_business = next(x for x in amalgamation.amalgamating_businesses
-                                        if x.role in [AmalgamatingBusiness.Role.holding.name,
-                                                        AmalgamatingBusiness.Role.primary.name])
+                                     if x.role in [AmalgamatingBusiness.Role.holding.name,
+                                                   AmalgamatingBusiness.Role.primary.name])
         prinary_or_holding_business = Business.find_by_internal_id(amalgamating_business.business_id)
 
         _set_parties(prinary_or_holding_business, filing_rec, amalgamation_filing)
@@ -207,10 +207,11 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
 
     return business, filing_rec, filing_meta
 
+
 def _set_parties(prinary_or_holding_business, filing_rec, amalgamation_filing):
     parties = []
     active_directors = PartyRole.get_active_directors(prinary_or_holding_business.id,
-                                                        filing_rec.effective_date.date())
+                                                      filing_rec.effective_date.date())
     # copy director
     for director in active_directors:
         director_json = director.json
@@ -242,6 +243,7 @@ def _set_parties(prinary_or_holding_business, filing_rec, amalgamation_filing):
             break
     amalgamation_filing['parties'] = parties
 
+
 def _set_offices(prinary_or_holding_business, amalgamation_filing):
     # copy offices
     offices = {}
@@ -254,6 +256,7 @@ def _set_offices(prinary_or_holding_business, amalgamation_filing):
                 del address_json['id']
                 offices[i.office_type][f'{address.address_type}Address'] = address_json
     amalgamation_filing['offices'] = offices
+
 
 def _set_shares(prinary_or_holding_business, amalgamation_filing):
     # copy shares
