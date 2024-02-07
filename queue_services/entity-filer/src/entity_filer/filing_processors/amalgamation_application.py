@@ -174,11 +174,11 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
         amalgamating_business = next(x for x in amalgamation.amalgamating_businesses
                                      if x.role in [AmalgamatingBusiness.Role.holding.name,
                                                    AmalgamatingBusiness.Role.primary.name])
-        prinary_or_holding_business = Business.find_by_internal_id(amalgamating_business.business_id)
+        primary_or_holding_business = Business.find_by_internal_id(amalgamating_business.business_id)
 
-        _set_parties(prinary_or_holding_business, filing_rec, amalgamation_filing)
-        _set_offices(prinary_or_holding_business, amalgamation_filing)
-        _set_shares(prinary_or_holding_business, amalgamation_filing)
+        _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing)
+        _set_offices(primary_or_holding_business, amalgamation_filing)
+        _set_shares(primary_or_holding_business, amalgamation_filing)
 
     if offices := amalgamation_filing.get('offices'):
         update_offices(business, offices)
@@ -208,9 +208,9 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
     return business, filing_rec, filing_meta
 
 
-def _set_parties(prinary_or_holding_business, filing_rec, amalgamation_filing):
+def _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing):
     parties = []
-    active_directors = PartyRole.get_active_directors(prinary_or_holding_business.id,
+    active_directors = PartyRole.get_active_directors(primary_or_holding_business.id,
                                                       filing_rec.effective_date.date())
     # copy director
     for director in active_directors:
@@ -244,10 +244,10 @@ def _set_parties(prinary_or_holding_business, filing_rec, amalgamation_filing):
     amalgamation_filing['parties'] = parties
 
 
-def _set_offices(prinary_or_holding_business, amalgamation_filing):
+def _set_offices(primary_or_holding_business, amalgamation_filing):
     # copy offices
     offices = {}
-    officelist = prinary_or_holding_business.offices.all()
+    officelist = primary_or_holding_business.offices.all()
     for i in officelist:
         if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
             offices[i.office_type] = {}
@@ -258,10 +258,10 @@ def _set_offices(prinary_or_holding_business, amalgamation_filing):
     amalgamation_filing['offices'] = offices
 
 
-def _set_shares(prinary_or_holding_business, amalgamation_filing):
+def _set_shares(primary_or_holding_business, amalgamation_filing):
     # copy shares
     share_classes = []
-    for share_class in prinary_or_holding_business.share_classes.all():
+    for share_class in primary_or_holding_business.share_classes.all():
         share_class_json = share_class.json
         del share_class_json['id']
         for series in share_class_json.get('series', []):
