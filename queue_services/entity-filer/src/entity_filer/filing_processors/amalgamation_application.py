@@ -40,9 +40,9 @@ from entity_filer.filing_processors.filing_components import (
     business_profile,
     filings,
     shares,
-    update_offices,
-    update_parties,
 )
+from entity_filer.filing_processors.filing_components.offices import update_offices
+from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
 def update_affiliation(business: Business, filing: Filing):
