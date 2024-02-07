@@ -19,7 +19,7 @@ import os
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 
 from flask import Flask
-from legal_api.services import flags
+from colin_api.services import flags
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 
 from colin_api import config, errorhandlers
