@@ -118,7 +118,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             return None
         alternate_name = cls.query.filter_by(name=name).filter_by(end_date=None).one_or_none()
         return alternate_name
-    
+
     @property
     def office_mailing_address(self):
         """Return the mailing address."""
@@ -143,7 +143,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             .filter(Address.legal_entity_id == self.id)
             .filter(Address.address_type == Address.MAILING)
         )
-        
+
     @property
     def office_delivery_address(self):
         """Return the delivery address."""
