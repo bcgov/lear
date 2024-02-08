@@ -2073,7 +2073,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.10"
+version = "2.18.19"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -2091,7 +2091,7 @@ strict-rfc3339 = "*"
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
 reference = "feature-legal-name"
-resolved_reference = "46fe42057ce8b8f7136ea2817b044b3a58d6939e"
+resolved_reference = "98624a8941acfdae9f45875510d70af5879e0936"
 
 [[package]]
 name = "reportlab"
@@ -2461,7 +2461,7 @@ develop = false
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "feature-legal-name"
-resolved_reference = "08687e0a1a31ba8f7ac6d0859d7c541d9df3bb43"
+resolved_reference = "67b9904fb647b8ab4b2037a6f9d39ad7f6645876"
 subdirectory = "python/common/sql-versioning"
 
 [[package]]
