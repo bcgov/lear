@@ -84,7 +84,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     JWT_OIDC_ALGORITHMS = os.getenv("JWT_OIDC_ALGORITHMS")
     JWT_OIDC_JWKS_URI = os.getenv("JWT_OIDC_JWKS_URI")
     JWT_OIDC_ISSUER = os.getenv("JWT_OIDC_ISSUER")
-    JWT_OIDC_AUDIENCE = os.getenv("KEYCLOAK_CLIENT_ID")
+    JWT_OIDC_AUDIENCE = os.getenv("JWT_OIDC_AUDIENCE")
     JWT_OIDC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
     JWT_OIDC_CACHING_ENABLED = os.getenv("JWT_OIDC_CACHING_ENABLED")
     JWT_OIDC_USERNAME = os.getenv("JWT_OIDC_USERNAME", "username")
@@ -126,7 +126,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")
     ACCOUNT_SVC_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
     ACCOUNT_SVC_TIMEOUT = os.getenv("KEYCLOAK_TIMEOUT")
 
     # legislative timezone for future effective dating
