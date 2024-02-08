@@ -126,7 +126,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")
     ACCOUNT_SVC_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
     ACCOUNT_SVC_TIMEOUT = os.getenv("KEYCLOAK_TIMEOUT")
 
     # legislative timezone for future effective dating
