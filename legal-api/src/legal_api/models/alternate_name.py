@@ -20,8 +20,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from legal_api.utils.datetime import datetime
 
 from ..utils.enum import BaseEnum, auto
+from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .business_common import BusinessCommon
 from .db import db
+from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 
 
 class AlternateName(Versioned, db.Model, BusinessCommon):
@@ -68,6 +70,9 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "state_filing_id",
             "admin_freeze",
             "last_modified",
+            "email",
+            "delivery_address_id",
+            "mailing_address_id",
         ]
     }
 
@@ -86,6 +91,9 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
+    email = db.Column("email", db.String(254), nullable=True)
+    delivery_address_id = db.Column("delivery_address_id", db.Integer, nullable=True)
+    mailing_address_id = db.Column("mailing_address_id", db.Integer, nullable=True)
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
@@ -110,6 +118,56 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             return None
         alternate_name = cls.query.filter_by(name=name).filter_by(end_date=None).one_or_none()
         return alternate_name
+    
+    @property
+    def office_mailing_address(self):
+        """Return the mailing address."""
+        registered_office = (
+            db.session.query(Office)
+            .filter(Office.legal_entity_id == self.id)
+            .filter(Office.office_type == "registeredOffice")
+            .one_or_none()
+        )
+        if registered_office:
+            return registered_office.addresses.filter(Address.address_type == "mailing")
+        elif (
+            business_office := db.session.query(Office)  # SP/GP
+            .filter(Office.legal_entity_id == self.id)
+            .filter(Office.office_type == "businessOffice")
+            .one_or_none()
+        ):
+            return business_office.addresses.filter(Address.address_type == "mailing")
+
+        return (
+            db.session.query(Address)
+            .filter(Address.legal_entity_id == self.id)
+            .filter(Address.address_type == Address.MAILING)
+        )
+        
+    @property
+    def office_delivery_address(self):
+        """Return the delivery address."""
+        registered_office = (
+            db.session.query(Office)
+            .filter(Office.legal_entity_id == self.id)
+            .filter(Office.office_type == "registeredOffice")
+            .one_or_none()
+        )
+        if registered_office:
+            return registered_office.addresses.filter(Address.address_type == "delivery")
+        elif (
+            business_office := db.session.query(Office)  # SP/GP
+            .filter(Office.legal_entity_id == self.id)
+            .filter(Office.office_type == "businessOffice")
+            .one_or_none()
+        ):
+            return business_office.addresses.filter(Address.address_type == "delivery")
+
+        return (
+            db.session.query(Address)
+            .filter(Address.legal_entity_id == self.id)
+            .filter(Address.address_type == Address.DELIVERY)
+        )
 
     def save(self):
         """Save the object to the database immediately."""
