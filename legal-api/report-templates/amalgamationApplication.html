@@ -21,7 +21,15 @@
         </tr>
       </table>
       <div class="business-name-header">
-        <label class="lbl-business-name">{{business.legalName}}</label>
+        <label class="lbl-business-name">
+          {% if business.legalName %}
+               {{ business.legalName }}
+          {% elif nameRequest.legalName %}
+              {{ nameRequest.legalName }}
+          {% else %}
+            {{numberedDescription}}
+          {% endif %}
+        </label>
       </div>
     </div>
     [[common/businessDetails.html]]
