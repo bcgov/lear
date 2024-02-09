@@ -66,84 +66,27 @@ class LegalEntity(
         HISTORICAL = auto()
         LIQUIDATION = auto()
 
-    # NB: commented out items that exist in namex but are not yet supported by Lear
-    class EntityTypes(str, Enum):
-        """Render an Enum of the Business Legal Types."""
-
-        BCOMP = "BEN"  # aka BENEFIT_COMPANY in namex
-        BC_CCC = "CC"
-        BC_ULC_COMPANY = "ULC"
-        CCC_CONTINUE_IN = "CCC"
-        CEMETARY = "CEM"
-        CO_1860 = "QA"
-        CO_1862 = "QB"
-        CO_1878 = "QC"
-        CO_1890 = "QD"
-        CO_1897 = "QE"
-        COMP = "BC"  # aka CORPORATION in namex
-        CONT_IN_SOCIETY = "CS"
-        CONTINUE_IN = "C"
-        COOP = "CP"  # aka COOPERATIVE in namex
-        EXTRA_PRO_A = "A"
-        EXTRA_PRO_B = "B"
-        EXTRA_PRO_REG = "EPR"
-        FINANCIAL = "FI"
-        FOREIGN = "FOR"
-        LIBRARY = "LIB"
-        LICENSED = "LIC"
-        LIM_PARTNERSHIP = "LP"
-        LIMITED_CO = "LLC"
-        LL_PARTNERSHIP = "LL"
-        MISC_FIRM = "MF"
-        ORGANIZATION = "organization"
-        PARISHES = "PAR"
-        PARTNERSHIP = "GP"
-        PENS_FUND_SOC = "PFS"
-        PERSON = "person"
-        PRIVATE_ACT = "PA"
-        RAILWAYS = "RLY"
-        REGISTRATION = "REG"
-        SOCIETY = "S"
-        SOCIETY_BRANCH = "SB"
-        SOLE_PROP = "SP"
-        TRAMWAYS = "TMY"
-        TRUST = "T"
-        ULC_CONTINUE_IN = "CUL"
-        ULC_CO_1860 = "UQA"
-        ULC_CO_1862 = "UQB"
-        ULC_CO_1878 = "UQC"
-        ULC_CO_1890 = "UQD"
-        ULC_CO_1897 = "UQE"
-        XPRO_COOP = "XCP"
-        XPRO_LIM_PARTNR = "XP"
-        XPRO_LL_PARTNR = "XL"
-        XPRO_SOCIETY = "XS"
-        # *** The following are not yet supported by legal-api: ***
-        # DOING_BUSINESS_AS = 'DBA'
-        # XPRO_CORPORATION = 'XCR'
-        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
-
     LIMITED_COMPANIES: Final = [
-        EntityTypes.COMP,
-        EntityTypes.CONTINUE_IN,
-        EntityTypes.CO_1860,
-        EntityTypes.CO_1862,
-        EntityTypes.CO_1878,
-        EntityTypes.CO_1890,
-        EntityTypes.CO_1897,
+        BusinessCommon.EntityTypes.COMP,
+        BusinessCommon.EntityTypes.CONTINUE_IN,
+        BusinessCommon.EntityTypes.CO_1860,
+        BusinessCommon.EntityTypes.CO_1862,
+        BusinessCommon.EntityTypes.CO_1878,
+        BusinessCommon.EntityTypes.CO_1890,
+        BusinessCommon.EntityTypes.CO_1897,
     ]
 
     UNLIMITED_COMPANIES: Final = [
-        EntityTypes.BC_ULC_COMPANY,
-        EntityTypes.ULC_CONTINUE_IN,
-        EntityTypes.ULC_CO_1860,
-        EntityTypes.ULC_CO_1862,
-        EntityTypes.ULC_CO_1878,
-        EntityTypes.ULC_CO_1890,
-        EntityTypes.ULC_CO_1897,
+        BusinessCommon.EntityTypes.BC_ULC_COMPANY,
+        BusinessCommon.EntityTypes.ULC_CONTINUE_IN,
+        BusinessCommon.EntityTypes.ULC_CO_1860,
+        BusinessCommon.EntityTypes.ULC_CO_1862,
+        BusinessCommon.EntityTypes.ULC_CO_1878,
+        BusinessCommon.EntityTypes.ULC_CO_1890,
+        BusinessCommon.EntityTypes.ULC_CO_1897,
     ]
 
-    NON_BUSINESS_ENTITY_TYPES: Final = [EntityTypes.PERSON, EntityTypes.ORGANIZATION]
+    NON_BUSINESS_ENTITY_TYPES: Final = [BusinessCommon.EntityTypes.PERSON, BusinessCommon.EntityTypes.ORGANIZATION]
 
     class AssociationTypes(Enum):
         """Render an Enum of the Business Association Types."""
@@ -156,19 +99,19 @@ class LegalEntity(
         SP_DOING_BUSINESS_AS = "DBA"
 
     BUSINESSES = {
-        EntityTypes.BCOMP: {
+        BusinessCommon.EntityTypes.BCOMP: {
             "numberedBusinessNameSuffix": "B.C. LTD.",
             "numberedDescription": "Numbered Benefit Company",
         },
-        EntityTypes.COMP: {
+        BusinessCommon.EntityTypes.COMP: {
             "numberedBusinessNameSuffix": "B.C. LTD.",
             "numberedDescription": "Numbered Limited Company",
         },
-        EntityTypes.BC_ULC_COMPANY: {
+        BusinessCommon.EntityTypes.BC_ULC_COMPANY: {
             "numberedBusinessNameSuffix": "B.C. UNLIMITED LIABILITY COMPANY",
             "numberedDescription": "Numbered Unlimited Liability Company",
         },
-        EntityTypes.BC_CCC: {
+        BusinessCommon.EntityTypes.BC_CCC: {
             "numberedBusinessNameSuffix": "B.C. COMMUNITY CONTRIBUTION COMPANY LTD.",
             "numberedDescription": "Numbered Community Contribution Company",
         },
@@ -426,14 +369,6 @@ class LegalEntity(
         )
 
     @property
-    def is_firm(self):
-        """Return if is firm, otherwise false."""
-        return self._entity_type in [
-            self.EntityTypes.SOLE_PROP.value,
-            self.EntityTypes.PARTNERSHIP.value,
-        ]
-
-    @property
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
         # A firm is always in good standing
@@ -448,122 +383,6 @@ class LegalEntity(
             else:
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
-
-    @property
-    def legal_name(self):
-        """Return legal name for entity.
-
-        For non-firms, just return the value in _legal_name field.
-        For SPs, return the legal name of the proprietor or the organization that owns the firm.
-        For SP/GPs:
-          1. Union the proprietor/partner that owns the firm and sort by legal name(individual or organization's name).
-          2. Take the first two proprietor/partner legal names and concatenate them with a comma.
-          3. If there are more than two matching proprietor/partners, append ', et al'
-          4. Return final legal_name result
-        """
-
-        match self._entity_type:
-            case self.EntityTypes.PARTNERSHIP:
-                return self._legal_name
-
-            case self.EntityTypes.PERSON:
-                person_full_name = ""
-                for token in [self.first_name, self.middle_initial, self.last_name]:
-                    if token:
-                        if len(person_full_name) > 0:
-                            person_full_name = f"{person_full_name} {token}"
-                        else:
-                            person_full_name = token
-
-                return person_full_name
-
-        from . import ColinEntity  # pylint: disable=import-outside-toplevel
-
-        if self.is_firm:
-            related_le_alias = aliased(LegalEntity, name="related_le_alias")
-            related_le_stmt = (
-                db.session.query(
-                    case(
-                        (
-                            related_le_alias._entity_type == "person",
-                            func.concat_ws(
-                                " ",
-                                func.nullif(related_le_alias.last_name, ""),
-                                func.nullif(related_le_alias.middle_initial, ""),
-                                func.nullif(related_le_alias.first_name, ""),
-                            ),
-                        ),
-                        (
-                            related_le_alias._entity_type == "organization",
-                            related_le_alias._legal_name,  # pylint: disable=protected-access  # noqa: E501
-                        ),
-                        else_=None,
-                    ).label("sortName"),
-                    case(
-                        (
-                            related_le_alias._entity_type == "person",
-                            func.concat_ws(
-                                " ",
-                                func.nullif(related_le_alias.first_name, ""),
-                                func.nullif(related_le_alias.middle_initial, ""),
-                                func.nullif(related_le_alias.last_name, ""),
-                            ),
-                        ),
-                        (
-                            related_le_alias._entity_type == "organization",
-                            related_le_alias._legal_name,  # pylint: disable=protected-access  # noqa: E501
-                        ),
-                        else_=None,
-                    ).label("legalName"),
-                )
-                .select_from(LegalEntity)
-                .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id)
-                .join(
-                    related_le_alias,
-                    related_le_alias.id == EntityRole.related_entity_id,
-                )
-                .filter(LegalEntity.id == self.id)
-            )
-
-            related_colin_entity_stmt = (
-                db.session.query(
-                    ColinEntity.organization_name.label("sortName"),
-                    ColinEntity.organization_name.label("legalName"),
-                )
-                .select_from(LegalEntity)
-                .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id)
-                .join(ColinEntity, ColinEntity.id == EntityRole.related_colin_entity_id)
-                .filter(LegalEntity.id == self.id)
-            )
-
-            result_query = related_le_stmt.union(related_colin_entity_stmt).order_by("sortName")
-
-            results = result_query.all()
-            if results and len(results) > 2:
-                legal_name_str = ", ".join([r.legalName for r in results[:2]])
-                legal_name_str = f"{legal_name_str}, et al"
-            else:
-                legal_name_str = ", ".join([r.legalName for r in results])
-            return legal_name_str
-
-        return self._legal_name
-
-    @legal_name.setter
-    def legal_name(self, value):
-        """Set the legal_name of the LegalEntity."""
-        self._legal_name = value
-
-    @property
-    def business_name(self):
-        """Return operating name for firms and legal name for non-firm entities."""
-
-        if not self.is_firm:
-            return self._legal_name
-
-        if alternate_name := self._alternate_names.filter_by(identifier=self.identifier).one_or_none():
-            return alternate_name.name
-
-        return None
 
     # @property
     def alternate_names_json(self):
@@ -656,7 +475,7 @@ class LegalEntity(
             "adminFreeze": self.admin_freeze or False,
             "goodStanding": self.good_standing,
             "identifier": self.identifier,
-            "legalName": self.legal_name,
+            "legalName": self._legal_name,
             "legalType": self._entity_type,
             "state": self.state.name if self.state else LegalEntity.State.ACTIVE.name,
         }
@@ -736,7 +555,7 @@ class LegalEntity(
                 "officer": {
                     "id": self.id,
                     "partyType": self._entity_type,
-                    "organizationName": self.legal_name,
+                    "organizationName": self._legal_name,
                     "identifier": self.identifier,
                 }
             }
@@ -764,7 +583,7 @@ class LegalEntity(
             if self.middle_initial:
                 return " ".join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
             return " ".join((self.first_name, self.last_name)).strip().upper()
-        return self.legal_name
+        return self._legal_name
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -873,7 +692,7 @@ class LegalEntity(
         return None
 
     @staticmethod
-    def validate_identifier(entity_type: EntityTypes, identifier: str) -> bool:
+    def validate_identifier(entity_type: BusinessCommon.EntityTypes, identifier: str) -> bool:
         """Validate the identifier meets the Registry naming standards.
 
         All legal entities with BC Reg are PREFIX + 7 digits
@@ -918,7 +737,7 @@ class LegalEntity(
                 return False
 
         if self._entity_type == LegalEntity.EntityTypes.PERSON.value:
-            if not (self.first_name or self.middle_initial or self.last_name) or self.legal_name:
+            if not (self.first_name or self.middle_initial or self.last_name) or self._legal_name:
                 return False
         return True
 

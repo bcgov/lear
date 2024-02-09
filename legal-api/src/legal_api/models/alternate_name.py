@@ -56,6 +56,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "end_date",
             "identifier",
             "legal_entity_id",
+            "colin_entity_id",
             "name",
             "name_type",
             "start_date",
@@ -89,6 +90,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    colin_entity_id = db.Column("colin_entity_id", db.Integer, db.ForeignKey("colin_entities.id"))
     change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
     state_filing_id = db.Column("state_filing_id", db.Integer, db.ForeignKey("filings.id"))
 
