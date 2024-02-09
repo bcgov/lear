@@ -27,7 +27,7 @@ from entity_filer.worker import process_filing
 from tests.unit import create_entity, create_filing, create_office, create_office_address, create_party, create_party_role, create_share_class
 
 
-async def test_amalgamation_application_process(app, session):
+async def test_regular_amalgamation_application_process(app, session):
     """Assert that the amalgamation application object is correctly populated to model objects."""
     filing_type = 'amalgamationApplication'
     amalgamating_identifier_1 = 'BC9891234'
@@ -121,8 +121,9 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
     amalgamating_identifier_2 = 'BC9891235'
     nr_identifier = 'NR 1234567'
     next_corp_num = 'BC0001095'
+    primary_or_holding_business_name = f'{amalgamating_role} business 1'
 
-    amalgamating_business_1 = create_entity(amalgamating_identifier_1, 'BC', f'{amalgamating_role} business 1')
+    amalgamating_business_1 = create_entity(amalgamating_identifier_1, 'BC', primary_or_holding_business_name)
     
     office = create_office(amalgamating_business_1, 'registeredOffice')
     office_delivery_address = create_office_address(amalgamating_business_1, office, 'delivery')
@@ -200,7 +201,7 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
     assert business.identifier
     assert business.founding_date == effective_date
     assert business.legal_type == filing['filing'][filing_type]['nameRequest']['legalType']
-    assert business.legal_name == filing['filing'][filing_type]['nameRequest']['legalName']
+    assert business.legal_name == primary_or_holding_business_name
     assert business.state == Business.State.ACTIVE
 
     assert len(business.share_classes.all()) == 1
