@@ -63,6 +63,7 @@ def test_create_bootstrap_registrations(session):
     """Assert the service creates registrations."""
     r = RegistrationBootstrapService.create_bootstrap(account=28)
     assert r.identifier
+    assert any(c.isdigit() for c in r.identifier)
 
 
 @integration_affiliation
