@@ -172,7 +172,7 @@ def search_businesses():
         draft_results = []
         for draft_dao in draft_query.all():
             draft = {
-                'identifier': draft_dao.temp_reg,  
+                'identifier': draft_dao.temp_reg,
                 'legalType': draft_dao.json_legal_type
             }
             if draft_dao.json_nr:
