@@ -34,11 +34,9 @@
                         <tr class="no-page-break">
                             <td class="col-50">
                                 <div class="{{'upper-text' if entity.legalName!='Not Available'}}">
-                                    {% if entity.legalName %}
-                                        and {{ entity.legalName }} ({{ entity.identifier }})
-                                    {%else%}
-                                        and {{ entity.name }} ({{ entity.identifier }})
-                                    {%endif%}
+
+                                    and {{ entity.legalName }} ({{ entity.identifier }})
+
                                 </div>
                             </td>   
                         </tr>
@@ -46,13 +44,10 @@
                     <tr class="no-page-break">
                         <td class="col-50">
                             <div class="{{'upper-text' if entity.legalName!='Not Available'}}">
-                                {% if entity.legalName %}
-                                    {{ entity.legalName }}
-                                    ({{ entity.identifier }}),
-                                {%else%}
-                                    {{ entity.name }}
-                                    ({{ entity.identifier }}),
-                                {%endif%}
+
+                                {{ entity.legalName }}
+                                ({{ entity.identifier }}),
+
                             </div>
                         </td>
                     </tr>
