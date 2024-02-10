@@ -177,10 +177,10 @@ def search_businesses():
             }
             if draft_dao.json_nr:
                 draft['nrNumber'] = draft_dao.json_nr
-                draft['legalName'] = (draft_dao.filing_json.get('filing', {})
-                                      .get(draft_dao.filing_type, {})
-                                      .get('nameRequest', {})
-                                      .get('legalName'))
+            draft['legalName'] = (draft_dao.filing_json.get('filing', {})
+                                  .get(draft_dao.filing_type, {})
+                                  .get('nameRequest', {})
+                                  .get('legalName'))
             draft['draftType'] = Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode')
             if draft['draftType'] == 'ATMP' and draft['legalName'] is None:
                 draft['legalName'] = 'Numbered Amalgamated Company'
