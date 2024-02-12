@@ -124,15 +124,13 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         """Return the mailing address."""
         registered_office = (
             db.session.query(Office)
-            .filter(Office.legal_entity_id == self.id)
+            .filter(Office.alternate_name_id == self.id)
             .filter(Office.office_type == "registeredOffice")
             .one_or_none()
         )
-        if registered_office:
-            return registered_office.addresses.filter(Address.address_type == "mailing")
-        elif (
+        if (
             business_office := db.session.query(Office)  # SP/GP
-            .filter(Office.legal_entity_id == self.id)
+            .filter(Office.alternate_name_id == self.id)
             .filter(Office.office_type == "businessOffice")
             .one_or_none()
         ):
