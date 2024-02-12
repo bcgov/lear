@@ -32,9 +32,11 @@ def upgrade():
     sa.Column('change_filing_id', sa.Integer(), nullable=True),
     sa.Column('office_id', sa.Integer(), nullable=True),
     sa.Column('version', sa.Integer(), nullable=False),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
     sa.ForeignKeyConstraint(['office_id'], ['offices.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sqlite_autoincrement=True
     )
@@ -43,6 +45,7 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_addresses_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_addresses_legal_entity_id'), ['legal_entity_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_addresses_street'), ['street'], unique=False)
+        batch_op.create_index(batch_op.f('ix_addresses_alternate_name_id'), ['alternate_name_id'], unique=False)
 
     op.create_table('colin_last_update',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -175,8 +178,10 @@ def upgrade():
     sa.Column('office_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('version', sa.Integer(), autoincrement=False, nullable=False),
     sa.Column('changed', sa.DateTime(), nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.PrimaryKeyConstraint('id', 'version'),
     sqlite_autoincrement=True
     )
@@ -185,6 +190,7 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_addresses_history_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_addresses_history_legal_entity_id'), ['legal_entity_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_addresses_history_street'), ['street'], unique=False)
+        batch_op.create_index(batch_op.f('ix_addresses_history_alternate_name_id'), ['alternate_name_id'], unique=False)
 
     op.create_table('aliases',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -1246,6 +1252,7 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_addresses_history_legal_entity_id'))
         batch_op.drop_index(batch_op.f('ix_addresses_history_change_filing_id'))
         batch_op.drop_index(batch_op.f('ix_addresses_history_address_type'))
+        batch_op.drop_index(batch_op.f('ix_addresses_history_alternate_name_id'))
 
     op.drop_table('addresses_history')
     with op.batch_alter_table('users_history', schema=None) as batch_op:
@@ -1281,6 +1288,7 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_addresses_legal_entity_id'))
         batch_op.drop_index(batch_op.f('ix_addresses_change_filing_id'))
         batch_op.drop_index(batch_op.f('ix_addresses_address_type'))
+        batch_op.drop_index(batch_op.f('ix_addresses_alternate_name_id'))
 
     op.drop_table('addresses')
     # ### end Alembic commands ###
