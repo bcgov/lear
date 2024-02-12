@@ -564,7 +564,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
 
 @pytest.mark.parametrize("entity_type", [("CP"), ("BEN"), ("BC"), ("ULC"), ("CC"), ("GP")])
 def test_legal_name_non_SP(session, entity_type):
-    """Assert that correct legal name returned for non-firm entity types."""
+    """Assert that correct legal name returned for non-SP-firm entity types."""
     legal_entity = LegalEntity(
         _legal_name="Test - Legal Name",
         _entity_type=entity_type,
