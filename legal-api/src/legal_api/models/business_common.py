@@ -19,7 +19,6 @@ from enum import Enum
 
 
 class BusinessCommon:
-
     # NB: commented out items that exist in namex but are not yet supported by Lear
     class EntityTypes(str, Enum):
         """Render an Enum of the Business Legal Types."""
@@ -163,7 +162,7 @@ class BusinessCommon:
             else:
                 owner = ColinEntity.find_by_id(self.colin_entity_id)
                 return owner.organization_name if owner else None
-        
+
         return self._legal_name
 
     @property
@@ -180,5 +179,5 @@ class BusinessCommon:
 
         if alternate_name := AlternateName.find_by_identifier(identifier=self.identifier):
             return alternate_name.name
-        
+
         return None

@@ -364,7 +364,7 @@ def test_business_json(session):
         "legalType": LegalEntity.EntityTypes.COOP.value,
         "state": LegalEntity.State.ACTIVE.name,
         "taxId": "123456789",
-        "alternateNames": []
+        "alternateNames": [],
     }
 
     assert legal_entity.json(slim=True) == d_slim
@@ -623,8 +623,8 @@ def test_legal_name_non_SP(session, entity_type):
             "SP_1_Colin_Org",
             {"legalEntities": [], "colinEntities": [{"organizationName": "ABC Labs"}]},
             "ABC Labs",
-        )
-    ]
+        ),
+    ],
 )
 def test_legal_name_firms_SP(session, test_name, partner_info, expected_legal_name):
     """Assert that correct legal name returned for SP firms."""
@@ -632,7 +632,7 @@ def test_legal_name_firms_SP(session, test_name, partner_info, expected_legal_na
         legal_entity_id = None
         colin_entity_id = None
         if le_entries := partner_info.get("legalEntities"):
-            if len(le_entries) == 1 and (le_entry:=le_entries[0]):
+            if len(le_entries) == 1 and (le_entry := le_entries[0]):
                 entity_type = le_entry.get("entityType")
                 le_partner = LegalEntity(
                     _entity_type=entity_type, founding_date=datetime.utcfromtimestamp(0), state=LegalEntity.State.ACTIVE
@@ -655,19 +655,19 @@ def test_legal_name_firms_SP(session, test_name, partner_info, expected_legal_na
                 le_partner.save()
                 legal_entity_id = le_partner.id
         elif ce_entries := partner_info.get("colinEntities"):
-            if len(ce_entries) == 1 and (ce_entry:=ce_entries[0]):
+            if len(ce_entries) == 1 and (ce_entry := ce_entries[0]):
                 ce_partner = ColinEntity(organization_name=ce_entry.get("organizationName"))
                 ce_partner.save()
                 colin_entity_id = ce_partner.id
-        
+
         sp_firm = AlternateName(
             identifier="FM1234567",
             name_type=AlternateName.NameType.OPERATING,
-            name='OPERATING NAME',
+            name="OPERATING NAME",
             start_date=datetime.utcnow(),
             state=AlternateName.State.ACTIVE,
-            legal_entity_id = legal_entity_id,
-            colin_entity_id = colin_entity_id,
+            legal_entity_id=legal_entity_id,
+            colin_entity_id=colin_entity_id,
         )
 
         sp_firm.save()
@@ -691,10 +691,10 @@ def test_business_name(session, entity_type, legal_name, operating_name, expecte
     sess = session.begin_nested()
     if entity_type == LegalEntity.EntityTypes.SOLE_PROP.value:
         le = LegalEntity(
-            _legal_name = legal_name,
+            _legal_name=legal_name,
             _entity_type=LegalEntity.EntityTypes.PERSON,
             founding_date=datetime.utcfromtimestamp(0),
-            identifier='P1234567',
+            identifier="P1234567",
             state=LegalEntity.State.ACTIVE,
         )
     else:

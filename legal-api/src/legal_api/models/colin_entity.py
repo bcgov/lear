@@ -56,7 +56,7 @@ class ColinEntity(Versioned, db.Model):
         if identifier:
             colin_entity = cls.query.filter_by(identifier=identifier).one_or_none()
         return colin_entity
-    
+
     @classmethod
     def find_by_id(cls, colin_entity_id: int):
         """Return a colin entity by the internal id."""
