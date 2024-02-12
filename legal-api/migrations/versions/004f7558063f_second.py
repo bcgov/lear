@@ -1252,6 +1252,7 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_addresses_history_legal_entity_id'))
         batch_op.drop_index(batch_op.f('ix_addresses_history_change_filing_id'))
         batch_op.drop_index(batch_op.f('ix_addresses_history_address_type'))
+        batch_op.drop_index(batch_op.f('ix_addresses_history_alternate_name_id'))
 
     op.drop_table('addresses_history')
     with op.batch_alter_table('users_history', schema=None) as batch_op:
