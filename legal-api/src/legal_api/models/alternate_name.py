@@ -132,7 +132,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
         return (
             db.session.query(Address)
-            .filter(Address.legal_entity_id == self.id)
+            .filter(Address.alternate_name_id == self.id)
             .filter(Address.address_type == Address.MAILING)
         )
 
@@ -149,7 +149,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
         return (
             db.session.query(Address)
-            .filter(Address.legal_entity_id == self.id)
+            .filter(Address.alternate_name_id == self.id)
             .filter(Address.address_type == Address.DELIVERY)
         )
 

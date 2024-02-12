@@ -178,8 +178,10 @@ def upgrade():
     sa.Column('office_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('version', sa.Integer(), autoincrement=False, nullable=False),
     sa.Column('changed', sa.DateTime(), nullable=True),
+    sa.Column('alternate_name_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
     sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
+    sa.ForeignKeyConstraint(['alternate_name_id'], ['alternate_names.id'], ),
     sa.PrimaryKeyConstraint('id', 'version'),
     sqlite_autoincrement=True
     )
@@ -188,6 +190,7 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_addresses_history_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_addresses_history_legal_entity_id'), ['legal_entity_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_addresses_history_street'), ['street'], unique=False)
+        batch_op.create_index(batch_op.f('ix_addresses_history_alternate_name_id'), ['alternate_name_id'], unique=False)
 
     op.create_table('aliases',
     sa.Column('id', sa.Integer(), nullable=False),
