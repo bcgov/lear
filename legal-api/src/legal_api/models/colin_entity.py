@@ -57,6 +57,14 @@ class ColinEntity(Versioned, db.Model):
             colin_entity = cls.query.filter_by(identifier=identifier).one_or_none()
         return colin_entity
 
+    @classmethod
+    def find_by_id(cls, colin_entity_id: int):
+        """Return a colin entity by the internal id."""
+        colin_entity = None
+        if colin_entity_id:
+            colin_entity = cls.query.filter_by(id=colin_entity_id).one_or_none()
+        return colin_entity
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
