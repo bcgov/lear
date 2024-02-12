@@ -122,12 +122,6 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     @property
     def office_mailing_address(self):
         """Return the mailing address."""
-        registered_office = (
-            db.session.query(Office)
-            .filter(Office.alternate_name_id == self.id)
-            .filter(Office.office_type == "registeredOffice")
-            .one_or_none()
-        )
         if (
             business_office := db.session.query(Office)  # SP/GP
             .filter(Office.alternate_name_id == self.id)
@@ -145,17 +139,9 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     @property
     def office_delivery_address(self):
         """Return the delivery address."""
-        registered_office = (
-            db.session.query(Office)
-            .filter(Office.legal_entity_id == self.id)
-            .filter(Office.office_type == "registeredOffice")
-            .one_or_none()
-        )
-        if registered_office:
-            return registered_office.addresses.filter(Address.address_type == "delivery")
-        elif (
+        if (
             business_office := db.session.query(Office)  # SP/GP
-            .filter(Office.legal_entity_id == self.id)
+            .filter(Office.alternate_name_id == self.id)
             .filter(Office.office_type == "businessOffice")
             .one_or_none()
         ):
