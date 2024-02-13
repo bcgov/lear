@@ -72,7 +72,7 @@ def get_businesses(identifier: str):
     business.allowable_actions = allowable_actions
 
     business_json = business.json()
-    recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
+    recent_filing_json = CoreFiling.get_most_recent_filing_json(business, None, jwt)
     if recent_filing_json:
         business_json["submitter"] = recent_filing_json["filing"]["header"]["submitter"]
         business_json["lastModified"] = recent_filing_json["filing"]["header"]["date"]

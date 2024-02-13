@@ -15,10 +15,22 @@
 This is the core business class.
 It is used to represent a business and its historical values.
 """
-from enum import Enum
+from enum import Enum, auto
+from typing import Final
+
+import datedelta
+
+from legal_api.utils.base import BaseEnum
+from legal_api.utils.datetime import datetime
 
 
 class BusinessCommon:
+    class State(BaseEnum):
+        """Enum for the Business state."""
+
+        ACTIVE = auto()
+        HISTORICAL = auto()
+
     # NB: commented out items that exist in namex but are not yet supported by Lear
     class EntityTypes(str, Enum):
         """Render an Enum of the Business Legal Types."""
@@ -76,6 +88,29 @@ class BusinessCommon:
         # XPRO_CORPORATION = 'XCR'
         # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
 
+    LIMITED_COMPANIES: Final = [
+        EntityTypes.COMP,
+        EntityTypes.CONTINUE_IN,
+        EntityTypes.CO_1860,
+        EntityTypes.CO_1862,
+        EntityTypes.CO_1878,
+        EntityTypes.CO_1890,
+        EntityTypes.CO_1897,
+    ]
+
+    UNLIMITED_COMPANIES: Final = [
+        EntityTypes.BC_ULC_COMPANY,
+        EntityTypes.ULC_CONTINUE_IN,
+        EntityTypes.ULC_CO_1860,
+        EntityTypes.ULC_CO_1862,
+        EntityTypes.ULC_CO_1878,
+        EntityTypes.ULC_CO_1890,
+        EntityTypes.ULC_CO_1897,
+    ]
+
+    NON_BUSINESS_ENTITY_TYPES: Final = [EntityTypes.PERSON, EntityTypes.ORGANIZATION]
+
+
     @property
     def is_alternate_name_entity(self):
         from legal_api.models import AlternateName
@@ -91,12 +126,18 @@ class BusinessCommon:
     @property
     def entity_type(self):
         """Return entity_type."""
+        from legal_api.models.alternate_name import AlternateName
 
         if self.is_legal_entity:
             return self._entity_type
 
-        # TODO flesh this logic out fully
-        return "SP"
+        if self.name_type.value != AlternateName.NameType.OPERATING:
+            return None
+
+        if self.state:
+            return self.EntityTypes.SOLE_PROP.value
+
+        return self.EntityTypes.PARTNERSHIP.value
 
     @property
     def compliance_warnings(self):
@@ -181,3 +222,21 @@ class BusinessCommon:
             return alternate_name.name
 
         return None
+
+    @property
+    def good_standing(self):
+        """Return true if in good standing, otherwise false."""
+        # A firm is always in good standing
+        # from legal_api.models import LegalEntity
+
+        if self.is_firm:
+            return True
+        # Date of last AR or founding date if they haven't yet filed one
+        last_ar_date = self.last_ar_date or self.founding_date
+        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
+        if self.state == BusinessCommon.State.ACTIVE:
+            if self.restoration_expiry_date:
+                return False  # A business in limited restoration is not in good standing
+            else:
+                return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
+        return True

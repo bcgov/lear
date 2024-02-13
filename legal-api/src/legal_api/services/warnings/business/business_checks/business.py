@@ -13,8 +13,6 @@
 # limitations under the License.
 
 """Service to check compliancy for a LegalEntity."""
-from legal_api.models import LegalEntity
-
 from .firms import check_business as firms_check  # noqa: I003
 
 
@@ -22,9 +20,7 @@ def check_business(business: any) -> list:
     """Check business for warnings."""
     result = []
 
-    if (
-        business.is_legal_entity and business.entity_type == LegalEntity.EntityTypes.PARTNERSHIP.value
-    ) or business.is_alternate_name_entity:
+    if business.is_firm:
         result = firms_check(business)
 
     return result

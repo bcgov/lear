@@ -297,9 +297,9 @@ class Filing:
         return filings
 
     @staticmethod
-    def get_most_recent_filing_json(legal_entity_id: str, filing_type: str = None, jwt: JwtManager = None):
+    def get_most_recent_filing_json(business: any, filing_type: str = None, jwt: JwtManager = None):
         """Return the most recent filing json."""
-        if storage := FilingStorage.get_most_recent_legal_filing(legal_entity_id, filing_type):
+        if storage := FilingStorage.get_most_recent_legal_filing(business, filing_type):
             submitter_displayname = REDACTED_STAFF_SUBMITTER
             if (
                 (submitter := storage.filing_submitter)
