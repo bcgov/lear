@@ -19,7 +19,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import EntityRole, LegalEntity
-from legal_api.services import authorized
+from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -31,9 +31,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_directors(identifier, director_id=None):
     """Return a JSON of the directors."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
+    business = business_service.fetch_business(identifier)
 
-    if not legal_entity:
+    if not business:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
@@ -45,7 +45,7 @@ def get_directors(identifier, director_id=None):
 
     # return the matching director
     if director_id:
-        director, msg, code = _get_director(legal_entity, director_id)
+        director, msg, code = _get_director(business, director_id)
         return jsonify(director or msg), code
 
     # return all active directors as of date query param
@@ -56,7 +56,7 @@ def get_directors(identifier, director_id=None):
     )
 
     party_list = []
-    active_directors = EntityRole.get_active_directors(legal_entity.id, end_date)
+    active_directors = EntityRole.get_active_directors(business.id, end_date)
     for director in active_directors:
         director_json = director.json
         party_list.append(director_json)
@@ -64,7 +64,7 @@ def get_directors(identifier, director_id=None):
     return jsonify(directors=party_list)
 
 
-def _get_director(legal_entity, director_id=None):
+def _get_director(business, director_id=None):
     # find by ID
     director = None
     if director_id:
@@ -73,6 +73,6 @@ def _get_director(legal_entity, director_id=None):
             director = {"director": rv.json}
 
     if not director:
-        return None, {"message": f"{legal_entity.identifier} director not found"}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} director not found"}, HTTPStatus.NOT_FOUND
 
     return director, None, HTTPStatus.OK

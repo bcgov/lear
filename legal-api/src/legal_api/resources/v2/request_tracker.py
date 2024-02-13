@@ -21,6 +21,7 @@ from flask_cors import cross_origin
 from legal_api.models import LegalEntity, RequestTracker, UserRoles
 from legal_api.resources.v2.administrative_bn import publish_entity_event
 from legal_api.utils.auth import jwt
+from legal_api.services import business_service
 
 bp = Blueprint("REQUEST_TRACKER", __name__, url_prefix="/api/v2/requestTracker")
 
@@ -30,11 +31,11 @@ bp = Blueprint("REQUEST_TRACKER", __name__, url_prefix="/api/v2/requestTracker")
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def get_bn_request_trackers(identifier: str):
     """Return a list of request trackers."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
-    if legal_entity is None:
+    business = business_service.fetch_business(identifier)
+    if business is None:
         return ({"message": "A valid business is required."}, HTTPStatus.BAD_REQUEST)
 
-    request_trackers = RequestTracker.find_by(legal_entity.id, RequestTracker.ServiceName.BN_HUB)
+    request_trackers = RequestTracker.find_by(business.id, RequestTracker.ServiceName.BN_HUB)
     return (
         jsonify(
             {
@@ -54,8 +55,8 @@ def get_bn_request_trackers(identifier: str):
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def resubmit_bn_request(identifier: str):
     """Resubmit BN request."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
-    if legal_entity is None:
+    business = business_service.fetch_business(identifier)
+    if business is None:
         return ({"message": "A valid business is required."}, HTTPStatus.BAD_REQUEST)
 
     message_id = str(uuid.uuid4())
@@ -67,14 +68,14 @@ def resubmit_bn_request(identifier: str):
         request_type=request_type,
         retry_number=-1,
         service_name=RequestTracker.ServiceName.BN_HUB,
-        legal_entity_id=legal_entity.id,
+        legal_entity_id=business.id,
         is_admin=True,
         message_id=message_id,
         request_object=request_object,
     )
     request_tracker.save()
 
-    publish_entity_event(legal_entity, request_name=f"RESUBMIT_{request_type.name}", message_id=message_id)
+    publish_entity_event(business, request_name=f"RESUBMIT_{request_type.name}", message_id=message_id)
     return {"message": "BN request queued."}, HTTPStatus.OK
 
 

@@ -21,7 +21,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import LegalEntity, UserRoles
-from legal_api.services import COLIN_SVC_ROLE
+from legal_api.services import business_service, COLIN_SVC_ROLE
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -41,8 +41,8 @@ def get_internal_tax_ids():
 
     identifiers = []
     bussinesses_no_taxid = LegalEntity.get_all_by_no_tax_id()
-    for legal_entity in bussinesses_no_taxid:
-        identifiers.append(legal_entity.identifier)
+    for business in bussinesses_no_taxid:
+        identifiers.append(business.identifier)
     return jsonify({"identifiers": identifiers}), HTTPStatus.OK
 
 
@@ -60,10 +60,10 @@ def post_internal_tax_ids():
 
     for identifier in json_input.keys():
         # json input is a dict -> identifier: tax id
-        legal_entity = LegalEntity.find_by_identifier(identifier)
-        if legal_entity:
-            legal_entity.tax_id = json_input[identifier]
-            legal_entity.save()
+        business = business_service.fetch_business(identifier)
+        if business:
+            business.tax_id = json_input[identifier]
+            business.save()
         else:
             current_app.logger.error("Unable to update tax_id for business (%s), which is missing in lear", identifier)
     return jsonify({"message": "Successfully updated tax ids."}), HTTPStatus.CREATED

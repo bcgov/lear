@@ -18,7 +18,7 @@ from flask import jsonify
 from flask_cors import cross_origin
 
 from legal_api.models import LegalEntity, ShareClass
-from legal_api.services import authorized
+from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -31,9 +31,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_share_class(identifier, share_class_id=None):
     """Return a JSON of the share classes."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
+    business = business_service.fetch_business(identifier)
 
-    if not legal_entity:
+    if not business:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
@@ -45,17 +45,17 @@ def get_share_class(identifier, share_class_id=None):
 
     # return the matching share class
     if share_class_id:
-        share_class, msg, code = _get_share_class(legal_entity, share_class_id)
+        share_class, msg, code = _get_share_class(business, share_class_id)
         return jsonify(share_class or msg), code
 
     share_classes = []
-    for share_class in legal_entity.share_classes.all():
+    for share_class in business.share_classes.all():
         share_classes.append(share_class.json)
 
     return jsonify(shareClasses=share_classes)
 
 
-def _get_share_class(legal_entity, share_class_id=None):
+def _get_share_class(business, share_class_id=None):
     # find by ID
     share_class = None
     if share_class_id:
@@ -64,6 +64,6 @@ def _get_share_class(legal_entity, share_class_id=None):
             share_class = {"shareClass": rv.json}
 
     if not share_class:
-        return None, {"message": f"{legal_entity.identifier} share class not found"}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} share class not found"}, HTTPStatus.NOT_FOUND
 
     return share_class, None, HTTPStatus.OK

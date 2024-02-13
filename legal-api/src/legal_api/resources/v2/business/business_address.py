@@ -21,7 +21,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Address, LegalEntity, db
-from legal_api.services import authorized
+from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -35,9 +35,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_addresses(identifier, addresses_id=None):
     """Return a JSON of the addresses on file."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
+    business = business_service.fetch_business(identifier)
 
-    if not legal_entity:
+    if not business:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
@@ -52,22 +52,22 @@ def get_addresses(identifier, addresses_id=None):
         return jsonify({"message": f"{address_type} not a valid address type"}), HTTPStatus.BAD_REQUEST
 
     if addresses_id or address_type:
-        addresses, msg, code = _get_address(legal_entity, addresses_id, address_type)
+        addresses, msg, code = _get_address(business, addresses_id, address_type)
         return jsonify(addresses or msg), code
 
     # return all active addresses
     rv = {}
-    officelist = legal_entity.offices.all()
+    officelist = business.offices.all()
     if officelist:
         for i in officelist:
             rv[i.office_type] = {}
             for address in i.addresses:
                 rv[i.office_type][f"{address.address_type}Address"] = address.json
     else:
-        mailing = legal_entity.office_mailing_address.one_or_none()
+        mailing = business.office_mailing_address.one_or_none()
         if mailing:
             rv[Address.JSON_MAILING] = mailing.json
-        delivery = legal_entity.office_delivery_address.one_or_none()
+        delivery = business.office_delivery_address.one_or_none()
         if delivery:
             rv[Address.JSON_DELIVERY] = delivery.json
         if not rv:
@@ -75,14 +75,14 @@ def get_addresses(identifier, addresses_id=None):
     return jsonify(rv)
 
 
-def _get_address(legal_entity, addresses_id=None, address_type=None):
+def _get_address(business, addresses_id=None, address_type=None):
     # find by ID
     addresses = None
     if addresses_id:
         rv = (
             db.session.query(LegalEntity, Address)
             .filter(LegalEntity.id == Address.legal_entity_id)
-            .filter(LegalEntity.identifier == legal_entity.identifier)
+            .filter(LegalEntity.identifier == business.identifier)
             .filter(Address.id == addresses_id)
             .one_or_none()
         )
@@ -94,14 +94,14 @@ def _get_address(legal_entity, addresses_id=None, address_type=None):
     if address_type:
         if address_type.lower() == Address.JSON_MAILING.lower():
             _address_type = Address.JSON_MAILING
-            address = legal_entity.office_mailing_address.one_or_none()
+            address = business.office_mailing_address.one_or_none()
         else:
             _address_type = Address.JSON_DELIVERY
-            address = legal_entity.office_delivery_address.one_or_none()
+            address = business.office_delivery_address.one_or_none()
         if address:
             addresses = {_address_type: address.json}
 
     if not addresses:
-        return None, {"message": f"{legal_entity.identifier} address not found"}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} address not found"}, HTTPStatus.NOT_FOUND
 
     return addresses, None, HTTPStatus.OK

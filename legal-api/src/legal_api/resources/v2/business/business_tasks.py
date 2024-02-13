@@ -26,7 +26,7 @@ from requests import exceptions  # noqa I001
 
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Filing, LegalEntity
-from legal_api.services import check_warnings, namex
+from legal_api.services import business_service, check_warnings, namex
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.utils.auth import jwt
 
@@ -38,7 +38,7 @@ from .bp import bp
 @jwt.requires_auth
 def get_tasks(identifier):
     """Return a JSON object with meta information about the Service."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
+    business = business_service.fetch_business(identifier)
     is_nr = identifier.startswith("NR")
     temp_reg_filing = Filing.get_temp_reg_filing(identifier)
     has_temp_reg_filing_todo = temp_reg_filing and temp_reg_filing.status not in (
@@ -60,7 +60,7 @@ def get_tasks(identifier):
                 HTTPStatus.FORBIDDEN,
             )
 
-    if not legal_entity:
+    if not business:
         # business does not exist and not an nr so return empty task list
         rv = []
         # Create Incorporate using NR to-do item
@@ -70,10 +70,10 @@ def get_tasks(identifier):
         elif has_temp_reg_filing_todo:
             rv.append(create_temp_reg_filing_todo(temp_reg_filing, 1, True))
     else:
-        rv = construct_task_list(legal_entity)
+        rv = construct_task_list(business)
         if not rv and is_nr:
             paid_completed_filings = Filing.get_filings_by_status(
-                legal_entity.id, [Filing.Status.PAID.value, Filing.Status.COMPLETED.value]
+                business.id, [Filing.Status.PAID.value, Filing.Status.COMPLETED.value]
             )
             # Append NR todo if there are no tasks and PAID or COMPLETED filings
             if not paid_completed_filings:
@@ -86,7 +86,7 @@ def get_tasks(identifier):
     return jsonify(tasks=rv)
 
 
-def construct_task_list(legal_entity):  # pylint: disable=too-many-locals; only 2 extra
+def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 extra
     """
     Return all current pending tasks to do.
 
@@ -105,20 +105,20 @@ def construct_task_list(legal_entity):  # pylint: disable=too-many-locals; only 
     tasks = []
     order = 1
 
-    warnings = check_warnings(legal_entity)
+    warnings = check_warnings(business)
     if any(x["warningType"] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in warnings):
         # TODO remove compliance warning line when UI has been integrated to use warnings instead of complianceWarnings
-        legal_entity.compliance_warnings = warnings
-        legal_entity.warnings = warnings
+        business.compliance_warnings = warnings
+        business.warnings = warnings
 
         # Checking for draft or pending conversion
-        if not Filing.get_incomplete_filings_by_type(legal_entity.id, "conversion"):
-            tasks.append(create_conversion_filing_todo(legal_entity, order, True))
+        if not Filing.get_incomplete_filings_by_type(business.id, "conversion"):
+            tasks.append(create_conversion_filing_todo(business, order, True))
             order += 1
 
     # Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(
-        legal_entity.id,
+        business.id,
         [
             Filing.Status.DRAFT.value,
             Filing.Status.PENDING.value,
@@ -143,44 +143,44 @@ def construct_task_list(legal_entity):  # pylint: disable=too-many-locals; only 
                 filing_json["filing"]["header"].update(pay_details)
 
             except (exceptions.ConnectionError, exceptions.Timeout) as err:
-                current_app.logger.error(f"Payment connection failure for {legal_entity.identifier} task list. ", err)
+                current_app.logger.error(f"Payment connection failure for {business.identifier} task list. ", err)
                 return "pay_connection_error"
 
         task = {"task": filing_json, "order": order, "enabled": True}
         tasks.append(task)
         order += 1
 
-    if legal_entity.entity_type not in entity_types_no_ar:
+    if business.entity_type not in entity_types_no_ar:
         # If this is the first calendar year since incorporation, there is no previous ar year.
-        next_ar_year = (legal_entity.last_ar_year if legal_entity.last_ar_year else legal_entity.founding_date.year) + 1
+        next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
         # Checking for pending ar
-        annual_report_filings = Filing.get_incomplete_filings_by_type(legal_entity.id, "annualReport")
+        annual_report_filings = Filing.get_incomplete_filings_by_type(business.id, "annualReport")
         if annual_report_filings:
             # Consider each filing as each year and add to find next ar year
             next_ar_year += len(annual_report_filings)
 
-        ar_min_date, ar_max_date = legal_entity.get_ar_dates(next_ar_year)
+        ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
 
         start_year = next_ar_year
         while next_ar_year <= datetime.utcnow().year and ar_min_date <= datetime.utcnow().date():
             # while next_ar_year <= datetime.utcnow().date():
             enabled = not pending_filings and ar_min_date.year == start_year
-            tasks.append(create_todo(legal_entity, next_ar_year, ar_min_date, ar_max_date, order, enabled))
+            tasks.append(create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
 
             # Include all ar's to todo from last ar filing
             next_ar_year += 1
-            ar_min_date, ar_max_date = legal_entity.get_ar_dates(next_ar_year)
+            ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
             order += 1
     return tasks
 
 
-def create_todo(legal_entity, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
+def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
     """Return a to-do JSON object."""
     todo = {
         "task": {
             "todo": {
-                "business": legal_entity.json(),
+                "business": business.json(),
                 "header": {
                     "name": "annualReport",
                     "ARFilingYear": ar_year,
@@ -206,10 +206,10 @@ def create_incorporate_nr_todo(name_request, order, enabled):
     return todo
 
 
-def create_conversion_filing_todo(legal_entity, order, enabled):
+def create_conversion_filing_todo(business, order, enabled):
     """Return a to-do JSON object."""
     todo = {
-        "task": {"todo": {"business": legal_entity.json(), "header": {"name": "conversion", "status": "NEW"}}},
+        "task": {"todo": {"business": business.json(), "header": {"name": "conversion", "status": "NEW"}}},
         "order": order,
         "enabled": enabled,
     }
