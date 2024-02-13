@@ -28,6 +28,7 @@ from urllib3.util.retry import Retry
 
 from legal_api.exceptions import ApiConnectionException
 from legal_api.models import EntityRole, Filing, LegalEntity, User
+from legal_api.models.business_common import BusinessCommon
 from legal_api.services.warnings.business.business_checks import WarningType
 
 ACCOUNT_IDENTITY = "account_identity"
@@ -135,7 +136,7 @@ def get_allowable_filings_dict():
 
     return {
         "staff": {
-            LegalEntity.State.ACTIVE: {
+            BusinessCommon.State.ACTIVE: {
                 "adminFreeze": {
                     "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"],
                 },
@@ -276,7 +277,7 @@ def get_allowable_filings_dict():
                     },
                 },
             },
-            LegalEntity.State.HISTORICAL: {
+            BusinessCommon.State.HISTORICAL: {
                 "courtOrder": {
                     "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"],
                 },
@@ -299,7 +300,7 @@ def get_allowable_filings_dict():
             },
         },
         "general": {
-            LegalEntity.State.ACTIVE: {
+            BusinessCommon.State.ACTIVE: {
                 "agmExtension": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC"],
                     "blockerChecks": {"business": [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]},
@@ -392,7 +393,7 @@ def get_allowable_filings_dict():
                 "specialResolution": {"legalTypes": ["CP"], "blockerChecks": {"business": [BusinessBlocker.DEFAULT]}},
                 "transition": {"legalTypes": ["BC", "BEN", "CC", "ULC"]},
             },
-            LegalEntity.State.HISTORICAL: {},
+            BusinessCommon.State.HISTORICAL: {},
         },
     }
 
@@ -427,13 +428,9 @@ def is_allowed(
 
 def get_allowable_actions(jwt: JwtManager, business: any):
     """Get allowable actions."""
-    # TODO update to work with legal entities and alternate names
     base_url = current_app.config.get("LEGAL_API_BASE_URL")
+    allowed_filings = get_allowed_filings(business, business.state, business.entity_type, jwt)
     filing_submission_url = urljoin(base_url, f"{business.identifier}/filings")
-    if business.entity_type == LegalEntity.EntityTypes.SOLE_PROP:
-        allowed_filings = []
-    else:
-        allowed_filings = get_allowed_filings(business, business.state, business.entity_type, jwt)
     result = {
         "filing": {"filingSubmissionLink": filing_submission_url, "filingTypes": allowed_filings},
         "digitalBusinessCard": are_digital_credentials_allowed(business, jwt),
@@ -442,9 +439,9 @@ def get_allowable_actions(jwt: JwtManager, business: any):
 
 
 def get_allowed_filings(
-    legal_entity: any,
-    state: LegalEntity.State,
-    legal_type: str,
+    business: any,
+    state: BusinessCommon.State,
+    entity_type: str,
     jwt: JwtManager,
     is_ignore_draft_blockers: bool = False,
 ):
@@ -458,11 +455,11 @@ def get_allowed_filings(
         user_role = "staff"
 
     state_filing = None
-    if legal_entity and legal_entity.state_filing_id:
-        state_filing = Filing.find_by_id(legal_entity.state_filing_id)
+    if business and business.state_filing_id:
+        state_filing = Filing.find_by_id(business.state_filing_id)
 
     # doing this check up front to cache result
-    business_blocker_dict: dict = business_blocker_check(legal_entity, is_ignore_draft_blockers)
+    business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
     allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
@@ -472,7 +469,7 @@ def get_allowed_filings(
 
         business_status = allowable_filing_value.get("businessRequirement", BusinessRequirement.EXIST)
 
-        if business_status != BusinessRequirement.NO_RESTRICTION and bool(legal_entity) ^ (
+        if business_status != BusinessRequirement.NO_RESTRICTION and bool(business) ^ (
             business_status == BusinessRequirement.EXIST
         ):
             continue
@@ -480,13 +477,13 @@ def get_allowed_filings(
         allowable_filing_legal_types = allowable_filing_value.get("legalTypes", [])
 
         if allowable_filing_legal_types:
-            is_blocker = has_blocker(legal_entity, state_filing, allowable_filing_value, business_blocker_dict)
-            is_include_legal_type = legal_type in allowable_filing_legal_types
+            is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
+            is_include_legal_type = entity_type in allowable_filing_legal_types
             is_allowable = not is_blocker and is_include_legal_type
             allowable_filing_type = {
                 "name": allowable_filing_key,
-                "displayName": FilingMeta.get_display_name(legal_type, allowable_filing_key),
-                "feeCode": Filing.get_fee_code(legal_type, allowable_filing_key),
+                "displayName": FilingMeta.get_display_name(entity_type, allowable_filing_key),
+                "feeCode": Filing.get_fee_code(entity_type, allowable_filing_key),
             }
             allowable_filing_types = add_allowable_filing_type(
                 is_allowable, allowable_filing_types, allowable_filing_type
@@ -494,19 +491,19 @@ def get_allowed_filings(
             continue
 
         filing_sub_type_items = filter(
-            lambda x: isinstance(x[1], dict) and legal_type in x[1].get("legalTypes", []),
+            lambda x: isinstance(x[1], dict) and entity_type in x[1].get("legalTypes", []),
             allowable_filing_value.items(),
         )
 
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
             is_allowable = not has_blocker(
-                legal_entity, state_filing, filing_sub_type_item_value, business_blocker_dict
+                business, state_filing, filing_sub_type_item_value, business_blocker_dict
             )
             allowable_filing_sub_type = {
                 "name": allowable_filing_key,
                 "type": filing_sub_type_item_key,
-                "displayName": FilingMeta.get_display_name(legal_type, allowable_filing_key, filing_sub_type_item_key),
-                "feeCode": Filing.get_fee_code(legal_type, allowable_filing_key, filing_sub_type_item_key),
+                "displayName": FilingMeta.get_display_name(entity_type, allowable_filing_key, filing_sub_type_item_key),
+                "feeCode": Filing.get_fee_code(entity_type, allowable_filing_key, filing_sub_type_item_key),
             }
             allowable_filing_types = add_allowable_filing_type(
                 is_allowable, allowable_filing_types, allowable_filing_sub_type
@@ -556,7 +553,7 @@ def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     return False
 
 
-def business_blocker_check(legal_entity: LegalEntity, is_ignore_draft_blockers: bool = False):
+def business_blocker_check(business: any, is_ignore_draft_blockers: bool = False):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
         BusinessBlocker.DEFAULT: False,
@@ -565,18 +562,18 @@ def business_blocker_check(legal_entity: LegalEntity, is_ignore_draft_blockers: 
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
     }
 
-    if not legal_entity:
+    if not business:
         return business_blocker_checks
 
-    if has_blocker_filing(legal_entity, is_ignore_draft_blockers):
+    if has_blocker_filing(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.DRAFT_PENDING] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
-    if legal_entity.admin_freeze:
+    if business.admin_freeze:
         business_blocker_checks[BusinessBlocker.BUSINESS_FROZEN] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
-    if not legal_entity.good_standing:
+    if not business.good_standing:
         business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
 
     return business_blocker_checks

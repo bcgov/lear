@@ -46,6 +46,7 @@ class ColinEntity(Versioned, db.Model):
     mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # relationships
+    alternate_names = db.relationship("AlternateName", back_populates="colin_entity", lazy="dynamic")
     delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
     mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 

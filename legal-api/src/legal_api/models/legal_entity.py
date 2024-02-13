@@ -59,34 +59,6 @@ class LegalEntity(
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
 
-    class State(BaseEnum):
-        """Enum for the Business state."""
-
-        ACTIVE = auto()
-        HISTORICAL = auto()
-        LIQUIDATION = auto()
-
-    LIMITED_COMPANIES: Final = [
-        BusinessCommon.EntityTypes.COMP,
-        BusinessCommon.EntityTypes.CONTINUE_IN,
-        BusinessCommon.EntityTypes.CO_1860,
-        BusinessCommon.EntityTypes.CO_1862,
-        BusinessCommon.EntityTypes.CO_1878,
-        BusinessCommon.EntityTypes.CO_1890,
-        BusinessCommon.EntityTypes.CO_1897,
-    ]
-
-    UNLIMITED_COMPANIES: Final = [
-        BusinessCommon.EntityTypes.BC_ULC_COMPANY,
-        BusinessCommon.EntityTypes.ULC_CONTINUE_IN,
-        BusinessCommon.EntityTypes.ULC_CO_1860,
-        BusinessCommon.EntityTypes.ULC_CO_1862,
-        BusinessCommon.EntityTypes.ULC_CO_1878,
-        BusinessCommon.EntityTypes.ULC_CO_1890,
-        BusinessCommon.EntityTypes.ULC_CO_1897,
-    ]
-
-    NON_BUSINESS_ENTITY_TYPES: Final = [BusinessCommon.EntityTypes.PERSON, BusinessCommon.EntityTypes.ORGANIZATION]
 
     class AssociationTypes(Enum):
         """Render an Enum of the Business Association Types."""
@@ -193,7 +165,7 @@ class LegalEntity(
     last_ar_year = db.Column("last_ar_year", db.Integer)
     last_ar_reminder_year = db.Column("last_ar_reminder_year", db.Integer)
     association_type = db.Column("association_type", db.String(50))
-    state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
+    state = db.Column("state", db.Enum(BusinessCommon.State), default=BusinessCommon.State.ACTIVE.value)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     submitter_userid = db.Column("submitter_userid", db.Integer, db.ForeignKey("users.id"))
     submitter = db.relationship(
@@ -368,22 +340,6 @@ class LegalEntity(
             .filter(Address.address_type == Address.DELIVERY)
         )
 
-    @property
-    def good_standing(self):
-        """Return true if in good standing, otherwise false."""
-        # A firm is always in good standing
-        if self.is_firm:
-            return True
-        # Date of last AR or founding date if they haven't yet filed one
-        last_ar_date = self.last_ar_date or self.founding_date
-        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
-        if self.state == LegalEntity.State.ACTIVE:
-            if self.restoration_expiry_date:
-                return False  # A business in limited restoration is not in good standing
-            else:
-                return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
-        return True
-
     # @property
     def alternate_names_json(self):
         """Return operating names for a business if any."""
@@ -405,8 +361,7 @@ class LegalEntity(
                 {
                     "identifier": alternate_name.identifier,
                     "operatingName": alternate_name.name,
-                    # 'entityType': alternate_name.name_type,
-                    "entityType": self._entity_type,
+                    "entityType": alternate_name.entity_type,
                     "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
                     # "nameRegisteredDate": alternate_name.registration_date.isoformat(),
                 }
@@ -531,8 +486,8 @@ class LegalEntity(
                 else None
             )
 
-        d["hasCorrections"] = Filing.has_completed_filing(self.id, "correction")
-        d["hasCourtOrders"] = Filing.has_completed_filing(self.id, "courtOrder")
+        d["hasCorrections"] = Filing.has_completed_filing(self, "correction")
+        d["hasCourtOrders"] = Filing.has_completed_filing(self, "courtOrder")
 
     @property
     def party_json(self) -> dict:
@@ -615,28 +570,17 @@ class LegalEntity(
         if not identifier or not cls.validate_identifier(entity_type=None, identifier=identifier):
             return None
 
-        legal_entity = None
+        non_business_types = [
+            LegalEntity.EntityTypes.PERSON.value,
+            LegalEntity.EntityTypes.ORGANIZATION.value,
+        ]
+        legal_entity = (
+            cls.query.filter(~LegalEntity._entity_type.in_(non_business_types))
+            .filter_by(identifier=identifier)
+            .one_or_none()
+        )
 
-        alternate_name_entity = None
-        if identifier.startswith("FM"):
-            if alt_name := AlternateName.find_by_identifier(identifier):
-                legal_entity = cls.find_by_id(alt_name.legal_entity_id)
-                alternate_name_entity = (
-                    alt_name if legal_entity.entity_type != LegalEntity.EntityTypes.PARTNERSHIP.value else None
-                )
-        else:
-            non_entity_types = [
-                LegalEntity.EntityTypes.PERSON.value,
-                LegalEntity.EntityTypes.ORGANIZATION.value,
-            ]
-
-            legal_entity = (
-                cls.query.filter(~LegalEntity._entity_type.in_(non_entity_types))
-                .filter_by(identifier=identifier)
-                .one_or_none()
-            )
-
-        return legal_entity, alternate_name_entity
+        return legal_entity
 
     @classmethod
     def find_by_internal_id(cls, internal_id: int = None):

@@ -278,7 +278,7 @@ def upgrade():
                     sa.Column('end_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
                     sa.Column('business_start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
                     sa.Column('dissolution_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
-                    sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), autoincrement=False, nullable=True),
+                    sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', name='state'), autoincrement=False, nullable=True),
                     sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True),
                     sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True),
                     sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
@@ -410,7 +410,7 @@ def upgrade():
     sa.Column('last_ar_year', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('last_ar_reminder_year', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('association_type', sa.String(length=50), autoincrement=False, nullable=True),
-    sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), autoincrement=False, nullable=True),
+    sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', name='state'), autoincrement=False, nullable=True),
     sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True),
     sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True),
     sa.Column('submitter_userid', sa.Integer(), autoincrement=False, nullable=True),
@@ -902,7 +902,7 @@ def upgrade():
         batch_op.add_column(sa.Column('last_ar_year', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('last_ar_reminder_year', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('association_type', sa.String(length=50), nullable=True))
-        batch_op.add_column(sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), nullable=True))
+        batch_op.add_column(sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', name='state'), nullable=True))
         batch_op.add_column(sa.Column('state_filing_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('admin_freeze', sa.Boolean(), nullable=True))
         batch_op.add_column(sa.Column('submitter_userid', sa.Integer(), nullable=True))
@@ -946,7 +946,7 @@ def upgrade():
         batch_op.add_column(sa.Column('end_date', sa.DateTime(timezone=True), nullable=True))
         batch_op.add_column(sa.Column('business_start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('dissolution_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True))
-        batch_op.add_column(sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', name='state'), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True))

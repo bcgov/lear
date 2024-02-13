@@ -13,18 +13,31 @@
 # limitations under the License.
 
 """This provides the service for businesses(legal entities and alternate name entities."""
-from legal_api.models import LegalEntity
+from legal_api.models import AlternateName, LegalEntity
+from legal_api.models.business_common import BusinessCommon
 
 
 class BusinessService:
     """Provides services to retrieve correct businesses."""
 
-    def fetch_business(self, identifier):
+
+    @staticmethod
+    def fetch_business(identifier):
         """Fetches appropriate business.
 
         This can be an instance of legal entity or alternate name.
         """
-        legal_entity, alternate_name_entity = LegalEntity.find_by_identifier(identifier)
-        if alternate_name_entity:
-            return alternate_name_entity
-        return legal_entity
+        if legal_entity := LegalEntity.find_by_identifier(identifier):
+            return legal_entity
+
+        if (identifier.startswith("FM") and (alternate_name := AlternateName.find_by_identifier(identifier))):
+            if alternate_name.is_owned_by_colin_entity:
+                return alternate_name
+
+            legal_entity = LegalEntity.find_by_id(alternate_name.legal_entity_id)
+            alternate_name_entity = (
+                alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
+            )
+            return  alternate_name_entity
+
+        return None
