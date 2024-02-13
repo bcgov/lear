@@ -679,31 +679,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if new_legal_type else None
 
     def _format_amalgamation_data(self, filing):
-
-        filings = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication'])
-        amalgamated_businesses = []
-
-        if filings:
-            filing['business']['amalgamatedEntity'] = True
-            amalgamation = self._business.amalgamation.one_or_none()
-            amalgamating_businesses = amalgamation.amalgamating_businesses.all()
-
-            for amalgamating_business in amalgamating_businesses:
-                if ting_business := Business.find_by_internal_id(amalgamating_business.business_id):
-                    identifier = ting_business.identifier
-                    business_legal_name = ting_business.legal_name
-                else:
-                    identifier = amalgamating_business.foreign_identifier or 'Not Available'
-                    business_legal_name = amalgamating_business.foreign_name or 'Not Available'
-
-                amalgamated_businesses_info = {
-                    'legalName': business_legal_name,
-                    'identifier': identifier
-                }
-                amalgamated_businesses.append(amalgamated_businesses_info)
-
-        filing['amalgamatingBusinesses'] = amalgamated_businesses
-
         amalgamation = filing['amalgamationApplication']
 
         # Formatting addresses for registered and records office
@@ -729,33 +704,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         else:
             filing['shareClasses'] = amalgamation.get('shareClasses', [])
 
+        filing['amalgamatingBusinesses'] = amalgamation.get('amalgamatingBusinesses', [])
         filing['incorporationAgreement'] = amalgamation.get('incorporationAgreement', {})
 
     def _format_certificate_of_amalgamation_data(self, filing):
-
-        filings = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication'])
-        amalgamated_businesses = []
-
-        if filings:
-            filing['business']['amalgamatedEntity'] = True
-            amalgamation = self._business.amalgamation.one_or_none()
-            amalgamating_businesses = amalgamation.amalgamating_businesses.all()
-            for amalgamating_business in amalgamating_businesses:
-                if ting_business := Business.find_by_internal_id(amalgamating_business.business_id):
-                    identifier = ting_business.identifier
-                    business_legal_name = ting_business.legal_name
-                else:
-                    identifier = amalgamating_business.foreign_identifier or 'Not Available'
-                    business_legal_name = amalgamating_business.foreign_name or 'Not Available'
-
-                amalgamated_businesses_info = {
-                    'legalName': business_legal_name,
-                    'identifier': identifier
-                }
-                amalgamated_businesses.append(amalgamated_businesses_info)
-
-        filing['amalgamatingBusinesses'] = amalgamated_businesses
-
         amalgamation = filing['amalgamationApplication']
 
         filing['nameRequest'] = amalgamation.get('nameRequest', {})
