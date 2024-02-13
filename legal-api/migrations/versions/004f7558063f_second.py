@@ -268,44 +268,6 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_colin_entities_history_identifier'), ['identifier'], unique=False)
         batch_op.create_index(batch_op.f('ix_colin_entities_history_organization_name'), ['organization_name'], unique=False)
 
-    op.create_table('alternate_names',
-                    sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('identifier', sa.String(length=10), nullable=True),
-                    sa.Column('name_type', sa.Enum('OPERATING', name='nametype'), nullable=False),
-                    sa.Column('name', sa.String(length=1000), nullable=False),
-                    sa.Column('bn15', sa.String(length=20), nullable=True),
-                    sa.Column('start_date', sa.DateTime(timezone=True), nullable=False),
-                    sa.Column('end_date', sa.DateTime(timezone=True), nullable=True),
-                    sa.Column('business_start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
-                    sa.Column('dissolution_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
-                    sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), autoincrement=False, nullable=True),
-                    sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True),
-                    sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True),
-                    sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
-                    sa.Column('legal_entity_id', sa.Integer(), nullable=True),
-                    sa.Column('colin_entity_id', sa.Integer(), nullable=True),
-                    sa.Column('change_filing_id', sa.Integer(), nullable=True),
-                    sa.Column('email', sa.String(length=254), autoincrement=False, nullable=True),
-                    sa.Column('delivery_address_id', sa.Integer(), autoincrement=False, nullable=True),
-                    sa.Column('mailing_address_id', sa.Integer(), autoincrement=False, nullable=True),
-                    sa.Column('naics_key', sa.String(length=50), autoincrement=False, nullable=True),
-                    sa.Column('naics_code', sa.String(length=10), autoincrement=False, nullable=True),
-                    sa.Column('naics_description', sa.String(length=300), autoincrement=False, nullable=True),
-                    sa.Column('version', sa.Integer(), nullable=False),
-                    sa.ForeignKeyConstraint(['delivery_address_id'], ['addresses.id'], ),
-                    sa.ForeignKeyConstraint(['mailing_address_id'], ['addresses.id'], ),
-                    sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id'], ),
-                    sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id'], ),
-                    sa.ForeignKeyConstraint(['colin_entity_id'], ['colin_entities.id'], ),
-                    sa.ForeignKeyConstraint(['state_filing_id'], ['filings.id'], ),
-                    sa.PrimaryKeyConstraint('id'),
-                    sqlite_autoincrement=True
-                    )
-    with op.batch_alter_table('alternate_names', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_alternate_names_change_filing_id'), ['change_filing_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_alternate_names_name'), ['name'], unique=False)
-        batch_op.create_index(batch_op.f('ix_alternate_names_identifier'), ['identifier'], unique=False)
-
     op.create_table('alternate_names_history',
                     sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
                     sa.Column('identifier', sa.String(length=10), autoincrement=False, nullable=True),
@@ -975,6 +937,39 @@ def upgrade():
         batch_op.create_foreign_key(None, 'addresses', ['delivery_address_id'], ['id'])
         batch_op.create_foreign_key(None, 'filings', ['state_filing_id'], ['id'])
 
+    with op.batch_alter_table('alternate_names', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('identifier', sa.String(length=10), nullable=True))
+        batch_op.add_column(sa.Column('name_type', sa.Enum('OPERATING', name='nametype'), nullable=False))
+        batch_op.add_column(sa.Column('name', sa.String(length=1000), nullable=False))
+        batch_op.add_column(sa.Column('bn15', sa.String(length=20), nullable=True))
+        batch_op.add_column(sa.Column('start_date', sa.DateTime(timezone=True), nullable=False))
+        batch_op.add_column(sa.Column('end_date', sa.DateTime(timezone=True), nullable=True))
+        batch_op.add_column(sa.Column('business_start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('dissolution_date', sa.DateTime(timezone=True), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('state', sa.Enum('ACTIVE', 'HISTORICAL', 'LIQUIDATION', name='state'), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('state_filing_id', sa.Integer(), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('legal_entity_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('colin_entity_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('change_filing_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('email', sa.String(length=254), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('delivery_address_id', sa.Integer(), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('mailing_address_id', sa.Integer(), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('naics_key', sa.String(length=50), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('naics_code', sa.String(length=10), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('naics_description', sa.String(length=300), autoincrement=False, nullable=True))
+        batch_op.add_column(sa.Column('version', sa.Integer(), nullable=False))
+        batch_op.create_foreign_key(None, 'addresses', ['delivery_address_id'], ['id'])
+        batch_op.create_foreign_key(None, 'addresses', ['mailing_address_id'], ['id'])
+        batch_op.create_foreign_key(None, 'filings', ['change_filing_id'], ['id'])
+        batch_op.create_foreign_key(None, 'legal_entities', ['legal_entity_id'], ['id'])
+        batch_op.create_foreign_key(None, 'colin_entities', ['colin_entity_id'], ['id'])
+        batch_op.create_foreign_key(None, 'filings', ['state_filing_id'], ['id'])
+        batch_op.create_index(batch_op.f('ix_alternate_names_change_filing_id'), ['change_filing_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_name'), ['name'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_identifier'), ['identifier'], unique=False)
+
     with op.batch_alter_table('offices', schema=None) as batch_op:
         batch_op.add_column(sa.Column('office_type', sa.String(length=75), nullable=True))
         batch_op.add_column(sa.Column('deactivated_date', sa.DateTime(timezone=True), nullable=True))
@@ -1068,6 +1063,39 @@ def downgrade():
         batch_op.drop_column('last_remote_ledger_id')
         batch_op.drop_column('last_ledger_id')
         batch_op.drop_column('last_modified')
+
+    with op.batch_alter_table('alternate_names', schema=None) as batch_op:
+        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_constraint(None, type_='foreignkey')
+        batch_op.drop_index(batch_op.f('ix_alternate_names_change_filing_id'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_name'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_identifier'))
+        batch_op.drop_column('identifier')
+        batch_op.drop_column('name_type')
+        batch_op.drop_column('name')
+        batch_op.drop_column('bn15')
+        batch_op.drop_column('start_date')
+        batch_op.drop_column('end_date')
+        batch_op.drop_column('business_start_date')
+        batch_op.drop_column('dissolution_date')
+        batch_op.drop_column('state')
+        batch_op.drop_column('state_filing_id')
+        batch_op.drop_column('admin_freeze')
+        batch_op.drop_column('last_modified')
+        batch_op.drop_column('legal_entity_id')
+        batch_op.drop_column('colin_entity_id')
+        batch_op.drop_column('change_filing_id')
+        batch_op.drop_column('email')
+        batch_op.drop_column('delivery_address_id')
+        batch_op.drop_column('mailing_address_id')
+        batch_op.drop_column('naics_key')
+        batch_op.drop_column('naics_code')
+        batch_op.drop_column('naics_description')
+        batch_op.drop_column('version')
 
     with op.batch_alter_table('filings', schema=None) as batch_op:
         batch_op.drop_constraint(None, type_='foreignkey')
