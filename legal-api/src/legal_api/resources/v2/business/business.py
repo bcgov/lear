@@ -185,21 +185,16 @@ def search_businesses():
         for draft_dao in draft_query.all():
             draft = {"identifier": draft_dao.temp_reg, "legalType": draft_dao.json_legal_type}
             if draft_dao.json_nr:
-                draft["nrNumber"] = draft_dao.json_nr
-            draft["legalName"] = (
-                draft_dao.filing_json.get("filing", {})
-                .get(draft_dao.filing_type, {})
-                .get("nameRequest", {})
-                .get("legalName")
-            )
-            draft["draftType"] = Filing.FILINGS.get(draft_dao.filing_type, {}).get("temporaryCorpTypeCode")
-            if draft["legalName"] is None:
-                if draft["draftType"] == "TMP":
-                    draft["legalName"] = LegalEntity.BUSINESSES.get(draft_dao.json_legal_type, {}).get(
-                        "numberedDescription"
-                    )
-                elif draft["draftType"] == "ATMP":
-                    draft["legalName"] = "Numbered Amalgamated Company"
+                draft['nrNumber'] = draft_dao.json_nr
+            draft['legalName'] = (draft_dao.filing_json.get('filing', {})
+                                  .get(draft_dao.filing_type, {})
+                                  .get('nameRequest', {})
+                                  .get('legalName'))
+            draft['draftType'] = Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode')
+            if draft['legalName'] is None:
+                draft['legalName'] = (LegalEntity.BUSINESSES
+                                      .get(draft_dao.json_legal_type, {})
+                                      .get('numberedDescription'))
             draft_results.append(draft)
 
         return (
