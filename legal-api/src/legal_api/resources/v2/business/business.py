@@ -186,12 +186,9 @@ def search_businesses():
                                   .get('legalName'))
             draft['draftType'] = Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode')
             if draft['legalName'] is None:
-                if draft['draftType'] == 'TMP':
-                    draft['legalName'] = (Business.BUSINESSES
-                                          .get(draft_dao.json_legal_type, {})
-                                          .get('numberedDescription'))
-                elif draft['draftType'] == 'ATMP':
-                    draft['legalName'] = 'Numbered Amalgamated Company'
+                draft['legalName'] = (Business.BUSINESSES
+                                      .get(draft_dao.json_legal_type, {})
+                                      .get('numberedDescription'))
             draft_results.append(draft)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
