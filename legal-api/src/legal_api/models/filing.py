@@ -862,11 +862,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing.one_or_none()
 
     @staticmethod
-    def get_most_recent_legal_filing(legal_entity_id: str, filing_type: str = None):
+    def get_most_recent_legal_filing(business: any, filing_type: str = None):
         """Return the most recent filing containing the legal_filing type."""
+        business_attribute = Filing.legal_entity_id if business.is_legal_entity else Filing.alternate_name_id
+
         query = (
             db.session.query(db.func.max(Filing._filing_date).label("last_filing_date"))
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attribute == business.id)
             .filter(Filing._status == Filing.Status.COMPLETED.value)
         )
         if filing_type:
@@ -881,7 +883,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         filing = (
             Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attribute == business.id)
             .filter(Filing._status == Filing.Status.COMPLETED.value)
             .order_by(Filing.id.desc())
         )
@@ -945,11 +947,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return None
 
     @staticmethod
-    def has_completed_filing(legal_entity_id: int, filing_type: str) -> bool:
+    def has_completed_filing(business: any, filing_type: str) -> bool:
         """Return whether a completed filing of a given filing type exists."""
+        business_attribute = Filing.legal_entity_id if business.is_legal_entity else Filing.alternate_name_id
         query = (
             db.session.query(Filing)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attribute == business.id)
             .filter(Filing._filing_type == filing_type)
             .filter(Filing._status == Filing.Status.COMPLETED.value)
         )
