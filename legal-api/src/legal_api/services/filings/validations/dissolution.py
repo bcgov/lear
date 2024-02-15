@@ -120,10 +120,14 @@ def validate_dissolution_type(filing_json, entity_type) -> Optional[list]:
     if dissolution_type:
         # pylint: disable=too-many-boolean-expressions
         if (
-            (entity_type == BusinessCommon.EntityTypes.COOP.value and dissolution_type not in DISSOLUTION_MAPPING["COOP"])
+            (
+                entity_type == BusinessCommon.EntityTypes.COOP.value
+                and dissolution_type not in DISSOLUTION_MAPPING["COOP"]
+            )
             or (entity_type in CORP_TYPES and dissolution_type not in DISSOLUTION_MAPPING["CORP"])
             or (
-                entity_type in (BusinessCommon.EntityTypes.SOLE_PROP.value, BusinessCommon.EntityTypes.PARTNERSHIP.value)
+                entity_type
+                in (BusinessCommon.EntityTypes.SOLE_PROP.value, BusinessCommon.EntityTypes.PARTNERSHIP.value)
                 and dissolution_type not in DISSOLUTION_MAPPING["FIRMS"]
             )
         ):

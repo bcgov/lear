@@ -52,9 +52,7 @@ def validate(business: any, restoration: Dict) -> Optional[Error]:
         name_request = restoration.get("filing", {}).get("restoration", {}).get("nameRequest", {})
         if name_request.get("nrNumber", None):
             accepted_request_types = ["RCC", "RCR", "BERE", "RUL"]
-            msg.extend(
-                validate_name_request(restoration, business.entity_type, filing_type, accepted_request_types)
-            )
+            msg.extend(validate_name_request(restoration, business.entity_type, filing_type, accepted_request_types))
         else:
             if not name_request.get("legalName", None):
                 msg.append(

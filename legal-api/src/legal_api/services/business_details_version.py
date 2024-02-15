@@ -170,9 +170,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ar_json["annualReport"]["directors"] = VersionedBusinessDetailsService.get_party_role_revision(
             filing, business.id, role="director"
         )
-        ar_json["annualReport"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, business.id
-        )
+        ar_json["annualReport"]["offices"] = VersionedBusinessDetailsService.get_office_revision(filing, business.id)
 
         # entity_type CP may need changeOfDirectors/changeOfAddress
         if "changeOfDirectors" in filing.json["filing"]:
@@ -205,7 +203,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         company_profile_json["parties"] = VersionedBusinessDetailsService.get_party_role_revision(
             filing, legal_entity_id
         )
-        company_profile_json["offices"] = VersionedBusinessDetailsService.get_office_revision(filing, legal_entity_id, alternate_name_id)
+        company_profile_json["offices"] = VersionedBusinessDetailsService.get_office_revision(
+            filing, legal_entity_id, alternate_name_id
+        )
         company_profile_json["shareClasses"] = VersionedBusinessDetailsService.get_share_class_revision(
             filing, legal_entity_id
         )
@@ -230,8 +230,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
         # The history table has the old revisions, not the current one.
         if business_revision.change_filing_id != filing.id:
-            business_version = history_cls(LegalEntity) if business_revision.is_legal_entity\
-                else history_cls(AlternateName)
+            business_version = (
+                history_cls(LegalEntity) if business_revision.is_legal_entity else history_cls(AlternateName)
+            )
 
             business_revision = (
                 db.session.query(business_version)
@@ -248,8 +249,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Get business info with last value of dissolution_date or restoration_expiry_date."""
         conditions = []
 
-        business_version = history_cls(LegalEntity) if business_revision.is_legal_entity\
-                else history_cls(AlternateName)
+        business_version = history_cls(LegalEntity) if business.is_legal_entity else history_cls(AlternateName)
 
         if is_dissolution_date:
             if business.dissolution_date:
@@ -291,7 +291,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )  # pylint: disable=singleton-comparison
 
         office_history = history_cls(Office)
-        office_history_attribute = office_history.legal_entity_id if legal_entity_id else office_history.alternate_name_id
+        office_history_attribute = (
+            office_history.legal_entity_id if legal_entity_id else office_history.alternate_name_id
+        )
         offices_historical = (
             db.session.query(office_history)
             .filter(office_history.change_filing_id == filing_id)

@@ -62,7 +62,7 @@ def validate(business: any, filing: Dict) -> Error:
         msg.append({"error": _("Corrected filing is not a valid filing."), "path": path})
 
     # confirm that this business owns the corrected filing
-    elif business.id != corrected_filing.legal_entity_id and business.id != corrected_filing.alternate_name_id:
+    elif business.id not in [corrected_filing.legal_entity_id, corrected_filing.alternate_name_id]:
         path = "/filing/correction/correctedFilingId"
         msg.append({"error": _("Corrected filing is not a valid filing for this business."), "path": path})
 
@@ -187,7 +187,9 @@ def validate_party(filing: Dict, entity_type: str) -> list:
         elif entity_type == BusinessCommon.EntityTypes.PARTNERSHIP.value and partner_parties < 2:
             msg.append({"error": "2 Partners are required.", "path": party_path})
     else:
-        if entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
+        if entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value and (
+            completing_parties < 1 or proprietor_parties < 1
+        ):
             msg.append({"error": "1 Proprietor and a Completing Party is required.", "path": party_path})
         elif entity_type == BusinessCommon.EntityTypes.PARTNERSHIP.value and (
             completing_parties < 1 or partner_parties < 2

@@ -111,7 +111,9 @@ def validate_party(filing: Dict, entity_type: str, filing_type="registration") -
     party_path = "/filing/registration/parties"
     if entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
         msg.append({"error": "1 Proprietor and a Completing Party is required.", "path": party_path})
-    elif entity_type == BusinessCommon.EntityTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
+    elif entity_type == BusinessCommon.EntityTypes.PARTNERSHIP.value and (
+        completing_parties < 1 or partner_parties < 2
+    ):
         msg.append({"error": "2 Partners and a Completing Party is required.", "path": party_path})
 
     return msg
