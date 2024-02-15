@@ -496,9 +496,7 @@ def get_allowed_filings(
         )
 
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            is_allowable = not has_blocker(
-                business, state_filing, filing_sub_type_item_value, business_blocker_dict
-            )
+            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
             allowable_filing_sub_type = {
                 "name": allowable_filing_key,
                 "type": filing_sub_type_item_key,

@@ -20,7 +20,6 @@ from legal_api.models.business_common import BusinessCommon
 class BusinessService:
     """Provides services to retrieve correct businesses."""
 
-
     @staticmethod
     def fetch_business(identifier):
         """Fetches appropriate business.
@@ -30,7 +29,7 @@ class BusinessService:
         if legal_entity := LegalEntity.find_by_identifier(identifier):
             return legal_entity
 
-        if (identifier.startswith("FM") and (alternate_name := AlternateName.find_by_identifier(identifier))):
+        if identifier.startswith("FM") and (alternate_name := AlternateName.find_by_identifier(identifier)):
             if alternate_name.is_owned_by_colin_entity:
                 return alternate_name
 
@@ -38,6 +37,6 @@ class BusinessService:
             alternate_name_entity = (
                 alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
             )
-            return  alternate_name_entity
+            return alternate_name_entity
 
         return None

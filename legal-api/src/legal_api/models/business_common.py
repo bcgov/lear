@@ -24,7 +24,10 @@ from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
 
 
+# pylint: disable=no-member,import-outside-toplevel,protected-access
 class BusinessCommon:
+    """This class is used to share common properties and functions between LegalEntity and AlternateName."""
+
     class State(BaseEnum):
         """Enum for the Business state."""
 
@@ -110,15 +113,16 @@ class BusinessCommon:
 
     NON_BUSINESS_ENTITY_TYPES: Final = [EntityTypes.PERSON, EntityTypes.ORGANIZATION]
 
-
     @property
     def is_alternate_name_entity(self):
+        """Return True if the entity is an AlternateName."""
         from legal_api.models import AlternateName
 
         return isinstance(self, AlternateName)
 
     @property
     def is_legal_entity(self):
+        """Return True if the entity is a LegalEntity."""
         from legal_api.models import LegalEntity
 
         return isinstance(self, LegalEntity)
