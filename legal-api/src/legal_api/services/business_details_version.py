@@ -35,7 +35,6 @@ from legal_api.models import (
     ShareSeries,
     db,
 )
-from legal_api.services.business_service import BusinessService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -78,17 +77,17 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return revision_json
 
     @staticmethod
-    def get_ia_revision(filing, legal_entity) -> dict:
+    def get_ia_revision(filing, business) -> dict:
         """Consolidates incorporation application upto the given transaction id of a filing."""
         ia_json = {}
 
-        ia_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, legal_entity)
+        ia_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
         ia_json["incorporationApplication"] = {}
         ia_json["incorporationApplication"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, legal_entity.id
+            filing, business.id
         )
         ia_json["incorporationApplication"]["parties"] = VersionedBusinessDetailsService.get_party_role_revision(
-            filing, legal_entity.id, is_ia_or_after=True
+            filing, business.id, is_ia_or_after=True
         )
         ia_json["incorporationApplication"]["nameRequest"] = VersionedBusinessDetailsService.get_name_request_revision(
             filing
@@ -99,10 +98,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json["incorporationApplication"]["shareStructure"] = {}
         ia_json["incorporationApplication"]["shareStructure"][
             "shareClasses"
-        ] = VersionedBusinessDetailsService.get_share_class_revision(filing, legal_entity.id)
+        ] = VersionedBusinessDetailsService.get_share_class_revision(filing, business.id)
         ia_json["incorporationApplication"][
             "nameTranslations"
-        ] = VersionedBusinessDetailsService.get_name_translations_revision(filing, legal_entity.id)
+        ] = VersionedBusinessDetailsService.get_name_translations_revision(filing, business.id)
         ia_json["incorporationApplication"][
             "incorporationAgreement"
         ] = VersionedBusinessDetailsService.get_incorporation_agreement_json(filing)
@@ -122,26 +121,26 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return ia_json
 
     @staticmethod
-    def get_cod_revision(filing, legal_entity) -> dict:
+    def get_cod_revision(filing, business) -> dict:
         """Consolidates change of directors upto the given transaction id of a filing."""
         cod_json = {}
 
-        cod_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, legal_entity)
+        cod_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
         cod_json["changeOfDirectors"] = {}
         cod_json["changeOfDirectors"]["directors"] = VersionedBusinessDetailsService.get_party_role_revision(
-            filing, legal_entity.id, role="director"
+            filing, business.id, role="director"
         )
         return cod_json
 
     @staticmethod
-    def get_coa_revision(filing, legal_entity) -> dict:
+    def get_coa_revision(filing, business) -> dict:
         """Consolidates change of address upto the given transaction id of a filing."""
         coa_json = {}
 
-        coa_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, legal_entity)
+        coa_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
         coa_json["changeOfAddress"] = {}
         coa_json["changeOfAddress"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, legal_entity.id
+            filing, business.id
         )
         coa_json["changeOfAddress"]["legalType"] = coa_json["business"]["legalType"]
         return coa_json
@@ -222,12 +221,12 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_business_revision_obj(filing, business: any) -> any:
         """Return version object associated with the given filing for a LegalEntity."""
 
-        le_revision = None
-        
+        le_revision = business
+
         #TODO: ideally we make this one query with dynamic filters etc
         if business.is_legal_entity:
             # The history table has the old revisions, not the current one.
-            if business.change_filing_id != filing.id:
+            if business.change_filing_id and business.change_filing_id != filing.id:
                 legal_entity_version = history_cls(LegalEntity)
                 le_revision = (
                     db.session.query(legal_entity_version)
@@ -237,7 +236,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 )
         else:
             # The history table has the old revisions, not the current one.
-            if business.change_filing_id != filing.id:
+            if business.change_filing_id and business.change_filing_id != filing.id:
                 alternate_name_version = history_cls(AlternateName)
                 le_revision = (
                     db.session.query(alternate_name_version)
