@@ -39,7 +39,8 @@ class DissolutionTypes(str, Enum):  # pylint: disable=too-many-lines
     VOLUNTARY_LIQUIDATION = "voluntaryLiquidation"
 
 
-class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+# pylint: disable=too-many-instance-attributes,too-many-public-methods,protected-access
+class Filing(db.Model):
     # allowing the model to be deep.
     """Immutable filing record.
 
@@ -907,7 +908,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             db.session.query(Filing)
             .join(LegalEntity, Filing.legal_entity_id == LegalEntity.id)
             .filter(
-                ~LegalEntity.entity_type.in_(
+                ~LegalEntity._entity_type.in_(
                     [
                         LegalEntity.EntityTypes.SOLE_PROP.value,
                         LegalEntity.EntityTypes.PARTNERSHIP.value,
