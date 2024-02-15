@@ -346,7 +346,7 @@ class ListFilingResource:
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
         filings = CoreFiling.ledger(
-            business.id,
+            business=business,
             jwt=user_jwt,
             statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value],
             start=ledger_start,
