@@ -222,6 +222,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_business_revision_obj(filing, business: any) -> any:
         """Return version object associated with the given filing for a LegalEntity."""
 
+        le_revision = None
+        
         #TODO: ideally we make this one query with dynamic filters etc
         if business.is_legal_entity:
             # The history table has the old revisions, not the current one.

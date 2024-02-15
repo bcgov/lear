@@ -425,7 +425,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
 
         business_revision = business
         # retrieve business revision at time of filing so legal type is correct when returned for display name
-        if bus_rev_temp := VersionService.get_business_revision_obj(filing, business.id):
+        if bus_rev_temp := VersionService.get_business_revision_obj(filing, business):
             business_revision = bus_rev_temp
 
         if isinstance(names, MutableMapping):
