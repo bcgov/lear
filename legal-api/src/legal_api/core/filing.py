@@ -367,11 +367,9 @@ class Filing:
         base_url = current_app.config.get("LEGAL_API_BASE_URL")
 
         business = business_service.fetch_business_by_id(business_id)
+        business_attribute = FilingStorage.legal_entity_id if business.is_legal_entity else FilingStorage.alternate_name_id
 
-        if business.is_legal_entity:
-            query = FilingStorage.query.filter(FilingStorage.legal_entity_id == business_id)
-        else:
-            query = FilingStorage.query.filter(FilingStorage.alternate_name_id == business_id)
+        query = FilingStorage.query.filter(business_attribute == business_id)
 
         if effective_date:
             query = query.filter(FilingStorage.effective_date <= effective_date)
