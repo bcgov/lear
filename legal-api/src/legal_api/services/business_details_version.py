@@ -24,6 +24,7 @@ from sqlalchemy.sql.expression import null
 from legal_api.models import (
     Address,
     Alias,
+    AlternateName,
     ColinEntity,
     EntityRole,
     Filing,
@@ -34,6 +35,7 @@ from legal_api.models import (
     ShareSeries,
     db,
 )
+from legal_api.services.business_service import BusinessService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -218,20 +220,20 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return VersionedBusinessDetailsService.business_revision_json(le_revision, legal_entity.json())
 
     @staticmethod
-    def get_business_revision_obj(filing, legal_entity_id) -> LegalEntity:
-        """Return version object associated with the given filing for a LegalEntity."""
-        le_revision = LegalEntity.find_by_internal_id(legal_entity_id)
+    def get_business_revision_obj(filing, business_id) -> LegalEntity | AlternateName:
+        """Return version object associated with the given filing for a LegalEntity or AlternateName."""
+        business_revision = BusinessService.fetch_business_by_id(business_id)
 
         # The history table has the old revisions, not the current one.
-        if le_revision.change_filing_id != filing.id:
-            legal_entity_version = history_cls(LegalEntity)
-            le_revision = (
-                db.session.query(legal_entity_version)
-                .filter(legal_entity_version.change_filing_id == filing.id)
-                .filter(legal_entity_version.id == legal_entity_id)
+        if business_revision.change_filing_id != filing.id:
+            business_version = history_cls(LegalEntity)
+            business_revision = (
+                db.session.query(business_version)
+                .filter(business_version.change_filing_id == filing.id)
+                .filter(business_version.id == business_id)
                 .first()
             )
-        return le_revision
+        return business_revision
 
     @staticmethod
     def find_last_value_from_business_revision(

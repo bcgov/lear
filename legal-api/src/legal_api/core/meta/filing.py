@@ -413,7 +413,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
-    def display_name(legal_entity: LegalEntity, filing: FilingStorage) -> Optional[str]:
+    def display_name(business: any, filing: FilingStorage) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get("displayName")):
@@ -423,9 +423,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             ):
                 return " ".join(word.capitalize() for word in re.sub(r"([A-Z])", r":\1", filing.filing_type).split(":"))
 
-        business_revision = legal_entity
+        business_revision = business
         # retrieve business revision at time of filing so legal type is correct when returned for display name
-        if bus_rev_temp := VersionService.get_business_revision_obj(filing, legal_entity.id):
+        if bus_rev_temp := VersionService.get_business_revision_obj(filing, business.id):
             business_revision = bus_rev_temp
 
         if isinstance(names, MutableMapping):

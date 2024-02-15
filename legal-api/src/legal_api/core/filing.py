@@ -29,6 +29,7 @@ from legal_api.core.meta import FilingMeta
 from legal_api.models import Document, DocumentType
 from legal_api.models import Filing as FilingStorage
 from legal_api.models import LegalEntity, UserRoles
+from legal_api.services import business_service
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
@@ -351,7 +352,7 @@ class Filing:
 
     @staticmethod
     def ledger(  # pylint: disable=too-many-arguments
-        legal_entity_id: int,
+        business_id: int,
         jwt: JwtManager = None,
         statuses: List(str) = None,
         start: int = None,
@@ -365,9 +366,12 @@ class Filing:
         """
         base_url = current_app.config.get("LEGAL_API_BASE_URL")
 
-        legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
+        business = business_service.fetch_business_by_id(business_id)
 
-        query = FilingStorage.query.filter(FilingStorage.legal_entity_id == legal_entity_id)
+        if business.is_legal_entity:
+            query = FilingStorage.query.filter(FilingStorage.legal_entity_id == business_id)
+        else:
+            query = FilingStorage.query.filter(FilingStorage.alternate_name_id == business_id)
 
         if effective_date:
             query = query.filter(FilingStorage.effective_date <= effective_date)
@@ -394,8 +398,8 @@ class Filing:
 
             ledger_filing = {
                 "availableOnPaperOnly": filing.paper_only,
-                "businessIdentifier": legal_entity.identifier,
-                "displayName": FilingMeta.display_name(legal_entity, filing=filing),
+                "businessIdentifier": business.identifier,
+                "displayName": FilingMeta.display_name(business, filing=filing),
                 "effectiveDate": filing.effective_date,
                 "filingId": filing.id,
                 "name": filing.filing_type,
@@ -403,7 +407,7 @@ class Filing:
                 "status": filing.status,
                 "submitter": submitter_displayname,
                 "submittedDate": filing._filing_date,  # pylint: disable=protected-access
-                **Filing.common_ledger_items(legal_entity.identifier, filing),
+                **Filing.common_ledger_items(business.identifier, filing),
             }
             if filing.filing_sub_type:
                 ledger_filing["filingSubType"] = filing.filing_sub_type
@@ -414,7 +418,7 @@ class Filing:
                 ledger_filing["correctionFilingId"] = filing.parent_filing.id
                 ledger_filing[
                     "correctionLink"
-                ] = f"{base_url}/{legal_entity.identifier}/filings/{filing.parent_filing.id}"
+                ] = f"{base_url}/{business.identifier}/filings/{filing.parent_filing.id}"
                 ledger_filing["correctionFilingStatus"] = filing.parent_filing.status
 
             # add the collected meta_data

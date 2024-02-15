@@ -1021,7 +1021,7 @@ def get_internal_filings(status=None):
         pending_filings = Filing.get_completed_filings_for_colin()
         for filing in pending_filings:
             filing_json = filing.filing_json
-            business = LegalEntity.find_by_internal_id(filing.legal_entity_id)
+            business = business_service.fetch_business_by_id(filing.legal_entity_id)
             if (
                 filing_json
                 and filing.filing_type != "lear_epoch"

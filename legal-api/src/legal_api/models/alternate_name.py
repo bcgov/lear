@@ -110,6 +110,12 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         """Return None or the AlternateName found by its registration number."""
         alternate_name = cls.query.filter_by(identifier=identifier).one_or_none()
         return alternate_name
+    
+    @classmethod
+    def find_by_internal_id(cls, internal_id: int) -> AlternateName | None:
+        """Return None or the AlternateName found by the internal id."""
+        alternate_name = cls.query.filter_by(id=internal_id).one_or_none()
+        return alternate_name
 
     @classmethod
     def find_by_name(cls, name: str = None):
