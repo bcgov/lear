@@ -18,6 +18,7 @@ from .alias import Alias
 from .alternate_name import AlternateName
 from .amalgamating_business import AmalgamatingBusiness
 from .amalgamation import Amalgamation
+from .business_common import BusinessCommon
 from .colin_entity import ColinEntity
 from .colin_update import ColinLastUpdate
 from .comment import Comment
@@ -52,6 +53,7 @@ __all__ = (
     "Amalgamation",
     "Alias",
     "AlternateName",
+    "BusinessCommon",
     "ColinEntity",
     "LegalEntity",
     "ColinLastUpdate",

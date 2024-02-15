@@ -21,7 +21,7 @@ from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
-from legal_api.models import LegalEntity, PartyRole
+from legal_api.models import BusinessCommon, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -35,20 +35,20 @@ def validate(registration_json: Dict) -> Optional[Error]:
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
 
-    legal_type_path = "/filing/registration/nameRequest/legalType"
-    legal_type = get_str(registration_json, legal_type_path)
-    if legal_type not in [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]:
+    entity_type_path = "/filing/registration/nameRequest/legalType"
+    entity_type = get_str(registration_json, entity_type_path)
+    if entity_type not in [BusinessCommon.EntityTypes.SOLE_PROP.value, BusinessCommon.EntityTypes.PARTNERSHIP.value]:
         return Error(
             HTTPStatus.BAD_REQUEST,
-            [{"error": babel("A valid legalType for registration is required."), "path": legal_type_path}],
+            [{"error": babel("A valid legalType for registration is required."), "path": entity_type_path}],
         )
 
     msg = []
-    msg.extend(validate_name_request(registration_json, legal_type, "registration"))
+    msg.extend(validate_name_request(registration_json, entity_type, "registration"))
     msg.extend(validate_tax_id(registration_json))
     msg.extend(validate_naics(registration_json))
-    msg.extend(validate_business_type(registration_json, legal_type))
-    msg.extend(validate_party(registration_json, legal_type))
+    msg.extend(validate_business_type(registration_json, entity_type))
+    msg.extend(validate_party(registration_json, entity_type))
     msg.extend(validate_start_date(registration_json))
     msg.extend(validate_offices(registration_json))
     msg.extend(validate_registration_court_order(registration_json))
@@ -58,11 +58,11 @@ def validate(registration_json: Dict) -> Optional[Error]:
     return None
 
 
-def validate_business_type(filing: Dict, legal_type: str) -> list:
+def validate_business_type(filing: Dict, entity_type: str) -> list:
     """Validate business type."""
     msg = []
     business_type_path = "/filing/registration/businessType"
-    if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:
+    if entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:
         msg.append({"error": "Business Type is required.", "path": business_type_path})
 
     return msg
@@ -91,7 +91,7 @@ def validate_naics(filing: Dict, filing_type="registration") -> list:
     return msg
 
 
-def validate_party(filing: Dict, legal_type: str, filing_type="registration") -> list:
+def validate_party(filing: Dict, entity_type: str, filing_type="registration") -> list:
     """Validate party."""
     msg = []
     completing_parties = 0
@@ -109,9 +109,9 @@ def validate_party(filing: Dict, legal_type: str, filing_type="registration") ->
                 partner_parties += 1
 
     party_path = "/filing/registration/parties"
-    if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
+    if entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
         msg.append({"error": "1 Proprietor and a Completing Party is required.", "path": party_path})
-    elif legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
+    elif entity_type == BusinessCommon.EntityTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
         msg.append({"error": "2 Partners and a Completing Party is required.", "path": party_path})
 
     return msg

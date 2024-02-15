@@ -18,9 +18,10 @@ from typing import Dict, Final, Optional
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import EntityRole, Filing, LegalEntity
+from legal_api.models import BusinessCommon, EntityRole, Filing
 from legal_api.services import STAFF_ROLE
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.business_service import BusinessService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
@@ -33,24 +34,24 @@ from legal_api.utils.auth import jwt
 # noqa: I003
 
 
-def validate(legal_entity: LegalEntity, amalgamation_json: Dict, account_id) -> Optional[Error]:
+def validate(business: any, amalgamation_json: Dict, account_id) -> Optional[Error]:
     """Validate the Amalgamation Application filing."""
     filing_type = "amalgamationApplication"
     if not amalgamation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
     msg = []
 
-    legal_type_path = f"/filing/{filing_type}/nameRequest/legalType"
-    legal_type = get_str(amalgamation_json, legal_type_path)
-    if not legal_type:
-        msg.append({"error": babel("Legal type is required."), "path": legal_type_path})
-        return msg  # Cannot continue validation without legal_type
+    entity_type_path = f"/filing/{filing_type}/nameRequest/legalType"
+    entity_type = get_str(amalgamation_json, entity_type_path)
+    if not entity_type:
+        msg.append({"error": babel("Legal type is required."), "path": entity_type_path})
+        return msg  # Cannot continue validation without entity_type
 
     amalgamation_type = get_str(amalgamation_json, f"/filing/{filing_type}/type")
 
     if amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
         # Adopt from one of the amalgamating businesses contains name not nrNumber
-        msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
+        msg.extend(validate_name_request(amalgamation_json, entity_type, filing_type))
 
     msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
     if amalgamation_type == "regular":
@@ -60,7 +61,7 @@ def validate(legal_entity: LegalEntity, amalgamation_json: Dict, account_id) -> 
             msg.extend(err)
 
     msg.extend(validate_amalgamation_court_order(amalgamation_json, filing_type))
-    msg.extend(validate_amalgamating_businesses(amalgamation_json, filing_type, legal_type, account_id))
+    msg.extend(validate_amalgamating_businesses(amalgamation_json, filing_type, entity_type, account_id))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -68,7 +69,7 @@ def validate(legal_entity: LegalEntity, amalgamation_json: Dict, account_id) -> 
 
 
 def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-    amalgamation_json, filing_type, legal_type, account_id
+    amalgamation_json, filing_type, entity_type, account_id
 ) -> list:
     """Validate amalgamating businesses."""
     is_staff = jwt.validate_roles([STAFF_ROLE])
@@ -85,18 +86,18 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     amalgamating_businesses = {}
     for amalgamating_business_json in amalgamating_businesses_json:
         if identifier := amalgamating_business_json.get("identifier"):
-            if not (legal_entity := LegalEntity.find_by_identifier(identifier)):
+            if not (business := BusinessService.fetch_business(identifier)):
                 continue
 
-            amalgamating_businesses[identifier] = legal_entity
+            amalgamating_businesses[identifier] = business
 
-            if legal_entity.entity_type == LegalEntity.EntityTypes.BCOMP.value:
+            if business.entity_type == BusinessCommon.EntityTypes.BCOMP.value:
                 is_any_ben = True
-            elif legal_entity.entity_type == LegalEntity.EntityTypes.COMP.value:
+            elif business.entity_type == BusinessCommon.EntityTypes.COMP.value:
                 is_any_limited = True
-            elif legal_entity.entity_type == LegalEntity.EntityTypes.BC_CCC.value:
+            elif business.entity_type == BusinessCommon.EntityTypes.BC_CCC.value:
                 is_any_ccc = True
-            elif legal_entity.entity_type == LegalEntity.EntityTypes.BC_ULC_COMPANY.value:
+            elif business.entity_type == BusinessCommon.EntityTypes.BC_ULC_COMPANY.value:
                 is_any_ulc = True
         elif (corp_number := amalgamating_business_json.get("corpNumber")) and corp_number.startswith("A"):
             if (
@@ -114,7 +115,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
         amalgamating_business = amalgamating_businesses.get(identifier)
 
         if amalgamating_business:
-            if amalgamating_business.state == LegalEntity.State.HISTORICAL:
+            if amalgamating_business.state == BusinessCommon.State.HISTORICAL:
                 msg.append(
                     {
                         "error": f"Cannot amalgamate with {identifier} which is in historical state.",
@@ -161,7 +162,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 )
         else:
             if is_foreign_business:
-                if legal_type == LegalEntity.EntityTypes.BC_ULC_COMPANY.value and is_any_bc_company:
+                if entity_type == BusinessCommon.EntityTypes.BC_ULC_COMPANY.value and is_any_bc_company:
                     msg.append(
                         {
                             "error": (
@@ -183,7 +184,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                         }
                     )
 
-    if legal_type == LegalEntity.EntityTypes.BC_CCC.value and not is_any_ccc:
+    if entity_type == BusinessCommon.EntityTypes.BC_CCC.value and not is_any_ccc:
         msg.append(
             {
                 "error": (
@@ -194,7 +195,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
             }
         )
     elif (
-        legal_type in [LegalEntity.EntityTypes.BC_CCC.value, LegalEntity.EntityTypes.BC_ULC_COMPANY.value]
+        entity_type in [BusinessCommon.EntityTypes.BC_CCC.value, BusinessCommon.EntityTypes.BC_ULC_COMPANY.value]
         and is_any_expro_a
         and is_any_bc_company
     ):
@@ -221,7 +222,7 @@ def _is_business_affliated(identifier, account_id):
     return False
 
 
-def _has_future_effective_filing(amalgamating_business: LegalEntity):
+def _has_future_effective_filing(amalgamating_business: any):
     if Filing.get_filings_by_status(amalgamating_business.id, [Filing.Status.PAID.value, Filing.Status.PENDING.value]):
         return True
     return False

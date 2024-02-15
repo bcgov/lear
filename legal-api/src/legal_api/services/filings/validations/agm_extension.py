@@ -20,7 +20,6 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 
 # noqa: I003
 from legal_api.errors import Error
-from legal_api.models import LegalEntity
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_bool, get_int, get_str  # noqa: I003
@@ -32,9 +31,9 @@ EXPIRED_ERROR = "Allotted period to request extension has expired."
 GRANT_FAILURE = "Fail to grant extension."
 
 
-def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
+def validate(business: any, filing: Dict) -> Optional[Error]:
     """Validate the AGM Extension filing."""
-    if not legal_entity or not filing:
+    if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
 
     msg = []
@@ -42,7 +41,7 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
     is_first_agm = get_bool(filing, f"{AGM_EXTENSION_PATH}/isFirstAgm")
 
     if is_first_agm:
-        msg.extend(first_agm_validation(legal_entity, filing))
+        msg.extend(first_agm_validation(business, filing))
     else:
         msg.extend(subsequent_agm_validation(filing))
 
@@ -52,12 +51,12 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
     return None
 
 
-def first_agm_validation(legal_entity: LegalEntity, filing: Dict) -> list:
+def first_agm_validation(business: any, filing: Dict) -> list:
     """Validate filing for first AGM Extension."""
     msg = []
 
     has_ext_req_for_agm_year = get_bool(filing, f"{AGM_EXTENSION_PATH}/extReqForAgmYear")
-    founding_date = LegislationDatetime.as_legislation_timezone_from_date(legal_entity.founding_date).date()
+    founding_date = LegislationDatetime.as_legislation_timezone_from_date(business.founding_date).date()
 
     if not has_ext_req_for_agm_year:
         # first AGM, first extension

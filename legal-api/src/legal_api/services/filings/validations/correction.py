@@ -21,7 +21,7 @@ from flask_babel import _
 
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
-from legal_api.models import Filing, LegalEntity, PartyRole
+from legal_api.models import BusinessCommon, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
@@ -46,9 +46,9 @@ from legal_api.utils.auth import jwt
 from ...utils import get_date, get_str
 
 
-def validate(legal_entity: LegalEntity, filing: Dict) -> Error:
+def validate(business: any, filing: Dict) -> Error:
     """Validate the Correction filing."""
-    if not legal_entity or not filing:
+    if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
     msg = []
 
@@ -62,23 +62,23 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Error:
         msg.append({"error": _("Corrected filing is not a valid filing."), "path": path})
 
     # confirm that this business owns the corrected filing
-    elif not legal_entity.id == corrected_filing.legal_entity_id:
+    elif business.id != corrected_filing.legal_entity_id and business.id != corrected_filing.alternate_name_id:
         path = "/filing/correction/correctedFilingId"
         msg.append({"error": _("Corrected filing is not a valid filing for this business."), "path": path})
 
     # validations for firms
-    if legal_type := filing.get("filing", {}).get("business", {}).get("legalType"):
-        if legal_type in [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]:
-            _validate_firms_correction(legal_entity, filing, legal_type, msg)
-        elif legal_type in [
-            LegalEntity.EntityTypes.COMP.value,
-            LegalEntity.EntityTypes.BCOMP.value,
-            LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-            LegalEntity.EntityTypes.BC_CCC.value,
+    if entity_type := filing.get("filing", {}).get("business", {}).get("legalType"):
+        if entity_type in [BusinessCommon.EntityTypes.SOLE_PROP.value, BusinessCommon.EntityTypes.PARTNERSHIP.value]:
+            _validate_firms_correction(business, filing, entity_type, msg)
+        elif entity_type in [
+            BusinessCommon.EntityTypes.COMP.value,
+            BusinessCommon.EntityTypes.BCOMP.value,
+            BusinessCommon.EntityTypes.BC_ULC_COMPANY.value,
+            BusinessCommon.EntityTypes.BC_CCC.value,
         ]:
-            _validate_corps_correction(filing, legal_type, msg)
-        elif legal_type in [LegalEntity.EntityTypes.COOP.value]:
-            _validate_special_resolution_correction(filing, legal_type, msg)
+            _validate_corps_correction(filing, entity_type, msg)
+        elif entity_type in [BusinessCommon.EntityTypes.COOP.value]:
+            _validate_special_resolution_correction(filing, entity_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -86,35 +86,35 @@ def validate(legal_entity: LegalEntity, filing: Dict) -> Error:
     return None
 
 
-def _validate_firms_correction(legal_entity: LegalEntity, filing, legal_type, msg):
+def _validate_firms_correction(business: any, filing, entity_type, msg):
     filing_type = "correction"
     if filing.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
-        msg.extend(validate_name_request(filing, legal_type, filing_type))
+        msg.extend(validate_name_request(filing, entity_type, filing_type))
     if filing.get("filing", {}).get("correction", {}).get("parties", None):
-        msg.extend(validate_party(filing, legal_type))
+        msg.extend(validate_party(filing, entity_type))
     if filing.get("filing", {}).get("correction", {}).get("offices", None):
         msg.extend(validate_offices(filing, filing_type))
     if filing.get("filing", {}).get("correction", {}).get("startDate", None):
-        msg.extend(validate_start_date(legal_entity, filing))
-    msg.extend(validate_naics(legal_entity, filing, filing_type))
+        msg.extend(validate_start_date(business, filing))
+    msg.extend(validate_naics(business, filing, filing_type))
 
 
-def _validate_corps_correction(filing_dict, legal_type, msg):
+def _validate_corps_correction(filing_dict, entity_type, msg):
     filing_type = "correction"
     if filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
-        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
+        msg.extend(validate_name_request(filing_dict, entity_type, filing_type))
     if filing_dict.get("filing", {}).get("correction", {}).get("offices", None):
         msg.extend(validate_corp_offices(filing_dict, filing_type))
     if filing_dict.get("filing", {}).get("correction", {}).get("parties", None):
-        err = validate_roles(filing_dict, legal_type, filing_type)
+        err = validate_roles(filing_dict, entity_type, filing_type)
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        err = validate_parties_names(filing_dict, legal_type, filing_type)
+        err = validate_parties_names(filing_dict, entity_type, filing_type)
         if err:
             msg.extend(err)
 
-        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
+        err = validate_parties_mailing_address(filing_dict, entity_type, filing_type)
         if err:
             msg.extend(err)
     if filing_dict.get("filing", {}).get("correction", {}).get("shareStructure", None):
@@ -123,10 +123,10 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
             msg.extend(err)
 
 
-def _validate_special_resolution_correction(filing_dict, legal_type, msg):
+def _validate_special_resolution_correction(filing_dict, entity_type, msg):
     filing_type = "correction"
     if filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
-        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
+        msg.extend(validate_name_request(filing_dict, entity_type, filing_type))
     if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("resolution", None):
         msg.extend(validate_resolution_content(filing_dict, filing_type))
     if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("signingDate", None):
@@ -140,20 +140,20 @@ def _validate_special_resolution_correction(filing_dict, legal_type, msg):
     if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("memorandumFileKey", None):
         msg.extend(memorandum_change_validation(filing_dict))
     if is_special_resolution_correction_by_filing_json(filing_dict.get("filing", {})):
-        _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg)
+        _validate_roles_parties_correction(filing_dict, entity_type, filing_type, msg)
 
 
-def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg):
+def _validate_roles_parties_correction(filing_dict, entity_type, filing_type, msg):
     if filing_dict.get("filing", {}).get("correction", {}).get("parties", None):
-        err = validate_roles(filing_dict, legal_type, filing_type)
+        err = validate_roles(filing_dict, entity_type, filing_type)
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        err = validate_parties_names(filing_dict, legal_type, filing_type)
+        err = validate_parties_names(filing_dict, entity_type, filing_type)
         if err:
             msg.extend(err)
 
-        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
+        err = validate_parties_mailing_address(filing_dict, entity_type, filing_type)
         if err:
             msg.extend(err)
     else:
@@ -161,7 +161,7 @@ def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg
         msg.append({"error": "Parties list cannot be empty or null", "path": err_path})
 
 
-def validate_party(filing: Dict, legal_type: str) -> list:
+def validate_party(filing: Dict, entity_type: str) -> list:
     """Validate party."""
     msg = []
     completing_parties = 0
@@ -182,14 +182,14 @@ def validate_party(filing: Dict, legal_type: str) -> list:
     party_path = "/filing/correction/parties"
 
     if correction_type == "STAFF":
-        if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value and proprietor_parties < 1:
+        if entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value and proprietor_parties < 1:
             msg.append({"error": "1 Proprietor is required.", "path": party_path})
-        elif legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value and partner_parties < 2:
+        elif entity_type == BusinessCommon.EntityTypes.PARTNERSHIP.value and partner_parties < 2:
             msg.append({"error": "2 Partners are required.", "path": party_path})
     else:
-        if legal_type == LegalEntity.EntityTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
+        if entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
             msg.append({"error": "1 Proprietor and a Completing Party is required.", "path": party_path})
-        elif legal_type == LegalEntity.EntityTypes.PARTNERSHIP.value and (
+        elif entity_type == BusinessCommon.EntityTypes.PARTNERSHIP.value and (
             completing_parties < 1 or partner_parties < 2
         ):
             msg.append({"error": "2 Partners and a Completing Party is required.", "path": party_path})
@@ -197,7 +197,7 @@ def validate_party(filing: Dict, legal_type: str) -> list:
     return msg
 
 
-def validate_naics(legal_entity: LegalEntity, filing: Dict, filing_type: str) -> list:
+def validate_naics(business: any, filing: Dict, filing_type: str) -> list:
     """Validate naics."""
     msg = []
     naics_code_path = f"/filing/{filing_type}/business/naics/naicsCode"
@@ -205,7 +205,7 @@ def validate_naics(legal_entity: LegalEntity, filing: Dict, filing_type: str) ->
     naics_desc = get_str(filing, f"/filing/{filing_type}/business/naics/naicsDescription")
 
     # Note: if existing naics code and description has not changed, no NAICS validation is required
-    if naics_code and (legal_entity.naics_code != naics_code or legal_entity.naics_description != naics_desc):
+    if naics_code and (business.naics_code != naics_code or business.naics_description != naics_desc):
         naics = NaicsService.find_by_code(naics_code)
         if not naics or naics["classTitle"] != naics_desc:
             msg.append({"error": "Invalid naics code or description.", "path": naics_code_path})
@@ -213,13 +213,13 @@ def validate_naics(legal_entity: LegalEntity, filing: Dict, filing_type: str) ->
     return msg
 
 
-def validate_start_date(business: LegalEntity, filing: Dict) -> list:
+def validate_start_date(business: any, filing: Dict) -> list:
     """Validate start date."""
     # Staff can go back with an unlimited period of time, the maximum start date is 90 days after the registration date
     msg = []
     start_date_path = "/filing/correction/startDate"
     start_date = get_date(filing, start_date_path)
-    registration_date = business.founding_date.date()
+    registration_date = business.founding_date.date() if business.is_legal_entity else business.start_date.date()
     greater = registration_date + timedelta(days=90)
     lesser = registration_date + relativedelta(years=-10)
 
