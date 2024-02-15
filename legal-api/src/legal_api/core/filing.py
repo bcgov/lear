@@ -106,6 +106,7 @@ class Filing:
         """Create the Filing."""
         self._storage: Optional[FilingStorage] = None
         self._id: str = ""
+        self._business = None
         self._raw: Optional[Dict] = None
         self._completion_date: datetime
         self._filing_date: datetime
@@ -208,7 +209,7 @@ class Filing:
             filing_json = filing
 
         else:  # Filing.Status.COMPLETED.value
-            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.legal_entity_id)
+            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._business)
 
         return filing_json
 
@@ -261,16 +262,17 @@ class Filing:
         raise NotImplementedError
 
     @staticmethod
-    def get(identifier, filing_id=None) -> Optional[Filing]:
+    def get(identifier, business: any, filing_id=None) -> Optional[Filing]:
         """Return a Filing domain by the id."""
         if identifier.startswith("T"):
             storage = FilingStorage.get_temp_reg_filing(identifier)
         else:
-            storage = LegalEntity.get_filing_by_id(identifier, filing_id)
+            storage = business.get_filing_by_id(filing_id)
 
         if storage:
             filing = Filing()
             filing._storage = storage  # pylint: disable=protected-access
+            filing._business = business
             return filing
 
         return None

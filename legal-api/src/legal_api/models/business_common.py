@@ -20,8 +20,13 @@ from typing import Final
 
 import datedelta
 
+from .db import db
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
+
+from sql_versioning import history_cls
+
+
 
 
 # pylint: disable=no-member,import-outside-toplevel,protected-access
@@ -118,14 +123,14 @@ class BusinessCommon:
         """Return True if the entity is an AlternateName."""
         from legal_api.models import AlternateName
 
-        return isinstance(self, AlternateName)
+        return isinstance(self, AlternateName) or isinstance(self, history_cls(AlternateName))
 
     @property
     def is_legal_entity(self):
         """Return True if the entity is a LegalEntity."""
         from legal_api.models import LegalEntity
 
-        return isinstance(self, LegalEntity)
+        return isinstance(self, LegalEntity) or isinstance(self, history_cls(LegalEntity))
 
     @property
     def entity_type(self):
@@ -244,3 +249,29 @@ class BusinessCommon:
             else:
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
+
+
+    def get_filing_by_id(self, filing_id: str):
+        """Return the filings for a specific business and filing_id."""
+        from legal_api.models import LegalEntity, Filing, AlternateName
+
+        # Determine the model to query based on is_legal_entity property
+        if self.is_legal_entity:
+            entity_model = LegalEntity
+            filing_filter = LegalEntity.id == Filing.legal_entity_id
+            entity_filter = LegalEntity.id == self.id
+        else:
+            entity_model = AlternateName
+            filing_filter = AlternateName.id == Filing.alternate_name_id
+            entity_filter = AlternateName.id == self.id
+
+        filing = (
+            db.session.query(entity_model, Filing)
+            .filter(filing_filter)
+            .filter(Filing.id == filing_id)
+            .filter(entity_filter)
+            .one_or_none()
+        )
+
+        return None if not filing else filing[1]
+

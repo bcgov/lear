@@ -26,6 +26,8 @@ class BusinessService:
 
         This can be an instance of legal entity or alternate name.
         """
+        if identifier.startswith("T"):
+            return None
         if legal_entity := LegalEntity.find_by_identifier(identifier):
             return legal_entity
 

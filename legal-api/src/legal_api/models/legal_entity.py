@@ -610,18 +610,6 @@ class LegalEntity(
         return legal_entities
 
     @classmethod
-    def get_filing_by_id(cls, legal_entity_identifier: int, filing_id: str):
-        """Return the filings for a specific business and filing_id."""
-        filing = (
-            db.session.query(LegalEntity, Filing)
-            .filter(LegalEntity.id == Filing.legal_entity_id)
-            .filter(LegalEntity.identifier == legal_entity_identifier)
-            .filter(Filing.id == filing_id)
-            .one_or_none()
-        )
-        return None if not filing else filing[1]
-
-    @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
         """Return the next value from the sequence."""
         sequence_mapping = {

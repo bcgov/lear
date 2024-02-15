@@ -276,7 +276,8 @@ class ListFilingResource:
     def get_single_filing(identifier: str, filing_id: int):
         """Return a single filing and all of its components."""
         original_filing = str(request.args.get("original", None)).lower() == "true"
-        rv = CoreFiling.get(identifier, filing_id)
+        business = business_service.fetch_business(identifier)
+        rv = CoreFiling.get(identifier, business, filing_id)
         if not rv:
             return jsonify({"message": f"{identifier} no filings found"}), HTTPStatus.NOT_FOUND
 

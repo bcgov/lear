@@ -43,21 +43,20 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     """Provides service for getting business details as of a filing."""
 
     @staticmethod
-    def get_revision(filing_id, legal_entity_id):
+    def get_revision(filing_id, business):
         """Consolidates based on filing type upto the given transaction id of a filing."""
-        legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
         filing = Filing.find_by_id(filing_id)
 
         revision_json = {}
         revision_json["filing"] = {}
         if filing.filing_type == "incorporationApplication":
-            revision_json["filing"] = VersionedBusinessDetailsService.get_ia_revision(filing, legal_entity)
+            revision_json["filing"] = VersionedBusinessDetailsService.get_ia_revision(filing, business)
         elif filing.filing_type == "changeOfDirectors":
-            revision_json["filing"] = VersionedBusinessDetailsService.get_cod_revision(filing, legal_entity)
+            revision_json["filing"] = VersionedBusinessDetailsService.get_cod_revision(filing, business)
         elif filing.filing_type == "changeOfAddress":
-            revision_json["filing"] = VersionedBusinessDetailsService.get_coa_revision(filing, legal_entity)
+            revision_json["filing"] = VersionedBusinessDetailsService.get_coa_revision(filing, business)
         elif filing.filing_type == "annualReport":
-            revision_json["filing"] = VersionedBusinessDetailsService.get_ar_revision(filing, legal_entity)
+            revision_json["filing"] = VersionedBusinessDetailsService.get_ar_revision(filing, business)
         elif filing.filing_type == "correction":
             revision_json = filing.json
 
@@ -71,7 +70,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if not revision_json["filing"]:
             revision_json = filing.json
             revision_json["filing"]["business"] = VersionedBusinessDetailsService.get_business_revision(
-                filing, legal_entity
+                filing, business
             )
 
         revision_json["filing"]["header"] = VersionedBusinessDetailsService.get_header_revision(filing)
@@ -148,17 +147,17 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return coa_json
 
     @staticmethod
-    def get_ar_revision(filing, legal_entity) -> dict:
+    def get_ar_revision(filing, business) -> dict:
         """Consolidates annual report upto the given transaction id of a filing."""
         ar_json = {}
 
-        ar_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, legal_entity)
+        ar_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
 
         ar_json["annualReport"] = {}
-        if legal_entity.last_ar_date:
-            ar_json["annualReport"]["annualReportDate"] = legal_entity.last_ar_date.date().isoformat()
-        if legal_entity.last_agm_date:
-            ar_json["annualReport"]["annualGeneralMeetingDate"] = legal_entity.last_agm_date.date().isoformat()
+        if business.last_ar_date:
+            ar_json["annualReport"]["annualReportDate"] = business.last_ar_date.date().isoformat()
+        if business.last_agm_date:
+            ar_json["annualReport"]["annualGeneralMeetingDate"] = business.last_agm_date.date().isoformat()
 
         if "didNotHoldAgm" in filing.json["filing"]["annualReport"]:
             ar_json["annualReport"]["didNotHoldAgm"] = filing.json["filing"]["annualReport"]["didNotHoldAgm"]
@@ -167,10 +166,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             ar_json["annualReport"]["nextARDate"] = filing.json["filing"]["annualReport"]["nextARDate"]
 
         ar_json["annualReport"]["directors"] = VersionedBusinessDetailsService.get_party_role_revision(
-            filing, legal_entity.id, role="director"
+            filing, business.id, role="director"
         )
         ar_json["annualReport"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, legal_entity.id
+            filing, business.id
         )
 
         # legal_type CP may need changeOfDirectors/changeOfAddress
@@ -214,26 +213,38 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return company_profile_json
 
     @staticmethod
-    def get_business_revision(filing, legal_entity) -> dict:
+    def get_business_revision(filing, business) -> dict:
         """Consolidates the LegalEntity info as of a particular filing."""
-        le_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, legal_entity.id)
-        return VersionedBusinessDetailsService.business_revision_json(le_revision, legal_entity.json())
+        le_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business)
+        return VersionedBusinessDetailsService.business_revision_json(le_revision, business.json())
 
     @staticmethod
-    def get_business_revision_obj(filing, business_id) -> LegalEntity | AlternateName:
-        """Return version object associated with the given filing for a LegalEntity or AlternateName."""
-        business_revision = BusinessService.fetch_business_by_id(business_id)
+    def get_business_revision_obj(filing, business: any) -> any:
+        """Return version object associated with the given filing for a LegalEntity."""
 
-        # The history table has the old revisions, not the current one.
-        if business_revision.change_filing_id != filing.id:
-            business_version = history_cls(LegalEntity)
-            business_revision = (
-                db.session.query(business_version)
-                .filter(business_version.change_filing_id == filing.id)
-                .filter(business_version.id == business_id)
-                .first()
-            )
-        return business_revision
+        #TODO: ideally we make this one query with dynamic filters etc
+        if business.is_legal_entity:
+            # The history table has the old revisions, not the current one.
+            if business.change_filing_id != filing.id:
+                legal_entity_version = history_cls(LegalEntity)
+                le_revision = (
+                    db.session.query(legal_entity_version)
+                    .filter(legal_entity_version.change_filing_id == filing.id)
+                    .filter(legal_entity_version.id == business.id)
+                    .first()
+                )
+        else:
+            # The history table has the old revisions, not the current one.
+            if business.change_filing_id != filing.id:
+                alternate_name_version = history_cls(AlternateName)
+                le_revision = (
+                    db.session.query(alternate_name_version)
+                    .filter(alternate_name_version.change_filing_id == filing.id)
+                    .filter(alternate_name_version.id == business.id)
+                    .first()
+                )
+
+        return le_revision
 
     @staticmethod
     def find_last_value_from_business_revision(
