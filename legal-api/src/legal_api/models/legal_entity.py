@@ -588,6 +588,10 @@ class LegalEntity(
         legal_entity = None
         if internal_id:
             legal_entity = cls.query.filter_by(id=internal_id).one_or_none()
+        if not legal_entity:
+            return None
+        if legal_entity.alternate_name_entity:
+            return legal_entity.alternate_name_entity
         return legal_entity
 
     @classmethod
@@ -596,6 +600,10 @@ class LegalEntity(
         legal_entity = None
         if tax_id:
             legal_entity = cls.query.filter_by(tax_id=tax_id).one_or_none()
+        if not legal_entity:
+            return None
+        if legal_entity.alternate_name_entity:
+            return legal_entity.alternate_name_entity
         return legal_entity
 
     @classmethod

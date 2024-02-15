@@ -20,6 +20,7 @@ from typing import Final
 
 import datedelta
 
+from legal_api.models import AlternateName
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
 
@@ -213,7 +214,6 @@ class BusinessCommon:
         For SP, returns its operating name from AlternateName.
         For GP, returns its primary operating name from AlternateName.
         """
-        from legal_api.models import AlternateName
 
         if not self.is_firm:
             return self._legal_name
@@ -240,3 +240,14 @@ class BusinessCommon:
             else:
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
+
+    @property
+    def alternate_name_entity(self):
+        """Return a AlternateName Entity for non-firm entities."""
+        if not self.is_firm:
+            return None
+
+        if alternate_name := AlternateName.find_by_identifier(identifier=self.identifier):
+            return alternate_name
+
+        return None
