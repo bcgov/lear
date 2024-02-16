@@ -83,7 +83,8 @@ def _get_document_list(business):
     for doc in business_documents:
         documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
 
-    if business.entity_type == LegalEntity.EntityTypes.COOP.value:
+    business_entity_type = business.entity_type if business.is_legal_entity else business.legal_entity.entity_type
+    if business_entity_type == LegalEntity.EntityTypes.COOP.value:
         documents["documentsInfo"] = {}
         coop_documents, coop_info = _get_coop_documents_and_info(business)
         for k, v in coop_documents.items():
@@ -107,14 +108,15 @@ def _get_coop_documents_and_info(business):
 
     info["certifiedRules"], info["certifiedMemorandum"] = {}, {}
 
-    sr_filings = Filing.get_filings_by_types(business.id, ["specialResolution"])
+    business_id = business.id if business.is_legal_entity else business.legal_entity_id
+    sr_filings = Filing.get_filings_by_types(business_id, ["specialResolution"])
     sr_rules_resolution = [
         sr for sr in sr_filings if sr.filing_json["filing"].get("alteration", {}).get("rulesInResolution") is True
     ]
     sr_memorandum_resolution = [
         sr for sr in sr_filings if sr.filing_json["filing"].get("alteration", {}).get("memorandumInResolution") is True
     ]
-    if rules_document := Document.find_by_legal_entity_id_and_type(business.id, DocumentType.COOP_RULES.value):
+    if rules_document := Document.find_by_legal_entity_id_and_type(business_id, DocumentType.COOP_RULES.value):
         rules_filing = Filing.find_by_id(rules_document.filing_id)
         rules_doc_url = url_for(
             "API2.get_documents",
@@ -133,7 +135,7 @@ def _get_coop_documents_and_info(business):
         info["certifiedRules"]["includedInResolutionDate"] = sr_rules_resolution[0].filing_date.isoformat()
 
     if memorandum_document := Document.find_by_legal_entity_id_and_type(
-        business.id, DocumentType.COOP_MEMORANDUM.value
+        business_id, DocumentType.COOP_MEMORANDUM.value
     ):
         memorandum_filing = Filing.find_by_id(memorandum_document.filing_id)
         memorandum_doc_url = url_for(

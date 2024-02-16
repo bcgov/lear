@@ -31,6 +31,7 @@ from legal_api.models import LegalEntity, User, db
 from legal_api.services import authorized, business_service
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
+from legal_api.models import AlternateName
 
 from .bp import bp
 
@@ -46,7 +47,11 @@ def get_comments(identifier, comment_id=None):
     # basic checks
     if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
-        business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        business = None
+        if filing_model.legal_entity_id:
+            business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        elif filing_model.alternate_name_id:
+            business = AlternateName.find_by_id(filing_model.alternate_name_id)
     else:
         business = business_service.fetch_business(identifier)
     err_msg, err_code = _basic_checks(identifier, business, request)
@@ -98,10 +103,11 @@ def post_comments(identifier):
     # save comment
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     try:
+        business_id = business.id if business.is_legal_entity else business.legal_entity_id
         comment = Comment()
         comment.comment = json_input["comment"]["comment"]
         comment.staff_id = user.id
-        comment.legal_entity_id = business.id
+        comment.legal_entity_id = business_id
         comment.timestamp = datetime.datetime.utcnow()
         comment.save()
     except BusinessException as err:

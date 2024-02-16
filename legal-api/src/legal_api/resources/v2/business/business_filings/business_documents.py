@@ -31,6 +31,7 @@ from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
+from legal_api.models import AlternateName
 
 from ..bp import bp
 
@@ -64,7 +65,11 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
 
     if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
-        business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        business = None
+        if filing_model.legal_entity_id:
+            business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        elif filing_model.alternate_name_id:
+            business = AlternateName.find_by_id(filing_model.alternate_name_id)
     else:
         business = business_service.fetch_business(identifier)
 

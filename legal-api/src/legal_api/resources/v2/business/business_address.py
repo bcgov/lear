@@ -20,7 +20,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Address, LegalEntity, db
+from legal_api.models import Address, AlternateName, LegalEntity, db
 from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 
@@ -79,10 +79,17 @@ def _get_address(business, addresses_id=None, address_type=None):
     # find by ID
     addresses = None
     if addresses_id:
+        if business.is_legal_entity:
+            business_source = LegalEntity
+            business_id_attr = LegalEntity.id
+        else:
+            business_source = AlternateName
+            business_id_attr = AlternateName.legal_entity_id
+
         rv = (
-            db.session.query(LegalEntity, Address)
-            .filter(LegalEntity.id == Address.legal_entity_id)
-            .filter(LegalEntity.identifier == business.identifier)
+            db.session.query(business_source, Address)
+            .filter(business_id_attr == Address.legal_entity_id)
+            .filter(business_source.identifier == business.identifier)
             .filter(Address.id == addresses_id)
             .one_or_none()
         )

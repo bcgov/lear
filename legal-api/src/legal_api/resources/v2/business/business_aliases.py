@@ -44,7 +44,8 @@ def get_aliases(identifier, alias_id=None):
 
     alias_type = request.args.get("type")
     if alias_type:
-        aliases = Alias.find_by_type(business.id, alias_type.upper())
+        business_id = business.id if business.is_legal_entity else business.legal_entity_id
+        aliases = Alias.find_by_type(business_id, alias_type.upper())
     else:
         aliases = business.aliases.all()
 

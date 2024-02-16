@@ -61,7 +61,7 @@ def post_internal_tax_ids():
     for identifier in json_input.keys():
         # json input is a dict -> identifier: tax id
         business = business_service.fetch_business(identifier)
-        if business:
+        if business and business.is_legal_entity:
             business.tax_id = json_input[identifier]
             business.save()
         else:

@@ -29,6 +29,7 @@ from legal_api.models import Comment, Filing, LegalEntity, User, db
 from legal_api.services import authorized, business_service
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
+from legal_api.models import AlternateName
 
 from .bp import bp
 
@@ -136,7 +137,11 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
 
     if client_request.method == "GET" and identifier.startswith("T"):
         filing_model = Filing.get_temp_reg_filing(identifier)
-        business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        business = None
+        if filing_model.legal_entity_id:
+            business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        elif filing_model.alternate_name_id:
+            business = AlternateName.find_by_id(filing_model.alternate_name_id)
     else:
         business = business_service.fetch_business(identifier)
 
@@ -146,7 +151,8 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
         return ({"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND)
 
     # check that filing belongs to this business
-    if not filing or filing.legal_entity_id != business.id:
+    filing_business_id = filing.legal_entity_id if business.is_legal_entity else filing.alternate_name_id
+    if not filing or filing_business_id != business.id:
         return ({"message": f"Filing {filing_id} not found"}, HTTPStatus.NOT_FOUND)
 
     return (None, None)

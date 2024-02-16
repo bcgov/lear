@@ -56,7 +56,8 @@ def get_directors(identifier, director_id=None):
     )
 
     party_list = []
-    active_directors = EntityRole.get_active_directors(business.id, end_date)
+    business_id = business.id if business.is_legal_entity else business.legal_entity_id
+    active_directors = EntityRole.get_active_directors(business_id, end_date)
     for director in active_directors:
         director_json = director.json
         party_list.append(director_json)
