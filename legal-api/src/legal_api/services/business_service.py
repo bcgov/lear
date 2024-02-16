@@ -44,15 +44,19 @@ class BusinessService:
         return None
 
     @staticmethod
-    def fetch_business_by_id(id: int):  # pylint: disable=redefined-builtin
-        """Fetches appropriate business by it's internal id.
+    def fetch_business_by_filing(filing):  # pylint: disable=redefined-builtin
+        """Fetches appropriate business from a filing.
 
         This can be an instance of legal entity or alternate name.
         """
-        if legal_entity := LegalEntity.find_by_internal_id(id):
+        if (legal_entity_id := filing.legal_entity_id) and (
+            legal_entity := LegalEntity.find_by_internal_id(legal_entity_id)
+        ):
             return legal_entity
 
-        if alternate_name := AlternateName.find_by_internal_id(id):
+        if (alternate_name_id := filing.altenate_name_id) and (
+            alternate_name := AlternateName.find_by_internal_id(alternate_name_id)
+        ):
             if alternate_name.is_owned_by_colin_entity:
                 return alternate_name
 

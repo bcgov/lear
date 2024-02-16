@@ -673,7 +673,7 @@ class LegalEntity(
 
     @classmethod
     def find_by_id(cls, legal_entity_id: int):
-        """Return a legal enntity by the internal id."""
+        """Return a legal entity by the internal id."""
         legal_entity = None
         if legal_entity_id:
             legal_entity = cls.query.filter_by(id=legal_entity_id).one_or_none()
