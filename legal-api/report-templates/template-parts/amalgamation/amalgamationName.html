@@ -1,4 +1,8 @@
-{% if amalgamationApplication %}
-    Name of Amalgamated Company: {{business.legalName}}
-    <div class="separator mt-4"></div>
-{%endif%}
+Name of Amalgamated Company:
+{% if business.legalName %}
+{{ business.legalName }}
+{% elif nameRequest.legalName %}
+{{ nameRequest.legalName }}
+{% else %}
+{{numberedDescription}}
+{% endif %}
