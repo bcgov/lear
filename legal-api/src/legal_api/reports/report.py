@@ -349,7 +349,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             legal_type = self._business.legal_type
 
         filing['numberedDescription'] = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
-        filing['numberedLegalNameSuffix'] = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
+        filing['numberedLegalNameSuffix'] = Business.BUSINESSES.get(legal_type, {}).get('numberedLegalNameSuffix')
 
         corp_type = CorpType.find_by_id(legal_type)
         filing['entityDescription'] = corp_type.full_desc
@@ -741,7 +741,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             })
         filing['amalgamatingBusinesses'] = amalgamating_businesses
 
-    def _set_from_primary_or_holding_business_data(self, filing):
+    def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals
         ting_business = next(x for x in filing['amalgamationApplication']['amalgamatingBusinesses']
                              if x['role'] in [AmalgamatingBusiness.Role.holding.name,
                                               AmalgamatingBusiness.Role.primary.name])
