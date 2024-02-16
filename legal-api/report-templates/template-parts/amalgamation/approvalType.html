@@ -3,19 +3,13 @@
   <div class="section-title mt-4">
     <span>Approval Type</span>
   </div>
-  {% if courtApproval is none %}
-    <div class="section-data mt-3">
-      N/A
-    </div>
-  {% else %}
-    {% if courtApproval == True %}
-      <div class="section-data mt-3">
-        The restoration was approved by a court order.
-      </div>
-    {% elif courtApproval == False %}
-    <div class="section-data mt-3">
-      The restoration was approved by Registrar.
-      </div>
-      {%endif%}
-  {% endif %}
+  {% if courtApproval == True %}
+  <div class="section-data mt-3">
+      The amalgamation is approved by a court order.
+  </div>
+  {% elif courtApproval == False %}
+  <div class="section-data mt-3">
+    The amalgamation is approved without a court order.
+  </div>
+  {%endif%}
 </div>
