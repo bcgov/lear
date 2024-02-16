@@ -42,9 +42,9 @@ class BusinessService:
             return alternate_name_entity
 
         return None
-    
+
     @staticmethod
-    def fetch_business_by_id(id: int):
+    def fetch_business_by_id(id: int):  # pylint: disable=redefined-builtin
         """Fetches appropriate business by it's internal id.
 
         This can be an instance of legal entity or alternate name.
@@ -60,6 +60,6 @@ class BusinessService:
             alternate_name_entity = (
                 alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
             )
-            return  alternate_name_entity
+            return alternate_name_entity
 
         return None

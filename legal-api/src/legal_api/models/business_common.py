@@ -19,14 +19,12 @@ from enum import Enum, auto
 from typing import Final
 
 import datedelta
+from sql_versioning import history_cls
 
-from .db import db
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
 
-from sql_versioning import history_cls
-
-
+from .db import db
 
 
 # pylint: disable=no-member,import-outside-toplevel,protected-access
@@ -123,14 +121,14 @@ class BusinessCommon:
         """Return True if the entity is an AlternateName."""
         from legal_api.models import AlternateName
 
-        return isinstance(self, AlternateName) or isinstance(self, history_cls(AlternateName))
+        return isinstance(self, (AlternateName, history_cls(AlternateName)))
 
     @property
     def is_legal_entity(self):
         """Return True if the entity is a LegalEntity."""
         from legal_api.models import LegalEntity
 
-        return isinstance(self, LegalEntity) or isinstance(self, history_cls(LegalEntity))
+        return isinstance(self, (LegalEntity, history_cls(LegalEntity)))
 
     @property
     def entity_type(self):
@@ -227,7 +225,9 @@ class BusinessCommon:
         if not self.is_firm:
             return self._legal_name
 
-        if self.is_alternate_name_entity and (alternate_name := AlternateName.find_by_identifier(identifier=self.identifier)):
+        if self.is_alternate_name_entity and (
+            alternate_name := AlternateName.find_by_identifier(identifier=self.identifier)
+        ):
             return alternate_name.name
 
         return None
@@ -250,10 +250,9 @@ class BusinessCommon:
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
 
-
     def get_filing_by_id(self, filing_id: str):
         """Return the filings for a specific business and filing_id."""
-        from legal_api.models import LegalEntity, Filing, AlternateName
+        from legal_api.models import AlternateName, Filing, LegalEntity
 
         # Determine the model to query based on is_legal_entity property
         if self.is_legal_entity:
@@ -274,4 +273,3 @@ class BusinessCommon:
         )
 
         return None if not filing else filing[1]
-

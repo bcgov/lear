@@ -29,7 +29,6 @@ from legal_api.core.meta import FilingMeta
 from legal_api.models import Document, DocumentType
 from legal_api.models import Filing as FilingStorage
 from legal_api.models import LegalEntity, UserRoles
-from legal_api.services import business_service
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
@@ -272,7 +271,7 @@ class Filing:
         if storage:
             filing = Filing()
             filing._storage = storage  # pylint: disable=protected-access
-            filing._business = business
+            filing._business = business  # pylint: disable=protected-access
             return filing
 
         return None
@@ -368,7 +367,9 @@ class Filing:
         """
         base_url = current_app.config.get("LEGAL_API_BASE_URL")
 
-        business_attribute = FilingStorage.legal_entity_id if business.is_legal_entity else FilingStorage.alternate_name_id
+        business_attribute = (
+            FilingStorage.legal_entity_id if business.is_legal_entity else FilingStorage.alternate_name_id
+        )
 
         query = FilingStorage.query.filter(business_attribute == business.id)
 
@@ -415,9 +416,7 @@ class Filing:
             # FUTURE: parent_filing should no longer be used for correction filings and will be removed
             if filing.parent_filing:
                 ledger_filing["correctionFilingId"] = filing.parent_filing.id
-                ledger_filing[
-                    "correctionLink"
-                ] = f"{base_url}/{business.identifier}/filings/{filing.parent_filing.id}"
+                ledger_filing["correctionLink"] = f"{base_url}/{business.identifier}/filings/{filing.parent_filing.id}"
                 ledger_filing["correctionFilingStatus"] = filing.parent_filing.status
 
             # add the collected meta_data

@@ -167,9 +167,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ar_json["annualReport"]["directors"] = VersionedBusinessDetailsService.get_party_role_revision(
             filing, business.id, role="director"
         )
-        ar_json["annualReport"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, business.id
-        )
+        ar_json["annualReport"]["offices"] = VersionedBusinessDetailsService.get_office_revision(filing, business.id)
 
         # legal_type CP may need changeOfDirectors/changeOfAddress
         if "changeOfDirectors" in filing.json["filing"]:
@@ -223,7 +221,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
         le_revision = business
 
-        #TODO: ideally we make this one query with dynamic filters etc
+        # TODO: ideally we make this one query with dynamic filters etc
         if business.is_legal_entity:
             # The history table has the old revisions, not the current one.
             if business.change_filing_id and business.change_filing_id != filing.id:

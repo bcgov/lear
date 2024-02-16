@@ -464,9 +464,7 @@ class ListFilingResource:
         return None, None
 
     @staticmethod
-    def check_authorization(
-        identifier, filing_json: dict, business: any, filing_id: int = None
-    ) -> Tuple[dict, int]:
+    def check_authorization(identifier, filing_json: dict, business: any, filing_id: int = None) -> Tuple[dict, int]:
         """Assert that the user can access the LegalEntity."""
         filing_type = filing_json["filing"]["header"].get("name")
         filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
@@ -475,9 +473,7 @@ class ListFilingResource:
         state = business.state if business else LegalEntity.State.ACTIVE
         # for incorporationApplication and registration, get legalType from nameRequest
         legal_type = (
-            business.entity_type
-            if business
-            else filing_json["filing"][filing_type]["nameRequest"].get("legalType")
+            business.entity_type if business else filing_json["filing"][filing_type]["nameRequest"].get("legalType")
         )
 
         if not authorized(identifier, jwt, action=["edit"]) or not is_allowed(
@@ -849,16 +845,12 @@ class ListFilingResource:
             else:
                 mailing_address = business.office_mailing_address.one_or_none()
             corp_type = (
-                business.entity_type
-                if business.entity_type
-                else filing.json["filing"]["business"].get("legalType")
+                business.entity_type if business.entity_type else filing.json["filing"]["business"].get("legalType")
             )
         else:
             mailing_address = business.office_mailing_address.one_or_none()
             corp_type = (
-                business.entity_type
-                if business.entity_type
-                else filing.json["filing"]["business"].get("legalType")
+                business.entity_type if business.entity_type else filing.json["filing"]["business"].get("legalType")
             )
 
         payload = {
@@ -907,9 +899,7 @@ class ListFilingResource:
             headers = {"Authorization": "Bearer " + token, "Content-Type": "application/json"}
             rv = requests.post(url=payment_svc_url, json=payload, headers=headers, timeout=20.0)
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
-            current_app.logger.error(
-                f"Payment connection failure for {business.identifier}: filing:{filing.id}", err
-            )
+            current_app.logger.error(f"Payment connection failure for {business.identifier}: filing:{filing.id}", err)
             return {"message": "unable to create invoice for payment."}, HTTPStatus.PAYMENT_REQUIRED
 
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
@@ -1026,9 +1016,7 @@ def get_internal_filings(status=None):
             if (
                 filing_json
                 and filing.filing_type != "lear_epoch"
-                and (
-                    filing.filing_type != "correction" or business.entity_type != LegalEntity.EntityTypes.COOP.value
-                )
+                and (filing.filing_type != "correction" or business.entity_type != LegalEntity.EntityTypes.COOP.value)
             ):
                 filing_json["filingId"] = filing.id
                 filing_json["filing"]["header"]["learEffectiveDate"] = filing.effective_date.isoformat()
