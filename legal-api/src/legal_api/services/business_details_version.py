@@ -243,7 +243,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                     .first()
                 )
 
-        return le_revision
+        return le_revision if le_revision else business
 
     @staticmethod
     def find_last_value_from_business_revision(
