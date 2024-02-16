@@ -54,7 +54,7 @@ class BusinessService:
         ):
             return legal_entity
 
-        if (alternate_name_id := filing.altenate_name_id) and (
+        if (alternate_name_id := filing.alternate_name_id) and (
             alternate_name := AlternateName.find_by_internal_id(alternate_name_id)
         ):
             if alternate_name.is_owned_by_colin_entity:
