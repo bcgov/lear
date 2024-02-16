@@ -22,7 +22,6 @@
       </table>
       <div class="business-name-header">
         <label class="lbl-business-name">
-          <label class="lbl-business-name">
           {% if business.legalName %}
                {{ business.legalName }}
           {% elif nameRequest.legalName %}
@@ -37,7 +36,13 @@
     <div class="no-page-break">
       <div class="section-header mt-5 pt-4">AMALGAMATION APPLICATION</div>
     </div>
-    [[incorporation-application/nameRequest.html]]
+
+    {% if nameRequest.nrNumber or (not nameRequest.nrNumber and not nameRequest.legalName)  %}
+        <!-- this block is hidden if the name is adopted from amalgamating business -->
+        [[incorporation-application/nameRequest.html]]
+        <div class="separator mt-4"></div>
+    {% endif %}
+
     [[amalgamation/effectiveDate.html]]
     [[amalgamation/approvalType.html]]
     [[amalgamation/amalgamatingCorp.html]]
@@ -47,6 +52,9 @@
     <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
       <div class="container pt-4">
         [[amalgamation/amalgamationName.html]]
+        {% if business.legalType in ['BEN', 'CC', 'ULC'] %}
+        <div class="separator mt-4"></div>
+        {% endif %}
         [[common/statement.html]]
         [[common/addresses.html]]
         [[common/directors.html]]
