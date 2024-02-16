@@ -161,7 +161,7 @@ def test_dba_registration(mocker, app, session, jwt):
 def test_invalid_nr_registration(mocker, app, session, jwt):
     """Assert that nr is invalid."""
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
-    
+
     filing = copy.deepcopy(SP_REGISTRATION)
     invalid_nr_response = {
         'state': 'INPROGRESS',
@@ -220,10 +220,10 @@ def test_validate_tax_id(mocker, app, session, jwt, test_name, tax_id, expected)
         assert err is None
 
 
-def test_naics_invalid(monkeypatch, app, session, jwt):
+def test_naics_invalid(mocker, app, session, jwt):
     """Assert that naics is invalid."""
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
     filing = copy.deepcopy(SP_REGISTRATION)
-
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
         with patch.object(NaicsService, 'find_by_code', return_value={}):
@@ -329,8 +329,8 @@ def test_validate_start_date(mocker, app, session, jwt, test_name, username, rol
 )
 def test_registration_court_orders(mocker, app, session, jwt, test_status, file_number, effect_of_order, expected_code, expected_msg):
     """Assert valid court orders."""
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False) 
-    
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
+
     filing = copy.deepcopy(GP_REGISTRATION)
 
     court_order = {'effectOfOrder': effect_of_order}
