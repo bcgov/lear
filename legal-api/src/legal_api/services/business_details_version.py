@@ -78,7 +78,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
     @staticmethod
     def get_ia_revision(filing, business) -> dict:
-        """Consolidates incorporation application upto the given transaction id of a filing."""
+        """Consolidates incorporation application up to the given transaction id of a filing."""
         ia_json = {}
 
         ia_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
@@ -773,7 +773,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def business_revision_json(business_revision, business_json):
         """Return the business revision as a json object."""
-        business_json["hasRestrictions"] = business_revision.restriction_ind
+        business_json["hasRestrictions"] = (
+            business_revision.restriction_ind if business_revision.is_legal_entity else False
+        )
         business_json["dissolutionDate"] = (
             LegislationDatetime.format_as_legislation_date(business_revision.dissolution_date)
             if business_revision.dissolution_date
@@ -781,7 +783,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )
         business_json["restorationExpiryDate"] = (
             LegislationDatetime.format_as_legislation_date(business_revision.restoration_expiry_date)
-            if business_revision.restoration_expiry_date
+            if business_revision.is_legal_entity and business_revision.restoration_expiry_date
             else None
         )
         business_json["startDate"] = (
@@ -791,11 +793,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )
         business_json["continuationOutDate"] = (
             LegislationDatetime.format_as_legislation_date(business_revision.continuation_out_date)
-            if business_revision.continuation_out_date
+            if business_revision.is_legal_entity and business_revision.continuation_out_date
             else None
         )
 
-        if business_revision.tax_id:
+        if business_revision.is_legal_entity and business_revision.tax_id:
             business_json["taxId"] = business_revision.tax_id
         business_json["legalName"] = business_revision.legal_name
         business_json["businessName"] = business_revision.business_name
