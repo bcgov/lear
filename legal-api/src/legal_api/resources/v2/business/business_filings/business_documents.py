@@ -65,11 +65,7 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
 
     if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
-        business = None
-        if filing_model.legal_entity_id:
-            business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
-        elif filing_model.alternate_name_id:
-            business = AlternateName.find_by_id(filing_model.alternate_name_id)
+        business = business_service.fetch_business_by_filing(filing_model)
     else:
         business = business_service.fetch_business(identifier)
 

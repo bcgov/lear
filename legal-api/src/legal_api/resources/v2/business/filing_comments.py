@@ -137,11 +137,7 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
 
     if client_request.method == "GET" and identifier.startswith("T"):
         filing_model = Filing.get_temp_reg_filing(identifier)
-        business = None
-        if filing_model.legal_entity_id:
-            business = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
-        elif filing_model.alternate_name_id:
-            business = AlternateName.find_by_id(filing_model.alternate_name_id)
+        business = business_service.fetch_business_by_filing(filing_model)
     else:
         business = business_service.fetch_business(identifier)
 
