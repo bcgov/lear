@@ -36,7 +36,6 @@ from legal_api.models import (
     ShareSeries,
     db,
 )
-from legal_api.services.business_service import BusinessService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
