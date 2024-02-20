@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Business checks for firms."""
-from legal_api.models import Address, EntityRole, Filing, LegalEntity, Office, AlternateName
+from legal_api.models import Address, AlternateName, EntityRole, Filing, Office
 from legal_api.models.business_common import BusinessCommon
 
 from . import WARNING_MESSAGE_BASE  # noqa: I001
@@ -89,7 +89,6 @@ def check_parties(entity_type: str, business: any) -> list:
         if not completing_party_filing:
             completing_party_filing = Filing.get_most_recent_legal_filing(business, "registration")
 
-        #TODO update to work with SP alternate_name
         result.extend(check_completing_party_for_filing(completing_party_filing))
 
     else:
@@ -213,7 +212,7 @@ def check_sp_party(alternate_name: AlternateName):
             {
                 **WARNING_MESSAGE_BASE,
                 "code": BusinessWarningCodes.NO_PROPRIETOR_PERSON_NAME,
-                "message": f"Proprietor name is required.",
+                "message": "Proprietor name is required.",
             }
         )
     if no_org_name_warning:
@@ -221,10 +220,9 @@ def check_sp_party(alternate_name: AlternateName):
             {
                 **WARNING_MESSAGE_BASE,
                 "code": BusinessWarningCodes.NO_PROPRIETOR_ORG_NAME,
-                "message": f"Proprietor organization name is required.",
+                "message": "Proprietor organization name is required.",
             }
         )
-
 
     return result
 

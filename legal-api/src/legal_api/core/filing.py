@@ -105,6 +105,7 @@ class Filing:
         """Create the Filing."""
         self._storage: Optional[FilingStorage] = None
         self._id: str = ""
+        self._business = None
         self._raw: Optional[Dict] = None
         self._completion_date: datetime
         self._filing_date: datetime
@@ -207,7 +208,7 @@ class Filing:
             filing_json = filing
 
         else:  # Filing.Status.COMPLETED.value
-            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.legal_entity_id)
+            filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._business)
 
         return filing_json
 
@@ -260,16 +261,17 @@ class Filing:
         raise NotImplementedError
 
     @staticmethod
-    def get(identifier, filing_id=None) -> Optional[Filing]:
+    def get(identifier, business: any, filing_id=None) -> Optional[Filing]:
         """Return a Filing domain by the id."""
         if identifier.startswith("T"):
             storage = FilingStorage.get_temp_reg_filing(identifier)
         else:
-            storage = LegalEntity.get_filing_by_id(identifier, filing_id)
+            storage = business.get_filing_by_id(filing_id)
 
         if storage:
             filing = Filing()
             filing._storage = storage  # pylint: disable=protected-access
+            filing._business = business  # pylint: disable=protected-access
             return filing
 
         return None
@@ -351,7 +353,7 @@ class Filing:
 
     @staticmethod
     def ledger(  # pylint: disable=too-many-arguments
-        legal_entity_id: int,
+        business: any,
         jwt: JwtManager = None,
         statuses: List(str) = None,
         start: int = None,
@@ -365,9 +367,11 @@ class Filing:
         """
         base_url = current_app.config.get("LEGAL_API_BASE_URL")
 
-        legal_entity = LegalEntity.find_by_internal_id(legal_entity_id)
+        business_attribute = (
+            FilingStorage.legal_entity_id if business.is_legal_entity else FilingStorage.alternate_name_id
+        )
 
-        query = FilingStorage.query.filter(FilingStorage.legal_entity_id == legal_entity_id)
+        query = FilingStorage.query.filter(business_attribute == business.id)
 
         if effective_date:
             query = query.filter(FilingStorage.effective_date <= effective_date)
@@ -394,8 +398,8 @@ class Filing:
 
             ledger_filing = {
                 "availableOnPaperOnly": filing.paper_only,
-                "businessIdentifier": legal_entity.identifier,
-                "displayName": FilingMeta.display_name(legal_entity, filing=filing),
+                "businessIdentifier": business.identifier,
+                "displayName": FilingMeta.display_name(business, filing=filing),
                 "effectiveDate": filing.effective_date,
                 "filingId": filing.id,
                 "name": filing.filing_type,
@@ -403,7 +407,7 @@ class Filing:
                 "status": filing.status,
                 "submitter": submitter_displayname,
                 "submittedDate": filing._filing_date,  # pylint: disable=protected-access
-                **Filing.common_ledger_items(legal_entity.identifier, filing),
+                **Filing.common_ledger_items(business.identifier, filing),
             }
             if filing.filing_sub_type:
                 ledger_filing["filingSubType"] = filing.filing_sub_type
@@ -412,9 +416,7 @@ class Filing:
             # FUTURE: parent_filing should no longer be used for correction filings and will be removed
             if filing.parent_filing:
                 ledger_filing["correctionFilingId"] = filing.parent_filing.id
-                ledger_filing[
-                    "correctionLink"
-                ] = f"{base_url}/{legal_entity.identifier}/filings/{filing.parent_filing.id}"
+                ledger_filing["correctionLink"] = f"{base_url}/{business.identifier}/filings/{filing.parent_filing.id}"
                 ledger_filing["correctionFilingStatus"] = filing.parent_filing.status
 
             # add the collected meta_data
@@ -440,7 +442,7 @@ class Filing:
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
-            "displayLedger": Filing._is_display_ledger(filing_storage),  # pylint: disable=E1120
+            "displayLedger": Filing._is_display_ledger(filing=filing_storage),  # pylint: disable=E1120
             "commentsCount": filing_storage.comments_count,
             "commentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/comments",
             "documentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents"
@@ -464,7 +466,8 @@ class Filing:
             ledger_filing["data"] = {}
         ledger_filing["data"]["order"] = court_order_data
 
-    def _is_display_ledger(self, filing: FilingStorage) -> bool:
+    @staticmethod
+    def _is_display_ledger(filing: FilingStorage) -> bool:
         """Return boolean that display the ledger."""
         return filing.filing_type != Filing.FilingTypes.ADMIN_FREEZE
 
@@ -570,7 +573,7 @@ class Filing:
 
                 # get extra outputs
                 if bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                    filing.storage, legal_entity.id
+                    filing.storage, legal_entity
                 ):
                     legal_entity = bus_rev_temp
 

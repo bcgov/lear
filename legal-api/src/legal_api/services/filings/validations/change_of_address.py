@@ -20,12 +20,11 @@ import pycountry
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import LegalEntity
 
 
-def validate(legal_entity: LegalEntity, cod: Dict) -> Error:
+def validate(business: any, cod: Dict) -> Error:
     """Validate the Change ofAddress filing."""
-    if not legal_entity or not cod:
+    if not business or not cod:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
     msg = []
 

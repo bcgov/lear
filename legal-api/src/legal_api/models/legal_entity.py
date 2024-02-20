@@ -16,21 +16,20 @@
 The Business class and Schema are held in this module
 """
 import re
-from enum import Enum, auto
+from enum import Enum
 from http import HTTPStatus
 from typing import Final, Optional
 
 import datedelta
 from flask import current_app
 from sql_versioning import Versioned
-from sqlalchemy import case, event, text
+from sqlalchemy import event, text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import aliased, backref
-from sqlalchemy.sql.functions import func
+from sqlalchemy.orm import backref
 
 from legal_api.exceptions import BusinessException
-from legal_api.utils.base import BaseEnum, BaseMeta
+from legal_api.utils.base import BaseMeta
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -58,7 +57,6 @@ class LegalEntity(
     with people and other businesses.
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
-
 
     class AssociationTypes(Enum):
         """Render an Enum of the Business Association Types."""
@@ -247,7 +245,7 @@ class LegalEntity(
     @identifier.setter
     def identifier(self, value: str):
         """Set the business identifier."""
-        if LegalEntity.validate_identifier(self._entity_type, value):
+        if LegalEntity.validate_identifier(self.entity_type, value):
             self._identifier = value
         else:
             raise BusinessException("invalid-identifier-format", 406)
@@ -266,7 +264,7 @@ class LegalEntity(
         ar_min_date = datetime(next_ar_year, 1, 1).date()
         ar_max_date = datetime(next_ar_year, 12, 31).date()
 
-        if self._entity_type == self.EntityTypes.COOP.value:
+        if self.entity_type == self.EntityTypes.COOP.value:
             # This could extend by moving it into a table with start and end date against each year when extension
             # is required. We need more discussion to understand different scenario's which can come across in future.
             if next_ar_year == 2020:
@@ -275,7 +273,7 @@ class LegalEntity(
             else:
                 # If this is a CO-OP, set the max date as April 30th next year.
                 ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
-        elif self._entity_type in [
+        elif self.entity_type in [
             self.EntityTypes.BCOMP.value,
             self.EntityTypes.COMP.value,
             self.EntityTypes.BC_ULC_COMPANY.value,
@@ -431,7 +429,7 @@ class LegalEntity(
             "goodStanding": self.good_standing,
             "identifier": self.identifier,
             "legalName": self._legal_name,
-            "legalType": self._entity_type,
+            "legalType": self.entity_type,
             "state": self.state.name if self.state else LegalEntity.State.ACTIVE.name,
         }
 
@@ -492,11 +490,11 @@ class LegalEntity(
     @property
     def party_json(self) -> dict:
         """Return the party member as a json object."""
-        if self._entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
             member = {
                 "officer": {
                     "id": self.id,
-                    "partyType": self._entity_type,
+                    "partyType": self.entity_type,
                     "firstName": self.first_name,
                     "lastName": self.last_name,
                 }
@@ -509,7 +507,7 @@ class LegalEntity(
             member = {
                 "officer": {
                     "id": self.id,
-                    "partyType": self._entity_type,
+                    "partyType": self.entity_type,
                     "organizationName": self._legal_name,
                     "identifier": self.identifier,
                 }
@@ -534,7 +532,7 @@ class LegalEntity(
     @property
     def name(self) -> str:
         """Return the full name of the party for comparison."""
-        if self._entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
             if self.middle_initial:
                 return " ".join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
             return " ".join((self.first_name, self.last_name)).strip().upper()
@@ -612,18 +610,6 @@ class LegalEntity(
         return legal_entities
 
     @classmethod
-    def get_filing_by_id(cls, legal_entity_identifier: int, filing_id: str):
-        """Return the filings for a specific business and filing_id."""
-        filing = (
-            db.session.query(LegalEntity, Filing)
-            .filter(LegalEntity.id == Filing.legal_entity_id)
-            .filter(LegalEntity.identifier == legal_entity_identifier)
-            .filter(Filing.id == filing_id)
-            .one_or_none()
-        )
-        return None if not filing else filing[1]
-
-    @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
         """Return the next value from the sequence."""
         sequence_mapping = {
@@ -676,18 +662,18 @@ class LegalEntity(
     @property
     def valid_party_type_data(self) -> bool:
         """Validate the model based on the party type (person/organization)."""
-        if self._entity_type != LegalEntity.EntityTypes.PERSON.value:
+        if self.entity_type != LegalEntity.EntityTypes.PERSON.value:
             if self.first_name or self.middle_initial or self.last_name:
                 return False
 
-        if self._entity_type == LegalEntity.EntityTypes.PERSON.value:
+        if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
             if not (self.first_name or self.middle_initial or self.last_name) or self._legal_name:
                 return False
         return True
 
     @classmethod
     def find_by_id(cls, legal_entity_id: int):
-        """Return a legal enntity by the internal id."""
+        """Return a legal entity by the internal id."""
         legal_entity = None
         if legal_entity_id:
             legal_entity = cls.query.filter_by(id=legal_entity_id).one_or_none()
@@ -707,7 +693,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
 
     if not party.valid_party_type_data:
         raise BusinessException(
-            error=f"Attempt to change/add {party._entity_type} had invalid data.",
+            error=f"Attempt to change/add {party.entity_type} had invalid data.",
             status_code=HTTPStatus.BAD_REQUEST,
         )
 

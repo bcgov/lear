@@ -20,7 +20,7 @@ import PyPDF2
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import LegalEntity
+from legal_api.models import BusinessCommon
 from legal_api.services import MinioService, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -210,7 +210,7 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
     return None
 
 
-def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
+def validate_party_name(entity_type: str, party: dict, party_path: str) -> list:
     """Validate party name."""
     msg = []
 
@@ -218,9 +218,9 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
     officer = party["officer"]
     party_type = officer["partyType"]
 
-    if party_type == "person" and legal_type in [
-        LegalEntity.EntityTypes.BCOMP.value,
-        LegalEntity.EntityTypes.COOP.value,
+    if party_type == "person" and entity_type in [
+        BusinessCommon.EntityTypes.BCOMP.value,
+        BusinessCommon.EntityTypes.COOP.value,
     ]:
         party_roles = [x.get("roleType") for x in party["roles"]]
         party_roles_str = ", ".join(party_roles)
@@ -251,7 +251,7 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
 
 def validate_name_request(  # pylint: disable=too-many-locals
     filing_json: dict,
-    legal_type: str,
+    entity_type: str,
     filing_type: str,
     accepted_request_types: list = None,
 ) -> list:
@@ -259,19 +259,19 @@ def validate_name_request(  # pylint: disable=too-many-locals
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
     legal_name_path = f"{nr_path}/legalName"
-    legal_type_path = f"{nr_path}/legalType"
+    entity_type_path = f"{nr_path}/legalType"
 
     nr_number = get_str(filing_json, nr_number_path)
     legal_name = get_str(filing_json, legal_name_path)
 
-    valid_numbered_legal_type = [
-        LegalEntity.EntityTypes.BCOMP.value,
-        LegalEntity.EntityTypes.COMP.value,
-        LegalEntity.EntityTypes.BC_CCC.value,
-        LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+    valid_numbered_entity_type = [
+        BusinessCommon.EntityTypes.BCOMP.value,
+        BusinessCommon.EntityTypes.COMP.value,
+        BusinessCommon.EntityTypes.BC_CCC.value,
+        BusinessCommon.EntityTypes.BC_ULC_COMPANY.value,
     ]
     if not nr_number and not legal_name:
-        if legal_type in valid_numbered_legal_type:
+        if entity_type in valid_numbered_entity_type:
             return []  # It's numbered company
         else:
             # CP, SP, GP doesn't support numbered company
@@ -300,10 +300,10 @@ def validate_name_request(  # pylint: disable=too-many-locals
         )
 
     # ensure business type
-    nr_legal_type = nr_response_json.get("legalType")
-    if legal_type != nr_legal_type:
+    nr_entity_type = nr_response_json.get("legalType")
+    if entity_type != nr_entity_type:
         msg.append(
-            {"error": _("Name Request legal type is not same as the business legal type."), "path": legal_type_path}
+            {"error": _("Name Request legal type is not same as the business legal type."), "path": entity_type_path}
         )
 
     # ensure NR request has the same legal name

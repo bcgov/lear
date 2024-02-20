@@ -19,7 +19,7 @@ from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import Filing, LegalEntity, PartyRole
+from legal_api.models import Filing, PartyRole
 from legal_api.services.filings.validations.common_validations import validate_court_order, validate_name_request
 from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_date, get_str
@@ -30,10 +30,10 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 APPROVAL_TYPE_PATH = "/filing/restoration/approvalType"
 
 
-def validate(legal_entity: LegalEntity, restoration: Dict) -> Optional[Error]:
+def validate(business: any, restoration: Dict) -> Optional[Error]:
     """Validate the Restoration filing."""
     filing_type = "restoration"
-    if not legal_entity or not restoration:
+    if not business or not restoration:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
@@ -41,10 +41,10 @@ def validate(legal_entity: LegalEntity, restoration: Dict) -> Optional[Error]:
     limited_restoration = None
     if restoration_type in ("limitedRestorationExtension", "limitedRestorationToFull"):
         limited_restoration = Filing.get_a_businesses_most_recent_filing_of_a_type(
-            legal_entity.id, "restoration", "limitedRestoration"
+            business.id, "restoration", "limitedRestoration"
         )
     if restoration_type in ("limitedRestoration", "limitedRestorationExtension"):
-        msg.extend(validate_expiry_date(legal_entity, restoration, restoration_type))
+        msg.extend(validate_expiry_date(business, restoration, restoration_type))
     elif restoration_type in ("fullRestoration", "limitedRestorationToFull"):
         msg.extend(validate_relationship(restoration))
 
@@ -52,9 +52,7 @@ def validate(legal_entity: LegalEntity, restoration: Dict) -> Optional[Error]:
         name_request = restoration.get("filing", {}).get("restoration", {}).get("nameRequest", {})
         if name_request.get("nrNumber", None):
             accepted_request_types = ["RCC", "RCR", "BERE", "RUL"]
-            msg.extend(
-                validate_name_request(restoration, legal_entity.entity_type, filing_type, accepted_request_types)
-            )
+            msg.extend(validate_name_request(restoration, business.entity_type, filing_type, accepted_request_types))
         else:
             if not name_request.get("legalName", None):
                 msg.append(
@@ -84,7 +82,7 @@ def validate(legal_entity: LegalEntity, restoration: Dict) -> Optional[Error]:
     return None
 
 
-def validate_expiry_date(legal_entity: LegalEntity, filing: Dict, restoration_type: str) -> list:
+def validate_expiry_date(business: any, filing: Dict, restoration_type: str) -> list:
     """Validate expiry date."""
     msg = []
     expiry_date_path = "/filing/restoration/expiry"
@@ -93,7 +91,7 @@ def validate_expiry_date(legal_entity: LegalEntity, filing: Dict, restoration_ty
         max_expiry_years = 2
         now = LegislationDatetime.now().date()
         if restoration_type == "limitedRestorationExtension":
-            now = LegislationDatetime.as_legislation_timezone(legal_entity.restoration_expiry_date).date()
+            now = LegislationDatetime.as_legislation_timezone(business.restoration_expiry_date).date()
         greater = now + relativedelta(years=max_expiry_years)
         lesser = now + relativedelta(months=1)
         if expiry_date < lesser or expiry_date > greater:

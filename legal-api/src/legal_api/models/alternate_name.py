@@ -15,20 +15,21 @@
 from __future__ import annotations
 
 from enum import auto
+
 from flask import current_app
 from sql_versioning import Versioned
 from sqlalchemy.dialects.postgresql import UUID
 
-
+from ..utils.base import BaseEnum
+from ..utils.datetime import datetime
+from ..utils.legislation_datetime import LegislationDatetime
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .business_common import BusinessCommon
 from .db import db
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from ..utils.base import BaseEnum
-from ..utils.datetime import datetime
-from ..utils.legislation_datetime import LegislationDatetime
 
 
+# pylint: disable=import-outside-toplevel
 class AlternateName(Versioned, db.Model, BusinessCommon):
     """This class manages the alternate names."""
 
@@ -44,7 +45,6 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
         OPERATING = auto()
         TRANSLATION = auto()
-
 
     __tablename__ = "alternate_names"
     __mapper_args__ = {
@@ -112,6 +112,12 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         return alternate_name
 
     @classmethod
+    def find_by_internal_id(cls, internal_id: int) -> AlternateName | None:
+        """Return None or the AlternateName found by the internal id."""
+        alternate_name = cls.query.filter_by(id=internal_id).one_or_none()
+        return alternate_name
+
+    @classmethod
     def find_by_name(cls, name: str = None):
         """Given a name, this will return an AlternateName."""
         if not name:
@@ -169,14 +175,12 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     @property
     def is_owned_by_legal_entity_org(self):
         """Return if owned by LE org."""
-        return (bool(self.legal_entity) and
-                self.legal_entity.entity_type not in BusinessCommon.NON_BUSINESS_ENTITY_TYPES)
+        return bool(self.legal_entity) and self.legal_entity.entity_type not in BusinessCommon.NON_BUSINESS_ENTITY_TYPES
 
     @property
     def is_owned_by_colin_entity(self):
         """Return if owned by colin entity."""
         return bool(self.colin_entity)
-
 
     def save(self):
         """Save the object to the database immediately."""
@@ -231,6 +235,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     def _extend_json(self, d):
         """Include conditional fields to json."""
         from legal_api.models import Filing
+
         base_url = current_app.config.get("LEGAL_API_BASE_URL")
 
         if self.dissolution_date:

@@ -17,31 +17,31 @@ from http import HTTPStatus
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
-from legal_api.models import LegalEntity
+from legal_api.models import BusinessCommon
 
 document_rule_set = {
-    "cstat": {"legal_types": ["CP", "BC", "BEN"], "status": LegalEntity.State.ACTIVE},
-    "cogs": {"legal_types": ["CP", "BC", "BEN"], "goodStanding": True},
+    "cstat": {"entity_types": ["CP", "BC", "BEN"], "status": BusinessCommon.State.ACTIVE},
+    "cogs": {"entity_types": ["CP", "BC", "BEN"], "goodStanding": True},
     "lseal": {
         # NB: will be available for all business types once the outputs have been updated for them
-        "legal_types": ["CP", "BEN", "SP", "GP"]
+        "entity_types": ["CP", "BEN", "SP", "GP"]
     },
 }
 
 
-def validate_document_request(document_type, legal_entity: LegalEntity):
+def validate_document_request(document_type, business: any):
     """Validate the business document request."""
     errors = []
     # basic checks
     if document_rules := document_rule_set.get(document_type, None):
-        allowed_legal_types = document_rules.get("legal_types", None)
-        if allowed_legal_types and legal_entity.entity_type not in allowed_legal_types:
+        allowed_entity_types = document_rules.get("entity_types", None)
+        if allowed_entity_types and business.entity_type not in allowed_entity_types:
             errors.append({"error": babel("Specified document type is not valid for the entity.")})
         status = document_rules.get("status", None)
-        if status and legal_entity.state != status:
+        if status and business.state != status:
             errors.append({"error": babel("Specified document type is not valid for the current entity status.")})
         good_standing = document_rules.get("goodStanding", None)
-        if good_standing and not legal_entity.good_standing:
+        if good_standing and not business.good_standing:
             errors.append({"error": babel("Specified document type is not valid for the current entity status.")})
     if errors:
         return Error(HTTPStatus.BAD_REQUEST, errors)

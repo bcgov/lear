@@ -19,16 +19,15 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 
 # noqa: I003
 from legal_api.errors import Error
-from legal_api.models import LegalEntity
 from legal_api.services.utils import get_int
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 # noqa: I003
 
 
-def validate(legal_entity: LegalEntity, filing: Dict) -> Optional[Error]:
+def validate(business: any, filing: Dict) -> Optional[Error]:
     """Validate the Agm Location Change filing."""
-    if not legal_entity or not filing:
+    if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
 
     msg = []

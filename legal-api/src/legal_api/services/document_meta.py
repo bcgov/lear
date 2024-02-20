@@ -15,7 +15,8 @@
 """This provides the service for filings documents meta data."""
 from enum import Enum
 
-from legal_api.models import Filing, LegalEntity
+from legal_api.models import BusinessCommon, Filing
+from legal_api.services import BusinessService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .namex import NameXService
@@ -44,7 +45,7 @@ class DocumentMetaService:
     def __init__(self):
         """Create the document meta instance."""
         # init global attributes
-        self._legal_entity_identifier = None
+        self._business_identifier = None
         self._entity_type = None
         self._filing_status = None
         self._filing_id = None
@@ -56,16 +57,16 @@ class DocumentMetaService:
         if not (business_identifier := filing.get("filing", {}).get("business", {}).get("identifier")):
             return []
 
-        self._legal_entity_identifier = business_identifier
+        self._business_identifier = business_identifier
         # if this is a temp registration then there is no business, so get legal type from filing
-        if self._legal_entity_identifier.startswith("T"):
+        if self._business_identifier.startswith("T"):
             filing_type = filing["filing"]["header"]["name"]
             self._entity_type = filing["filing"][filing_type]["nameRequest"]["legalType"]
         else:
-            legal_entity = LegalEntity.find_by_identifier(self._legal_entity_identifier)
-            if not legal_entity:
+            business = BusinessService.fetch_business(self._business_identifier)
+            if not business:
                 return []  # business not found
-            self._entity_type = legal_entity.entity_type
+            self._entity_type = business.entity_type
 
         self._filing_status = filing["filing"]["header"]["status"]
         is_paper_only = filing["filing"]["header"].get("availableOnPaperOnly", False)
@@ -376,16 +377,16 @@ class DocumentMetaService:
 
     def get_general_filename(self, name: str):
         """Return a general filename string."""
-        file_name = f"{self._legal_entity_identifier} - {name} - {self._filing_date}.pdf"
+        file_name = f"{self._business_identifier} - {name} - {self._filing_date}.pdf"
         return file_name
 
     def is_bcomp(self):
         """Return True if this entity is a BCOMP."""
-        return self._entity_type == LegalEntity.EntityTypes.BCOMP.value
+        return self._entity_type == BusinessCommon.EntityTypes.BCOMP.value
 
     def is_coop(self):
         """Return True if this entity is a COOP."""
-        return self._entity_type == LegalEntity.EntityTypes.COOP.value
+        return self._entity_type == BusinessCommon.EntityTypes.COOP.value
 
     def is_paid(self):
         """Return True if this filing is PAID."""

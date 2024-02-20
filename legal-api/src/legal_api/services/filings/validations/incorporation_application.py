@@ -21,7 +21,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
 from legal_api.errors import Error
-from legal_api.models import Filing, LegalEntity
+from legal_api.models import BusinessCommon, Filing
 from legal_api.services import namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -42,38 +42,38 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
     msg = []
 
-    legal_type_path = "/filing/incorporationApplication/nameRequest/legalType"
-    legal_type = get_str(incorporation_json, legal_type_path)
-    if not legal_type:
-        msg.append({"error": babel("Legal type is required."), "path": legal_type_path})
-        return msg  # Cannot continue validation without legal_type
+    entity_type_path = "/filing/incorporationApplication/nameRequest/legalType"
+    entity_type = get_str(incorporation_json, entity_type_path)
+    if not entity_type:
+        msg.append({"error": babel("Legal type is required."), "path": entity_type_path})
+        return msg  # Cannot continue validation without entity_type
 
     msg.extend(validate_offices(incorporation_json))
 
-    if err := validate_roles(incorporation_json, legal_type):
+    if err := validate_roles(incorporation_json, entity_type):
         msg.extend(err)
 
     # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
     # to work around first and middle name length mismatches between LEAR and COLIN.  BEN & COOP IA filings syncing
     # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
-    if err := validate_parties_names(incorporation_json, legal_type):
+    if err := validate_parties_names(incorporation_json, entity_type):
         msg.extend(err)
 
-    if err := validate_parties_mailing_address(incorporation_json, legal_type):
+    if err := validate_parties_mailing_address(incorporation_json, entity_type):
         msg.extend(err)
 
-    msg.extend(validate_name_request(incorporation_json, legal_type, filing_type))
+    msg.extend(validate_name_request(incorporation_json, entity_type, filing_type))
 
-    if legal_type in [
-        LegalEntity.EntityTypes.BCOMP.value,
-        LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-        LegalEntity.EntityTypes.COMP.value,
-        LegalEntity.EntityTypes.BC_CCC.value,
+    if entity_type in [
+        BusinessCommon.EntityTypes.BCOMP.value,
+        BusinessCommon.EntityTypes.BC_ULC_COMPANY.value,
+        BusinessCommon.EntityTypes.COMP.value,
+        BusinessCommon.EntityTypes.BC_CCC.value,
     ]:
         if err := validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value):
             msg.extend(err)
 
-    elif legal_type == LegalEntity.EntityTypes.COOP.value:
+    elif entity_type == BusinessCommon.EntityTypes.COOP.value:
         msg.extend(validate_cooperative_documents(incorporation_json))
 
     if err := validate_incorporation_effective_date(incorporation_json):
@@ -130,13 +130,13 @@ def _validate_address(addresses: dict, address_key: str, filing_type: str) -> li
 
 
 # pylint: disable=too-many-branches
-def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = "incorporationApplication") -> Error:
+def validate_roles(filing_dict: dict, entity_type: str, filing_type: str = "incorporationApplication") -> Error:
     """Validate the required completing party of the incorporation filing."""
     min_director_count_info = {
-        LegalEntity.EntityTypes.BCOMP.value: 1,
-        LegalEntity.EntityTypes.COMP.value: 1,
-        LegalEntity.EntityTypes.BC_ULC_COMPANY.value: 1,
-        LegalEntity.EntityTypes.BC_CCC.value: 3,
+        BusinessCommon.EntityTypes.BCOMP.value: 1,
+        BusinessCommon.EntityTypes.COMP.value: 1,
+        BusinessCommon.EntityTypes.BC_ULC_COMPANY.value: 1,
+        BusinessCommon.EntityTypes.BC_CCC.value: 3,
     }
     parties_array = filing_dict["filing"][filing_type]["parties"]
     msg = []
@@ -172,7 +172,7 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = "incor
         err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({"error": "Should not provide completing party when correction type is STAFF", "path": err_path})
 
-    if legal_type == LegalEntity.EntityTypes.COOP.value:
+    if entity_type == BusinessCommon.EntityTypes.COOP.value:
         if incorporator_count > 0:
             err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Incorporator is an invalid party role", "path": err_path})
@@ -182,7 +182,7 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = "incor
             msg.append({"error": "Must have a minimum of three Directors", "path": err_path})
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
-        min_director_count = min_director_count_info.get(legal_type, 0)
+        min_director_count = min_director_count_info.get(entity_type, 0)
         if filing_type == "incorporationApplication" and incorporator_count < 1:
             err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Must have a minimum of one Incorporator", "path": err_path})
@@ -202,7 +202,7 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = "incor
 
 # pylint: disable=too-many-branches
 def validate_parties_names(
-    incorporation_json: dict, legal_type: str, filing_type: str = "incorporationApplication"
+    incorporation_json: dict, entity_type: str, filing_type: str = "incorporationApplication"
 ) -> Error:
     """Validate the party names of the incorporation filing."""
     parties_array = incorporation_json["filing"][filing_type]["parties"]
@@ -210,7 +210,7 @@ def validate_parties_names(
     msg = []
 
     for item in parties_array:
-        msg.extend(validate_party_name(legal_type, item, party_path))
+        msg.extend(validate_party_name(entity_type, item, party_path))
 
     if msg:
         return msg
@@ -219,7 +219,7 @@ def validate_parties_names(
 
 
 def validate_parties_mailing_address(
-    incorporation_json: dict, legal_type: str, filing_type: str = "incorporationApplication"
+    incorporation_json: dict, entity_type: str, filing_type: str = "incorporationApplication"
 ) -> Error:
     """Validate the person data of the incorporation filing."""
     parties_array = incorporation_json["filing"][filing_type]["parties"]
@@ -247,7 +247,7 @@ def validate_parties_mailing_address(
                 if ma_country == "CA":
                     country_ca_party_ma_count += 1
 
-    if legal_type == LegalEntity.EntityTypes.COOP.value:
+    if entity_type == BusinessCommon.EntityTypes.COOP.value:
         if bc_party_ma_count < 1:
             err_path = f"/filing/{filing_type}/parties/mailingAddress"
             msg.append({"error": "Must have minimum of one BC mailing address", "path": err_path})
@@ -384,8 +384,8 @@ def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Op
 
     # ensure business type is BCOMP
     path = "/filing/incorporationApplication/nameRequest/legalType"
-    legal_type = get_str(filing, path)
-    if legal_type != LegalEntity.EntityTypes.BCOMP.value:
+    entity_type = get_str(filing, path)
+    if entity_type != BusinessCommon.EntityTypes.BCOMP.value:
         msg.append({"error": babel("Correction of Name Request is not vaild for this type."), "path": path})
 
     # ensure NR request has the same legal name
