@@ -188,10 +188,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return _header
 
     @staticmethod
-    def get_company_details_revision(filing_id, identifier) -> dict:
+    def get_company_details_revision(filing_id, business) -> dict:
         """Consolidates company details up to the given transaction id of a filing."""
         company_profile_json = {}
-        business = BusinessService.fetch_business(identifier)
         legal_entity_id = business.id if business.is_legal_entity else business.legal_entity_id
 
         filing = Filing.find_by_id(filing_id)
