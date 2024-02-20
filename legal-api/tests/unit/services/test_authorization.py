@@ -205,9 +205,9 @@ EXPECTED_DATA = {
     FilingKey.RESTRN_LTD_TO_FULL_LLC: {'displayName': 'Conversion to Full Restoration Application', 'feeCode': None,
                                        'name': 'restoration', 'type': 'limitedRestorationToFull'},
     FilingKey.PUT_BACK_ON: {'displayName': 'Correction - Put Back On', 'feeCode': 'NOFEE', 'name': 'putBackOn'},
-    FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Regular Amalgamation', 'feeCode': 'AMALR'},
-    FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamationApplication', 'type': 'vertical', 'displayName': 'Vertical Amalgamation', 'feeCode': 'AMALV'},
-    FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Horizontal Amalgamation', 'feeCode': 'AMALH'}
+    FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application (Regular)', 'feeCode': 'AMALR'},
+    FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamationApplication', 'type': 'vertical', 'displayName': 'Amalgamation Application Short-form (Vertical)', 'feeCode': 'AMALV'},
+    FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Amalgamation Application Short-form (Horizontal)', 'feeCode': 'AMALH'}
 }
 
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()

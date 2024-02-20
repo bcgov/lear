@@ -101,7 +101,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'temporaryCorpTypeCode': 'ATMP',
             'regular': {
                 'name': 'regularAmalgamation',
-                'title': 'Regular Amalgamation',
+                'title': 'Amalgamation Application (Regular)',
                 'codes': {
                     'BEN': 'AMALR',
                     'BC': 'AMALR',
@@ -111,7 +111,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             },
             'vertical': {
                 'name': 'verticalAmalgamation',
-                'title': 'Vertical Amalgamation',
+                'title': 'Amalgamation Application Short-form (Vertical)',
                 'codes': {
                     'BEN': 'AMALV',
                     'BC': 'AMALV',
@@ -121,7 +121,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             },
             'horizontal': {
                 'name': 'horizontalAmalgamation',
-                'title': 'Horizontal Amalgamation',
+                'title': 'Amalgamation Application Short-form (Horizontal)',
                 'codes': {
                     'BEN': 'AMALH',
                     'BC': 'AMALH',
