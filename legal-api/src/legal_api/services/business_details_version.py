@@ -86,7 +86,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
         ia_json["incorporationApplication"] = {}
         ia_json["incorporationApplication"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, business.id
+            filing, business
         )
         ia_json["incorporationApplication"]["parties"] = VersionedBusinessDetailsService.get_party_role_revision(
             filing, business.id, is_ia_or_after=True
@@ -142,7 +142,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         coa_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
         coa_json["changeOfAddress"] = {}
         coa_json["changeOfAddress"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, business.id
+            filing, business
         )
         coa_json["changeOfAddress"]["legalType"] = coa_json["business"]["legalType"]
         return coa_json
@@ -169,7 +169,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ar_json["annualReport"]["directors"] = VersionedBusinessDetailsService.get_party_role_revision(
             filing, business.id, role="director"
         )
-        ar_json["annualReport"]["offices"] = VersionedBusinessDetailsService.get_office_revision(filing, business.id)
+        ar_json["annualReport"]["offices"] = VersionedBusinessDetailsService.get_office_revision(filing, business)
 
         # entity_type CP may need changeOfDirectors/changeOfAddress
         if "changeOfDirectors" in filing.json["filing"]:
@@ -195,7 +195,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         company_profile_json = {}
         business = BusinessService.fetch_business(identifier)
         legal_entity_id = business.id if business.is_legal_entity else business.legal_entity_id
-        alternate_name_id = business.id if business.is_alternate_name_entity else None
 
         filing = Filing.find_by_id(filing_id)
         company_profile_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
@@ -203,7 +202,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             filing, legal_entity_id
         )
         company_profile_json["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, legal_entity_id, alternate_name_id
+            filing, business
         )
         company_profile_json["shareClasses"] = VersionedBusinessDetailsService.get_share_class_revision(
             filing, legal_entity_id
@@ -219,13 +218,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_business_revision(filing, business) -> dict:
         """Consolidates the LegalEntity info as of a particular filing."""
-        business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business.id)
+        business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business)
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
-    def get_business_revision_obj(filing, identifier) -> any:
+    def get_business_revision_obj(filing, business) -> any:
         """Return version object associated with the given filing for a business."""
-        business_revision = BusinessService.fetch_business(identifier)
+        business_revision = business
 
         # The history table has the old revisions, not the current one.
         if business_revision and business_revision.change_filing_id != filing.id:
@@ -236,7 +235,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             business_revision = (
                 db.session.query(business_version)
                 .filter(business_version.change_filing_id == filing.id)
-                .filter(business_version.id == identifier)
+                .filter(business_version.id == business.id)
                 .first()
             )
         return business_revision
@@ -274,29 +273,28 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return business_revision
 
     @staticmethod
-    def get_office_revision(filing, legal_entity_id, alternate_name_id=None) -> dict:  # pylint: disable=too-many-locals
+    def get_office_revision(filing, business) -> dict:  # pylint: disable=too-many-locals
         """Consolidates all office changes up to the given transaction id."""
         filing_id = filing.id
         offices_json = {}
 
-        office_attribute = Office.legal_entity_id if legal_entity_id else Office.alternate_name_id
-        expected_value = legal_entity_id if legal_entity_id else alternate_name_id
+        office_attribute = Office.legal_entity_id if business.is_legal_entity else Office.alternate_name_id
 
         offices_current = (
             db.session.query(Office, null().label("changed"))
             .filter(Office.change_filing_id == filing_id)
-            .filter(office_attribute == expected_value)
+            .filter(office_attribute == business.id)
             .filter(Office.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
 
         office_history = history_cls(Office)
         office_history_attribute = (
-            office_history.legal_entity_id if legal_entity_id else office_history.alternate_name_id
+            office_history.legal_entity_id if business.is_legal_entity else office_history.alternate_name_id
         )
         offices_historical = (
             db.session.query(office_history)
             .filter(office_history.change_filing_id == filing_id)
-            .filter(office_history_attribute == expected_value)
+            .filter(office_history_attribute == business.id)
             .filter(office_history.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
 
@@ -304,13 +302,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         current_types = (
             db.session.query(Office.office_type.label("office_type"))
             .filter(Office.change_filing_id == filing_id)
-            .filter(office_attribute == expected_value)
+            .filter(office_attribute == business.id)
             .filter(Office.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
         historical_types = (
             db.session.query(office_history.office_type.label("office_type"))
             .filter(office_history.change_filing_id == filing_id)
-            .filter(office_history_attribute == expected_value)
+            .filter(office_history_attribute == business.id)
             .filter(office_history.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
 
