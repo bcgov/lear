@@ -119,24 +119,39 @@ FILINGS: Final = {
         "additional": [
             {"types": "BC,ULC,BEN,CC", "outputs": ["noticeOfArticles", "certificateOfAmalgamation"]},
         ],
-        "regular": {
-            "name": "regularAmalgamation",
-            "title": "Regular Amalgamation",
-            "displayName": "Regular Amalgamation",
-            "codes": {"BEN": "AMALR", "BC": "AMALR", "ULC": "AMALR", "CC": "AMALR"},
+        'regular': {
+            'name': 'regularAmalgamation',
+            'title': 'Amalgamation Application (Regular)',
+            'displayName': 'Amalgamation Application (Regular)',
+            'codes': {
+                'BEN': 'AMALR',
+                'BC': 'AMALR',
+                'ULC': 'AMALR',
+                'CC': 'AMALR'
+            }
         },
-        "vertical": {
-            "name": "verticalAmalgamation",
-            "title": "Vertical Amalgamation",
-            "displayName": "Vertical Amalgamation",
-            "codes": {"BEN": "AMALV", "BC": "AMALV", "ULC": "AMALV", "CC": "AMALV"},
+        'vertical': {
+            'name': 'verticalAmalgamation',
+            'title': 'Amalgamation Application Short-form (Vertical)',
+            'displayName': 'Amalgamation Application Short-form (Vertical)',
+            'codes': {
+                'BEN': 'AMALV',
+                'BC': 'AMALV',
+                'ULC': 'AMALV',
+                'CC': 'AMALV'
+            }
         },
-        "horizontal": {
-            "name": "horizontalAmalgamation",
-            "title": "Horizontal Amalgamation",
-            "displayName": "Horizontal Amalgamation",
-            "codes": {"BEN": "AMALH", "BC": "AMALH", "ULC": "AMALH", "CC": "AMALH"},
-        },
+        'horizontal': {
+            'name': 'horizontalAmalgamation',
+            'title': 'Amalgamation Application Short-form (Horizontal)',
+            'displayName': 'Amalgamation Application Short-form (Horizontal)',
+            'codes': {
+                'BEN': 'AMALH',
+                'BC': 'AMALH',
+                'ULC': 'AMALH',
+                'CC': 'AMALH'
+            }
+        }
     },
     "annualReport": {
         "name": "annualReport",

@@ -336,19 +336,19 @@ EXPECTED_DATA = {
     FilingKey.AMALGAMATION_REGULAR: {
         "name": "amalgamationApplication",
         "type": "regular",
-        "displayName": "Regular Amalgamation",
+        "displayName": "Amalgamation Application (Regular)",
         "feeCode": "AMALR",
     },
     FilingKey.AMALGAMATION_VERTICAL: {
         "name": "amalgamationApplication",
         "type": "vertical",
-        "displayName": "Vertical Amalgamation",
+        "displayName": "Amalgamation Application Short-form (Vertical)",
         "feeCode": "AMALV",
     },
     FilingKey.AMALGAMATION_HORIZONTAL: {
         "name": "amalgamationApplication",
         "type": "horizontal",
-        "displayName": "Horizontal Amalgamation",
+        "displayName": "Amalgamation Application Short-form (Horizontal)",
         "feeCode": "AMALH",
     },
 }
