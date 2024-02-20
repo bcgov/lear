@@ -131,8 +131,8 @@ FILINGS: Final = {
         ],
         'regular': {
             'name': 'regularAmalgamation',
-            'title': 'Regular Amalgamation',
-            'displayName': 'Regular Amalgamation',
+            'title': 'Amalgamation Application (Regular)',
+            'displayName': 'Amalgamation Application (Regular)',
             'codes': {
                 'BEN': 'AMALR',
                 'BC': 'AMALR',
@@ -142,8 +142,8 @@ FILINGS: Final = {
         },
         'vertical': {
             'name': 'verticalAmalgamation',
-            'title': 'Vertical Amalgamation',
-            'displayName': 'Vertical Amalgamation',
+            'title': 'Amalgamation Application Short-form (Vertical)',
+            'displayName': 'Amalgamation Application Short-form (Vertical)',
             'codes': {
                 'BEN': 'AMALV',
                 'BC': 'AMALV',
@@ -153,8 +153,8 @@ FILINGS: Final = {
         },
         'horizontal': {
             'name': 'horizontalAmalgamation',
-            'title': 'Horizontal Amalgamation',
-            'displayName': 'Horizontal Amalgamation',
+            'title': 'Amalgamation Application Short-form (Horizontal)',
+            'displayName': 'Amalgamation Application Short-form (Horizontal)',
             'codes': {
                 'BEN': 'AMALH',
                 'BC': 'AMALH',
