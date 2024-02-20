@@ -573,7 +573,7 @@ class Filing:
 
                 # get extra outputs
                 if bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                    filing.storage, legal_entity.id
+                    filing.storage, legal_entity
                 ):
                     legal_entity = bus_rev_temp
 

@@ -18,29 +18,29 @@ from typing import Dict, List, Tuple
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import LegalEntity
+from legal_api.models import BusinessCommon
 from legal_api.services.utils import get_date
 from legal_api.utils.datetime import datetime
 
 
-def requires_agm(legal_entity: LegalEntity) -> bool:
+def requires_agm(business: any) -> bool:
     """Determine if AGM validation is required for AR."""
     # FUTURE: This is not dynamic enough
-    agm_arr = [LegalEntity.EntityTypes.COOP.value, LegalEntity.EntityTypes.XPRO_LIM_PARTNR.value]
-    return legal_entity.entity_type in agm_arr
+    agm_arr = [BusinessCommon.EntityTypes.COOP.value, BusinessCommon.EntityTypes.XPRO_LIM_PARTNR.value]
+    return business.entity_type in agm_arr
 
 
-def validate(legal_entity: LegalEntity, annual_report: Dict) -> Error:
+def validate(business: any, annual_report: Dict) -> Error:
     """Validate the annual report JSON."""
-    if not legal_entity or not annual_report:
+    if not business or not annual_report:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
 
-    err = validate_ar_year(legal_entity=legal_entity, current_annual_report=annual_report)
+    err = validate_ar_year(business=business, current_annual_report=annual_report)
     if err:
         return err
 
-    if requires_agm(legal_entity):
-        err = validate_agm_year(legal_entity=legal_entity, annual_report=annual_report)
+    if requires_agm(business):
+        err = validate_agm_year(business=business, annual_report=annual_report)
 
     if err:
         return err
@@ -48,7 +48,7 @@ def validate(legal_entity: LegalEntity, annual_report: Dict) -> Error:
     return None
 
 
-def validate_ar_year(*, legal_entity: LegalEntity, current_annual_report: Dict) -> Error:
+def validate_ar_year(*, business: any, current_annual_report: Dict) -> Error:
     """Validate that the annual report year is valid."""
     ar_date = get_date(current_annual_report, "filing/annualReport/annualReportDate")
     if not ar_date:
@@ -70,8 +70,8 @@ def validate_ar_year(*, legal_entity: LegalEntity, current_annual_report: Dict) 
         )
 
     # The AR Date cannot be before the last AR Filed
-    next_ar_year = (legal_entity.last_ar_year if legal_entity.last_ar_year else legal_entity.founding_date.year) + 1
-    ar_min_date, ar_max_date = legal_entity.get_ar_dates(next_ar_year)
+    next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+    ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
 
     if ar_date < ar_min_date:
         return Error(
@@ -100,7 +100,7 @@ def validate_ar_year(*, legal_entity: LegalEntity, current_annual_report: Dict) 
 
 
 # pylint: disable=too-many-return-statements,unused-argument; lots of rules to individually return from
-def validate_agm_year(*, legal_entity: LegalEntity, annual_report: Dict) -> Tuple[int, List[Dict]]:
+def validate_agm_year(*, business: any, annual_report: Dict) -> Tuple[int, List[Dict]]:
     """Validate the AGM year."""
     ar_date = get_date(annual_report, "filing/annualReport/annualReportDate")
     if not ar_date:

@@ -19,7 +19,6 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 
 # noqa: I004
 from legal_api.errors import Error
-from legal_api.models import LegalEntity
 from legal_api.services.filings.validations.common_validations import validate_pdf
 
 from ...utils import get_str
@@ -27,9 +26,9 @@ from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(legal_entity: LegalEntity, court_order: Dict) -> Optional[Error]:
+def validate(business: any, court_order: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
-    if not legal_entity or not court_order:
+    if not business or not court_order:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
