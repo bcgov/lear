@@ -24,6 +24,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.utils.util import build_schema_error_response
+from legal_api.models import AlternateName, LegalEntity
 
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .db import db  # noqa: I001
@@ -732,11 +733,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_filings_by_status(legal_entity_id: int, status: list, after_date: date = None):
+    def get_filings_by_status(business_id: int, status: list, after_date: date = None, business: any = None):
         """Return the filings with statuses in the status array input."""
+        business_attr = Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
         query = (
             db.session.query(Filing)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attr == business_id)
             .filter(Filing._status.in_(status))
             .order_by(Filing._filing_date.desc(), Filing.effective_date.desc())
         )  # pylint: disable=no-member;

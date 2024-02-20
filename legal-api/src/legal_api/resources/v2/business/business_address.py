@@ -82,13 +82,15 @@ def _get_address(business, addresses_id=None, address_type=None):
         if business.is_legal_entity:
             business_source = LegalEntity
             business_id_attr = LegalEntity.id
+            address_business_attr = Address.legal_entity_id
         else:
             business_source = AlternateName
-            business_id_attr = AlternateName.legal_entity_id
+            business_id_attr = AlternateName.id
+            address_business_attr = Address.alternate_name_id
 
         rv = (
             db.session.query(business_source, Address)
-            .filter(business_id_attr == Address.legal_entity_id)
+            .filter(business_id_attr == address_business_attr)
             .filter(business_source.identifier == business.identifier)
             .filter(Address.id == addresses_id)
             .one_or_none()

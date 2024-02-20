@@ -35,9 +35,8 @@ def get_bn_request_trackers(identifier: str):
     if business is None:
         return ({"message": "A valid business is required."}, HTTPStatus.BAD_REQUEST)
 
-    request_trackers = RequestTracker.find_by(business_id = business.id, 
-                                              service_name = RequestTracker.ServiceName.BN_HUB, 
-                                              business=business)
+    request_trackers = RequestTracker.find_by(business.id, RequestTracker.ServiceName.BN_HUB, 
+                                              None, None, None, business)
     return (
         jsonify(
             {
@@ -70,7 +69,8 @@ def resubmit_bn_request(identifier: str):
         request_type=request_type,
         retry_number=-1,
         service_name=RequestTracker.ServiceName.BN_HUB,
-        legal_entity_id=business.id,
+        legal_entity_id=business.id if business.is_legal_entity else None,
+        alternate_name_id=business.id if business.is_alternate_name_entity else None,
         is_admin=True,
         message_id=message_id,
         request_object=request_object,

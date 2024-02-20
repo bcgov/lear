@@ -51,8 +51,7 @@ def get_resolutions(identifier, resolution_id=None):
 
     resolution_type = request.args.get("type")
     if resolution_type:
-        business_id = business.id if business.is_legal_entity else business.legal_entity_id
-        resolutions = Resolution.find_by_type(business_id, resolution_type.upper())
+        resolutions = Resolution.find_by_type(business.id, resolution_type.upper())
     else:
         resolutions = business.resolutions.all()
 

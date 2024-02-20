@@ -72,9 +72,8 @@ def get_tasks(identifier):
     else:
         rv = construct_task_list(business)
         if not rv and is_nr:
-            business_id = business.id if business.is_legal_entity else business.legal_entity_id
             paid_completed_filings = Filing.get_filings_by_status(
-                business_id, [Filing.Status.PAID.value, Filing.Status.COMPLETED.value]
+                business.id, [Filing.Status.PAID.value, Filing.Status.COMPLETED.value], None, business
             )
             # Append NR todo if there are no tasks and PAID or COMPLETED filings
             if not paid_completed_filings:
@@ -105,7 +104,6 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
     entity_types_no_ar = ["SP", "GP"]
     tasks = []
     order = 1
-    business_id = business.id if business.is_legal_entity else business.legal_entity_id
 
     warnings = check_warnings(business)
     if any(x["warningType"] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in warnings):
@@ -114,19 +112,21 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
         business.warnings = warnings
 
         # Checking for draft or pending conversion
-        if not Filing.get_incomplete_filings_by_type(business_id, "conversion"):
+        if not Filing.get_incomplete_filings_by_type(business.id, "conversion"):
             tasks.append(create_conversion_filing_todo(business, order, True))
             order += 1
 
     # Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(
-        business_id,
+        business.id,
         [
             Filing.Status.DRAFT.value,
             Filing.Status.PENDING.value,
             Filing.Status.PENDING_CORRECTION.value,
             Filing.Status.ERROR.value,
         ],
+        None,
+        business
     )
     # Create a todo item for each pending filing
     for filing in pending_filings:
@@ -153,12 +153,12 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
         order += 1
 
     business_entity_type = business.entity_type if business.is_legal_entity else business.legal_entity.entity_type
-    if business.entity_type not in entity_types_no_ar:
+    if business_entity_type not in entity_types_no_ar:
         # If this is the first calendar year since incorporation, there is no previous ar year.
         next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
         # Checking for pending ar
-        annual_report_filings = Filing.get_incomplete_filings_by_type(business_id, "annualReport")
+        annual_report_filings = Filing.get_incomplete_filings_by_type(business.id, "annualReport")
         if annual_report_filings:
             # Consider each filing as each year and add to find next ar year
             next_ar_year += len(annual_report_filings)

@@ -90,7 +90,7 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def find_by(  # pylint: disable=too-many-arguments
         cls,
-        business_id: int,
+        legal_entity_id: int,
         service_name: ServiceName,
         request_type: RequestType = None,
         filing_id: int = None,
@@ -100,10 +100,11 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     ) -> List[RequestTracker]:
         """Return the request tracker matching."""
         # TODO: simplify after update the associated functions
-        business_attribute = RequestTracker.legal_entity_id if business.is_legal_entity else RequestTracker.alternate_name_id
+        business_attribute = RequestTracker.alternate_name_id \
+            if business.is_alternate_name_entity else RequestTracker.legal_entity_id
         query = (
             db.session.query(RequestTracker)
-            .filter(business_attribute == business_id)
+            .filter(business_attribute == legal_entity_id)
             .filter(RequestTracker.service_name == service_name)
         )
 
