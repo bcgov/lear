@@ -141,9 +141,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
         coa_json["business"] = VersionedBusinessDetailsService.get_business_revision(filing, business)
         coa_json["changeOfAddress"] = {}
-        coa_json["changeOfAddress"]["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, business
-        )
+        coa_json["changeOfAddress"]["offices"] = VersionedBusinessDetailsService.get_office_revision(filing, business)
         coa_json["changeOfAddress"]["legalType"] = coa_json["business"]["legalType"]
         return coa_json
 
@@ -201,9 +199,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         company_profile_json["parties"] = VersionedBusinessDetailsService.get_party_role_revision(
             filing, legal_entity_id
         )
-        company_profile_json["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            filing, business
-        )
+        company_profile_json["offices"] = VersionedBusinessDetailsService.get_office_revision(filing, business)
         company_profile_json["shareClasses"] = VersionedBusinessDetailsService.get_share_class_revision(
             filing, legal_entity_id
         )
