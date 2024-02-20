@@ -19,9 +19,12 @@ from enum import Enum, auto
 from typing import Final
 
 import datedelta
+from sql_versioning import history_cls
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
+
+from .db import db
 
 
 # pylint: disable=no-member,import-outside-toplevel,protected-access
@@ -118,14 +121,14 @@ class BusinessCommon:
         """Return True if the entity is an AlternateName."""
         from legal_api.models import AlternateName
 
-        return isinstance(self, AlternateName)
+        return isinstance(self, (AlternateName, history_cls(AlternateName)))
 
     @property
     def is_legal_entity(self):
         """Return True if the entity is a LegalEntity."""
         from legal_api.models import LegalEntity
 
-        return isinstance(self, LegalEntity)
+        return isinstance(self, (LegalEntity, history_cls(LegalEntity)))
 
     @property
     def entity_type(self):
@@ -135,7 +138,7 @@ class BusinessCommon:
         if self.is_legal_entity:
             return self._entity_type
 
-        if self.name_type.value != AlternateName.NameType.OPERATING:
+        if self.is_alternate_name_entity and self.name_type.value != AlternateName.NameType.OPERATING:
             return None
 
         if self.state:
@@ -222,7 +225,9 @@ class BusinessCommon:
         if not self.is_firm:
             return self._legal_name
 
-        if alternate_name := AlternateName.find_by_identifier(identifier=self.identifier):
+        if self.is_alternate_name_entity and (
+            alternate_name := AlternateName.find_by_identifier(identifier=self.identifier)
+        ):
             return alternate_name.name
 
         return None
@@ -244,3 +249,27 @@ class BusinessCommon:
             else:
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
+
+    def get_filing_by_id(self, filing_id: str):
+        """Return the filings for a specific business and filing_id."""
+        from legal_api.models import AlternateName, Filing, LegalEntity
+
+        # Determine the model to query based on is_legal_entity property
+        if self.is_legal_entity:
+            entity_model = LegalEntity
+            filing_filter = LegalEntity.id == Filing.legal_entity_id
+            entity_filter = LegalEntity.id == self.id
+        else:
+            entity_model = AlternateName
+            filing_filter = AlternateName.id == Filing.alternate_name_id
+            entity_filter = AlternateName.id == self.id
+
+        filing = (
+            db.session.query(entity_model, Filing)
+            .filter(filing_filter)
+            .filter(Filing.id == filing_id)
+            .filter(entity_filter)
+            .one_or_none()
+        )
+
+        return None if not filing else filing[1]
