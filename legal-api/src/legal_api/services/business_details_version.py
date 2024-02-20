@@ -223,12 +223,12 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
-    def get_business_revision_obj(filing, identifier) -> AlternateName | LegalEntity:
-        """Return version object associated with the given filing for a LegalEntity."""
+    def get_business_revision_obj(filing, identifier) -> any:
+        """Return version object associated with the given filing for a business."""
         business_revision = BusinessService.fetch_business(identifier)
 
         # The history table has the old revisions, not the current one.
-        if business_revision.change_filing_id != filing.id:
+        if business_revision and business_revision.change_filing_id != filing.id:
             business_version = (
                 history_cls(LegalEntity) if business_revision.is_legal_entity else history_cls(AlternateName)
             )
@@ -244,7 +244,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def find_last_value_from_business_revision(
         filing, business, is_dissolution_date=False, is_restoration_expiry_date=False
-    ) -> AlternateName | LegalEntity:
+    ) -> any:
         """Get business info with last value of dissolution_date or restoration_expiry_date."""
         conditions = []
 
