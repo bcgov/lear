@@ -328,7 +328,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
         # get identifiers with outstanding tax_ids
         application.logger.debug("Getting businesses with outstanding tax ids from legal api...")
         response = requests.get(
-            application.config["LEGAL_URL"] + "/internal/tax_ids",
+            'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v1/businesses/internal/tax_ids',
             headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
             timeout=AccountService.timeout,
         )
@@ -346,15 +346,17 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
                 headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                 timeout=AccountService.timeout,
             )
+            print("good!")
             if response.status_code != 200:
                 application.logger.error("legal-updater failed to get tax_ids from colin-api.")
                 raise Exception  # pylint: disable=broad-exception-raised
             tax_ids = response.json()
             if tax_ids.keys():
+                print("get to keys")
                 # update lear with new tax ids from colin
                 application.logger.debug(f"Updating tax ids for {tax_ids.keys()} in lear...")
                 response = requests.post(
-                    application.config["LEGAL_URL"] + "/internal/tax_ids",
+                    'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v1/businesses/internal/tax_ids',
                     json=tax_ids,
                     headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                     timeout=AccountService.timeout,
