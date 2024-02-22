@@ -126,7 +126,7 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
             Filing.Status.ERROR.value,
         ],
         None,
-        business
+        business,
     )
     # Create a todo item for each pending filing
     for filing in pending_filings:

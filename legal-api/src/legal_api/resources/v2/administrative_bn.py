@@ -41,9 +41,7 @@ def create_bn_request(identifier: str, business_number: str = None):
     return {"message": "BN request queued."}, HTTPStatus.CREATED
 
 
-def publish_entity_event(
-    business: any, request_name: str = None, message_id: str = None, business_number: str = None
-):
+def publish_entity_event(business: any, request_name: str = None, message_id: str = None, business_number: str = None):
     """Publish the admin message on to the NATS events subject."""
     try:
         payload = {  # pylint: disable=unused-variable;  # noqa: F841
@@ -62,8 +60,6 @@ def publish_entity_event(
         subject = current_app.config.get("NATS_ENTITY_EVENT_SUBJECT")  # pylint: disable=unused-variable;  # noqa: F841
         # queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
-        capture_message(
-            "Queue Publish Admin Event Error: business.id=" + str(business.id) + str(err), level="error"
-        )
+        capture_message("Queue Publish Admin Event Error: business.id=" + str(business.id) + str(err), level="error")
         current_app.logger.error("Queue Publish Event Error: business.id=%s", business.id, exc_info=True)
         raise err

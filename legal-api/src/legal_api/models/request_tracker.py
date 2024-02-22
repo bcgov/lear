@@ -96,12 +96,13 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         filing_id: int = None,
         is_admin: bool = None,
         message_id: str = None,
-        business: any = None
+        business: any = None,
     ) -> List[RequestTracker]:
         """Return the request tracker matching."""
         # TODO: simplify after update the associated functions
-        business_attribute = RequestTracker.alternate_name_id \
-            if business.is_alternate_name_entity else RequestTracker.legal_entity_id
+        business_attribute = (
+            RequestTracker.alternate_name_id if business.is_alternate_name_entity else RequestTracker.legal_entity_id
+        )
         query = (
             db.session.query(RequestTracker)
             .filter(business_attribute == legal_entity_id)

@@ -520,9 +520,7 @@ class ListFilingResource:
                 raise KeyError
 
             if (
-                epoch_filing := Filing.get_filings_by_status(
-                    business.id, [Filing.Status.EPOCH.value], None, business
-                )
+                epoch_filing := Filing.get_filings_by_status(business.id, [Filing.Status.EPOCH.value], None, business)
             ) and ListFilingResource.is_before_epoch_filing(filing.filing_json, business):
                 filing.transaction_id = epoch_filing[0].transaction_id
                 filing.set_processed(business.entity_type)
