@@ -126,7 +126,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         return alternate_name
 
     @classmethod
-    def find_by_id(cls, id: int = None): # pylint: disable=W0622
+    def find_by_id(cls, id: int = None):  # pylint: disable=W0622
         """Given a name, this will return an AlternateName."""
         if not id:
             return None
