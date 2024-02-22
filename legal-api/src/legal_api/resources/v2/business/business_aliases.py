@@ -18,8 +18,8 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Alias
-from legal_api.utils.auth import jwt
 from legal_api.services import business_service
+from legal_api.utils.auth import jwt
 
 from .bp import bp
 

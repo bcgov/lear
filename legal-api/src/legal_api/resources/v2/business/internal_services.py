@@ -21,7 +21,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import LegalEntity, UserRoles
-from legal_api.services import business_service, COLIN_SVC_ROLE
+from legal_api.services import COLIN_SVC_ROLE, business_service
 from legal_api.utils.auth import jwt
 
 from .bp import bp

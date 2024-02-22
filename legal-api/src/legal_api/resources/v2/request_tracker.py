@@ -20,8 +20,8 @@ from flask_cors import cross_origin
 
 from legal_api.models import RequestTracker, UserRoles
 from legal_api.resources.v2.administrative_bn import publish_entity_event
-from legal_api.utils.auth import jwt
 from legal_api.services import business_service
+from legal_api.utils.auth import jwt
 
 bp = Blueprint("REQUEST_TRACKER", __name__, url_prefix="/api/v2/requestTracker")
 
