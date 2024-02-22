@@ -351,7 +351,6 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
                 raise Exception  # pylint: disable=broad-exception-raised
             tax_ids = response.json()
             if tax_ids.keys():
-                print("get to keys")
                 # update lear with new tax ids from colin
                 application.logger.debug(f"Updating tax ids for {tax_ids.keys()} in lear...")
                 response = requests.post(

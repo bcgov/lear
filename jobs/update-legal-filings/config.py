@@ -49,9 +49,9 @@ class _Config:  # pylint: disable=too-few-public-methods
     COLIN_URL = os.getenv("COLIN_URL", "")
 
     # service accounts
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
+    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
     ACCOUNT_SVC_TIMEOUT = os.getenv("KEYCLOAK_TIMEOUT")
     PAYMENT_SVC_FEES_URL = os.getenv("PAYMENT_SVC_FEES_URL", None)
 
