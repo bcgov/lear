@@ -413,7 +413,7 @@ select distinct ph.id                                                           
                       and ph.party_type = 'organization'
                       and le.id is null
                       and (ph.identifier is null or ph.identifier = '' or ph.identifier like 'FM%')
-                    ))                                                                           is_business_party_colin_entity,
+                    ))                                                                          is_business_party_colin_entity,
                 (r.id is null and pr.filing_id is not null)                                     is_filing_party,
                 (r.id is not null and pr.id is null)                                            is_resolution_party,
                 ph.version,
