@@ -25,11 +25,10 @@ from flask_cors import cross_origin
 from werkzeug.exceptions import UnsupportedMediaType
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Comment, Filing, LegalEntity, User, db
+from legal_api.models import Comment, Filing, User, db
 from legal_api.services import authorized, business_service
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
-from legal_api.models import AlternateName
 
 from .bp import bp
 

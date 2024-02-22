@@ -25,13 +25,11 @@ from flask_cors import cross_origin
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Filing as FilingModel  # noqa: I001
-from legal_api.models import LegalEntity
 from legal_api.reports import get_pdf
 from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
-from legal_api.models import AlternateName
 
 from ..bp import bp
 

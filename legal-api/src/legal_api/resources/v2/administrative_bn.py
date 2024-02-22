@@ -19,7 +19,7 @@ from flask import Blueprint, current_app
 from flask_cors import cross_origin
 from sentry_sdk import capture_message
 
-from legal_api.models import LegalEntity, UserRoles
+from legal_api.models import UserRoles
 
 from legal_api.services import business_service
 from legal_api.utils.auth import jwt

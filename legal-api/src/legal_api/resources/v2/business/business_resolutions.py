@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import LegalEntity, Resolution
+from legal_api.models import Resolution
 from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 

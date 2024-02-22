@@ -25,7 +25,7 @@ from flask_cors import cross_origin
 from requests import exceptions  # noqa I001
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Filing, LegalEntity
+from legal_api.models import Filing
 from legal_api.services import business_service, check_warnings, namex
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.utils.auth import jwt

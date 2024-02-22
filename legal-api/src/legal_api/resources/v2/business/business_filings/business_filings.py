@@ -491,7 +491,7 @@ class ListFilingResource:
         """Is the filings before the launch of COOPS."""
         if not business or not filing_json:
             return False
-        epoch_filing = Filing.get_filings_by_status(legal_entity_id=business.id, status=[Filing.Status.EPOCH.value])
+        epoch_filing = Filing.get_filings_by_status(business.id, [Filing.Status.EPOCH.value], None, business)
         if len(epoch_filing) != 1:
             current_app.logger.error("Business:%s either none or too many epoch filings", business.identifier)
             return False
@@ -521,7 +521,7 @@ class ListFilingResource:
 
             if (
                 epoch_filing := Filing.get_filings_by_status(
-                    legal_entity_id=business.id, status=[Filing.Status.EPOCH.value]
+                    business.id, [Filing.Status.EPOCH.value], None, business
                 )
             ) and ListFilingResource.is_before_epoch_filing(filing.filing_json, business):
                 filing.transaction_id = epoch_filing[0].transaction_id

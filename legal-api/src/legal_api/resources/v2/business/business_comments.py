@@ -27,11 +27,10 @@ from werkzeug.exceptions import UnsupportedMediaType
 from legal_api.exceptions import BusinessException
 from legal_api.models import Comment
 from legal_api.models import Filing as FilingModel  # noqa: I001
-from legal_api.models import LegalEntity, User, db
+from legal_api.models import User, db
 from legal_api.services import authorized, business_service
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
-from legal_api.models import AlternateName
 
 from .bp import bp
 

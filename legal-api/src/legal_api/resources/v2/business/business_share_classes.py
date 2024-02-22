@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import LegalEntity, ShareClass
+from legal_api.models import ShareClass
 from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 

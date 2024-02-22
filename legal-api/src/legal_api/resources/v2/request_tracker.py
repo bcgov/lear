@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import LegalEntity, RequestTracker, UserRoles
+from legal_api.models import RequestTracker, UserRoles
 from legal_api.resources.v2.administrative_bn import publish_entity_event
 from legal_api.utils.auth import jwt
 from legal_api.services import business_service
@@ -35,7 +35,7 @@ def get_bn_request_trackers(identifier: str):
     if business is None:
         return ({"message": "A valid business is required."}, HTTPStatus.BAD_REQUEST)
 
-    request_trackers = RequestTracker.find_by(business.id, RequestTracker.ServiceName.BN_HUB, 
+    request_trackers = RequestTracker.find_by(business.id, RequestTracker.ServiceName.BN_HUB,
                                               None, None, None, business)
     return (
         jsonify(

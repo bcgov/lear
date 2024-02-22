@@ -24,7 +24,6 @@ from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.utils.util import build_schema_error_response
-from legal_api.models import AlternateName, LegalEntity
 
 from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .db import db  # noqa: I001
