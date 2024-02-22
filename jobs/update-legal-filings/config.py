@@ -43,10 +43,8 @@ class _Config:  # pylint: disable=too-few-public-methods
     COLIN_API_URL = os.getenv("COLIN_API_URL", "")
     COLIN_API_VERSION = os.getenv("COLIN_API_VERSION", "")
 
-    # COLIN_API = f"{COLIN_API_URL + COLIN_API_VERSION}"
-    # LEGAL_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}"
-    LEGAL_URL = os.getenv("LEGAL_URL", "")
-    COLIN_URL = os.getenv("COLIN_URL", "")
+    COLIN_URL = f"{COLIN_API_URL + COLIN_API_VERSION}/businesses"
+    LEGAL_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses"
 
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")

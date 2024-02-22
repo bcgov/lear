@@ -59,8 +59,7 @@ def register_shellcontext(app):
 
 def get_filings(app: Flask = None):
     """Get a filing with filing_id."""
-    req = requests.get(f'{app.config["LEGAL_URL"]}/businesses/internal/filings', timeout=AccountService.timeout)
-    print(req.status_code)
+    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings', timeout=AccountService.timeout)
     if not req or req.status_code != 200:
         app.logger.error(f"Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}")
         raise Exception  # pylint: disable=broad-exception-raised
@@ -99,7 +98,7 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: dict = None):
     """Update the colin_id in the filings table."""
     req = requests.patch(
-        f'{app.config["LEGAL_URL"]}/businesses/internal/filings/{filing_id}',
+        f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
         headers={"Authorization": f"Bearer {token}"},
         json={"colinIds": colin_ids},
         timeout=AccountService.timeout,
@@ -128,6 +127,7 @@ def run():
         try:
             # get updater-job token
             token = AccountService.get_bearer_token()
+
             filings = get_filings(app=application)
             if not filings:
                 # pylint: disable=no-member; false positive
