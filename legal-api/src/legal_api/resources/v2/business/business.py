@@ -24,7 +24,7 @@ from flask_cors import cross_origin
 from sqlalchemy import and_
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Filing, LegalEntity, RegistrationBootstrap, db
+from legal_api.models import AlternateName, Filing, LegalEntity, RegistrationBootstrap, db
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,
@@ -161,24 +161,33 @@ def search_businesses():
         if not identifiers or not isinstance(identifiers, list):
             return {"message": "Expected a list of 1 or more for 'identifiers'"}, HTTPStatus.BAD_REQUEST
 
-        # base business query
-        bus_query = db.session.query(LegalEntity).filter(
-            LegalEntity._identifier.in_(identifiers)  # noqa: E501; pylint: disable=protected-access
-        )
+        # base legal entity query
+        bus_le_query = db.session.query(LegalEntity).filter(
+            LegalEntity._identifier.in_(identifiers)
+        )  # noqa: E501; pylint: disable=protected-access
+
+        # base alternate name query
+        bus_an_query = db.session.query(AlternateName).filter(
+            AlternateName.identifier.in_(identifiers)
+        )  # noqa: E501; pylint: disable=protected-access
 
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         draft_query = db.session.query(Filing).filter(
-            and_(Filing.temp_reg.in_(identifiers), Filing.legal_entity_id.is_(None))
+            and_(Filing.temp_reg.in_(identifiers), Filing.legal_entity_id.is_(None), Filing.alternate_name_id.is_(None))
         )
 
         # parse results
-        bus_results = [x.json(slim=True) for x in bus_query.all()]
+        bus_le_results = [x.json(slim=True) for x in bus_le_query.all()]
+        bus_an_results = [x.json(slim=True) for x in bus_an_query.all()]
         draft_results = [
             {"identifier": x.temp_reg, "legalType": x.json_legal_type, **({"nrNumber": x.json_nr} if x.json_nr else {})}
             for x in draft_query.all()
         ]
 
-        return jsonify({"businessEntities": bus_results, "draftEntities": draft_results}), HTTPStatus.OK
+        return (
+            jsonify({"businessEntities": bus_le_results + bus_an_results, "draftEntities": draft_results}),
+            HTTPStatus.OK,
+        )
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error("Error searching over business information for: %s", identifiers)
