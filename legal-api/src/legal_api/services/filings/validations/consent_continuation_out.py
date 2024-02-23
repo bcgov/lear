@@ -41,23 +41,18 @@ def validate(business: any, filing: Dict) -> Optional[Error]:
     msg = []
     filing_type = "consentContinuationOut"
 
-    if err := validate_foreign_jurisdiction(filing, filing_type):
+    foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
+    foreign_jurisdiction_path = f'/filing/{filing_type}/foreignJurisdiction'
+    if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
         msg.extend(err)
     else:
         now = datetime.utcnow()
-        foreign_jurisdiction = filing["filing"][filing_type]["foreignJurisdiction"]
-        country_code = foreign_jurisdiction.get("country")
-        region = foreign_jurisdiction.get("region")
+        country_code = foreign_jurisdiction.get('country')
+        region = foreign_jurisdiction.get('region')
         ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region)
         if ccos:
-            msg.extend(
-                [
-                    {
-                        "error": "Can't have new consent for same jurisdiction if an unexpired one already exists",
-                        "path": f"/filing/{filing_type}/foreignJurisdiction",
-                    }
-                ]
-            )
+            msg.extend([{'error': "Can't have new consent for same jurisdiction if an unexpired one already exists",
+                        'path': foreign_jurisdiction_path}])
 
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
