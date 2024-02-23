@@ -137,9 +137,7 @@ def test_find_request_tracker_by(session):
     assert len(res) == 1
     assert res[0].id == request_tracker.id
 
-    res = RequestTracker.find_by(
-        legal_entity, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA
-    )
+    res = RequestTracker.find_by(legal_entity, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA)
     assert len(res) == 1
     assert res[0].id == request_tracker.id
 
