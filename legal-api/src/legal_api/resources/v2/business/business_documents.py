@@ -83,7 +83,7 @@ def _get_document_list(business):
     for doc in business_documents:
         documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
 
-    if business.is_legal_entity == LegalEntity.EntityTypes.COOP.value:
+    if business.entity_type == LegalEntity.EntityTypes.COOP.value:
         documents["documentsInfo"] = {}
         coop_documents, coop_info = _get_coop_documents_and_info(business)
         for k, v in coop_documents.items():
