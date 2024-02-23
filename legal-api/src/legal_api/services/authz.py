@@ -591,7 +591,7 @@ def has_blocker_filing(legal_entity: LegalEntity, is_ignore_draft_blockers: bool
     ]
     if not is_ignore_draft_blockers:
         filing_statuses.append(Filing.Status.DRAFT.value)
-    blocker_filing_matches = Filing.get_filings_by_status(legal_entity.id, filing_statuses)
+    blocker_filing_matches = Filing.get_filings_by_status(legal_entity, filing_statuses)
     if any(blocker_filing_matches):
         return True
 

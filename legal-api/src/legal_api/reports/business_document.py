@@ -173,7 +173,7 @@ class BusinessDocument:
 
     def _set_epoch_date(self, legal_entity: dict):
         """Set the epoch filing date (date it was imported from COLIN)."""
-        epoch_filing = Filing.get_filings_by_status(self._legal_entity.id, [Filing.Status.EPOCH])
+        epoch_filing = Filing.get_filings_by_status(self._legal_entity, [Filing.Status.EPOCH])
         if epoch_filing:
             self._epoch_filing_date = epoch_filing[0].effective_date
             legal_entity["business"]["epochFilingDate"] = self._epoch_filing_date.isoformat()

@@ -223,7 +223,7 @@ def _is_business_affliated(identifier, account_id):
 
 
 def _has_future_effective_filing(amalgamating_business: any):
-    if Filing.get_filings_by_status(amalgamating_business.id, [Filing.Status.PAID.value, Filing.Status.PENDING.value]):
+    if Filing.get_filings_by_status(amalgamating_business, [Filing.Status.PAID.value, Filing.Status.PENDING.value]):
         return True
     return False
 
