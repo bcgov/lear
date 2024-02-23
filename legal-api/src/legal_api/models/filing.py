@@ -733,12 +733,12 @@ class Filing(db.Model):
         return filing
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: list, after_date: date = None, business: any = None):
+    def get_filings_by_status(business: any, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         business_attr = Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
         query = (
             db.session.query(Filing)
-            .filter(business_attr == business_id)
+            .filter(business_attr == business.id)
             .filter(Filing._status.in_(status))
             .order_by(Filing._filing_date.desc(), Filing.effective_date.desc())
         )  # pylint: disable=no-member;

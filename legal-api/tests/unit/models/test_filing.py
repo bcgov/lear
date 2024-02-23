@@ -345,7 +345,7 @@ def test_get_filings_by_status(session):
     setattr(filing, "skip_status_listener", True)
     filing.save()
 
-    rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value])
+    rv = Filing.get_filings_by_status(legal_entity, [Filing.Status.COMPLETED.value])
 
     assert rv
     assert rv[0].status == Filing.Status.COMPLETED.value
@@ -388,7 +388,7 @@ def test_get_filings_by_status__default_order(session):
             file_counter += 1
 
     # test
-    rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value])
+    rv = Filing.get_filings_by_status(legal_entity, [Filing.Status.COMPLETED.value])
 
     # check
     assert rv
@@ -517,7 +517,7 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
     filing.payment_completion_date = datetime.datetime.utcnow()
     filing.save()
 
-    rv = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value], go_live_date)
+    rv = Filing.get_filings_by_status(legal_entity, [Filing.Status.COMPLETED.value], go_live_date)
 
     assert eval(expected)  # pylint: disable=eval-used; useful for parameterized tests
     if rv:

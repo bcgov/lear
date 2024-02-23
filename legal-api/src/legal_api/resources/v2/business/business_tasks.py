@@ -73,7 +73,7 @@ def get_tasks(identifier):
         rv = construct_task_list(business)
         if not rv and is_nr:
             paid_completed_filings = Filing.get_filings_by_status(
-                business.id, [Filing.Status.PAID.value, Filing.Status.COMPLETED.value], None, business
+                business, [Filing.Status.PAID.value, Filing.Status.COMPLETED.value]
             )
             # Append NR todo if there are no tasks and PAID or COMPLETED filings
             if not paid_completed_filings:
@@ -118,15 +118,13 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
 
     # Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(
-        business.id,
+        business,
         [
             Filing.Status.DRAFT.value,
             Filing.Status.PENDING.value,
             Filing.Status.PENDING_CORRECTION.value,
             Filing.Status.ERROR.value,
-        ],
-        None,
-        business,
+        ]
     )
     # Create a todo item for each pending filing
     for filing in pending_filings:
