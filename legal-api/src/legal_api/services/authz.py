@@ -577,7 +577,7 @@ def business_blocker_check(business: any, is_ignore_draft_blockers: bool = False
     return business_blocker_checks
 
 
-def has_blocker_filing(legal_entity: LegalEntity, is_ignore_draft_blockers: bool = False):
+def has_blocker_filing(business: any, is_ignore_draft_blockers: bool = False):
     """Check if there are any incomplete states filings. This is a blocker because it needs to be completed first."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -591,13 +591,13 @@ def has_blocker_filing(legal_entity: LegalEntity, is_ignore_draft_blockers: bool
     ]
     if not is_ignore_draft_blockers:
         filing_statuses.append(Filing.Status.DRAFT.value)
-    blocker_filing_matches = Filing.get_filings_by_status(legal_entity.id, filing_statuses)
+    blocker_filing_matches = Filing.get_filings_by_status(business, filing_statuses)
     if any(blocker_filing_matches):
         return True
 
     filing_types = [CoreFiling.FilingTypes.ALTERATION.value, CoreFiling.FilingTypes.CORRECTION.value]
     excluded_statuses = [Filing.Status.DRAFT.value] if is_ignore_draft_blockers else []
-    blocker_filing_matches = Filing.get_incomplete_filings_by_types(legal_entity.id, filing_types, excluded_statuses)
+    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, filing_types, excluded_statuses)
     return any(blocker_filing_matches)
 
 
