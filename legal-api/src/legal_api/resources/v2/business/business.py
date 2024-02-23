@@ -163,13 +163,11 @@ def search_businesses():
 
         # base legal entity query
         bus_le_query = db.session.query(LegalEntity).filter(
-            LegalEntity._identifier.in_(identifiers)
-        )  # noqa: E501; pylint: disable=protected-access
+            LegalEntity._identifier.in_(identifiers)  # noqa: E501; pylint: disable=protected-access
+        )
 
         # base alternate name query
-        bus_an_query = db.session.query(AlternateName).filter(
-            AlternateName.identifier.in_(identifiers)
-        )  # noqa: E501; pylint: disable=protected-access
+        bus_an_query = db.session.query(AlternateName).filter(AlternateName.identifier.in_(identifiers))
 
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         draft_query = db.session.query(Filing).filter(
