@@ -133,18 +133,16 @@ def test_find_request_tracker_by(session):
     )
     request_tracker.save()
 
-    res = RequestTracker.find_by(legal_entity.id, RequestTracker.ServiceName.BN_HUB)
+    res = RequestTracker.find_by(legal_entity, RequestTracker.ServiceName.BN_HUB)
+    assert len(res) == 1
+    assert res[0].id == request_tracker.id
+
+    res = RequestTracker.find_by(legal_entity, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA)
     assert len(res) == 1
     assert res[0].id == request_tracker.id
 
     res = RequestTracker.find_by(
-        legal_entity.id, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA
-    )
-    assert len(res) == 1
-    assert res[0].id == request_tracker.id
-
-    res = RequestTracker.find_by(
-        legal_entity.id, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA, filing_id=filing.id
+        legal_entity, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.INFORM_CRA, filing_id=filing.id
     )
     assert len(res) == 1
     assert res[0].id == request_tracker.id

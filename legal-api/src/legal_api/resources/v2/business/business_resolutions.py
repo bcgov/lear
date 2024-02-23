@@ -17,8 +17,8 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import LegalEntity, Resolution
-from legal_api.services import authorized
+from legal_api.models import Resolution
+from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -30,9 +30,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_resolutions(identifier, resolution_id=None):
     """Return a JSON of the resolutions."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
+    business = business_service.fetch_business(identifier)
 
-    if not legal_entity:
+    if not business:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
@@ -44,16 +44,16 @@ def get_resolutions(identifier, resolution_id=None):
 
     # return the matching resolution
     if resolution_id:
-        resolution, msg, code = _get_resolution(legal_entity, resolution_id)
+        resolution, msg, code = _get_resolution(business, resolution_id)
         return jsonify(resolution or msg), code
 
     resolution_list = []
 
     resolution_type = request.args.get("type")
     if resolution_type:
-        resolutions = Resolution.find_by_type(legal_entity.id, resolution_type.upper())
+        resolutions = Resolution.find_by_type(business.id, resolution_type.upper())
     else:
-        resolutions = legal_entity.resolutions.all()
+        resolutions = business.resolutions.all()
 
     for resolution in resolutions:
         resolution_json = resolution.json
@@ -62,7 +62,7 @@ def get_resolutions(identifier, resolution_id=None):
     return jsonify(resolutions=resolution_list)
 
 
-def _get_resolution(legal_entity, resolution_id=None):
+def _get_resolution(business, resolution_id=None):
     # find by ID
     resolution = None
     if resolution_id:
@@ -71,6 +71,6 @@ def _get_resolution(legal_entity, resolution_id=None):
             resolution = {"resolution": rv.json}
 
     if not resolution:
-        return None, {"message": f"{legal_entity.identifier} resolution not found"}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} resolution not found"}, HTTPStatus.NOT_FOUND
 
     return resolution, None, HTTPStatus.OK

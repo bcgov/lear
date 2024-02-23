@@ -117,7 +117,7 @@ def test_resubmit_bn_request(session, client, jwt, request_type, request_xml):
             assert rv.status_code == HTTPStatus.OK
 
             request_trackers = RequestTracker.find_by(
-                legal_entity.id, RequestTracker.ServiceName.BN_HUB, request_type=request_type
+                legal_entity, RequestTracker.ServiceName.BN_HUB, request_type=request_type
             )
             assert request_trackers[0].request_object == request_xml
             assert request_trackers[0].is_admin

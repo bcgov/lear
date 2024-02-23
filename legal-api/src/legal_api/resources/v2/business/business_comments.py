@@ -27,8 +27,8 @@ from werkzeug.exceptions import UnsupportedMediaType
 from legal_api.exceptions import BusinessException
 from legal_api.models import Comment
 from legal_api.models import Filing as FilingModel  # noqa: I001
-from legal_api.models import LegalEntity, User, db
-from legal_api.services import authorized
+from legal_api.models import User, db
+from legal_api.services import authorized, business_service
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
 
@@ -46,14 +46,14 @@ def get_comments(identifier, comment_id=None):
     # basic checks
     if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
-        legal_entity = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        business = business_service.fetch_business_by_filing(filing_model)
     else:
-        legal_entity = LegalEntity.find_by_identifier(identifier)
-    err_msg, err_code = _basic_checks(identifier, legal_entity, request)
+        business = business_service.fetch_business(identifier)
+    err_msg, err_code = _basic_checks(identifier, business, request)
     if err_msg:
         return jsonify(err_msg), err_code
 
-    comments = db.session.query(Comment).filter(Comment.legal_entity_id == legal_entity.id, Comment.filing_id.is_(None))
+    comments = db.session.query(Comment).filter(Comment.legal_entity_id == business.id, Comment.filing_id.is_(None))
 
     if comment_id:
         comment = comments.filter(Comment.id == comment_id).one_or_none()
@@ -75,8 +75,8 @@ def get_comments(identifier, comment_id=None):
 def post_comments(identifier):
     """Create a new comment for the LegalEntity."""
     # basic checks
-    legal_entity = LegalEntity.find_by_identifier(identifier)
-    err_msg, err_code = _basic_checks(identifier, legal_entity, request)
+    business = business_service.fetch_business(identifier)
+    err_msg, err_code = _basic_checks(identifier, business, request)
     if err_msg:
         return jsonify(err_msg), err_code
 
@@ -98,10 +98,11 @@ def post_comments(identifier):
     # save comment
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     try:
+        business_id = business.id if business.is_legal_entity else business.legal_entity_id
         comment = Comment()
         comment.comment = json_input["comment"]["comment"]
         comment.staff_id = user.id
-        comment.legal_entity_id = legal_entity.id
+        comment.legal_entity_id = business_id
         comment.timestamp = datetime.datetime.utcnow()
         comment.save()
     except BusinessException as err:
@@ -115,7 +116,7 @@ def post_comments(identifier):
     return jsonify(comment.json), HTTPStatus.CREATED
 
 
-def _basic_checks(identifier: str, legal_entity: LegalEntity, client_request) -> Tuple[dict, int]:
+def _basic_checks(identifier: str, business: any, client_request) -> Tuple[dict, int]:
     """Perform basic checks to ensure put can do something."""
 
     json_input = None
@@ -125,7 +126,7 @@ def _basic_checks(identifier: str, legal_entity: LegalEntity, client_request) ->
     if client_request.method == "POST" and not json_input:
         return ({"message": f"No comment json data in body of post for {identifier}."}, HTTPStatus.BAD_REQUEST)
 
-    if not legal_entity:
+    if not business:
         return ({"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND)
 
     return (None, None)

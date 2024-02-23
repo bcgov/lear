@@ -18,8 +18,8 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import EntityRole, LegalEntity
-from legal_api.services import authorized
+from legal_api.models import EntityRole
+from legal_api.services import authorized, business_service
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -31,9 +31,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_parties(identifier, party_id=None):
     """Return a JSON of the parties."""
-    legal_entity = LegalEntity.find_by_identifier(identifier)
+    business = business_service.fetch_business(identifier)
 
-    if not legal_entity:
+    if not business:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
@@ -44,7 +44,8 @@ def get_parties(identifier, party_id=None):
         )
 
     if party_id:
-        party_roles = EntityRole.get_entity_roles_by_party_id(legal_entity.id, party_id)
+        business_id = business.id if business.is_legal_entity else business.legal_entity_id
+        party_roles = EntityRole.get_entity_roles_by_party_id(business_id, party_id)
         if not party_roles:
             return jsonify({"message": f"Party {party_id} not found"}), HTTPStatus.NOT_FOUND
     else:
@@ -53,7 +54,7 @@ def get_parties(identifier, party_id=None):
             if request.args.get("date")
             else datetime.utcnow().date()
         )
-        party_roles = EntityRole.get_entity_roles(legal_entity.id, end_date, request.args.get("role"))
+        party_roles = EntityRole.get_entity_roles(business_id, end_date, request.args.get("role"))
 
     party_role_dict = {}
     party_list = []

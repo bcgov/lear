@@ -125,6 +125,14 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         alternate_name = cls.query.filter_by(name=name).filter_by(end_date=None).one_or_none()
         return alternate_name
 
+    @classmethod
+    def find_by_id(cls, id: int = None):  # pylint: disable=W0622
+        """Given a name, this will return an AlternateName."""
+        if not id:
+            return None
+        alternate_name = cls.query.filter_by(id=id).one_or_none()
+        return alternate_name
+
     @property
     def office_mailing_address(self):
         """Return the mailing address."""

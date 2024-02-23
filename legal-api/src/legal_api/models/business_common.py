@@ -21,6 +21,7 @@ from typing import Final
 import datedelta
 from sql_versioning import history_cls
 
+from legal_api.models import AlternateName
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
 
@@ -119,8 +120,6 @@ class BusinessCommon:
     @property
     def is_alternate_name_entity(self):
         """Return True if the entity is an AlternateName."""
-        from legal_api.models import AlternateName
-
         return isinstance(self, (AlternateName, history_cls(AlternateName)))
 
     @property
@@ -133,8 +132,6 @@ class BusinessCommon:
     @property
     def entity_type(self):
         """Return entity_type."""
-        from legal_api.models.alternate_name import AlternateName
-
         if self.is_legal_entity:
             return self._entity_type
 
@@ -220,7 +217,6 @@ class BusinessCommon:
         For SP, returns its operating name from AlternateName.
         For GP, returns its primary operating name from AlternateName.
         """
-        from legal_api.models import AlternateName
 
         if not self.is_firm:
             return self._legal_name
@@ -252,7 +248,7 @@ class BusinessCommon:
 
     def get_filing_by_id(self, filing_id: str):
         """Return the filings for a specific business and filing_id."""
-        from legal_api.models import AlternateName, Filing, LegalEntity
+        from legal_api.models import Filing, LegalEntity
 
         # Determine the model to query based on is_legal_entity property
         if self.is_legal_entity:

@@ -25,8 +25,8 @@ from flask_cors import cross_origin
 from werkzeug.exceptions import UnsupportedMediaType
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Comment, Filing, LegalEntity, User, db
-from legal_api.services import authorized
+from legal_api.models import Comment, Filing, User, db
+from legal_api.services import authorized, business_service
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
 
@@ -136,17 +136,18 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
 
     if client_request.method == "GET" and identifier.startswith("T"):
         filing_model = Filing.get_temp_reg_filing(identifier)
-        legal_entity = LegalEntity.find_by_internal_id(filing_model.legal_entity_id)
+        business = business_service.fetch_business_by_filing(filing_model)
     else:
-        legal_entity = LegalEntity.find_by_identifier(identifier)
+        business = business_service.fetch_business(identifier)
 
     filing = Filing.find_by_id(filing_id)
 
-    if not legal_entity:
+    if not business:
         return ({"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND)
 
     # check that filing belongs to this business
-    if not filing or filing.legal_entity_id != legal_entity.id:
+    filing_business_id = filing.legal_entity_id or filing.alternate_name_id
+    if not filing or filing_business_id != business.id:
         return ({"message": f"Filing {filing_id} not found"}, HTTPStatus.NOT_FOUND)
 
     return (None, None)
