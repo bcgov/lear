@@ -15,12 +15,14 @@
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
-import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I003
 from legal_api.errors import Error
 from legal_api.models import Business, ConsentContinuationOut
-from legal_api.services.filings.validations.common_validations import validate_court_order
+from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_foreign_jurisdiction,
+)
 from legal_api.services.utils import get_date
 from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003;
@@ -41,7 +43,8 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
         msg.extend(err)
         is_valid_co_date = False
 
-    if err := validate_foreign_jurisdiction(filing, filing_type):
+    if err := validate_foreign_jurisdiction(filing['filing'][filing_type]['foreignJurisdiction'],
+                                            f'/filing/{filing_type}/foreignJurisdiction'):
         msg.extend(err)
         is_valid_foreign_jurisdiction = False
 
@@ -97,28 +100,5 @@ def validate_continuation_out_date(filing: Dict, filing_type: str) -> list:
     if continuation_out_date > now:
         msg.append({'error': 'Continuation out date must be today or past.',
                     'path': continuation_out_date_path})
-
-    return msg
-
-
-def validate_foreign_jurisdiction(filing: Dict, filing_type: str) -> list:
-    """Validate foreign jurisdiction."""
-    msg = []
-    foreign_jurisdiction_path = f'/filing/{filing_type}/foreignJurisdiction'
-
-    foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
-    country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
-    region = (foreign_jurisdiction.get('region') or '').upper()
-
-    country = pycountry.countries.get(alpha_2=country_code)
-    if not country:
-        msg.append({'error': 'Invalid country.', 'path': f'{foreign_jurisdiction_path}/country'})
-    elif country_code == 'CA':
-        if region == 'BC':
-            msg.append({'error': 'Region should not be BC.', 'path': f'{foreign_jurisdiction_path}/region'})
-        elif not (region == 'FEDERAL' or pycountry.subdivisions.get(code=f'{country_code}-{region}')):
-            msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
-    elif country_code == 'US' and not pycountry.subdivisions.get(code=f'{country_code}-{region}'):
-        msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
 
     return msg

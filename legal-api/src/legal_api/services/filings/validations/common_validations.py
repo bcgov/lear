@@ -16,6 +16,7 @@ import io
 from datetime import datetime
 from typing import Optional
 
+import pycountry
 import PyPDF2
 from flask_babel import _
 
@@ -284,5 +285,30 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     if nr_name != legal_name:
         msg.append({'error': _('Name Request legal name is not same as the business legal name.'),
                     'path': legal_name_path})
+
+    return msg
+
+
+def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
+                                  foreign_jurisdiction_path: str,
+                                  is_region_bc_valid=False,
+                                  is_region_for_us_required=True) -> list:
+    """Validate foreign jurisdiction."""
+    msg = []
+    country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
+    region = (foreign_jurisdiction.get('region') or '').upper()
+
+    country = pycountry.countries.get(alpha_2=country_code)
+    if not country:
+        msg.append({'error': 'Invalid country.', 'path': f'{foreign_jurisdiction_path}/country'})
+    elif country_code == 'CA':
+        if not is_region_bc_valid and region == 'BC':
+            msg.append({'error': 'Region should not be BC.', 'path': f'{foreign_jurisdiction_path}/region'})
+        elif not (region == 'FEDERAL' or pycountry.subdivisions.get(code=f'{country_code}-{region}')):
+            msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
+    elif (country_code == 'US' and
+          is_region_for_us_required and
+          not pycountry.subdivisions.get(code=f'{country_code}-{region}')):
+        msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
 
     return msg
