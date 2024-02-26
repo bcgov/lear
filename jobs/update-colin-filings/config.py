@@ -52,18 +52,20 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     # API Endpoints
     BUSINESS_API_URL = os.getenv("BUSINESS_API_URL", "")
-    BUSINESS_API_VERSION_2 = os.getenv("BUSINESS_API_VERSION2", "")
+    BUSINESS_API_VERSION_2 = os.getenv("BUSINESS_API_VERSION_2", "")
     COLIN_API_URL = os.getenv("COLIN_API_URL", "")
     COLIN_API_VERSION = os.getenv("COLIN_API_VERSION", "")
 
-    COLIN_API = f"{COLIN_API_URL + COLIN_API_VERSION}"
-    LEGAL_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}"
+    COLIN_URL = f"{COLIN_API_URL + COLIN_API_VERSION}/businesses"
+    LEGAL_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses"
 
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL")
     ACCOUNT_SVC_CLIENT_ID = os.getenv("KEYCLOAK_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("KEYCLOAK_CLIENT_SECRET")
     ACCOUNT_SVC_TIMEOUT = os.getenv("KEYCLOAK_TIMEOUT")
+
+    PAYMENT_SVC_FEES_URL = os.getenv("PAYMENT_SVC_FEES_URL", None)
 
     TESTING = False
     DEBUG = False
