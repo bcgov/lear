@@ -611,7 +611,7 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
     filing_template["filing"]["header"]["name"] = "amalgamationApplication"
 
     filing_template["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
-    filing_template["filing"]["business"] = {
+    filing_template['filing']['amalgamationApplication']['nameRequest'] = {
         "identifier": business.identifier,
         "legalType": LegalEntity.EntityTypes.BCOMP.value,
         "legalName": legal_name,
