@@ -41,11 +41,11 @@ def test_amalgamation_notification(app, session, status):
             assert email['content']['subject'] == legal_name + ' - Amalgamation'
             assert 'comp_party@email.com' in email['recipients']
         else:
+            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
             assert email['content']['subject'] == legal_name + ' - Confirmation of Amalgamation'
 
         assert email['content']['body']
         assert email['content']['attachments'] == []
         assert mock_get_pdfs.call_args[0][0] == status
         assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
         assert mock_get_pdfs.call_args[0][3] == filing
