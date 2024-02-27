@@ -403,17 +403,10 @@ select distinct ph.id                                                           
                     and ph.party_type = 'organization'
                     and
                  le.id is not null)                                                             is_business_party_org_match,
-                ((r.id is null
+                (r.id is null
                     and pr.filing_id is null
                     and le.id is null
-                    and ph.party_type = 'organization'
-                    and (ph.identifier is not null and ph.identifier != '' and ph.identifier not like 'FM%')
-                    ) or (r.id is null
-                      and pr.filing_id is null
-                      and ph.party_type = 'organization'
-                      and le.id is null
-                      and (ph.identifier is null or ph.identifier = '' or ph.identifier like 'FM%')
-                    ))                                                                          is_business_party_colin_entity,
+                    and ph.party_type = 'organization')                                         is_business_party_colin_entity,
                 (r.id is null and pr.filing_id is not null)                                     is_filing_party,
                 (r.id is not null and pr.id is null)                                            is_resolution_party,
                 ph.version,
@@ -471,17 +464,10 @@ select distinct p.id                                                            
                     and p.party_type = 'organization'
                     and
                  le.id is not null)                                                            is_business_party_org_match,
-                ((r.id is null
+                (r.id is null
                     and pr.filing_id is null
                     and le.id is null
-                    and p.party_type = 'organization'
-                    and (p.identifier is not null and p.identifier != '' and p.identifier not like 'FM%')
-                    ) or (r.id is null
-                      and pr.filing_id is null
-                      and p.party_type = 'organization'
-                      and le.id is null
-                      and (p.identifier is null or p.identifier = '' or p.identifier like 'FM%')
-                    ))                                                                         is_business_party_colin_entity,
+                    and p.party_type = 'organization')                                         is_business_party_colin_entity,
                 (r.id is null and pr.filing_id is not null)                                    is_filing_party,
                 (r.id is not null and pr.id is null)                                           is_resolution_party,
                 p.version,
