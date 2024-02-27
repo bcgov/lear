@@ -149,7 +149,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if status == Filing.Status.PAID.value:
         business = filing_data['nameRequest']
         business['identifier'] = filing.temp_reg
-    
+
         if filing.filing_sub_type in [Amalgamation.AmalgamationTypes.vertical.name,
                                       Amalgamation.AmalgamationTypes.horizontal.name]:
             amalgamating_business = next(x for x in filing_data.get('amalgamatingBusinesses')

@@ -298,8 +298,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
 
-        if ar_max_date > datetime.utcnow().date():
-            ar_max_date = datetime.utcnow().date()
+        ar_max_date = min(ar_max_date, datetime.utcnow().date())  # ar_max_date cannot be in future
 
         return ar_min_date, ar_max_date
 
