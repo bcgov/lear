@@ -406,9 +406,7 @@ select distinct ph.id                                                           
                 (r.id is null
                     and pr.filing_id is null
                     and le.id is null
-                    and ph.party_type = 'organization'
-                    and (ph.identifier is not null and ph.identifier != '' and ph.identifier not like 'FM%')
-                    )                                                                           is_business_party_colin_entity,
+                    and ph.party_type = 'organization')                                         is_business_party_colin_entity,
                 (r.id is null and pr.filing_id is not null)                                     is_filing_party,
                 (r.id is not null and pr.id is null)                                            is_resolution_party,
                 ph.version,
@@ -469,9 +467,7 @@ select distinct p.id                                                            
                 (r.id is null
                     and pr.filing_id is null
                     and le.id is null
-                    and p.party_type = 'organization'
-                    and (p.identifier is not null and p.identifier != '' and p.identifier not like 'FM%')
-                    )                                                                          is_business_party_colin_entity,
+                    and p.party_type = 'organization')                                         is_business_party_colin_entity,
                 (r.id is null and pr.filing_id is not null)                                    is_filing_party,
                 (r.id is not null and pr.id is null)                                           is_resolution_party,
                 p.version,
