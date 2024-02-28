@@ -43,8 +43,13 @@ def get_parties(identifier, party_id=None):
             HTTPStatus.UNAUTHORIZED,
         )
 
+    business_id = business.id
+    if business.is_owned_by_legal_entity_person or business.is_owned_by_legal_entity_org:
+        business_id = business.legal_entity_id
+    elif business.is_owned_by_colin_entity:
+        business_id = business.colin_entity_id
+
     if party_id:
-        business_id = business.id if business.is_legal_entity else business.legal_entity_id
         party_roles = EntityRole.get_entity_roles_by_party_id(business_id, party_id)
         if not party_roles:
             return jsonify({"message": f"Party {party_id} not found"}), HTTPStatus.NOT_FOUND
