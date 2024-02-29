@@ -925,25 +925,25 @@ FROM public.sent_to_gazette stg;
 
 
 -- amalgamation -> amalgamations
-CREATE CAST (varchar AS amalgamation_type) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS amalgamations_type) WITH INOUT AS IMPLICIT;
 
 transfer public.amalgamations from lear_old using
 SELECT  id,
         business_id as legal_entity_id,
         filing_id,
-        amalgamation_date,
-        amalgamation_type,
+        amalgamation_date as amalgamations_date,
+        amalgamation_type as amalgamations_type,
         court_approval
 FROM public.amalgamation;
 
 
 -- amalgamating_business -> amalgamating_businesses
-CREATE CAST (varchar AS amalgamating_business_role) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS amalgamating_businesses_role) WITH INOUT AS IMPLICIT;
 
 transfer public.amalgamating_businesses from lear_old using
 SELECT id,
        business_id as legal_entity_id,
-       amalgamation_id,
+       amalgamation_id as amalgamations_id,
        foreign_jurisdiction,
        foreign_jurisdiction_region,
        foreign_name,
@@ -990,8 +990,8 @@ SELECT setval('colin_entities_id_seq', (select coalesce(max(id) + 1, 1) FROM pub
 SELECT setval('alternate_names_id_seq', (select coalesce(max(id) + 1, 1) FROM public.alternate_names));
 SELECT setval('users_id_seq', (select coalesce(max(id) + 1, 1) FROM public.users));
 SELECT setval('consent_continuation_outs_id_seq', (select coalesce(max(id) + 1, 1) FROM public.consent_continuation_outs));
-SELECT setval('amalgamating_business_id_seq', (select coalesce(max(id) + 1, 1) FROM public.amalgamating_business));
-SELECT setval('amalgamation_id_seq', (select coalesce(max(id) + 1, 1) FROM public.amalgamation));
+SELECT setval('amalgamating_businesses_id_seq', (select coalesce(max(id) + 1, 1) FROM public.amalgamating_businesses));
+SELECT setval('amalgamations_id_seq', (select coalesce(max(id) + 1, 1) FROM public.amalgamations));
 SELECT setval('naics_elements_id_seq', (select coalesce(max(id) + 1, 1) FROM public.naics_elements));
 SELECT setval('naics_structures_id_seq', (select coalesce(max(id) + 1, 1) FROM public.naics_structures));
 SELECT setval('sent_to_gazette_filing_id_seq', (select coalesce(max(filing_id) + 1, 1) FROM public.sent_to_gazette));
@@ -1001,8 +1001,8 @@ DROP CAST (varchar AS state);
 DROP CAST (varchar AS credentialtype);
 DROP CAST (varchar AS requesttype);
 DROP CAST (varchar AS servicename);
-DROP CAST (varchar AS amalgamation_type);
-DROP CAST (varchar AS amalgamating_business_role);
+DROP CAST (varchar AS amalgamations_type);
+DROP CAST (varchar AS amalgamating_businesses_role);
 
 
 -- *****************************************************************************************************************
