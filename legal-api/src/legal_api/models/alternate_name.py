@@ -189,11 +189,26 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     def owner_data_json(self):
         """Return if owner data."""
         json = {
-            "deliveryAddress": self.delivery_address,
-            "mailingAddress": self.mailing_address,
+            "deliveryAddress": None,
+            "mailingAddress": None,
             "officer": {},
-            "roles": [{"appointmentDate": self.start_date, "cessationDate": None, "roleType": "Proprietor"}],
+            "roles": [{"appointmentDate": datetime.date(self.start_date).isoformat(),
+                       "cessationDate": None, "roleType": "Proprietor"}],
         }
+
+        if self.delivery_address:
+            member_address = self.delivery_address.json
+            if "addressType" in member_address:
+                del member_address["addressType"]
+            json["deliveryAddress"] = member_address
+        if self.mailing_address:
+            member_mailing_address = self.mailing_address.json
+            if "addressType" in member_mailing_address:
+                del member_mailing_address["addressType"]
+            json["mailingAddress"] = member_mailing_address
+        else:
+            if self.delivery_address:
+                json["mailingAddress"] = json["deliveryAddress"]
 
         if self.is_owned_by_legal_entity_person:
             json["officer"] = {

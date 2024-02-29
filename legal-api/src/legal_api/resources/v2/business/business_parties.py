@@ -44,7 +44,7 @@ def get_parties(identifier, party_id=None):
         )
 
     if business.entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value:
-        return business.owner_data_json
+        return jsonify(parties=[business.owner_data_json])
 
     if party_id:
         party_roles = EntityRole.get_entity_roles_by_party_id(business.id, party_id)
