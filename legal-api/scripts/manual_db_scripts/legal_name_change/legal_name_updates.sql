@@ -1594,8 +1594,53 @@ WHERE d.legal_entity_id = le.id
   AND le.entity_type != 'GP';
 
 
--- TODO offices/offices_history addresses can linked to alternate_names when alternate_name_id has been added to
---  offices table.  Businesses addresses should already be linked for SP persons
+UPDATE offices o
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE o.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+UPDATE offices_history oh
+SET alternate_name_id = an.id,
+    legal_entity_id   = NULL
+FROM alternate_names an
+         JOIN legal_entities le ON an.legal_entity_id = le.id
+WHERE oh.legal_entity_id = le.id
+  AND le.entity_type != 'GP';
+
+
+-- Link alternate_name_id to custodial address in addresses/addresses_history
+WITH subquery AS (
+    SELECT
+        a.id AS address_id,
+        o.alternate_name_id
+    FROM addresses a
+    JOIN offices o 
+        ON a.office_id = o.id AND COALESCE(a.change_filing_id, 1) = COALESCE(o.change_filing_id, 1) 
+    WHERE a.office_id IS NOT NULL AND o.office_type = 'custodialOffice'
+)
+UPDATE addresses a
+SET alternate_name_id = sq.alternate_name_id,
+    legal_entity_id = NULL
+FROM subquery sq
+WHERE a.id = sq.address_id AND sq.alternate_name_id IS NOT NULL;
+
+WITH subquery AS (
+    SELECT 
+        ah.id,
+        oh.alternate_name_id
+    FROM addresses_history ah
+    JOIN offices_history oh 
+        ON ah.office_id = oh.id AND COALESCE(ah.change_filing_id, 1) = COALESCE(oh.change_filing_id, 1)
+    WHERE ah.office_id IS NOT NULL AND oh.office_type = 'custodialOffice'
+)
+UPDATE addresses_history ah
+SET alternate_name_id = sq.alternate_name_id,
+    legal_entity_id = NULL
+FROM subquery sq
+WHERE ah.id = sq.id AND sq.alternate_name_id IS NOT NULL;
 
 
 CREATE TABLE temp_sp_person_entity_role AS
@@ -1629,6 +1674,9 @@ select le.id                as sp_id,
        ler.id               as related_entity_id,
        ler.entity_type      as related_entity_type,
        ler.identifier       as related_identifier,
+       ler.delivery_address_id  as related_delivery_address_id,
+       ler.mailing_address_id   as related_mailing_address_id,
+       ler.email            as related_email,
        le_match.id          as le_match_id,
        le_match.entity_type as le_match_entity_type
 from legal_entities le
@@ -1642,15 +1690,23 @@ where le.entity_type = 'SP'
   and ler.identifier is not null
   and ler.identifier <> '';
 
--- TODO update temp_sp_dba_entity_role to include address & email fields from ler record and update corresponding
---      alternate_name entry to use these values.  This populates the business address for the SP LEAR DBA.
 
 UPDATE alternate_names an
-SET legal_entity_id = temp.le_match_id
-FROM (SELECT sp_id, le_match_id
+SET legal_entity_id = temp.le_match_id,
+    delivery_address_id = temp.related_delivery_address_id,
+    mailing_address_id = temp.related_mailing_address_id,
+    email = temp.related_email
+FROM (SELECT 
+        sp_id,
+        le_match_id,
+        related_delivery_address_id,
+        related_mailing_address_id,
+        related_email
       FROM temp_sp_dba_entity_role) AS temp
 WHERE an.legal_entity_id = temp.sp_id;
 
+
+-- TODO update alternate_names_history entry to use corresponding address & email for SP LEAR DBA
 
 UPDATE alternate_names_history anh
 SET legal_entity_id = temp.le_match_id
@@ -1714,23 +1770,34 @@ select le.id          as sp_id,
        er.id          as er_id,
        er.role_type   as er_role_type,
        ce.id          as related_colin_entity_id,
-       ce.identifier  as related_colin_identifier
+       ce.identifier  as related_colin_identifier,
+       ce.delivery_address_id   as related_delivery_address_id,
+       ce.mailing_address_id    as related_mailing_address_id,
+       ce.email                 as related_email
 from legal_entities le
          join entity_roles er on le.id = er.legal_entity_id
          join colin_entities ce on er.related_colin_entity_id = ce.id
 where le.entity_type = 'SP'
   and er.role_type = 'proprietor';
 
--- TODO update temp_sp_dba_colin_entity_role to include address & email fields from ler record and update corresponding
---      alternate_name entry to use these values.  This populates the business address for the SP COLIN DBA.
 
 UPDATE alternate_names an
 SET legal_entity_id = null,
-    colin_entity_id = related_colin_entity_id
-FROM (SELECT sp_id, related_colin_entity_id
+    colin_entity_id = related_colin_entity_id,
+    delivery_address_id = related_delivery_address_id,
+    mailing_address_id = related_mailing_address_id,
+    email = related_email
+FROM (SELECT 
+        sp_id,
+        related_colin_entity_id,
+        related_delivery_address_id,
+        related_mailing_address_id,
+        related_email
       FROM temp_sp_dba_colin_entity_role) AS temp
 WHERE an.legal_entity_id = temp.sp_id;
 
+
+-- TODO update alternate_names_history entry to use corresponding address & email for SP COLIN DBA
 
 UPDATE alternate_names_history anh
 SET legal_entity_id = null,
