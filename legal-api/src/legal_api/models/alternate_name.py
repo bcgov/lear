@@ -185,7 +185,11 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     @property
     def owner_data_json(self):
         """Return if owner data."""
+        delivery_address = Address.find_by_id(self.delivery_address_id) if self.delivery_address_id else None
+        mailing_address = Address.find_by_id(self.mailing_address_id) if self.mailing_address_id else None
         json = {
+            "deliveryAddress": delivery_address.json if delivery_address else None,
+            "mailingAddress": mailing_address.json if mailing_address else None,
             "officer": {},
             "roles": [{"appointmentDate": self.start_date, "cessationDate": None, "roleType": "Proprietor"}],
         }
