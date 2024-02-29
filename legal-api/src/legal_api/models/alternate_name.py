@@ -192,8 +192,13 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "deliveryAddress": None,
             "mailingAddress": None,
             "officer": {},
-            "roles": [{"appointmentDate": datetime.date(self.start_date).isoformat(),
-                       "cessationDate": None, "roleType": "Proprietor"}],
+            "roles": [
+                {
+                    "appointmentDate": datetime.date(self.start_date).isoformat(),
+                    "cessationDate": None,
+                    "roleType": "Proprietor",
+                }
+            ],
         }
 
         if self.delivery_address:
