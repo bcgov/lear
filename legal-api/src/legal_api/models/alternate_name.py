@@ -182,6 +182,42 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         """Return if owned by colin entity."""
         return bool(self.colin_entity)
 
+    @property
+    def owner_data_json(self):
+        """Return if owner data."""
+        json = {
+            "officer": {},
+            "roles": [{"appointmentDate": "2000-01-03", "cessationDate": None, "roleType": "Proprietor"}],
+        }
+
+        if self.is_owned_by_legal_entity_person:
+            json["officer"] = {
+                "id": self.legal_entity.id,
+                "email": self.legal_entity.email,
+                "firstName": self.legal_entity.first_name,
+                "lastName": self.legal_entity.last_name,
+                "middleInitial": self.legal_entity.middle_initial,
+                "partyType": "person",
+            }
+        elif self.is_owned_by_legal_entity_org:
+            json["officer"] = {
+                "id": self.legal_entity.id,
+                "email": self.legal_entity.email,
+                "identifier": self.legal_entity.identifier,
+                "organizationName": self.legal_name,
+                "partyType": "organization",
+            }
+        elif self.is_owned_by_colin_entity:
+            json["officer"] = {
+                "id": self.colin_entity.id,
+                "email": self.colin_entity.email,
+                "identifier": self.colin_entity.identifier,
+                "organizationName": self.legal_name,
+                "partyType": "organization",
+            }
+
+        return json
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
