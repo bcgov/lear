@@ -90,8 +90,8 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
     email = db.Column("email", db.String(254), nullable=True)
-    delivery_address_id = db.Column("delivery_address_id", db.Integer, nullable=True)
-    mailing_address_id = db.Column("mailing_address_id", db.Integer, nullable=True)
+    delivery_address_id = db.Column("delivery_address_id", db.Integer, db.ForeignKey("addresses.id"))
+    mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
@@ -104,6 +104,9 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     colin_entity = db.relationship("ColinEntity", back_populates="alternate_names")
     filings = db.relationship("Filing", lazy="dynamic", foreign_keys="Filing.alternate_name_id")
     documents = db.relationship("Document", lazy="dynamic")
+
+    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
+    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 
     @classmethod
     def find_by_identifier(cls, identifier: str) -> AlternateName | None:
@@ -185,11 +188,9 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     @property
     def owner_data_json(self):
         """Return if owner data."""
-        delivery_address = Address.find_by_id(self.delivery_address_id) if self.delivery_address_id else None
-        mailing_address = Address.find_by_id(self.mailing_address_id) if self.mailing_address_id else None
         json = {
-            "deliveryAddress": delivery_address.json if delivery_address else None,
-            "mailingAddress": mailing_address.json if mailing_address else None,
+            "deliveryAddress": self.delivery_address,
+            "mailingAddress": self.mailing_address,
             "officer": {},
             "roles": [{"appointmentDate": self.start_date, "cessationDate": None, "roleType": "Proprietor"}],
         }
