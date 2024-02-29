@@ -187,7 +187,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         """Return if owner data."""
         json = {
             "officer": {},
-            "roles": [{"appointmentDate": self.startDate, "cessationDate": None, "roleType": "Proprietor"}],
+            "roles": [{"appointmentDate": self.start_date, "cessationDate": None, "roleType": "Proprietor"}],
         }
 
         if self.is_owned_by_legal_entity_person:
