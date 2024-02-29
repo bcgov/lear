@@ -925,25 +925,25 @@ FROM public.sent_to_gazette stg;
 
 
 -- amalgamation -> amalgamations
-CREATE CAST (varchar AS amalgamations_type) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS amalgamation_type) WITH INOUT AS IMPLICIT;
 
 transfer public.amalgamations from lear_old using
 SELECT  id,
         business_id as legal_entity_id,
         filing_id,
-        amalgamation_date as amalgamations_date,
-        amalgamation_type as amalgamations_type,
+        amalgamation_date,
+        amalgamation_type,
         court_approval
 FROM public.amalgamation;
 
 
 -- amalgamating_business -> amalgamating_businesses
-CREATE CAST (varchar AS amalgamating_businesses_role) WITH INOUT AS IMPLICIT;
+CREATE CAST (varchar AS amalgamating_business_role) WITH INOUT AS IMPLICIT;
 
 transfer public.amalgamating_businesses from lear_old using
 SELECT id,
        business_id as legal_entity_id,
-       amalgamation_id as amalgamations_id,
+       amalgamation_id,
        foreign_jurisdiction,
        foreign_jurisdiction_region,
        foreign_name,
@@ -1001,8 +1001,8 @@ DROP CAST (varchar AS state);
 DROP CAST (varchar AS credentialtype);
 DROP CAST (varchar AS requesttype);
 DROP CAST (varchar AS servicename);
-DROP CAST (varchar AS amalgamations_type);
-DROP CAST (varchar AS amalgamating_businesses_role);
+DROP CAST (varchar AS amalgamation_type);
+DROP CAST (varchar AS amalgamating_business_role);
 
 
 -- *****************************************************************************************************************
