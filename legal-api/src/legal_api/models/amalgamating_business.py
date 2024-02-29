@@ -34,7 +34,7 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
         primary = auto()
 
     # __versioned__ = {}
-    __tablename__ = "amalgamating_business"
+    __tablename__ = "amalgamating_businesses"
 
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column("role", db.Enum(Role), nullable=False)
