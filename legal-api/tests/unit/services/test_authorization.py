@@ -31,7 +31,7 @@ from registry_schemas.example_data import AGM_EXTENSION, AGM_LOCATION_CHANGE, AL
     CORRECTION_AR, CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, \
     CONTINUATION_IN, CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
 
-from legal_api.models import Address, Filing
+from legal_api.models import Address, Filing, AmalgamatingBusiness
 from legal_api.models.business import Business, PartyRole, User
 
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, PUBLIC_USER, \
@@ -1159,13 +1159,12 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
         ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
                   expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER])),
+                          FilingKey.REGISTRARS_ORDER]),
+                          ),
         ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
                   expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.RESTRN_FULL_CORPS,
-                          FilingKey.RESTRN_LTD_CORPS])),
+                          FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
                   expected_lookup([FilingKey.COURT_ORDER,
@@ -1199,8 +1198,9 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
             business = factory_business(identifier=identifier,
                                         entity_type=legal_type,
                                         state=state)
-            with patch.object(type(business), 'is_pending_amalgamating_business', new_callable=PropertyMock) as is_ting:
-                is_ting.return_value = True
+            
+            with patch.object(type(business), 'amalgamating_businesses', new_callable=PropertyMock) as mock_amalgamating_business:
+                mock_amalgamating_business = [{'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': identifier}]
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
