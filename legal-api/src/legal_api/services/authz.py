@@ -50,7 +50,6 @@ class BusinessBlocker(str, Enum):
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
 
 
-
 class BusinessRequirement(str, Enum):
     """Define an enum for business requirement scenarios."""
 
