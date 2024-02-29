@@ -46,7 +46,7 @@ class BusinessBlocker(str, Enum):
     DEFAULT = 'DEFAULT'
     BUSINESS_FROZEN = 'BUSINESS_FROZEN'
     DRAFT_PENDING = 'DRAFT_PENDING'
-    NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING',
+    NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
 
 
@@ -620,7 +620,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if not business.good_standing:
         business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
 
-    if business.is_pending_amalgamating_business:
+    if business.amalgamating_businesses.one_or_none() is not None:
         business_blocker_checks[BusinessBlocker.AMALGAMATING_BUSINESS] = True
 
     return business_blocker_checks
