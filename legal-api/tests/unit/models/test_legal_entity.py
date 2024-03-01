@@ -29,6 +29,7 @@ from legal_api.models import (
     AlternateName,
     AmalgamatingBusiness,
     Amalgamation,
+    BusinessCommon,
     ColinEntity,
     EntityRole,
     Filing,
@@ -41,11 +42,13 @@ from tests.unit import has_expected_date_str_format
 ALTERNATE_NAME_1 = "operating name 1"
 ALTERNATE_NAME_1_IDENTIFIER = "FM1111111"
 ALTERNATE_NAME_1_START_DATE = "2023-09-02"
+ALTERNATE_NAME_1_START_DATE_ISO = "2023-09-02T07:00:00+00:00"
 ALTERNATE_NAME_1_REGISTERED_DATE = "2000-01-01T00:00:00+00:00"
 
 ALTERNATE_NAME_2 = "operating name 2"
 ALTERNATE_NAME_2_IDENTIFIER = "FM2222222"
 ALTERNATE_NAME_2_START_DATE = "2023-09-05"
+ALTERNATE_NAME_2_START_DATE_ISO = "2023-09-05T07:00:00+00:00"
 ALTERNATE_NAME_2_REGISTERED_DATE = "2005-01-01T00:00:00+00:00"
 
 
@@ -675,56 +678,30 @@ def test_legal_name_firms_SP(session, test_name, partner_info, expected_legal_na
 
 
 @pytest.mark.parametrize(
-    "entity_type, legal_name, operating_name, expected_business_name",
+    "entity_type, legal_name, expected_business_name",
     [
-        ("CP", "CP Test XYZ", None, "CP Test XYZ"),
-        ("BEN", "BEN Test XYZ", None, "BEN Test XYZ"),
-        ("BC", "BC Test XYZ", None, "BC Test XYZ"),
-        ("ULC", "ULC Test XYZ", None, "ULC Test XYZ"),
-        ("CC", "CC Test XYZ", None, "CC Test XYZ"),
-        ("SP", None, "SP Test XYZ", "SP Test XYZ"),
-        ("GP", None, "GP Test XYZ", "GP Test XYZ"),
+        ("CP", "CP Test XYZ", "CP Test XYZ"),
+        ("BEN", "BEN Test XYZ", "BEN Test XYZ"),
+        ("BC", "BC Test XYZ", "BC Test XYZ"),
+        ("ULC", "ULC Test XYZ", "ULC Test XYZ"),
+        ("CC", "CC Test XYZ", "CC Test XYZ"),
     ],
 )
-def test_business_name(session, entity_type, legal_name, operating_name, expected_business_name):
+def test_business_name(session, entity_type, legal_name, expected_business_name):
     """Assert that correct business name is returned."""
     sess = session.begin_nested()
-    if entity_type == LegalEntity.EntityTypes.SOLE_PROP.value:
-        le = LegalEntity(
-            _legal_name=legal_name,
-            _entity_type=LegalEntity.EntityTypes.PERSON,
-            founding_date=datetime.utcfromtimestamp(0),
-            identifier="P1234567",
-            state=LegalEntity.State.ACTIVE,
-        )
-    else:
-        le = LegalEntity(
-            _legal_name=legal_name,
-            _entity_type=entity_type,
-            founding_date=datetime.utcfromtimestamp(0),
-            identifier="BC1234567",
-            state=LegalEntity.State.ACTIVE,
-        )
-
-    if operating_name:
-        alternate_name = AlternateName(
-            identifier="BC1234567",
-            name_type=AlternateName.NameType.OPERATING,
-            name=operating_name,
-            bn15="111111100BC1111",
-            start_date=datetime.utcnow(),
-            legal_entity_id=le.id,
-        )
-        session.add(alternate_name)
-        le.alternate_names.append(alternate_name)
+    le = LegalEntity(
+        _legal_name=legal_name,
+        _entity_type=entity_type,
+        founding_date=datetime.utcfromtimestamp(0),
+        identifier="BC1234567",
+        state=LegalEntity.State.ACTIVE,
+    )
 
     le.skip_party_listener = True
     session.add(le)
     session.flush()
-    if entity_type == LegalEntity.EntityTypes.SOLE_PROP.value:
-        assert alternate_name.business_name == expected_business_name
-    else:
-        assert le.business_name == expected_business_name
+    assert le.business_name == expected_business_name
 
     sess.rollback()
 
@@ -776,18 +753,16 @@ def test_business_name(session, entity_type, legal_name, operating_name, expecte
             # expected_alternate_names
             [
                 {
-                    "entityType": "SP",
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
-                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
-                    "nameStartDate": ALTERNATE_NAME_1_START_DATE,
                     "operatingName": ALTERNATE_NAME_1,
+                    "entityType": "SP",
+                    "nameRegisteredDate": ALTERNATE_NAME_1_START_DATE_ISO,
                 },
                 {
-                    "entityType": "GP",
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
-                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
-                    "nameStartDate": ALTERNATE_NAME_2_START_DATE,
                     "operatingName": ALTERNATE_NAME_2,
+                    "entityType": "GP",
+                    "nameRegisteredDate": ALTERNATE_NAME_2_START_DATE_ISO,
                 },
             ],
         ),
@@ -815,11 +790,10 @@ def test_business_name(session, entity_type, legal_name, operating_name, expecte
             # expected_alternate_names
             [
                 {
-                    "entityType": "SP",
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
-                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
-                    "nameStartDate": ALTERNATE_NAME_1_START_DATE,
                     "operatingName": ALTERNATE_NAME_1,
+                    "entityType": "SP",
+                    "nameRegisteredDate": ALTERNATE_NAME_1_START_DATE_ISO,
                 }
             ],
         ),
@@ -847,11 +821,10 @@ def test_business_name(session, entity_type, legal_name, operating_name, expecte
             # expected_alternate_names
             [
                 {
-                    "entityType": "GP",
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
-                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
-                    "nameStartDate": ALTERNATE_NAME_2_START_DATE,
                     "operatingName": ALTERNATE_NAME_2,
+                    "entityType": "GP",
+                    "nameRegisteredDate": ALTERNATE_NAME_2_START_DATE_ISO,
                 }
             ],
         ),
@@ -889,18 +862,16 @@ def test_business_name(session, entity_type, legal_name, operating_name, expecte
             # expected_alternate_names
             [
                 {
-                    "entityType": "GP",
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
-                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
-                    "nameStartDate": ALTERNATE_NAME_1_START_DATE,
                     "operatingName": ALTERNATE_NAME_1,
+                    "entityType": "GP",
+                    "nameRegisteredDate": ALTERNATE_NAME_1_START_DATE_ISO,
                 },
                 {
-                    "entityType": "SP",
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
-                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
-                    "nameStartDate": ALTERNATE_NAME_2_START_DATE,
                     "operatingName": ALTERNATE_NAME_2,
+                    "entityType": "SP",
+                    "nameRegisteredDate":ALTERNATE_NAME_2_START_DATE_ISO,
                 },
             ],
         ),
@@ -921,7 +892,6 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
             _entity_type=le_info["entityType"],
             founding_date=founding_date,
             identifier=le_info["identifier"],
-            state=LegalEntity.State.ACTIVE,
         )
         session.add(le)
 
@@ -940,7 +910,6 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
                         _entity_type=alternate_name_info["entityType"],
                         founding_date=le_an_founding_date,
                         identifier=alternate_name_identifier,
-                        state=LegalEntity.State.ACTIVE,
                     )
                     session.add(le_alternate_name)
 
@@ -955,6 +924,7 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
                 le.alternate_names.append(alternate_name)
 
         session.flush()
-        assert le.alternate_names == expected_alternate_names
+        for expected_alternate_name in expected_alternate_names:
+            assert any(l.json(slim=True)["alternateNames"][0] == expected_alternate_name for l in le.alternate_names)
         # if no rollback, test data conflicts between parametrized test runs
         sess.rollback()

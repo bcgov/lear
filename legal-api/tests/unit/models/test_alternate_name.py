@@ -17,9 +17,11 @@
 Test-Suite to ensure that the AlternateName Model is working as expected.
 """
 from datetime import datetime
+import pytest
 
 from legal_api.models import AlternateName
-from tests.unit.models import factory_legal_entity
+from tests.unit import nested_session
+from tests.unit.models import factory_alternate_name, factory_legal_entity
 
 
 def test_valid_alternate_name_save(session):
@@ -55,3 +57,31 @@ def test_valid_alternate_name_save(session):
     assert all(alternate_name.name_type == AlternateName.NameType.OPERATING for alternate_name in alternate_names)
     assert any(alternate_name.name == "XYZ Test BC LTD" for alternate_name in alternate_names)
     assert any(alternate_name.name == "ABC Test BC LTD" for alternate_name in alternate_names)
+
+
+@pytest.mark.parametrize(
+    "entity_type, operating_name, expected_business_name",
+    [
+        ("SP" , "SP Test XYZ", "SP Test XYZ"),
+        ("GP", "GP Test XYZ", "GP Test XYZ"),
+    ],
+)
+def test_business_name(session, entity_type, operating_name, expected_business_name):
+    """Assert that correct business name is returned."""
+    with nested_session(session):
+        identifier="BC1234567"
+        legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
+
+        alternate_name = factory_alternate_name(
+            identifier=identifier,
+            name=operating_name,
+            name_type=AlternateName.NameType.OPERATING,
+            bn15="111111100BC1111",
+            start_date=datetime.utcnow(),
+            legal_entity_id=legal_entity.id,
+        )
+
+        legal_entity.alternate_names.append(alternate_name)
+        legal_entity.skip_party_listener = True
+
+        assert alternate_name.business_name == expected_business_name
