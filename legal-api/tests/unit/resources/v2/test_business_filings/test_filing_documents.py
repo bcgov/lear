@@ -87,7 +87,7 @@ def basic_test_helper():
 
     return legal_entity, filing
 
-
+#TODO: Can be tested/fixed after Output endpoints are fixed
 def test_not_authorized(session, client, jwt):
     """Assert the the call fails for unauthorized access."""
     with nested_session(session):
@@ -2006,7 +2006,7 @@ def test_document_list_for_various_filing_states(
     with nested_session(session):
         # Setup
         # identifier = 'CP7654321'
-        legal_entity = factory_legal_entity(identifier, entity_type=entity_type)
+        legal_entity = factory_legal_entity(identifier, _entity_type=entity_type)
 
         filing_json = copy.deepcopy(FILING_HEADER)
         filing_json["filing"]["header"]["name"] = filing_name_1

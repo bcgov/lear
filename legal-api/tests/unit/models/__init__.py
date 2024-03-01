@@ -123,7 +123,7 @@ def factory_legal_entity(
     identifier=None,
     founding_date=EPOCH_DATETIME,
     last_ar_date=None,
-    entity_type=LegalEntity.EntityTypes.COOP.value,
+    _entity_type=LegalEntity.EntityTypes.COOP.value,
     state=LegalEntity.State.ACTIVE,
     naics_code=None,
     naics_desc=None,
@@ -146,7 +146,7 @@ def factory_legal_entity(
         last_ar_year=last_ar_year,
         last_ledger_timestamp=EPOCH_DATETIME,
         # dissolution_date=EPOCH_DATETIME,
-        entity_type=entity_type,
+        _entity_type=_entity_type,
         identifier=identifier,
         tax_id="BN123456789",
         fiscal_year_end_date=FROZEN_DATETIME,
@@ -193,6 +193,7 @@ def factory_filing(
     filing_date=FROZEN_DATETIME,
     filing_type=None,
     filing_sub_type=None,
+    status=None,
     is_future_effective=False,
 ):
     """Create a filing."""
@@ -204,6 +205,8 @@ def factory_filing(
         filing._filing_type = filing_type
     if filing_sub_type:
         filing._filing_sub_type = filing_sub_type
+    if status:
+        filing._status = status
     if is_future_effective:
         filing.effective_date = datetime.utcnow() + datedelta(days=5)
     try:
@@ -350,7 +353,7 @@ def factory_party_role(
         first_name=officer["firstName"],
         last_name=officer["lastName"],
         middle_initial=officer["middleInitial"],
-        entity_type=officer["partyType"],
+        _entity_type=officer["partyType"],
         _legal_name=officer["organizationName"],
     )
     legal_entity.entity_delivery_address = delivery_address

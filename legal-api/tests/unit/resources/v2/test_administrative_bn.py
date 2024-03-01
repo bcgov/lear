@@ -29,7 +29,7 @@ from tests.unit.services.utils import create_header
 def test_create_bn_request(session, client, jwt):
     """Create a new BN request."""
     identifier = "FM0000001"
-    factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
+    factory_legal_entity(identifier, _entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
 
     with patch.object(administrative_bn, "publish_entity_event"):
         rv = client.post(f"/api/v2/admin/bn/{identifier}", headers=create_header(jwt, [UserRoles.bn_edit], identifier))

@@ -28,7 +28,7 @@ from tests.unit.services.utils import create_header
 def test_update_bn_move(session, client, jwt):
     """Assert that the endpoint updates tax_id."""
     identifier = "FM0000001"
-    legal_entity = factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
+    legal_entity = factory_legal_entity(identifier, _entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
     legal_entity.tax_id = "993775204BC0001"
     legal_entity.save()
 

@@ -65,7 +65,7 @@ def factory_legal_entity_model(
         tax_id=tax_id,
     )
     if entity_type:
-        b.entity_type = entity_type
+        b._entity_type = entity_type
     b.save()
     return b
 
@@ -145,21 +145,22 @@ def test_get_temp_business_info(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
 
 
+#TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name,role,calls_auth",
+    "test_name, role, calls_auth, identifier",
     [
-        ("public-user", PUBLIC_USER, True),
-        ("account-identity", ACCOUNT_IDENTITY, False),
-        ("staff", STAFF_ROLE, False),
-        ("system", SYSTEM_ROLE, False),
+        ("public-user", PUBLIC_USER, True, "CP7654321"),
+        ("account-identity", ACCOUNT_IDENTITY, False, "CP7654322"),
+        ("staff", STAFF_ROLE, False, "CP7654323"),
+        ("system", SYSTEM_ROLE, False, "CP7654324"),
     ],
 )
-def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth):
+def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth,identifier):
     """Assert that the business info can be received in a valid JSONSchema format."""
     with nested_session(session):
-        identifier = "CP7654321"
         legal_name = identifier + " legal name"
         factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -195,6 +196,7 @@ def test_get_business_with_correction_filings(session, client, jwt):
         identifier = "CP7654321"
         legal_name = identifier + " legal name"
         legal_entity = factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -226,6 +228,7 @@ def test_get_business_info_dissolution(session, client, jwt):
         identifier = "CP1234567"
         legal_name = identifier + " legal name"
         factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -247,6 +250,7 @@ def test_get_business_info_missing_business(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     with nested_session(session):
         factory_legal_entity_model(
+            entity_type="CP",
             legal_name="legal_name",
             identifier="CP7654321",
             founding_date=datetime.utcfromtimestamp(0),
@@ -277,7 +281,8 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         assert rv.status_code == HTTPStatus.OK
         assert rv.json["business"]["allowedFilings"]
 
-
+#TODO: first test runs successfully but next fail. Looks like values from first test are used for the next one
+#Tests run successfully when run individually.
 @pytest.mark.parametrize(
     "test_name, legal_type, identifier, has_missing_business_info, missing_business_info_warning_expected",
     [
@@ -286,8 +291,8 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "FM0000003", False, False),
         ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "GP", "FM0000004", False, False),
         ("NO_WARNINGS_NON_FIRM", "CP", "CP7654321", True, False),
-        ("NO_WARNINGS_NON_FIRM", "BEN", "CP7654321", True, False),
-        ("NO_WARNINGS_NON_FIRM", "BC", "BC7654321", True, False),
+        ("NO_WARNINGS_NON_FIRM", "BEN", "CP7654322", True, False),
+        ("NO_WARNINGS_NON_FIRM", "BC", "BC7654323", True, False),
     ],
 )
 def test_get_business_with_incomplete_info(
@@ -345,6 +350,7 @@ def test_get_business_with_court_orders(session, client, jwt):
         identifier = "CP7654321"
         legal_name = identifier + " legal name"
         legal_entity = factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -375,7 +381,7 @@ def test_post_affiliated_businesses(session, client, jwt):
             (identifiers[1], LegalEntity.EntityTypes.BCOMP.value, "123456789BC0001"),
         ]
         draft_businesses = [
-            (identifiers[2], "registration", LegalEntity.EntityTypes.GP.value, None),
+            (identifiers[2], "registration", LegalEntity.EntityTypes.PARTNERSHIP.value, None),
             (identifiers[3], "incorporationApplication", LegalEntity.EntityTypes.SOLE_PROP.value, "NR 1234567"),
             (identifiers[4], "amalgamationApplication", LegalEntity.EntityTypes.COMP.value, "NR 1234567"),
         ]

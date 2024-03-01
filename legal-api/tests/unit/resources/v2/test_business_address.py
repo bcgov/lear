@@ -16,31 +16,29 @@
 
 Test-Suite to ensure that the /businesses../addresses endpoint is working as expected.
 """
-from contextlib import suppress
 from http import HTTPStatus
 
 import pytest
 
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from tests.unit import nested_session
 from tests.unit.models import Address, Office, factory_legal_entity
 from tests.unit.services.utils import create_header
 
-
+#TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name,role",
+    "test_name,role,identifier",
     [
-        ("public-user", PUBLIC_USER),
-        ("account-identity", ACCOUNT_IDENTITY),
-        ("staff", STAFF_ROLE),
-        ("system", SYSTEM_ROLE),
+        ("public-user", PUBLIC_USER, "CP7654321"),
+        ("account-identity", ACCOUNT_IDENTITY, "CP7654322"),
+        ("staff", STAFF_ROLE, "CP7654323"),
+        ("system", SYSTEM_ROLE, "CP7654324"),
     ],
 )
-def test_get_business_addresses(app, session, client, jwt, requests_mock, test_name, role):
+def test_get_business_addresses(app, session, client, jwt, requests_mock, test_name, role, identifier):
     """Assert that business addresses are returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
-        identifier = "CP7654321"
+    with nested_session(session):
         legal_entity = factory_legal_entity(identifier)
         mailing_address = Address(city="Test Mailing City", address_type=Address.MAILING)
         delivery_address = Address(city="Test Delivery City", address_type=Address.DELIVERY)
@@ -66,14 +64,12 @@ def test_get_business_addresses(app, session, client, jwt, requests_mock, test_n
         assert "registeredOffice" in rv.json
         assert "mailingAddress" in rv.json["registeredOffice"]
         assert "deliveryAddress" in rv.json["registeredOffice"]
-        sess.rollback()
 
 
 def test_get_business_no_addresses(session, client, jwt):
     """Assert that business addresses are not returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
 
@@ -84,14 +80,12 @@ def test_get_business_no_addresses(session, client, jwt):
         # check
         assert rv.status_code == HTTPStatus.NOT_FOUND
         assert rv.json == {"message": f"{legal_entity.identifier} address not found"}
-        sess.rollback()
 
 
 def test_get_business_addresses_by_id(session, client, jwt):
     """Assert that business address is returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         mailing_address = Address(
@@ -110,14 +104,12 @@ def test_get_business_addresses_by_id(session, client, jwt):
         # check
         assert rv.status_code == HTTPStatus.OK
         assert "mailingAddress" in rv.json
-        sess.rollback()
 
 
 def test_get_business_addresses_by_invalid_id(session, client, jwt):
     """Assert that business addresses are not returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         address_id = 1000
@@ -133,14 +125,12 @@ def test_get_business_addresses_by_invalid_id(session, client, jwt):
         # check
         assert rv.status_code == HTTPStatus.NOT_FOUND
         assert rv.json == {"message": f"{identifier} address not found"}
-        sess.rollback()
 
 
 def test_get_business_mailing_addresses_by_type(session, client, jwt):
     """Assert that business address type is returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         mailing_address = Address(
@@ -159,14 +149,12 @@ def test_get_business_mailing_addresses_by_type(session, client, jwt):
         # check
         assert rv.status_code == HTTPStatus.OK
         assert Address.JSON_MAILING in rv.json
-        sess.rollback()
 
 
 def test_get_business_delivery_addresses_by_type_missing_address(session, client, jwt):
     """Assert that business addresses are not returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         delivery_address = Address(
@@ -185,14 +173,12 @@ def test_get_business_delivery_addresses_by_type_missing_address(session, client
         # check
         assert rv.status_code == HTTPStatus.NOT_FOUND
         assert rv.json == {"message": f"{identifier} address not found"}
-        sess.rollback()
 
 
 def test_get_business_delivery_addresses_by_type(session, client, jwt):
     """Assert that business address type is returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         delivery_address = Address(
@@ -211,14 +197,12 @@ def test_get_business_delivery_addresses_by_type(session, client, jwt):
         # check
         assert rv.status_code == HTTPStatus.OK
         assert Address.JSON_DELIVERY in rv.json
-        sess.rollback()
 
 
 def test_get_addresses_invalid_business(session, client, jwt):
     """Assert that business is not returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
 
         # test
@@ -228,14 +212,12 @@ def test_get_addresses_invalid_business(session, client, jwt):
         # check
         assert rv.status_code == HTTPStatus.NOT_FOUND
         assert rv.json == {"message": f"{identifier} not found"}
-        sess.rollback()
 
 
 def test_get_addresses_invalid_type(session, client, jwt):
     """Assert that business addresses is not returned."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         address_type = "INVALID_TYPE"
         legal_entity = factory_legal_entity(identifier)
@@ -249,14 +231,12 @@ def test_get_addresses_invalid_type(session, client, jwt):
         # check
         assert rv.status_code == HTTPStatus.BAD_REQUEST
         assert rv.json == {"message": f"{address_type} not a valid address type"}
-        sess.rollback()
 
 
 def test_get_addresses_unauthorized(app, session, client, jwt, requests_mock):
     """Assert that business addresses is not returned for an unauthorized user."""
     # setup
-    with suppress(Exception):
-        sess = session.begin_nested()
+    with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         legal_entity.save()
@@ -270,4 +250,3 @@ def test_get_addresses_unauthorized(app, session, client, jwt, requests_mock):
         # check
         assert rv.status_code == HTTPStatus.UNAUTHORIZED
         assert rv.json == {"message": f"You are not authorized to view addresses for {identifier}."}
-        sess.rollback()
