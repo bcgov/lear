@@ -47,6 +47,7 @@ class BusinessBlocker(str, Enum):
     BUSINESS_FROZEN = 'BUSINESS_FROZEN'
     DRAFT_PENDING = 'DRAFT_PENDING'
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
+    AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
 
 
 class BusinessRequirement(str, Enum):
@@ -314,13 +315,15 @@ def get_allowable_filings_dict():
                     'fullRestoration': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                         'blockerChecks': {
-                            'invalidStateFilings': ['continuationIn', 'continuationOut']
+                            'invalidStateFilings': ['continuationIn', 'continuationOut'],
+                            'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
                         }
                     },
                     'limitedRestoration': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                         'blockerChecks': {
-                            'invalidStateFilings': ['continuationIn', 'continuationOut']
+                            'invalidStateFilings': ['continuationIn', 'continuationOut'],
+                            'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
                         }
                     }
                 }
@@ -598,7 +601,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.DEFAULT: False,
         BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DRAFT_PENDING: False,
-        BusinessBlocker.NOT_IN_GOOD_STANDING: False
+        BusinessBlocker.NOT_IN_GOOD_STANDING: False,
+        BusinessBlocker.AMALGAMATING_BUSINESS: False
     }
 
     if not business:
@@ -614,6 +618,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if not business.good_standing:
         business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
+
+    if business.amalgamating_businesses.one_or_none():
+        business_blocker_checks[BusinessBlocker.AMALGAMATING_BUSINESS] = True
 
     return business_blocker_checks
 
