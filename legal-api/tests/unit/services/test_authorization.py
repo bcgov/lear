@@ -4343,7 +4343,7 @@ def create_party_role(
         "partyType": "person",
         "organizationName": "",
     }
-    party_role = factory_party_role(completing_party_address, None, officer, _datetime.utcnow(), None, role)
+    party_role = factory_party_role(completing_party_address, None, officer, _datetime.utcnow(), None, role_type)
     return party_role
 
 
