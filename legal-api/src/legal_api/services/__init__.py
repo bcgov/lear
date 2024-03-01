@@ -33,7 +33,7 @@ from .authz import (
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 
-# from .queue import QueueService
+from .queue import QueueService
 from .business_service import BusinessService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
