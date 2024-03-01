@@ -25,12 +25,12 @@ from legal_api.services.warnings.business.business_checks.firms import (
     check_business,
     check_completing_party,
     check_completing_party_for_filing,
-    check_sp_parties,
     check_gp_parties,
-    check_sp_party,
     check_gp_party,
     check_office,
     check_parties,
+    check_sp_parties,
+    check_sp_party,
     check_start_date,
 )
 from tests.unit.services.warnings import (

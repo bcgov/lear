@@ -32,8 +32,6 @@ from .authz import (
 )
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
-
-from .queue import QueueService
 from .business_service import BusinessService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
@@ -42,6 +40,7 @@ from .minio import MinioService
 from .naics import NaicsService
 from .namex import NameXService
 from .pdf_service import PdfService
+from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
 
