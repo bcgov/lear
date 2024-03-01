@@ -65,7 +65,7 @@ def test_simple_ledger_search(session):
     num_of_files = load_ledger(legal_entity, founding_date)
 
     # test
-    ledger = CoreFiling.ledger(legal_entity.id)
+    ledger = CoreFiling.ledger(legal_entity)
 
     # Did we get the full set
     assert len(ledger) == num_of_files

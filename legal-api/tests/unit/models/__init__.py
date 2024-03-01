@@ -146,7 +146,7 @@ def factory_legal_entity(
         last_ar_year=last_ar_year,
         last_ledger_timestamp=EPOCH_DATETIME,
         # dissolution_date=EPOCH_DATETIME,
-        entity_type=entity_type,
+        _entity_type=entity_type,
         identifier=identifier,
         tax_id="BN123456789",
         fiscal_year_end_date=FROZEN_DATETIME,

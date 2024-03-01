@@ -27,7 +27,7 @@ from legal_api.models import ColinEntity, LegalEntity, Party
 def test_party_json(session):
     """Assert the json format of party member."""
     person = LegalEntity(
-        entity_type=LegalEntity.EntityTypes.PERSON.value,
+        _entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Michael",
         last_name="Crane",
         middle_initial="Joe",
@@ -63,7 +63,7 @@ def test_party_json(session):
 def test_party_save(session):
     """Assert that the party member saves correctly."""
     member1 = LegalEntity(
-        entity_type=LegalEntity.EntityTypes.PERSON.value,
+        _entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Michael",
         last_name="Crane",
         middle_initial="Joe",
@@ -80,13 +80,13 @@ def test_party_save(session):
 def test_invalid_org_party_type(session):
     """Assert the party model validates the party type correctly."""
     member1 = LegalEntity(
-        entity_type=LegalEntity.EntityTypes.BCOMP.value,
+        _entity_type=LegalEntity.EntityTypes.BCOMP.value,
         first_name="invalid",
         last_name="name",
         middle_initial="test",
         title="INV",
     )
-    member2 = LegalEntity(entity_type=LegalEntity.EntityTypes.PERSON.value, _legal_name="BC1234567 LTD")
+    member2 = LegalEntity(_entity_type=LegalEntity.EntityTypes.PERSON.value, _legal_name="BC1234567 LTD")
     with pytest.raises(BusinessException) as party_type_err1:
         member1.save()
     session.rollback()

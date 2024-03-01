@@ -952,7 +952,7 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
                     start_date=start_date,
                     legal_entity_id=le.id,
                 )
-                le._alternate_names.append(alternate_name)
+                le.alternate_names.append(alternate_name)
 
         session.flush()
         assert le.alternate_names == expected_alternate_names
