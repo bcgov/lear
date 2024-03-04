@@ -53,8 +53,7 @@ def check_office(business: any) -> list:
     result = []
     business_office = None
 
-    if business.is_legal_entity:
-        business_office = business.offices.filter(Office.office_type == "businessOffice").one_or_none()
+    business_office = business.offices.filter(Office.office_type == "businessOffice").one_or_none()
 
     if not business_office:
         result.append(
@@ -190,7 +189,7 @@ def check_sp_party(alternate_name: AlternateName):
         if not colin_entity.organization_name:
             no_org_name_warning = True
         result.extend(
-            check_address(colin_entity.mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY)
+            check_address(alternate_name.owner_mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY)
         )
     elif alternate_name.is_owned_by_legal_entity_person:
         legal_entity = alternate_name.legal_entity
@@ -204,7 +203,7 @@ def check_sp_party(alternate_name: AlternateName):
         if not legal_entity.legal_name:
             no_org_name_warning = True
         result.extend(
-            check_address(legal_entity.entity_mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY)
+            check_address(alternate_name.owner_mailing_address, Address.MAILING, BusinessWarningReferers.BUSINESS_PARTY)
         )
 
     if no_person_name_check_warning:
