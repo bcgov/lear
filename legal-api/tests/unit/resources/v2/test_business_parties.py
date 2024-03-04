@@ -23,7 +23,14 @@ import pytest
 
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit import nested_session
-from tests.unit.models import Address, EntityRole, LegalEntity, factory_alternate_name, factory_legal_entity, factory_party_role
+from tests.unit.models import (
+    Address,
+    EntityRole,
+    LegalEntity,
+    factory_alternate_name,
+    factory_legal_entity,
+    factory_party_role,
+)
 from tests.unit.services.utils import create_header
 
 
@@ -327,9 +334,9 @@ def test_get_business_parties_sp_proprietor(app, session, client, jwt):
         legal_entity = factory_legal_entity(owner_identifier)
         alternate_name = factory_alternate_name(
             identifier=identifier,
-            name='TEST OPERATING NAME',
+            name="TEST OPERATING NAME",
             start_date=datetime.datetime.utcnow(),
-            legal_entity_id=legal_entity.id
+            legal_entity_id=legal_entity.id,
         )
 
         legal_entity.alternate_names.append(alternate_name)
