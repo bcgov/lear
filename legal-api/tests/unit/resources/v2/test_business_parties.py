@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the /businesses../parties endpoint is working as expected.
 """
-from datetime import datetime
+import datetime
 from http import HTTPStatus
 
 import pytest
@@ -317,6 +317,7 @@ def test_get_parties_unauthorized(app, session, client, jwt, requests_mock):
         assert rv.status_code == HTTPStatus.UNAUTHORIZED
         assert rv.json == {"message": f"You are not authorized to view parties for {identifier}."}
 
+
 def test_get_business_parties_sp_proprietor(app, session, client, jwt):
     """Assert that SP proprietor is returned."""
     with nested_session(session):
@@ -327,7 +328,7 @@ def test_get_business_parties_sp_proprietor(app, session, client, jwt):
         alternate_name = factory_alternate_name(
             identifier=identifier,
             name='TEST OPERATING NAME',
-            start_date=datetime.utcnow(),
+            start_date=datetime.datetime.utcnow(),
             legal_entity_id=legal_entity.id
         )
 
