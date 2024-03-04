@@ -16,14 +16,14 @@
 
 Test-Suite to ensure that the /businesses../parties endpoint is working as expected.
 """
-import datetime
+from datetime import datetime
 from http import HTTPStatus
 
 import pytest
 
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from tests.unit import nested_session
-from tests.unit.models import Address, EntityRole, LegalEntity, factory_legal_entity, factory_party_role
+from tests.unit.models import Address, EntityRole, LegalEntity, factory_alternate_name, factory_legal_entity, factory_party_role
 from tests.unit.services.utils import create_header
 
 
@@ -316,3 +316,31 @@ def test_get_parties_unauthorized(app, session, client, jwt, requests_mock):
         # check
         assert rv.status_code == HTTPStatus.UNAUTHORIZED
         assert rv.json == {"message": f"You are not authorized to view parties for {identifier}."}
+
+def test_get_business_parties_sp_proprietor(app, session, client, jwt):
+    """Assert that SP proprietor is returned."""
+    with nested_session(session):
+        # setup
+        owner_identifier = "CP7654321"
+        identifier = "FM7654321"
+        legal_entity = factory_legal_entity(owner_identifier)
+        alternate_name = factory_alternate_name(
+            identifier=identifier,
+            name='TEST OPERATING NAME',
+            start_date=datetime.utcnow(),
+            legal_entity_id=legal_entity.id
+        )
+
+        legal_entity.alternate_names.append(alternate_name)
+        legal_entity.skip_party_listener = True
+        legal_entity.save()
+
+        # test
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/parties", headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
+
+        # check
+        assert rv.status_code == HTTPStatus.OK
+        assert "parties" in rv.json
+        assert len(rv.json["parties"]) == 1
