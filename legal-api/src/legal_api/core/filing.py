@@ -295,6 +295,7 @@ class Filing:
         for storage in storages:
             filing = Filing()
             filing.storage = storage
+            filing._business = business
             filings.append(filing)
 
         return filings

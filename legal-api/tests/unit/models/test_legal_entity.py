@@ -871,7 +871,7 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "operatingName": ALTERNATE_NAME_2,
                     "entityType": "SP",
-                    "nameRegisteredDate":ALTERNATE_NAME_2_START_DATE_ISO,
+                    "nameRegisteredDate": ALTERNATE_NAME_2_START_DATE_ISO,
                 },
             ],
         ),
@@ -924,7 +924,11 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
                 le.alternate_names.append(alternate_name)
 
         session.flush()
+        # TODO: once entity_type is added to the AlternateName model, confirm these tests pass.
         for expected_alternate_name in expected_alternate_names:
-            assert any(l.json(slim=True)["alternateNames"][0] == expected_alternate_name for l in le.alternate_names)
+            assert any(
+                alternate_name.json(slim=True)["alternateNames"][0] == expected_alternate_name
+                for alternate_name in le.alternate_names
+            )
         # if no rollback, test data conflicts between parametrized test runs
         sess.rollback()

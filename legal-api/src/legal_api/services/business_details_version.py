@@ -211,7 +211,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
     @staticmethod
     def get_business_revision(filing, business) -> dict:
-        """Consolidates the LegalEntity info as of a particular filing."""
+        """Consolidates the business info as of a particular filing."""
         business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business)
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 

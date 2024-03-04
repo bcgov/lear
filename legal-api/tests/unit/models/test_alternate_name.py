@@ -17,6 +17,7 @@
 Test-Suite to ensure that the AlternateName Model is working as expected.
 """
 from datetime import datetime
+
 import pytest
 
 from legal_api.models import AlternateName
@@ -62,14 +63,14 @@ def test_valid_alternate_name_save(session):
 @pytest.mark.parametrize(
     "entity_type, operating_name, expected_business_name",
     [
-        ("SP" , "SP Test XYZ", "SP Test XYZ"),
+        ("SP", "SP Test XYZ", "SP Test XYZ"),
         ("GP", "GP Test XYZ", "GP Test XYZ"),
     ],
 )
 def test_business_name(session, entity_type, operating_name, expected_business_name):
     """Assert that correct business name is returned."""
     with nested_session(session):
-        identifier="BC1234567"
+        identifier = "BC1234567"
         legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
 
         alternate_name = factory_alternate_name(
