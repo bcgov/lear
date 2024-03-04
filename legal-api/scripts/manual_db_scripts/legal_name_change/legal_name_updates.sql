@@ -1618,7 +1618,7 @@ WITH subquery AS (
         o.alternate_name_id
     FROM addresses a
     JOIN offices o 
-        ON a.office_id = o.id AND COALESCE(a.change_filing_id, 1) = COALESCE(o.change_filing_id, 1) 
+        ON a.office_id = o.id
     WHERE a.office_id IS NOT NULL AND o.office_type = 'custodialOffice'
 )
 UPDATE addresses a
@@ -1633,7 +1633,7 @@ WITH subquery AS (
         oh.alternate_name_id
     FROM addresses_history ah
     JOIN offices_history oh 
-        ON ah.office_id = oh.id AND COALESCE(ah.change_filing_id, 1) = COALESCE(oh.change_filing_id, 1)
+        ON ah.office_id = oh.id
     WHERE ah.office_id IS NOT NULL AND oh.office_type = 'custodialOffice'
 )
 UPDATE addresses_history ah
