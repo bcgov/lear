@@ -104,6 +104,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     colin_entity = db.relationship("ColinEntity", back_populates="alternate_names")
     filings = db.relationship("Filing", lazy="dynamic", foreign_keys="Filing.alternate_name_id")
     documents = db.relationship("Document", lazy="dynamic")
+    offices = db.relationship("Office", lazy="dynamic", cascade="all, delete, delete-orphan")
 
     delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
     mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
