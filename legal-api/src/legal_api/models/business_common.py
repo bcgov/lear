@@ -138,9 +138,9 @@ class BusinessCommon:
         if self.is_legal_entity:
             return self._entity_type
 
-        if self.is_alternate_name_entity and self.name_type.value == AlternateName.NameType.OPERATING:        
+        if self.is_alternate_name_entity and self.name_type.value == AlternateName.NameType.OPERATING:
             return self.EntityTypes.SOLE_PROP.value
-    
+
         return None
 
     @property
