@@ -150,8 +150,7 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
         tasks.append(task)
         order += 1
 
-    business_entity_type = business.entity_type if business.is_legal_entity else business.legal_entity.entity_type
-    if business_entity_type not in entity_types_no_ar:
+    if business.entity_type not in entity_types_no_ar:
         # If this is the first calendar year since incorporation, there is no previous ar year.
         next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
