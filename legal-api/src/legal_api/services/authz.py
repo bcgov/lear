@@ -597,7 +597,7 @@ def has_blocker_filing(business: any, is_ignore_draft_blockers: bool = False):
 
     filing_types = [CoreFiling.FilingTypes.ALTERATION.value, CoreFiling.FilingTypes.CORRECTION.value]
     excluded_statuses = [Filing.Status.DRAFT.value] if is_ignore_draft_blockers else []
-    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, filing_types, excluded_statuses)
+    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business, filing_types, excluded_statuses)
     return any(blocker_filing_matches)
 
 
@@ -630,7 +630,7 @@ def has_blocker_completed_filing(legal_entity: LegalEntity, blocker_checks: dict
 
     filing_type_pairs = [(parse_filing_info(x)) for x in complete_filing_types]
     completed_filings = Filing.get_filings_by_type_pairs(
-        legal_entity.id, filing_type_pairs, [Filing.Status.COMPLETED.value], True
+        legal_entity, filing_type_pairs, [Filing.Status.COMPLETED.value], True
     )
 
     if len(completed_filings) == len(complete_filing_types):
@@ -647,7 +647,7 @@ def has_blocker_future_effective_filing(legal_entity: LegalEntity, blocker_check
     filing_type_pairs = [(parse_filing_info(x)) for x in fed_filing_types]
 
     pending_filings = Filing.get_filings_by_type_pairs(
-        legal_entity.id, filing_type_pairs, [Filing.Status.PENDING.value, Filing.Status.PAID.value], True
+        legal_entity, filing_type_pairs, [Filing.Status.PENDING.value, Filing.Status.PAID.value], True
     )
 
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -951,7 +951,7 @@ def is_self_registered_owner_operator(legal_entity, user):
 
 def get_registration_filing(legal_entity):
     """Return the registration filing for the LegalEntity."""
-    if len(registration_filings := Filing.get_filings_by_types(legal_entity.id, ["registration"])) <= 0:
+    if len(registration_filings := Filing.get_filings_by_types(legal_entity, ["registration"])) <= 0:
         return None
 
     return registration_filings[0]

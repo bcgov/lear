@@ -750,11 +750,12 @@ class Filing(db.Model):
         return query.all()
 
     @staticmethod
-    def get_incomplete_filings_by_type(legal_entity_id: int, filing_type: str):
+    def get_incomplete_filings_by_type(business: any, filing_type: str):
         """Return the incomplete filings of a particular type."""
+        business_attr = Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
         filings = (
             db.session.query(Filing)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attr == business.id)
             .filter(Filing._filing_type == filing_type)
             .filter(Filing._status != Filing.Status.COMPLETED.value)
             .order_by(desc(Filing.filing_date))
@@ -763,11 +764,12 @@ class Filing(db.Model):
         return filings
 
     @staticmethod
-    def get_filings_by_types(legal_entity_id: int, filing_types):
+    def get_filings_by_types(business: any, filing_types):
         """Return the completed filings of a particular type."""
+        business_attr = Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
         filings = (
             db.session.query(Filing)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attr == business.id)
             .filter(Filing._filing_type.in_(filing_types))
             .filter(Filing._status == Filing.Status.COMPLETED.value)
             .order_by(desc(Filing.effective_date))
@@ -776,16 +778,17 @@ class Filing(db.Model):
         return filings
 
     @staticmethod
-    def get_incomplete_filings_by_types(legal_entity_id: int, filing_types: list, excluded_statuses: list = None):
+    def get_incomplete_filings_by_types(business: any, filing_types: list, excluded_statuses: list = None):
         """Return the filings of particular types and statuses.
 
         excluded_statuses is a list of filing statuses that will be excluded from the query for incomplete filings
         """
         excluded_statuses = [] if excluded_statuses is None else excluded_statuses
 
+        business_attr = Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
         filings = (
             db.session.query(Filing)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attr == business.id)
             .filter(Filing._filing_type.in_(filing_types))
             .filter(Filing._status != Filing.Status.COMPLETED.value)
             .filter(not_(Filing._status.in_(excluded_statuses)))
@@ -796,7 +799,7 @@ class Filing(db.Model):
 
     @staticmethod
     def get_filings_by_type_pairs(
-        legal_entity_id: int,
+        business: any,
         filing_type_pairs: list,
         status: list,
         return_unique_pairs=False,
@@ -805,6 +808,7 @@ class Filing(db.Model):
 
         If return_unique_pairs is True, only return one instance of each filing type/sub-type pair.
         """
+        business_attr = Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
         filing_type_conditions = [
             and_(
                 Filing._filing_type == filing_type,
@@ -815,7 +819,7 @@ class Filing(db.Model):
 
         base_query = (
             db.session.query(Filing)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attr == business.id)
             .filter(Filing._status.in_(status))
             .filter(or_(*filing_type_conditions))
         )
@@ -839,14 +843,13 @@ class Filing(db.Model):
         return filings
 
     @staticmethod
-    def get_a_businesses_most_recent_filing_of_a_type(
-        legal_entity_id: int, filing_type: str, filing_sub_type: str = None
-    ):
+    def get_a_businesses_most_recent_filing_of_a_type(business: any, filing_type: str, filing_sub_type: str = None):
         """Return the filings of a particular type."""
+        business_attr = Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
         max_filing = (
             db.session.query(db.func.max(Filing._filing_date).label("last_filing_date"))
             .filter(Filing._filing_type == filing_type)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attr == business.id)
         )
         if filing_sub_type:
             max_filing = max_filing.filter(Filing._filing_sub_type == filing_sub_type)
@@ -854,7 +857,7 @@ class Filing(db.Model):
 
         filing = (
             Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date)
-            .filter(Filing.legal_entity_id == legal_entity_id)
+            .filter(business_attr == business.id)
             .filter(Filing._filing_type == filing_type)
             .filter(Filing._status == Filing.Status.COMPLETED.value)
         )
@@ -935,9 +938,16 @@ class Filing(db.Model):
     @staticmethod
     def get_previous_completed_filing(filing):
         """Return the previous completed filing."""
+        if filing.legal_entity_id:
+            business_attr = Filing.legal_entity_id
+            business_attr_value = filing.legal_entity_id
+        else:
+            business_attr = Filing.alternate_name_id
+            business_attr_value = filing.alternate_name_id
+
         filings = (
             db.session.query(Filing)
-            .filter(Filing.legal_entity_id == filing.legal_entity_id)
+            .filter(business_attr == business_attr_value)
             .filter(Filing._status == Filing.Status.COMPLETED.value)
             .filter(Filing.id < filing.id)
             .filter(Filing.effective_date < filing.effective_date)
