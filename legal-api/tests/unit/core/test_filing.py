@@ -37,7 +37,7 @@ def test_filing_type(session):
     legal_entity = factory_legal_entity(identifier)
     factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
-    filings = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.DRAFT.value, Filing.Status.COMPLETED.value])
+    filings = Filing.get_filings_by_status(legal_entity, [Filing.Status.DRAFT.value, Filing.Status.COMPLETED.value])
     assert filings[0].filing_type == "annualReport"
 
 
@@ -103,7 +103,7 @@ def test_filing_json_completed(session):
     legal_entity = factory_legal_entity(identifier)
     factory_completed_filing(legal_entity, ANNUAL_REPORT)
 
-    filings = Filing.get_filings_by_status(legal_entity.id, [Filing.Status.COMPLETED.value])
+    filings = Filing.get_filings_by_status(legal_entity, [Filing.Status.COMPLETED.value])
     filing = filings[0]
 
     assert filing.json

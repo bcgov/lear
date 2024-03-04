@@ -25,6 +25,7 @@ from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
     Address,
     Alias,
+    AlternateName,
     ColinEntity,
     Comment,
     EntityRole,
@@ -119,6 +120,41 @@ def factory_user(username: str, firstname: str = None, lastname: str = None):
     return user
 
 
+def factory_alternate_name(
+    identifier=None,
+    name=None,
+    name_type=AlternateName.NameType.OPERATING,
+    bn15=None,
+    legal_entity_id=None,
+    start_date=None,
+    end_date=None,
+    state=LegalEntity.State.ACTIVE,
+    naics_code=None,
+    naics_desc=None,
+    admin_freeze=False,
+    change_filing_id=None,
+):
+    """Create a alternate name."""
+
+    alternate_name = AlternateName(
+        identifier=identifier,
+        name=name,
+        name_type=name_type,
+        bn15=bn15,
+        legal_entity_id=legal_entity_id,
+        start_date=start_date,
+        end_date=end_date,
+        state=state,
+        naics_code=naics_code,
+        naics_description=naics_desc,
+        admin_freeze=admin_freeze,
+        change_filing_id=change_filing_id,
+    )
+
+    alternate_name.save()
+    return alternate_name
+
+
 def factory_legal_entity(
     identifier=None,
     founding_date=EPOCH_DATETIME,
@@ -133,7 +169,7 @@ def factory_legal_entity(
     last_name=None,
     change_filing_id=None,
 ):
-    """Create a business entity with a versioned business."""
+    """Create a legal entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
         last_ar_year = last_ar_date.year
@@ -146,7 +182,7 @@ def factory_legal_entity(
         last_ar_year=last_ar_year,
         last_ledger_timestamp=EPOCH_DATETIME,
         # dissolution_date=EPOCH_DATETIME,
-        entity_type=entity_type,
+        _entity_type=entity_type,
         identifier=identifier,
         tax_id="BN123456789",
         fiscal_year_end_date=FROZEN_DATETIME,
@@ -169,7 +205,7 @@ def factory_legal_entity(
 
 
 def factory_legal_entity_mailing_address(legal_entity):
-    """Create a business entity."""
+    """Create a legal entity mailing address."""
     address = Address(
         city="Test City",
         street=f"{legal_entity.identifier}-Test Street",

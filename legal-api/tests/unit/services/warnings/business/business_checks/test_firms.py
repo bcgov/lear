@@ -18,17 +18,19 @@ from unittest.mock import patch
 
 import pytest
 
-from legal_api.models import Address, EntityRole, LegalEntity, Office, PartyRole
+from legal_api.models import Address, AlternateName, EntityRole, LegalEntity, Office, PartyRole
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
 from legal_api.services.warnings.business.business_checks.firms import (
     check_address,
     check_business,
     check_completing_party,
     check_completing_party_for_filing,
-    check_firm_parties,
-    check_firm_party,
+    check_gp_parties,
+    check_gp_party,
     check_office,
     check_parties,
+    check_sp_parties,
+    check_sp_party,
     check_start_date,
 )
 from tests.unit.services.warnings import (
@@ -269,7 +271,11 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
         party_role.related_colin_entity.organization_name = None
 
     with patch.object(firms, "check_address", return_value=[]):
-        result = check_firm_party(legal_type, party_role)
+        # TODO: check/update following block to work properly with AlternateName
+        if legal_type == AlternateName.EntityTypes.SP:
+            result = check_sp_party(legal_entity)
+        else:
+            result = check_gp_party(role)
 
     if expected_code:
         assert len(result) == 1
@@ -312,8 +318,9 @@ def test_check_firm_parties(
 
     party_roles = factory_party_roles(role, num_persons_roles, num_org_roles)
 
-    with patch.object(firms, "check_firm_party", return_value=[]):
-        result = check_firm_parties(legal_type, party_roles)
+    # TODO: check/update following block to work properly with AlternateName
+    with patch.object(firms, "check_gp_party", return_value=[]):
+        result = check_gp_parties(party_roles)
 
     if expected_code:
         assert len(result) == 1
@@ -552,8 +559,12 @@ def test_check_parties(
         assert legal_entity.entity_type == legal_type
         assert legal_entity.identifier == identifier
 
+        # TODO: check/update following block to work properly with AlternateName
         with patch.object(firms, "check_address", return_value=[]):
-            result = check_parties(legal_type, legal_entity)
+            if legal_type == AlternateName.EntityTypes.SP:
+                result = check_sp_parties(legal_entity)
+            else:
+                result = check_gp_parties([])
 
         if expected_code:
             assert len(result) == 1

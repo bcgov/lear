@@ -282,7 +282,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "identifier": self.identifier,
             "legalName": legal_name,
             "legalType": self.entity_type,
-            "state": self.state.name if self.state else AlternateName.State.ACTIVE.name,
+            "state": self.state if self.state else BusinessCommon.State.ACTIVE.value,
             "alternateNames": [
                 {
                     "identifier": self.identifier,
