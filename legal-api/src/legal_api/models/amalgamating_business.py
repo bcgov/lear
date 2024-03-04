@@ -33,8 +33,8 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
         holding = auto()
         primary = auto()
 
-    # __versioned__ = {}
-    __tablename__ = 'amalgamating_business'
+    __versioned__ = {}
+    __tablename__ = 'amalgamating_businesses'
 
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column('role', db.Enum(Role), nullable=False)
@@ -45,7 +45,7 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamation.id',
+    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamations.id',
                                                                              ondelete='CASCADE'),
                                 nullable=False)
 
