@@ -541,7 +541,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
         filing = factory_completed_filing(b, ar, filing_date)
         filings.append(filing)
     # test
-    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(b.id, Filing.FILINGS["annualReport"]["name"])
+    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(b, Filing.FILINGS["annualReport"]["name"])
 
     # assert that we get the last filing
     assert filings[4] == filing

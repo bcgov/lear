@@ -136,7 +136,7 @@ class BusinessDocument:
                 self._set_liquidation_details(business_json)
 
             if self._legal_entity.entity_type in ["SP", "GP"]:
-                registration_filing = Filing.get_filings_by_types(self._legal_entity.id, ["registration"])
+                registration_filing = Filing.get_filings_by_types(self._legal_entity, ["registration"])
                 if registration_filing:
                     business_json["business"]["registrationDateTime"] = registration_filing[
                         0
@@ -312,7 +312,7 @@ class BusinessDocument:
         state_filings = []
         # Any filings like restoration, liquidation etc. that changes the state must be included here
         for filing in Filing.get_filings_by_types(
-            self._legal_entity.id,
+            self._legal_entity,
             [
                 "dissolution",
                 "restorationApplication",
@@ -347,7 +347,7 @@ class BusinessDocument:
         alterations = []
         # Any future filings that includes a company name/type change must be added here
         for filing in Filing.get_filings_by_types(
-            self._legal_entity.id,
+            self._legal_entity,
             ["alteration", "correction", "changeOfName", "changeOfRegistration", "specialResolution"],
         ):
             filing_meta = filing.meta_data
@@ -447,7 +447,7 @@ class BusinessDocument:
     def _set_amalgamation_details(self, legal_entity: dict):
         """Set the list of partial amalgamation filing data."""
         amalgamated_businesses = []
-        amalgamation_application = Filing.get_filings_by_types(self._legal_entity.id, ["amalgamationApplication"])
+        amalgamation_application = Filing.get_filings_by_types(self._legal_entity, ["amalgamationApplication"])
         if amalgamation_application:
             legal_entity["business"]["amalgamatedEntity"] = True
             # else condition will have to be added when we do amalgamation in the new system
@@ -459,7 +459,7 @@ class BusinessDocument:
     def _set_liquidation_details(self, legal_entity: dict):
         """Set partial liquidation filing data."""
         liquidation_info = {}
-        liquidation = Filing.get_filings_by_types(self._legal_entity.id, ["voluntaryLiquidation"])
+        liquidation = Filing.get_filings_by_types(self._legal_entity, ["voluntaryLiquidation"])
         if liquidation:
             liquidation_info["filingDateTime"] = liquidation[0].filing_date.isoformat()
             legal_entity["business"]["state"] = LegalEntity.State.LIQUIDATION.name

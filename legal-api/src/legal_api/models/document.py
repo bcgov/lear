@@ -69,10 +69,12 @@ class Document(Versioned, db.Model):
         return cls.query.filter_by(id=document_id).one_or_none()
 
     @classmethod
-    def find_by_legal_entity_id_and_type(cls, legal_entity_id: int, document_type: String):
+    def find_by_legal_entity_id_and_type(cls, business: any, document_type: String):
         """Return the document matching the business id and type."""
+        business_attr = Document.alternate_name_id if business.is_alternate_name_entity else Document.legal_entity_id
         return (
-            cls.query.filter_by(legal_entity_id=legal_entity_id, type=document_type)
+            cls.query.filter(business_attr == business.id)
+            .filter(Document.type == document_type)
             .order_by(desc(Document.id))
             .limit(1)
             .one_or_none()
