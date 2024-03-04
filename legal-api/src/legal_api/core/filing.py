@@ -295,7 +295,7 @@ class Filing:
         for storage in storages:
             filing = Filing()
             filing.storage = storage
-            filing._business = business
+            filing._business = business  # pylint: disable=protected-access
             filings.append(filing)
 
         return filings
