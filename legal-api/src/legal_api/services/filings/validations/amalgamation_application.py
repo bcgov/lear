@@ -86,14 +86,15 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     amalgamating_businesses = {}
     for amalgamating_business_json in amalgamating_businesses_json:
         if identifier := amalgamating_business_json.get("identifier"):
-            if (identifier.startswith("A")
+            if (
+                identifier.startswith("A")
                 and (foreign_jurisdiction := amalgamating_business_json.get("foreignJurisdiction"))
                 and foreign_jurisdiction.get("country") == "CA"
                 and foreign_jurisdiction.get("region") == "BC"
             ):
                 is_any_expro_a = True
 
-            if not (business := BusinessService.fetch_business(identifier)):
+            if not (business := BusinessService.fetch_business(identifier, skip_identifier_validation=True)):
                 continue
 
             amalgamating_businesses[identifier] = business
@@ -133,8 +134,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 if not _is_business_affliated(identifier, account_id):
                     msg.append(
                         {
-                            "error": f"{identifier} is not affiliated \
-                                with the currently selected BC Registries account.",
+                            "error": f"{identifier} is not affiliated with the currently selected BC Registries account.",  # noqa: E501
                             "path": amalgamating_businesses_path,
                         }
                     )

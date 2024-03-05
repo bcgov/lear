@@ -563,9 +563,11 @@ class LegalEntity(
         return None
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None):
+    def find_by_identifier(cls, identifier: str = None, skip_identifier_validation: bool = False):
         """Return a Business by the id assigned by the Registrar."""
-        if not identifier or not cls.validate_identifier(entity_type=None, identifier=identifier):
+        if not identifier or (
+            skip_identifier_validation and not cls.validate_identifier(entity_type=None, identifier=identifier)
+        ):
             return None
 
         non_business_types = [

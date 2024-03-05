@@ -1597,7 +1597,7 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
     }
     filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         return LegalEntity(
             identifier=identifier,
             _entity_type=LegalEntity.EntityTypes.BCOMP.value,
@@ -1616,6 +1616,7 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
         "legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier",
         return_value={"orgs": [{"id": account_id}]} if test_status == "SUCCESS" else {},
     )
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=True)  # Staff
 
@@ -1856,7 +1857,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
     }
     filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
@@ -1870,6 +1871,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     def mock_validate_roles(required_roles):
         if role in required_roles:
@@ -1895,8 +1897,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
             "FAIL",
             STAFF_ROLE,
             HTTPStatus.BAD_REQUEST,
-            "Foreign Co. foreign corporation must not amalgamate \
-                with a BC company to form a BC Unlimited Liability Company.",
+            "Foreign Co. foreign corporation must not amalgamate with a BC company to form a BC Unlimited Liability Company.",  # noqa: E501
         ),
         ("SUCCESS", STAFF_ROLE, None, None),
     ],
@@ -1918,7 +1919,7 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(
     if test_status == "FAIL":
         filing["filing"]["amalgamationApplication"]["nameRequest"]["legalType"] = "ULC"
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
@@ -1932,6 +1933,8 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
+
 
     def mock_validate_roles(required_roles):
         if role in required_roles:
@@ -1977,7 +1980,7 @@ def test_amalgamating_foreign_business_with_ulc_company(
     }
     filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         return LegalEntity(
             identifier=identifier,
             _entity_type=LegalEntity.EntityTypes.BC_ULC_COMPANY.value
@@ -1996,6 +1999,7 @@ def test_amalgamating_foreign_business_with_ulc_company(
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     def mock_validate_roles(required_roles):
         if role in required_roles:
@@ -2039,7 +2043,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt, test_status, expected_
     filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing["filing"]["amalgamationApplication"]["nameRequest"]["legalType"] = "CC"
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         return LegalEntity(
             identifier=identifier,
             _entity_type=LegalEntity.EntityTypes.BCOMP.value
@@ -2058,6 +2062,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt, test_status, expected_
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=True)  # Staff
 
@@ -2103,7 +2108,7 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
         },
     ]
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BC_CCC.value)
 
     mocker.patch(
