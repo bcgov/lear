@@ -34,21 +34,21 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
         primary = auto()
 
     # __versioned__ = {}
-    __tablename__ = "amalgamating_business"
+    __tablename__ = "amalgamating_businesses"
 
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column("role", db.Enum(Role), nullable=False)
     foreign_jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
     foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
     foreign_name = db.Column("foreign_name", db.String(100))
-    foreign_corp_num = db.Column("foreign_corp_num", db.String(50))
+    foreign_identifier = db.Column("foreign_identifier", db.String(50))
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
     amalgamation_id = db.Column(
         "amalgamation_id",
         db.Integer,
-        db.ForeignKey("amalgamation.id", ondelete="CASCADE"),
+        db.ForeignKey("amalgamations.id", ondelete="CASCADE"),
         nullable=False,
     )
 

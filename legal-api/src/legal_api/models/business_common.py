@@ -138,13 +138,10 @@ class BusinessCommon:
         if self.is_legal_entity:
             return self._entity_type
 
-        if self.is_alternate_name_entity and self.name_type.value != AlternateName.NameType.OPERATING:
-            return None
-
-        if self.state:
+        if self.is_alternate_name_entity and self.name_type.value == AlternateName.NameType.OPERATING:
             return self.EntityTypes.SOLE_PROP.value
 
-        return self.EntityTypes.PARTNERSHIP.value
+        return None
 
     @property
     def compliance_warnings(self):

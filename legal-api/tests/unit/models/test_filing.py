@@ -422,7 +422,7 @@ def test_get_most_recent_filing_by_entity_type_in_json(session):
         setattr(filing, "skip_status_listener", True)
         filing.save()
 
-    f = Filing.get_most_recent_legal_filing(legal_entity.id, "changeOfDirectors")
+    f = Filing.get_most_recent_legal_filing(legal_entity, "changeOfDirectors")
     assert f.effective_date == datetime.datetime.fromisoformat(effective_date)
     assert f.filing_type == "annualReport"
     assert f.id == filing.id
@@ -485,7 +485,7 @@ def test_get_most_recent_filing_by_entity_type_db_field(session):
     setattr(filing3, "skip_status_listener", True)
     filing3.save()
 
-    f = Filing.get_most_recent_legal_filing(legal_entity.id, "changeOfDirectors")
+    f = Filing.get_most_recent_legal_filing(legal_entity, "changeOfDirectors")
     assert f.filing_type == "changeOfDirectors"
     assert f.id == filing2.id
 
@@ -541,7 +541,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
         filing = factory_completed_filing(b, ar, filing_date)
         filings.append(filing)
     # test
-    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(b.id, Filing.FILINGS["annualReport"]["name"])
+    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(b, Filing.FILINGS["annualReport"]["name"])
 
     # assert that we get the last filing
     assert filings[4] == filing

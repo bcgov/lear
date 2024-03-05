@@ -92,7 +92,7 @@ def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amal
             amalgamating_business.legal_entity_id = business.id
             dissolve_amalgamating_business(business, filing_rec)
         else:
-            amalgamating_business.foreign_corp_num = amalgamating_business_json.get("corpNumber")
+            amalgamating_business.foreign_identifier = amalgamating_business_json.get("corpNumber")
             amalgamating_business.foreign_name = amalgamating_business_json.get("legalName")
 
             foreign_jurisdiction = amalgamating_business_json.get("foreignJurisdiction")

@@ -35,7 +35,7 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
         horizontal = auto()
 
     # __versioned__ = {}
-    __tablename__ = "amalgamation"
+    __tablename__ = "amalgamations"
 
     id = db.Column(db.Integer, primary_key=True)
     amalgamation_type = db.Column("amalgamation_type", db.Enum(AmalgamationTypes), nullable=False)

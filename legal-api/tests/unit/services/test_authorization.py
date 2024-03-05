@@ -4118,7 +4118,8 @@ def test_is_self_registered_owner_operator_false_when_no_proprietors(app, sessio
 
 
 @patch(
-    "legal_api.models.EntityRole.get_parties_by_role", return_value=[EntityRole(role=EntityRole.RoleTypes.proprietor)]
+    "legal_api.models.EntityRole.get_parties_by_role",
+    return_value=[EntityRole(role_type=EntityRole.RoleTypes.proprietor)],
 )
 def test_is_self_registered_owner_operator_false_when_no_proprietor(app, session):
     user = factory_user(username="test", firstname="Test", lastname="User")
@@ -4150,7 +4151,7 @@ def test_is_self_registered_owner_operator_false_when_no_completing_parties(app,
 
 @patch(
     "legal_api.models.EntityRole.get_party_roles_by_filing",
-    return_value=[EntityRole(role=EntityRole.RoleTypes.completing_party)],
+    return_value=[EntityRole(role_type=EntityRole.RoleTypes.completing_party)],
 )
 def test_is_self_registered_owner_operator_false_when_no_completing_party(app, session):
     user = factory_user(username="test", firstname="Test", lastname="User")
@@ -4331,7 +4332,9 @@ def create_filing(legal_entity, filing_type, filing_sub_type=None):
     return filing
 
 
-def create_party_role(role=EntityRole.RoleTypes.completing_party, first_name=None, last_name=None, middle_initial=None):
+def create_party_role(
+    role_type=EntityRole.RoleTypes.completing_party, first_name=None, last_name=None, middle_initial=None
+):
     completing_party_address = Address(city="Test Mailing City", address_type=Address.DELIVERY)
     officer = {
         "firstName": first_name or "TEST",
@@ -4340,7 +4343,7 @@ def create_party_role(role=EntityRole.RoleTypes.completing_party, first_name=Non
         "partyType": "person",
         "organizationName": "",
     }
-    party_role = factory_party_role(completing_party_address, None, officer, _datetime.utcnow(), None, role)
+    party_role = factory_party_role(completing_party_address, None, officer, _datetime.utcnow(), None, role_type)
     return party_role
 
 

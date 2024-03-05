@@ -41,7 +41,7 @@ def validate(business: any, restoration: Dict) -> Optional[Error]:
     limited_restoration = None
     if restoration_type in ("limitedRestorationExtension", "limitedRestorationToFull"):
         limited_restoration = Filing.get_a_businesses_most_recent_filing_of_a_type(
-            business.id, "restoration", "limitedRestoration"
+            business, "restoration", "limitedRestoration"
         )
     if restoration_type in ("limitedRestoration", "limitedRestorationExtension"):
         msg.extend(validate_expiry_date(business, restoration, restoration_type))

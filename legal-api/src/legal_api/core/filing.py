@@ -287,13 +287,15 @@ class Filing:
         return None
 
     @staticmethod
-    def get_filings_by_status(legal_entity_id: int, status: list, after_date: date = None):
+    def get_filings_by_status(business: any, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
-        storages = FilingStorage.get_filings_by_status(legal_entity_id, status, after_date)
+        storages = FilingStorage.get_filings_by_status(business, status, after_date)
+
         filings = []
         for storage in storages:
             filing = Filing()
             filing.storage = storage
+            filing._business = business  # pylint: disable=protected-access
             filings.append(filing)
 
         return filings

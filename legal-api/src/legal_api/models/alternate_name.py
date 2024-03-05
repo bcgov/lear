@@ -90,8 +90,8 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
     email = db.Column("email", db.String(254), nullable=True)
-    delivery_address_id = db.Column("delivery_address_id", db.Integer, nullable=True)
-    mailing_address_id = db.Column("mailing_address_id", db.Integer, nullable=True)
+    delivery_address_id = db.Column("delivery_address_id", db.Integer, db.ForeignKey("addresses.id"))
+    mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
@@ -104,6 +104,10 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     colin_entity = db.relationship("ColinEntity", back_populates="alternate_names")
     filings = db.relationship("Filing", lazy="dynamic", foreign_keys="Filing.alternate_name_id")
     documents = db.relationship("Document", lazy="dynamic")
+    offices = db.relationship("Office", lazy="dynamic", cascade="all, delete, delete-orphan")
+
+    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
+    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 
     @classmethod
     def find_by_identifier(cls, identifier: str) -> AlternateName | None:
@@ -182,6 +186,64 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         """Return if owned by colin entity."""
         return bool(self.colin_entity)
 
+    @property
+    def owner_data_json(self):
+        """Return if owner data."""
+        json = {
+            "deliveryAddress": None,
+            "mailingAddress": None,
+            "officer": {},
+            "roles": [
+                {
+                    "appointmentDate": datetime.date(self.start_date).isoformat(),
+                    "cessationDate": None,
+                    "roleType": "Proprietor",
+                }
+            ],
+        }
+
+        if self.delivery_address:
+            member_address = self.delivery_address.json
+            if "addressType" in member_address:
+                del member_address["addressType"]
+            json["deliveryAddress"] = member_address
+        if self.mailing_address:
+            member_mailing_address = self.mailing_address.json
+            if "addressType" in member_mailing_address:
+                del member_mailing_address["addressType"]
+            json["mailingAddress"] = member_mailing_address
+        else:
+            if self.delivery_address:
+                json["mailingAddress"] = json["deliveryAddress"]
+
+        if self.is_owned_by_legal_entity_person:
+            json["officer"] = {
+                "id": self.legal_entity.id,
+                "email": self.legal_entity.email,
+                "firstName": self.legal_entity.first_name,
+                "lastName": self.legal_entity.last_name,
+                "middleInitial": self.legal_entity.middle_initial,
+                "partyType": "person",
+            }
+        elif self.is_owned_by_legal_entity_org:
+            json["officer"] = {
+                "id": self.legal_entity.id,
+                "email": self.legal_entity.email,
+                "identifier": self.legal_entity.identifier,
+                "organizationName": self.legal_name,
+                "partyType": "organization",
+            }
+        elif self.is_owned_by_colin_entity:
+            json["officer"] = {
+                "id": self.colin_entity.id,
+                "email": self.colin_entity.email,
+                "identifier": self.colin_entity.identifier,
+                "organizationName": self.legal_name,
+                "partyType": "organization",
+            }
+
+        return json
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
@@ -220,7 +282,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "identifier": self.identifier,
             "legalName": legal_name,
             "legalType": self.entity_type,
-            "state": self.state.name if self.state else AlternateName.State.ACTIVE.name,
+            "state": self.state if self.state else BusinessCommon.State.ACTIVE.value,
             "alternateNames": [
                 {
                     "identifier": self.identifier,
