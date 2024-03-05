@@ -207,7 +207,7 @@ def test_ledger_comment_count(session, client, jwt):
         assert rv.json["filings"][0]["commentsCount"] == number_of_comments
 
 
-#TODO: first test runs successfully but next fail. Looks like values from first test are used for the next one
+# TODO: first test runs successfully but next fail. Looks like values from first test are used for the next one
 @pytest.mark.parametrize(
     "test_name, identifier, file_number, order_date, effect_of_order, order_details, expected",
     [
@@ -390,7 +390,12 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
             LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
             "BC Unlimited Liability Company Incorporation Application",
         ),
-        ("CC", "BC1234564", LegalEntity.EntityTypes.BC_CCC.value, "BC Community Contribution Company Incorporation Application"),
+        (
+            "CC",
+            "BC1234564",
+            LegalEntity.EntityTypes.BC_CCC.value,
+            "BC Community Contribution Company Incorporation Application",
+        ),
         ("BC", "BC1234565", LegalEntity.EntityTypes.COMP.value, "BC Limited Company Incorporation Application"),
     ],
 )
@@ -519,9 +524,36 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             "lastname",
             "firstname lastname",
         ),
-        ("system-staff", "BC1234562", UserRoles.system, UserRoles.staff, "system", "firstname", "lastname", "firstname lastname"),
-        ("unknown-staff", "BC1234563", None, UserRoles.staff, "some-user", "firstname", "lastname", "firstname lastname"),
-        ("system-public", "BC1234564", UserRoles.system, UserRoles.public_user, "system", "firstname", "lastname", "Registry Staff"),
+        (
+            "system-staff",
+            "BC1234562",
+            UserRoles.system,
+            UserRoles.staff,
+            "system",
+            "firstname",
+            "lastname",
+            "firstname lastname",
+        ),
+        (
+            "unknown-staff",
+            "BC1234563",
+            None,
+            UserRoles.staff,
+            "some-user",
+            "firstname",
+            "lastname",
+            "firstname lastname",
+        ),
+        (
+            "system-public",
+            "BC1234564",
+            UserRoles.system,
+            UserRoles.public_user,
+            "system",
+            "firstname",
+            "lastname",
+            "Registry Staff",
+        ),
         (
             "staff-public",
             "BC1234565",
@@ -552,7 +584,16 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             "lastname",
             "firstname lastname",
         ),
-        ("unknown-public", "BC1234568", None, UserRoles.public_user, "some-user", "firstname", "lastname", "firstname lastname"),
+        (
+            "unknown-public",
+            "BC1234568",
+            None,
+            UserRoles.public_user,
+            "some-user",
+            "firstname",
+            "lastname",
+            "firstname lastname",
+        ),
         ("unknown-public", "BC1234569", None, UserRoles.public_user, "some-user", "", "", "some-user"),
     ],
 )

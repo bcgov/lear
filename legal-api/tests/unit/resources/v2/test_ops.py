@@ -17,7 +17,8 @@
 Test-Suite to ensure that the /ops endpoint is working as expected.
 """
 
-#TODO: Tests are failing as endpoints (readyz, healthz) are not working yet. Fix this later
+
+# TODO: Tests are failing as endpoints (readyz, healthz) are not working yet. Fix this later
 def test_ops_healthz_success(client):
     """Assert that the service is healthy if it can successfully access the database."""
     rv = client.get("/ops/healthz")

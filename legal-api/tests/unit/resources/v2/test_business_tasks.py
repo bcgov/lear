@@ -192,14 +192,18 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
 
         assert rv.status_code == HTTPStatus.OK
         assert rv.json.get("tasks")[0]["enabled"] == True
-        #assert len(rv.json.get("tasks")) == 2  # Previous year filing and a disabled to-do for current year.
+        # assert len(rv.json.get("tasks")) == 2  # Previous year filing and a disabled to-do for current year.
+
 
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     with nested_session(session):
         identifier = "BC7654321"
         b = factory_legal_entity(
-            identifier, datetime.now() - datedelta.datedelta(years=2), datetime(2018, 3, 3), LegalEntity.EntityTypes.BCOMP.value
+            identifier,
+            datetime.now() - datedelta.datedelta(years=2),
+            datetime(2018, 3, 3),
+            LegalEntity.EntityTypes.BCOMP.value,
         )
 
         filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
@@ -209,7 +213,7 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt
 
         assert rv.status_code == HTTPStatus.OK
         assert rv.json.get("tasks")[0]["enabled"] == True
-        #assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
+        # assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
 def test_get_empty_tasks_with_invalid_business(session, client, jwt):
@@ -275,7 +279,7 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
             assert rv.json["tasks"][0]["task"]["filing"]["header"]["filingId"] == filing.id
 
 
-#TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @freeze_time("Jul 2nd, 2022")
 @pytest.mark.parametrize(
     "test_name, identifier, founding_date, previous_ar_date, entity_type, tasks_length",
@@ -405,7 +409,8 @@ def test_temp_reg_filing_task(session, client, jwt, test_name, filing_status, id
             filing_json,
             filing_type="incorporationApplication",
             filing_sub_type=None,
-            status=filing_status)
+            status=filing_status,
+        )
         filing.temp_reg = identifier
         filing._status = filing_status
         filing.save()

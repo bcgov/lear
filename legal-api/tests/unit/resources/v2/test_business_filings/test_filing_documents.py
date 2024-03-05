@@ -87,7 +87,8 @@ def basic_test_helper():
 
     return legal_entity, filing
 
-#TODO: Can be tested/fixed after Output endpoints are fixed
+
+# TODO: Can be tested/fixed after Output endpoints are fixed
 def test_not_authorized(session, client, jwt):
     """Assert the the call fails for unauthorized access."""
     with nested_session(session):

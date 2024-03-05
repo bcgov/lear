@@ -145,7 +145,7 @@ def test_get_temp_business_info(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
 
 
-#TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
     "test_name, role, calls_auth, identifier",
     [
@@ -155,7 +155,7 @@ def test_get_temp_business_info(session, client, jwt):
         ("system", SYSTEM_ROLE, False, "CP7654324"),
     ],
 )
-def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth,identifier):
+def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth, identifier):
     """Assert that the business info can be received in a valid JSONSchema format."""
     with nested_session(session):
         legal_name = identifier + " legal name"
@@ -281,8 +281,9 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         assert rv.status_code == HTTPStatus.OK
         assert rv.json["business"]["allowedFilings"]
 
-#TODO: first test runs successfully but next fail. Looks like values from first test are used for the next one
-#Tests run successfully when run individually.
+
+# TODO: first test runs successfully but next fail. Looks like values from first test are used for the next one
+# Tests run successfully when run individually.
 @pytest.mark.parametrize(
     "test_name, legal_type, identifier, has_missing_business_info, missing_business_info_warning_expected",
     [

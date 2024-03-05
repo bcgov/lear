@@ -89,7 +89,11 @@ def test_get_request_tracker(session, client, jwt):
 @pytest.mark.parametrize(
     "request_type, request_xml, identifier",
     [
-        (RequestTracker.RequestType.INFORM_CRA, "<SBNCreateProgramAccountRequest></SBNCreateProgramAccountRequest>", "FM0000001"),
+        (
+            RequestTracker.RequestType.INFORM_CRA,
+            "<SBNCreateProgramAccountRequest></SBNCreateProgramAccountRequest>",
+            "FM0000001",
+        ),
         (RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS, "<SBNChangeAddress></SBNChangeAddress>", "FM0000002"),
         (RequestTracker.RequestType.CHANGE_MAILING_ADDRESS, "<SBNChangeAddress></SBNChangeAddress>", "FM0000001"),
         (RequestTracker.RequestType.CHANGE_NAME, "<SBNChangeName></SBNChangeName>", "FM0000003"),
