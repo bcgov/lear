@@ -2099,7 +2099,7 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
             "role": "amalgamating",
             "legalName": "Foreign Co.",
             "foreignJurisdiction": {"country": "CA", "region": "BC"},
-            "identifier": "A12345678" if test_status == "FAIL" else "7654321",
+            "identifier": "A1234567" if test_status == "FAIL" else "7654321",
         },
     ]
 
