@@ -14,6 +14,7 @@
 """Centralized setup of logging for the service."""
 from contextlib import contextmanager
 from datetime import datetime
+from sqlalchemy import exc
 
 
 class MockResponse:
@@ -43,7 +44,12 @@ def nested_session(session):
         sess = session.begin_nested()
         yield sess
         sess.rollback()
-    except Exception as e:
-        print(f"Nested session exception: {e}")
+    except AssertionError as err:
+        raise err
+    except exc.ResourceClosedError as err:
+        # mean the close out of the transaction got fouled in pytest
+        pass
+    except Exception as err:
+        raise err
     finally:
         pass
