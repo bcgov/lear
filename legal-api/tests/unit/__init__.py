@@ -14,6 +14,7 @@
 """Centralized setup of logging for the service."""
 from contextlib import contextmanager
 from datetime import datetime
+
 from sqlalchemy import exc
 
 
