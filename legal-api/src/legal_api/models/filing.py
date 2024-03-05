@@ -426,7 +426,9 @@ class Filing(db.Model):
 
     comments = db.relationship("Comment", lazy="dynamic")
     documents = db.relationship("Document", lazy="dynamic")
-    filing_entity_roles = db.relationship("EntityRole", lazy="dynamic", primaryjoin="(Filing.id==EntityRole.filing_id)")
+    filing_entity_roles = db.relationship(
+        "EntityRole", lazy="dynamic", primaryjoin="(Filing.id==EntityRole.filing_id)", overlaps="filing"
+    )
 
     # FUTURE: parent_filing_id and parent_filing should no longer be used for correction filings and will be removed
     parent_filing_id = db.Column(db.Integer, db.ForeignKey("filings.id"))
