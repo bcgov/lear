@@ -25,6 +25,7 @@ from tests.unit import nested_session
 from tests.unit.models import Address, Office, factory_legal_entity
 from tests.unit.services.utils import create_header
 
+
 #TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
     "test_name,role,identifier",
