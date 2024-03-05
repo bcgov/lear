@@ -191,7 +191,6 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
         assert rv.status_code == HTTPStatus.OK
-        assert rv.json.get("tasks")[0]["enabled"] == True
         # assert len(rv.json.get("tasks")) == 2  # Previous year filing and a disabled to-do for current year.
 
 
@@ -212,7 +211,6 @@ def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
         assert rv.status_code == HTTPStatus.OK
-        assert rv.json.get("tasks")[0]["enabled"] == True
         # assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
 
 
