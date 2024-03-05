@@ -1690,7 +1690,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
         {"role": "amalgamating", "identifier": "BC7654321"},
     ]
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
@@ -1746,7 +1746,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
         {"role": "amalgamating", "identifier": "BC7654321"},
     ]
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
         return LegalEntity(
             identifier=identifier,
@@ -1802,7 +1802,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
         {"role": "amalgamating", "identifier": "BC7654321"},
     ]
 
-    def mock_find_by_identifier(identifier):
+    def mock_find_by_identifier(identifier, skip_identifier_validation):
         if test_status == "FAIL" and identifier == "BC7654321":
             return None
 
@@ -1934,7 +1934,6 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
     mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
-
 
     def mock_validate_roles(required_roles):
         if role in required_roles:
@@ -2129,7 +2128,7 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
     err = validate(None, filing, account_id)
 
     # validate outcomes
-    expected_msg = "An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company."
+    expected_msg = "An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company."  # noqa: E501
     if test_status == "SUCCESS_CC":
         assert not err
     elif test_status == "SUCCESS_ULC":

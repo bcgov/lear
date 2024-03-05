@@ -45,7 +45,7 @@ def test_document_entity_type(session, test_status, document_type, entity_type, 
         identifier,
         founding_date=(datetime.utcnow() - datedelta.YEAR),
         last_ar_date=datetime.utcnow(),
-        _entity_type=entity_type,
+        entity_type=entity_type,
     )
     if test_status == "HISTORICAL":
         legal_entity.dissolution_date = datetime.utcnow()
