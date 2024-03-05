@@ -2117,18 +2117,18 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=True)  # Staff
 
     err = validate(None, filing, account_id)
 
     # validate outcomes
-    expected_msg = "An extra-Pro cannot amalgamate with anything \
-        to become a BC Unlimited Liability Company or a BC Community Contribution Company."
+    expected_msg = "An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company."
     if test_status == "SUCCESS_CC":
         assert not err
     elif test_status == "SUCCESS_ULC":
         assert not next((x for x in err.msg if x["error"] == expected_msg), None)
     else:
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert next((x for x in err.msg if x["error"] == expected_msg), None)
+        assert any(x["error"] == expected_msg for x in err.msg)
