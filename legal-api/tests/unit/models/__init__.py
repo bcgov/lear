@@ -159,7 +159,7 @@ def factory_legal_entity(
     identifier=None,
     founding_date=EPOCH_DATETIME,
     last_ar_date=None,
-    _entity_type=LegalEntity.EntityTypes.COOP.value,
+    entity_type=LegalEntity.EntityTypes.COOP.value,
     state=LegalEntity.State.ACTIVE,
     naics_code=None,
     naics_desc=None,
