@@ -146,7 +146,8 @@ def _basic_checks(identifier, filing_id, client_request) -> Tuple[dict, int]:
         return ({"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND)
 
     # check that filing belongs to this business
-    if filing: filing_business_id = filing.legal_entity_id or filing.alternate_name_id
+    if filing:
+        filing_business_id = filing.legal_entity_id or filing.alternate_name_id
     if not filing or filing_business_id != business.id:
         return ({"message": f"Filing {filing_id} not found"}, HTTPStatus.NOT_FOUND)
 
