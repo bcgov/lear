@@ -43,7 +43,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     class NameType(BaseEnum):
         """Enum for the name type."""
 
-        DBA = auto()
+        OPERATING = auto()
         TRANSLATION = auto()
 
     __tablename__ = "alternate_names"
