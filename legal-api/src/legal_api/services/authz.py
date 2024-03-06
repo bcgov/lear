@@ -301,9 +301,6 @@ def get_allowable_filings_dict():
                 },
                 'putBackOn': {
                     'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
-                    'blockerChecks': {
-                        'validStateFilings': [filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
-                    }
                 },
                 'registrarsNotation': {
                     'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
