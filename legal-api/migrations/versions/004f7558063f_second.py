@@ -271,7 +271,7 @@ def upgrade():
     op.create_table('alternate_names_history',
                     sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
                     sa.Column('identifier', sa.String(length=10), autoincrement=False, nullable=True),
-                    sa.Column('name_type', sa.Enum('OPERATING', name='nametype'), autoincrement=False, nullable=False),
+                    sa.Column('name_type', sa.Enum('DBA', 'TRANSLATION', name='nametype'), autoincrement=False, nullable=False),
                     sa.Column('name', sa.String(length=1000), autoincrement=False, nullable=False),
                     sa.Column('bn15', sa.String(length=20), autoincrement=False, nullable=True),
                     sa.Column('start_date', sa.DateTime(timezone=True), autoincrement=False, nullable=False),
@@ -939,7 +939,7 @@ def upgrade():
 
     with op.batch_alter_table('alternate_names', schema=None) as batch_op:
         batch_op.add_column(sa.Column('identifier', sa.String(length=10), nullable=True))
-        batch_op.add_column(sa.Column('name_type', sa.Enum('OPERATING', name='nametype'), nullable=False))
+        batch_op.add_column(sa.Column('name_type', sa.Enum('DBA', 'TRANSLATION', name='nametype'), nullable=False))
         batch_op.add_column(sa.Column('name', sa.String(length=1000), nullable=False))
         batch_op.add_column(sa.Column('bn15', sa.String(length=20), nullable=True))
         batch_op.add_column(sa.Column('start_date', sa.DateTime(timezone=True), nullable=False))
