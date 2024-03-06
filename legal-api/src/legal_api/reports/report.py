@@ -732,7 +732,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             identifier = amalgamating_business.get('identifier')
             if foreign_legal_name := amalgamating_business.get('legalName'):
                 business_legal_name = foreign_legal_name
-            elif ting_business := Business.find_by_identifier(identifier):
+            elif ting_business := self._get_versioned_amalgamating_business(identifier):
                 business_legal_name = ting_business.legal_name
 
             amalgamating_businesses.append({
@@ -741,21 +741,41 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             })
         filing['amalgamatingBusinesses'] = amalgamating_businesses
 
+    def _get_versioned_amalgamating_business(self, identifier):
+        # until TED business is created, get it from business table
+        ting_business = Business.find_by_identifier(identifier)
+        if self._filing.transaction_id:
+            # get TING business from version
+            # when TED is dissolved by staff (with court order) and TING is restored, user can modify TING data
+            # which should not be reflected here
+            ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
+                self._filing.transaction_id, ting_business)
+        return ting_business
+
     def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals
         ting_business = next(x for x in filing['amalgamationApplication']['amalgamatingBusinesses']
                              if x['role'] in [AmalgamatingBusiness.Role.holding.name,
                                               AmalgamatingBusiness.Role.primary.name])
-        primary_or_holding_business = Business.find_by_identifier(ting_business['identifier'])
+        primary_or_holding_business = self._get_versioned_amalgamating_business(ting_business['identifier'])
         filing['nameRequest']['legalName'] = primary_or_holding_business.legal_name
 
         parties = []
-        active_directors = PartyRole.get_active_directors(primary_or_holding_business.id,
-                                                          self._filing.effective_date.date())
         # copy director
-        for director in active_directors:
-            director_json = director.json
-            director_json['roles'] = [{'roleType': 'Director'}]
-            parties.append(director_json)
+        if self._filing.transaction_id:
+            parties_version = VersionedBusinessDetailsService.get_party_role_revision(
+                self._filing.transaction_id,
+                primary_or_holding_business.id,
+                role=PartyRole.RoleTypes.DIRECTOR.value)
+            for director_json in parties_version:
+                director_json['roles'] = [{'roleType': 'Director'}]
+                parties.append(director_json)
+        else:
+            active_directors = PartyRole.get_active_directors(primary_or_holding_business.id,
+                                                              self._filing.effective_date.date())
+            for director in active_directors:
+                director_json = director.json
+                director_json['roles'] = [{'roleType': 'Director'}]
+                parties.append(director_json)
 
         # copy completing party from filing json
         for party_info in filing['amalgamationApplication'].get('parties'):
@@ -768,18 +788,28 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         # copy offices
         offices = {}
-        officelist = primary_or_holding_business.offices.all()
-        for i in officelist:
-            if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
-                offices[i.office_type] = {}
-                for address in i.addresses:
-                    offices[i.office_type][f'{address.address_type}Address'] = address.json
+        if self._filing.transaction_id:
+            offices = VersionedBusinessDetailsService.get_office_revision(
+                self._filing.transaction_id,
+                primary_or_holding_business.id)
+        else:
+            officelist = primary_or_holding_business.offices.all()
+            for i in officelist:
+                if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
+                    offices[i.office_type] = {}
+                    for address in i.addresses:
+                        offices[i.office_type][f'{address.address_type}Address'] = address.json
         filing['offices'] = offices
 
         # copy shares
         share_classes = []
-        for share_class in primary_or_holding_business.share_classes.all():
-            share_classes.append(share_class.json)
+        if self._filing.transaction_id:
+            share_classes = VersionedBusinessDetailsService.get_share_class_revision(
+                self._filing.transaction_id,
+                primary_or_holding_business.id)
+        else:
+            for share_class in primary_or_holding_business.share_classes.all():
+                share_classes.append(share_class.json)
         filing['shareClasses'] = share_classes
 
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
