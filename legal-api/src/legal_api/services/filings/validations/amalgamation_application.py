@@ -94,7 +94,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
             ):
                 is_any_expro_a = True
 
-            if not (business := BusinessService.fetch_business(identifier, skip_identifier_validation=True)):
+            if not (business := BusinessService.fetch_business(identifier)):
                 continue
 
             amalgamating_businesses[identifier] = business

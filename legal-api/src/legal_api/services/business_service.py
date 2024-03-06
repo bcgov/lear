@@ -21,14 +21,14 @@ class BusinessService:
     """Provides services to retrieve correct businesses."""
 
     @staticmethod
-    def fetch_business(identifier: str, skip_identifier_validation: bool = False):
+    def fetch_business(identifier: str):
         """Fetches appropriate business.
 
         This can be an instance of legal entity or alternate name.
         """
         if identifier.startswith("T"):
             return None
-        if legal_entity := LegalEntity.find_by_identifier(identifier, skip_identifier_validation):
+        if legal_entity := LegalEntity.find_by_identifier(identifier):
             return legal_entity
 
         if identifier.startswith("FM") and (alternate_name := AlternateName.find_by_identifier(identifier)):
