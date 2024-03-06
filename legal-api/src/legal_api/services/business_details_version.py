@@ -415,6 +415,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
     @staticmethod
     def get_amalgamation_revision_obj(transaction_id, business_id):
+        """Get amalgamation for the given transaction id."""
         amalgamation_version = version_class(Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
@@ -427,6 +428,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
     @staticmethod
     def get_amalgamating_businesses_revision_obj(transaction_id, amalgamation_id):
+        """Get amalgamating businesses for the given transaction id."""
         amalgamating_businesses_version = version_class(AmalgamatingBusiness)
         amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
             .filter(amalgamating_businesses_version.transaction_id <= transaction_id) \

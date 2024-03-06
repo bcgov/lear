@@ -752,7 +752,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._filing.transaction_id, ting_business)
         return ting_business
 
-    def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals
+    def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals, too-many-branches
         ting_business = next(x for x in filing['amalgamationApplication']['amalgamatingBusinesses']
                              if x['role'] in [AmalgamatingBusiness.Role.holding.name,
                                               AmalgamatingBusiness.Role.primary.name])
