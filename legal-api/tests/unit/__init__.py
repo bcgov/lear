@@ -49,6 +49,7 @@ def nested_session(session):
         raise err
     except exc.ResourceClosedError as err:
         # mean the close out of the transaction got fouled in pytest
+        err
         pass
     except Exception as err:
         raise err
