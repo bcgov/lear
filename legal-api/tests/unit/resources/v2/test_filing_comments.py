@@ -160,7 +160,6 @@ def test_get_comments_invalid_business_error(session, client, jwt):
         assert "CP2222222 not found" == rv.json.get("message")
 
 
-# TODO: Fix this
 def test_get_comments_invalid_filing_error(session, client, jwt):
     """Assert that error is returned when filing doesn't exist."""
     with nested_session(session):
@@ -324,7 +323,6 @@ def test_post_comment_invalid_business_error(session, client, jwt):
         assert "CP2222222 not found" == rv.json.get("message")
 
 
-# TODO:Fix this
 def test_post_comment_invalid_filing_error(session, client, jwt):
     """Assert that error is returned when filing doesn't exist."""
     with nested_session(session):
