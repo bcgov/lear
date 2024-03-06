@@ -47,9 +47,8 @@ def nested_session(session):
         sess.rollback()
     except AssertionError as err:
         raise err
-    except exc.ResourceClosedError as err:
+    except exc.ResourceClosedError:
         # mean the close out of the transaction got fouled in pytest
-        err
         pass
     except Exception as err:
         raise err
