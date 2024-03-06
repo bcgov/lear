@@ -93,7 +93,7 @@ def check_valid_agm_date(
 
     # Test it
     with app.app_context():
-        err = validate_agm_year(legal_entity=legal_entity, annual_report=current_ar)
+        err = validate_agm_year(business=legal_entity, annual_report=current_ar)
     # Validate the outcome
     if expected_msg:  # examples check
         assert err.msg == expected_msg

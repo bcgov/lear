@@ -66,7 +66,7 @@ def execute_test_restoration_nr(
     mocker.patch("legal_api.services.NameXService.validate_nr", return_value=validate_nr_result)
 
     legal_entity = LegalEntity(
-        identifier="BC1234567", entity_type=entity_type, restoration_expiry_date=LegislationDatetime.now()
+        identifier="BC1234567", _entity_type=entity_type, restoration_expiry_date=LegislationDatetime.now()
     )
     filing = copy.deepcopy(FILING_HEADER)
     filing["filing"]["restoration"] = copy.deepcopy(RESTORATION)
@@ -124,7 +124,7 @@ class MockResponse:
 )
 def test_validate_party(session, test_name, party_role, expected_msg):
     """Assert that party is validated."""
-    legal_entity = LegalEntity(identifier="BC1234567", entity_type="BC")
+    legal_entity = LegalEntity(identifier="BC1234567", _entity_type="BC")
     filing = copy.deepcopy(FILING_HEADER)
     filing["filing"]["restoration"] = copy.deepcopy(RESTORATION)
     filing["filing"]["header"]["name"] = "restoration"
@@ -158,7 +158,7 @@ def test_validate_party(session, test_name, party_role, expected_msg):
 def test_validate_relationship(session, test_status, restoration_type, expected_code, expected_msg):
     """Assert that applicant's relationship is validated."""
     legal_entity = LegalEntity(
-        identifier="BC1234567", entity_type="BC", restoration_expiry_date=LegislationDatetime.now()
+        identifier="BC1234567", _entity_type="BC", restoration_expiry_date=LegislationDatetime.now()
     )
     limited_restoration_filing = None
     if restoration_type in ("limitedRestorationExtension", "limitedRestorationToFull"):
@@ -215,7 +215,7 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     if delta_date:
         expiry_date = expiry_date + delta_date
     legal_entity = LegalEntity(
-        identifier="BC1234567", entity_type="BC", restoration_expiry_date=restoration_expiry_date
+        identifier="BC1234567", _entity_type="BC", restoration_expiry_date=restoration_expiry_date
     )
 
     filing = copy.deepcopy(FILING_HEADER)
@@ -307,7 +307,7 @@ def test_approval_type(
             limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
         for entity_type in entity_types:
             legal_entity = LegalEntity(
-                identifier="BC1234567", entity_type=entity_type, restoration_expiry_date=LegislationDatetime.now()
+                identifier="BC1234567", _entity_type=entity_type, restoration_expiry_date=LegislationDatetime.now()
             )
             filing = copy.deepcopy(FILING_HEADER)
             filing["filing"]["restoration"] = copy.deepcopy(RESTORATION)
@@ -403,7 +403,7 @@ def test_restoration_court_orders(
             limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
         for legal_type in legal_types:
             legal_entity = LegalEntity(
-                identifier="BC1234567", entity_type=legal_type, restoration_expiry_date=LegislationDatetime.now()
+                identifier="BC1234567", _entity_type=legal_type, restoration_expiry_date=LegislationDatetime.now()
             )
             filing = copy.deepcopy(FILING_HEADER)
             filing["filing"]["restoration"] = copy.deepcopy(RESTORATION)
@@ -529,7 +529,7 @@ def test_restoration_registrar(
             limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
         for legal_type in legal_types:
             legal_entity = LegalEntity(
-                identifier="BC1234567", entity_type=legal_type, restoration_expiry_date=LegislationDatetime.now()
+                identifier="BC1234567", _entity_type=legal_type, restoration_expiry_date=LegislationDatetime.now()
             )
             filing = copy.deepcopy(FILING_HEADER)
             filing["filing"]["restoration"] = copy.deepcopy(RESTORATION)

@@ -120,7 +120,7 @@ def test_validate_ar_year(
 
     # Test it
     with app.app_context():
-        err = validate_ar_year(legal_entity=legal_entity, current_annual_report=current_ar)
+        err = validate_ar_year(business=legal_entity, current_annual_report=current_ar)
     # Validate the outcome
     if not expected_code and not err:
         assert err is expected_code
