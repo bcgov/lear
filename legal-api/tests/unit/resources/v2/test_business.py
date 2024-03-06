@@ -282,8 +282,7 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         assert rv.json["business"]["allowedFilings"]
 
 
-# TODO: first test runs successfully but next fail. Looks like values from first test are used for the next one
-# Tests run successfully when run individually.
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
     "test_name, legal_type, identifier, has_missing_business_info, missing_business_info_warning_expected",
     [

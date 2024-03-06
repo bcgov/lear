@@ -207,7 +207,7 @@ def test_ledger_comment_count(session, client, jwt):
         assert rv.json["filings"][0]["commentsCount"] == number_of_comments
 
 
-# TODO: first test runs successfully but next fail. Looks like values from first test are used for the next one
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
     "test_name, identifier, file_number, order_date, effect_of_order, order_details, expected",
     [
