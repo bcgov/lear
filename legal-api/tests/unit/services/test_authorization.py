@@ -4270,9 +4270,7 @@ def test_is_self_registered_owner_operator_true_when_proprietor_and_user_uses_mi
 
 
 def test_is_self_registered_owner_operator_true(app, session):
-    #pdb.set_trace()
     user = factory_user(username="test", firstname="Test", lastname="User")
-    #print(LegalEntity.entity_type)
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(
         EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST", last_name="USER")
