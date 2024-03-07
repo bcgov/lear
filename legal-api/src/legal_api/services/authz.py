@@ -282,9 +282,8 @@ def get_allowable_filings_dict():
                 "courtOrder": {
                     "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"],
                 },
-                "putBackOn": {
-                    "legalTypes": ["SP", "GP", "BEN", "CP", "BC", "CC", "ULC"],
-                    "blockerChecks": {"validStateFilings": [filing_types_compact.DISSOLUTION_ADMINISTRATIVE]},
+                'putBackOn': {
+                    'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC'],
                 },
                 "registrarsNotation": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
                 "registrarsOrder": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
