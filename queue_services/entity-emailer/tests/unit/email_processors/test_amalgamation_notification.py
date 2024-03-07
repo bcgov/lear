@@ -21,31 +21,31 @@ from entity_emailer.email_processors import amalgamation_notification
 from tests.unit import prep_amalgamation_filing
 
 
-@pytest.mark.parametrize('status', [
+@pytest.mark.parametrize("status", [
     (Filing.Status.PAID.value),
     (Filing.Status.COMPLETED.value)
 ])
 def test_amalgamation_notification(app, session, status):
     """Assert Amalgamation notification is created."""
     # setup filing + business for email
-    legal_name = 'test business'
-    filing = prep_amalgamation_filing(session, 'BC1234567', '1', status, legal_name)
-    token = 'token'
+    legal_name = "test business"
+    filing = prep_amalgamation_filing(session, "BC1234567", "1", status, legal_name)
+    token = "token"
     # test processor
-    with patch.object(amalgamation_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+    with patch.object(amalgamation_notification, "_get_pdfs", return_value=[]) as mock_get_pdfs:
         email = amalgamation_notification.process(
-            {'filingId': filing.id, 'type': 'amalgamationApplication', 'option': status}, token)
+            {"filingId": filing.id, "type": "amalgamationApplication", "option": status}, token)
 
-        assert 'test@test.com' in email['recipients']
+        assert "test@test.com" in email["recipients"]
         if status == Filing.Status.PAID.value:
-            assert email['content']['subject'] == legal_name + ' - Amalgamation'
-            assert 'comp_party@email.com' in email['recipients']
+            assert email["content"]["subject"] == legal_name + " - Amalgamation"
+            assert "comp_party@email.com" in email["recipients"]
         else:
-            assert email['content']['subject'] == legal_name + ' - Confirmation of Amalgamation'
+            assert email["content"]["subject"] == legal_name + " - Confirmation of Amalgamation"
 
-        assert email['content']['body']
-        assert email['content']['attachments'] == []
+        assert email["content"]["body"]
+        assert email["content"]["attachments"] == []
         assert mock_get_pdfs.call_args[0][0] == status
         assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+        assert mock_get_pdfs.call_args[0][2]["identifier"] == "BC1234567"
         assert mock_get_pdfs.call_args[0][3] == filing
