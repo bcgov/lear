@@ -285,14 +285,13 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
     def _slim_json(self):
         """Return a smaller/faster version of the business json."""
-        legal_name = self.legal_entity.legal_name if self.legal_entity else None
         d = {
             "adminFreeze": self.admin_freeze or False,
             "goodStanding": True,
             "identifier": self.identifier,
-            "legalName": legal_name,
+            "legalName": self.legal_name,
             "legalType": self.entity_type,
-            "state": self.state if self.state else BusinessCommon.State.ACTIVE.value,
+            "state": self.state.name if self.state else BusinessCommon.State.ACTIVE.name,
             "alternateNames": [
                 {
                     "identifier": self.identifier,
