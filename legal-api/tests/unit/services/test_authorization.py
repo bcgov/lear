@@ -625,7 +625,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
-                {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -685,7 +685,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
-                {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -4119,9 +4119,7 @@ def test_is_self_registered_owner_operator_false_when_no_proprietors(app, sessio
     assert is_self_registered_owner_operator(business, user) is False
 
 
-@patch(
-    "legal_api.models.EntityRole.get_parties_by_role"
-)
+@patch("legal_api.models.EntityRole.get_parties_by_role")
 def test_is_self_registered_owner_operator_false_when_no_proprietor(mock_get_parties_by_role, app, session):
     # Setup a mock EntityRole object with the desired attributes
     entity_role = EntityRole()
@@ -4129,7 +4127,7 @@ def test_is_self_registered_owner_operator_false_when_no_proprietor(mock_get_par
 
     # Configure the mock to return a list containing the mock entity role
     mock_get_parties_by_role.return_value = [entity_role]
-    
+
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user())
@@ -4157,9 +4155,7 @@ def test_is_self_registered_owner_operator_false_when_no_completing_parties(app,
     assert is_self_registered_owner_operator(business, user) is False
 
 
-@patch(
-    "legal_api.models.EntityRole.get_party_roles_by_filing"
-)
+@patch("legal_api.models.EntityRole.get_party_roles_by_filing")
 def test_is_self_registered_owner_operator_false_when_no_completing_party(mock_get_parties_by_role, app, session):
     # Setup a mock EntityRole object with the desired attributes
     entity_role = EntityRole()
@@ -4167,7 +4163,7 @@ def test_is_self_registered_owner_operator_false_when_no_completing_party(mock_g
 
     # Configure the mock to return a list containing the mock entity role
     mock_get_parties_by_role.return_value = [entity_role]
-    
+
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     proprietor_party_role = create_party_role(EntityRole.RoleTypes.PROPRIETOR, **create_test_user())
