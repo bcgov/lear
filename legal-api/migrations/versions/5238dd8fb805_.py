@@ -30,7 +30,7 @@ def upgrade():
     amalgamation_type_enum.create(op.get_bind(), checkfirst=True)
 
     # ==========================================================================================
-    # amalgamating_businesses/amalgamations tables
+    # amalgamating_businesses/amalgamations/amalgamations_version/amalgamating_businesses_version tables
     # ==========================================================================================
 
     op.create_table(
@@ -62,11 +62,63 @@ def upgrade():
 
     # enum added after creating table as DuplicateObject error would be thrown otherwise
     op.add_column('amalgamating_businesses', sa.Column('role', role_enum, nullable=False))
-
+    
+    op.create_table(
+        'amalgamations_version',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('legal_entity_id', sa.Integer(), nullable=False),
+        sa.Column('filing_id', sa.Integer(), nullable=False),
+        sa.Column('amalgamation_date', sa.TIMESTAMP(timezone=True), nullable=False),
+        sa.Column('court_approval', sa.Boolean(), nullable=False),
+        sa.Column('transaction_id', sa.BigInteger(), autoincrement=False, nullable=False),
+        sa.Column('end_transaction_id', sa.BigInteger(), nullable=True),
+        sa.Column('operation_type', sa.SmallInteger(), nullable=False),
+        sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
+        sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
+        sa.PrimaryKeyConstraint('id', 'transaction_id')
+    )
+    
+    # enum added after creating table as DuplicateObject error would be thrown otherwise
+    op.add_column('amalgamations_version', sa.Column('amalgamation_type', amalgamation_type_enum, nullable=False))
+    
+    with op.batch_alter_table('amalgamations_version', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_amalgamations_version_end_transaction_id'), ['end_transaction_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamations_version_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamations_version_filing_id'), ['filing_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamations_version_operation_type'), ['operation_type'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamations_version_transaction_id'), ['transaction_id'], unique=False)
+    
+    op.create_table(
+        'amalgamating_businesses_version',
+        sa.Column('id', sa.Integer(), primary_key=False),
+        sa.Column('legal_entity_id', sa.Integer(), nullable=True),
+        sa.Column('amalgamation_id', sa.Integer(), nullable=False),
+        sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=True),
+        sa.Column('foreign_jurisdiction_region', sa.String(length=10), nullable=True),
+        sa.Column('foreign_name', sa.String(length=100), nullable=True),
+        sa.Column('foreign_identifier', sa.String(length=50), nullable=True),
+        sa.Column('transaction_id', sa.BigInteger(), autoincrement=False, nullable=False),
+        sa.Column('end_transaction_id', sa.BigInteger(), nullable=True),
+        sa.Column('operation_type', sa.SmallInteger(), nullable=False),
+        sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
+        sa.PrimaryKeyConstraint('id', 'transaction_id')
+    )
+    
+    # enum added after creating table as DuplicateObject error would be thrown otherwise
+    op.add_column('amalgamating_businesses_version', sa.Column('role', role_enum, nullable=False))
+    
+    with op.batch_alter_table('amalgamating_businesses_version', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_version_end_transaction_id'), ['end_transaction_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_version_legal_entity_id'), ['legal_entity_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_version_amalgamation_id'), ['amalgamation_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_version_operation_type'), ['operation_type'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_version_transaction_id'), ['transaction_id'], unique=False)
 
 def downgrade():
     op.drop_table('amalgamating_businesses')
     op.drop_table('amalgamations')
+    op.drop_table('amalgamating_businesses_version')
+    op.drop_table('amalgamations_version')
 
     # Drop enum types from the database
     amalgamation_type_enum.drop(op.get_bind(), checkfirst=True)
