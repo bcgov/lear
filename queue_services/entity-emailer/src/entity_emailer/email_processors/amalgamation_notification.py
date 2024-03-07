@@ -40,8 +40,8 @@ def _get_pdfs(
     pdfs = []
     attach_order = 1
     headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
+        "Accept": "application/pdf",
+        "Authorization": f"Bearer {token}"
     }
 
     if status == Filing.Status.PAID.value:
@@ -51,41 +51,41 @@ def _get_pdfs(
             headers=headers
         )
         if filing_pdf.status_code != HTTPStatus.OK:
-            logger.error('Failed to get pdf for filing: %s', filing.id)
+            logger.error("Failed to get pdf for filing: %s", filing.id)
         else:
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
                 {
-                    'fileName': 'Amalgamation Application.pdf',
-                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
+                    "fileName": "Amalgamation Application.pdf",
+                    "fileBytes": filing_pdf_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order
                 }
             )
             attach_order += 1
 
-        corp_name = business.get('legalName')
+        corp_name = business.get("legalName")
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
-                'corpName': corp_name,
-                'filingDateTime': filing_date_time,
-                'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
-                'filingIdentifier': str(filing.id),
-                'businessNumber': business.get('taxId', '')
+                "corpName": corp_name,
+                "filingDateTime": filing_date_time,
+                "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
+                "filingIdentifier": str(filing.id),
+                "businessNumber": business.get("taxId", "")
             },
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+            logger.error("Failed to get receipt pdf for filing: %s", filing.id)
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
                 {
-                    'fileName': 'Receipt.pdf',
-                    'fileBytes': receipt_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
+                    "fileName": "Receipt.pdf",
+                    "fileBytes": receipt_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order
                 }
             )
             attach_order += 1
@@ -93,38 +93,38 @@ def _get_pdfs(
         # add certificate of amalgamation
         certificate = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certificateOfAmalgamation',
+            "?type=certificateOfAmalgamation",
             headers=headers
         )
         if certificate.status_code != HTTPStatus.OK:
-            logger.error('Failed to get corrected registration statement pdf for filing: %s', filing.id)
+            logger.error("Failed to get corrected registration statement pdf for filing: %s", filing.id)
         else:
             certificate_encoded = base64.b64encode(certificate.content)
             pdfs.append(
                 {
-                    'fileName': 'Certificate Of Amalgamation.pdf',
-                    'fileBytes': certificate_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
+                    "fileName": "Certificate Of Amalgamation.pdf",
+                    "fileBytes": certificate_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order
                 }
             )
             attach_order += 1
         # add notice of articles
         noa = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=noticeOfArticles',
+            "?type=noticeOfArticles",
             headers=headers
         )
         if noa.status_code != HTTPStatus.OK:
-            logger.error('Failed to get noa pdf for filing: %s', filing.id)
+            logger.error("Failed to get noa pdf for filing: %s", filing.id)
         else:
             noa_encoded = base64.b64encode(noa.content)
             pdfs.append(
                 {
-                    'fileName': 'Notice of Articles.pdf',
-                    'fileBytes': noa_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': attach_order
+                    "fileName": "Notice of Articles.pdf",
+                    "fileBytes": noa_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": attach_order
                 }
             )
             attach_order += 1
@@ -133,25 +133,25 @@ def _get_pdfs(
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Amalgamation notification."""
-    logger.debug('filing_notification: %s', email_info)
+    logger.debug("filing_notification: %s", email_info)
     # get template and fill in parts
-    filing_type, status = email_info['type'], email_info['option']
+    filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
-    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AMALGA-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)['filing'][f'{filing_type}']
+    filing_data = (filing.json)["filing"][f'{filing_type}']
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
-        header=(filing.json)['filing']['header'],
+        header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.get('identifier', ''),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.get("identifier", ""),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
@@ -165,17 +165,17 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         return {}
 
     # assign subject
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - Amalgamation'
+    legal_name = business.get("legalName", None)
+    subject = f"{legal_name} - Amalgamation"
     if status == Filing.Status.COMPLETED.value:
-        subject = f'{legal_name} - Confirmation of Amalgamation'
+        subject = f"{legal_name} - Confirmation of Amalgamation"
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': pdfs
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {
+            "subject": subject,
+            "body": f"{html_out}",
+            "attachments": pdfs
         }
     }
