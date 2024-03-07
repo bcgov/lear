@@ -403,7 +403,7 @@ def test_check_warnings(
         legal_entity = None
 
         create_business(
-            entity_type=entity_type,
+            _entity_type=entity_type,
             identifier=identifier,
             create_office=has_office,
             create_office_mailing_address=has_office,
@@ -419,7 +419,7 @@ def test_check_warnings(
 
         legal_entity = LegalEntity.find_by_identifier(identifier)
         assert legal_entity
-        assert legal_entity.entity_type == entity_type
+        assert legal_entity._entity_type == entity_type
         assert legal_entity.identifier == identifier
 
         with patch.object(firms, "check_address", return_value=[]):

@@ -625,6 +625,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
+                {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -684,6 +685,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
+                {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -2411,7 +2413,7 @@ def test_get_allowed_filings_blocker_admin_freeze(
             if business_exists:
                 identifier = (f"BC{random.SystemRandom().getrandbits(0x58)}")[:9]
                 legal_entity = factory_legal_entity(
-                    identifier=identifier, entity_type=legal_type, state=state, admin_freeze=True
+                    identifier=identifier, _entity_type=legal_type, state=state, admin_freeze=True
                 )
             filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
             assert filing_types == expected
@@ -2606,7 +2608,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(
         for legal_type in legal_types:
             business = None
             identifier = (f"BC{random.SystemRandom().getrandbits(0x58)}")[:9]
-            business = factory_legal_entity(identifier=identifier, entity_type=legal_type, state=state)
+            business = factory_legal_entity(identifier=identifier, _entity_type=legal_type, state=state)
             with patch.object(type(business), "good_standing", new_callable=PropertyMock) as mock_good_standing:
                 mock_good_standing.return_value = False
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
@@ -3126,7 +3128,7 @@ def test_allowed_filings_blocker_filing_amalgamations(
                     business = create_business(legal_type, state)
                     filing_dict = FILING_DATA.get(filing_type, None)
                     create_incomplete_filing(
-                        business=business,
+                        legal_entity=business,
                         filing_name=filing_type,
                         filing_status=filing_status,
                         filing_dict=filing_dict,
@@ -3947,7 +3949,7 @@ def test_allowed_filings_completed_filing_check(
                     else:
                         filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
                         create_incomplete_filing(
-                            business=business,
+                            legal_entity=business,
                             filing_name="unknown",
                             filing_status=Filing.Status.DRAFT.value,
                             filing_dict=filing_dict,
@@ -4105,12 +4107,12 @@ def test_is_self_registered_owner_operator_false_when_no_proprietors(app, sessio
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user())
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4118,20 +4120,26 @@ def test_is_self_registered_owner_operator_false_when_no_proprietors(app, sessio
 
 
 @patch(
-    "legal_api.models.EntityRole.get_parties_by_role",
-    return_value=[EntityRole(role_type=EntityRole.RoleTypes.proprietor)],
+    "legal_api.models.EntityRole.get_parties_by_role"
 )
-def test_is_self_registered_owner_operator_false_when_no_proprietor(app, session):
+def test_is_self_registered_owner_operator_false_when_no_proprietor(mock_get_parties_by_role, app, session):
+    # Setup a mock EntityRole object with the desired attributes
+    entity_role = EntityRole()
+    entity_role.role = EntityRole.RoleTypes.proprietor  # Set the role post-instantiation
+
+    # Configure the mock to return a list containing the mock entity role
+    mock_get_parties_by_role.return_value = [entity_role]
+    
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user())
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4150,10 +4158,16 @@ def test_is_self_registered_owner_operator_false_when_no_completing_parties(app,
 
 
 @patch(
-    "legal_api.models.EntityRole.get_party_roles_by_filing",
-    return_value=[EntityRole(role_type=EntityRole.RoleTypes.completing_party)],
+    "legal_api.models.EntityRole.get_party_roles_by_filing"
 )
-def test_is_self_registered_owner_operator_false_when_no_completing_party(app, session):
+def test_is_self_registered_owner_operator_false_when_no_completing_party(mock_get_parties_by_role, app, session):
+    # Setup a mock EntityRole object with the desired attributes
+    entity_role = EntityRole()
+    entity_role.role = EntityRole.RoleTypes.proprietor  # Set the role post-instantiation
+
+    # Configure the mock to return a list containing the mock entity role
+    mock_get_parties_by_role.return_value = [entity_role]
+    
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     proprietor_party_role = create_party_role(EntityRole.RoleTypes.PROPRIETOR, **create_test_user())
@@ -4168,12 +4182,12 @@ def test_is_self_registered_owner_operator_false_when_parties_not_matching(app, 
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user("1"))
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4189,12 +4203,12 @@ def test_is_self_registered_owner_operator_false_when_user_not_matching(app, ses
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user("2"))
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4212,12 +4226,12 @@ def test_is_self_registered_owner_operator_false_when_proprietor_uses_middle_nam
         EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST", last_name="USER")
     )
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4237,12 +4251,12 @@ def test_is_self_registered_owner_operator_true_when_proprietor_and_user_uses_mi
         EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST TU", last_name="USER")
     )
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4256,18 +4270,20 @@ def test_is_self_registered_owner_operator_true_when_proprietor_and_user_uses_mi
 
 
 def test_is_self_registered_owner_operator_true(app, session):
+    #pdb.set_trace()
     user = factory_user(username="test", firstname="Test", lastname="User")
+    #print(LegalEntity.entity_type)
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(
         EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST", last_name="USER")
     )
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4276,16 +4292,16 @@ def test_is_self_registered_owner_operator_true(app, session):
     )
     proprietor_party_role.legal_entity_id = business.id
     proprietor_party_role.save()
-    proprietor_party_role.party.middle_initial = None
-    proprietor_party_role.party.save()
+    proprietor_party_role.middle_initial = None
+    proprietor_party_role.save()
     assert is_self_registered_owner_operator(business, user) is True
 
 
-def create_business(legal_type, state):
+def create_business(entity_type, state):
     """Create a business."""
     identifier = (f"BC{random.SystemRandom().getrandbits(0x58)}")[:9]
     legal_entity = factory_legal_entity(
-        identifier=identifier, entity_type=legal_type, state=state, founding_date=_datetime.now()
+        identifier=identifier, _entity_type=entity_type, state=state, founding_date=_datetime.now()
     )
     return legal_entity
 

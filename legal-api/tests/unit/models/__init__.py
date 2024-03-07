@@ -159,7 +159,7 @@ def factory_legal_entity(
     identifier=None,
     founding_date=EPOCH_DATETIME,
     last_ar_date=None,
-    entity_type=LegalEntity.EntityTypes.COOP.value,
+    _entity_type=LegalEntity.EntityTypes.SOLE_PROP.value,
     state=LegalEntity.State.ACTIVE,
     naics_code=None,
     naics_desc=None,
@@ -182,7 +182,7 @@ def factory_legal_entity(
         last_ar_year=last_ar_year,
         last_ledger_timestamp=EPOCH_DATETIME,
         # dissolution_date=EPOCH_DATETIME,
-        _entity_type=entity_type,
+        _entity_type=_entity_type,
         identifier=identifier,
         tax_id="BN123456789",
         fiscal_year_end_date=FROZEN_DATETIME,
@@ -386,7 +386,7 @@ def factory_party_role(
         first_name=officer["firstName"],
         last_name=officer["lastName"],
         middle_initial=officer["middleInitial"],
-        entity_type=officer["partyType"],
+        _entity_type=officer["partyType"],
         _legal_name=officer["organizationName"],
     )
     legal_entity.entity_delivery_address = delivery_address

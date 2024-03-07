@@ -29,8 +29,7 @@ def test_get_business_revision_obj(session):
 
     ia_filing = Filing(_filing_type="incorporationApplication")
     ia_filing.save()
-    legal_entity = factory_legal_entity(identifier="BC1234567", entity_type="BEN", change_filing_id=ia_filing.id)
-
+    legal_entity = factory_legal_entity(identifier="BC1234567", _entity_type="BEN", change_filing_id=ia_filing.id)
     dissolution_filing = Filing(_filing_type="dissolution")
     dissolution_filing.save()
     legal_entity.change_filing_id = dissolution_filing.id
@@ -56,7 +55,7 @@ def test_find_last_value_from_business_revision(session):
 
     ia_filing = Filing(_filing_type="incorporationApplication")
     ia_filing.save()
-    legal_entity = factory_legal_entity(identifier="BC1234567", entity_type="BEN", change_filing_id=ia_filing.id)
+    legal_entity = factory_legal_entity(identifier="BC1234567", _entity_type="BEN", change_filing_id=ia_filing.id)
 
     dissolution_date = datetime.datetime.utcnow()
     dissolution_filing = Filing(_filing_type="dissolution")
@@ -127,7 +126,7 @@ def test_get_office_revision(session):
     ia_effective_date = datetime.datetime.utcnow()
     ia_filing = Filing(_filing_type="incorporationApplication", effective_date=ia_effective_date)
     ia_filing.save()
-    legal_entity = factory_legal_entity(identifier="BC1234567", entity_type="BEN", change_filing_id=ia_filing.id)
+    legal_entity = factory_legal_entity(identifier="BC1234567", _entity_type="BEN", change_filing_id=ia_filing.id)
     factory_offices(legal_entity, office_types=[OfficeType.REGISTERED, OfficeType.RECORDS], change_filing=ia_filing)
     legal_entity.save()
 

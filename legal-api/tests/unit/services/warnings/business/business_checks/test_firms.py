@@ -272,7 +272,7 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
 
     with patch.object(firms, "check_address", return_value=[]):
         # TODO: check/update following block to work properly with AlternateName
-        if legal_type == AlternateName.EntityTypes.SP:
+        if legal_type == AlternateName.EntityTypes.SOLE_PROP:
             result = check_sp_party(legal_entity)
         else:
             result = check_gp_party(role)
@@ -546,7 +546,7 @@ def test_check_parties(
         legal_entity = None
 
         create_business(
-            entity_type=legal_type,
+            _entity_type=legal_type,
             identifier=identifier,
             firm_num_persons_roles=num_persons_roles,
             firm_num_org_roles=num_org_roles,
@@ -556,12 +556,12 @@ def test_check_parties(
 
         legal_entity = LegalEntity.find_by_identifier(identifier)
         assert legal_entity
-        assert legal_entity.entity_type == legal_type
+        assert legal_entity._entity_type == legal_type
         assert legal_entity.identifier == identifier
 
         # TODO: check/update following block to work properly with AlternateName
         with patch.object(firms, "check_address", return_value=[]):
-            if legal_type == AlternateName.EntityTypes.SP:
+            if legal_type == AlternateName.EntityTypes.SOLE_PROP:
                 result = check_sp_parties(legal_entity)
             else:
                 result = check_gp_parties([])
@@ -715,7 +715,7 @@ def test_check_business(
         legal_entity = None
 
         create_business(
-            entity_type=legal_type,
+            _entity_type=legal_type,
             identifier=identifier,
             create_office=has_office,
             create_office_mailing_address=has_office,
@@ -729,7 +729,7 @@ def test_check_business(
 
         legal_entity = LegalEntity.find_by_identifier(identifier)
         assert legal_entity
-        assert legal_entity.entity_type == legal_type
+        assert legal_entity._entity_type == legal_type
         assert legal_entity.identifier == identifier
 
         with patch.object(firms, "check_address", return_value=[]):
@@ -793,7 +793,7 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
         legal_entity = None
         if test_name == "SUCCESS":
             create_business(
-                entity_type=legal_type,
+                _entity_type=legal_type,
                 identifier=identifier,
                 create_office=True,
                 create_office_mailing_address=True,
@@ -803,7 +803,7 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
             create_business(entity_type=legal_type, identifier=identifier, create_office=False)
         elif test_name == "FAIL_NO_MAILING_ADDR":
             create_business(
-                entity_type=legal_type,
+                _entity_type=legal_type,
                 identifier=identifier,
                 create_office=True,
                 create_office_mailing_address=False,
@@ -811,7 +811,7 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
             )
         elif test_name == "FAIL_NO_DELIVERY_ADDR":
             create_business(
-                entity_type=legal_type,
+                _entity_type=legal_type,
                 identifier=identifier,
                 create_office=True,
                 create_office_mailing_address=True,
@@ -820,7 +820,7 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
 
         legal_entity = LegalEntity.find_by_identifier(identifier)
         assert legal_entity
-        assert legal_entity.entity_type == legal_type
+        assert legal_entity._entity_type == legal_type
         assert legal_entity.identifier == identifier
 
         result = check_office(legal_entity)
@@ -880,7 +880,7 @@ def test_check_parties_cessation_date(
         legal_entity = None
 
         create_business(
-            entity_type=legal_type,
+            _entity_type=legal_type,
             identifier=identifier,
             firm_num_persons_roles=num_persons_roles,
             firm_num_org_roles=num_org_roles,
@@ -894,7 +894,7 @@ def test_check_parties_cessation_date(
 
         legal_entity = LegalEntity.find_by_identifier(identifier)
         assert legal_entity
-        assert legal_entity.entity_type == legal_type
+        assert legal_entity._entity_type == legal_type
         assert legal_entity.identifier == identifier
 
         ceased_party = None
