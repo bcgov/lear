@@ -15,6 +15,7 @@
 """Service to check compliancy for a LegalEntity."""
 from .firms import check_business as firms_check  # noqa: I003
 from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.models import LegalEntity
 
 def check_business(business: any) -> list:
     """Check business for warnings."""
@@ -23,7 +24,7 @@ def check_business(business: any) -> list:
     if business.is_firm:
         result = firms_check(business)
 
-    ting_info = Business.check_if_ting(business.identifier)
+    ting_info = LegalEntity.check_if_ting(business.identifier)
     if ting_info:
         result =[  
                     {
