@@ -27,6 +27,7 @@ from sqlalchemy import event, text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
+from sqlalchemy.sql.expression import text
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseMeta
@@ -565,6 +566,24 @@ class LegalEntity(
                 return " ".join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
             return " ".join((self.first_name, self.last_name)).strip().upper()
         return self._legal_name
+    
+    @classmethod
+    def check_if_ting(cls, business_identifier):
+        # Construct a JSON containment check clause for the SQL query
+        where_clause = text(
+        "filing_json->'filing'->'amalgamationApplication'->'amalgamatingBusinesses'" +
+        f' @>\'[{{"identifier": "{business_identifier}"}}]\'')
+
+        # Query the database to find amalgamation filings
+        filing = db.session.query(Filing). \
+            filter( Filing._status == Filing.Status.PAID.value,
+                    Filing._filing_type == 'amalgamationApplication',  # Check for the filing type
+                    where_clause  # Apply the JSON containment check
+            ).one_or_none()
+     
+         # Check if a matching filing was found and if its effective date is greater than payment completion date
+        if filing and filing.effective_date > filing.payment_completion_date:
+            return filing.effective_date
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
