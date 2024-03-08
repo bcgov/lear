@@ -330,8 +330,9 @@ class BusinessDocument:
         ):
             state_filings.append(self._format_state_filing(filing))
         # If it is amalgamating business
-        if ((legal_entity.get("business").get("state") == "HISTORICAL")
-                and (legal_entity.get("business").get("amalgamatedInto"))):
+        if (legal_entity.get("business").get("state") == "HISTORICAL") and (
+            legal_entity.get("business").get("amalgamatedInto")
+        ):
             amalgamating_business_temp = LegalEntity.find_by_identifier(legal_entity.get("business").get("identifier"))
             amalgamating_business = amalgamating_business_temp.amalgamating_businesses.one_or_none()
             amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
@@ -463,8 +464,9 @@ class BusinessDocument:
         amalgamation_application = Filing.get_filings_by_types(self._legal_entity, ["amalgamationApplication"])
         if amalgamation_application:
             legal_entity["business"]["amalgamatedEntity"] = True
-            amalgamation_json = amalgamation_application[0].filing_json.get("filing", {})\
-                .get("amalgamationApplication", {})
+            amalgamation_json = (
+                amalgamation_application[0].filing_json.get("filing", {}).get("amalgamationApplication", {})
+            )
             # if it's future effective
             if self._epoch_filing_date and amalgamation_application[0].effective_date < self._epoch_filing_date:
                 amalgamated_businesses_info = {"legalName": NOT_AVAILABLE, "identifier": NOT_AVAILABLE}
@@ -478,10 +480,7 @@ class BusinessDocument:
                         identifier = amalgamating_businesses[0].get("corpNumber", {})
                     amalgamating_business = legal_entity.find_by_identifier(identifier)
                     business_legal_name = amalgamating_business.legal_name
-                    amalgamated_businesses_info = {
-                        "legalName": business_legal_name,
-                        "identifier": identifier
-                    }
+                    amalgamated_businesses_info = {"legalName": business_legal_name, "identifier": identifier}
                     amalgamated_businesses.append(amalgamated_businesses_info)
                     amalgamating_businesses.remove(amalgamating_businesses[0])
         legal_entity["amalgamatedEntities"] = amalgamated_businesses
