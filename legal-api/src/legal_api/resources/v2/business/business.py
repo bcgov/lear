@@ -96,8 +96,8 @@ def get_businesses(identifier: str):
             # A business can be affiliated in multiple accounts (in user account as well as in gov staff account's)
             # AccountService.get_account_by_affiliated_identifier will fetch all of it
             # check one of it has `q_account`
-            if any(str(org.get('id')) == q_account for org in orgs):
-                business_json['accountId'] = q_account
+            if any(str(org.get("id")) == q_account for org in orgs):
+                business_json["accountId"] = q_account
 
     return jsonify(business=business_json)
 
