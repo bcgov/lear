@@ -43,7 +43,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     class NameType(BaseEnum):
         """Enum for the name type."""
 
-        OPERATING = auto()
+        DBA = auto()
         TRANSLATION = auto()
 
     __tablename__ = "alternate_names"
@@ -136,6 +136,17 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             return None
         alternate_name = cls.query.filter_by(id=id).one_or_none()
         return alternate_name
+
+    @classmethod
+    def find_by_name_type(cls, legal_entity_id: int, name_type: str):
+        """Return the aliases matching the type."""
+        aliases = (
+            db.session.query(AlternateName)
+            .filter(AlternateName.legal_entity_id == legal_entity_id)
+            .filter(AlternateName.name_type == name_type)
+            .all()
+        )
+        return aliases
 
     @property
     def office_mailing_address(self):
