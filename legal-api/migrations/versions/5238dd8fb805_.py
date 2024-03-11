@@ -60,10 +60,10 @@ def upgrade():
         sa.Column('foreign_name', sa.String(length=100), nullable=True),
         sa.Column('foreign_identifier', sa.String(length=50), nullable=True),
         sa.Column('version', sa.Integer(), nullable=False),
-        sa.Column('filing_id', sa.Integer(), nullable=False),
+        sa.Column('change_filing_id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
         sa.ForeignKeyConstraint(['amalgamation_id'], ['amalgamations.id']),
-        sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
+        sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id']),
         sa.PrimaryKeyConstraint('id'),
         sqlite_autoincrement=True,
     )
@@ -72,7 +72,7 @@ def upgrade():
     op.add_column('amalgamating_businesses', sa.Column('role', role_enum, nullable=False))
     
     with op.batch_alter_table('amalgamating_businesses', schema=None) as batch_op:
-        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_filing_id'), ['filing_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_change_filing_id'), ['change_filing_id'], unique=False)
     
     op.create_table(
         'amalgamations_history',

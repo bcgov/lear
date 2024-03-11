@@ -59,6 +59,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_identifier="123456789",
         legal_entity_id=b.id,
         amalgamation_id=amalgamation.id,
+        change_filing_id=filing.id,
     )
     amalgamating_business_1.save()
 
@@ -70,6 +71,7 @@ def test_valid_amalgamating_business_save(session):
         foreign_identifier="123456789",
         legal_entity_id=b.id,
         amalgamation_id=amalgamation.id,
+        change_filing_id=filing.id,
     )
     amalgamating_business_2.save()
 

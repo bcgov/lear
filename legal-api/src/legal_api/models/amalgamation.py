@@ -19,11 +19,13 @@ from __future__ import annotations
 
 from enum import auto
 
+from sql_versioning import Versioned
+
 from ..utils.base import BaseEnum
 from .db import db
 
 
-class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
+class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the amalgamations."""
 
     # pylint: disable=invalid-name
