@@ -53,8 +53,8 @@ def check_office(business: any) -> list:
     result = []
     business_office = None
 
-    if business.is_legal_entity:
-        business_office = business.offices.filter(Office.office_type == "businessOffice").one_or_none()
+    # if business.is_legal_entity:
+    business_office = business.offices.filter(Office.office_type == "businessOffice").one_or_none()
 
     if not business_office:
         result.append(

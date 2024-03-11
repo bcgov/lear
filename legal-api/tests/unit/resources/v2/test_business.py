@@ -18,6 +18,9 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
 from http import HTTPStatus
+from unittest.mock import patch
+from legal_api.models.alternate_name import AlternateName
+from legal_api.services.warnings.business.business_checks import firms
 
 import pytest
 import registry_schemas
@@ -35,9 +38,13 @@ from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, 
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit import nested_session
-from tests.unit.models import factory_completed_filing, factory_legal_entity, factory_pending_filing
+from tests.unit.models import (
+    factory_completed_filing,
+    factory_legal_entity,
+    factory_pending_filing,
+)
 from tests.unit.services.utils import create_header
-from tests.unit.services.warnings import create_business
+from tests.unit.services.warnings import create_business, create_alternate_name_business, factory_alternate_name
 
 
 def factory_legal_entity_model(
@@ -309,22 +316,47 @@ def test_get_business_with_incomplete_info(
     with nested_session(session):
         if has_missing_business_info:
             legal_entity = factory_legal_entity(entity_type=legal_type, identifier=identifier)
+            if legal_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                alternate_name = factory_alternate_name(
+                    identifier=identifier,
+                    name="SP TESTING1212",
+                    name_type=AlternateName.NameType.OPERATING,
+                    bn15="111111100BC1111",
+                    start_date=datetime.utcnow(),
+                    legal_entity_id=legal_entity.id,
+                )
+                alternate_name.save()
+                legal_entity.alternate_names.append(alternate_name)
         else:
-            legal_entity = create_business(
-                entity_type=legal_type,
-                identifier=identifier,
-                create_office=True,
-                create_office_mailing_address=True,
-                create_office_delivery_address=True,
-                firm_num_persons_roles=2,
-                create_firm_party_address=True,
-                filing_types=["registration"],
-                filing_has_completing_party=[True],
-                create_completing_party_address=[True],
-            )
-        legal_entity.start_date = datetime.utcnow().date()
-        legal_entity.save()
-        session.commit()
+            if legal_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                legal_entity = create_alternate_name_business(
+                    entity_type=legal_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=2,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                )
+            else:
+                legal_entity = create_business(
+                    entity_type=legal_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=2,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                )
+            legal_entity.start_date = datetime.utcnow().date()
+            legal_entity.save()
+            session.commit()
         rv = client.get(f"/api/v2/businesses/{identifier}", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
         assert rv.status_code == HTTPStatus.OK

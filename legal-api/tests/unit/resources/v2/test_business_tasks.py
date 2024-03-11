@@ -22,22 +22,28 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import datedelta
+from legal_api.models.alternate_name import AlternateName
+from legal_api.models.office import OfficeType
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, INCORPORATION_FILING_TEMPLATE
 
-from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
+from legal_api.models import Address, EntityRole, Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit import nested_session
 from tests.unit.models import (
+    factory_alternate_name,
     factory_filing,
     factory_legal_entity,
     factory_legal_entity_mailing_address,
+    factory_offices,
     factory_pending_filing,
+    factory_legal_entity,
+    factory_party_role,
 )
 from tests.unit.services.utils import create_header
-from tests.unit.services.warnings import create_business
+from tests.unit.services.warnings import create_alternate_name_business, create_business
 
 AR_FILING_CURRENT_YEAR = {
     "filing": {
@@ -322,7 +328,20 @@ def test_construct_task_list(
         with patch("legal_api.resources.v2.business.business_tasks.check_warnings", return_value=[]):
             previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
             legal_entity = factory_legal_entity(identifier, founding_date, previous_ar_datetime, entity_type)
-            tasks = construct_task_list(legal_entity)
+
+            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                alternate_name = factory_alternate_name(
+                    identifier=identifier,
+                    name="SP TESTING1212",
+                    name_type=AlternateName.NameType.OPERATING,
+                    bn15="111111100BC1111",
+                    start_date=founding_date,
+                    legal_entity_id=legal_entity.id,
+                )
+                tasks = construct_task_list(alternate_name)
+            else:
+                tasks = construct_task_list(legal_entity)
+
             assert len(tasks) == tasks_length
 
             # nextAnnualReport should be in UTC and have the time should have the offset: 7 or 8 hours late
@@ -350,21 +369,49 @@ def test_conversion_filing_task(
     """Assert conversion todo shows up for only SP/GPs with missing business info."""
     with nested_session(session):
         if has_missing_business_info:
-            factory_legal_entity(_entity_type=entity_type, identifier=identifier)
+            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                legal_entity = factory_legal_entity(entity_type=entity_type, identifier=identifier)
+                alternate_name = factory_alternate_name(
+                    identifier=identifier,
+                    name="SP TESTING1212",
+                    name_type=AlternateName.NameType.OPERATING,
+                    bn15="111111100BC1111",
+                    start_date=datetime.utcnow(),
+                    legal_entity_id=legal_entity.id,
+                )
+                alternate_name.save()
+                legal_entity.alternate_names.append(alternate_name)
+            else:
+                factory_legal_entity(entity_type=entity_type, identifier=identifier)
+
         else:
-            create_business(
-                _entity_type=entity_type,
-                identifier=identifier,
-                create_office=True,
-                create_office_mailing_address=True,
-                create_office_delivery_address=True,
-                firm_num_persons_roles=2,
-                create_firm_party_address=True,
-                filing_types=["registration"],
-                filing_has_completing_party=[True],
-                create_completing_party_address=[True],
-                start_date=datetime.utcnow(),
-            )
+            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                create_alternate_name_business(
+                    entity_type=entity_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=2,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                )
+            else:
+                create_business(
+                    entity_type=entity_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=2,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                    start_date=datetime.utcnow(),
+                )
 
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
