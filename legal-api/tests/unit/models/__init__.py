@@ -123,7 +123,7 @@ def factory_user(username: str, firstname: str = None, lastname: str = None):
 def factory_alternate_name(
     identifier=None,
     name=None,
-    name_type=AlternateName.NameType.OPERATING,
+    name_type=AlternateName.NameType.DBA,
     bn15=None,
     legal_entity_id=None,
     start_date=None,

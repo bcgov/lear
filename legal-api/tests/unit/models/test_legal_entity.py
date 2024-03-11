@@ -665,7 +665,7 @@ def test_legal_name_firms_SP(session, test_name, partner_info, expected_legal_na
 
         sp_firm = AlternateName(
             identifier="FM1234567",
-            name_type=AlternateName.NameType.OPERATING,
+            name_type=AlternateName.NameType.DBA,
             name="OPERATING NAME",
             start_date=datetime.utcnow(),
             state=AlternateName.State.ACTIVE,
@@ -915,7 +915,7 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
 
                 alternate_name = AlternateName(
                     identifier=alternate_name_identifier,
-                    name_type=AlternateName.NameType.OPERATING,
+                    name_type=AlternateName.NameType.DBA,
                     name=alternate_name_info["operatingName"],
                     bn15="111111100BC1111",
                     start_date=start_date,
