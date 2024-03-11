@@ -70,7 +70,7 @@ class NameXService:
 
         # Perform proxy call using the inputted identifier (e.g. NR 1234567)
         nr_response = requests.get(
-            namex_url + "requests/" + identifier,
+            namex_url + "/requests/" + identifier,
             headers={"Content-Type": "application/json", "Authorization": "Bearer " + token},
         )
 
