@@ -142,6 +142,20 @@ class FilingInfo(Resource):
                 # get db connection and start a session, in case we need to roll back
                 con = DB.connection
                 con.begin()
+
+                # No filing will be created for administrative dissolution. Create an event and update corp state.
+                if ('dissolution' in filing_list and
+                        Filing.get_filing_sub_type('dissolution', filing_list['dissolution']) == 'administrative'):
+                    if legal_type == Business.LearBusinessTypes.COOP.value:
+                        raise Exception('Not implemented!')
+                    event_id = Filing.add_administrative_dissolution_event(con, identifier)
+                    con.commit()
+                    return jsonify({
+                        'filing': {
+                            'header': { 'colinIds' : [event_id]}
+                        }
+                    }), HTTPStatus.CREATED
+
                 filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier, corp_types)
 
                 # return the completed filing data
