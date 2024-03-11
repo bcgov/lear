@@ -124,7 +124,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         # `voluntaryDissolution filing type in place as unsure if it is being used in other places
         'dissolution': {
             'sub_type_property': 'dissolutionType',
-            'sub_type_list': ['voluntary'],
+            'sub_type_list': ['voluntary', 'administrative'],
             'type_code_list': ['OTVDS', 'ADVD2'],
             'voluntary': {
                 Business.TypeCodes.COOP.value: 'OTVDS',
@@ -919,6 +919,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
             # pass through exception to caller
             raise err
+
+    @classmethod
+    def add_administrative_dissolution_event(cls, con, corp_num) -> int:
+        """Add administrative dissolution event."""
+        cursor = con.cursor()
+        event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, event_type='SYSDA')
+        Business.update_corp_state(cursor, event_id, corp_num,
+                                   Business.CorpStateTypes.ADMINISTRATIVE_DISSOLUTION.value)
+        return event_id
 
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
