@@ -64,6 +64,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         """Render an Enum of the CorpState Type Codes."""
 
         VOLUNTARY_DISSOLUTION = 'HDV'
+        ADMINISTRATIVE_DISSOLUTION = 'HDA'
 
     # temp converter because legal doesn't have codes only class (legal_type)
     CORP_TYPE_CONVERSION = {
