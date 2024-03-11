@@ -30,7 +30,7 @@ def upgrade():
     amalgamation_type_enum.create(op.get_bind(), checkfirst=True)
 
     # ==========================================================================================
-    # amalgamating_businesses/amalgamations/amalgamations_version/amalgamating_businesses_version tables
+    # amalgamating_businesses/amalgamations/amalgamations_history/amalgamating_businesses_history tables
     # ==========================================================================================
 
     op.create_table(
@@ -81,7 +81,6 @@ def upgrade():
         sa.Column('filing_id', sa.Integer(), nullable=False),
         sa.Column('amalgamation_date', sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column('court_approval', sa.Boolean(), nullable=False),
-        sa.Column('operation_type', sa.SmallInteger(), nullable=False),
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('changed', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
