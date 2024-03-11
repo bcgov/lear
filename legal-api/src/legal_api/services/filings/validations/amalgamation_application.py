@@ -86,6 +86,14 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     amalgamating_businesses = {}
     for amalgamating_business_json in amalgamating_businesses_json:
         if identifier := amalgamating_business_json.get("identifier"):
+            if (
+                identifier.startswith("A")
+                and (foreign_jurisdiction := amalgamating_business_json.get("foreignJurisdiction"))
+                and foreign_jurisdiction.get("country") == "CA"
+                and foreign_jurisdiction.get("region") == "BC"
+            ):
+                is_any_expro_a = True
+
             if not (business := BusinessService.fetch_business(identifier)):
                 continue
 
@@ -99,13 +107,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 is_any_ccc = True
             elif business.entity_type == BusinessCommon.EntityTypes.BC_ULC_COMPANY.value:
                 is_any_ulc = True
-        elif (corp_number := amalgamating_business_json.get("corpNumber")) and corp_number.startswith("A"):
-            if (
-                (foreign_jurisdiction := amalgamating_business_json.get("foreignJurisdiction"))
-                and foreign_jurisdiction.get("country") == "CA"
-                and foreign_jurisdiction.get("region") == "BC"
-            ):
-                is_any_expro_a = True
+
     is_any_bc_company = is_any_ben or is_any_limited or is_any_ccc or is_any_ulc
 
     for amalgamating_business_json in amalgamating_businesses_json:
@@ -132,8 +134,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 if not _is_business_affliated(identifier, account_id):
                     msg.append(
                         {
-                            "error": f"{identifier} is not affiliated \
-                                with the currently selected BC Registries account.",
+                            "error": f"{identifier} is not affiliated with the currently selected BC Registries account.",  # noqa: E501
                             "path": amalgamating_businesses_path,
                         }
                     )

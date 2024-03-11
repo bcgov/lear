@@ -111,7 +111,7 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     LEGAL_API_BASE_URL = f"{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses"
     NAMEX_SVC_URL = f"{NAMEX_API_URL + NAMEX_API_VERSION}"
-    PAYMENT_SVC_URL = f"{PAY_API_URL + PAY_API_VERSION}/payment-request"
+    PAYMENT_SVC_URL = f"{PAY_API_URL + PAY_API_VERSION}/payment-requests"
     AUTH_SVC_URL = f"{AUTH_API_URL + AUTH_API_VERSION}"
     REPORT_SVC_URL = f"{REPORT_API_URL + REPORT_API_VERSION}/reports"
 

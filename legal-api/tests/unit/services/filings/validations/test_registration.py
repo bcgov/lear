@@ -197,9 +197,9 @@ def test_validate_tax_id(mocker, app, session, jwt, test_name, tax_id, expected)
         assert err is None
 
 
-def test_naics_invalid(monkeypatch, app, session, jwt):
+def test_naics_invalid(mocker, app, session, jwt):
     """Assert that naics is invalid."""
-
+    mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=False)  # Client
     filing = copy.deepcopy(SP_REGISTRATION)
 
     entity_type = filing["filing"]["registration"]["nameRequest"]["legalType"]

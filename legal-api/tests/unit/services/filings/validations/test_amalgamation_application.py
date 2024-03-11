@@ -788,8 +788,7 @@ def test_validate_amalgamation_office(
             HTTPStatus.BAD_REQUEST,
             [
                 {
-                    "error": "Series Share Series 1 share quantity must be less \
-                              than or equal to that of its class Share Class 1",
+                    "error": "Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1",  # noqa: E501
                     "path": "/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares",
                 }
             ],
@@ -1011,8 +1010,7 @@ def test_validate_amalgamation_office(
             HTTPStatus.BAD_REQUEST,
             [
                 {
-                    "error": "Series Share Series 1 share quantity must be less \
-                              than or equal to that of its class Share Class 1",
+                    "error": "Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1",  # noqa: E501
                     "path": "/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares",
                 }
             ],
@@ -1234,8 +1232,7 @@ def test_validate_amalgamation_office(
             HTTPStatus.BAD_REQUEST,
             [
                 {
-                    "error": "Series Share Series 1 share quantity must be less \
-                              than or equal to that of its class Share Class 1",
+                    "error": "Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1",  # noqa: E501
                     "path": "/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares",
                 }
             ],
@@ -1457,8 +1454,7 @@ def test_validate_amalgamation_office(
             HTTPStatus.BAD_REQUEST,
             [
                 {
-                    "error": "Series Share Series 1 share quantity must be less \
-                              than or equal to that of its class Share Class 1",
+                    "error": "Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1",  # noqa: E501
                     "path": "/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares",
                 }
             ],
@@ -1604,7 +1600,7 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
     def mock_find_by_identifier(identifier):
         return LegalEntity(
             identifier=identifier,
-            entity_type=LegalEntity.EntityTypes.BCOMP.value,
+            _entity_type=LegalEntity.EntityTypes.BCOMP.value,
             state=LegalEntity.State.ACTIVE if test_status == "SUCCESS" else LegalEntity.State.HISTORICAL,
         )
 
@@ -1620,6 +1616,7 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
         "legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier",
         return_value={"orgs": [{"id": account_id}]} if test_status == "SUCCESS" else {},
     )
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=True)  # Staff
 
@@ -1654,7 +1651,7 @@ def test_has_future_effective_filing(mocker, app, session, jwt, test_status, exp
     )
     mocker.patch(
         "legal_api.models.legal_entity.LegalEntity.find_by_identifier",
-        return_value=LegalEntity(identifier="BC1234567", entity_type=LegalEntity.EntityTypes.BCOMP.value),
+        return_value=LegalEntity(identifier="BC1234567", _entity_type=LegalEntity.EntityTypes.BCOMP.value),
     )
     mocker.patch(
         "legal_api.models.filing.Filing.get_filings_by_status", return_value=[Filing()] if test_status == "FAIL" else []
@@ -1694,7 +1691,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
     ]
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1753,7 +1750,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
         utc_now = datetime.datetime.now(datetime.timezone.utc)
         return LegalEntity(
             identifier=identifier,
-            entity_type=LegalEntity.EntityTypes.BCOMP.value,
+            _entity_type=LegalEntity.EntityTypes.BCOMP.value,
             state=LegalEntity.State.ACTIVE,
             founding_date=utc_now,
             restoration_expiry_date=utc_now if test_status == "FAIL" else None,
@@ -1809,7 +1806,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
         if test_status == "FAIL" and identifier == "BC7654321":
             return None
 
-        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1861,7 +1858,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
     filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1874,6 +1871,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     def mock_validate_roles(required_roles):
         if role in required_roles:
@@ -1899,8 +1897,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
             "FAIL",
             STAFF_ROLE,
             HTTPStatus.BAD_REQUEST,
-            "Foreign Co. foreign corporation must not amalgamate \
-                with a BC company to form a BC Unlimited Liability Company.",
+            "Foreign Co. foreign corporation must not amalgamate with a BC company to form a BC Unlimited Liability Company.",  # noqa: E501
         ),
         ("SUCCESS", STAFF_ROLE, None, None),
     ],
@@ -1923,7 +1920,7 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(
         filing["filing"]["amalgamationApplication"]["nameRequest"]["legalType"] = "ULC"
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1936,6 +1933,7 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     def mock_validate_roles(required_roles):
         if role in required_roles:
@@ -1984,7 +1982,7 @@ def test_amalgamating_foreign_business_with_ulc_company(
     def mock_find_by_identifier(identifier):
         return LegalEntity(
             identifier=identifier,
-            entity_type=LegalEntity.EntityTypes.BC_ULC_COMPANY.value
+            _entity_type=LegalEntity.EntityTypes.BC_ULC_COMPANY.value
             if test_status == "FAIL"
             else LegalEntity.EntityTypes.BCOMP.value,
         )
@@ -2000,6 +1998,7 @@ def test_amalgamating_foreign_business_with_ulc_company(
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     def mock_validate_roles(required_roles):
         if role in required_roles:
@@ -2046,7 +2045,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt, test_status, expected_
     def mock_find_by_identifier(identifier):
         return LegalEntity(
             identifier=identifier,
-            entity_type=LegalEntity.EntityTypes.BCOMP.value
+            _entity_type=LegalEntity.EntityTypes.BCOMP.value
             if test_status == "FAIL"
             else LegalEntity.EntityTypes.BC_CCC.value,
         )
@@ -2062,6 +2061,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt, test_status, expected_
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=True)  # Staff
 
@@ -2103,12 +2103,12 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
             "role": "amalgamating",
             "legalName": "Foreign Co.",
             "foreignJurisdiction": {"country": "CA", "region": "BC"},
-            "corpNumber": "A1234567" if test_status == "FAIL" else "7654321",
+            "identifier": "A1234567" if test_status == "FAIL" else "7654321",
         },
     ]
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BC_CCC.value)
+        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BC_CCC.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -2121,18 +2121,18 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
         "legal_api.services.filings.validations.amalgamation_application._is_business_affliated", return_value=True
     )
     mocker.patch("legal_api.models.legal_entity.LegalEntity.find_by_identifier", side_effect=mock_find_by_identifier)
+    mocker.patch("legal_api.models.legal_entity.LegalEntity.validate_identifier", return_value=True)
 
     mocker.patch("legal_api.utils.auth.jwt.validate_roles", return_value=True)  # Staff
 
     err = validate(None, filing, account_id)
 
     # validate outcomes
-    expected_msg = "An extra-Pro cannot amalgamate with anything \
-        to become a BC Unlimited Liability Company or a BC Community Contribution Company."
+    expected_msg = "An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company."  # noqa: E501
     if test_status == "SUCCESS_CC":
         assert not err
     elif test_status == "SUCCESS_ULC":
         assert not next((x for x in err.msg if x["error"] == expected_msg), None)
     else:
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert next((x for x in err.msg if x["error"] == expected_msg), None)
+        assert any(x["error"] == expected_msg for x in err.msg)

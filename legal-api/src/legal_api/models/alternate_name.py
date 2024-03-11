@@ -43,7 +43,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     class NameType(BaseEnum):
         """Enum for the name type."""
 
-        OPERATING = auto()
+        DBA = auto()
         TRANSLATION = auto()
 
     __tablename__ = "alternate_names"
@@ -106,8 +106,8 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     documents = db.relationship("Document", lazy="dynamic")
     offices = db.relationship("Office", lazy="dynamic", cascade="all, delete, delete-orphan")
 
-    delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
-    mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
+    owner_delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
+    owner_mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 
     @classmethod
     def find_by_identifier(cls, identifier: str) -> AlternateName | None:
@@ -136,6 +136,17 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             return None
         alternate_name = cls.query.filter_by(id=id).one_or_none()
         return alternate_name
+
+    @classmethod
+    def find_by_name_type(cls, legal_entity_id: int, name_type: str):
+        """Return the aliases matching the type."""
+        aliases = (
+            db.session.query(AlternateName)
+            .filter(AlternateName.legal_entity_id == legal_entity_id)
+            .filter(AlternateName.name_type == name_type)
+            .all()
+        )
+        return aliases
 
     @property
     def office_mailing_address(self):
@@ -188,7 +199,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
     @property
     def owner_data_json(self):
-        """Return if owner data."""
+        """Return if owner data for SP only."""
         json = {
             "deliveryAddress": None,
             "mailingAddress": None,
@@ -202,18 +213,28 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             ],
         }
 
-        if self.delivery_address:
-            member_address = self.delivery_address.json
+        delivery_address = None
+        mailing_address = None
+
+        if self.is_owned_by_legal_entity_person:
+            delivery_address = self.legal_entity.entity_delivery_address
+            mailing_address = self.legal_entity.entity_mailing_address
+        else:
+            delivery_address = self.owner_delivery_address
+            mailing_address = self.owner_mailing_address
+
+        if delivery_address:
+            member_address = delivery_address.json
             if "addressType" in member_address:
                 del member_address["addressType"]
             json["deliveryAddress"] = member_address
-        if self.mailing_address:
-            member_mailing_address = self.mailing_address.json
+        if mailing_address:
+            member_mailing_address = mailing_address.json
             if "addressType" in member_mailing_address:
                 del member_mailing_address["addressType"]
             json["mailingAddress"] = member_mailing_address
         else:
-            if self.delivery_address:
+            if delivery_address:
                 json["mailingAddress"] = json["deliveryAddress"]
 
         if self.is_owned_by_legal_entity_person:
@@ -275,14 +296,13 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
     def _slim_json(self):
         """Return a smaller/faster version of the business json."""
-        legal_name = self.legal_entity.legal_name if self.legal_entity else None
         d = {
             "adminFreeze": self.admin_freeze or False,
             "goodStanding": True,
             "identifier": self.identifier,
-            "legalName": legal_name,
+            "legalName": self.legal_name,
             "legalType": self.entity_type,
-            "state": self.state if self.state else BusinessCommon.State.ACTIVE.value,
+            "state": self.state.name if self.state else BusinessCommon.State.ACTIVE.name,
             "alternateNames": [
                 {
                     "identifier": self.identifier,
