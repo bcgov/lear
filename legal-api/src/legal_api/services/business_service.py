@@ -38,7 +38,7 @@ class BusinessService:
                 alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
             )
             return alternate_name_entity
-        
+
         if legal_entity := LegalEntity.find_by_identifier(identifier):
             return legal_entity
 

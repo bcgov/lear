@@ -348,7 +348,8 @@ def test_construct_task_list(
 
 
 @pytest.mark.parametrize(
-    "test_name, entity_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info, conversion_task_expected",
+    "test_name, entity_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
+    + " conversion_task_expected",
     [
         ("CONVERSION_TODO_EXISTS_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
         ("CONVERSION_TODO_EXISTS_MISSING_DATA", "GP", None, "FM0000002", None, True, True),

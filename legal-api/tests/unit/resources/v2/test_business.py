@@ -291,7 +291,8 @@ def test_get_business_with_allowed_filings(session, client, jwt):
 
 # TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info, missing_business_info_warning_expected",
+    "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
+    + "missing_business_info_warning_expected",
     [
         # ("WARNINGS_EXIST_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
         # ("WARNINGS_EXIST_MISSING_DATA", "GP", None, "FM0000002", None, True, True),
