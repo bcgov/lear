@@ -37,7 +37,10 @@ def check_business(business: any) -> list:
 def check_start_date(business: any) -> list:
     """Check for business start date."""
     result = []
-    if not business.start_date:
+
+    if (business.is_legal_entity and not business.start_date) or (
+        business.is_alternate_name_entity and not business.business_start_date
+    ):
         result.append(
             {
                 **WARNING_MESSAGE_BASE,
