@@ -326,8 +326,8 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         if self.state_filing_id:
             d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
-        if self.start_date:
-            d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)
+        if self.business_start_date:
+            d["startDate"] = LegislationDatetime.format_as_legislation_date(self.business_start_date)
 
         d["hasCorrections"] = Filing.has_completed_filing(self, "correction")
         d["hasCourtOrders"] = Filing.has_completed_filing(self, "courtOrder")
