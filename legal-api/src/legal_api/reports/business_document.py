@@ -330,12 +330,12 @@ class BusinessDocument:
         ):
             state_filings.append(self._format_state_filing(filing))
         # If it is amalgamating business
-        if legal_entity.get('business').get('amalgamatedInto'):
+        if legal_entity.get("business").get("amalgamatedInto"):
             amalgamating_business = self._legal_entity.amalgamating_businesses.one_or_none()
             amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
             filing = Filing.find_by_id(amalgamation.filing_id)
             state_filings.insert(0, self._format_state_filing(filing))
-        legal_entity['stateFilings'] = state_filings
+        legal_entity["stateFilings"] = state_filings
 
     def _set_record_keepers(self, legal_entity: dict):
         """Set the custodians of the business (parties with custodian role)."""
@@ -446,8 +446,9 @@ class BusinessDocument:
             filing_info["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
             filing_info["foreignLegalName"] = filing_meta["continuationOut"]["legalName"]
             continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
-                filing_meta['continuationOut']['continuationOutDate'])
-            filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
+                filing_meta["continuationOut"]["continuationOutDate"]
+            )
+            filing_info["continuationOutDate"] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
         else:
             filing_info["filingName"] = BusinessDocument._get_summary_display_name(filing.filing_type, None, None)
         return filing_info
@@ -455,16 +456,13 @@ class BusinessDocument:
     def _set_amalgamation_details(self, legal_entity: dict):
         """Set amalgamation filing data."""
         amalgamated_businesses = []
-        filings = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication'])
+        filings = Filing.get_filings_by_types(self._legal_entity.id, ["amalgamationApplication"])
         if filings:
             amalgamation_application = filings[0]
-            legal_entity['business']['amalgamatedEntity'] = True
+            legal_entity["business"]["amalgamatedEntity"] = True
             if self._epoch_filing_date and amalgamation_application.effective_date < self._epoch_filing_date:
                 # imported from COLIN
-                amalgamated_businesses_info = {
-                    'legalName': 'Not Available',
-                    'identifier': 'Not Available'
-                }
+                amalgamated_businesses_info = {"legalName": "Not Available", "identifier": "Not Available"}
                 amalgamated_businesses.append(amalgamated_businesses_info)
             else:
                 amalgamation = self._legal_entity.amalgamation.one_or_none()
@@ -474,24 +472,21 @@ class BusinessDocument:
                         identifier = ting_business.identifier
                         business_legal_name = ting_business.legal_name
                     else:
-                        identifier = amalgamating_business.foreign_corp_num or 'Not Available'
-                        business_legal_name = amalgamating_business.foreign_name or 'Not Available'
+                        identifier = amalgamating_business.foreign_corp_num or "Not Available"
+                        business_legal_name = amalgamating_business.foreign_name or "Not Available"
 
-                    amalgamated_businesses_info = {
-                        'legalName': business_legal_name,
-                        'identifier': identifier
-                    }
+                    amalgamated_businesses_info = {"legalName": business_legal_name, "identifier": identifier}
                     amalgamated_businesses.append(amalgamated_businesses_info)
-        legal_entity['amalgamatedEntities'] = amalgamated_businesses
+        legal_entity["amalgamatedEntities"] = amalgamated_businesses
 
     def _set_amalgamating_details(self, legal_entity: dict):
-        amalgamating_info = legal_entity.get('business', {}).get('amalgamatedInto')
+        amalgamating_info = legal_entity.get("business", {}).get("amalgamatedInto")
         if amalgamating_info:
-            legal_entity['business']['isAmalgamating'] = True
-            if legal_entity.get('amalgamatedEntities'):
+            legal_entity["business"]["isAmalgamating"] = True
+            if legal_entity.get("amalgamatedEntities"):
                 # Amalgamating business can contain amalgamatedEntities when it is created through an amalgamation
                 # (if a business was a TED and it is now a TING). No need to show amalgamating businesses information
-                legal_entity['amalgamatedEntities'] = []
+                legal_entity["amalgamatedEntities"] = []
 
     def _set_liquidation_details(self, legal_entity: dict):
         """Set partial liquidation filing data."""
@@ -549,7 +544,7 @@ class BusinessDocument:
         return corp_type.full_desc if corp_type else ""
 
     FILING_SUMMARY_DISPLAY_NAME = {
-        'amalgamationApplication': 'Amalgamation',
+        "amalgamationApplication": "Amalgamation",
         "dissolution": {
             "voluntary": {
                 "CP": "Voluntary Dissolution",

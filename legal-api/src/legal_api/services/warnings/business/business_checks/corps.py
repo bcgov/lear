@@ -17,6 +17,7 @@ from sqlalchemy.sql.expression import text  # noqa: I001
 from legal_api.models import LegalEntity, Filing, db
 from legal_api.services.warnings.business.business_checks import WarningType
 
+
 def check_business(legal_entity: LegalEntity) -> list:
     """Check for missing business data."""
     result = []
@@ -25,31 +26,37 @@ def check_business(legal_entity: LegalEntity) -> list:
 
     return result
 
+
 def check_amalgamating_business(legal_entity: LegalEntity) -> list:
     """Check if business is currently pending amalgamation."""
     result = []
 
     # Construct a JSON containment check clause for the SQL query
     where_clause = text(
-        "filing_json->'filing'->'amalgamationApplication'->'amalgamatingBusinesses'" +
-        f' @>\'[{{"identifier": "{legal_entity.identifier}"}}]\'')
+        "filing_json->'filing'->'amalgamationApplication'->'amalgamatingBusinesses'"
+        + f' @>\'[{{"identifier": "{legal_entity.identifier}"}}]\''
+    )
 
     # Query the database to find amalgamation filings
-    filing = db.session.query(Filing). \
-        filter( Filing._status == Filing.Status.PAID.value,
-                Filing._filing_type == 'amalgamationApplication',  # Check for the filing type
-                where_clause  # Apply the JSON containment check
-                ).one_or_none()
+    filing = (
+        db.session.query(Filing)
+        .filter(
+            Filing._status == Filing.Status.PAID.value,
+            Filing._filing_type == "amalgamationApplication",  # Check for the filing type
+            where_clause,  # Apply the JSON containment check
+        )
+        .one_or_none()
+    )
 
     # Check if a matching filing was found and if its effective date is greater than payment completion date
     if filing and filing.effective_date > filing.payment_completion_date:
-        result.append({
-            "code": "AMALGAMATING_BUSINESS",
-            "message": "This business is part of a future effective amalgamation.",
-            "warningType": WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
-            "data": {
-                "amalgamationDate": filing.effective_date
+        result.append(
+            {
+                "code": "AMALGAMATING_BUSINESS",
+                "message": "This business is part of a future effective amalgamation.",
+                "warningType": WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
+                "data": {"amalgamationDate": filing.effective_date},
             }
-        })
+        )
 
     return result
