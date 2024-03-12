@@ -32,7 +32,7 @@ def test_valid_alternate_name_save(session):
 
     alternate_name_1 = AlternateName(
         identifier=identifier,
-        name_type=AlternateName.NameType.OPERATING,
+        name_type=AlternateName.NameType.DBA,
         name="XYZ Test BC LTD",
         bn15="111111100BC1111",
         start_date=datetime.utcnow(),
@@ -42,7 +42,7 @@ def test_valid_alternate_name_save(session):
 
     alternate_name_2 = AlternateName(
         identifier=identifier,
-        name_type=AlternateName.NameType.OPERATING,
+        name_type=AlternateName.NameType.DBA,
         name="ABC Test BC LTD",
         bn15="222222200BC2222",
         start_date=datetime.utcnow(),
@@ -55,7 +55,7 @@ def test_valid_alternate_name_save(session):
     assert alternate_name_2.id
     alternate_names = legal_entity.alternate_names.all()
     assert len(alternate_names) == 2
-    assert all(alternate_name.name_type == AlternateName.NameType.OPERATING for alternate_name in alternate_names)
+    assert all(alternate_name.name_type == AlternateName.NameType.DBA for alternate_name in alternate_names)
     assert any(alternate_name.name == "XYZ Test BC LTD" for alternate_name in alternate_names)
     assert any(alternate_name.name == "ABC Test BC LTD" for alternate_name in alternate_names)
 
@@ -76,7 +76,7 @@ def test_business_name(session, entity_type, operating_name, expected_business_n
         alternate_name = factory_alternate_name(
             identifier=identifier,
             name=operating_name,
-            name_type=AlternateName.NameType.OPERATING,
+            name_type=AlternateName.NameType.DBA,
             bn15="111111100BC1111",
             start_date=datetime.utcnow(),
             legal_entity_id=legal_entity.id,
