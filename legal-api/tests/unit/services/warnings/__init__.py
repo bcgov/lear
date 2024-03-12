@@ -3,7 +3,8 @@ from typing import Final
 
 from datedelta import datedelta
 
-from legal_api.models import Address, AlternateName, ColinEntity, EntityRole, Filing, LegalEntity, Office
+from legal_api.models import Address, ColinEntity, EntityRole, Filing, LegalEntity, Office
+from legal_api.models.alternate_name import AlternateName
 from tests.unit.models import factory_alternate_name
 
 TEST_BUSINESS_NAME: Final = "test business name"
