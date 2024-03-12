@@ -18,17 +18,19 @@ from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.models import LegalEntity
 from .corps import check_business as corps_check
 
+
 def check_business(business: any) -> list:
     """Check business for warnings."""
     result = []
 
     if business.is_firm:
         result = firms_check(business)
-    elif business.legal_type in \
-          (LegalEntity.EntityTypes.BC_CCC,
-           LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
-           LegalEntity.EntityTypes.COMP.value,
-           LegalEntity.EntityTypes.BCOMP.value):
+    elif business.legal_type in (
+        LegalEntity.EntityTypes.BC_CCC,
+        LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+        LegalEntity.EntityTypes.COMP.value,
+        LegalEntity.EntityTypes.BCOMP.value,
+    ):
         result = corps_check(business)
 
     return result
