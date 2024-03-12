@@ -51,7 +51,6 @@ def check_start_date(business: any) -> list:
 def check_office(business: any) -> list:
     """Check for missing office data."""
     result = []
-    business_office = None
 
     business_office = business.offices.filter(Office.office_type == "businessOffice").one_or_none()
 

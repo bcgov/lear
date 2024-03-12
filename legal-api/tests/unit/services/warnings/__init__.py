@@ -3,10 +3,8 @@ from typing import Final
 
 from datedelta import datedelta
 
-from legal_api.models import Address, ColinEntity, EntityRole, Filing, LegalEntity, Office
-from legal_api.models.alternate_name import AlternateName
-
-from tests.unit.models import factory_party_role
+from legal_api.models import Address, AlternateName, ColinEntity, EntityRole, Filing, LegalEntity, Office
+from tests.unit.models import factory_alternate_name
 
 TEST_BUSINESS_NAME: Final = "test business name"
 
@@ -259,17 +257,18 @@ def create_alternate_name_business(
 ):
     legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
 
-    alternate_name=factory_alternate_name(
+    alternate_name = factory_alternate_name(
         identifier=identifier,
         name="SP TESTING1212",
-        name_type=AlternateName.NameType.OPERATING,
+        name_type=AlternateName.NameType.DBA,
         bn15="111111100BC1111",
         start_date=datetime.utcnow(),
         legal_entity_id=legal_entity.id,
     )
 
-    alternate_name.legal_entity=legal_entity
+    alternate_name.legal_entity = legal_entity
     alternate_name.save()
+    legal_entity.alternate_names.append(alternate_name)
 
     if start_date:
         legal_entity.start_date = start_date
@@ -285,7 +284,7 @@ def create_alternate_name_business(
             delivery_addr = factory_address("delivery")
             business_office.addresses.append(delivery_addr)
 
-        business_office.alternate_name_id=alternate_name.id
+        business_office.alternate_name_id = alternate_name.id
         legal_entity.offices.append(business_office)
 
     if firm_num_persons_roles > 0 or firm_num_org_roles > 0:
@@ -296,7 +295,7 @@ def create_alternate_name_business(
             firm_num_org_roles,
             person_cessation_dates,
             org_cessation_dates,
-            alternate_name.legal_entity
+            legal_entity,
         )
         if create_firm_party_address:
             for entity_role in firm_entity_roles:
@@ -323,7 +322,6 @@ def create_alternate_name_business(
                     completing_party_role.related_colin_entity.mailing_address_id = mailing_addr.id
             filing.filing_entity_roles.append(completing_party_role)
         legal_entity.filings.append(filing)
-
     return alternate_name
 
 
@@ -334,63 +332,3 @@ def get_firm_entity_role(entity_type: str):
         return "partner"
     else:
         return None
-
-
-def create_filing(filing_type: str, add_completing_party=False):
-    filing = factory_filing(filing_type=filing_type)
-    if add_completing_party:
-        party_role = factory_filing_role_person(filing.id, "completing_party")
-        filing.filing_entity_roles.append(party_role)
-
-    filing.save()
-    return filing
-
-
-def factory_alternate_name(
-    identifier=None,
-    name=None,
-    name_type=AlternateName.NameType.OPERATING,
-    bn15=None,
-    legal_entity_id=None,
-    start_date=None,
-    end_date=None,
-    state=LegalEntity.State.ACTIVE,
-    naics_code=None,
-    naics_desc=None,
-    admin_freeze=False,
-    change_filing_id=None,
-):
-    """Create a alternate name."""
-
-    alternate_name = AlternateName(
-        identifier=identifier,
-        name=name,
-        name_type=name_type,
-        bn15=bn15,
-        legal_entity_id=legal_entity_id,
-        start_date=start_date,
-        end_date=end_date,
-        state=state,
-        naics_code=naics_code,
-        naics_description=naics_desc,
-        admin_freeze=admin_freeze,
-        change_filing_id=change_filing_id,
-    )
-
-    alternate_name.save()
-    return alternate_name
-
-
-def create_party_role(
-    role_type=EntityRole.RoleTypes.completing_party, first_name=None, last_name=None, middle_initial=None
-):
-    completing_party_address = Address(city="Test Mailing City", address_type=Address.DELIVERY)
-    officer = {
-        "firstName": first_name or "TEST",
-        "middleInitial": middle_initial or "TU",
-        "lastName": last_name or "USER",
-        "partyType": "person",
-        "organizationName": "",
-    }
-    party_role = factory_party_role(completing_party_address, None, officer, datetime.utcnow(), None, role_type)
-    return party_role

@@ -22,25 +22,23 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import datedelta
-from legal_api.models.alternate_name import AlternateName
-from legal_api.models.office import OfficeType
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, INCORPORATION_FILING_TEMPLATE
 
-from legal_api.models import Address, EntityRole, Filing, LegalEntity, RegistrationBootstrap
+from legal_api.models import Address, AlternateName, EntityRole, Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit import nested_session
 from tests.unit.models import (
+    factory_address,
     factory_alternate_name,
     factory_filing,
     factory_legal_entity,
     factory_legal_entity_mailing_address,
     factory_offices,
-    factory_pending_filing,
-    factory_legal_entity,
     factory_party_role,
+    factory_pending_filing,
 )
 from tests.unit.services.utils import create_header
 from tests.unit.services.warnings import create_alternate_name_business, create_business
@@ -333,7 +331,7 @@ def test_construct_task_list(
                 alternate_name = factory_alternate_name(
                     identifier=identifier,
                     name="SP TESTING1212",
-                    name_type=AlternateName.NameType.OPERATING,
+                    name_type=AlternateName.NameType.DBA,
                     bn15="111111100BC1111",
                     start_date=founding_date,
                     legal_entity_id=legal_entity.id,
@@ -350,43 +348,53 @@ def test_construct_task_list(
 
 
 @pytest.mark.parametrize(
-    "test_name, entity_type, identifier, has_missing_business_info, conversion_task_expected",
+    "test_name, entity_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info, conversion_task_expected",
     [
-        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "SP", "FM0000001", True, True),
-        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "GP", "FM0000002", True, True),
-        ("NO_CONVERSION_TODO_NO_MISSING_DATA", "SP", "FM0000003", False, False),
-        ("NO_CONVERSION_TODO_NO_MISSING_DATA", "GP", "FM0000004", False, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "CP", "CP7654321", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "BEN", "CP7654322", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "BC", "BC7654323", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "ULC", "BC7654324", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "CC", "BC7654325", True, False),
+        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
+        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "GP", None, "FM0000002", None, True, True),
+        ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "BEN", "FM0000003", "FM0000003", False, False),
+        ("NO_CONVERSION_TODO_NO_MISSING_DATA", "GP", None, "FM0000004", None, False, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "CP", None, "CP7654321", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "BEN", None, "CP7654322", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "BC", None, "BC7654323", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "ULC", None, "BC7654324", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "CC", None, "BC7654325", None, True, False),
     ],
 )
 def test_conversion_filing_task(
-    session, client, jwt, test_name, entity_type, identifier, has_missing_business_info, conversion_task_expected
+    session,
+    client,
+    jwt,
+    test_name,
+    entity_type,
+    owner_legal_type,
+    identifier,
+    owner_identifier,
+    has_missing_business_info,
+    conversion_task_expected,
 ):
     """Assert conversion todo shows up for only SP/GPs with missing business info."""
     with nested_session(session):
         if has_missing_business_info:
-            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+            if owner_legal_type:
+                legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+            else:
                 legal_entity = factory_legal_entity(entity_type=entity_type, identifier=identifier)
+            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
                 alternate_name = factory_alternate_name(
                     identifier=identifier,
                     name="SP TESTING1212",
-                    name_type=AlternateName.NameType.OPERATING,
+                    name_type=AlternateName.NameType.DBA,
                     bn15="111111100BC1111",
                     start_date=datetime.utcnow(),
                     legal_entity_id=legal_entity.id,
                 )
                 alternate_name.save()
                 legal_entity.alternate_names.append(alternate_name)
-            else:
-                factory_legal_entity(entity_type=entity_type, identifier=identifier)
-
         else:
             if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
-                create_alternate_name_business(
+                legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+                alternate_name = create_alternate_name_business(
                     entity_type=entity_type,
                     identifier=identifier,
                     create_office=True,
@@ -398,6 +406,10 @@ def test_conversion_filing_task(
                     filing_has_completing_party=[True],
                     create_completing_party_address=[True],
                 )
+                mailing_address_alt = factory_address("mailing")
+                alternate_name.owner_mailing_address = mailing_address_alt
+                alternate_name.save()
+                legal_entity.alternate_names.append(alternate_name)
             else:
                 create_business(
                     entity_type=entity_type,

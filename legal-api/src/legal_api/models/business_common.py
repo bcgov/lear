@@ -201,8 +201,8 @@ class BusinessCommon:
         from . import ColinEntity, LegalEntity
 
         if self.entity_type == self.EntityTypes.SOLE_PROP:
-            if self.id:
-                owner = LegalEntity.find_by_id(self.id)
+            if self.legal_entity_id:
+                owner = LegalEntity.find_by_id(self.legal_entity_id)
                 return owner._legal_name if owner else None
             else:
                 owner = ColinEntity.find_by_id(self.colin_entity_id)
