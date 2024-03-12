@@ -47,6 +47,7 @@ class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-at
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
     filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), nullable=False)
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), nullable=False)
 
     # Relationships
     amalgamating_businesses = db.relationship("AmalgamatingBusiness", lazy="dynamic")

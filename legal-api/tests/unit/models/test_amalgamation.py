@@ -48,6 +48,7 @@ def test_valid_amalgamation_save(session):
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
         court_approval=True,
+        change_filing_id=filing.id,
     )
 
     amalgamation_1.save()
@@ -58,6 +59,7 @@ def test_valid_amalgamation_save(session):
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
         court_approval=True,
+        change_filing_id=filing.id,
     )
 
     amalgamation_2.save()
@@ -68,6 +70,7 @@ def test_valid_amalgamation_save(session):
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
         court_approval=True,
+        change_filing_id=filing.id,
     )
 
     amalgamation_3.save()

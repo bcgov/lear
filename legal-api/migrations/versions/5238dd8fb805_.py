@@ -41,7 +41,9 @@ def upgrade():
         sa.Column('amalgamation_date', sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column('court_approval', sa.Boolean(), nullable=False),
         sa.Column('version', sa.Integer(), nullable=False),
+        sa.Column('change_filing_id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
+        sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id']),
         sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
         sa.PrimaryKeyConstraint('id'),
         sqlite_autoincrement=True,
@@ -83,7 +85,9 @@ def upgrade():
         sa.Column('court_approval', sa.Boolean(), nullable=False),
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('changed', sa.DateTime(), nullable=True),
+        sa.Column('change_filing_id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
+        sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id']),
         sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
         sa.PrimaryKeyConstraint('id', 'version'),
         sqlite_autoincrement=True,
@@ -106,11 +110,11 @@ def upgrade():
         sa.Column('foreign_jurisdiction_region', sa.String(length=10), nullable=True),
         sa.Column('foreign_name', sa.String(length=100), nullable=True),
         sa.Column('foreign_identifier', sa.String(length=50), nullable=True),
-        sa.Column('filing_id', sa.Integer(), nullable=False),
+        sa.Column('change_filing_id', sa.Integer(), nullable=False),
         sa.Column('version', sa.Integer(), nullable=False),
         sa.Column('changed', sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(['legal_entity_id'], ['legal_entities.id']),
-        sa.ForeignKeyConstraint(['filing_id'], ['filings.id']),
+        sa.ForeignKeyConstraint(['change_filing_id'], ['filings.id']),
         sa.PrimaryKeyConstraint('id', 'version')
     )
     
@@ -120,7 +124,7 @@ def upgrade():
     with op.batch_alter_table('amalgamating_businesses_history', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_amalgamating_businesses_history_legal_entity_id'), ['legal_entity_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_amalgamating_businesses_history_amalgamation_id'), ['amalgamation_id'], unique=False)
-        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_history_filing_id'), ['filing_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_amalgamating_businesses_history_change_filing_id'), ['change_filing_id'], unique=False)
 
 def downgrade():
     op.drop_table('amalgamating_businesses')

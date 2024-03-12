@@ -47,6 +47,7 @@ def test_valid_amalgamating_business_save(session):
         filing_id=filing.id,
         amalgamation_date=datetime.utcnow(),
         court_approval=True,
+        change_filing_id=filing.id,
     )
 
     amalgamation.save()
