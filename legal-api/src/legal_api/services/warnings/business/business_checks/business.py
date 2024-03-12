@@ -31,16 +31,4 @@ def check_business(business: any) -> list:
            LegalEntity.EntityTypes.BCOMP.value):
         result = corps_check(business)
 
-    ting_info = LegalEntity.check_if_ting(business.identifier)
-    if ting_info:
-        result = [  
-                    {
-                        "code": "AMALGAMATING_BUSINESS", 
-                        "message": "This business is part of a future effective amalgamation.", 
-                        "warningType": WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
-                        "data": {
-                            "amalgamationDate": ting_info 
-                        }
-                    }
-                 ]
     return result

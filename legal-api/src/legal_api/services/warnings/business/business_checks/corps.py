@@ -14,25 +14,25 @@
 
 from sqlalchemy.sql.expression import text  # noqa: I001
 
-from legal_api.models import Business, Filing, db
+from legal_api.models import LegalEntity, Filing, db
 from legal_api.services.warnings.business.business_checks import WarningType
 
-def check_business(business: Business) -> list:
+def check_business(legal_entity: LegalEntity) -> list:
     """Check for missing business data."""
     result = []
 
-    result.extend(check_amalgamating_business(business))
+    result.extend(check_amalgamating_business(legal_entity))
 
     return result
 
-def check_amalgamating_business(business: Business) -> list:
+def check_amalgamating_business(legal_entity: LegalEntity) -> list:
     """Check if business is currently pending amalgamation."""
     result = []
 
     # Construct a JSON containment check clause for the SQL query
     where_clause = text(
         "filing_json->'filing'->'amalgamationApplication'->'amalgamatingBusinesses'" +
-        f' @>\'[{{"identifier": "{business.identifier}"}}]\'')
+        f' @>\'[{{"identifier": "{legal_entity.identifier}"}}]\'')
 
     # Query the database to find amalgamation filings
     filing = db.session.query(Filing). \
