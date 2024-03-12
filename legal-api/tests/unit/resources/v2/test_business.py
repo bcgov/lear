@@ -294,13 +294,13 @@ def test_get_business_with_allowed_filings(session, client, jwt):
     "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
     + "missing_business_info_warning_expected",
     [
-        # ("WARNINGS_EXIST_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
-        # ("WARNINGS_EXIST_MISSING_DATA", "GP", None, "FM0000002", None, True, True),
+        ("WARNINGS_EXIST_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
+        ("WARNINGS_EXIST_MISSING_DATA", "GP", None, "FM0000002", None, True, True),
         ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "BEN", "FM0000003", "BC0000003", False, False),
-        # ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "GP", None, "FM0000004", None, False, False),
-        # ("NO_WARNINGS_NON_FIRM", "CP", None, "CP7654321", None, True, False),
-        # ("NO_WARNINGS_NON_FIRM", "BEN", None, "CP7654322", None, True, False),
-        # ("NO_WARNINGS_NON_FIRM", "BC", None, "BC7654323", None, True, False),
+        ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "GP", None, "FM0000004", None, False, False),
+        ("NO_WARNINGS_NON_FIRM", "CP", None, "CP7654321", None, True, False),
+        ("NO_WARNINGS_NON_FIRM", "BEN", None, "CP7654322", None, True, False),
+        ("NO_WARNINGS_NON_FIRM", "BC", None, "BC7654323", None, True, False),
     ],
 )
 def test_get_business_with_incomplete_info(
