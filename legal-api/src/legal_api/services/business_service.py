@@ -28,6 +28,8 @@ class BusinessService:
         """
         if identifier.startswith("T"):
             return None
+        if legal_entity := LegalEntity.find_by_identifier(identifier):
+            return legal_entity
 
         if identifier.startswith("FM") and (alternate_name := AlternateName.find_by_identifier(identifier)):
             if alternate_name.is_owned_by_colin_entity:
@@ -38,9 +40,6 @@ class BusinessService:
                 alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
             )
             return alternate_name_entity
-
-        if legal_entity := LegalEntity.find_by_identifier(identifier):
-            return legal_entity
 
         return None
 
