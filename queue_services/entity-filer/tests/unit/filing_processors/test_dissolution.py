@@ -228,7 +228,7 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
     ('administrative'),
     ('voluntary'),
 ])
-async def test_amalgamation_administrative_dissolution(app, session, dissolution_type):
+async def test_amalgamation_administrative_dissolution(app, session, mocker, dissolution_type):
     """Assert that the dissolution is processed."""
     from tests.unit.test_worker.test_amalgamation_application import test_regular_amalgamation_application_process
     identifier = await test_regular_amalgamation_application_process(app, session)
@@ -248,6 +248,13 @@ async def test_amalgamation_administrative_dissolution(app, session, dissolution
 
     # test
     filing_msg = {'filing': {'id': filing.id}}
+
+    
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
     await process_filing(filing_msg, app)
 
     # validate

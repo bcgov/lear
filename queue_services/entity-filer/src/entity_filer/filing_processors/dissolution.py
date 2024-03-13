@@ -18,7 +18,7 @@ from typing import Dict
 import dpath
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import db, Business, Document, Filing
+from legal_api.models import Business, Document, Filing, db
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.minio import MinioService
