@@ -126,7 +126,7 @@ def test_ledger_search(session, client, jwt):
             identifier=identifier,
             founding_date=founding_date,
             last_ar_date=None,
-            entity_type=LegalEntity.EntityTypes.BCOMP.value,
+            _entity_type=LegalEntity.EntityTypes.BCOMP.value,
         )
         num_of_files = load_ledger(legal_entity, founding_date)
 
@@ -171,7 +171,7 @@ def ledger_element_setup_help(identifier: str, filing_name: str = "brokenFiling"
         identifier=identifier,
         founding_date=founding_date,
         last_ar_date=None,
-        entity_type=LegalEntity.EntityTypes.BCOMP.value,
+        _entity_type=LegalEntity.EntityTypes.BCOMP.value,
     )
     return legal_entity, ledger_element_setup_filing(
         legal_entity, filing_name, filing_date=founding_date + datedelta.datedelta(months=1)
@@ -207,31 +207,32 @@ def test_ledger_comment_count(session, client, jwt):
         assert rv.json["filings"][0]["commentsCount"] == number_of_comments
 
 
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name, file_number, order_date, effect_of_order, order_details, expected",
+    "test_name, identifier, file_number, order_date, effect_of_order, order_details, expected",
     [
         (
             "all_elements",
+            "BC1234561",
             "ABC123",
             datetime.utcnow(),
             "effect",
             "details",
             ["effectOfOrder", "fileNumber", "orderDate", "orderDetails"],
         ),
-        ("no_elements", None, None, None, None, []),
-        ("no-file-number-or-details", None, datetime.utcnow(), None, None, []),
-        ("date", "ABC123", datetime.utcnow(), None, None, ["fileNumber", "orderDate"]),
-        ("effect", "ABC123", None, "effect", None, ["effectOfOrder", "fileNumber"]),
-        ("details", "ABC123", None, None, "details", ["fileNumber", "orderDetails"]),
+        ("no_elements", "BC1234562", None, None, None, None, []),
+        ("no-file-number-or-details", "BC1234563", None, datetime.utcnow(), None, None, []),
+        ("date", "BC1234564", "ABC123", datetime.utcnow(), None, None, ["fileNumber", "orderDate"]),
+        ("effect", "BC1234565", "ABC123", None, "effect", None, ["effectOfOrder", "fileNumber"]),
+        ("details", "BC1234566", "ABC123", None, None, "details", ["fileNumber", "orderDetails"]),
     ],
 )
 def test_ledger_court_order(
-    session, client, jwt, test_name, file_number, order_date, effect_of_order, order_details, expected
+    session, client, jwt, test_name, identifier, file_number, order_date, effect_of_order, order_details, expected
 ):
     """Assert that the ledger returns court_order values."""
     with nested_session(session):
         # setup
-        identifier = "BC1234567"
         _, filing_storage = ledger_element_setup_help(identifier)
 
         filing_storage.court_order_file_number = file_number
@@ -336,26 +337,25 @@ def test_ledger_display_alteration_report(session, client, jwt):
 
 
 @pytest.mark.parametrize(
-    "restoration_type,expected_display_name",
+    "restoration_type,expected_display_name,identifier",
     [
-        ("fullRestoration", "Full Restoration Application"),
-        ("limitedRestoration", "Limited Restoration Application"),
-        ("limitedRestorationExtension", "Limited Restoration Extension Application"),
-        ("limitedRestorationToFull", "Conversion to Full Restoration Application"),
+        ("fullRestoration", "Full Restoration Application", "BC1234561"),
+        ("limitedRestoration", "Limited Restoration Application", "BC1234562"),
+        ("limitedRestorationExtension", "Limited Restoration Extension Application", "BC1234563"),
+        ("limitedRestorationToFull", "Conversion to Full Restoration Application", "BC1234564"),
     ],
 )
-def test_ledger_display_restoration(session, client, jwt, restoration_type, expected_display_name):
+def test_ledger_display_restoration(session, client, jwt, restoration_type, expected_display_name, identifier):
     """Assert that the ledger returns the correct names of the four restoration types."""
     with nested_session(session):
         # setup
-        identifier = "BC1234567"
         founding_date = datetime.utcnow()
         filing_date = founding_date
         filing_name = "restoration"
         business_name = "Skinners Fine Saves"
 
         legal_entity = factory_legal_entity(
-            identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type="BC"
+            identifier=identifier, founding_date=founding_date, last_ar_date=None, _entity_type="BC"
         )
         legal_entity._legal_name = business_name
         legal_entity.save()
@@ -380,24 +380,29 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
 
 
 @pytest.mark.parametrize(
-    "test_name,entity_type,expected_display_name",
+    "test_name,identifier,entity_type,expected_display_name",
     [
-        ("CP", LegalEntity.EntityTypes.COOP.value, "Incorporation Application"),
-        ("BEN", LegalEntity.EntityTypes.BCOMP.value, "BC Benefit Company Incorporation Application"),
+        ("CP", "BC1234561", LegalEntity.EntityTypes.COOP.value, "Incorporation Application"),
+        ("BEN", "BC1234562", LegalEntity.EntityTypes.BCOMP.value, "BC Benefit Company Incorporation Application"),
         (
             "ULC",
+            "BC1234563",
             LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
             "BC Unlimited Liability Company Incorporation Application",
         ),
-        ("CC", LegalEntity.EntityTypes.BC_CCC.value, "BC Community Contribution Company Incorporation Application"),
-        ("BC", LegalEntity.EntityTypes.COMP.value, "BC Limited Company Incorporation Application"),
+        (
+            "CC",
+            "BC1234564",
+            LegalEntity.EntityTypes.BC_CCC.value,
+            "BC Community Contribution Company Incorporation Application",
+        ),
+        ("BC", "BC1234565", LegalEntity.EntityTypes.COMP.value, "BC Limited Company Incorporation Application"),
     ],
 )
-def test_ledger_display_incorporation(session, client, jwt, test_name, entity_type, expected_display_name):
+def test_ledger_display_incorporation(session, client, jwt, test_name, identifier, entity_type, expected_display_name):
     """Assert that the ledger returns the correct number of comments."""
     with nested_session(session):
         # setup
-        identifier = "BC1234567"
         nr_number = "NR000001"
         founding_date = datetime.utcnow()
         filing_date = founding_date
@@ -405,7 +410,7 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
         business_name = "The Truffle House"
 
         legal_entity = factory_legal_entity(
-            identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type
+            identifier=identifier, founding_date=founding_date, last_ar_date=None, _entity_type=entity_type
         )
         legal_entity._legal_name = business_name
         legal_entity.save()
@@ -507,10 +512,11 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
 
 
 @pytest.mark.parametrize(
-    "test_name, submitter_role, jwt_role, username, firstname, lastname, expected",
+    "test_name, identifier, submitter_role, jwt_role, username, firstname, lastname, expected",
     [
         (
             "staff-staff",
+            "BC1234561",
             UserRoles.staff,
             UserRoles.staff,
             "idir/staff-user",
@@ -518,11 +524,39 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             "lastname",
             "firstname lastname",
         ),
-        ("system-staff", UserRoles.system, UserRoles.staff, "system", "firstname", "lastname", "firstname lastname"),
-        ("unknown-staff", None, UserRoles.staff, "some-user", "firstname", "lastname", "firstname lastname"),
-        ("system-public", UserRoles.system, UserRoles.public_user, "system", "firstname", "lastname", "Registry Staff"),
+        (
+            "system-staff",
+            "BC1234562",
+            UserRoles.system,
+            UserRoles.staff,
+            "system",
+            "firstname",
+            "lastname",
+            "firstname lastname",
+        ),
+        (
+            "unknown-staff",
+            "BC1234563",
+            None,
+            UserRoles.staff,
+            "some-user",
+            "firstname",
+            "lastname",
+            "firstname lastname",
+        ),
+        (
+            "system-public",
+            "BC1234564",
+            UserRoles.system,
+            UserRoles.public_user,
+            "system",
+            "firstname",
+            "lastname",
+            "Registry Staff",
+        ),
         (
             "staff-public",
+            "BC1234565",
             UserRoles.staff,
             UserRoles.public_user,
             "idir/staff-user",
@@ -532,6 +566,7 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
         ),
         (
             "public-staff",
+            "BC1234566",
             UserRoles.public_user,
             UserRoles.staff,
             "bcsc/public_user",
@@ -541,6 +576,7 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
         ),
         (
             "public-public",
+            "BC1234567",
             UserRoles.public_user,
             UserRoles.public_user,
             "bcsc/public_user",
@@ -548,25 +584,33 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
             "lastname",
             "firstname lastname",
         ),
-        ("unknown-public", None, UserRoles.public_user, "some-user", "firstname", "lastname", "firstname lastname"),
-        ("unknown-public", None, UserRoles.public_user, "some-user", "", "", "some-user"),
+        (
+            "unknown-public",
+            "BC1234568",
+            None,
+            UserRoles.public_user,
+            "some-user",
+            "firstname",
+            "lastname",
+            "firstname lastname",
+        ),
+        ("unknown-public", "BC1234569", None, UserRoles.public_user, "some-user", "", "", "some-user"),
     ],
 )
 def test_ledger_redaction(
-    session, client, jwt, test_name, submitter_role, jwt_role, username, firstname, lastname, expected
+    session, client, jwt, test_name, identifier, submitter_role, jwt_role, username, firstname, lastname, expected
 ):
     """Assert that the core filing is saved to the backing store."""
     with nested_session(session):
         from legal_api.core.filing import Filing as CoreFiling
 
         try:
-            identifier = "BC1234567"
             founding_date = datetime.utcnow()
             business_name = "The Truffle House"
             entity_type = LegalEntity.EntityTypes.BCOMP.value
 
             legal_entity = factory_legal_entity(
-                identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type
+                identifier=identifier, founding_date=founding_date, last_ar_date=None, _entity_type=entity_type
             )
             legal_entity._legal_name = business_name
             legal_entity.save()

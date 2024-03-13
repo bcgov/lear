@@ -15,6 +15,8 @@
 from contextlib import contextmanager
 from datetime import datetime
 
+from sqlalchemy import exc
+
 
 class MockResponse:
     """Mock http response."""
@@ -38,12 +40,17 @@ def has_expected_date_str_format(date_str: str, format: str) -> bool:
 
 
 @contextmanager
-def nested_session(session, exception=Exception):
+def nested_session(session):
     try:
         sess = session.begin_nested()
         yield sess
         sess.rollback()
-    except exception:
+    except AssertionError as err:
+        raise err
+    except exc.ResourceClosedError:
+        # mean the close out of the transaction got fouled in pytest
         pass
+    except Exception as err:
+        raise err
     finally:
         pass

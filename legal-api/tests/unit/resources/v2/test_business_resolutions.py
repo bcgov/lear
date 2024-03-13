@@ -28,23 +28,23 @@ from tests.unit.models import factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name,role",
+    "test_name,role,identifier",
     [
-        ("public-user", PUBLIC_USER),
-        ("account-identity", ACCOUNT_IDENTITY),
-        ("staff", STAFF_ROLE),
-        ("system", SYSTEM_ROLE),
+        ("public-user", PUBLIC_USER, "CP1234561"),
+        ("account-identity", ACCOUNT_IDENTITY, "CP1234562"),
+        ("staff", STAFF_ROLE, "CP1234563"),
+        ("system", SYSTEM_ROLE, "CP1234564"),
     ],
 )
-def test_get_business_resolutions(app, session, client, jwt, requests_mock, test_name, role):
+def test_get_business_resolutions(app, session, client, jwt, requests_mock, test_name, role, identifier):
     """Assert that business resolutions are returned."""
     with nested_session(session):
-        identifier = "CP1234567"
         resolution_text = "bla bla"
         legal_entity = factory_legal_entity(identifier)
         signing_party = LegalEntity(
-            entity_type=LegalEntity.EntityTypes.PERSON.value, first_name="signing", last_name="party"
+            _entity_type=LegalEntity.EntityTypes.PERSON.value, first_name="signing", last_name="party"
         )
         resolution = Resolution(
             resolution_date=FROZEN_DATETIME,

@@ -18,6 +18,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 import registry_schemas
@@ -30,14 +31,20 @@ from registry_schemas.example_data import (
     INCORPORATION,
 )
 
-from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
+from legal_api.models import AlternateName, Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit import nested_session
-from tests.unit.models import factory_completed_filing, factory_legal_entity, factory_pending_filing
+from tests.unit.models import (
+    factory_address,
+    factory_alternate_name,
+    factory_completed_filing,
+    factory_legal_entity,
+    factory_pending_filing,
+)
 from tests.unit.services.utils import create_header
-from tests.unit.services.warnings import create_business
+from tests.unit.services.warnings import create_alternate_name_business, create_business
 
 
 def factory_legal_entity_model(
@@ -65,7 +72,7 @@ def factory_legal_entity_model(
         tax_id=tax_id,
     )
     if entity_type:
-        b.entity_type = entity_type
+        b._entity_type = entity_type
     b.save()
     return b
 
@@ -145,21 +152,22 @@ def test_get_temp_business_info(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
 
 
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name,role,calls_auth",
+    "test_name, role, calls_auth, identifier",
     [
-        ("public-user", PUBLIC_USER, True),
-        ("account-identity", ACCOUNT_IDENTITY, False),
-        ("staff", STAFF_ROLE, False),
-        ("system", SYSTEM_ROLE, False),
+        ("public-user", PUBLIC_USER, True, "CP7654321"),
+        ("account-identity", ACCOUNT_IDENTITY, False, "CP7654322"),
+        ("staff", STAFF_ROLE, False, "CP7654323"),
+        ("system", SYSTEM_ROLE, False, "CP7654324"),
     ],
 )
-def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth):
+def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth, identifier):
     """Assert that the business info can be received in a valid JSONSchema format."""
     with nested_session(session):
-        identifier = "CP7654321"
         legal_name = identifier + " legal name"
         factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -195,6 +203,7 @@ def test_get_business_with_correction_filings(session, client, jwt):
         identifier = "CP7654321"
         legal_name = identifier + " legal name"
         legal_entity = factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -226,6 +235,7 @@ def test_get_business_info_dissolution(session, client, jwt):
         identifier = "CP1234567"
         legal_name = identifier + " legal name"
         factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -247,6 +257,7 @@ def test_get_business_info_missing_business(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     with nested_session(session):
         factory_legal_entity_model(
+            entity_type="CP",
             legal_name="legal_name",
             identifier="CP7654321",
             founding_date=datetime.utcfromtimestamp(0),
@@ -278,16 +289,18 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         assert rv.json["business"]["allowedFilings"]
 
 
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name, legal_type, identifier, has_missing_business_info, missing_business_info_warning_expected",
+    "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
+    + "missing_business_info_warning_expected",
     [
-        ("WARNINGS_EXIST_MISSING_DATA", "SP", "FM0000001", True, True),
-        ("WARNINGS_EXIST_MISSING_DATA", "GP", "FM0000002", True, True),
-        ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "FM0000003", False, False),
-        ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "GP", "FM0000004", False, False),
-        ("NO_WARNINGS_NON_FIRM", "CP", "CP7654321", True, False),
-        ("NO_WARNINGS_NON_FIRM", "BEN", "CP7654321", True, False),
-        ("NO_WARNINGS_NON_FIRM", "BC", "BC7654321", True, False),
+        ("WARNINGS_EXIST_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
+        ("WARNINGS_EXIST_MISSING_DATA", "GP", None, "FM0000002", None, True, True),
+        ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "BEN", "FM0000003", "BC0000003", False, False),
+        ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "GP", None, "FM0000004", None, False, False),
+        ("NO_WARNINGS_NON_FIRM", "CP", None, "CP7654321", None, True, False),
+        ("NO_WARNINGS_NON_FIRM", "BEN", None, "CP7654322", None, True, False),
+        ("NO_WARNINGS_NON_FIRM", "BC", None, "BC7654323", None, True, False),
     ],
 )
 def test_get_business_with_incomplete_info(
@@ -296,30 +309,65 @@ def test_get_business_with_incomplete_info(
     jwt,
     test_name,
     legal_type,
+    owner_legal_type,
     identifier,
+    owner_identifier,
     has_missing_business_info,
     missing_business_info_warning_expected,
 ):
     """Assert that SP/GPs with missing business info is populating warnings list."""
     with nested_session(session):
         if has_missing_business_info:
-            legal_entity = factory_legal_entity(entity_type=legal_type, identifier=identifier)
+            if owner_legal_type:
+                legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+            else:
+                legal_entity = factory_legal_entity(entity_type=legal_type, identifier=identifier)
+            if legal_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                alternate_name = factory_alternate_name(
+                    identifier=identifier,
+                    name="SP TESTING1212",
+                    name_type=AlternateName.NameType.DBA,
+                    bn15="111111100BC1111",
+                    start_date=datetime.utcnow(),
+                    legal_entity_id=legal_entity.id,
+                )
+                alternate_name.save()
+                legal_entity.alternate_names.append(alternate_name)
         else:
-            legal_entity = create_business(
-                entity_type=legal_type,
-                identifier=identifier,
-                create_office=True,
-                create_office_mailing_address=True,
-                create_office_delivery_address=True,
-                firm_num_persons_roles=2,
-                create_firm_party_address=True,
-                filing_types=["registration"],
-                filing_has_completing_party=[True],
-                create_completing_party_address=[True],
-            )
-        legal_entity.start_date = datetime.utcnow().date()
-        legal_entity.save()
-        session.commit()
+            if legal_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+                alternate_name = create_alternate_name_business(
+                    entity_type=legal_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=1,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                )
+                mailing_address_alt = factory_address("mailing")
+                alternate_name.owner_mailing_address = mailing_address_alt
+                alternate_name.save()
+                legal_entity.alternate_names.append(alternate_name)
+            else:
+                legal_entity = create_business(
+                    entity_type=legal_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=2,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                )
+            legal_entity.start_date = datetime.utcnow().date()
+            legal_entity.save()
+            session.commit()
         rv = client.get(f"/api/v2/businesses/{identifier}", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
         assert rv.status_code == HTTPStatus.OK
@@ -345,6 +393,7 @@ def test_get_business_with_court_orders(session, client, jwt):
         identifier = "CP7654321"
         legal_name = identifier + " legal name"
         legal_entity = factory_legal_entity_model(
+            entity_type="CP",
             legal_name=legal_name,
             identifier=identifier,
             founding_date=datetime.utcfromtimestamp(0),
@@ -375,7 +424,7 @@ def test_post_affiliated_businesses(session, client, jwt):
             (identifiers[1], LegalEntity.EntityTypes.BCOMP.value, "123456789BC0001"),
         ]
         draft_businesses = [
-            (identifiers[2], "registration", LegalEntity.EntityTypes.GP.value, None),
+            (identifiers[2], "registration", LegalEntity.EntityTypes.PARTNERSHIP.value, None),
             (identifiers[3], "incorporationApplication", LegalEntity.EntityTypes.SOLE_PROP.value, "NR 1234567"),
             (identifiers[4], "amalgamationApplication", LegalEntity.EntityTypes.COMP.value, "NR 1234567"),
         ]

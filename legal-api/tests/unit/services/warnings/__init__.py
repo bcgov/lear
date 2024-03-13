@@ -4,12 +4,14 @@ from typing import Final
 from datedelta import datedelta
 
 from legal_api.models import Address, ColinEntity, EntityRole, Filing, LegalEntity, Office
+from legal_api.models.alternate_name import AlternateName
+from tests.unit.models import factory_alternate_name
 
 TEST_BUSINESS_NAME: Final = "test business name"
 
 
 def factory_party_person(first_name: str, last_name: str, custom_id: int = None) -> LegalEntity:
-    party = LegalEntity(entity_type=LegalEntity.EntityTypes.PERSON.value, first_name=first_name, last_name=last_name)
+    party = LegalEntity(_entity_type=LegalEntity.EntityTypes.PERSON.value, first_name=first_name, last_name=last_name)
 
     if custom_id is not None:
         party.id = custom_id
@@ -139,7 +141,7 @@ def factory_address(
 
 def factory_legal_entity(entity_type: str, identifier: str, custom_id: int = None):
     legal_entity = LegalEntity(
-        _legal_name="test business", entity_type=entity_type, identifier=identifier, state="ACTIVE"
+        _legal_name="test business", _entity_type=entity_type, identifier=identifier, state="ACTIVE"
     )
 
     if custom_id:
@@ -238,6 +240,92 @@ def create_business(
     return legal_entity
 
 
+def create_alternate_name_business(
+    entity_type: str,
+    identifier: str,
+    create_office=False,
+    create_office_mailing_address=False,
+    create_office_delivery_address=False,
+    firm_num_persons_roles=0,
+    firm_num_org_roles=0,
+    create_firm_party_address=False,
+    filing_types=[],
+    filing_has_completing_party=[],
+    create_completing_party_address=[],
+    start_date=None,
+    person_cessation_dates=[],
+    org_cessation_dates=[],
+):
+    legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
+
+    alternate_name = factory_alternate_name(
+        identifier=identifier,
+        name="SP TESTING1212",
+        name_type=AlternateName.NameType.DBA,
+        bn15="111111100BC1111",
+        start_date=datetime.utcnow(),
+        legal_entity_id=legal_entity.id,
+    )
+
+    alternate_name.legal_entity = legal_entity
+    alternate_name.save()
+    legal_entity.alternate_names.append(alternate_name)
+
+    if start_date:
+        legal_entity.start_date = start_date
+
+    if create_office:
+        business_office = factory_office("businessOffice")
+
+        if create_office_mailing_address:
+            mailing_addr = factory_address("mailing")
+            business_office.addresses.append(mailing_addr)
+
+        if create_office_delivery_address:
+            delivery_addr = factory_address("delivery")
+            business_office.addresses.append(delivery_addr)
+
+        business_office.alternate_name_id = alternate_name.id
+        legal_entity.offices.append(business_office)
+
+    if firm_num_persons_roles > 0 or firm_num_org_roles > 0:
+        firm_entity_role = get_firm_entity_role(entity_type)
+        firm_entity_roles = factory_party_roles(
+            firm_entity_role,
+            firm_num_persons_roles,
+            firm_num_org_roles,
+            person_cessation_dates,
+            org_cessation_dates,
+            legal_entity,
+        )
+        if create_firm_party_address:
+            for entity_role in firm_entity_roles:
+                mailing_addr = factory_address("mailing")
+                mailing_addr.save()
+                if entity_role.legal_entity:
+                    entity_role.legal_entity.mailing_address_id = mailing_addr.id
+                else:
+                    entity_role.related_colin_entity.mailing_address_id = mailing_addr.id
+        legal_entity.entity_roles.extend(firm_entity_roles)
+
+    for idx, filing_type in enumerate(filing_types):
+        filing = factory_filing(filing_type)
+        filing.alternate_name_id = alternate_name.id
+        has_completing_party = filing_has_completing_party[idx]
+        if has_completing_party:
+            completing_party_role = factory_filing_role_person(filing.id, "completing_party")
+            if create_completing_party_address:
+                mailing_addr = factory_address("mailing")
+                mailing_addr.save()
+                if completing_party_role.legal_entity:
+                    completing_party_role.legal_entity.mailing_address_id = mailing_addr.id
+                else:
+                    completing_party_role.related_colin_entity.mailing_address_id = mailing_addr.id
+            filing.filing_entity_roles.append(completing_party_role)
+        legal_entity.filings.append(filing)
+    return alternate_name
+
+
 def get_firm_entity_role(entity_type: str):
     if entity_type == "SP":
         return "proprietor"
@@ -245,13 +333,3 @@ def get_firm_entity_role(entity_type: str):
         return "partner"
     else:
         return None
-
-
-def create_filing(filing_type: str, add_completing_party=False):
-    filing = factory_filing(filing_type=filing_type)
-    if add_completing_party:
-        party_role = factory_filing_role_person(filing.id, "completing_party")
-        filing.filing_entity_roles.append(party_role)
-
-    filing.save()
-    return filing
