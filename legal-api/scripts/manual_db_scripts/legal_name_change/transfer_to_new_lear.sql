@@ -406,11 +406,11 @@ where sq.version != mv.max_version;
 
 
 vset cli.settings.transfer_threads=8
--- aliases -> aliases
-transfer public.aliases from lear_old using
+-- aliases -> alternate_names
+transfer public.alternate_names from lear_old using
 SELECT a.id,
-       a.alias,
-       a.type,
+       a.alias                 as name,
+       a.type                  as name_type,
        a.business_id           as legal_entity_id,
        f.id                    as change_filing_id,
        COALESCE(av.version, 0) as version
@@ -421,12 +421,12 @@ FROM public.aliases a
          left join public.filings f on f.transaction_id = av.transaction_id;
 
 
--- aliases_version -> aliases_history
-transfer public.aliases_history from lear_old using
+-- aliases_version -> alternate_names_history
+transfer public.alternate_names_history from lear_old using
 with subquery as
          (SELECT av.id,
-                 av.alias,
-                 av.type,
+                 av.alias                                                                           as name,
+                 av.type                                                                            as name_type,
                  av.business_id                                                                     as legal_entity_id,
                  f.id                                                                               as change_filing_id,
                  t.issued_at                                                                        as changed,
