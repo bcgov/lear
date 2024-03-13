@@ -609,9 +609,9 @@ class ListFilingResource:
             else:
                 filing = Filing()
                 if business.identifier.startswith("FM"):
-                  filing.alternate_name_id = business.id
+                    filing.alternate_name_id = business.id
                 else:
-                  filing.legal_entity_id = business.id  
+                    filing.legal_entity_id = business.id  
 
         try:
             filing.submitter_id = user.id
