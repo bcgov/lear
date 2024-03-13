@@ -152,19 +152,19 @@ def test_get_temp_business_info(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
 
 
-# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name, role, calls_auth, identifier",
+    "test_name,role,calls_auth",
     [
-        ("public-user", PUBLIC_USER, True, "CP7654321"),
-        ("account-identity", ACCOUNT_IDENTITY, False, "CP7654322"),
-        ("staff", STAFF_ROLE, False, "CP7654323"),
-        ("system", SYSTEM_ROLE, False, "CP7654324"),
+        ("public-user", PUBLIC_USER, True),
+        ("account-identity", ACCOUNT_IDENTITY, False),
+        ("staff", STAFF_ROLE, False),
+        ("system", SYSTEM_ROLE, False),
     ],
 )
-def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth, identifier):
+def test_get_business_info(app, session, client, jwt, requests_mock, test_name, role, calls_auth):
     """Assert that the business info can be received in a valid JSONSchema format."""
     with nested_session(session):
+        identifier = "CP7654321"
         legal_name = identifier + " legal name"
         factory_legal_entity_model(
             entity_type="CP",
@@ -289,7 +289,6 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         assert rv.json["business"]["allowedFilings"]
 
 
-# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
     "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
     + "missing_business_info_warning_expected",
@@ -299,8 +298,8 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "BEN", "FM0000003", "BC0000003", False, False),
         ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "GP", None, "FM0000004", None, False, False),
         ("NO_WARNINGS_NON_FIRM", "CP", None, "CP7654321", None, True, False),
-        ("NO_WARNINGS_NON_FIRM", "BEN", None, "CP7654322", None, True, False),
-        ("NO_WARNINGS_NON_FIRM", "BC", None, "BC7654323", None, True, False),
+        ("NO_WARNINGS_NON_FIRM", "BEN", None, "CP7654321", None, True, False),
+        ("NO_WARNINGS_NON_FIRM", "BC", None, "BC7654321", None, True, False),
     ],
 )
 def test_get_business_with_incomplete_info(

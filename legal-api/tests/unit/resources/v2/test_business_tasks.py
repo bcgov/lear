@@ -281,22 +281,21 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
             assert rv.json["tasks"][0]["task"]["filing"]["header"]["filingId"] == filing.id
 
 
-# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @freeze_time("Jul 2nd, 2022")
 @pytest.mark.parametrize(
     "test_name, identifier, founding_date, previous_ar_date, entity_type, tasks_length",
     [
-        ("BEN first AR to be issued", "BC1234501", "2021-07-02", None, LegalEntity.EntityTypes.BCOMP.value, 1),
-        ("BEN no AR due yet", "BC1234502", "2021-07-03", None, LegalEntity.EntityTypes.BCOMP.value, 0),
-        ("BEN 3 ARs overdue", "BC1234503", "2019-05-15", None, LegalEntity.EntityTypes.BCOMP.value, 3),
-        ("BEN current AR year issued", "BC1234504", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BCOMP.value, 0),
-        ("BC first AR to be issued", "BC1234505", "2021-07-02", None, LegalEntity.EntityTypes.COMP.value, 1),
-        ("BC no AR due yet", "BC1234506", "2021-07-03", None, LegalEntity.EntityTypes.COMP.value, 0),
-        ("BC 3 ARs overdue", "BC1234507", "2019-05-15", None, LegalEntity.EntityTypes.COMP.value, 3),
-        ("BC current AR year issued", "BC1234508", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.COMP.value, 0),
-        ("ULC first AR to be issued", "BC1234509", "2021-07-02", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 1),
-        ("ULC no AR due yet", "BC1234510", "2021-07-03", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 0),
-        ("ULC 3 ARs overdue", "BC1234511", "2019-05-15", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 3),
+        ("BEN first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.BCOMP.value, 1),
+        ("BEN no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.BCOMP.value, 0),
+        ("BEN 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.BCOMP.value, 3),
+        ("BEN current AR year issued", "BC1234567", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BCOMP.value, 0),
+        ("BC first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.COMP.value, 1),
+        ("BC no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.COMP.value, 0),
+        ("BC 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.COMP.value, 3),
+        ("BC current AR year issued", "BC1234567", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.COMP.value, 0),
+        ("ULC first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 1),
+        ("ULC no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 0),
+        ("ULC 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 3),
         (
             "ULC current AR year issued",
             "BC1234567",
@@ -305,15 +304,15 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
             LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
             0,
         ),
-        ("CC first AR to be issued", "BC1234512", "2021-07-02", None, LegalEntity.EntityTypes.BC_CCC.value, 1),
-        ("CC no AR due yet", "BC1234513", "2021-07-03", None, LegalEntity.EntityTypes.BC_CCC.value, 0),
-        ("CC 3 ARs overdue", "BC1234514", "2019-05-15", None, LegalEntity.EntityTypes.BC_CCC.value, 3),
-        ("CC current AR year issued", "BC1234515", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BC_CCC.value, 0),
-        ("CP founded in the end of the year", "CP1234561", "2021-12-31", None, LegalEntity.EntityTypes.COOP.value, 1),
-        ("CP current year AR pending", "CP1234562", "1900-07-01", "2021-03-03", LegalEntity.EntityTypes.COOP.value, 1),
-        ("CP 3 ARs overdue", "CP1234563", "2019-05-15", None, LegalEntity.EntityTypes.COOP.value, 3),
-        ("SP no AR", "FM1234561", "2019-05-15", None, LegalEntity.EntityTypes.SOLE_PROP.value, 0),
-        ("GP no AR", "FM1234562", "2019-05-15", None, LegalEntity.EntityTypes.PARTNERSHIP.value, 0),
+        ("CC first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.BC_CCC.value, 1),
+        ("CC no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.BC_CCC.value, 0),
+        ("CC 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.BC_CCC.value, 3),
+        ("CC current AR year issued", "BC1234567", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BC_CCC.value, 0),
+        ("CP founded in the end of the year", "CP1234567", "2021-12-31", None, LegalEntity.EntityTypes.COOP.value, 1),
+        ("CP current year AR pending", "CP1234567", "1900-07-01", "2021-03-03", LegalEntity.EntityTypes.COOP.value, 1),
+        ("CP 3 ARs overdue", "CP1234567", "2019-05-15", None, LegalEntity.EntityTypes.COOP.value, 3),
+        ("SP no AR", "FM1234567", "2019-05-15", None, LegalEntity.EntityTypes.SOLE_PROP.value, 0),
+        ("GP no AR", "FM1234567", "2019-05-15", None, LegalEntity.EntityTypes.PARTNERSHIP.value, 0),
     ],
 )
 def test_construct_task_list(

@@ -207,32 +207,31 @@ def test_ledger_comment_count(session, client, jwt):
         assert rv.json["filings"][0]["commentsCount"] == number_of_comments
 
 
-# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name, identifier, file_number, order_date, effect_of_order, order_details, expected",
+    "test_name, file_number, order_date, effect_of_order, order_details, expected",
     [
         (
             "all_elements",
-            "BC1234561",
             "ABC123",
             datetime.utcnow(),
             "effect",
             "details",
             ["effectOfOrder", "fileNumber", "orderDate", "orderDetails"],
         ),
-        ("no_elements", "BC1234562", None, None, None, None, []),
-        ("no-file-number-or-details", "BC1234563", None, datetime.utcnow(), None, None, []),
-        ("date", "BC1234564", "ABC123", datetime.utcnow(), None, None, ["fileNumber", "orderDate"]),
-        ("effect", "BC1234565", "ABC123", None, "effect", None, ["effectOfOrder", "fileNumber"]),
-        ("details", "BC1234566", "ABC123", None, None, "details", ["fileNumber", "orderDetails"]),
+        ("no_elements", None, None, None, None, []),
+        ("no-file-number-or-details", None, datetime.utcnow(), None, None, []),
+        ("date", "ABC123", datetime.utcnow(), None, None, ["fileNumber", "orderDate"]),
+        ("effect", "ABC123", None, "effect", None, ["effectOfOrder", "fileNumber"]),
+        ("details", "ABC123", None, None, "details", ["fileNumber", "orderDetails"]),
     ],
 )
 def test_ledger_court_order(
-    session, client, jwt, test_name, identifier, file_number, order_date, effect_of_order, order_details, expected
+    session, client, jwt, test_name, file_number, order_date, effect_of_order, order_details, expected
 ):
     """Assert that the ledger returns court_order values."""
     with nested_session(session):
         # setup
+        identifier = "BC1234567"
         _, filing_storage = ledger_element_setup_help(identifier)
 
         filing_storage.court_order_file_number = file_number
