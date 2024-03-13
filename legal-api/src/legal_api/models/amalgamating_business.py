@@ -18,11 +18,13 @@ Currently this only provides API versioning information
 
 from enum import auto
 
+from sql_versioning import Versioned
+
 from ..utils.base import BaseEnum
 from .db import db
 
 
-class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attributes
+class AmalgamatingBusiness(Versioned, db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the amalgamating businesses."""
 
     # pylint: disable=invalid-name
@@ -45,6 +47,7 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
 
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"))
+    change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
     amalgamation_id = db.Column(
         "amalgamation_id",
         db.Integer,
