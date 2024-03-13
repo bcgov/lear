@@ -243,6 +243,7 @@ def create_business(
 def create_alternate_name_business(
     entity_type: str,
     identifier: str,
+    legal_entity,
     create_office=False,
     create_office_mailing_address=False,
     create_office_delivery_address=False,
@@ -256,8 +257,6 @@ def create_alternate_name_business(
     person_cessation_dates=[],
     org_cessation_dates=[],
 ):
-    legal_entity = factory_legal_entity(identifier=identifier, entity_type=entity_type)
-
     alternate_name = factory_alternate_name(
         identifier=identifier,
         name="SP TESTING1212",
