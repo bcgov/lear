@@ -24,9 +24,8 @@ import sqlalchemy
 from flask_migrate import Migrate, upgrade
 from ldclient.integrations.test_data import TestData
 from sqlalchemy import event, inspect, text
-from sqlalchemy.schema import DropConstraint, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
-
+from sqlalchemy.schema import DropConstraint, MetaData
 
 from legal_api import create_app
 from legal_api import jwt as _jwt
