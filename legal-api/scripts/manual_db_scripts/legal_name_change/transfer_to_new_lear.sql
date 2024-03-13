@@ -430,6 +430,7 @@ with subquery as
                  av.type                                                                            as name_type,
                  av.business_id                                                                     as legal_entity_id,
                  f.id                                                                               as change_filing_id,
+                 f.effective_date                                                                   as start_date,
                  t.issued_at                                                                        as changed,
                  COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC), 1) as version
           from public.aliases_version av
