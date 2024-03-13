@@ -126,7 +126,7 @@ def test_ledger_search(session, client, jwt):
             identifier=identifier,
             founding_date=founding_date,
             last_ar_date=None,
-            _entity_type=LegalEntity.EntityTypes.BCOMP.value,
+            entity_type=LegalEntity.EntityTypes.BCOMP.value,
         )
         num_of_files = load_ledger(legal_entity, founding_date)
 
@@ -171,7 +171,7 @@ def ledger_element_setup_help(identifier: str, filing_name: str = "brokenFiling"
         identifier=identifier,
         founding_date=founding_date,
         last_ar_date=None,
-        _entity_type=LegalEntity.EntityTypes.BCOMP.value,
+        entity_type=LegalEntity.EntityTypes.BCOMP.value,
     )
     return legal_entity, ledger_element_setup_filing(
         legal_entity, filing_name, filing_date=founding_date + datedelta.datedelta(months=1)
@@ -354,7 +354,7 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
         business_name = "Skinners Fine Saves"
 
         legal_entity = factory_legal_entity(
-            identifier=identifier, founding_date=founding_date, last_ar_date=None, _entity_type="BC"
+            identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type="BC"
         )
         legal_entity._legal_name = business_name
         legal_entity.save()
@@ -409,7 +409,7 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, identifie
         business_name = "The Truffle House"
 
         legal_entity = factory_legal_entity(
-            identifier=identifier, founding_date=founding_date, last_ar_date=None, _entity_type=entity_type
+            identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type
         )
         legal_entity._legal_name = business_name
         legal_entity.save()
@@ -609,7 +609,7 @@ def test_ledger_redaction(
             entity_type = LegalEntity.EntityTypes.BCOMP.value
 
             legal_entity = factory_legal_entity(
-                identifier=identifier, founding_date=founding_date, last_ar_date=None, _entity_type=entity_type
+                identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=entity_type
             )
             legal_entity._legal_name = business_name
             legal_entity.save()
