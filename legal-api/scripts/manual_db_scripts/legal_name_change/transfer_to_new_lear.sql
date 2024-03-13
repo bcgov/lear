@@ -413,6 +413,7 @@ SELECT a.id,
        a.type                  as name_type,
        a.business_id           as legal_entity_id,
        f.id                    as change_filing_id,
+       f.effective_date        as start_date,
        COALESCE(av.version, 0) as version
 FROM public.aliases a
          left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
