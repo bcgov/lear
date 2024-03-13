@@ -608,7 +608,7 @@ class ListFilingResource:
                 filing = rv[1]
             else:
                 filing = Filing()
-                if business_identifier.startswith("FM"):
+                if business.is_alternate_name_entity:
                     filing.alternate_name_id = business.id
                 else:
                     filing.legal_entity_id = business.id
