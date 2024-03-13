@@ -229,6 +229,7 @@ def factory_filing(
     filing_date=FROZEN_DATETIME,
     filing_type=None,
     filing_sub_type=None,
+    status=None,
     is_future_effective=False,
 ):
     """Create a filing."""
@@ -240,6 +241,8 @@ def factory_filing(
         filing._filing_type = filing_type
     if filing_sub_type:
         filing._filing_sub_type = filing_sub_type
+    if status:
+        filing._status = status
     if is_future_effective:
         filing.effective_date = datetime.utcnow() + datedelta(days=5)
     try:

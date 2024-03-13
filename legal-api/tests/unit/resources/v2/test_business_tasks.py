@@ -26,18 +26,22 @@ import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, INCORPORATION_FILING_TEMPLATE
 
-from legal_api.models import Filing, LegalEntity, RegistrationBootstrap
+from legal_api.models import Address, AlternateName, EntityRole, Filing, LegalEntity, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE
 from tests import integration_payment
 from tests.unit import nested_session
 from tests.unit.models import (
+    factory_address,
+    factory_alternate_name,
     factory_filing,
     factory_legal_entity,
     factory_legal_entity_mailing_address,
+    factory_offices,
+    factory_party_role,
     factory_pending_filing,
 )
 from tests.unit.services.utils import create_header
-from tests.unit.services.warnings import create_business
+from tests.unit.services.warnings import create_alternate_name_business, create_business
 
 AR_FILING_CURRENT_YEAR = {
     "filing": {
@@ -114,7 +118,7 @@ def test_get_tasks_next_year(session, client, jwt):
 def test_bcorps_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the current year is returned when there are no filings."""
     with nested_session(session):
-        identifier = "CP7654321"
+        identifier = "BC7654321"
         factory_legal_entity(identifier, datetime.now(), None, LegalEntity.EntityTypes.BCOMP.value)
 
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
@@ -176,7 +180,7 @@ def test_get_tasks_current_year_filing_exists(session, client, jwt):
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
         assert rv.status_code == HTTPStatus.OK
-        # assert len(rv.json.get('tasks')) == 1  # Current year incomplete filing only
+        assert len(rv.json.get("tasks")) == 1  # Current year incomplete filing only
 
 
 def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
@@ -191,16 +195,20 @@ def test_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
         assert rv.status_code == HTTPStatus.OK
-        # assert len(rv.json.get('tasks')) == 2  # Previous year filing and a disabled to-do for current year.
+        # assert len(rv.json.get("tasks")) == 2  # Previous year filing and a disabled to-do for current year.
 
 
 def test_bcorp_get_tasks_prev_year_incomplete_filing_exists(session, client, jwt):
     """Assert that the one incomplete filing for previous year and a to-do for current year are returned."""
     with nested_session(session):
-        identifier = "CP7654321"
+        identifier = "BC7654321"
         b = factory_legal_entity(
-            identifier, datetime.now() - datedelta.datedelta(years=2), last_ar_date=datetime(2018, 3, 3)
+            identifier,
+            datetime.now() - datedelta.datedelta(years=2),
+            datetime(2018, 3, 3),
+            LegalEntity.EntityTypes.BCOMP.value,
         )
+
         filings = factory_filing(b, AR_FILING_PREVIOUS_YEAR, datetime(2018, 8, 5, 7, 7, 58, 272362))
         print("test_get_all_business_filings - filing:", filings)
 
@@ -273,21 +281,22 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
             assert rv.json["tasks"][0]["task"]["filing"]["header"]["filingId"] == filing.id
 
 
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @freeze_time("Jul 2nd, 2022")
 @pytest.mark.parametrize(
     "test_name, identifier, founding_date, previous_ar_date, entity_type, tasks_length",
     [
-        ("BEN first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.BCOMP.value, 1),
-        ("BEN no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.BCOMP.value, 0),
-        ("BEN 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.BCOMP.value, 3),
-        ("BEN current AR year issued", "BC1234567", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BCOMP.value, 0),
-        ("BC first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.COMP.value, 1),
-        ("BC no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.COMP.value, 0),
-        ("BC 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.COMP.value, 3),
-        ("BC current AR year issued", "BC1234567", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.COMP.value, 0),
-        ("ULC first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 1),
-        ("ULC no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 0),
-        ("ULC 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 3),
+        ("BEN first AR to be issued", "BC1234501", "2021-07-02", None, LegalEntity.EntityTypes.BCOMP.value, 1),
+        ("BEN no AR due yet", "BC1234502", "2021-07-03", None, LegalEntity.EntityTypes.BCOMP.value, 0),
+        ("BEN 3 ARs overdue", "BC1234503", "2019-05-15", None, LegalEntity.EntityTypes.BCOMP.value, 3),
+        ("BEN current AR year issued", "BC1234504", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BCOMP.value, 0),
+        ("BC first AR to be issued", "BC1234505", "2021-07-02", None, LegalEntity.EntityTypes.COMP.value, 1),
+        ("BC no AR due yet", "BC1234506", "2021-07-03", None, LegalEntity.EntityTypes.COMP.value, 0),
+        ("BC 3 ARs overdue", "BC1234507", "2019-05-15", None, LegalEntity.EntityTypes.COMP.value, 3),
+        ("BC current AR year issued", "BC1234508", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.COMP.value, 0),
+        ("ULC first AR to be issued", "BC1234509", "2021-07-02", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 1),
+        ("ULC no AR due yet", "BC1234510", "2021-07-03", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 0),
+        ("ULC 3 ARs overdue", "BC1234511", "2019-05-15", None, LegalEntity.EntityTypes.BC_ULC_COMPANY.value, 3),
         (
             "ULC current AR year issued",
             "BC1234567",
@@ -296,15 +305,15 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
             LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
             0,
         ),
-        ("CC first AR to be issued", "BC1234567", "2021-07-02", None, LegalEntity.EntityTypes.BC_CCC.value, 1),
-        ("CC no AR due yet", "BC1234567", "2021-07-03", None, LegalEntity.EntityTypes.BC_CCC.value, 0),
-        ("CC 3 ARs overdue", "BC1234567", "2019-05-15", None, LegalEntity.EntityTypes.BC_CCC.value, 3),
-        ("CC current AR year issued", "BC1234567", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BC_CCC.value, 0),
-        ("CP founded in the end of the year", "CP1234567", "2021-12-31", None, LegalEntity.EntityTypes.COOP.value, 1),
-        ("CP current year AR pending", "CP1234567", "1900-07-01", "2021-03-03", LegalEntity.EntityTypes.COOP.value, 1),
-        ("CP 3 ARs overdue", "CP1234567", "2019-05-15", None, LegalEntity.EntityTypes.COOP.value, 3),
-        ("SP no AR", "FM1234567", "2019-05-15", None, LegalEntity.EntityTypes.SOLE_PROP.value, 0),
-        ("GP no AR", "FM1234567", "2019-05-15", None, LegalEntity.EntityTypes.PARTNERSHIP.value, 0),
+        ("CC first AR to be issued", "BC1234512", "2021-07-02", None, LegalEntity.EntityTypes.BC_CCC.value, 1),
+        ("CC no AR due yet", "BC1234513", "2021-07-03", None, LegalEntity.EntityTypes.BC_CCC.value, 0),
+        ("CC 3 ARs overdue", "BC1234514", "2019-05-15", None, LegalEntity.EntityTypes.BC_CCC.value, 3),
+        ("CC current AR year issued", "BC1234515", "1900-07-01", "2022-03-03", LegalEntity.EntityTypes.BC_CCC.value, 0),
+        ("CP founded in the end of the year", "CP1234561", "2021-12-31", None, LegalEntity.EntityTypes.COOP.value, 1),
+        ("CP current year AR pending", "CP1234562", "1900-07-01", "2021-03-03", LegalEntity.EntityTypes.COOP.value, 1),
+        ("CP 3 ARs overdue", "CP1234563", "2019-05-15", None, LegalEntity.EntityTypes.COOP.value, 3),
+        ("SP no AR", "FM1234561", "2019-05-15", None, LegalEntity.EntityTypes.SOLE_PROP.value, 0),
+        ("GP no AR", "FM1234562", "2019-05-15", None, LegalEntity.EntityTypes.PARTNERSHIP.value, 0),
     ],
 )
 def test_construct_task_list(
@@ -317,7 +326,20 @@ def test_construct_task_list(
         with patch("legal_api.resources.v2.business.business_tasks.check_warnings", return_value=[]):
             previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
             legal_entity = factory_legal_entity(identifier, founding_date, previous_ar_datetime, entity_type)
-            tasks = construct_task_list(legal_entity)
+
+            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                alternate_name = factory_alternate_name(
+                    identifier=identifier,
+                    name="SP TESTING1212",
+                    name_type=AlternateName.NameType.DBA,
+                    bn15="111111100BC1111",
+                    start_date=founding_date,
+                    legal_entity_id=legal_entity.id,
+                )
+                tasks = construct_task_list(alternate_name)
+            else:
+                tasks = construct_task_list(legal_entity)
+
             assert len(tasks) == tasks_length
 
             # nextAnnualReport should be in UTC and have the time should have the offset: 7 or 8 hours late
@@ -326,40 +348,83 @@ def test_construct_task_list(
 
 
 @pytest.mark.parametrize(
-    "test_name, entity_type, identifier, has_missing_business_info, conversion_task_expected",
+    "test_name, entity_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
+    + " conversion_task_expected",
     [
-        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "SP", "FM0000001", True, True),
-        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "GP", "FM0000002", True, True),
-        ("NO_CONVERSION_TODO_NO_MISSING_DATA", "SP", "FM0000003", False, False),
-        ("NO_CONVERSION_TODO_NO_MISSING_DATA", "GP", "FM0000004", False, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "CP", "CP7654321", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "BEN", "CP7654321", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "BC", "BC7654321", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "ULC", "BC7654321", True, False),
-        ("NO_CONVERSION_TODO_NON_FIRM", "CC", "BC7654321", True, False),
+        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
+        ("CONVERSION_TODO_EXISTS_MISSING_DATA", "GP", None, "FM0000002", None, True, True),
+        ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "BEN", "FM0000003", "FM0000003", False, False),
+        ("NO_CONVERSION_TODO_NO_MISSING_DATA", "GP", None, "FM0000004", None, False, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "CP", None, "CP7654321", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "BEN", None, "CP7654322", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "BC", None, "BC7654323", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "ULC", None, "BC7654324", None, True, False),
+        ("NO_CONVERSION_TODO_NON_FIRM", "CC", None, "BC7654325", None, True, False),
     ],
 )
 def test_conversion_filing_task(
-    session, client, jwt, test_name, entity_type, identifier, has_missing_business_info, conversion_task_expected
+    session,
+    client,
+    jwt,
+    test_name,
+    entity_type,
+    owner_legal_type,
+    identifier,
+    owner_identifier,
+    has_missing_business_info,
+    conversion_task_expected,
 ):
     """Assert conversion todo shows up for only SP/GPs with missing business info."""
     with nested_session(session):
         if has_missing_business_info:
-            factory_legal_entity(entity_type=entity_type, identifier=identifier)
+            if owner_legal_type:
+                legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+            else:
+                legal_entity = factory_legal_entity(entity_type=entity_type, identifier=identifier)
+            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                alternate_name = factory_alternate_name(
+                    identifier=identifier,
+                    name="SP TESTING1212",
+                    name_type=AlternateName.NameType.DBA,
+                    bn15="111111100BC1111",
+                    start_date=datetime.utcnow(),
+                    legal_entity_id=legal_entity.id,
+                )
+                alternate_name.save()
+                legal_entity.alternate_names.append(alternate_name)
         else:
-            create_business(
-                entity_type=entity_type,
-                identifier=identifier,
-                create_office=True,
-                create_office_mailing_address=True,
-                create_office_delivery_address=True,
-                firm_num_persons_roles=2,
-                create_firm_party_address=True,
-                filing_types=["registration"],
-                filing_has_completing_party=[True],
-                create_completing_party_address=[True],
-                start_date=datetime.utcnow(),
-            )
+            if entity_type is LegalEntity.EntityTypes.SOLE_PROP.value:
+                legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+                alternate_name = create_alternate_name_business(
+                    entity_type=entity_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=2,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                )
+                mailing_address_alt = factory_address("mailing")
+                alternate_name.owner_mailing_address = mailing_address_alt
+                alternate_name.save()
+                legal_entity.alternate_names.append(alternate_name)
+            else:
+                create_business(
+                    entity_type=entity_type,
+                    identifier=identifier,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=2,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                    start_date=datetime.utcnow(),
+                )
 
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
 
@@ -381,26 +446,31 @@ def test_conversion_filing_task(
 
 
 @pytest.mark.parametrize(
-    "test_name, filing_status",
+    "test_name, filing_status, identifier",
     [
-        ("TODO_EXISTS_DRAFT_FILING", Filing.Status.DRAFT.value),
-        ("TODO_EXISTS_PENDING_FILING", Filing.Status.PENDING.value),
-        ("NO_TODO_PAID_FILING", Filing.Status.PAID.value),
-        ("NO_TODO_COMPLETED_FILING", Filing.Status.COMPLETED.value),
+        ("TODO_EXISTS_DRAFT_FILING", Filing.Status.DRAFT.value, "T1234561"),
+        ("TODO_EXISTS_PENDING_FILING", Filing.Status.PENDING.value, "T1234562"),
+        ("NO_TODO_PAID_FILING", Filing.Status.PAID.value, "T1234563"),
+        ("NO_TODO_COMPLETED_FILING", Filing.Status.COMPLETED.value, "T1234564"),
     ],
 )
-def test_temp_reg_filing_task(session, client, jwt, test_name, filing_status):
+def test_temp_reg_filing_task(session, client, jwt, test_name, filing_status, identifier):
     """Assert conversion todo shows up for only SP/GPs with missing business info."""
     with nested_session(session):
-        identifier = "T1234567"
         temp_reg = RegistrationBootstrap()
         temp_reg._identifier = identifier
         temp_reg.save()
 
         filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-        filing = factory_filing(LegalEntity(), filing_json, filing_type="incorporationApplication")
+        filing = factory_filing(
+            LegalEntity(),
+            filing_json,
+            filing_type="incorporationApplication",
+            filing_sub_type=None,
+            status=filing_status,
+        )
         filing.temp_reg = identifier
-        filing.status = filing_status
+        filing._status = filing_status
         filing.save()
 
         rv = client.get(f"/api/v2/businesses/{identifier}/tasks", headers=create_header(jwt, [STAFF_ROLE], identifier))
@@ -410,14 +480,14 @@ def test_temp_reg_filing_task(session, client, jwt, test_name, filing_status):
 
         if filing_status not in (Filing.Status.PAID.value, Filing.Status.COMPLETED.value):
             to_do = any(
-                x["task"]["filing"]["header"]["name"] == "incorporationApplication"
+                x["task"][0]["filing"]["header"]["name"] == "incorporationApplication"
                 and x["task"]["todo"]["header"]["status"] == filing_status
                 for x in rv_json["tasks"]
             )
             assert to_do
         else:
             to_do = any(
-                x["task"]["filing"]["header"]["name"] == "incorporationApplication"
+                x["task"][0]["filing"]["header"]["name"] == "incorporationApplication"
                 and x["task"]["todo"]["header"]["status"] == filing_status
                 for x in rv_json["tasks"]
             )

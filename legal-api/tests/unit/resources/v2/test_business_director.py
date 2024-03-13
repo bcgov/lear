@@ -28,20 +28,20 @@ from tests.unit.models import Address, factory_legal_entity, factory_party_role
 from tests.unit.services.utils import create_header
 
 
+# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name,role",
+    "test_name,role,identifier",
     [
-        ("public-user", PUBLIC_USER),
-        ("account-identity", ACCOUNT_IDENTITY),
-        ("staff", STAFF_ROLE),
-        ("system", SYSTEM_ROLE),
+        ("public-user", PUBLIC_USER, "CP7654321"),
+        ("account-identity", ACCOUNT_IDENTITY, "CP7654322"),
+        ("staff", STAFF_ROLE, "CP7654323"),
+        ("system", SYSTEM_ROLE, "CP7654324"),
     ],
 )
-def test_get_business_directors(app, session, client, jwt, requests_mock, test_name, role):
+def test_get_business_directors(app, session, client, jwt, requests_mock, test_name, role, identifier):
     """Assert that business directors are returned."""
     with nested_session(session):
         # setup
-        identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         director_address = Address(city="Test Mailing City", address_type=Address.DELIVERY)
         officer = {
@@ -74,7 +74,7 @@ def test_bcorp_get_business_directors(session, client, jwt):
     """Assert that business directors are returned."""
     with nested_session(session):
         # setup
-        identifier = "CP7654321"
+        identifier = "BC7654321"
         legal_entity = factory_legal_entity(
             identifier, datetime.datetime.now(), None, LegalEntity.EntityTypes.BCOMP.value
         )
@@ -182,6 +182,7 @@ def test_get_business_director_by_id(session, client, jwt):
         )
         # check
         assert rv.status_code == HTTPStatus.OK
+        assert rv.json["director"]["officer"]["firstName"] == "Michael"
 
 
 def test_get_business_director_by_invalid_id(session, client, jwt):
@@ -222,7 +223,7 @@ def test_directors_mailing_address(session, client, jwt):
     """Assert that bcorp directors have a mailing and delivery address."""
     with nested_session(session):
         # setup
-        identifier = "CP7654321"
+        identifier = "BC7654321"
         legal_entity = factory_legal_entity(
             identifier, datetime.datetime(2017, 4, 17), None, LegalEntity.EntityTypes.BCOMP.value
         )

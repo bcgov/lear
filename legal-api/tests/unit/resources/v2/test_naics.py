@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the business-addresses end-point.
+"""Tests to assure the naics end-point.
 
 Test-Suite to ensure that naics endpoints are working as expected.
 """

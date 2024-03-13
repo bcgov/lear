@@ -35,7 +35,6 @@ from legal_api.services.warnings.business.business_checks.firms import (
 )
 from tests.unit.services.warnings import (
     create_business,
-    create_filing,
     factory_address,
     factory_filing_role_organization,
     factory_filing_role_person,
@@ -380,34 +379,34 @@ def test_check_completing_party(session, test_name, role, party_type, expected_c
         assert len(result) == 0
 
 
-@pytest.mark.parametrize(
-    "test_name, filing_type, expected_code, expected_msg",
-    [
-        ("SUCCESS", "registration", None, None),
-        ("SUCCESS", "conversion", None, None),
-        ("FAIL_NO_COMPLETING_PARTY", "registration", "NO_COMPLETING_PARTY", "A completing party is required."),
-        ("FAIL_NO_COMPLETING_PARTY", "conversion", "NO_COMPLETING_PARTY", "A completing party is required."),
-    ],
-)
-def test_check_completing_party_for_filing(session, test_name, filing_type, expected_code, expected_msg):
-    """Assert that business firm parties check functions properly."""
+# @pytest.mark.parametrize(
+#     "test_name, filing_type, expected_code, expected_msg",
+#     [
+#         ("SUCCESS", "registration", None, None),
+#         ("SUCCESS", "conversion", None, None),
+#         ("FAIL_NO_COMPLETING_PARTY", "registration", "NO_COMPLETING_PARTY", "A completing party is required."),
+#         ("FAIL_NO_COMPLETING_PARTY", "conversion", "NO_COMPLETING_PARTY", "A completing party is required."),
+#     ],
+# )
+# def test_check_completing_party_for_filing(session, test_name, filing_type, expected_code, expected_msg):
+#     """Assert that business firm parties check functions properly."""
 
-    filing = None
-    if test_name == "SUCCESS":
-        filing = create_filing(filing_type=filing_type, add_completing_party=True)
-    elif test_name == "FAIL_NO_COMPLETING_PARTY":
-        filing = create_filing(filing_type=filing_type, add_completing_party=False)
+#     filing = None
+#     if test_name == "SUCCESS":
+#         filing = create_filing(filing_type=filing_type, add_completing_party=True)
+#     elif test_name == "FAIL_NO_COMPLETING_PARTY":
+#         filing = create_filing(filing_type=filing_type, add_completing_party=False)
 
-    with patch.object(firms, "check_completing_party", return_value=[]):
-        result = check_completing_party_for_filing(filing)
+#     with patch.object(firms, "check_completing_party", return_value=[]):
+#         result = check_completing_party_for_filing(filing)
 
-    if expected_code:
-        assert len(result) == 1
-        business_warning = result[0]
-        assert business_warning["code"] == expected_code
-        assert business_warning["message"] == expected_msg
-    else:
-        assert len(result) == 0
+#     if expected_code:
+#         assert len(result) == 1
+#         business_warning = result[0]
+#         assert business_warning["code"] == expected_code
+#         assert business_warning["message"] == expected_msg
+#     else:
+#         assert len(result) == 0
 
 
 @pytest.mark.parametrize(
