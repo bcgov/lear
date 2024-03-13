@@ -343,7 +343,7 @@ class ListFilingResource:
                 effective_date = _datetime.fromisoformat(datetime_str)
 
         business = business_service.fetch_business(identifier)
-        
+
         if not business:
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
