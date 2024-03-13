@@ -294,7 +294,7 @@ def test_get_business_with_allowed_filings(session, client, jwt):
     "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
     + "missing_business_info_warning_expected",
     [
-        ("WARNINGS_EXIST_MISSING_DATA", "SP", "BEN", "FM0000001", "FM0000001", True, True),
+        ("WARNINGS_EXIST_MISSING_DATA", "SP", "BEN", "FM0000001", "BC0000001", True, True),
         ("WARNINGS_EXIST_MISSING_DATA", "GP", None, "FM0000002", None, True, True),
         ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "SP", "BEN", "FM0000003", "BC0000003", False, False),
         ("NO_WARNINGS_EXIST_NO_MISSING_DATA", "GP", None, "FM0000004", None, False, False),
@@ -339,6 +339,7 @@ def test_get_business_with_incomplete_info(
                 alternate_name = create_alternate_name_business(
                     entity_type=legal_type,
                     identifier=identifier,
+                    legal_entity=legal_entity,
                     create_office=True,
                     create_office_mailing_address=True,
                     create_office_delivery_address=True,
