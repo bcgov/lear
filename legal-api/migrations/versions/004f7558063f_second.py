@@ -951,6 +951,7 @@ def upgrade():
         batch_op.add_column(sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('legal_entity_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('entity_type', sa.String(length=15), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('colin_entity_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('change_filing_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('email', sa.String(length=254), autoincrement=False, nullable=True))
@@ -964,11 +965,13 @@ def upgrade():
         batch_op.create_foreign_key(None, 'addresses', ['mailing_address_id'], ['id'])
         batch_op.create_foreign_key(None, 'filings', ['change_filing_id'], ['id'])
         batch_op.create_foreign_key(None, 'legal_entities', ['legal_entity_id'], ['id'])
+        batch_op.create_foreign_key('fk_entity_type', 'legal_entities', ['entity_type'], ['entity_type'])
         batch_op.create_foreign_key(None, 'colin_entities', ['colin_entity_id'], ['id'])
         batch_op.create_foreign_key(None, 'filings', ['state_filing_id'], ['id'])
         batch_op.create_index(batch_op.f('ix_alternate_names_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_alternate_names_name'), ['name'], unique=False)
         batch_op.create_index(batch_op.f('ix_alternate_names_identifier'), ['identifier'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_entity_type'), ['entity_type'], unique=False)
 
     with op.batch_alter_table('offices', schema=None) as batch_op:
         batch_op.add_column(sa.Column('office_type', sa.String(length=75), nullable=True))
@@ -1065,6 +1068,7 @@ def downgrade():
         batch_op.drop_column('last_modified')
 
     with op.batch_alter_table('alternate_names', schema=None) as batch_op:
+        batch_op.drop_constraint('fk_entity_type', type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
@@ -1074,6 +1078,7 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_alternate_names_change_filing_id'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_name'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_identifier'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_entity_type'))
         batch_op.drop_column('identifier')
         batch_op.drop_column('name_type')
         batch_op.drop_column('name')
@@ -1087,6 +1092,7 @@ def downgrade():
         batch_op.drop_column('admin_freeze')
         batch_op.drop_column('last_modified')
         batch_op.drop_column('legal_entity_id')
+        batch_op.drop_column('entity_type')
         batch_op.drop_column('colin_entity_id')
         batch_op.drop_column('change_filing_id')
         batch_op.drop_column('email')
