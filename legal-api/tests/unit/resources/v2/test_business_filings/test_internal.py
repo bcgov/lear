@@ -46,6 +46,7 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_legal_entity_mailing_address,
 )
 from tests.unit.services.utils import create_header
+from sqlalchemy import text
 
 
 def test_post_pre_load_colin_filing(session, client, jwt):
@@ -374,10 +375,10 @@ def test_get_colin_last_update(session, client, jwt):
         # setup
         colin_id = 1234
         db.session.execute(
-            f"""
+            text(f"""
             insert into colin_last_update (last_update, last_event_id)
             values (current_timestamp, {colin_id})
-            """
+            """)
         )
 
         rv = client.get("/api/v2/businesses/internal/filings/colin_id")

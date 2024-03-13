@@ -189,10 +189,11 @@ def delete_filings(identifier, filing_id=None):
             HTTPStatus.UNAUTHORIZED,
         )
 
+    business = business_service.fetch_business(identifier)
     if identifier.startswith("T"):
         filing = Filing.get_temp_reg_filing(identifier, filing_id)
     else:
-        filing = LegalEntity.get_filing_by_id(identifier, filing_id)
+        filing = business.get_filing_by_id(filing_id)
 
     if not filing:
         return jsonify({"message": _("Filing Not Found.")}), HTTPStatus.NOT_FOUND
@@ -241,12 +242,13 @@ def patch_filings(identifier, filing_id=None):
             HTTPStatus.UNAUTHORIZED,
         )
 
+    business = business_service.fetch_business(identifier)
     if identifier.startswith("T"):
         q = db.session.query(Filing).filter(Filing.temp_reg == identifier).filter(Filing.id == filing_id)
 
         filing = q.one_or_none()
     else:
-        filing = LegalEntity.get_filing_by_id(identifier, filing_id)
+        filing = business.get_filing_by_id(identifier, filing_id)
 
     if not filing:
         return jsonify({"message": ("Filing Not Found.")}), HTTPStatus.NOT_FOUND
@@ -341,7 +343,7 @@ class ListFilingResource:
                 effective_date = _datetime.fromisoformat(datetime_str)
 
         business = business_service.fetch_business(identifier)
-
+        
         if not business:
             return jsonify(filings=[]), HTTPStatus.NOT_FOUND
 
