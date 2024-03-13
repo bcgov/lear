@@ -25,6 +25,8 @@ from flask_migrate import Migrate, upgrade
 from ldclient.integrations.test_data import TestData
 from sqlalchemy import event, inspect, text
 from sqlalchemy.schema import DropConstraint, MetaData
+from sqlalchemy.orm import scoped_session, sessionmaker
+
 
 from legal_api import create_app
 from legal_api import jwt as _jwt
@@ -267,24 +269,15 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         txn = conn.begin()
 
         try:
-            options = dict(bind=conn, binds={})
-            # sess = db.create_scoped_session(options=options)
-            sess = db._make_scoped_session(options=options)
+            sess = scoped_session(
+                session_factory=sessionmaker(
+                    bind=conn,
+                    join_transaction_mode="create_savepoint",
+                )
+            )
         except Exception as err:
             print(err)
             print("done")
-
-        # establish  a SAVEPOINT just before beginning the test
-        # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
-        sess.begin_nested()
-
-        @event.listens_for(sess(), "after_transaction_end")
-        def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
-            # Detecting whether this is indeed the nested transaction of the test
-            if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
-                # Handle where test DOESN'T session.commit(),
-                sess2.expire_all()
-                sess.begin_nested()
 
         db.session = sess
 
@@ -295,6 +288,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
 
         # Cleanup
         sess.remove()
+        db.session.close()
         # This instruction rollsback any commit that were executed in the tests.
         txn.rollback()
         conn.close()
