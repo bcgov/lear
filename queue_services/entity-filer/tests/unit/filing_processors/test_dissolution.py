@@ -24,10 +24,11 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
 from entity_filer.filing_meta import FilingMeta
-from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
-
 from entity_filer.filing_processors import dissolution
+from entity_filer.worker import process_filing
+
 from tests.unit import create_business, create_filing
+from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
 
 
 @pytest.mark.parametrize('legal_type,identifier,dissolution_type', [
@@ -221,3 +222,41 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
 
     final_filing = Filing.find_by_id(filing_id)
     assert filing_json['filing']['dissolution']['details'] == final_filing.order_details
+
+
+@pytest.mark.parametrize('dissolution_type', [
+    ('administrative'),
+    ('voluntary'),
+])
+async def test_amalgamation_administrative_dissolution(app, session, dissolution_type):
+    """Assert that the dissolution is processed."""
+    from tests.unit.test_worker.test_amalgamation_application import test_regular_amalgamation_application_process
+    identifier = await test_regular_amalgamation_application_process(app, session)
+    # setup
+    dissolution_filing_json = copy.deepcopy(FILING_HEADER)
+    dissolution_filing_json['filing']['header']['name'] = 'dissolution'
+    dissolution_filing_json['filing']['dissolution'] = DISSOLUTION
+    dissolution_filing_json['filing']['dissolution']['dissolutionDate'] = '2018-04-08'
+    dissolution_filing_json['filing']['dissolution']['dissolutionType'] = dissolution_type
+    dissolution_filing_json['filing']['dissolution']['hasLiabilities'] = False
+    dissolution_filing_json['filing']['dissolution']['details'] = 'Some Details here'
+
+    business = Business.find_by_identifier(identifier)
+    filing = create_filing('123', dissolution_filing_json, business_id=business.id)
+    filing.effective_date = datetime.now()
+    filing.save()
+
+    # test
+    filing_msg = {'filing': {'id': filing.id}}
+    await process_filing(filing_msg, app)
+
+    # validate
+    business = Business.find_by_identifier(identifier)
+    assert business.state == Business.State.HISTORICAL
+    assert business.state_filing_id == filing.id
+    if dissolution_type == 'administrative':
+        assert not business.amalgamation.one_or_none()
+    else:
+        amalgamation = business.amalgamation.one_or_none()
+        assert amalgamation
+        assert amalgamation.amalgamating_businesses.all()
