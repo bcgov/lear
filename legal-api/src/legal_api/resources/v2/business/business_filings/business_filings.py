@@ -38,7 +38,17 @@ import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, ColinLastUpdate, Filing, LegalEntity, RegistrationBootstrap, User, UserRoles, db
+from legal_api.models import (
+    Address,
+    AlternateName,
+    ColinLastUpdate,
+    Filing,
+    LegalEntity,
+    RegistrationBootstrap,
+    User,
+    UserRoles,
+    db,
+)
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -596,13 +606,22 @@ class ListFilingResource:
                 return None, None, {"message": f"{business_identifier} not found"}, HTTPStatus.NOT_FOUND
 
             if client_request.method == "PUT":
-                rv = (
-                    db.session.query(LegalEntity, Filing)
-                    .filter(LegalEntity.id == Filing.legal_entity_id)
-                    .filter(LegalEntity.identifier == business_identifier)
-                    .filter(Filing.id == filing_id)
-                    .one_or_none()
-                )
+                if business.is_alternate_name_entity:
+                    rv = (
+                        db.session.query(AlternateName, Filing)
+                        .filter(AlternateName.id == Filing.alternate_name_id)
+                        .filter(AlternateName.identifier == business_identifier)
+                        .filter(Filing.id == filing_id)
+                        .one_or_none()
+                    )
+                else:
+                    rv = (
+                        db.session.query(LegalEntity, Filing)
+                        .filter(LegalEntity.id == Filing.legal_entity_id)
+                        .filter(LegalEntity.identifier == business_identifier)
+                        .filter(Filing.id == filing_id)
+                        .one_or_none()
+                    )
                 if not rv:
                     return None, None, {"message": f"{business_identifier} no filings found"}, HTTPStatus.NOT_FOUND
                 filing = rv[1]
