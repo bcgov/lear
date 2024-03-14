@@ -18,7 +18,7 @@ from typing import Dict
 import dpath
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Business, Document, Filing
+from legal_api.models import Business, Document, Filing, db
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.minio import MinioService
@@ -55,6 +55,11 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         dissolution_date_str = dissolution_filing.get('dissolutionDate')
         dissolution_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(dissolution_date_str)
     business.dissolution_date = dissolution_date
+
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE and (amalgamation := business.amalgamation.one_or_none()):
+        for amalgamating_business in amalgamation.amalgamating_businesses.all():
+            db.session.delete(amalgamating_business)
+        db.session.delete(amalgamation)
 
     business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
