@@ -24,7 +24,6 @@ from sqlalchemy_continuum import versioning_manager
 from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
     Address,
-    Alias,
     AlternateName,
     ColinEntity,
     Comment,
