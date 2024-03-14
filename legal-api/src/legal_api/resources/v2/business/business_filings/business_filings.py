@@ -547,7 +547,6 @@ class ListFilingResource:
             current_app.logger.error("Business:%s unable to post to queue, err=%s", identifier, err)
             return {"errors": {"message": "unable to publish for post processing"}}, HTTPStatus.BAD_REQUEST
 
-    # pylint: disable=too-many-statements
     @staticmethod
     def save_filing(  # pylint: disable=too-many-return-statements,too-many-branches
         client_request: LocalProxy,
@@ -607,22 +606,20 @@ class ListFilingResource:
                 return None, None, {"message": f"{business_identifier} not found"}, HTTPStatus.NOT_FOUND
 
             if client_request.method == "PUT":
-                if business.is_alternate_name_entity:
-                    rv = (
-                        db.session.query(AlternateName, Filing)
-                        .filter(AlternateName.id == Filing.alternate_name_id)
-                        .filter(AlternateName.identifier == business_identifier)
-                        .filter(Filing.id == filing_id)
-                        .one_or_none()
-                    )
-                else:
-                    rv = (
-                        db.session.query(LegalEntity, Filing)
-                        .filter(LegalEntity.id == Filing.legal_entity_id)
-                        .filter(LegalEntity.identifier == business_identifier)
-                        .filter(Filing.id == filing_id)
-                        .one_or_none()
-                    )
+                # Model is based on the nature of the business
+                business_model = AlternateName if business.is_alternate_name_entity else LegalEntity
+                # Whether to query over the alternate_name_id or legal_entity_id column in the Filings table
+                # That depends also on the nature (model) of the business
+                filing_entity_id = (
+                    Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
+                )
+                rv = (
+                    db.session.query(business_model, Filing)
+                    .filter(business_model.id == filing_entity_id)
+                    .filter(business_model.identifier == business_identifier)
+                    .filter(Filing.id == filing_id)
+                    .one_or_none()
+                )
                 if not rv:
                     return None, None, {"message": f"{business_identifier} no filings found"}, HTTPStatus.NOT_FOUND
                 filing = rv[1]
