@@ -965,7 +965,6 @@ def upgrade():
         batch_op.create_foreign_key(None, 'addresses', ['mailing_address_id'], ['id'])
         batch_op.create_foreign_key(None, 'filings', ['change_filing_id'], ['id'])
         batch_op.create_foreign_key(None, 'legal_entities', ['legal_entity_id'], ['id'])
-        batch_op.create_foreign_key('fk_entity_type', 'legal_entities', ['entity_type'], ['entity_type'])
         batch_op.create_foreign_key(None, 'colin_entities', ['colin_entity_id'], ['id'])
         batch_op.create_foreign_key(None, 'filings', ['state_filing_id'], ['id'])
         batch_op.create_index(batch_op.f('ix_alternate_names_change_filing_id'), ['change_filing_id'], unique=False)
@@ -1068,7 +1067,6 @@ def downgrade():
         batch_op.drop_column('last_modified')
 
     with op.batch_alter_table('alternate_names', schema=None) as batch_op:
-        batch_op.drop_constraint('fk_entity_type', type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
         batch_op.drop_constraint(None, type_='foreignkey')
