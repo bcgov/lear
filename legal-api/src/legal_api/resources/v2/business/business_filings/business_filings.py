@@ -615,7 +615,7 @@ class ListFilingResource:
                 )
                 rv = (
                     db.session.query(business_model, Filing)
-                    .filter(business_model.id == filing_entity_id)
+                    .join(Filing, filing_entity_id == business_model.id)  # join Filing table based on the dynamic column
                     .filter(business_model.identifier == business_identifier)
                     .filter(Filing.id == filing_id)
                     .one_or_none()
