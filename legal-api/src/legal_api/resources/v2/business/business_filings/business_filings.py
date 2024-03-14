@@ -547,6 +547,7 @@ class ListFilingResource:
             current_app.logger.error("Business:%s unable to post to queue, err=%s", identifier, err)
             return {"errors": {"message": "unable to publish for post processing"}}, HTTPStatus.BAD_REQUEST
 
+    # pylint: disable=too-many-statements
     @staticmethod
     def save_filing(  # pylint: disable=too-many-return-statements,too-many-branches
         client_request: LocalProxy,
