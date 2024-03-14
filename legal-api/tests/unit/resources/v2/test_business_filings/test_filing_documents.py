@@ -2007,7 +2007,7 @@ def test_document_list_for_various_filing_states(
     with nested_session(session):
         # Setup
         # identifier = 'CP7654321'
-        legal_entity = factory_legal_entity(identifier, _entity_type=entity_type)
+        legal_entity = factory_legal_entity(identifier, entity_type=entity_type)
 
         filing_json = copy.deepcopy(FILING_HEADER)
         filing_json["filing"]["header"]["name"] = filing_name_1
@@ -2025,6 +2025,8 @@ def test_document_list_for_various_filing_states(
         filing._status = status
         filing._payment_completion_date = payment_completion_date
         filing.save()
+
+        meta_data = {}
 
         if status == "COMPLETED":
             lf = [list(x.keys()) for x in filing.legal_filings()]
