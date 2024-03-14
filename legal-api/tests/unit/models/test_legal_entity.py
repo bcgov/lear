@@ -915,15 +915,11 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
 
         if alternate_names_info:
             for alternate_name_info in alternate_names_info:
-                business_start_date = datetime.strptime(
-                    alternate_name_info["businessStartDate"], "%Y-%m-%dT%H:%M:%S%z"
-                )
-               
+                business_start_date = datetime.strptime(alternate_name_info["businessStartDate"], "%Y-%m-%dT%H:%M:%S%z")
+
                 alternate_name_identifier = alternate_name_info["identifier"]
 
-                start_date = datetime.strptime(
-                    alternate_name_info["startDate"], "%Y-%m-%dT%H:%M:%S%z"
-                )
+                start_date = datetime.strptime(alternate_name_info["startDate"], "%Y-%m-%dT%H:%M:%S%z")
                 if alternate_name_identifier != le.identifier:
                     le_alternate_name = LegalEntity(
                         _entity_type=alternate_name_info["entityType"],

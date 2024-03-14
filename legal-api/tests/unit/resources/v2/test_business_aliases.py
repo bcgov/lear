@@ -157,7 +157,8 @@ def test_get_business_alias_by_type(session, client, jwt):
 
         # test
         rv = client.get(
-            f"/api/v2/businesses/{identifier}/aliases?type=translation", headers=create_header(jwt, [STAFF_ROLE], identifier)
+            f"/api/v2/businesses/{identifier}/aliases?type=translation",
+            headers=create_header(jwt, [STAFF_ROLE], identifier),
         )
         # check
         assert rv.status_code == HTTPStatus.OK

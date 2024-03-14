@@ -325,7 +325,6 @@ def test_get_business_with_alternate_names(session, client, jwt):
         assert len(rv.json["business"]["alternateNames"]) == 2
 
 
-
 @pytest.mark.parametrize(
     "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
     + "missing_business_info_warning_expected",

@@ -111,7 +111,7 @@ def test_find_by_name_type(session):
     with nested_session(session):
         identifier = "BC1234567"
         legal_entity = factory_legal_entity(identifier=identifier)
-        
+
         alternate_name = factory_alternate_name(
             name="ABC Ltd.",
             name_type=AlternateName.NameType.DBA,
@@ -139,4 +139,3 @@ def test_find_by_name_type(session):
         assert len(res) == 2
         assert res[0].name == "NAME TRANSLATION 1"
         assert res[1].name == "NAME TRANSLATION 2"
- 
