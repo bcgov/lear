@@ -437,10 +437,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            if (self.state == Business.State.HISTORICAL and
-                    (amalgamating_business := self.amalgamating_businesses.one_or_none())):
-                amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-                d['amalgamatedInto'] = amalgamation.json()
+            if (amalgamated_into := self.get_amalgamated_into()):
+                d['amalgamatedInto'] = amalgamated_into
             else:
                 d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
@@ -561,6 +559,16 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             filter(Filing.id == filing_id). \
             one_or_none()
         return None if not filing else filing[1]
+
+    def get_amalgamated_into(self) -> dict:
+        """Get amalgamated into if this business is part of an amalgamation."""
+        if (self.state == Business.State.HISTORICAL and
+            (state_filing := Filing.find_by_id(self.state_filing_id)) and
+                state_filing.is_amalgamation_application):
+            return Amalgamation.get_amalgamation_revision_json(state_filing.transaction_id,
+                                                               state_filing.business_id)
+
+        return None
 
     @classmethod
     def is_pending_amalgamating_business(cls, business_identifier):
