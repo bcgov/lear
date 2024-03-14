@@ -247,7 +247,7 @@ class BusinessCommon:
                 return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return True
 
-    def get_filing_by_id(self, filing_id: str):
+    def get_filing_by_id(self, filing_id: int):
         """Return the filings for a specific business and filing_id."""
         from legal_api.models import AlternateName, Filing, LegalEntity
 

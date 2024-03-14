@@ -26,19 +26,19 @@ from tests.unit.models import factory_legal_entity, factory_share_class
 from tests.unit.services.utils import create_header
 
 
-# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name,role,identifier",
+    "test_name,role",
     [
-        ("public-user", PUBLIC_USER, "CP1234561"),
-        ("account-identity", ACCOUNT_IDENTITY, "CP1234562"),
-        ("staff", STAFF_ROLE, "CP1234563"),
-        ("system", SYSTEM_ROLE, "CP1234564"),
+        ("public-user", PUBLIC_USER),
+        ("account-identity", ACCOUNT_IDENTITY),
+        ("staff", STAFF_ROLE),
+        ("system", SYSTEM_ROLE),
     ],
 )
-def test_get_business_share_classes(app, session, client, jwt, requests_mock, test_name, role, identifier):
+def test_get_business_share_classes(app, session, client, jwt, requests_mock, test_name, role):
     """Assert that business share classes are returned."""
     with nested_session(session):
+        identifier = "CP1234561"
         share_class = factory_share_class(identifier)
 
         # mock response from auth to give view access (not needed if staff / system)

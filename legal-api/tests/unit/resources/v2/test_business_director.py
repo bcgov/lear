@@ -28,20 +28,20 @@ from tests.unit.models import Address, factory_legal_entity, factory_party_role
 from tests.unit.services.utils import create_header
 
 
-# TODO: Works with unique identifiers but DB reset fix will resolve the randomly failing tests (ticket# 20121)
 @pytest.mark.parametrize(
-    "test_name,role,identifier",
+    "test_name,role",
     [
-        ("public-user", PUBLIC_USER, "CP7654321"),
-        ("account-identity", ACCOUNT_IDENTITY, "CP7654322"),
-        ("staff", STAFF_ROLE, "CP7654323"),
-        ("system", SYSTEM_ROLE, "CP7654324"),
+        ("public-user", PUBLIC_USER),
+        ("account-identity", ACCOUNT_IDENTITY),
+        ("staff", STAFF_ROLE),
+        ("system", SYSTEM_ROLE),
     ],
 )
-def test_get_business_directors(app, session, client, jwt, requests_mock, test_name, role, identifier):
+def test_get_business_directors(app, session, client, jwt, requests_mock, test_name, role):
     """Assert that business directors are returned."""
     with nested_session(session):
         # setup
+        identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
         director_address = Address(city="Test Mailing City", address_type=Address.DELIVERY)
         officer = {
