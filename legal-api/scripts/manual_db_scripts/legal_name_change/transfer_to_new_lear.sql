@@ -407,19 +407,24 @@ where sq.version != mv.max_version;
 
 vset cli.settings.transfer_threads=8
 -- aliases -> alternate_names
+CREATE CAST (varchar AS nametype) WITH INOUT AS IMPLICIT;
 transfer public.alternate_names from lear_old using
 SELECT a.id,
        a.alias                 as name,
        a.type                  as name_type,
        a.business_id           as legal_entity_id,
        f.id                    as change_filing_id,
-       f.effective_date        as start_date,
+       (CASE
+             WHEN f.effective_date is not null THEN f.effective_date
+             ELSE t.issued_at
+          END)                 as start_date,
        COALESCE(av.version, 0) as version
 FROM public.aliases a
          left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.aliases_version
                     group by id) av on a.id = av.id
-         left join public.filings f on f.transaction_id = av.transaction_id;
+         left join public.filings f on f.transaction_id = av.transaction_id
+         left join public.transaction t on av.transaction_id = t.id;
 
 
 -- aliases_version -> alternate_names_history
@@ -430,7 +435,10 @@ with subquery as
                  av.type                                                                            as name_type,
                  av.business_id                                                                     as legal_entity_id,
                  f.id                                                                               as change_filing_id,
-                 f.effective_date                                                                   as start_date,
+                 (CASE
+                      WHEN f.effective_date is not null THEN f.effective_date
+                      ELSE t.issued_at
+                   END)                                                                             as start_date,
                  t.issued_at                                                                        as changed,
                  COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC), 1) as version
           from public.aliases_version av
