@@ -86,3 +86,57 @@ def test_business_name(session, entity_type, operating_name, expected_business_n
         legal_entity.skip_party_listener = True
 
         assert alternate_name.business_name == expected_business_name
+
+
+def test_alternate_name_alias_json(session):
+    """Assert the json format for alternate name alias(translation)"""
+    with nested_session(session):
+        identifier = "BC1234567"
+        legal_entity = factory_legal_entity(identifier=identifier)
+
+        alternate_name = factory_alternate_name(
+            name="NAME TRANSLATION",
+            name_type=AlternateName.NameType.TRANSLATION,
+            start_date=datetime.utcnow(),
+            legal_entity_id=legal_entity.id,
+        )
+
+        assert alternate_name.alias_json
+        assert alternate_name.alias_json["name"] == "NAME TRANSLATION"
+        assert alternate_name.alias_json["type"] == "TRANSLATION"
+
+
+def test_find_by_name_type(session):
+    """Assert that the method returns correct value."""
+    with nested_session(session):
+        identifier = "BC1234567"
+        legal_entity = factory_legal_entity(identifier=identifier)
+        
+        alternate_name = factory_alternate_name(
+            name="ABC Ltd.",
+            name_type=AlternateName.NameType.DBA,
+            start_date=datetime.utcnow(),
+            legal_entity_id=legal_entity.id,
+        )
+
+        alternate_name2 = factory_alternate_name(
+            name="NAME TRANSLATION 1",
+            name_type=AlternateName.NameType.TRANSLATION,
+            start_date=datetime.utcnow(),
+            legal_entity_id=legal_entity.id,
+        )
+
+        alternate_name3 = factory_alternate_name(
+            name="NAME TRANSLATION 2",
+            name_type=AlternateName.NameType.TRANSLATION,
+            start_date=datetime.utcnow(),
+            legal_entity_id=legal_entity.id,
+        )
+
+        res = AlternateName.find_by_name_type(legal_entity.id, "TRANSLATION")
+
+        assert res
+        assert len(res) == 2
+        assert res[0].name == "NAME TRANSLATION 1"
+        assert res[1].name == "NAME TRANSLATION 2"
+ 

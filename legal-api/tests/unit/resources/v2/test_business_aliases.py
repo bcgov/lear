@@ -16,12 +16,11 @@
 
 Test-Suite to ensure that the /businesses../aliases endpoint is working as expected.
 """
-from contextlib import suppress
 from http import HTTPStatus
 
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit import nested_session
-from tests.unit.models import Alias, factory_legal_entity
+from tests.unit.models import AlternateName, factory_alternate_name, factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
@@ -31,10 +30,16 @@ def test_get_business_aliases(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
-        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
-        alias1.save()
-        alias2.save()
+        alias1 = factory_alternate_name(
+            name="ABC Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
+        alias2 = factory_alternate_name(
+            name="DEF Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
 
         # test
         rv = client.get(
@@ -44,6 +49,33 @@ def test_get_business_aliases(session, client, jwt):
         assert rv.status_code == HTTPStatus.OK
         assert "aliases" in rv.json
         assert len(rv.json["aliases"]) == 2
+
+
+def test_get_business_aliases_only_translation(session, client, jwt):
+    """Assert that only name translation is returned."""
+    # setup
+    with nested_session(session):
+        identifier = "CP7654321"
+        legal_entity = factory_legal_entity(identifier)
+        alias1 = factory_alternate_name(
+            name="ABC Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
+        alias2 = factory_alternate_name(
+            name="DEF Ltd.",
+            name_type=AlternateName.NameType.DBA,
+            legal_entity_id=legal_entity.id,
+        )
+
+        # test
+        rv = client.get(
+            f"/api/v2/businesses/{identifier}/aliases", headers=create_header(jwt, [STAFF_ROLE], identifier)
+        )
+        # check
+        assert rv.status_code == HTTPStatus.OK
+        assert len(rv.json["aliases"]) == 1
+        assert rv.json["aliases"][0]["name"] == "ABC Ltd."
 
 
 def test_get_business_no_aliases(session, client, jwt):
@@ -68,10 +100,17 @@ def test_get_business_alias_by_id(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
-        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
-        alias1.save()
-        alias2.save()
+        alias1 = factory_alternate_name(
+            name="ABC Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
+        alias2 = factory_alternate_name(
+            name="DEF Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
+
         # test
         rv = client.get(
             f"/api/v2/businesses/{identifier}/aliases/{alias1.id}", headers=create_header(jwt, [STAFF_ROLE], identifier)
@@ -105,20 +144,25 @@ def test_get_business_alias_by_type(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
-        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
-        alias1.save()
-        alias2.save()
+        alias1 = factory_alternate_name(
+            name="ABC Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
+        alias2 = factory_alternate_name(
+            name="DEF Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
 
         # test
         rv = client.get(
-            f"/api/v2/businesses/{identifier}/aliases?type=dba", headers=create_header(jwt, [STAFF_ROLE], identifier)
+            f"/api/v2/businesses/{identifier}/aliases?type=translation", headers=create_header(jwt, [STAFF_ROLE], identifier)
         )
         # check
         assert rv.status_code == HTTPStatus.OK
         assert "aliases" in rv.json
-        assert len(rv.json["aliases"]) == 1
-        assert rv.json["aliases"][0]["name"] == "DEF Ltd."
+        assert len(rv.json["aliases"]) == 2
 
 
 def test_get_business_alias_by_invalid_type(session, client, jwt):
@@ -127,10 +171,16 @@ def test_get_business_alias_by_invalid_type(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = Alias(alias="ABC Ltd.", type="TRANSLATION", legal_entity_id=legal_entity.id)
-        alias2 = Alias(alias="DEF Ltd.", type="DBA", legal_entity_id=legal_entity.id)
-        alias1.save()
-        alias2.save()
+        alias1 = factory_alternate_name(
+            name="ABC Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
+        alias2 = factory_alternate_name(
+            name="DEF Ltd.",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
 
         # test
         rv = client.get(

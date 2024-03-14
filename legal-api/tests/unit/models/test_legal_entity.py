@@ -739,15 +739,15 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "entityType": "SP",
                     "operatingName": ALTERNATE_NAME_1,
-                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
-                    "startDate": ALTERNATE_NAME_1_START_DATE,
+                    "businessStartDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                 },
                 {
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "entityType": "GP",
                     "operatingName": ALTERNATE_NAME_2,
-                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
-                    "startDate": ALTERNATE_NAME_2_START_DATE,
+                    "businessStartDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                 },
             ],
             # expected_alternate_names
@@ -756,13 +756,19 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "operatingName": ALTERNATE_NAME_1,
                     "entityType": "SP",
-                    "nameRegisteredDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
+                    "nameStartDate": ALTERNATE_NAME_1_START_DATE,
+                    "name": ALTERNATE_NAME_1,
+                    "nameType": "DBA",
                 },
                 {
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "operatingName": ALTERNATE_NAME_2,
                     "entityType": "GP",
-                    "nameRegisteredDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
+                    "nameStartDate": ALTERNATE_NAME_2_START_DATE,
+                    "name": ALTERNATE_NAME_2,
+                    "nameType": "DBA",
                 },
             ],
         ),
@@ -783,8 +789,8 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "entityType": "SP",
                     "operatingName": ALTERNATE_NAME_1,
-                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
-                    "startDate": ALTERNATE_NAME_1_START_DATE,
+                    "businessStartDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                 }
             ],
             # expected_alternate_names
@@ -793,7 +799,10 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "operatingName": ALTERNATE_NAME_1,
                     "entityType": "SP",
-                    "nameRegisteredDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
+                    "nameStartDate": ALTERNATE_NAME_1_START_DATE,
+                    "name": ALTERNATE_NAME_1,
+                    "nameType": "DBA",
                 }
             ],
         ),
@@ -814,8 +823,8 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "entityType": "GP",
                     "operatingName": ALTERNATE_NAME_2,
-                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
-                    "startDate": ALTERNATE_NAME_2_START_DATE,
+                    "businessStartDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                 }
             ],
             # expected_alternate_names
@@ -824,7 +833,10 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "operatingName": ALTERNATE_NAME_2,
                     "entityType": "GP",
-                    "nameRegisteredDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
+                    "nameStartDate": ALTERNATE_NAME_2_START_DATE,
+                    "name": ALTERNATE_NAME_2,
+                    "nameType": "DBA",
                 }
             ],
         ),
@@ -848,15 +860,15 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "entityType": "GP",
                     "operatingName": ALTERNATE_NAME_1,
-                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
-                    "startDate": ALTERNATE_NAME_1_START_DATE,
+                    "businessStartDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                 },
                 {
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "entityType": "SP",
                     "operatingName": ALTERNATE_NAME_2,
-                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
-                    "startDate": ALTERNATE_NAME_2_START_DATE,
+                    "businessStartDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                 },
             ],
             # expected_alternate_names
@@ -865,13 +877,19 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "operatingName": ALTERNATE_NAME_1,
                     "entityType": "GP",
-                    "nameRegisteredDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                    "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
+                    "nameStartDate": ALTERNATE_NAME_1_START_DATE,
+                    "name": ALTERNATE_NAME_1,
+                    "nameType": "DBA",
                 },
                 {
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "operatingName": ALTERNATE_NAME_2,
                     "entityType": "SP",
-                    "nameRegisteredDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                    "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
+                    "nameStartDate": ALTERNATE_NAME_2_START_DATE,
+                    "name": ALTERNATE_NAME_2,
+                    "nameType": "DBA",
                 },
             ],
         ),
@@ -897,18 +915,19 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
 
         if alternate_names_info:
             for alternate_name_info in alternate_names_info:
-                start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
-                    alternate_name_info["startDate"]
+                business_start_date = datetime.strptime(
+                    alternate_name_info["businessStartDate"], "%Y-%m-%dT%H:%M:%S%z"
                 )
+               
                 alternate_name_identifier = alternate_name_info["identifier"]
 
+                start_date = datetime.strptime(
+                    alternate_name_info["startDate"], "%Y-%m-%dT%H:%M:%S%z"
+                )
                 if alternate_name_identifier != le.identifier:
-                    le_an_founding_date = datetime.strptime(
-                        alternate_name_info["nameRegisteredDate"], "%Y-%m-%dT%H:%M:%S%z"
-                    )
                     le_alternate_name = LegalEntity(
                         _entity_type=alternate_name_info["entityType"],
-                        founding_date=le_an_founding_date,
+                        founding_date=start_date,
                         identifier=alternate_name_identifier,
                     )
                     session.add(le_alternate_name)
@@ -919,6 +938,7 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
                     name=alternate_name_info["operatingName"],
                     bn15="111111100BC1111",
                     start_date=start_date,
+                    business_start_date=business_start_date,
                     legal_entity_id=le.id,
                 )
                 le.alternate_names.append(alternate_name)

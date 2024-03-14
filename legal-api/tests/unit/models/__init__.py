@@ -126,7 +126,7 @@ def factory_alternate_name(
     name_type=AlternateName.NameType.DBA,
     bn15=None,
     legal_entity_id=None,
-    start_date=None,
+    start_date=EPOCH_DATETIME,
     end_date=None,
     state=LegalEntity.State.ACTIVE,
     naics_code=None,
