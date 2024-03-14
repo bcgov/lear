@@ -283,6 +283,7 @@ def upgrade():
                     sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True),
                     sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True),
                     sa.Column('legal_entity_id', sa.Integer(), autoincrement=False, nullable=True),
+                    sa.Column('entity_type', sa.String(length=15), autoincrement=False, nullable=True),
                     sa.Column('colin_entity_id', sa.Integer(), autoincrement=False, nullable=True),
                     sa.Column('change_filing_id', sa.Integer(), autoincrement=False, nullable=True),
                     sa.Column('email', sa.String(length=254), autoincrement=False, nullable=True),
@@ -306,6 +307,7 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_alternate_names_history_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_alternate_names_history_name'), ['name'], unique=False)
         batch_op.create_index(batch_op.f('ix_alternate_names_history_identifier'), ['identifier'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_history_entity_type'), ['entity_type'], unique=False)
 
     op.create_table('colin_event_ids',
     sa.Column('colin_event_id', sa.Integer(), nullable=False),
@@ -951,6 +953,7 @@ def upgrade():
         batch_op.add_column(sa.Column('admin_freeze', sa.Boolean(), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('last_modified', sa.DateTime(timezone=True), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('legal_entity_id', sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column('entity_type', sa.String(length=15), autoincrement=False, nullable=True))
         batch_op.add_column(sa.Column('colin_entity_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('change_filing_id', sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column('email', sa.String(length=254), autoincrement=False, nullable=True))
@@ -969,6 +972,7 @@ def upgrade():
         batch_op.create_index(batch_op.f('ix_alternate_names_change_filing_id'), ['change_filing_id'], unique=False)
         batch_op.create_index(batch_op.f('ix_alternate_names_name'), ['name'], unique=False)
         batch_op.create_index(batch_op.f('ix_alternate_names_identifier'), ['identifier'], unique=False)
+        batch_op.create_index(batch_op.f('ix_alternate_names_entity_type'), ['entity_type'], unique=False)
 
     with op.batch_alter_table('offices', schema=None) as batch_op:
         batch_op.add_column(sa.Column('office_type', sa.String(length=75), nullable=True))
@@ -1074,6 +1078,7 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_alternate_names_change_filing_id'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_name'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_identifier'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_entity_type'))
         batch_op.drop_column('identifier')
         batch_op.drop_column('name_type')
         batch_op.drop_column('name')
@@ -1087,6 +1092,7 @@ def downgrade():
         batch_op.drop_column('admin_freeze')
         batch_op.drop_column('last_modified')
         batch_op.drop_column('legal_entity_id')
+        batch_op.drop_column('entity_type')
         batch_op.drop_column('colin_entity_id')
         batch_op.drop_column('change_filing_id')
         batch_op.drop_column('email')
@@ -1257,12 +1263,15 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_alternate_names_history_change_filing_id'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_history_name'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_history_identifier'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_history_entity_type'))
+        
 
     op.drop_table('alternate_names_history')
     with op.batch_alter_table('alternate_names', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_alternate_names_change_filing_id'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_name'))
         batch_op.drop_index(batch_op.f('ix_alternate_names_identifier'))
+        batch_op.drop_index(batch_op.f('ix_alternate_names_history_entity_type'))
 
     op.drop_table('alternate_names')
     with op.batch_alter_table('aliases_history', schema=None) as batch_op:
