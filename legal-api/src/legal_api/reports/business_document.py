@@ -21,7 +21,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, CorpType, Filing, LegalEntity
+from legal_api.models import AlternateName, CorpType, Filing, LegalEntity
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
@@ -304,7 +304,7 @@ class BusinessDocument:
 
     def _set_name_translations(self, legal_entity: dict):
         """Set the aliases."""
-        aliases = Alias.find_by_type(self._legal_entity.id, "TRANSLATION")
+        aliases = AlternateName.find_by_name_type(self._legal_entity.id, "TRANSLATION")
         legal_entity["listOfTranslations"] = [alias.json for alias in aliases]
 
     def _set_business_state_changes(self, legal_entity: dict):
