@@ -30,12 +30,12 @@ def test_get_business_aliases(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = factory_alternate_name(
+        factory_alternate_name(
             name="ABC Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
         )
-        alias2 = factory_alternate_name(
+        factory_alternate_name(
             name="DEF Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
@@ -57,12 +57,12 @@ def test_get_business_aliases_only_translation(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = factory_alternate_name(
+        factory_alternate_name(
             name="ABC Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
         )
-        alias2 = factory_alternate_name(
+        factory_alternate_name(
             name="DEF Ltd.",
             name_type=AlternateName.NameType.DBA,
             legal_entity_id=legal_entity.id,
@@ -105,7 +105,7 @@ def test_get_business_alias_by_id(session, client, jwt):
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
         )
-        alias2 = factory_alternate_name(
+        factory_alternate_name(
             name="DEF Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
@@ -144,12 +144,12 @@ def test_get_business_alias_by_type(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = factory_alternate_name(
+        factory_alternate_name(
             name="ABC Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
         )
-        alias2 = factory_alternate_name(
+        factory_alternate_name(
             name="DEF Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
@@ -172,12 +172,12 @@ def test_get_business_alias_by_invalid_type(session, client, jwt):
     with nested_session(session):
         identifier = "CP7654321"
         legal_entity = factory_legal_entity(identifier)
-        alias1 = factory_alternate_name(
+        factory_alternate_name(
             name="ABC Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,
         )
-        alias2 = factory_alternate_name(
+        factory_alternate_name(
             name="DEF Ltd.",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,

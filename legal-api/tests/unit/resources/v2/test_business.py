@@ -306,13 +306,13 @@ def test_get_business_with_alternate_names(session, client, jwt):
             dissolution_date=datetime.utcfromtimestamp(0),
         )
 
-        alternate_name1 = factory_alternate_name(
+        factory_alternate_name(
             name="ABC Ltd.",
             name_type=AlternateName.NameType.DBA,
             legal_entity_id=legal_entity.id,
         )
 
-        alternate_name2 = factory_alternate_name(
+        factory_alternate_name(
             name="NAME TRANSLATION",
             name_type=AlternateName.NameType.TRANSLATION,
             legal_entity_id=legal_entity.id,

@@ -112,21 +112,21 @@ def test_find_by_name_type(session):
         identifier = "BC1234567"
         legal_entity = factory_legal_entity(identifier=identifier)
 
-        alternate_name = factory_alternate_name(
+        factory_alternate_name(
             name="ABC Ltd.",
             name_type=AlternateName.NameType.DBA,
             start_date=datetime.utcnow(),
             legal_entity_id=legal_entity.id,
         )
 
-        alternate_name2 = factory_alternate_name(
+        factory_alternate_name(
             name="NAME TRANSLATION 1",
             name_type=AlternateName.NameType.TRANSLATION,
             start_date=datetime.utcnow(),
             legal_entity_id=legal_entity.id,
         )
 
-        alternate_name3 = factory_alternate_name(
+        factory_alternate_name(
             name="NAME TRANSLATION 2",
             name_type=AlternateName.NameType.TRANSLATION,
             start_date=datetime.utcnow(),
