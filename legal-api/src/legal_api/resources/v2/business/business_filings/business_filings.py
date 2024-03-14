@@ -38,7 +38,17 @@ import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, ColinLastUpdate, Filing, LegalEntity, RegistrationBootstrap, User, UserRoles, db
+from legal_api.models import (
+    Address,
+    AlternateName,
+    ColinLastUpdate,
+    Filing,
+    LegalEntity,
+    RegistrationBootstrap,
+    User,
+    UserRoles,
+    db,
+)
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -598,10 +608,19 @@ class ListFilingResource:
                 return None, None, {"message": f"{business_identifier} not found"}, HTTPStatus.NOT_FOUND
 
             if client_request.method == "PUT":
+                # Model is based on the nature of the business
+                business_model = AlternateName if business.is_alternate_name_entity else LegalEntity
+                # Whether to query over the alternate_name_id or legal_entity_id column in the Filings table
+                # That depends also on the nature (model) of the business
+                filing_entity_id = (
+                    Filing.alternate_name_id if business.is_alternate_name_entity else Filing.legal_entity_id
+                )
                 rv = (
-                    db.session.query(LegalEntity, Filing)
-                    .filter(LegalEntity.id == Filing.legal_entity_id)
-                    .filter(LegalEntity.identifier == business_identifier)
+                    db.session.query(business_model, Filing)
+                    .join(
+                        Filing, filing_entity_id == business_model.id
+                    )  # join Filing table based on the dynamic column
+                    .filter(business_model.identifier == business_identifier)
                     .filter(Filing.id == filing_id)
                     .one_or_none()
                 )
