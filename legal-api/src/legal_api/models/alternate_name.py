@@ -318,7 +318,9 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
                     "identifier": self.identifier,
                     "name": self.name,
                     "nameRegisteredDate": self.start_date.isoformat(),
-                    "nameStartDate": LegislationDatetime.format_as_legislation_date(self.business_start_date),
+                    "nameStartDate": LegislationDatetime.format_as_legislation_date(self.business_start_date)
+                    if self.business_start_date
+                    else None,
                     "nameType": self.name_type.name,
                     "operatingName": self.name,  # will be removed in the future
                 }
