@@ -43,7 +43,7 @@ def get_parties(identifier, party_id=None):
             HTTPStatus.UNAUTHORIZED,
         )
 
-    if business.entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value:
+    if business.is_alternate_name_entity and (business.entity_type == BusinessCommon.EntityTypes.SOLE_PROP.value):
         return jsonify(parties=[business.owner_data_json])
 
     if party_id:
