@@ -14,7 +14,6 @@
 
 """This exports all of the models and schemas used by the application."""
 from .address import Address
-from .alias import Alias
 from .alternate_name import AlternateName
 from .amalgamating_business import AmalgamatingBusiness
 from .amalgamation import Amalgamation
@@ -51,7 +50,6 @@ __all__ = (
     "Address",
     "AmalgamatingBusiness",
     "Amalgamation",
-    "Alias",
     "AlternateName",
     "BusinessCommon",
     "ColinEntity",
