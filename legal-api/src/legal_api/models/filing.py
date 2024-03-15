@@ -651,6 +651,11 @@ class Filing(db.Model):
             return True
         return False
 
+    @property
+    def is_amalgamation_application(self):
+        """Is this an amalgamation application filing."""
+        return self.filing_type == Filing.FILINGS['amalgamationApplication'].get('name')
+
     @hybrid_property
     def comments_count(self):
         """Return the number of commentson this filing."""
