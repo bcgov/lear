@@ -52,6 +52,7 @@ from simple_cloudevent import (
     to_queue_message,
 )
 from werkzeug.local import LocalProxy
+from werkzeug.exceptions import UnsupportedMediaType
 
 
 class GcpQueue:
@@ -123,7 +124,9 @@ class GcpQueue:
         return None
 
     @staticmethod
-    def get_simple_cloud_event(request: LocalProxy, return_raw: bool = False) -> type[SimpleCloudEvent | dict | None]:
+    def get_simple_cloud_event(
+        request: LocalProxy, return_raw: bool = False, wrapped: bool = False
+    ) -> type[SimpleCloudEvent | dict | None]:
         """Return a SimpleCloudEvent if one is in session from the PubSub call.
 
         Parameters
@@ -145,6 +148,18 @@ class GcpQueue:
 
                 dict - if return_raw was set to true and it's not a SimpleCloudEvent -or-
         """
+        if not wrapped:
+            try:
+                message = request.get_json()
+                message.pop("datacontenttype", None)
+                message.pop("specversion", None)
+                ce = SimpleCloudEvent(**message)
+                return ce
+            except (UnsupportedMediaType, Exception) as err:
+                return None
+
+        # A wrapped pubsub message has an envelope and
+        # encrypted data payload
         if not (envelope := GcpQueue.get_envelope(request)):
             return None
 
@@ -163,6 +178,8 @@ class GcpQueue:
             ):
                 if return_raw and str_data:
                     return str_data
+
+        # we fell out the bottom here
         return None
 
     def publish(self, topic: str, payload: bytes):
