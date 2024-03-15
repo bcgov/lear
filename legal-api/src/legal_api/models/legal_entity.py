@@ -374,7 +374,9 @@ class LegalEntity(
                             "nameRegisteredDate": alternate_name.start_date.isoformat(),
                             "nameStartDate": LegislationDatetime.format_as_legislation_date(
                                 alternate_name.business_start_date
-                            ),
+                            )
+                            if alternate_name.business_start_date
+                            else None,
                             "nameType": alternate_name.name_type.name,
                             "operatingName": alternate_name.name,  # will be removed in the future
                         }
