@@ -201,7 +201,7 @@ def test_process_payment(app, session, client, mocker):
         }
     }
 
-    message = helper_create_cloud_event_envelope(source="sbc-pay", subject="payment", data=payment_token)
+    message = helper_create_cloud_event(source="sbc-pay", subject="payment", data=payment_token)
     # keep track of topics called on the mock
     topics = []
 
@@ -266,3 +266,23 @@ def helper_create_cloud_event_envelope(
         "id": envelope_id,
     }
     return envelope
+
+
+def helper_create_cloud_event(
+    cloud_event_id: str = None,
+    source: str = "fake-for-tests",
+    subject: str = "fake-subject",
+    type: str = "payment",
+    data: dict = {},
+):
+    if not data:
+        data = {
+            "paymentToken": {
+                "id": "29590",
+                "statusCode": "COMPLETED",
+                "filingIdentifier": 12345,
+                "corpTypeCode": "BC",
+            }
+        }
+    ce = SimpleCloudEvent(id=cloud_event_id, source=source, subject=subject, type=type, data=data)
+    return ce
