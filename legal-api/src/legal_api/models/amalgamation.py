@@ -18,6 +18,7 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 from enum import auto
+
 from sqlalchemy import or_
 from sqlalchemy_continuum import version_class
 
@@ -80,13 +81,13 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def get_amalgamation_revision_obj(cls, transaction_id, business_id):
         """Get amalgamation for the given transaction id."""
-        # pylint: disable=singleton-comparison; # noqa: E711;
+        # pylint: disable=singleton-comparison;
         amalgamation_version = version_class(Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
             .filter(amalgamation_version.operation_type != 2) \
             .filter(amalgamation_version.business_id == business_id) \
-            .filter(or_(amalgamation_version.end_transaction_id == None,
+            .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
                         amalgamation_version.end_transaction_id > transaction_id)) \
             .order_by(amalgamation_version.transaction_id).one_or_none()
         return amalgamation
