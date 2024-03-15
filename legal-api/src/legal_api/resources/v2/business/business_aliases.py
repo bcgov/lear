@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Alias
+from legal_api.models import AlternateName
 from legal_api.services import business_service
 from legal_api.utils.auth import jwt
 
@@ -40,17 +40,20 @@ def get_aliases(identifier, alias_id=None):
         alias, msg, code = _get_alias(business, alias_id)
         return jsonify(alias or msg), code
 
+    # currently return empty for SP
+    if business.is_alternate_name_entity:
+        return jsonify(aliases=[])
+
     aliases_list = []
 
     alias_type = request.args.get("type")
     if alias_type:
-        business_id = business.id if business.is_legal_entity else business.legal_entity_id
-        aliases = Alias.find_by_type(business_id, alias_type.upper())
+        aliases = AlternateName.find_by_name_type(business.id, alias_type.upper())
     else:
         aliases = business.aliases.all()
 
     for alias in aliases:
-        alias_json = alias.json
+        alias_json = alias.alias_json
         aliases_list.append(alias_json)
 
     return jsonify(aliases=aliases_list)
@@ -60,9 +63,9 @@ def _get_alias(business, alias_id=None):
     # find by ID
     alias = None
     if alias_id:
-        rv = Alias.find_by_id(alias_id=alias_id)
+        rv = AlternateName.find_by_id(id=alias_id)
         if rv:
-            alias = {"alias": rv.json}
+            alias = {"alias": rv.alias_json}
 
     if not alias:
         return None, {"message": f"{business.identifier} alias not found"}, HTTPStatus.NOT_FOUND

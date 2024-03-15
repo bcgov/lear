@@ -24,7 +24,6 @@ from sqlalchemy_continuum import versioning_manager
 from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
     Address,
-    Alias,
     AlternateName,
     ColinEntity,
     Comment,
@@ -126,7 +125,7 @@ def factory_alternate_name(
     name_type=AlternateName.NameType.DBA,
     bn15=None,
     legal_entity_id=None,
-    start_date=None,
+    start_date=EPOCH_DATETIME,
     end_date=None,
     state=LegalEntity.State.ACTIVE,
     naics_code=None,

@@ -23,7 +23,6 @@ from sqlalchemy.sql.expression import null
 
 from legal_api.models import (
     Address,
-    Alias,
     AlternateName,
     BusinessCommon,
     ColinEntity,
@@ -451,18 +450,18 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_name_translations_revision(filing, legal_entity_id) -> dict:
         """Consolidates all name translations up to the given transaction id."""
         name_translations_current = (
-            db.session.query(Alias)
-            .filter(Alias.change_filing_id == filing.id)
-            .filter(Alias.legal_entity_id == legal_entity_id)
-            .filter(Alias.type == "TRANSLATION")
+            db.session.query(AlternateName)
+            .filter(AlternateName.change_filing_id == filing.id)
+            .filter(AlternateName.legal_entity_id == legal_entity_id)
+            .filter(AlternateName.name_type == "TRANSLATION")
         )
 
-        name_translations_version = history_cls(Alias)
+        name_translations_version = history_cls(AlternateName)
         name_translations_history = (
             db.session.query(name_translations_version)
             .filter(name_translations_version.change_filing_id == filing.id)
             .filter(name_translations_version.legal_entity_id == legal_entity_id)
-            .filter(name_translations_version.type == "TRANSLATION")
+            .filter(name_translations_version.name_type == "TRANSLATION")
         )
         name_translations_list = name_translations_current.union(name_translations_history).all()
 
@@ -750,8 +749,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Return the name translation revision as a json object."""
         name_translation = {
             "id": str(name_translation_revision.id),
-            "name": name_translation_revision.alias,
-            "type": name_translation_revision.type,
+            "name": name_translation_revision.name,
+            "type": name_translation_revision.name_type.name,
         }
         return name_translation
 

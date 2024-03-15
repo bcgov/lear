@@ -289,6 +289,42 @@ def test_get_business_with_allowed_filings(session, client, jwt):
         assert rv.json["business"]["allowedFilings"]
 
 
+def test_get_business_with_alternate_names(session, client, jwt):
+    """Assert that alternate names (dba & translation) are returned with business."""
+    with nested_session(session):
+        identifier = "CP1234567"
+        legal_name = identifier + " legal name"
+        legal_entity = factory_legal_entity_model(
+            entity_type="CP",
+            legal_name=legal_name,
+            identifier=identifier,
+            founding_date=datetime.utcfromtimestamp(0),
+            last_ledger_timestamp=datetime.utcfromtimestamp(0),
+            last_modified=datetime.utcfromtimestamp(0),
+            fiscal_year_end_date=None,
+            tax_id=None,
+            dissolution_date=datetime.utcfromtimestamp(0),
+        )
+
+        factory_alternate_name(
+            name="ABC Ltd.",
+            name_type=AlternateName.NameType.DBA,
+            legal_entity_id=legal_entity.id,
+        )
+
+        factory_alternate_name(
+            name="NAME TRANSLATION",
+            name_type=AlternateName.NameType.TRANSLATION,
+            legal_entity_id=legal_entity.id,
+        )
+
+        rv = client.get(f"/api/v2/businesses/{identifier}", headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json["business"]["alternateNames"]
+        assert len(rv.json["business"]["alternateNames"]) == 2
+
+
 @pytest.mark.parametrize(
     "test_name, legal_type, owner_legal_type, identifier, owner_identifier, has_missing_business_info,"
     + "missing_business_info_warning_expected",
