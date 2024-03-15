@@ -221,9 +221,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _get_template_data(self):
         if self._report_key in ["noticeOfArticles", "amendedRegistrationStatement", "correctedRegistrationStatement"]:
-            filing = VersionedBusinessDetailsService.get_company_details_revision(
-                self._filing.id, self._business.id
-            )
+            filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
         else:
             filing = copy.deepcopy(self._filing.filing_json["filing"])
@@ -357,7 +355,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["effective_date"] = effective_date.strftime(OUTPUT_DATE_FORMAT)
         # Recognition Date
         if self._business:
-            recognition_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date if self._business.is_legal_entity else self._business.start_date)
+            recognition_datetime = LegislationDatetime.as_legislation_timezone(
+                self._business.founding_date if self._business.is_legal_entity else self._business.start_date
+            )
             filing["recognition_date_time"] = LegislationDatetime.format_as_report_string(recognition_datetime)
             filing["recognition_date_utc"] = recognition_datetime.strftime(OUTPUT_DATE_FORMAT)
             if self._business.start_date:

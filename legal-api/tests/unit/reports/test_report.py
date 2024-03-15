@@ -90,10 +90,10 @@ def set_dates(report):
     assert filing_json["effective_date_time"]
     assert filing_json["effective_date"]
     assert filing_json["recognition_date_time"]
-    if report._filing._filing_type == 'annualReport':
-        assert filing_json['agm_date']
-    if report._report_key == 'correction':
-        assert filing_json['original_filing_date_time']
+    if report._filing._filing_type == "annualReport":
+        assert filing_json["agm_date"]
+    if report._report_key == "correction":
+        assert filing_json["original_filing_date_time"]
 
 
 def substitute_template_parts(report):
