@@ -66,7 +66,7 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
     filing = factory_completed_filing(legal_entity, filing_json)
 
     report = Report(filing)
-    report._legal_entity = legal_entity
+    report._business = legal_entity
     report._report_key = report_type
     if report._report_key == "correction":
         report._report_key = report._filing.filing_json["filing"]["correction"]["correctedFilingType"]
@@ -76,7 +76,7 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
 
 def populate_business_info_to_filing(report):
     """Assert _populate_business_info_to_filing works as expected."""
-    report._populate_business_info_to_filing(report._filing, report._legal_entity)
+    report._populate_business_info_to_filing(report._filing, report._business)
     filing_json = report._filing.filing_json
     assert filing_json["filing"]["business"]["formatted_founding_date_time"]
     assert filing_json["filing"]["business"]["formatted_founding_date"]
@@ -90,11 +90,10 @@ def set_dates(report):
     assert filing_json["effective_date_time"]
     assert filing_json["effective_date"]
     assert filing_json["recognition_date_time"]
-    # TODO: figure out why this fails and improve test/code
-    # if report._report_key == 'annualReport':
-    #     assert filing_json['agm_date']
-    # if report_type == 'correction':
-    #     assert filing_json['original_filing_date_time']
+    if report._filing._filing_type == 'annualReport':
+        assert filing_json['agm_date']
+    if report._report_key == 'correction':
+        assert filing_json['original_filing_date_time']
 
 
 def substitute_template_parts(report):
@@ -136,7 +135,7 @@ def set_addresses(report):
             report._set_addresses(filing_json["filing"])
 
     assert filing_json["filing"].get("registeredOfficeAddress")
-    if report._legal_entity.entity_type == "BEN" and report._report_key == "changeOfAddress":
+    if report._business.entity_type == "BEN" and report._report_key == "changeOfAddress":
         assert filing_json["filing"].get("recordsOfficeAddress")
 
 
@@ -205,7 +204,7 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     if report_type in ["annualReport", "changeOfAddress"]:
         set_addresses(report)
 
-    if report._legal_entity.entity_type != "CP":
+    if report._business.entity_type != "CP":
         set_tax_id(report)
 
     filename = report._get_report_filename()
@@ -285,7 +284,7 @@ def filing_numbered_company(legal_entity, template, legal_name):
 def create_alteration_report(filing, business, report_type):
     """Create a report for alteration."""
     report = Report(filing)
-    report._legal_entity = business
+    report._business = business
     report._report_key = report_type
     populate_business_info_to_filing(report)
     set_dates(report)
