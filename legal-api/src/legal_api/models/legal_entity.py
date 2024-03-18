@@ -482,13 +482,15 @@ class LegalEntity(
         if self.fiscal_year_end_date:
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            if self.state == LegalEntity.State.HISTORICAL and (
-                amalgamating_business := self.amalgamating_businesses.one_or_none()
-            ):
-                amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-                d["amalgamatedInto"] = amalgamation.json()
-            else:
-                d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            # TODO: revert once amalgamation tables and migration scripts have been run
+            # if self.state == LegalEntity.State.HISTORICAL and (
+            #     amalgamating_business := self.amalgamating_businesses.one_or_none()
+            # ):
+            #     amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
+            #     d["amalgamatedInto"] = amalgamation.json()
+            # else:
+            #     d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         if self.start_date:
             d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)
