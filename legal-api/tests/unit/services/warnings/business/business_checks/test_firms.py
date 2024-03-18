@@ -35,6 +35,7 @@ from legal_api.services.warnings.business.business_checks.firms import (
 )
 from tests.unit.services.warnings import (
     create_business,
+    create_alternate_name_business,
     factory_address,
     factory_filing_role_organization,
     factory_filing_role_person,
@@ -286,11 +287,11 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
 
 
 @pytest.mark.parametrize(
-    "test_name, legal_type, role, num_persons_roles, num_org_roles, expected_code, expected_msg",
+    "test_name, legal_type, role, num_persons_roles, num_org_roles, expected_code, expected_msg, owner_legal_type, owner_identifier",
     [
         # SP tests
-        ("SUCCESS", "SP", EntityRole.RoleTypes.proprietor, 1, 0, None, None),
-        ("SUCCESS", "SP", EntityRole.RoleTypes.proprietor, 0, 1, None, None),
+        ("SUCCESS", "SP", EntityRole.RoleTypes.proprietor, 1, 0, None, None, "BEN", "BC0000003"),
+        ("SUCCESS", "SP", EntityRole.RoleTypes.proprietor, 0, 1, None, None, "BEN", "BC0000004"),
         (
             "FAIL_PROPRIETOR_REQUIRED",
             "SP",
@@ -299,27 +300,50 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
             0,
             "NO_PROPRIETOR",
             "A proprietor is required.",
+            "BEN", 
+            "BC0000005"
         ),
         #
         # GP tests
-        ("SUCCESS", "GP", EntityRole.RoleTypes.partner, 2, 0, None, None),
-        ("SUCCESS", "GP", EntityRole.RoleTypes.partner, 0, 2, None, None),
-        ("SUCCESS", "GP", EntityRole.RoleTypes.partner, 1, 1, None, None),
-        ("FAIL_PARTNER_REQUIRED", "GP", EntityRole.RoleTypes.partner, 0, 0, "NO_PARTNER", "2 partners are required."),
-        ("FAIL_PARTNER_REQUIRED", "GP", EntityRole.RoleTypes.partner, 1, 0, "NO_PARTNER", "2 partners are required."),
-        ("FAIL_PARTNER_REQUIRED", "GP", EntityRole.RoleTypes.partner, 0, 1, "NO_PARTNER", "2 partners are required."),
+        ("SUCCESS", "GP", EntityRole.RoleTypes.partner, 2, 0, None, None, "BEN", "BC0000006"),
+        ("SUCCESS", "GP", EntityRole.RoleTypes.partner, 0, 2, None, None, "BEN", "BC0000007"),
+        ("SUCCESS", "GP", EntityRole.RoleTypes.partner, 1, 1, None, None, "BEN", "BC000008"),
+        ("FAIL_PARTNER_REQUIRED", "GP", EntityRole.RoleTypes.partner, 0, 0, "NO_PARTNER", "2 partners are required.", "BEN", "BC000009"),
+        ("FAIL_PARTNER_REQUIRED", "GP", EntityRole.RoleTypes.partner, 1, 0, "NO_PARTNER", "2 partners are required.", "BEN", "BC0000010"),
+        ("FAIL_PARTNER_REQUIRED", "GP", EntityRole.RoleTypes.partner, 0, 1, "NO_PARTNER", "2 partners are required.", "BEN", "BC0000011")
     ],
 )
 def test_check_firm_parties(
-    session, test_name, legal_type, role, num_persons_roles: int, num_org_roles: int, expected_code, expected_msg
+    session, test_name, legal_type, role, num_persons_roles: int, num_org_roles: int, expected_code, expected_msg, owner_legal_type, owner_identifier
 ):
     """Assert that business firm parties check functions properly."""
 
     party_roles = factory_party_roles(role, num_persons_roles, num_org_roles)
 
     # TODO: check/update following block to work properly with AlternateName
-    with patch.object(firms, "check_gp_party", return_value=[]):
-        result = check_gp_parties(party_roles)
+    with patch.object(firms, "check_sp_parties", return_value=[]):
+        if legal_type == AlternateName.EntityTypes.SOLE_PROP.value:
+            legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+            alternate_name = create_alternate_name_business(
+                    entity_type=legal_type,
+                    identifier="FM1234567",
+                    legal_entity=legal_entity,
+                    create_office=True,
+                    create_office_mailing_address=True,
+                    create_office_delivery_address=True,
+                    firm_num_persons_roles=0,
+                    create_firm_party_address=True,
+                    filing_types=["registration"],
+                    filing_has_completing_party=[True],
+                    create_completing_party_address=[True],
+                )
+            mailing_address_alt = factory_address("mailing")
+            alternate_name.owner_mailing_address = mailing_address_alt
+            alternate_name.save()
+            legal_entity.alternate_names.append(alternate_name)
+            result = check_sp_parties(alternate_name)
+        else:
+            result = check_gp_parties(party_roles)
 
     if expected_code:
         assert len(result) == 1

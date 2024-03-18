@@ -625,6 +625,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -684,6 +685,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -3126,7 +3128,7 @@ def test_allowed_filings_blocker_filing_amalgamations(
                     business = create_business(legal_type, state)
                     filing_dict = FILING_DATA.get(filing_type, None)
                     create_incomplete_filing(
-                        business=business,
+                        legal_entity=business,
                         filing_name=filing_type,
                         filing_status=filing_status,
                         filing_dict=filing_dict,
@@ -3947,7 +3949,7 @@ def test_allowed_filings_completed_filing_check(
                     else:
                         filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
                         create_incomplete_filing(
-                            business=business,
+                            legal_entity=business,
                             filing_name="unknown",
                             filing_status=Filing.Status.DRAFT.value,
                             filing_dict=filing_dict,
@@ -4105,41 +4107,53 @@ def test_is_self_registered_owner_operator_false_when_no_proprietors(app, sessio
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user())
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
     assert is_self_registered_owner_operator(business, user) is False
 
 
-@patch(
-    "legal_api.models.EntityRole.get_parties_by_role",
-    return_value=[EntityRole(role_type=EntityRole.RoleTypes.proprietor)],
-)
-def test_is_self_registered_owner_operator_false_when_no_proprietor(app, session):
+@patch("legal_api.models.EntityRole.get_parties_by_role")
+def test_is_self_registered_owner_operator_false_when_no_proprietor(mock_get_parties_by_role, app, session):
+    # Setup a mock EntityRole object with the desired attributes
+    entity_role = EntityRole()
+    entity_role.role = EntityRole.RoleTypes.proprietor  # Set the role post-instantiation
+
+    # Configure the mock to return a list containing the mock entity role
+    mock_get_parties_by_role.return_value = [entity_role]
+
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user())
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
     assert is_self_registered_owner_operator(business, user) is False
 
 
-@patch("legal_api.models.EntityRole.get_party_roles_by_filing", return_value=None)
-def test_is_self_registered_owner_operator_false_when_no_completing_parties(app, session):
+@patch("legal_api.models.EntityRole.get_party_roles_by_filing")
+def test_is_self_registered_owner_operator_false_when_no_completing_party(mock_get_parties_by_role, app, session):
+    # Setup a mock EntityRole object with the desired attributes
+    entity_role = EntityRole()
+    entity_role.role = EntityRole.RoleTypes.proprietor  # Set the role post-instantiation
+
+    # Configure the mock to return a list containing the mock entity role
+    mock_get_parties_by_role.return_value = [entity_role]
+
+
     user = factory_user(username="test", firstname="Test", lastname="User")
     business = create_business("SP", LegalEntity.State.ACTIVE)
     proprietor_party_role = create_party_role(EntityRole.RoleTypes.proprietor, **create_test_user())
@@ -4168,12 +4182,12 @@ def test_is_self_registered_owner_operator_false_when_parties_not_matching(app, 
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user("1"))
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4189,12 +4203,12 @@ def test_is_self_registered_owner_operator_false_when_user_not_matching(app, ses
     business = create_business("SP", LegalEntity.State.ACTIVE)
     completing_party_role = create_party_role(EntityRole.RoleTypes.completing_party, **create_test_user("2"))
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4212,12 +4226,12 @@ def test_is_self_registered_owner_operator_false_when_proprietor_uses_middle_nam
         EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST", last_name="USER")
     )
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4237,12 +4251,12 @@ def test_is_self_registered_owner_operator_true_when_proprietor_and_user_uses_mi
         EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST TU", last_name="USER")
     )
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
@@ -4262,12 +4276,12 @@ def test_is_self_registered_owner_operator_true(app, session):
         EntityRole.RoleTypes.completing_party, **create_test_user(first_name="TEST", last_name="USER")
     )
     filing = factory_completed_filing(
-        business=business,
+        legal_entity=business,
         data_dict={"filing": {"header": {"name": "registration"}}},
         filing_date=_datetime.utcnow(),
         filing_type="registration",
     )
-    filing.filing_party_roles.append(completing_party_role)
+    filing.filing_entity_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
 
