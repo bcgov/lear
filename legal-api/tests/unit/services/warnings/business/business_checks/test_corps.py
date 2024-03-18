@@ -15,7 +15,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
-from tests.unit.models import factory_business
+from tests.unit.models import factory_legal_entity
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.corps import check_business
 
@@ -25,7 +25,7 @@ from legal_api.services.warnings.business.business_checks.corps import check_bus
 ])
 def test_check_business(session, has_amalgamation, expected_warning):
     """Test the check_business function."""
-    business = factory_business(identifier="BC1234567")
+    business = factory_legal_entity(identifier="BC1234567")
 
     mock_filing = Mock()
     if has_amalgamation:
