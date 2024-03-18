@@ -636,21 +636,26 @@ class LegalEntity(
         ]
         legal_entities = cls.query.filter(~LegalEntity._entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
-    
+
     @classmethod
     def is_pending_amalgamating_business(cls, business_identifier):
         """Check if a business has a pending amalgamation with the provided business identifier."""
-        where_clause = {'identifier': business_identifier}
+        where_clause = {"identifier": business_identifier}
 
         # Query the database to find amalgamation filings
         # pylint: disable=protected-access
         # pylint: disable=unsubscriptable-object
-        filing = db.session.query(Filing). \
-            filter(Filing._status == Filing.Status.PAID.value,
-                   Filing._filing_type == 'amalgamationApplication',
-                   Filing.filing_json['filing']['amalgamationApplication']
-                   ['amalgamatingBusinesses'].contains([where_clause])
-                   ).one_or_none()
+        filing = (
+            db.session.query(Filing)
+            .filter(
+                Filing._status == Filing.Status.PAID.value,
+                Filing._filing_type == "amalgamationApplication",
+                Filing.filing_json["filing"]["amalgamationApplication"]["amalgamatingBusinesses"].contains(
+                    [where_clause]
+                ),
+            )
+            .one_or_none()
+        )
         return filing
 
     @classmethod
