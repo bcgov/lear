@@ -924,33 +924,102 @@ SELECT stg.filing_id,
 FROM public.sent_to_gazette stg;
 
 
--- amalgamation -> amalgamations
+-- amalgamations -> amalgamations
 CREATE CAST (varchar AS amalgamation_type) WITH INOUT AS IMPLICIT;
 
 transfer public.amalgamations from lear_old using
-SELECT  id,
-        business_id as legal_entity_id,
-        filing_id,
-        amalgamation_date,
-        amalgamation_type,
-        court_approval
-FROM public.amalgamation;
+SELECT  a.id,
+        a.business_id as legal_entity_id,
+        a.filing_id,
+        a.amalgamation_date,
+        a.amalgamation_type,
+        a.court_approval,
+        a.filing_id as change_filing_id,
+        COALESCE(av.version, 0) as version
+FROM public.amalgamations a
+        left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
+                    from public.amalgamations_version
+                    group by id) av on a.id = av.id
+        left join public.filings f
+                   on av.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
+                      f.transaction_id = av.transaction_id
+        left join temp_multiple_filing_transactions tmft on av.transaction_id = tmft.transaction_id
+;
 
 
--- amalgamating_business -> amalgamating_businesses
+-- amalgamations_version -> amalgamations_history
+transfer public.amalgamations_history from lear_old using
+with subquery as
+         (SELECT av.id,
+                av.business_id as legal_entity_id,
+                av.filing_id,
+                av.filing_id as change_filing_id,
+                av.amalgamation_date,
+                av.amalgamation_type,
+                av.court_approval,
+                t.issued_at as changed,
+                COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC), 1) as version
+          from public.amalgamations_version av
+                   left join public.transaction t
+                             on av.transaction_id not in
+                                (select transaction_id from temp_multiple_filing_transactions) and
+                                av.transaction_id = t.id
+                    left join public.filings f on f.transaction_id = t.id
+                    left join temp_multiple_filing_transactions tmft on av.transaction_id = tmft.transaction_id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
+
+
+-- amalgamating_businesses -> amalgamating_businesses
 CREATE CAST (varchar AS amalgamating_business_role) WITH INOUT AS IMPLICIT;
 
 transfer public.amalgamating_businesses from lear_old using
-SELECT id,
-       business_id as legal_entity_id,
-       amalgamation_id,
-       foreign_jurisdiction,
-       foreign_jurisdiction_region,
-       foreign_name,
-       foreign_corp_num as foreign_identifier,
+SELECT a.id,
+       a.business_id as legal_entity_id,
+       a.amalgamation_id,
+       a.foreign_jurisdiction,
+       a.foreign_jurisdiction_region,
+       a.foreign_name,
+       a.foreign_identifier,
+       f.id as change_filing_id,
+       COALESCE(av.version, 1) as version,
        role :: amalgamating_business_role
-FROM public.amalgamating_business;
+FROM public.amalgamating_businesses a
+        left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
+                    from public.amalgamating_businesses_version
+                    group by id) av on a.id = av.id
+        left join public.filings f
+                   on av.transaction_id not in (select transaction_id from temp_multiple_filing_transactions) and
+                      f.transaction_id = av.transaction_id
+        left join temp_multiple_filing_transactions tmft on av.transaction_id = tmft.transaction_id
+;
 
+-- amalgamating_businesses_version -> amalgamating_businesses_history
+transfer public.amalgamating_businesses_history from lear_old using
+with subquery as
+         (SELECT av.id,
+                av.business_id as legal_entity_id,
+                f.id as change_filing_id,
+                t.issued_at as changed,
+                COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC), 1) as version
+          from public.amalgamating_businesses_version av
+                    left join public.transaction t on av.transaction_id = t.id
+                    left join public.filings f on f.transaction_id = t.id
+                    left join temp_multiple_filing_transactions tmft on av.transaction_id = tmft.transaction_id),
+     max_versions as
+         (select id, max(version) as max_version
+          from subquery sq
+          group by id)
+select sq.*
+from subquery sq
+         left join max_versions mv on mv.id = sq.id
+where sq.version != mv.max_version;
 
 -- ensure sequence numbers are updated so collisions with future data does not happen
 SELECT setval('users_id_seq', (select coalesce(max(id) + 1, 1) FROM public.users));
