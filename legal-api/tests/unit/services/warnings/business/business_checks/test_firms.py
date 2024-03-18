@@ -34,8 +34,8 @@ from legal_api.services.warnings.business.business_checks.firms import (
     check_start_date,
 )
 from tests.unit.services.warnings import (
-    create_business,
     create_alternate_name_business,
+    create_business,
     factory_address,
     factory_filing_role_organization,
     factory_filing_role_person,
@@ -219,11 +219,11 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
 
 
 @pytest.mark.parametrize(
-    "test_name, legal_type, role, party_type, expected_code, expected_msg",
+    "test_name, legal_type, role, party_type, expected_code, expected_msg, owner_legal_type, owner_identifier",
     [
         # SP tests
-        ("SUCCESS", "SP", "proprietor", "person", None, None),
-        ("SUCCESS", "SP", "proprietor", "organization", None, None),
+        ("SUCCESS", "SP", "proprietor", "person", None, None, "BEN", "BC0000003"),
+        ("SUCCESS", "SP", "proprietor", "organization", None, None, "BEN", "BC0000004"),
         (
             "FAIL_NO_PERSON_NAME",
             "SP",
@@ -231,6 +231,8 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
             "person",
             "NO_PROPRIETOR_PERSON_NAME",
             "Proprietor name is required.",
+            "BEN",
+            "BC0000005"
         ),
         (
             "FAIL_NO_ORG_NAME",
@@ -239,11 +241,13 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
             "organization",
             "NO_PROPRIETOR_ORG_NAME",
             "Proprietor organization name is required.",
+            "BEN",
+            "BC0000006"
         ),
         # GP tests
-        ("SUCCESS", "GP", "partner", "person", None, None),
-        ("SUCCESS", "GP", "partner", "organization", None, None),
-        ("FAIL_NO_PERSON_NAME", "GP", "partner", "person", "NO_PARTNER_PERSON_NAME", "Partner name is required."),
+        ("SUCCESS", "GP", "partner", "person", None, None, "BEN", "BC0000007"),
+        ("SUCCESS", "GP", "partner", "organization", None, None, "BEN", "BC0000008"),
+        ("FAIL_NO_PERSON_NAME", "GP", "partner", "person", "NO_PARTNER_PERSON_NAME", "Partner name is required.", "BEN", "BC0000009"),
         (
             "FAIL_NO_ORG_NAME",
             "GP",
@@ -251,13 +255,32 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
             "organization",
             "NO_PARTNER_ORG_NAME",
             "Partner organization name is required.",
+            "BEN",
+            "BC0000010"
         ),
     ],
 )
-def test_check_firm_party(session, test_name, legal_type, role, party_type, expected_code, expected_msg):
+def test_check_firm_party(session, test_name, legal_type, role, party_type, expected_code, expected_msg, owner_legal_type, owner_identifier):
     """Assert that business firm party checks functions properly."""
 
-    legal_entity = factory_legal_entity(legal_type, "BC1234567", 123)
+    legal_entity = factory_legal_entity(entity_type=owner_legal_type, identifier=owner_identifier)
+    alternate_name = create_alternate_name_business(
+            entity_type=legal_type,
+            identifier=owner_identifier,
+            legal_entity=legal_entity,
+            create_office=True,
+            create_office_mailing_address=True,
+            create_office_delivery_address=True,
+            firm_num_persons_roles=0,
+            create_firm_party_address=True,
+            filing_types=["registration"],
+            filing_has_completing_party=[True],
+            create_completing_party_address=[True],
+        )
+    mailing_address_alt = factory_address("mailing")
+    alternate_name.owner_mailing_address = mailing_address_alt
+    alternate_name.save()
+    legal_entity.alternate_names.append(alternate_name)
 
     if party_type == "person":
         party_role = factory_party_role_person(legal_entity=legal_entity, role=role, custom_person_id=1111)
@@ -270,12 +293,12 @@ def test_check_firm_party(session, test_name, legal_type, role, party_type, expe
     elif test_name == "FAIL_NO_ORG_NAME":
         party_role.related_colin_entity.organization_name = None
 
-    with patch.object(firms, "check_address", return_value=[]):
+    with patch.object(firms, "check_completing_party_for_filing", return_value=[]):
         # TODO: check/update following block to work properly with AlternateName
-        if legal_type == AlternateName.EntityTypes.SP:
-            result = check_sp_party(legal_entity)
+        if legal_type == AlternateName.EntityTypes.SOLE_PROP.value:
+            result = check_sp_party(alternate_name)
         else:
-            result = check_gp_party(role)
+            result = check_gp_party(party_role)
 
     if expected_code:
         assert len(result) == 1

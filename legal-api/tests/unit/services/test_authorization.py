@@ -60,6 +60,7 @@ from legal_api.services.authz import (
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import (
+    factory_alternate_name,
     factory_completed_filing,
     factory_filing,
     factory_incomplete_statuses,
