@@ -158,19 +158,23 @@ def process(
 
     amalgamation = Amalgamation()
     amalgamation.filing_id = filing_rec.id
-    amalgamation.amalgamation_type = amalgamation_filing.get('type')
+    amalgamation.amalgamation_type = amalgamation_filing.get("type")
     amalgamation.amalgamation_date = filing_rec.effective_date
-    amalgamation.court_approval = bool(amalgamation_filing.get('courtApproval'))
+    amalgamation.court_approval = bool(amalgamation_filing.get("courtApproval"))
     create_amalgamating_businesses(amalgamation_filing, amalgamation, filing_rec)
-    if amalgamation.amalgamation_type in [Amalgamation.AmalgamationTypes.horizontal.name,
-                                          Amalgamation.AmalgamationTypes.vertical.name]:
+    if amalgamation.amalgamation_type in [
+        Amalgamation.AmalgamationTypes.horizontal.name,
+        Amalgamation.AmalgamationTypes.vertical.name,
+    ]:
         # Include/Replace legal_name, director, office and shares from holding/primary business (won't be a foreign)
-        amalgamating_business = next(x for x in amalgamation.amalgamating_businesses
-                                     if x.role in [AmalgamatingBusiness.Role.holding.name,
-                                                   AmalgamatingBusiness.Role.primary.name])
+        amalgamating_business = next(
+            x
+            for x in amalgamation.amalgamating_businesses
+            if x.role in [AmalgamatingBusiness.Role.holding.name, AmalgamatingBusiness.Role.primary.name]
+        )
         primary_or_holding_business = LegalEntity.find_by_internal_id(amalgamating_business.business_id)
 
-        business_info_obj['legalName'] = primary_or_holding_business.legal_name
+        business_info_obj["legalName"] = primary_or_holding_business.legal_name
 
         _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing)
         _set_offices(primary_or_holding_business, amalgamation_filing)
@@ -178,23 +182,9 @@ def process(
 
     amalgamation = Amalgamation()
     amalgamation.filing_id = filing_rec.id
-    amalgamation.amalgamation_type = amalgamation_filing.get('type')
+    amalgamation.amalgamation_type = amalgamation_filing.get("type")
     amalgamation.amalgamation_date = filing_rec.effective_date
-    amalgamation.court_approval = bool(amalgamation_filing.get('courtApproval'))
-    create_amalgamating_businesses(amalgamation_filing, amalgamation, filing_rec)
-    if amalgamation.amalgamation_type in [Amalgamation.AmalgamationTypes.horizontal.name,
-                                          Amalgamation.AmalgamationTypes.vertical.name]:
-        # Include/Replace legal_name, director, office and shares from holding/primary business (won't be a foreign)
-        amalgamating_business = next(x for x in amalgamation.amalgamating_businesses
-                                     if x.role in [AmalgamatingBusiness.Role.holding.name,
-                                                   AmalgamatingBusiness.Role.primary.name])
-        primary_or_holding_business = Business.find_by_internal_id(amalgamating_business.business_id)
-
-        business_info_obj['legalName'] = primary_or_holding_business.legal_name
-
-        _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing)
-        _set_offices(primary_or_holding_business, amalgamation_filing)
-        _set_shares(primary_or_holding_business, amalgamation_filing)
+    amalgamation.court_approval = bool(amalgamation_filing.get("courtApproval"))
 
     # Initial insert of the business record
     business = LegalEntity()
@@ -218,7 +208,7 @@ def process(
     if not business:
         raise DefaultException(f"amalgamationApplication {filing_rec.id}, Unable to create business.")
 
-    if offices := amalgamation_filing.get('offices'):
+    if offices := amalgamation_filing.get("offices"):
         update_offices(business, offices)
 
     if parties := amalgamation_filing.get("parties"):
