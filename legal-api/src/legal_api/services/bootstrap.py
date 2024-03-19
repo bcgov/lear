@@ -58,7 +58,7 @@ class RegistrationBootstrapService:
         allowed_encoded = string.ascii_letters + string.digits
         identifier = None
         while True:
-            identifier = 'T' + ''.join(secrets.choice(allowed_encoded) for _ in range(9))
+            identifier = "T" + "".join(secrets.choice(allowed_encoded) for _ in range(9))
             if any(c.isdigit() for c in identifier):  # identifier requires at least 1 digit (as per auth-api)
                 break
         return identifier

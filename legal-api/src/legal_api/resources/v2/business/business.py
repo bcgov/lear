@@ -127,15 +127,14 @@ def post_businesses():
     filing_title = filing_type
     with suppress(KeyError):
         if filing_sub_type := Filing.get_filings_sub_type(filing_type, json_input):
-            filing_title = Filing.FILINGS[filing_type][filing_sub_type]['title']
+            filing_title = Filing.FILINGS[filing_type][filing_sub_type]["title"]
         else:
-            filing_title = Filing.FILINGS[filing_type]['title']
+            filing_title = Filing.FILINGS[filing_type]["title"]
 
     # @TODO rollback bootstrap if there is A failure, awaiting changes in the affiliation service
     bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
     if not isinstance(bootstrap, RegistrationBootstrap):
-        return {'error': babel('Unable to create {0} Filing.'.format(filing_title))}, \
-            HTTPStatus.SERVICE_UNAVAILABLE
+        return {"error": babel("Unable to create {0} Filing.".format(filing_title))}, HTTPStatus.SERVICE_UNAVAILABLE
 
     try:
         business_name = json_input["filing"][filing_type]["nameRequest"]["nrNumber"]
@@ -150,8 +149,7 @@ def post_businesses():
     if not isinstance(rv, HTTPStatus):
         with suppress(Exception):
             bootstrap.delete()
-        return {'error': babel('Unable to create {0} Filing.'.format(filing_title))}, \
-            HTTPStatus.SERVICE_UNAVAILABLE
+        return {"error": babel("Unable to create {0} Filing.".format(filing_title))}, HTTPStatus.SERVICE_UNAVAILABLE
 
     return saving_filings(identifier=bootstrap.identifier)  # pylint: disable=no-value-for-parameter
 
@@ -185,24 +183,23 @@ def search_businesses():
         bus_an_results = [x.json(slim=True) for x in bus_an_query.all()]
         draft_results = []
         for draft_dao in draft_query.all():
-            draft = {
-                'identifier': draft_dao.temp_reg,
-                'legalType': draft_dao.json_legal_type
-            }
+            draft = {"identifier": draft_dao.temp_reg, "legalType": draft_dao.json_legal_type}
             if draft_dao.json_nr:
-                draft['nrNumber'] = draft_dao.json_nr
-            draft['legalName'] = (draft_dao.filing_json.get('filing', {})
-                                  .get(draft_dao.filing_type, {})
-                                  .get('nameRequest', {})
-                                  .get('legalName'))
-            draft['draftType'] = Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode')
-            if draft['legalName'] is None:
-                if draft['draftType'] == 'TMP':
-                    draft['legalName'] = (LegalEntity.BUSINESSES
-                                          .get(draft_dao.json_legal_type, {})
-                                          .get('numberedDescription'))
-                elif draft['draftType'] == 'ATMP':
-                    draft['legalName'] = 'Numbered Amalgamated Company'
+                draft["nrNumber"] = draft_dao.json_nr
+            draft["legalName"] = (
+                draft_dao.filing_json.get("filing", {})
+                .get(draft_dao.filing_type, {})
+                .get("nameRequest", {})
+                .get("legalName")
+            )
+            draft["draftType"] = Filing.FILINGS.get(draft_dao.filing_type, {}).get("temporaryCorpTypeCode")
+            if draft["legalName"] is None:
+                if draft["draftType"] == "TMP":
+                    draft["legalName"] = LegalEntity.BUSINESSES.get(draft_dao.json_legal_type, {}).get(
+                        "numberedDescription"
+                    )
+                elif draft["draftType"] == "ATMP":
+                    draft["legalName"] = "Numbered Amalgamated Company"
             draft_results.append(draft)
 
         return (
