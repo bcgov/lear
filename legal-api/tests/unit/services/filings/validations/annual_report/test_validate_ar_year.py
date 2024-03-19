@@ -94,6 +94,8 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
          '2022-07-01', '2022-07-14', 2021, 2022, '2022-07-14'),
         ('BEN 2021', '1900-06-01', '2020-07-03', Business.LegalTypes.BCOMP.value,
          '2021-06-01', '2021-07-14', 2020, 2021, '2021-07-14'),
+        ('BEN 2024', '2024-02-29', None, Business.LegalTypes.BCOMP.value,  # Leap year
+         '2025-03-01', '2025-04-30', None, 2025, '2025-05-30'),
 
         ('BC first AR', '2011-06-29', None, Business.LegalTypes.COMP.value,
          '2012-06-29', '2012-08-28', None, 2012, '2022-07-14'),
