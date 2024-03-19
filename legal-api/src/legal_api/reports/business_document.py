@@ -468,7 +468,7 @@ class BusinessDocument:
                 amalgamation = self._legal_entity.amalgamation.one_or_none()
                 amalgamating_businesses = amalgamation.amalgamating_businesses.all()
                 for amalgamating_business in amalgamating_businesses:
-                    if ting_business := LegalEntity.find_by_internal_id(amalgamating_business.business_id):
+                    if ting_business := LegalEntity.find_by_internal_id(amalgamating_business.legal_entity_id):
                         identifier = ting_business.identifier
                         business_legal_name = ting_business.legal_name
                     else:
