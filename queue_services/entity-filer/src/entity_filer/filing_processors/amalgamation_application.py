@@ -33,11 +33,11 @@ from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
-    JSON_ROLE_CONVERTER,
     aliases,
     business_info,
     business_profile,
     filings,
+    JSON_ROLE_CONVERTER,
     shares,
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices

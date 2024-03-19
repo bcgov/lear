@@ -19,11 +19,11 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Amalgamation, AmalgamatingBusiness, Filing, LegalEntity
-from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
 from entity_filer.resources.worker import FilingMessage, process_filing
+from legal_api.models import Amalgamation, AmalgamatingBusiness, Filing, LegalEntity
+from registry_schemas.example_data import AMALGAMATION_APPLICATION
 from tests.unit import create_entity, create_filing, create_office, create_office_address, create_party, create_party_role, create_share_class
 
 
