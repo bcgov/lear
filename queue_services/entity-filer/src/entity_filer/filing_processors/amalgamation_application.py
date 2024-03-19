@@ -18,7 +18,15 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Document, Filing, LegalEntity, RegistrationBootstrap, db
+from legal_api.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    Document,
+    Filing,
+    LegalEntity,
+    RegistrationBootstrap,
+    db,
+)
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
