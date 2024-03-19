@@ -86,7 +86,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     naics_description = db.Column("naics_description", db.String(300), nullable=True)
     business_start_date = db.Column("business_start_date", db.DateTime(timezone=True), default=datetime.utcnow)
     dissolution_date = db.Column("dissolution_date", db.DateTime(timezone=True), default=None)
-    state = db.Column("state", db.Enum(BusinessCommon.State), default=BusinessCommon.State.ACTIVE.value)
+    state = db.Column("state", db.Enum(BusinessCommon.State), default=BusinessCommon.State.ACTIVE)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
     email = db.Column("email", db.String(254), nullable=True)
@@ -140,6 +140,9 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
     @classmethod
     def find_by_name_type(cls, legal_entity_id: int, name_type: str):
         """Return the aliases matching the type."""
+        if name_type not in [nt.name for nt in AlternateName.NameType]:
+            return []
+
         aliases = (
             db.session.query(AlternateName)
             .filter(AlternateName.legal_entity_id == legal_entity_id)
@@ -270,6 +273,12 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         db.session.add(self)
         db.session.commit()
 
+    @property
+    def alias_json(self):
+        """Return the Alias as a json object."""
+        alias = {"id": str(self.id), "name": self.name, "type": self.name_type.name}
+        return alias
+
     def json(self, slim=False):
         """Return the Business as a json object.
         None fields are not included.
@@ -302,13 +311,18 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "identifier": self.identifier,
             "legalName": self.legal_name,
             "legalType": self.entity_type,
-            "state": self.state.name if self.state else BusinessCommon.State.ACTIVE.name,
+            "state": self.state.name,
             "alternateNames": [
                 {
-                    "identifier": self.identifier,
-                    "operatingName": self.name,
                     "entityType": self.entity_type,
+                    "identifier": self.identifier,
+                    "name": self.name,
                     "nameRegisteredDate": self.start_date.isoformat(),
+                    "nameStartDate": LegislationDatetime.format_as_legislation_date(self.business_start_date)
+                    if self.business_start_date
+                    else None,
+                    "nameType": self.name_type.name,
+                    "operatingName": self.name,  # will be removed in the future
                 }
             ],
         }

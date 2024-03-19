@@ -27,7 +27,7 @@ from flask import current_app, jsonify
 from legal_api.models import ConsentContinuationOut, CorpType, Document, EntityRole, Filing, LegalEntity
 from legal_api.models.legal_entity import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService
+from legal_api.services import BusinessService, MinioService, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -43,7 +43,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def __init__(self, filing):
         """Create the Report instance."""
         self._filing = filing
-        self._legal_entity = None
+        self._business = None
         self._report_key = None
         self._report_date_time = LegislationDatetime.now()
 
@@ -62,8 +62,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _get_report(self):
         if self._filing.legal_entity_id:
-            self._legal_entity = LegalEntity.find_by_internal_id(self._filing.legal_entity_id)
-            Report._populate_business_info_to_filing(self._filing, self._legal_entity)
+            self._business = BusinessService.fetch_business_by_filing(self._filing)
+            Report._populate_business_info_to_filing(self._filing, self._business)
         if self._report_key == "alteration":
             self._report_key = "alterationNotice"
         headers = {"Authorization": "Bearer {}".format(jwt.get_token_auth_header()), "Content-Type": "application/json"}
@@ -84,8 +84,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_report_filename(self):
         filing_date = str(self._filing.filing_date)[:19]
         legal_entity_number = (
-            self._legal_entity.identifier
-            if self._legal_entity
+            self._business.identifier
+            if self._business
             else self._filing.filing_json["filing"].get("business", {}).get("identifier", "")
         )
         description = ReportMeta.reports[self._report_key]["filingDescription"]
@@ -206,7 +206,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # Get template specific to legal type
             file_name = None
             specific_template = ReportMeta.reports[self._report_key].get(
-                self._business.legal_type, None  # pylint: disable=no-member
+                self._business.entity_type, None  # pylint: disable=no-member
             )
             if file_name is None:
                 # Fallback to default if specific template not found
@@ -221,9 +221,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _get_template_data(self):
         if self._report_key in ["noticeOfArticles", "amendedRegistrationStatement", "correctedRegistrationStatement"]:
-            filing = VersionedBusinessDetailsService.get_company_details_revision(
-                self._filing.id, self._legal_entity.id
-            )
+            filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
         else:
             filing = copy.deepcopy(self._filing.filing_json["filing"])
@@ -322,8 +320,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["registrarInfo"] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
     def _set_tax_id(self, filing):
-        if self._legal_entity and self._legal_entity.tax_id:
-            filing["taxId"] = self._legal_entity.tax_id
+        if self._business and self._business.is_legal_entity and self._business.tax_id:
+            filing["taxId"] = self._business.tax_id
 
     def _set_description(self, filing):
         legal_type = self._filing.filing_json["filing"].get("business", {}).get("legalType", "NA")
@@ -356,12 +354,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["effective_date_time"] = LegislationDatetime.format_as_report_string(effective_date)
         filing["effective_date"] = effective_date.strftime(OUTPUT_DATE_FORMAT)
         # Recognition Date
-        if self._legal_entity:
-            recognition_datetime = LegislationDatetime.as_legislation_timezone(self._legal_entity.founding_date)
+        if self._business:
+            recognition_datetime = LegislationDatetime.as_legislation_timezone(
+                self._business.founding_date if self._business.is_legal_entity else self._business.start_date
+            )
             filing["recognition_date_time"] = LegislationDatetime.format_as_report_string(recognition_datetime)
             filing["recognition_date_utc"] = recognition_datetime.strftime(OUTPUT_DATE_FORMAT)
-            if self._legal_entity.start_date:
-                filing["start_date_utc"] = self._legal_entity.start_date.strftime(OUTPUT_DATE_FORMAT)
+            if self._business.start_date:
+                filing["start_date_utc"] = self._business.start_date.strftime(OUTPUT_DATE_FORMAT)
         # For Annual Report - Set AGM date as the effective date
         if self._filing.filing_type == "annualReport":
             agm_date_str = filing.get("annualReport", {}).get("annualGeneralMeetingDate", None)
@@ -527,7 +527,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._filing.filing_sub_type == "limitedRestorationToFull":
             business_previous_restoration_expiry = (
                 VersionedBusinessDetailsService.find_last_value_from_business_revision(
-                    self._filing, self._legal_entity, is_restoration_expiry_date=True
+                    self._filing, self._business, is_restoration_expiry_date=True
                 )
             )
             restoration_expiry_datetime = LegislationDatetime.as_legislation_timezone(
@@ -536,7 +536,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["previous_restoration_expiry_date"] = restoration_expiry_datetime.strftime(OUTPUT_DATE_FORMAT)
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing, self._legal_entity, is_dissolution_date=True
+            self._filing, self._business, is_dissolution_date=True
         )
         filing["formatted_dissolution_date"] = LegislationDatetime.format_as_report_string(
             business_dissolution.dissolution_date
@@ -544,7 +544,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     # pylint: disable=no-member
     def _format_dissolution_data(self, filing):
-        if self._business.legal_type in ["SP", "GP"] and filing["dissolution"]["dissolutionType"] == "voluntary":
+        if self._business.entity_type in ["SP", "GP"] and filing["dissolution"]["dissolutionType"] == "voluntary":
             filing["dissolution"]["dissolution_date_str"] = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing["dissolution"]["dissolutionDate"]
             ).strftime(OUTPUT_DATE_FORMAT)
@@ -557,7 +557,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["offices"] = filing["restoration"]["offices"]
         meta_data = self._filing.meta_data or {}
         filing["fromBusinessName"] = meta_data.get("restoration", {}).get("fromBusinessName")
-        filing["numberedBusinessNameSuffix"] = LegalEntity.BUSINESSES[self._legal_entity.entity_type][
+        filing["numberedBusinessNameSuffix"] = LegalEntity.BUSINESSES[self._business.entity_type][
             "numberedBusinessNameSuffix"
         ]
 
@@ -573,7 +573,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["noticeDate"] = filing["restoration"].get("noticeDate", "Not Applicable")
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing, self._legal_entity, is_dissolution_date=True
+            self._filing, self._business, is_dissolution_date=True
         )
         filing["dissolutionBusinessName"] = business_dissolution.business_name
 
@@ -594,7 +594,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         expiry_date = LegislationDatetime.as_legislation_timezone(cco.expiry_date)
         filing["cco_expiry_date"] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
 
-        filing["offices"] = VersionedBusinessDetailsService.get_office_revision(self._filing, self._legal_entity.id)
+        filing["offices"] = VersionedBusinessDetailsService.get_office_revision(self._filing, self._business.id)
 
         with suppress(KeyError):
             self._format_address(filing["offices"]["registeredOffice"]["deliveryAddress"])
@@ -653,7 +653,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["listOfTranslations"] = filing["alteration"].get("nameTranslations", [])
             # Get previous translations for deleted translations. No record created in aliases version for deletions
             filing["previousNameTranslations"] = VersionedBusinessDetailsService.get_name_translations_revision(
-                self._filing.transaction_id, self._legal_entity.id
+                self._filing.transaction_id, self._business.id
             )
         if filing["alteration"].get("shareStructure", None):
             filing["shareClasses"] = filing["alteration"]["shareStructure"].get("shareClasses", [])
@@ -700,12 +700,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self, filing, filing_type
     ):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
-        versioned_legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(
-            prev_completed_filing, self._legal_entity.id
+        versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(
+            prev_completed_filing, self._business.id
         )
 
         # Change of Name
-        prev_business_name = versioned_legal_entity.legal_name
+        prev_business_name = versioned_business.legal_name
         name_request_json = filing.get(filing_type).get("nameRequest")
         filing["nameRequest"] = name_request_json
         if name_request_json:
@@ -715,7 +715,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 filing["newBusinessName"] = to_business_name
 
         # Change of Nature of Business
-        prev_naics_description = versioned_legal_entity.naics_description
+        prev_naics_description = versioned_business.naics_description
         naics_json = filing.get(filing_type).get("business", {}).get("naics")
         if naics_json:
             to_naics_description = naics_json.get("naicsDescription")
@@ -724,7 +724,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         # Change of start date
         if filing_type == "correction":
-            prev_start_date = versioned_legal_entity.start_date
+            prev_start_date = versioned_business.start_date
             new_start_date_str = filing.get(filing_type).get("startDate")
             if new_start_date_str != LegislationDatetime.format_as_legislation_date(prev_start_date):
                 filing["newStartDate"] = new_start_date_str
@@ -782,7 +782,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing["newParties"].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing, self._legal_entity.id, True
+                prev_completed_filing, self._business.id, True
             )
             parties_deleted = [p for p in existing_party_json if p["officer"]["id"] not in parties_to_edit]
             filing["ceasedParties"] = parties_deleted
@@ -865,26 +865,26 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return has_change
 
     def _format_correction_data(self, filing):
-        if self._legal_entity.legal_type in ["SP", "GP"]:
+        if self._business.entity_type in ["SP", "GP"]:
             self._format_change_of_registration_data(filing, "correction")
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
-            versioned_legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(
-                prev_completed_filing, self._legal_entity.id
+            versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(
+                prev_completed_filing, self._business.id
             )
 
-            self._format_name_request_data(filing, versioned_legal_entity)
+            self._format_name_request_data(filing, versioned_business)
             self._format_name_translations_data(filing, prev_completed_filing)
             self._format_office_data(filing, prev_completed_filing)
             self._format_party_data(filing, prev_completed_filing)
             self._format_share_class_data(filing, prev_completed_filing)
             self._format_resolution_data(filing)
 
-    def _format_name_request_data(self, filing, versioned_legal_entity: LegalEntity):
+    def _format_name_request_data(self, filing, versioned_business: any):
         name_request_json = filing.get("correction").get("nameRequest", {})
         filing["nameRequest"] = name_request_json
-        prev_business_name = versioned_legal_entity.legal_name
-        legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(self._filing, self._legal_entity.id)
+        prev_business_name = versioned_business.legal_name
+        legal_entity = VersionedBusinessDetailsService.get_business_revision_obj(self._filing, self._business.id)
         if prev_business_name != legal_entity.legal_name:
             filing["previousBusinessName"] = prev_business_name
             filing["newBusinessName"] = legal_entity.legal_name
@@ -892,7 +892,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing["listOfTranslations"] = filing["correction"].get("nameTranslations", [])
         versioned_name_translations = VersionedBusinessDetailsService.get_name_translations_revision(
-            prev_completed_filing, self._legal_entity.id
+            prev_completed_filing, self._business.id
         )
         filing["previousNameTranslations"] = versioned_name_translations
         filing["nameTranslationsChange"] = sorted(
@@ -968,7 +968,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing["newParties"].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing, self._legal_entity.id, True
+                prev_completed_filing, self._business.id, True
             )
             parties_deleted = [p for p in existing_party_json if p["officer"]["id"] not in parties_to_edit]
             filing["ceasedParties"] = parties_deleted
@@ -1076,7 +1076,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
-            display_name = display_name.get(self._legal_entity.entity_type)
+            display_name = display_name.get(self._business.entity_type)
         filing_source = "specialResolution" if self._filing.filing_type == "specialResolution" else "correction"
         filing["header"]["displayName"] = display_name
         resolution_date_str = filing.get(filing_source, {}).get("resolutionDate", None)
@@ -1130,7 +1130,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         # Appears in the Description section of the PDF Document Properties as Subject.
         if self._report_key == "noticeOfArticles":
-            filing["meta_subject"] = "{} ({})".format(self._legal_entity.legal_name, self._legal_entity.identifier)
+            filing["meta_subject"] = "{} ({})".format(self._business.legal_name, self._business.identifier)
         else:
             legal_name = self._filing.filing_json["filing"].get("business", {}).get("businessName", "NA")
             filing["meta_subject"] = "{} ({})".format(

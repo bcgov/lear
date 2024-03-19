@@ -73,7 +73,7 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
             HTTPStatus.NOT_FOUND,
         )
 
-    if not (filing := Filing.get(identifier, filing_id)):
+    if not (filing := Filing.get(identifier, business, filing_id)):
         return (
             jsonify(
                 message=get_error_message(

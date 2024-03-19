@@ -34,7 +34,6 @@ from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alternate_name import AlternateName  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .business_common import BusinessCommon
@@ -163,7 +162,7 @@ class LegalEntity(
     last_ar_year = db.Column("last_ar_year", db.Integer)
     last_ar_reminder_year = db.Column("last_ar_reminder_year", db.Integer)
     association_type = db.Column("association_type", db.String(50))
-    state = db.Column("state", db.Enum(BusinessCommon.State), default=BusinessCommon.State.ACTIVE.value)
+    state = db.Column("state", db.Enum(BusinessCommon.State), default=BusinessCommon.State.ACTIVE)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     submitter_userid = db.Column("submitter_userid", db.Integer, db.ForeignKey("users.id"))
     submitter = db.relationship(
@@ -206,7 +205,6 @@ class LegalEntity(
     )
     offices = db.relationship("Office", lazy="dynamic", cascade="all, delete, delete-orphan")
     share_classes = db.relationship("ShareClass", lazy="dynamic", cascade="all, delete, delete-orphan")
-    aliases = db.relationship("Alias", lazy="dynamic")
     resolutions = db.relationship("Resolution", lazy="dynamic", foreign_keys="Resolution.legal_entity_id")
     documents = db.relationship("Document", lazy="dynamic")
     consent_continuation_outs = db.relationship("ConsentContinuationOut", lazy="dynamic")
@@ -314,6 +312,15 @@ class LegalEntity(
         )
 
     @property
+    def aliases(self):
+        """Return aliases(name translation) for a business if any."""
+        return (
+            db.session.query(AlternateName)
+            .filter(AlternateName.legal_entity_id == self.id)
+            .filter(AlternateName.name_type == AlternateName.NameType.TRANSLATION)
+        )
+
+    @property
     def office_delivery_address(self):
         """Return the delivery address."""
         registered_office = (
@@ -340,7 +347,7 @@ class LegalEntity(
 
     # @property
     def alternate_names_json(self):
-        """Return operating names for a business if any."""
+        """Return alternate names (dba & translation) for a business if any."""
         # le_alias = aliased(LegalEntity)
         # alternate_names = (
         #     db.session.query(AlternateName.identifier,
@@ -355,16 +362,35 @@ class LegalEntity(
         # )
 
         if alternate_names := self.alternate_names.all():
-            names = [
-                {
-                    "identifier": alternate_name.identifier,
-                    "operatingName": alternate_name.name,
-                    "entityType": alternate_name.entity_type,
-                    "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
-                    # "nameRegisteredDate": alternate_name.registration_date.isoformat(),
-                }
-                for alternate_name in alternate_names
-            ]
+            names = []
+            for alternate_name in alternate_names:
+                if alternate_name.name_type == AlternateName.NameType.DBA:
+                    # format dba
+                    names.append(
+                        {
+                            "entityType": alternate_name.entity_type,
+                            "identifier": alternate_name.identifier,
+                            "name": alternate_name.name,
+                            "nameRegisteredDate": alternate_name.start_date.isoformat(),
+                            "nameStartDate": LegislationDatetime.format_as_legislation_date(
+                                alternate_name.business_start_date
+                            )
+                            if alternate_name.business_start_date
+                            else None,
+                            "nameType": alternate_name.name_type.name,
+                            "operatingName": alternate_name.name,  # will be removed in the future
+                        }
+                    )
+                else:
+                    # format name translation
+                    names.append(
+                        {
+                            "name": alternate_name.name,
+                            "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
+                            "nameType": alternate_name.name_type.name,
+                        }
+                    )
+
             return names
 
         return []
@@ -430,7 +456,7 @@ class LegalEntity(
             "identifier": self.identifier,
             "legalName": self._legal_name,
             "legalType": self.entity_type,
-            "state": self.state.name if self.state else LegalEntity.State.ACTIVE.name,
+            "state": self.state.name,
         }
 
         if self.tax_id:
@@ -456,13 +482,15 @@ class LegalEntity(
         if self.fiscal_year_end_date:
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            if self.state == LegalEntity.State.HISTORICAL and (
-                amalgamating_business := self.amalgamating_businesses.one_or_none()
-            ):
-                amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-                d["amalgamatedInto"] = amalgamation.json()
-            else:
-                d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            # TODO: revert once amalgamation tables and migration scripts have been run
+            # if self.state == LegalEntity.State.HISTORICAL and (
+            #     amalgamating_business := self.amalgamating_businesses.one_or_none()
+            # ):
+            #     amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
+            #     d["amalgamatedInto"] = amalgamation.json()
+            # else:
+            #     d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         if self.start_date:
             d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)

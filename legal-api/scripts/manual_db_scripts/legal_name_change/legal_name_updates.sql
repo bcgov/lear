@@ -2,7 +2,7 @@
 -- Script to migrate data related to legal name model changes.
 -- Summary of changes:
 -- 1. Migrate SP/GP legal name(legal_entities.legal_name/legal_entities_history.legal_name) entries to
---    alternate_names/alternate_names_history tables.  The migrated entries were actually operating names and not legal
+--    alternate_names/alternate_names_history tables.  The migrated entries were actually dba names and not legal
 --    names.
 -- 2. Remove legal_entities_history entries that were only name changes.  These should only reside in
 --    alternate_names_history tables.  As a part of this update, the end transaction ids needed to be re-linked
@@ -209,7 +209,7 @@ select lnc.id                as legal_entity_id,
        tax_id                as bn15,
        start_date,
        end_date,
-       'OPERATING'::nametype as name_type,
+       'DBA'::nametype as name_type,
        CASE WHEN lnc.entity_type = 'SP' THEN naics_key ELSE NULL END,
        CASE WHEN lnc.entity_type = 'SP' THEN naics_code ELSE NULL END,
        CASE WHEN lnc.entity_type = 'SP' THEN naics_description ELSE NULL END,
@@ -253,7 +253,7 @@ SELECT id_values.an_seq_id   as id,
        id_values.tax_id      as bn15,
        id_values.start_date,
        NULL                  as end_date,
-       'OPERATING'::nametype as name_type,
+       'DBA'::nametype as name_type,
        CASE WHEN id_values.entity_type = 'SP' THEN naics_key ELSE NULL END,
        CASE WHEN id_values.entity_type = 'SP' THEN naics_code ELSE NULL END,
        CASE WHEN id_values.entity_type = 'SP' THEN naics_description ELSE NULL END,
@@ -277,7 +277,7 @@ SELECT id_values.an_seq_id      as id,
        id_values.tax_id         as bn15,
        id_values.start_date,
        id_values.end_date       as end_date,
-       'OPERATING'::nametype    as name_type,
+       'DBA'::nametype    as name_type,
        CASE WHEN id_values.entity_type = 'SP' THEN naics_key ELSE NULL END,
        CASE WHEN id_values.entity_type = 'SP' THEN naics_code ELSE NULL END,
        CASE WHEN id_values.entity_type = 'SP' THEN naics_description ELSE NULL END,
