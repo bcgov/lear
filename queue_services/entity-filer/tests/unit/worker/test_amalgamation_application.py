@@ -24,13 +24,7 @@ from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
 from entity_filer.resources.worker import FilingMessage, process_filing
-from tests.unit import (
-    create_entity,
-    create_filing,
-    create_party,
-    create_party_role,
-    create_share_class,
-)
+from tests.unit import create_entity, create_filing, create_party, create_party_role, create_share_class
 
 
 def test_amalgamation_application_process(app, session):
@@ -188,7 +182,7 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
     # test
     filing_msg = {"filing": {"id": filing_rec.id}}
     with patch.object(legal_entity_info, "get_next_corp_num", return_value=next_corp_num):
-        #with patch.object(business_profile, "update_business_profile", return_value=HTTPStatus.OK):
+        # with patch.object(business_profile, "update_business_profile", return_value=HTTPStatus.OK):
         await process_filing(filing_msg, app)
 
     # Assertions
