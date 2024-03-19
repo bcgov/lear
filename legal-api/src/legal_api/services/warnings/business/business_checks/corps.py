@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Business checks for corps."""
 from legal_api.models import LegalEntity
 from legal_api.services.warnings.business.business_checks import WarningType
 
