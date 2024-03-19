@@ -21,10 +21,7 @@ from entity_emailer.email_processors import amalgamation_notification
 from tests.unit import prep_amalgamation_filing
 
 
-@pytest.mark.parametrize("status", [
-    (Filing.Status.PAID.value),
-    (Filing.Status.COMPLETED.value)
-])
+@pytest.mark.parametrize("status", [(Filing.Status.PAID.value), (Filing.Status.COMPLETED.value)])
 def test_amalgamation_notification(app, session, status):
     """Assert Amalgamation notification is created."""
     # setup filing + business for email
@@ -34,7 +31,8 @@ def test_amalgamation_notification(app, session, status):
     # test processor
     with patch.object(amalgamation_notification, "_get_pdfs", return_value=[]) as mock_get_pdfs:
         email = amalgamation_notification.process(
-            {"filingId": filing.id, "type": "amalgamationApplication", "option": status}, token)
+            {"filingId": filing.id, "type": "amalgamationApplication", "option": status}, token
+        )
 
         assert "test@test.com" in email["recipients"]
         if status == Filing.Status.PAID.value:

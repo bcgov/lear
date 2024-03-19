@@ -196,8 +196,8 @@ def process_email(email_msg: dict, token: str):  # pylint: disable=too-many-bran
             email = continuation_out_notification.process(email_msg["email"], token)
         elif etype == "specialResolution":
             email = special_resolution_notification.process(email_msg["email"], token)
-        elif etype == 'amalgamationApplication':
-            email = amalgamation_notification.process(email_msg['email'], token)
+        elif etype == "amalgamationApplication":
+            email = amalgamation_notification.process(email_msg["email"], token)
         # pylint: disable-next=consider-iterating-dictionary
         elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
             if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
