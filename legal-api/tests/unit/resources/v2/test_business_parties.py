@@ -211,10 +211,13 @@ def test_get_business_no_parties(session, client, jwt):
         assert rv.json["parties"] == []
 
 
-@pytest.mark.parametrize('test_name,params,expected', [
-    ('test_no_ceased_returned', '', 0),
-    ('test_all_ceased_returned', '?all=true', 1),
-])
+@pytest.mark.parametrize(
+    "test_name,params,expected",
+    [
+        ("test_no_ceased_returned", "", 0),
+        ("test_all_ceased_returned", "?all=true", 1),
+    ],
+)
 def test_get_business_ceased_parties(session, client, jwt, test_name, params, expected):
     """Assert that ceased parties are only returned when the correct params are included."""
     with nested_session(session):
@@ -240,13 +243,14 @@ def test_get_business_ceased_parties(session, client, jwt, test_name, params, ex
         legal_entity.save()
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/parties{params}',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    rv = client.get(
+        f"/api/v2/businesses/{identifier}/parties{params}", headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
     # check
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json['parties']) == expected
+    assert len(rv.json["parties"]) == expected
     if expected != 0:
-        assert rv.json['parties'][0]['officer']['firstName'] == officer['firstName']
+        assert rv.json["parties"][0]["officer"]["firstName"] == officer["firstName"]
 
 
 def test_get_business_party_by_id(session, client, jwt):
