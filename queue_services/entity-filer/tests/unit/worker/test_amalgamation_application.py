@@ -19,12 +19,20 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Filing, LegalEntity
+from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
 from entity_filer.resources.worker import FilingMessage, process_filing
-from legal_api.models import Amalgamation, AmalgamatingBusiness, Filing, LegalEntity
-from registry_schemas.example_data import AMALGAMATION_APPLICATION
-from tests.unit import create_entity, create_filing, create_office, create_office_address, create_party, create_party_role, create_share_class
+from tests.unit import (
+    create_entity,
+    create_filing,
+    create_office,
+    create_office_address,
+    create_party,
+    create_party_role,
+    create_share_class,
+)
 
 
 def test_amalgamation_application_process(app, session):
@@ -47,7 +55,7 @@ def test_amalgamation_application_process(app, session):
         "filingId": 1,
     }
     filing["filing"][filing_type] = copy.deepcopy(AMALGAMATION_APPLICATION)
-    del filing['filing'][filing_type]['amalgamatingBusinesses'][0]
+    del filing["filing"][filing_type]["amalgamatingBusinesses"][0]
     filing["filing"][filing_type]["amalgamatingBusinesses"] = [
         {"role": AmalgamatingBusiness.Role.amalgamating.name, "identifier": amalgamating_identifier_1},
         {"role": AmalgamatingBusiness.Role.amalgamating.name, "identifier": amalgamating_identifier_2},
@@ -106,87 +114,87 @@ def test_amalgamation_application_process(app, session):
 
 
 @pytest.mark.parametrize(
-        'amalgamation_type, amalgamating_role',
-        [
-            (Amalgamation.AmalgamationTypes.horizontal.name, AmalgamatingBusiness.Role.primary.name),
-            (Amalgamation.AmalgamationTypes.vertical.name, AmalgamatingBusiness.Role.holding.name)
-        ]
+    "amalgamation_type, amalgamating_role",
+    [
+        (Amalgamation.AmalgamationTypes.horizontal.name, AmalgamatingBusiness.Role.primary.name),
+        (Amalgamation.AmalgamationTypes.vertical.name, AmalgamatingBusiness.Role.holding.name),
+    ],
 )
 async def test_short_form_amalgamation_application_process(app, session, amalgamation_type, amalgamating_role):
     """Assert that the amalgamation application object is correctly populated to model objects."""
-    filing_type = 'amalgamationApplication'
-    amalgamating_identifier_1 = 'BC9891234'
-    amalgamating_identifier_2 = 'BC9891235'
-    nr_identifier = 'NR 1234567'
-    next_corp_num = 'BC0001095'
+    filing_type = "amalgamationApplication"
+    amalgamating_identifier_1 = "BC9891234"
+    amalgamating_identifier_2 = "BC9891235"
+    nr_identifier = "NR 1234567"
+    next_corp_num = "BC0001095"
 
-    amalgamating_business_1 = create_entity(amalgamating_identifier_1, 'BC', f'{amalgamating_role} business 1')
+    amalgamating_business_1 = create_entity(amalgamating_identifier_1, "BC", f"{amalgamating_role} business 1")
 
-    office = create_office(amalgamating_business_1, 'registeredOffice')
-    office_delivery_address = create_office_address(amalgamating_business_1, office, 'delivery')
-    office_mailing_address = create_office_address(amalgamating_business_1, office, 'mailing')
+    office = create_office(amalgamating_business_1, "registeredOffice")
+    office_delivery_address = create_office_address(amalgamating_business_1, office, "delivery")
+    office_mailing_address = create_office_address(amalgamating_business_1, office, "mailing")
 
     create_share_class(amalgamating_business_1)
 
-    party = create_party({
-            'officer': {
-                'firstName': f'{amalgamating_business_1.identifier} first_name',
-                'lastName': 'Director',
-                'middleName': 'P',
+    party = create_party(
+        {
+            "officer": {
+                "firstName": f"{amalgamating_business_1.identifier} first_name",
+                "lastName": "Director",
+                "middleName": "P",
             },
-            'mailingAddress': {
-                'streetAddress': f'{amalgamating_business_1.identifier} mailing_address',
-                'addressCity': 'mailing_address city',
-                'addressCountry': 'CA',
-                'postalCode': 'H0H0H0',
-                'addressRegion': 'BC'
+            "mailingAddress": {
+                "streetAddress": f"{amalgamating_business_1.identifier} mailing_address",
+                "addressCity": "mailing_address city",
+                "addressCountry": "CA",
+                "postalCode": "H0H0H0",
+                "addressRegion": "BC",
             },
-            'deliveryAddress': {
-                'streetAddress': f'{amalgamating_business_1.identifier} delivery_address',
-                'addressCity': 'delivery_address city',
-                'addressCountry': 'CA',
-                'postalCode': 'H0H0H0',
-                'addressRegion': 'BC'
-            }
-        })
-    create_party_role(amalgamating_business_1, party, ['director'], datetime.utcnow())
-
+            "deliveryAddress": {
+                "streetAddress": f"{amalgamating_business_1.identifier} delivery_address",
+                "addressCity": "delivery_address city",
+                "addressCountry": "CA",
+                "postalCode": "H0H0H0",
+                "addressRegion": "BC",
+            },
+        }
+    )
+    create_party_role(amalgamating_business_1, party, ["director"], datetime.utcnow())
 
     amalgamating_business_1_id = amalgamating_business_1.id
-    amalgamating_business_2_id = create_entity(amalgamating_identifier_2, 'BC', 'amalgamating business 2').id
+    amalgamating_business_2_id = create_entity(amalgamating_identifier_2, "BC", "amalgamating business 2").id
 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': filing_type, 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing'][filing_type] = copy.deepcopy(AMALGAMATION_APPLICATION)
-    filing['filing'][filing_type]['type'] = amalgamation_type
-    del filing['filing'][filing_type]['amalgamatingBusinesses'][0]
-    filing['filing'][filing_type]['amalgamatingBusinesses'] = [
-        {
-            'role': amalgamating_role,
-            'identifier': amalgamating_identifier_1
-        },
-        {
-            'role': AmalgamatingBusiness.Role.amalgamating.name,
-            'identifier': amalgamating_identifier_2
-        }
+    filing = {"filing": {}}
+    filing["filing"]["header"] = {
+        "name": filing_type,
+        "date": "2019-04-08",
+        "certifiedBy": "full name",
+        "email": "no_one@never.get",
+        "filingId": 1,
+    }
+    filing["filing"][filing_type] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing["filing"][filing_type]["type"] = amalgamation_type
+    del filing["filing"][filing_type]["amalgamatingBusinesses"][0]
+    filing["filing"][filing_type]["amalgamatingBusinesses"] = [
+        {"role": amalgamating_role, "identifier": amalgamating_identifier_1},
+        {"role": AmalgamatingBusiness.Role.amalgamating.name, "identifier": amalgamating_identifier_2},
     ]
 
-    filing['filing'][filing_type]['nameRequest']['nrNumber'] = nr_identifier
+    filing["filing"][filing_type]["nameRequest"]["nrNumber"] = nr_identifier
 
-    del filing['filing'][filing_type]['offices']
-    del filing['filing'][filing_type]['shareStructure']
-    del filing['filing'][filing_type]['parties'][0]['roles'][1]
+    del filing["filing"][filing_type]["offices"]
+    del filing["filing"][filing_type]["shareStructure"]
+    del filing["filing"][filing_type]["parties"][0]["roles"][1]
 
-    filing_rec = create_filing('123', filing)
+    filing_rec = create_filing("123", filing)
     effective_date = datetime.now(timezone.utc)
     filing_rec.effective_date = effective_date
     filing_rec.save()
 
     # test
-    filing_msg = {'filing': {'id': filing_rec.id}}
-    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num):
-        with patch.object(business_profile, 'update_business_profile', return_value=HTTPStatus.OK):
+    filing_msg = {"filing": {"id": filing_rec.id}}
+    with patch.object(business_info, "get_next_corp_num", return_value=next_corp_num):
+        with patch.object(business_profile, "update_business_profile", return_value=HTTPStatus.OK):
             await process_filing(filing_msg, app)
 
     # Assertions
@@ -197,22 +205,22 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
     assert filing_rec.status == Filing.Status.COMPLETED.value
     assert business.identifier
     assert business.founding_date == effective_date
-    assert business.legal_type == filing['filing'][filing_type]['nameRequest']['legalType']
-    assert business.legal_name == filing['filing'][filing_type]['nameRequest']['legalName']
+    assert business.legal_type == filing["filing"][filing_type]["nameRequest"]["legalType"]
+    assert business.legal_name == filing["filing"][filing_type]["nameRequest"]["legalName"]
     assert business.state == LegalEntity.State.ACTIVE
 
     assert len(business.share_classes.all()) == 1
     assert len(business.offices.all()) == 1
-    assert len(business.aliases.all()) == len(filing['filing'][filing_type]['nameTranslations'])
-    assert business.party_roles[0].role == 'director'
-    assert filing_rec.filing_party_roles[0].role == 'completing_party'
+    assert len(business.aliases.all()) == len(filing["filing"][filing_type]["nameTranslations"])
+    assert business.party_roles[0].role == "director"
+    assert filing_rec.filing_party_roles[0].role == "completing_party"
 
     assert business.amalgamation
     amalgamation: Amalgamation = business.amalgamation[0]
     assert amalgamation.amalgamation_date == effective_date
     assert amalgamation.filing_id == filing_rec.id
-    assert amalgamation.amalgamation_type.name == filing['filing'][filing_type]['type']
-    assert amalgamation.court_approval == filing['filing'][filing_type]['courtApproval']
+    assert amalgamation.amalgamation_type.name == filing["filing"][filing_type]["type"]
+    assert amalgamation.court_approval == filing["filing"][filing_type]["courtApproval"]
 
     for amalgamating_business in amalgamation.amalgamating_businesses:
         assert amalgamating_business.role.name in [amalgamating_role, AmalgamatingBusiness.Role.amalgamating.name]
