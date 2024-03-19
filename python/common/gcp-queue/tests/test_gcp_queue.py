@@ -1,13 +1,12 @@
 import base64
-import json
 from contextlib import suppress
-from http import HTTPStatus
 
 import flask
-import pytest
-from simple_cloudevent import SimpleCloudEvent, to_queue_message, to_structured
-
 from gcp_queue import GcpQueue
+import pytest
+from simple_cloudevent import SimpleCloudEvent
+from simple_cloudevent import to_queue_message
+from simple_cloudevent import to_structured
 
 BASE_ENVELOPE = {
     "subscription": "projects/PUBSUB_PROJECT_ID/subscriptions/SUBSCRIPTION_ID",
@@ -20,7 +19,9 @@ BASE_ENVELOPE = {
 }
 
 
-@pytest.mark.parametrize("test_name,msg,expected", [("invalid", {}, False), ("valid", BASE_ENVELOPE, True)])
+@pytest.mark.parametrize(
+    "test_name,msg,expected", [("invalid", {}, False), ("valid", BASE_ENVELOPE, True)]
+)
 def test_valid_envelope(test_name, msg, expected):
     """Test the validation the envelope."""
     rv = GcpQueue.is_valid_envelope(msg)
@@ -74,11 +75,25 @@ WRAPPED_CLOUD_EVENT_ENVELOPE = {
     "test_name,queue_message,wrapped,expected,ret_type",
     [
         ("invalid", {}, True, None, type(None)),
-        ("valid-wrapped", WRAPPED_CLOUD_EVENT_ENVELOPE, True, CLOUD_EVENT, SimpleCloudEvent),
-        ("valid-unwrapped", to_structured(CLOUD_EVENT), False, CLOUD_EVENT, SimpleCloudEvent),
+        (
+            "valid-wrapped",
+            WRAPPED_CLOUD_EVENT_ENVELOPE,
+            True,
+            CLOUD_EVENT,
+            SimpleCloudEvent,
+        ),
+        (
+            "valid-unwrapped",
+            to_structured(CLOUD_EVENT),
+            False,
+            CLOUD_EVENT,
+            SimpleCloudEvent,
+        ),
     ],
 )
-def test_get_simple_cloud_event(mocker, test_name, queue_message, wrapped, expected, ret_type):
+def test_get_simple_cloud_event(
+    mocker, test_name, queue_message, wrapped, expected, ret_type
+):
     """Test that getting a simple cloud event works as expected."""
     app = flask.Flask(__name__)
     with app.app_context():

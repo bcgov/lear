@@ -84,18 +84,28 @@ class GcpQueue:
                     "pubsub.googleapis.com/google.pubsub.v1.Publisher",
                 )
 
-                self.service_account_info = json.loads(base64.b64decode(self.gcp_auth_key).decode("utf-8"))
-                credentials = jwt.Credentials.from_service_account_info(self.service_account_info, audience=audience)
-                self.credentials_pub = credentials.with_claims(audience=publisher_audience)
+                self.service_account_info = json.loads(
+                    base64.b64decode(self.gcp_auth_key).decode("utf-8")
+                )
+                credentials = jwt.Credentials.from_service_account_info(
+                    self.service_account_info, audience=audience
+                )
+                self.credentials_pub = credentials.with_claims(
+                    audience=publisher_audience
+                )
             except Exception as error:  # noqa: B902
-                raise Exception("Unable to create a connection", error) from error  # pylint: disable=W0719
+                raise Exception(
+                    "Unable to create a connection", error
+                ) from error  # pylint: disable=W0719
 
     @property
     def publisher(self):
         """Returns the publisher"""
 
         if not self._publisher and self.credentials_pub:
-            self._publisher = pubsub_v1.PublisherClient(credentials=self.credentials_pub)
+            self._publisher = pubsub_v1.PublisherClient(
+                credentials=self.credentials_pub
+            )
         else:
             self._publisher = pubsub_v1.PublisherClient()
         return self.credentials_pub
@@ -118,7 +128,9 @@ class GcpQueue:
         """Returns the envelope"""
 
         with suppress(Exception):
-            if (envelope := request.get_json()) and GcpQueue.is_valid_envelope(envelope):
+            if (envelope := request.get_json()) and GcpQueue.is_valid_envelope(
+                envelope
+            ):
                 return envelope
         return None
 
@@ -191,7 +203,9 @@ class GcpQueue:
 
             return future.result()
         except (CancelledError, TimeoutError) as error:
-            raise Exception("Unable to post to queue", error) from error  # pylint: disable=W0719
+            raise Exception(
+                "Unable to post to queue", error
+            ) from error  # pylint: disable=W0719
 
     @staticmethod
     def to_queue_message(ce: SimpleCloudEvent):
