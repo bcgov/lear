@@ -27,8 +27,6 @@ from entity_filer.resources.worker import FilingMessage, process_filing
 from tests.unit import (
     create_entity,
     create_filing,
-    create_office,
-    create_office_address,
     create_party,
     create_party_role,
     create_share_class,
@@ -130,10 +128,6 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
 
     amalgamating_business_1 = create_entity(amalgamating_identifier_1, "BC", f"{amalgamating_role} business 1")
 
-    office = create_office(amalgamating_business_1, "registeredOffice")
-    office_delivery_address = create_office_address(amalgamating_business_1, office, "delivery")
-    office_mailing_address = create_office_address(amalgamating_business_1, office, "mailing")
-
     create_share_class(amalgamating_business_1)
 
     party = create_party(
@@ -193,9 +187,9 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
 
     # test
     filing_msg = {"filing": {"id": filing_rec.id}}
-    with patch.object(business_info, "get_next_corp_num", return_value=next_corp_num):
-        with patch.object(business_profile, "update_business_profile", return_value=HTTPStatus.OK):
-            await process_filing(filing_msg, app)
+    with patch.object(legal_entity_info, "get_next_corp_num", return_value=next_corp_num):
+        #with patch.object(business_profile, "update_business_profile", return_value=HTTPStatus.OK):
+        await process_filing(filing_msg, app)
 
     # Assertions
     filing_rec = Filing.find_by_id(filing_rec.id)

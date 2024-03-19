@@ -31,6 +31,7 @@ from legal_api.models import (
 )
 from legal_api.services.bootstrap import AccountService
 
+from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     JSON_ROLE_CONVERTER,
@@ -38,6 +39,7 @@ from entity_filer.filing_processors.filing_components import (
     business_info,
     business_profile,
     filings,
+    legal_entity_info,
     shares,
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices
