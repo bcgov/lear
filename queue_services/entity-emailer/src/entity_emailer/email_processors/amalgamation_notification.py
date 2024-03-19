@@ -29,26 +29,19 @@ from entity_emailer.email_processors import get_filing_info, get_recipients, sub
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    status: str, token: str, business: dict, filing: Filing, filing_date_time: str, effective_date: str
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the outputs for the amalgamation notification."""
     pdfs = []
     attach_order = 1
-    headers = {
-        "Accept": "application/pdf",
-        "Authorization": f"Bearer {token}"
-    }
+    headers = {"Accept": "application/pdf", "Authorization": f"Bearer {token}"}
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
         filing_pdf = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            headers=headers
+            headers=headers,
         )
         if filing_pdf.status_code != HTTPStatus.OK:
             logger.error("Failed to get pdf for filing: %s", filing.id)
@@ -59,7 +52,7 @@ def _get_pdfs(
                     "fileName": "Amalgamation Application.pdf",
                     "fileBytes": filing_pdf_encoded.decode("utf-8"),
                     "fileUrl": "",
-                    "attachOrder": attach_order
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
@@ -72,9 +65,9 @@ def _get_pdfs(
                 "filingDateTime": filing_date_time,
                 "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
                 "filingIdentifier": str(filing.id),
-                "businessNumber": business.get("taxId", "")
+                "businessNumber": business.get("taxId", ""),
             },
-            headers=headers
+            headers=headers,
         )
         if receipt.status_code != HTTPStatus.CREATED:
             logger.error("Failed to get receipt pdf for filing: %s", filing.id)
@@ -85,7 +78,7 @@ def _get_pdfs(
                     "fileName": "Receipt.pdf",
                     "fileBytes": receipt_encoded.decode("utf-8"),
                     "fileUrl": "",
-                    "attachOrder": attach_order
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
@@ -94,7 +87,7 @@ def _get_pdfs(
         certificate = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
             "?type=certificateOfAmalgamation",
-            headers=headers
+            headers=headers,
         )
         if certificate.status_code != HTTPStatus.OK:
             logger.error("Failed to get corrected registration statement pdf for filing: %s", filing.id)
@@ -105,7 +98,7 @@ def _get_pdfs(
                     "fileName": "Certificate Of Amalgamation.pdf",
                     "fileBytes": certificate_encoded.decode("utf-8"),
                     "fileUrl": "",
-                    "attachOrder": attach_order
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
@@ -113,7 +106,7 @@ def _get_pdfs(
         noa = requests.get(
             f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
             "?type=noticeOfArticles",
-            headers=headers
+            headers=headers,
         )
         if noa.status_code != HTTPStatus.OK:
             logger.error("Failed to get noa pdf for filing: %s", filing.id)
@@ -124,7 +117,7 @@ def _get_pdfs(
                     "fileName": "Notice of Articles.pdf",
                     "fileBytes": noa_encoded.decode("utf-8"),
                     "fileUrl": "",
-                    "attachOrder": attach_order
+                    "attachOrder": attach_order,
                 }
             )
             attach_order += 1
@@ -144,7 +137,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)["filing"][f'{filing_type}']
+    filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
@@ -153,7 +146,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.get("identifier", ""),
         email_header=filing_name.upper(),
-        filing_type=filing_type
+        filing_type=filing_type,
     )
 
     # get attachments
@@ -173,9 +166,5 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     return {
         "recipients": recipients,
         "requestBy": "BCRegistries@gov.bc.ca",
-        "content": {
-            "subject": subject,
-            "body": f"{html_out}",
-            "attachments": pdfs
-        }
+        "content": {"subject": subject, "body": f"{html_out}", "attachments": pdfs},
     }
