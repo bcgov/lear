@@ -475,7 +475,7 @@ class Filing:
 
     @staticmethod
     def get_document_list(  # pylint: disable=too-many-locals disable=too-many-branches
-        legal_entity, filing, request
+        business, filing, request
     ) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
         no_output_filings = [
@@ -495,7 +495,7 @@ class Filing:
 
         base_url = current_app.config.get("LEGAL_API_BASE_URL")
         base_url = base_url[: base_url.find("/api")]
-        identifier = legal_entity.identifier if legal_entity else filing.storage.temp_reg
+        identifier = business.identifier if business else filing.storage.temp_reg
         doc_url = url_for(
             "API2.get_documents", **{"identifier": identifier, "filing_id": filing.id, "legal_filing_name": None}
         )
@@ -528,7 +528,7 @@ class Filing:
             filing.filing_type in no_legal_filings_in_paid_status
             or (
                 filing.filing_type == Filing.FilingTypes.DISSOLUTION.value
-                and legal_entity.entity_type
+                and business.entity_type
                 in [LegalEntity.EntityTypes.SOLE_PROP.value, LegalEntity.EntityTypes.PARTNERSHIP.value]
             )
         ):
@@ -549,7 +549,7 @@ class Filing:
                 legal_filings_copy = copy.deepcopy(legal_filings)
                 if (
                     filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value
-                    and legal_entity.entity_type == LegalEntity.EntityTypes.COOP.value
+                    and business.entity_type == LegalEntity.EntityTypes.COOP.value
                 ):
                     # add special resolution application output
                     documents["documents"][
@@ -575,14 +575,14 @@ class Filing:
 
                 # get extra outputs
                 if bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                    filing.storage, legal_entity
+                    filing.storage, business
                 ):
-                    legal_entity = bus_rev_temp
+                    business = bus_rev_temp
 
-                adds = [FilingMeta.get_all_outputs(legal_entity.entity_type, doc) for doc in legal_filings]
+                adds = [FilingMeta.get_all_outputs(business.entity_type, doc) for doc in legal_filings]
                 additional = set([item for sublist in adds for item in sublist])
 
-                FilingMeta.alter_outputs(filing.storage, legal_entity, additional)
+                FilingMeta.alter_outputs(filing.storage, business, additional)
                 for doc in additional:
                     documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
 

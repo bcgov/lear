@@ -22,6 +22,8 @@ from legal_api.resources.v2.business.business_filings.business_filings import Li
 from legal_api.services import publish_event
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import date, datetime
+from legal_api.services import business_service
+
 
 bp = Blueprint("INTERNAL_SERVICE", __name__, url_prefix="/api/v2/internal")
 
@@ -36,39 +38,40 @@ def update_bn_move():
     if not json_input or not (old_bn := json_input.get("oldBn")) or not (new_bn := json_input.get("newBn")):
         return ({"message": "No oldBn or newBn in body of post."}, HTTPStatus.BAD_REQUEST)
 
-    legal_entity = LegalEntity.find_by_tax_id(old_bn)
-    if legal_entity:
-        legal_entity.tax_id = new_bn
-        legal_entity.save()
+    for identifier in json_input.keys():
+        business = business_service.fetch_business(identifier)
+        if business and business.is_legal_entity:
+            business.tax_id = json_input[identifier]
+            business.save()
 
-        response, response_code = create_registrars_notation_filing(legal_entity, user, old_bn)
-        if response and (response_code != HTTPStatus.CREATED):
-            current_app.logger.error("Unable to complete payment for registrars notation (bn move)")
-            current_app.logger.error("%s, %s", response, response_code)
+            response, response_code = create_registrars_notation_filing(business, user, old_bn)
+            if response and (response_code != HTTPStatus.CREATED):
+                current_app.logger.error("Unable to complete payment for registrars notation (bn move)")
+                current_app.logger.error("%s, %s", response, response_code)
 
-        publish_event(
-            legal_entity,
-            "bc.registry.bnmove",
-            {"oldBn": old_bn, "newBn": new_bn},
-            current_app.config.get("NATS_EMAILER_SUBJECT"),
-        )
-        publish_event(legal_entity, "bc.registry.business.bn", {}, current_app.config.get("NATS_ENTITY_EVENT_SUBJECT"))
-    else:
-        current_app.logger.error("Unable to update tax_id for (%s), which is missing in lear", old_bn)
+            publish_event(
+                business,
+                "bc.registry.bnmove",
+                {"oldBn": old_bn, "newBn": new_bn},
+                current_app.config.get("NATS_EMAILER_SUBJECT"),
+            )
+            publish_event(business, "bc.registry.business.bn", {}, current_app.config.get("NATS_ENTITY_EVENT_SUBJECT"))
+        else:
+            current_app.logger.error("Unable to update tax_id for (%s), which is missing in lear", old_bn)
     return jsonify({"message": "Successfully updated tax id."}), HTTPStatus.OK
 
 
-def create_registrars_notation_filing(legal_entity: LegalEntity, user: User, old_bn: str):
+def create_registrars_notation_filing(business: any, user: User, old_bn: str):
     """Create registrars notation filing while updating tax_id (BN Move)."""
     filing = Filing()
-    filing.legal_entity_id = legal_entity.id
+    filing.legal_entity_id = business.id
     filing.submitter_id = user.id
     filing.filing_json = {
         "filing": {
             "header": {"name": "registrarsNotation", "date": date.today().isoformat(), "certifiedBy": "system"},
-            "business": {"identifier": legal_entity.identifier, "legalType": legal_entity.entity_type},
+            "business": {"identifier": business.identifier, "legalType": business.entity_type},
             "registrarsNotation": {
-                "orderDetails": f"Business Number changed from {old_bn} to {legal_entity.tax_id }"
+                "orderDetails": f"Business Number changed from {old_bn} to {business.tax_id }"
                 + " based on a request from the CRA."
             },
         }
