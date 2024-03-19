@@ -94,7 +94,7 @@ def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amal
             if region := foreign_jurisdiction.get("region"):
                 amalgamating_business.foreign_jurisdiction_region = region.upper()
         elif business := LegalEntity.find_by_identifier(identifier):
-            amalgamating_business.business_id = business.id
+            amalgamating_business.legal_entity_id = business.id
             dissolve_amalgamating_business(business, filing_rec)
 
         amalgamation.amalgamating_businesses.append(amalgamating_business)
