@@ -1553,48 +1553,6 @@ def test_validate_amalgamation_office_or_share_required(session, mocker, amalgam
         "filingId": 1,
     }
     filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
-
-    court_order = {"effectOfOrder": effect_of_order}
-    if file_number:
-        court_order["fileNumber"] = file_number
-    filing["filing"]["amalgamationApplication"]["courtOrder"] = court_order
-
-    mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
-    )
-    mocker.patch(
-        "legal_api.services.filings.validations.amalgamation_ap plication.validate_amalgamating_businesses",
-        return_value=[],
-    )
-
-    err = validate(None, filing)
-
-    # validate outcomes
-    if expected_code:
-        assert err.code == expected_code
-    else:
-        assert err is None
-
-
-@pytest.mark.parametrize(
-    "amalgamation_type, expected_code",
-    [
-        (Amalgamation.AmalgamationTypes.regular.name, HTTPStatus.UNPROCESSABLE_ENTITY),
-        (Amalgamation.AmalgamationTypes.vertical.name, None),
-        (Amalgamation.AmalgamationTypes.horizontal.name, None),
-    ],
-)
-def test_validate_amalgamation_office_or_share_required(session, mocker, amalgamation_type, expected_code):
-    """Assert that amalgamation offices/shareStructure required can be validated."""
-    filing = {"filing": {}}
-    filing["filing"]["header"] = {
-        "name": "amalgamationApplication",
-        "date": "2019-04-08",
-        "certifiedBy": "full name",
-        "email": "no_one@never.get",
-        "filingId": 1,
-    }
-    filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing["filing"]["amalgamationApplication"]["type"] = amalgamation_type
 
     del filing["filing"]["amalgamationApplication"]["offices"]
