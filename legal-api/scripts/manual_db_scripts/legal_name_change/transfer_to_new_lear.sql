@@ -935,7 +935,7 @@ SELECT  a.id,
         a.amalgamation_type,
         a.court_approval,
         a.filing_id as change_filing_id,
-        COALESCE(av.version, 0) as version
+        COALESCE(av.version, 1) as version
 FROM public.amalgamations a
         left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.amalgamations_version
@@ -1004,12 +1004,21 @@ FROM public.amalgamating_businesses a
 transfer public.amalgamating_businesses_history from lear_old using
 with subquery as
          (SELECT av.id,
+                av.amalgamation_id,
+                av.foreign_jurisdiction,
+                av.foreign_jurisdiction_region,
+                av.foreign_name,
+                av.foreign_identifier,
+                av.role,
                 av.business_id as legal_entity_id,
                 f.id as change_filing_id,
                 t.issued_at as changed,
                 COALESCE(ROW_NUMBER() OVER (PARTITION BY av.id ORDER BY av.transaction_id ASC), 1) as version
           from public.amalgamating_businesses_version av
-                    left join public.transaction t on av.transaction_id = t.id
+                    left join public.transaction t
+                             on av.transaction_id not in
+                                (select transaction_id from temp_multiple_filing_transactions) and
+                                av.transaction_id = t.id
                     left join public.filings f on f.transaction_id = t.id
                     left join temp_multiple_filing_transactions tmft on av.transaction_id = tmft.transaction_id),
      max_versions as
