@@ -177,6 +177,8 @@ def test_validate_ar_year(
             2021,
             "2021-07-14",
         ),
+        ('BEN 2024', '2024-02-29', None, LegalEntity.EntityTypes.BCOMP.value,  # Leap year
+         '2025-03-01', '2025-04-30', None, 2025, '2025-05-30'),
         (
             "BC first AR",
             "2011-06-29",
