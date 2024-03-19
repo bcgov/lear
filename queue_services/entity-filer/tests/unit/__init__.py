@@ -568,37 +568,6 @@ def create_entity_role(business, party, roles, appointment_date):
     return business
 
 
-
-def create_share_class(business, no_of_shares=1, no_of_series_in_each_share=2):
-    """Create a new share class and associated series."""
-    for i in range(no_of_shares):
-        share_class = ShareClass(
-            name=f'{business.identifier} Share Class {i}',
-            priority=1,
-            max_share_flag=True,
-            max_shares=100,
-            par_value_flag=True,
-            par_value=10,
-            currency='CAD',
-            special_rights_flag=False
-        )
-
-        share_class.series = []
-        for j in range(no_of_series_in_each_share):
-            share_series = ShareSeries(
-                name=f'{business.identifier} Share {i} Series {j}',
-                priority=1,
-                max_share_flag=True,
-                max_shares=50,
-                special_rights_flag=False
-            )
-            share_class.series.append(share_series)
-
-    business.share_classes.append(share_class)
-    business.save()
-
-
-
 def create_share_class(business, no_of_shares=1, no_of_series_in_each_share=2):
     """Create a new share class and associated series."""
     for i in range(no_of_shares):
