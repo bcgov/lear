@@ -19,11 +19,9 @@ from flask_cors import cross_origin
 
 from legal_api.models import Filing, LegalEntity, User, UserRoles
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
-from legal_api.services import publish_event
+from legal_api.services import business_service, publish_event
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import date, datetime
-from legal_api.services import business_service
-
 
 bp = Blueprint("INTERNAL_SERVICE", __name__, url_prefix="/api/v2/internal")
 
