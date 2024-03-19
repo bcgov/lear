@@ -447,9 +447,11 @@ class Filing:
             "displayLedger": Filing._is_display_ledger(filing=filing_storage),  # pylint: disable=E1120
             "commentsCount": filing_storage.comments_count,
             "commentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/comments",
-            "documentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents"
-            if filing_storage.filing_type not in no_output_filing_types
-            else None,
+            "documentsLink": (
+                f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents"
+                if filing_storage.filing_type not in no_output_filing_types
+                else None
+            ),
             "filingLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}",
             "isFutureEffective": filing.is_future_effective,
         }
@@ -574,9 +576,7 @@ class Filing:
                     ]
 
                 # get extra outputs
-                if bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                    filing.storage, business
-                ):
+                if bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(filing.storage, business):
                     business = bus_rev_temp
 
                 adds = [FilingMeta.get_all_outputs(business.entity_type, doc) for doc in legal_filings]

@@ -81,4 +81,4 @@ def create_registrars_notation_filing(business: any, user: User, old_bn: str):
     filing.effective_date = datetime.utcnow()
     filing.save()
 
-    return ListFilingResource.complete_filing(legal_entity, filing, False, None)
+    return ListFilingResource.complete_filing(business, filing, False, None)
