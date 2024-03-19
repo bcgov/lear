@@ -182,14 +182,20 @@ def search_businesses():
         bus_an_results = [x.json(slim=True) for x in bus_an_query.all()]
         draft_results = [
             {
-                'identifier': x.temp_reg,
-                'legalType': x.json_legal_type,
-                **({'nrNumber': x.json_nr} if x.json_nr else {}),
-                **({'legalName': x.filing_json.get('filing', {})
-                    .get(x.filing_type, {})
-                    .get('nameRequest', {})
-                    .get('legalName')})
-            } for x in draft_query.all()]
+                "identifier": x.temp_reg,
+                "legalType": x.json_legal_type,
+                **({"nrNumber": x.json_nr} if x.json_nr else {}),
+                **(
+                    {
+                        "legalName": x.filing_json.get("filing", {})
+                        .get(x.filing_type, {})
+                        .get("nameRequest", {})
+                        .get("legalName")
+                    }
+                ),
+            }
+            for x in draft_query.all()
+        ]
 
         return (
             jsonify({"businessEntities": bus_le_results + bus_an_results, "draftEntities": draft_results}),
