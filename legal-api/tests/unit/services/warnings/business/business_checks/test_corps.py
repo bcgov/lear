@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test suite to ensure Corpse business checks work correctly."""
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime, timedelta
-from tests.unit.models import factory_legal_entity
+from unittest.mock import Mock, patch
+
+import pytest
+
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.corps import check_business
+from tests.unit.models import factory_legal_entity
 
 
 @pytest.mark.parametrize(
