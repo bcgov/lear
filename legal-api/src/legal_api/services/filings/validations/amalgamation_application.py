@@ -18,7 +18,7 @@ from typing import Dict, Final, Optional
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import AmalgamatingBusiness, Amalgamation, LegalEntity, EntityRole, Filing
+from legal_api.models import AmalgamatingBusiness, Amalgamation, EntityRole, Filing, LegalEntity
 from legal_api.services import STAFF_ROLE
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.business_service import BusinessService

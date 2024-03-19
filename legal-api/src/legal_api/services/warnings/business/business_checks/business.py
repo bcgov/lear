@@ -13,10 +13,11 @@
 # limitations under the License.
 
 """Service to check compliancy for a LegalEntity."""
-from .firms import check_business as firms_check  # noqa: I003
-from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.models import LegalEntity
+from legal_api.services.warnings.business.business_checks import WarningType
+
 from .corps import check_business as corps_check
+from .firms import check_business as firms_check  # noqa: I003
 
 
 def check_business(business: any) -> list:
