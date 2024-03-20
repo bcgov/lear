@@ -120,39 +120,24 @@ class Filing(db.Model):
             "title": "Notice of Alteration Filing",
             "codes": {"BC": "ALTER", "BEN": "ALTER", "ULC": "ALTER", "CC": "ALTER"},
         },
-        'amalgamationApplication': {
-            'name': 'amalgamationApplication',
-            'temporaryCorpTypeCode': 'ATMP',
-            'regular': {
-                'name': 'regularAmalgamation',
-                'title': 'Amalgamation Application (Regular)',
-                'codes': {
-                    'BEN': 'AMALR',
-                    'BC': 'AMALR',
-                    'ULC': 'AMALR',
-                    'CC': 'AMALR'
-                },
+        "amalgamationApplication": {
+            "name": "amalgamationApplication",
+            "temporaryCorpTypeCode": "ATMP",
+            "regular": {
+                "name": "regularAmalgamation",
+                "title": "Amalgamation Application (Regular)",
+                "codes": {"BEN": "AMALR", "BC": "AMALR", "ULC": "AMALR", "CC": "AMALR"},
             },
-            'vertical': {
-                'name': 'verticalAmalgamation',
-                'title': 'Amalgamation Application Short-form (Vertical)',
-                'codes': {
-                    'BEN': 'AMALV',
-                    'BC': 'AMALV',
-                    'ULC': 'AMALV',
-                    'CC': 'AMALV'
-                },
+            "vertical": {
+                "name": "verticalAmalgamation",
+                "title": "Amalgamation Application Short-form (Vertical)",
+                "codes": {"BEN": "AMALV", "BC": "AMALV", "ULC": "AMALV", "CC": "AMALV"},
             },
-            'horizontal': {
-                'name': 'horizontalAmalgamation',
-                'title': 'Amalgamation Application Short-form (Horizontal)',
-                'codes': {
-                    'BEN': 'AMALH',
-                    'BC': 'AMALH',
-                    'ULC': 'AMALH',
-                    'CC': 'AMALH'
-                },
-            }
+            "horizontal": {
+                "name": "horizontalAmalgamation",
+                "title": "Amalgamation Application Short-form (Horizontal)",
+                "codes": {"BEN": "AMALH", "BC": "AMALH", "ULC": "AMALH", "CC": "AMALH"},
+            },
         },
         "annualReport": {
             "name": "annualReport",
