@@ -25,8 +25,8 @@ simple_cloudevent = { git = "https://github.com/daxiom/simple-cloudevent.py" }
 
 ## sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "feature-legal-name" }
 ## sql-versioning = {path = "../../python/common/sql-versioning"}
-## business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "feature-legal-name" }
-business-model = {path = "../../python/common/business-registry-model"}
+business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "feature-legal-name" }
+## business-model = {path = "../../python/common/business-registry-model"}
 cattrs = "^23.1.2"
 google-cloud-pubsub = "^2.18.4"
 google-auth = "^2.23.3"
