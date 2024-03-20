@@ -17,13 +17,12 @@ import os
 import random
 from contextlib import contextmanager, suppress
 
+import business_model_migrations
 import psycopg2
 import pytest
 import sqlalchemy
-from flask_migrate import Migrate, upgrade
-
 from business_model import db as _db
-import business_model_migrations
+from flask_migrate import Migrate, upgrade
 from sqlalchemy import text
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -303,7 +302,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         except Exception as err:
             print(err)
             print("done")
-        
+
         db.session = sess
 
         sql = text("select 1")
