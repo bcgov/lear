@@ -38,11 +38,7 @@ def upgrade():
         sqlite_autoincrement=True,
     )
     with op.batch_alter_table("consent_continuation_outs", schema=None) as batch_op:
-        batch_op.create_index(
-            batch_op.f("ix_consent_continuation_outs_filing_id"),
-            ["filing_id"],
-            unique=False,
-        )
+        batch_op.create_index(batch_op.f("ix_consent_continuation_outs_filing_id"), ["filing_id"], unique=False)
 
     op.create_table(
         "sent_to_gazette",

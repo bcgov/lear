@@ -70,7 +70,7 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
         last_name="Crane",
         middle_initial="Joe",
         title="VP",
-        entity_type=LegalEntity.EntityTypes.PERSON.value,
+        _entity_type=LegalEntity.EntityTypes.PERSON.value,
     )
     member.save()
     # sanity check
@@ -170,7 +170,7 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
         last_name="Crane",
         middle_initial="Joe",
         title="VP",
-        entity_type=LegalEntity.EntityTypes.PERSON.value,
+        _entity_type=LegalEntity.EntityTypes.PERSON.value,
     )
     member.save()
     # sanity check

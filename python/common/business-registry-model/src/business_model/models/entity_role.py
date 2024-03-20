@@ -180,7 +180,7 @@ class EntityRole(Versioned, db.Model):
         org_name: str,
     ):
         """Return a Party connected to the given legal_entity_id by the given name."""
-        from legal_api.models import ColinEntity, LegalEntity
+        from ..models import ColinEntity, LegalEntity
 
         party = None
 
@@ -360,7 +360,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_related_person(self):
         """Return if entity role is for individual entity in legal_entities table."""
-        from legal_api.models import LegalEntity
+        from ..models import LegalEntity
 
         if self.related_entity_id and self.related_entity.entity_type == LegalEntity.EntityTypes.PERSON.value:
             return True
@@ -370,7 +370,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_related_organization(self):
         """Return if entity role is a business in legal_entities table."""
-        from legal_api.models import LegalEntity
+        from ..models import LegalEntity
 
         if self.related_entity_id and self.related_entity.entity_type != LegalEntity.EntityTypes.PERSON.value:
             return True
@@ -385,7 +385,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_filing_related_person(self):
         """Return if entity role is for individual entity in legal_entities table."""
-        from legal_api.models import LegalEntity
+        from ..models import LegalEntity
 
         if (
             self.filing_id
@@ -399,7 +399,7 @@ class EntityRole(Versioned, db.Model):
     @property
     def is_filing_related_organization(self):
         """Return if entity role is a business in legal_entities table."""
-        from legal_api.models import LegalEntity
+        from ..models import LegalEntity
 
         if (
             self.filing_id
