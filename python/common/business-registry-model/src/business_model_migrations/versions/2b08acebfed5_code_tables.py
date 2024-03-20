@@ -11,36 +11,29 @@ from sqlalchemy import String
 
 
 # revision identifiers, used by Alembic.
-revision = '2b08acebfed5'
-down_revision = '004f7558063f'
+revision = "2b08acebfed5"
+down_revision = "004f7558063f"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
-
-    office_types_table = table('office_types',
-        column('identifier', String),
-        column('description', String),
+    office_types_table = table(
+        "office_types",
+        column("identifier", String),
+        column("description", String),
     )
 
     op.bulk_insert(
         office_types_table,
         [
-            {
-                'identifier':'registeredOffice', 'description':'Registered Office'
-            },
-            {
-                'identifier':'recordsOffice', 'description':'Records Office'
-            },
-            {
-                'identifier':'custodialOffice', 'description':'Custodial Office'
-            },
-            {
-                'identifier':'businessOffice', 'description':'Business Office'
-            },
-        ]
+            {"identifier": "registeredOffice", "description": "Registered Office"},
+            {"identifier": "recordsOffice", "description": "Records Office"},
+            {"identifier": "custodialOffice", "description": "Custodial Office"},
+            {"identifier": "businessOffice", "description": "Business Office"},
+        ],
     )
+
 
 def downgrade():
     pass
