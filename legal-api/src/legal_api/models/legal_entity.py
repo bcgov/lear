@@ -278,7 +278,8 @@ class LegalEntity(
             self.EntityTypes.BC_CCC.value,
         ]:
             # For BCOMP min date is next anniversary date.
-            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
+            no_of_years_to_add = next_ar_year - self.founding_date.year
+            ar_min_date = self.founding_date.date() + datedelta.datedelta(years=no_of_years_to_add)
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
 
         ar_max_date = min(ar_max_date, datetime.utcnow().date())  # ar_max_date cannot be in future
