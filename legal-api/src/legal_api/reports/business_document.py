@@ -21,7 +21,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Alias, Business, CorpType, Filing
+from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
