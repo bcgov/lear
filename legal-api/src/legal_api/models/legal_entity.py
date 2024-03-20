@@ -482,11 +482,8 @@ class LegalEntity(
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
             # TODO: revert once amalgamation tables and migration scripts have been run
-            # if self.state == LegalEntity.State.HISTORICAL and (
-            #     amalgamating_business := self.amalgamating_businesses.one_or_none()
-            # ):
-            #     amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-            #     d["amalgamatedInto"] = amalgamation.json()
+            # if (amalgamated_into := self.get_amalgamated_into()):
+            #     d['amalgamatedInto'] = amalgamated_into
             # else:
             #     d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
             d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
@@ -635,6 +632,17 @@ class LegalEntity(
         ]
         legal_entities = cls.query.filter(~LegalEntity._entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
+
+    def get_amalgamated_into(self) -> dict:
+        """Get amalgamated into if this business is part of an amalgamation."""
+        if (
+            self.state == LegalEntity.State.HISTORICAL
+            and (state_filing := Filing.find_by_id(self.state_filing_id))
+            and state_filing.is_amalgamation_application
+        ):
+            return Amalgamation.get_amalgamation_revision_json(state_filing.transaction_id, state_filing.business_id)
+
+        return None
 
     @classmethod
     def is_pending_amalgamating_business(cls, business_identifier):

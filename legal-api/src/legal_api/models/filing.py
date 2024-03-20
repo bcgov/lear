@@ -654,7 +654,7 @@ class Filing(db.Model):
     @property
     def is_amalgamation_application(self):
         """Is this an amalgamation application filing."""
-        return self.filing_type == Filing.FILINGS['amalgamationApplication'].get('name')
+        return self.filing_type == Filing.FILINGS["amalgamationApplication"].get("name")
 
     @hybrid_property
     def comments_count(self):
