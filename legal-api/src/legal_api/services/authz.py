@@ -55,7 +55,7 @@ class BusinessBlocker(str, Enum):
     BUSINESS_FROZEN = "BUSINESS_FROZEN"
     DRAFT_PENDING = "DRAFT_PENDING"
     NOT_IN_GOOD_STANDING = "NOT_IN_GOOD_STANDING"
-    AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
+    AMALGAMATING_BUSINESS = "AMALGAMATING_BUSINESS"
 
 
 class BusinessRequirement(str, Enum):
@@ -286,29 +286,25 @@ def get_allowable_filings_dict():
                     "legalTypes": ["SP", "GP", "BEN", "CP", "BC", "CC", "ULC"],
                     "blockerChecks": {"validStateFilings": [filing_types_compact.DISSOLUTION_ADMINISTRATIVE]},
                 },
-                'registrarsNotation': {
-                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
-                },
-                'registrarsOrder': {
-                    'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC']
-                },
-                'restoration': {
-                    'fullRestoration': {
-                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
-                        'blockerChecks': {
-                            'invalidStateFilings': ['continuationIn', 'continuationOut'],
-                            'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
-                        }
+                "registrarsNotation": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
+                "registrarsOrder": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
+                "restoration": {
+                    "fullRestoration": {
+                        "legalTypes": ["BC", "BEN", "CC", "ULC"],
+                        "blockerChecks": {
+                            "invalidStateFilings": ["continuationIn", "continuationOut"],
+                            "business": [BusinessBlocker.AMALGAMATING_BUSINESS],
+                        },
                     },
-                    'limitedRestoration': {
-                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
-                        'blockerChecks': {
-                            'invalidStateFilings': ['continuationIn', 'continuationOut'],
-                            'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
-                        }
-                    }
-                }
-            }
+                    "limitedRestoration": {
+                        "legalTypes": ["BC", "BEN", "CC", "ULC"],
+                        "blockerChecks": {
+                            "invalidStateFilings": ["continuationIn", "continuationOut"],
+                            "business": [BusinessBlocker.AMALGAMATING_BUSINESS],
+                        },
+                    },
+                },
+            },
         },
         "general": {
             BusinessCommon.State.ACTIVE: {
@@ -569,7 +565,7 @@ def business_blocker_check(business: any, is_ignore_draft_blockers: bool = False
         BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DRAFT_PENDING: False,
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
-        BusinessBlocker.AMALGAMATING_BUSINESS: False
+        BusinessBlocker.AMALGAMATING_BUSINESS: False,
     }
 
     if not business:
