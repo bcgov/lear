@@ -2484,9 +2484,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(
             identifier = (f"BC{random.SystemRandom().getrandbits(0x58)}")[:9]
             business = factory_legal_entity(identifier=identifier, entity_type=legal_type, state=state)
 
-            with patch.object(
-                type(business), "amalgamating_businesses", new_callable=PropertyMock
-            ):
+            with patch.object(type(business), "amalgamating_businesses", new_callable=PropertyMock):
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
