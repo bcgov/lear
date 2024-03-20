@@ -14,7 +14,7 @@
 """This module holds data for digital credentials schema and credential definition."""
 from __future__ import annotations
 
-from legal_api.utils.enum import BaseEnum, auto
+from ..utils.enum import BaseEnum, auto
 from sqlalchemy import text
 
 from .db import db

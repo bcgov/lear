@@ -36,6 +36,9 @@ from .models.db import db  # noqa: I001
 from .models.address import Address
 from .models.alias import Alias
 from .models.alternate_name import AlternateName
+from .models.amalgamating_business import AmalgamatingBusiness
+from .models.amalgamation import Amalgamation
+from .models.business_common import BusinessCommon
 from .models.colin_entity import ColinEntity
 from .models.colin_update import ColinLastUpdate
 from .models.comment import Comment
@@ -68,6 +71,9 @@ __all__ = (
     "Address",
     "Alias",
     "AlternateName",
+    "AmalgamatingBusiness",
+    "Amalgamation",
+    "BusinessCommon",
     "ColinEntity",
     "ColinLastUpdate",
     "Comment",

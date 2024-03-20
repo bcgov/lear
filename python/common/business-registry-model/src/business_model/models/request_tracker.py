@@ -17,9 +17,9 @@ from __future__ import annotations
 from enum import auto
 from typing import List
 
-from legal_api.utils.base import BaseEnum
-from legal_api.utils.datetime import datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from ..utils.enum import BaseEnum
+from ..utils.datetime import datetime
+from ..utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 

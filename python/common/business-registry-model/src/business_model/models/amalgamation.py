@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from enum import auto
 
-from ..utils.base import BaseEnum
+from ..utils.enum import BaseEnum
 from .db import db
 
 
