@@ -19,7 +19,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from business_model import DocumentType, Filing, LegalEntity
+from business_model import BusinessCommon, DocumentType, Filing
 from business_model.models.colin_event_id import ColinEventId
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
@@ -92,7 +92,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
             assert business.founding_date.replace(tzinfo=None) == effective_date
             assert business.entity_type == filing["filing"]["incorporationApplication"]["nameRequest"]["legalType"]
             assert business.legal_name == filing["filing"]["incorporationApplication"]["nameRequest"]["legalName"]
-            assert business.state == LegalEntity.State.ACTIVE
+            assert business.state == BusinessCommon.State.ACTIVE
             entity_roles = business.entity_roles.all()
             if legal_type in ("BC", "BEN", "ULC", "CC"):
                 assert len(entity_roles) == 2

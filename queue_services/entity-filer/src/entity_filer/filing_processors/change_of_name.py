@@ -35,7 +35,7 @@ def process(business: LegalEntity, filing: Dict, filing_meta: FilingMeta):
         "toLegalName": new_name,
     }
 
-    business.legal_name = new_name
+    business._legal_name = new_name
 
 
 def post_process(business: LegalEntity, filing: Filing):

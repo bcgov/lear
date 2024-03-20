@@ -38,7 +38,7 @@ def set_corp_type(legal_entity: LegalEntity, legal_entity_info: Dict) -> Dict:
     try:
         entity_type = legal_entity_info.get("legalType")
         if entity_type:
-            legal_entity.entity_type = entity_type
+            legal_entity._entity_type = entity_type
     except (IndexError, KeyError, TypeError):
         return {"error": babel("A valid legal type must be provided.")}
 
@@ -75,7 +75,7 @@ def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, legal_ent
     if corp_num and legal_entity and legal_entity_info and filing:
         set_legal_name(corp_num, legal_entity, legal_entity_info)
         legal_entity.identifier = corp_num
-        legal_entity.entity_type = legal_entity_info.get("legalType", None)
+        legal_entity._entity_type = legal_entity_info.get("legalType", None)
         legal_entity.founding_date = filing.effective_date
         legal_entity.last_coa_date = filing.effective_date
         legal_entity.last_cod_date = filing.effective_date

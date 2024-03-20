@@ -40,7 +40,7 @@ def update_partner_change(
         alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
         parties_dict = dpath.util.get(change_filing, f"/{filing_type}/parties")
 
-        legal_entity.legal_name = get_partnership_name(parties_dict)
+        legal_entity._legal_name = get_partnership_name(parties_dict)
 
         legal_entity.alternate_names.remove(alternate_name)
         alternate_name.end_date = change_filing_rec.effective_date
