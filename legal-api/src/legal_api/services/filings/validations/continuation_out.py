@@ -43,8 +43,9 @@ def validate(business: any, filing: Dict) -> Optional[Error]:
         msg.extend(err)
         is_valid_co_date = False
 
-    if err := validate_foreign_jurisdiction(filing['filing'][filing_type]['foreignJurisdiction'],
-                                            f'/filing/{filing_type}/foreignJurisdiction'):
+    if err := validate_foreign_jurisdiction(
+        filing["filing"][filing_type]["foreignJurisdiction"], f"/filing/{filing_type}/foreignJurisdiction"
+    ):
         msg.extend(err)
         is_valid_foreign_jurisdiction = False
 
