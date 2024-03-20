@@ -23,8 +23,8 @@ from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import dissolution
 from entity_filer.worker import process_filing
-
 from tests.unit import create_business, create_filing
+
 # from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
 
 
@@ -237,36 +237,39 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
     assert filing_json["filing"]["dissolution"]["details"] == final_filing.order_details
 
 
-@pytest.mark.parametrize('dissolution_type', [
-    ('administrative'),
-    ('voluntary'),
-])
+@pytest.mark.parametrize(
+    "dissolution_type",
+    [
+        ("administrative"),
+        ("voluntary"),
+    ],
+)
 async def test_amalgamation_administrative_dissolution(app, session, mocker, dissolution_type):
     """Assert that the dissolution is processed."""
     from tests.unit.test_worker.test_amalgamation_application import test_regular_amalgamation_application_process
+
     identifier = await test_regular_amalgamation_application_process(app, session)
     # setup
     dissolution_filing_json = copy.deepcopy(FILING_HEADER)
-    dissolution_filing_json['filing']['header']['name'] = 'dissolution'
-    dissolution_filing_json['filing']['dissolution'] = DISSOLUTION
-    dissolution_filing_json['filing']['dissolution']['dissolutionDate'] = '2018-04-08'
-    dissolution_filing_json['filing']['dissolution']['dissolutionType'] = dissolution_type
-    dissolution_filing_json['filing']['dissolution']['hasLiabilities'] = False
-    dissolution_filing_json['filing']['dissolution']['details'] = 'Some Details here'
+    dissolution_filing_json["filing"]["header"]["name"] = "dissolution"
+    dissolution_filing_json["filing"]["dissolution"] = DISSOLUTION
+    dissolution_filing_json["filing"]["dissolution"]["dissolutionDate"] = "2018-04-08"
+    dissolution_filing_json["filing"]["dissolution"]["dissolutionType"] = dissolution_type
+    dissolution_filing_json["filing"]["dissolution"]["hasLiabilities"] = False
+    dissolution_filing_json["filing"]["dissolution"]["details"] = "Some Details here"
 
     business = LegalEntity.find_by_identifier(identifier)
-    filing = create_filing('123', dissolution_filing_json, business_id=business.id)
+    filing = create_filing("123", dissolution_filing_json, business_id=business.id)
     filing.effective_date = datetime.now()
     filing.save()
 
     # test
-    filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = {"filing": {"id": filing.id}}
 
-    
     # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    mocker.patch("entity_filer.worker.publish_email_message", return_value=None)
+    mocker.patch("entity_filer.worker.publish_event", return_value=None)
+    mocker.patch("legal_api.services.bootstrap.AccountService.update_entity", return_value=None)
 
     await process_filing(filing_msg, app)
 
@@ -274,7 +277,7 @@ async def test_amalgamation_administrative_dissolution(app, session, mocker, dis
     business = LegalEntity.find_by_identifier(identifier)
     assert business.state == LegalEntity.State.HISTORICAL
     assert business.state_filing_id == filing.id
-    if dissolution_type == 'administrative':
+    if dissolution_type == "administrative":
         assert not business.amalgamation.one_or_none()
     else:
         amalgamation = business.amalgamation.one_or_none()
