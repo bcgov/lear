@@ -763,32 +763,35 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # when TED is dissolved by staff (with court order) and TING is restored, user can modify TING data
             # which should not be reflected here
             ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
-                self._filing.transaction_id, ting_business)
+                self._filing.transaction_id, ting_business
+            )
         return ting_business
 
     def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals, too-many-branches
-        ting_business = next(x for x in filing['amalgamationApplication']['amalgamatingBusinesses']
-                             if x['role'] in [AmalgamatingBusiness.Role.holding.name,
-                                              AmalgamatingBusiness.Role.primary.name])
-        primary_or_holding_business = self._get_versioned_amalgamating_business(ting_business['identifier'])
-        filing['nameRequest']['legalName'] = primary_or_holding_business.legal_name
+        ting_business = next(
+            x
+            for x in filing["amalgamationApplication"]["amalgamatingBusinesses"]
+            if x["role"] in [AmalgamatingBusiness.Role.holding.name, AmalgamatingBusiness.Role.primary.name]
+        )
+        primary_or_holding_business = self._get_versioned_amalgamating_business(ting_business["identifier"])
+        filing["nameRequest"]["legalName"] = primary_or_holding_business.legal_name
 
         parties = []
         # copy director
         if self._filing.transaction_id:
             parties_version = VersionedBusinessDetailsService.get_party_role_revision(
-                self._filing.transaction_id,
-                primary_or_holding_business.id,
-                role=PartyRole.RoleTypes.DIRECTOR.value)
+                self._filing.transaction_id, primary_or_holding_business.id, role=PartyRole.RoleTypes.DIRECTOR.value
+            )
             for director_json in parties_version:
-                director_json['roles'] = [{'roleType': 'Director'}]
+                director_json["roles"] = [{"roleType": "Director"}]
                 parties.append(director_json)
         else:
-            active_directors = PartyRole.get_active_directors(primary_or_holding_business.id,
-                                                              self._filing.effective_date.date())
+            active_directors = PartyRole.get_active_directors(
+                primary_or_holding_business.id, self._filing.effective_date.date()
+            )
             for director in active_directors:
                 director_json = director.json
-                director_json['roles'] = [{'roleType': 'Director'}]
+                director_json["roles"] = [{"roleType": "Director"}]
                 parties.append(director_json)
 
         # copy completing party from filing json
@@ -805,27 +808,27 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         offices = {}
         if self._filing.transaction_id:
             offices = VersionedBusinessDetailsService.get_office_revision(
-                self._filing.transaction_id,
-                primary_or_holding_business.id)
+                self._filing.transaction_id, primary_or_holding_business.id
+            )
         else:
             officelist = primary_or_holding_business.offices.all()
             for i in officelist:
                 if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
                     offices[i.office_type] = {}
                     for address in i.addresses:
-                        offices[i.office_type][f'{address.address_type}Address'] = address.json
-        filing['offices'] = offices
+                        offices[i.office_type][f"{address.address_type}Address"] = address.json
+        filing["offices"] = offices
 
         # copy shares
         share_classes = []
         if self._filing.transaction_id:
             share_classes = VersionedBusinessDetailsService.get_share_class_revision(
-                self._filing.transaction_id,
-                primary_or_holding_business.id)
+                self._filing.transaction_id, primary_or_holding_business.id
+            )
         else:
             for share_class in primary_or_holding_business.share_classes.all():
                 share_classes.append(share_class.json)
-        filing['shareClasses'] = share_classes
+        filing["shareClasses"] = share_classes
 
     def _format_change_of_registration_data(
         self, filing, filing_type
