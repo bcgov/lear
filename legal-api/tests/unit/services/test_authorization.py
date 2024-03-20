@@ -2486,10 +2486,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(
 
             with patch.object(
                 type(business), "amalgamating_businesses", new_callable=PropertyMock
-            ) as mock_amalgamating_business:
-                mock_amalgamating_business = [
-                    {"role": AmalgamatingBusiness.Role.amalgamating.name, "identifier": identifier}
-                ]
+            ):
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
