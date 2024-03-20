@@ -18,7 +18,7 @@ from typing import Dict, Final, Optional
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import AmalgamatingBusiness, Amalgamation, BusinessCommon, EntityRole, Filing
+from legal_api.models import AmalgamatingBusiness, Amalgamation, BusinessCommon, EntityRole, Filing, LegalEntity
 from legal_api.services import STAFF_ROLE
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.business_service import BusinessService
@@ -311,7 +311,7 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
                     "path": amalgamating_business_path,
                 }
             )
-        elif BusinessCommon.is_pending_amalgamating_business(identifier):
+        elif LegalEntity.is_pending_amalgamating_business(identifier):
             msg.append(
                 {
                     "error": f"{identifier} is part of a future effective amalgamation filing.",

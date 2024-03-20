@@ -23,19 +23,20 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import AmalgamatingBusiness, Amalgamation, LegalEntity, Filing
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Filing, LegalEntity
 
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str,
-        amalgamation_application_name: str) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str,
+    amalgamation_application_name: str,
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the outputs for the amalgamation notification."""
     pdfs = []
@@ -54,7 +55,7 @@ def _get_pdfs(
             filing_pdf_encoded = base64.b64encode(filing_pdf.content)
             pdfs.append(
                 {
-                    "fileName": f'{amalgamation_application_name}.pdf',
+                    "fileName": f"{amalgamation_application_name}.pdf",
                     "fileBytes": filing_pdf_encoded.decode("utf-8"),
                     "fileUrl": "",
                     "attachOrder": attach_order,
@@ -133,59 +134,59 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     """Build the email for Amalgamation notification."""
     logger.debug("filing_notification: %s", email_info)
     amalgamation_application_names = {
-        Amalgamation.AmalgamationTypes.regular.name: 'Amalgamation Application (Regular)',
-        Amalgamation.AmalgamationTypes.vertical.name: 'Amalgamation Application Short-form (Vertical)',
-        Amalgamation.AmalgamationTypes.horizontal.name: 'Amalgamation Application Short-form (Horizontal)'
+        Amalgamation.AmalgamationTypes.regular.name: "Amalgamation Application (Regular)",
+        Amalgamation.AmalgamationTypes.vertical.name: "Amalgamation Application Short-form (Vertical)",
+        Amalgamation.AmalgamationTypes.horizontal.name: "Amalgamation Application Short-form (Horizontal)",
     }
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
-    filing_data = (filing.json)['filing'][f'{filing_type}']
+    filing_data = (filing.json)["filing"][f"{filing_type}"]
     if status == Filing.Status.PAID.value:
-        business = filing_data['nameRequest']
-        business['identifier'] = filing.temp_reg
+        business = filing_data["nameRequest"]
+        business["identifier"] = filing.temp_reg
 
-        if filing.filing_sub_type in [Amalgamation.AmalgamationTypes.vertical.name,
-                                      Amalgamation.AmalgamationTypes.horizontal.name]:
-            amalgamating_business = next(x for x in filing_data.get('amalgamatingBusinesses')
-                                         if x['role'] in [AmalgamatingBusiness.Role.holding.name,
-                                                          AmalgamatingBusiness.Role.primary.name])
-            primary_or_holding_business = LegalEntity.find_by_identifier(amalgamating_business['identifier'])
-            business['legalName'] = primary_or_holding_business.legal_name
+        if filing.filing_sub_type in [
+            Amalgamation.AmalgamationTypes.vertical.name,
+            Amalgamation.AmalgamationTypes.horizontal.name,
+        ]:
+            amalgamating_business = next(
+                x
+                for x in filing_data.get("amalgamatingBusinesses")
+                if x["role"] in [AmalgamatingBusiness.Role.holding.name, AmalgamatingBusiness.Role.primary.name]
+            )
+            primary_or_holding_business = LegalEntity.find_by_identifier(amalgamating_business["identifier"])
+            business["legalName"] = primary_or_holding_business.legal_name
 
     amalgamation_application_name = amalgamation_application_names[filing.filing_sub_type]
 
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AMALGA-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
-    legal_type = business.get('legalType')
-    numbered_description = LegalEntity.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+    legal_type = business.get("legalType")
+    numbered_description = LegalEntity.BUSINESSES.get(legal_type, {}).get("numberedDescription")
     jnja_template = Template(filled_template, autoescape=True)
 
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
         filing_status=status,
-        header=(filing.json)['filing']['header'],
+        header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.get("identifier", ""),
         email_header=filing_name.upper(),
         filing_type=filing_type,
         numbered_description=numbered_description,
-        amalgamation_application_name=amalgamation_application_name
+        amalgamation_application_name=amalgamation_application_name,
     )
 
     # get attachments
-    pdfs = _get_pdfs(status,
-                     token,
-                     business,
-                     filing,
-                     leg_tmz_filing_date,
-                     leg_tmz_effective_date,
-                     amalgamation_application_name)
+    pdfs = _get_pdfs(
+        status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, amalgamation_application_name
+    )
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token, filing_type)
@@ -193,12 +194,12 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         return {}
 
     # assign subject
-    legal_name = business.get('legalName', None)
+    legal_name = business.get("legalName", None)
     if status == Filing.Status.PAID.value:
-        subject_prefix = f'{legal_name} - ' if legal_name else ''
-        subject = f'{subject_prefix}Amalgamation'
+        subject_prefix = f"{legal_name} - " if legal_name else ""
+        subject = f"{subject_prefix}Amalgamation"
     elif status == Filing.Status.COMPLETED.value:
-        subject = f'{legal_name} - Confirmation of Amalgamation'
+        subject = f"{legal_name} - Confirmation of Amalgamation"
 
     return {
         "recipients": recipients,
