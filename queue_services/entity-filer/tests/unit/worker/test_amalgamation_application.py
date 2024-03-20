@@ -104,6 +104,8 @@ def test_regular_amalgamation_application_process(app, session):
             assert amalgamating_business.foreign_name
             assert amalgamating_business.foreign_identifier
 
+    return next_corp_num
+
 
 @pytest.mark.parametrize(
     "amalgamation_type, amalgamating_role",
