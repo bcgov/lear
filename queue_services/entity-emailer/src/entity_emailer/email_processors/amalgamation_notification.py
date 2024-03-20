@@ -23,7 +23,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing
+from legal_api.models import AmalgamatingBusiness, Amalgamation, LegalEntity, Filing
 
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
 
@@ -161,7 +161,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # render template with vars
     legal_type = business.get('legalType')
-    numbered_description = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+    numbered_description = LegalEntity.BUSINESSES.get(legal_type, {}).get('numberedDescription')
     jnja_template = Template(filled_template, autoescape=True)
 
     html_out = jnja_template.render(
