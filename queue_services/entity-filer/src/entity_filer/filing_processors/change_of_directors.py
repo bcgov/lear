@@ -17,7 +17,7 @@ from typing import Dict
 
 from business_model import LegalEntity, PartyRole
 
-from entity_filer.exceptions import DefaultException, logger
+from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_role, merge_party, update_director
 

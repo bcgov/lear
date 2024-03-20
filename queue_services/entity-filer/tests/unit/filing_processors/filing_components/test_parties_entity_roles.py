@@ -160,7 +160,7 @@ def helper_create_person(person_dict: dict) -> LegalEntity:
         first_name=person_dict.get("officer", {}).get("firstName"),
         last_name=person_dict.get("officer", {}).get("lastName"),
         middle_initial=person_dict.get("officer", {}).get("middleName"),
-        entity_type=LegalEntity.EntityTypes.PERSON,
+        _entity_type=LegalEntity.EntityTypes.PERSON,
     )
     mail = Address(address_type=Address.MAILING)
     mail.save()

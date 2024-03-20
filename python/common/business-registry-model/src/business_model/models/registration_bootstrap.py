@@ -17,7 +17,7 @@ The RegistrationBoostrap class and Schema are held in this module
 """
 from datetime import datetime
 
-from legal_api.exceptions import BusinessException
+from ..exceptions import BusinessException
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from .db import db

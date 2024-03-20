@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "3d8eb786f4c2"
-down_revision = "2b08acebfed5"
+revision = '3d8eb786f4c2'
+down_revision = '2b08acebfed5'
 branch_labels = None
 depends_on = None
 
@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     op.execute("CREATE SEQUENCE legal_entity_identifier_coop START 1002395")
     op.execute("CREATE SEQUENCE legal_entity_identifier_sp_gp START 1002395")
-    op.execute("CREATE SEQUENCE legal_entity_identifier_person START 0000001")
+    op.execute("CREATE SEQUENCE legal_entity_identifier_person START 1000000")
 
 
 def downgrade():

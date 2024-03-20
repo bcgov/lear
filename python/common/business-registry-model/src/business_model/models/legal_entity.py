@@ -16,27 +16,28 @@
 The Business class and Schema are held in this module
 """
 import re
-from enum import Enum, auto
+from enum import Enum
 from http import HTTPStatus
 from typing import Final, Optional
 
 import datedelta
 from flask import current_app
-from legal_api.exceptions import BusinessException
-from legal_api.utils.base import BaseEnum, BaseMeta
-from legal_api.utils.datetime import datetime, timezone
-from legal_api.utils.legislation_datetime import LegislationDatetime
 from sql_versioning import Versioned
-from sqlalchemy import case, event, text
+from sqlalchemy import event, text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import aliased, backref
-from sqlalchemy.sql.functions import func
+from sqlalchemy.orm import backref
+
+from ..exceptions import BusinessException
+from ..utils.enum import BaseMeta
+from ..utils.datetime import datetime, timezone
+from ..utils.legislation_datetime import LegislationDatetime
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alternate_name import AlternateName  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
+from .business_common import BusinessCommon
 from .db import db  # noqa: I001
 from .entity_role import EntityRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
@@ -48,7 +49,7 @@ from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed 
 
 
 class LegalEntity(
-    Versioned, db.Model
+    Versioned, db.Model, BusinessCommon
 ):  # pylint: disable=too-many-instance-attributes, too-many-public-methods, too-many-lines
     """This class manages all of the base data about a LegalEntity.
 
@@ -56,92 +57,6 @@ class LegalEntity(
     with people and other businesses.
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
-
-    class State(BaseEnum):
-        """Enum for the Business state."""
-
-        ACTIVE = auto()
-        HISTORICAL = auto()
-        LIQUIDATION = auto()
-
-    # NB: commented out items that exist in namex but are not yet supported by Lear
-    class EntityTypes(str, Enum):
-        """Render an Enum of the Business Legal Types."""
-
-        BCOMP = "BEN"  # aka BENEFIT_COMPANY in namex
-        BC_CCC = "CC"
-        BC_ULC_COMPANY = "ULC"
-        CCC_CONTINUE_IN = "CCC"
-        CEMETARY = "CEM"
-        CO_1860 = "QA"
-        CO_1862 = "QB"
-        CO_1878 = "QC"
-        CO_1890 = "QD"
-        CO_1897 = "QE"
-        COMP = "BC"  # aka CORPORATION in namex
-        CONT_IN_SOCIETY = "CS"
-        CONTINUE_IN = "C"
-        COOP = "CP"  # aka COOPERATIVE in namex
-        EXTRA_PRO_A = "A"
-        EXTRA_PRO_B = "B"
-        EXTRA_PRO_REG = "EPR"
-        FINANCIAL = "FI"
-        FOREIGN = "FOR"
-        LIBRARY = "LIB"
-        LICENSED = "LIC"
-        LIM_PARTNERSHIP = "LP"
-        LIMITED_CO = "LLC"
-        LL_PARTNERSHIP = "LL"
-        MISC_FIRM = "MF"
-        ORGANIZATION = "organization"
-        PARISHES = "PAR"
-        PARTNERSHIP = "GP"
-        PENS_FUND_SOC = "PFS"
-        PERSON = "person"
-        PRIVATE_ACT = "PA"
-        RAILWAYS = "RLY"
-        REGISTRATION = "REG"
-        SOCIETY = "S"
-        SOCIETY_BRANCH = "SB"
-        SOLE_PROP = "SP"
-        TRAMWAYS = "TMY"
-        TRUST = "T"
-        ULC_CONTINUE_IN = "CUL"
-        ULC_CO_1860 = "UQA"
-        ULC_CO_1862 = "UQB"
-        ULC_CO_1878 = "UQC"
-        ULC_CO_1890 = "UQD"
-        ULC_CO_1897 = "UQE"
-        XPRO_COOP = "XCP"
-        XPRO_LIM_PARTNR = "XP"
-        XPRO_LL_PARTNR = "XL"
-        XPRO_SOCIETY = "XS"
-        # *** The following are not yet supported by legal-api: ***
-        # DOING_BUSINESS_AS = 'DBA'
-        # XPRO_CORPORATION = 'XCR'
-        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
-
-    LIMITED_COMPANIES: Final = [
-        EntityTypes.COMP,
-        EntityTypes.CONTINUE_IN,
-        EntityTypes.CO_1860,
-        EntityTypes.CO_1862,
-        EntityTypes.CO_1878,
-        EntityTypes.CO_1890,
-        EntityTypes.CO_1897,
-    ]
-
-    UNLIMITED_COMPANIES: Final = [
-        EntityTypes.BC_ULC_COMPANY,
-        EntityTypes.ULC_CONTINUE_IN,
-        EntityTypes.ULC_CO_1860,
-        EntityTypes.ULC_CO_1862,
-        EntityTypes.ULC_CO_1878,
-        EntityTypes.ULC_CO_1890,
-        EntityTypes.ULC_CO_1897,
-    ]
-
-    NON_BUSINESS_ENTITY_TYPES: Final = [EntityTypes.PERSON, EntityTypes.ORGANIZATION]
 
     class AssociationTypes(Enum):
         """Render an Enum of the Business Association Types."""
@@ -154,19 +69,19 @@ class LegalEntity(
         SP_DOING_BUSINESS_AS = "DBA"
 
     BUSINESSES = {
-        EntityTypes.BCOMP: {
+        BusinessCommon.EntityTypes.BCOMP: {
             "numberedBusinessNameSuffix": "B.C. LTD.",
             "numberedDescription": "Numbered Benefit Company",
         },
-        EntityTypes.COMP: {
+        BusinessCommon.EntityTypes.COMP: {
             "numberedBusinessNameSuffix": "B.C. LTD.",
             "numberedDescription": "Numbered Limited Company",
         },
-        EntityTypes.BC_ULC_COMPANY: {
+        BusinessCommon.EntityTypes.BC_ULC_COMPANY: {
             "numberedBusinessNameSuffix": "B.C. UNLIMITED LIABILITY COMPANY",
             "numberedDescription": "Numbered Unlimited Liability Company",
         },
-        EntityTypes.BC_CCC: {
+        BusinessCommon.EntityTypes.BC_CCC: {
             "numberedBusinessNameSuffix": "B.C. COMMUNITY CONTRIBUTION COMPANY LTD.",
             "numberedDescription": "Numbered Community Contribution Company",
         },
@@ -235,7 +150,7 @@ class LegalEntity(
     last_coa_date = db.Column("last_coa_date", db.DateTime(timezone=True))
     last_cod_date = db.Column("last_cod_date", db.DateTime(timezone=True))
     _legal_name = db.Column("legal_name", db.String(1000), index=True)
-    entity_type = db.Column("entity_type", db.String(15), index=True)
+    _entity_type = db.Column("entity_type", db.String(15), index=True)
     founding_date = db.Column("founding_date", db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column("start_date", db.DateTime(timezone=True))
     restoration_expiry_date = db.Column("restoration_expiry_date", db.DateTime(timezone=True))
@@ -248,7 +163,7 @@ class LegalEntity(
     last_ar_year = db.Column("last_ar_year", db.Integer)
     last_ar_reminder_year = db.Column("last_ar_reminder_year", db.Integer)
     association_type = db.Column("association_type", db.String(50))
-    state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
+    state = db.Column("state", db.Enum(BusinessCommon.State), default=BusinessCommon.State.ACTIVE)
     admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
     submitter_userid = db.Column("submitter_userid", db.Integer, db.ForeignKey("users.id"))
     submitter = db.relationship(
@@ -301,7 +216,7 @@ class LegalEntity(
         lazy="dynamic",
         overlaps="legal_entity",
     )
-    _alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy="dynamic")
+    alternate_names = db.relationship("AlternateName", back_populates="legal_entity", lazy="dynamic")
     role_addresses = db.relationship("RoleAddress", lazy="dynamic")
     entity_delivery_address = db.relationship(
         "Address",
@@ -399,6 +314,15 @@ class LegalEntity(
         )
 
     @property
+    def aliases(self):
+        """Return aliases(name translation) for a business if any."""
+        return (
+            db.session.query(AlternateName)
+            .filter(AlternateName.legal_entity_id == self.id)
+            .filter(AlternateName.name_type == AlternateName.NameType.TRANSLATION)
+        )
+
+    @property
     def office_delivery_address(self):
         """Return the delivery address."""
         registered_office = (
@@ -423,149 +347,9 @@ class LegalEntity(
             .filter(Address.address_type == Address.DELIVERY)
         )
 
-    @property
-    def is_firm(self):
-        """Return if is firm, otherwise false."""
-        return self.entity_type in [
-            self.EntityTypes.SOLE_PROP.value,
-            self.EntityTypes.PARTNERSHIP.value,
-        ]
-
-    @property
-    def good_standing(self):
-        """Return true if in good standing, otherwise false."""
-        # A firm is always in good standing
-        if self.is_firm:
-            return True
-        # Date of last AR or founding date if they haven't yet filed one
-        last_ar_date = self.last_ar_date or self.founding_date
-        # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
-        if self.state == LegalEntity.State.ACTIVE:
-            if self.restoration_expiry_date:
-                return False  # A business in limited restoration is not in good standing
-            else:
-                return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
-        return True
-
-    @property
-    def legal_name(self):
-        """Return legal name for entity.
-
-        For non-firms, just return the value in _legal_name field.
-        For SPs, return the legal name of the proprietor or the organization that owns the firm.
-        For SP/GPs:
-          1. Union the proprietor/partner that owns the firm and sort by legal name(individual or organization's name).
-          2. Take the first two proprietor/partner legal names and concatenate them with a comma.
-          3. If there are more than two matching proprietor/partners, append ', et al'
-          4. Return final legal_name result
-        """
-
-        match self.entity_type:
-            case self.EntityTypes.PARTNERSHIP:
-                return self._legal_name
-
-            case self.EntityTypes.PERSON:
-                person_full_name = ""
-                for token in [self.first_name, self.middle_initial, self.last_name]:
-                    if token:
-                        if len(person_full_name) > 0:
-                            person_full_name = f"{person_full_name} {token}"
-                        else:
-                            person_full_name = token
-
-                return person_full_name
-
-        from . import ColinEntity  # pylint: disable=import-outside-toplevel
-
-        if self.is_firm:
-            related_le_alias = aliased(LegalEntity, name="related_le_alias")
-            related_le_stmt = (
-                db.session.query(
-                    case(
-                        (
-                            related_le_alias.entity_type == "person",
-                            func.concat_ws(
-                                " ",
-                                func.nullif(related_le_alias.last_name, ""),
-                                func.nullif(related_le_alias.middle_initial, ""),
-                                func.nullif(related_le_alias.first_name, ""),
-                            ),
-                        ),
-                        (
-                            related_le_alias.entity_type == "organization",
-                            related_le_alias._legal_name,
-                        ),  # pylint: disable=protected-access  # noqa: E501
-                        else_=None,
-                    ).label("sortName"),
-                    case(
-                        (
-                            related_le_alias.entity_type == "person",
-                            func.concat_ws(
-                                " ",
-                                func.nullif(related_le_alias.first_name, ""),
-                                func.nullif(related_le_alias.middle_initial, ""),
-                                func.nullif(related_le_alias.last_name, ""),
-                            ),
-                        ),
-                        (
-                            related_le_alias.entity_type == "organization",
-                            related_le_alias._legal_name,
-                        ),  # pylint: disable=protected-access  # noqa: E501
-                        else_=None,
-                    ).label("legalName"),
-                )
-                .select_from(LegalEntity)
-                .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id)
-                .join(
-                    related_le_alias,
-                    related_le_alias.id == EntityRole.related_entity_id,
-                )
-                .filter(LegalEntity.id == self.id)
-            )
-
-            related_colin_entity_stmt = (
-                db.session.query(
-                    ColinEntity.organization_name.label("sortName"),
-                    ColinEntity.organization_name.label("legalName"),
-                )
-                .select_from(LegalEntity)
-                .join(EntityRole, EntityRole.legal_entity_id == LegalEntity.id)
-                .join(ColinEntity, ColinEntity.id == EntityRole.related_colin_entity_id)
-                .filter(LegalEntity.id == self.id)
-            )
-
-            result_query = related_le_stmt.union(related_colin_entity_stmt).order_by("sortName")
-
-            results = result_query.all()
-            if results and len(results) > 2:
-                legal_name_str = ", ".join([r.legalName for r in results[:2]])
-                legal_name_str = f"{legal_name_str}, et al"
-            else:
-                legal_name_str = ", ".join([r.legalName for r in results])
-            return legal_name_str
-
-        return self._legal_name
-
-    @legal_name.setter
-    def legal_name(self, value):
-        """Set the legal_name of the LegalEntity."""
-        self._legal_name = value
-
-    @property
-    def business_name(self):
-        """Return operating name for firms and legal name for non-firm entities."""
-
-        if not self.is_firm:
-            return self._legal_name
-
-        if alternate_name := self._alternate_names.filter_by(identifier=self.identifier).one_or_none():
-            return alternate_name.name
-
-        return None
-
     # @property
     def alternate_names_json(self):
-        """Return operating names for a business if any."""
+        """Return alternate names (dba & translation) for a business if any."""
         # le_alias = aliased(LegalEntity)
         # alternate_names = (
         #     db.session.query(AlternateName.identifier,
@@ -580,17 +364,35 @@ class LegalEntity(
         # )
 
         if alternate_names := self.alternate_names.all():
-            names = [
-                {
-                    "identifier": alternate_name.identifier,
-                    "operatingName": alternate_name.name,
-                    # 'entityType': alternate_name.name_type,
-                    "entityType": self.entity_type,
-                    "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
-                    "nameRegisteredDate": alternate_name.registration_date.isoformat(),
-                }
-                for alternate_name in alternate_names
-            ]
+            names = []
+            for alternate_name in alternate_names:
+                if alternate_name.name_type == AlternateName.NameType.DBA:
+                    # format dba
+                    names.append(
+                        {
+                            "entityType": alternate_name.entity_type,
+                            "identifier": alternate_name.identifier,
+                            "name": alternate_name.name,
+                            "nameRegisteredDate": alternate_name.start_date.isoformat(),
+                            "nameStartDate": LegislationDatetime.format_as_legislation_date(
+                                alternate_name.business_start_date
+                            )
+                            if alternate_name.business_start_date
+                            else None,
+                            "nameType": alternate_name.name_type.name,
+                            "operatingName": alternate_name.name,  # will be removed in the future
+                        }
+                    )
+                else:
+                    # format name translation
+                    names.append(
+                        {
+                            "name": alternate_name.name,
+                            "nameStartDate": LegislationDatetime.format_as_legislation_date(alternate_name.start_date),
+                            "nameType": alternate_name.name_type.name,
+                        }
+                    )
+
             return names
 
         return []
@@ -654,9 +456,9 @@ class LegalEntity(
             "adminFreeze": self.admin_freeze or False,
             "goodStanding": self.good_standing,
             "identifier": self.identifier,
-            "legalName": self.legal_name,
+            "legalName": self._legal_name,
             "legalType": self.entity_type,
-            "state": self.state.name if self.state else LegalEntity.State.ACTIVE.name,
+            "state": self.state.name,
         }
 
         if self.tax_id:
@@ -682,13 +484,15 @@ class LegalEntity(
         if self.fiscal_year_end_date:
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            if self.state == LegalEntity.State.HISTORICAL and (
-                amalgamating_business := self.amalgamating_businesses.one_or_none()
-            ):
-                amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-                d["amalgamatedInto"] = amalgamation.json()
-            else:
-                d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            # TODO: revert once amalgamation tables and migration scripts have been run
+            # if self.state == LegalEntity.State.HISTORICAL and (
+            #     amalgamating_business := self.amalgamating_businesses.one_or_none()
+            # ):
+            #     amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
+            #     d["amalgamatedInto"] = amalgamation.json()
+            # else:
+            #     d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         if self.start_date:
             d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)
@@ -710,8 +514,8 @@ class LegalEntity(
                 else None
             )
 
-        d["hasCorrections"] = Filing.has_completed_filing(self.id, "correction")
-        d["hasCourtOrders"] = Filing.has_completed_filing(self.id, "courtOrder")
+        d["hasCorrections"] = Filing.has_completed_filing(self, "correction")
+        d["hasCourtOrders"] = Filing.has_completed_filing(self, "courtOrder")
 
     @property
     def party_json(self) -> dict:
@@ -734,7 +538,7 @@ class LegalEntity(
                 "officer": {
                     "id": self.id,
                     "partyType": self.entity_type,
-                    "organizationName": self.legal_name,
+                    "organizationName": self._legal_name,
                     "identifier": self.identifier,
                 }
             }
@@ -756,52 +560,13 @@ class LegalEntity(
         return member
 
     @property
-    def compliance_warnings(self):
-        """Return compliance warnings."""
-        if not hasattr(self, "_compliance_warnings"):
-            return []
-
-        return self._compliance_warnings
-
-    @compliance_warnings.setter
-    def compliance_warnings(self, value):
-        """Set compliance warnings."""
-        self._compliance_warnings = value
-
-    @property
-    def warnings(self):
-        """Return warnings."""
-        if not hasattr(self, "_warnings"):
-            return []
-
-        return self._warnings
-
-    @warnings.setter
-    def warnings(self, value):
-        """Set warnings."""
-        self._warnings = value
-
-    @property
-    def allowable_actions(self):
-        """Return warnings."""
-        if not hasattr(self, "_allowable_actions"):
-            return {}
-
-        return self._allowable_actions
-
-    @property
     def name(self) -> str:
         """Return the full name of the party for comparison."""
         if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
             if self.middle_initial:
                 return " ".join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
             return " ".join((self.first_name, self.last_name)).strip().upper()
-        return self.legal_name
-
-    @allowable_actions.setter
-    def allowable_actions(self, value):
-        """Set warnings."""
-        self._allowable_actions = value
+        return self._legal_name
 
     @classmethod
     def find_by_legal_name(cls, legal_name: str = None):
@@ -819,7 +584,7 @@ class LegalEntity(
         return legal_entity
 
     @classmethod
-    def find_by_operating_name(cls, operating_name: str = None) -> LegalEntity | None:
+    def find_by_operating_name(cls, operating_name: str = None):
         """Given a operating_name, this will return an Active LegalEntity."""
         if not operating_name:
             return None
@@ -833,22 +598,15 @@ class LegalEntity(
         if not identifier or not cls.validate_identifier(entity_type=None, identifier=identifier):
             return None
 
-        legal_entity = None
-
-        if identifier.startswith("FM"):
-            if alt_name := AlternateName.find_by_identifier(identifier):
-                legal_entity = cls.find_by_id(alt_name.legal_entity_id)
-        else:
-            non_entity_types = [
-                LegalEntity.EntityTypes.PERSON.value,
-                LegalEntity.EntityTypes.ORGANIZATION.value,
-            ]
-
-            legal_entity = (
-                cls.query.filter(~LegalEntity.entity_type.in_(non_entity_types))
-                .filter_by(identifier=identifier)
-                .one_or_none()
-            )
+        non_business_types = [
+            LegalEntity.EntityTypes.PERSON.value,
+            LegalEntity.EntityTypes.ORGANIZATION.value,
+        ]
+        legal_entity = (
+            cls.query.filter(~LegalEntity._entity_type.in_(non_business_types))
+            .filter_by(identifier=identifier)
+            .one_or_none()
+        )
 
         return legal_entity
 
@@ -878,20 +636,8 @@ class LegalEntity(
             LegalEntity.EntityTypes.PERSON.value,
             LegalEntity.EntityTypes.ORGANIZATION.value,
         ]
-        legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
+        legal_entities = cls.query.filter(~LegalEntity._entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
-
-    @classmethod
-    def get_filing_by_id(cls, legal_entity_identifier: int, filing_id: str):
-        """Return the filings for a specific business and filing_id."""
-        filing = (
-            db.session.query(LegalEntity, Filing)
-            .filter(LegalEntity.id == Filing.legal_entity_id)
-            .filter(LegalEntity.identifier == legal_entity_identifier)
-            .filter(Filing.id == filing_id)
-            .one_or_none()
-        )
-        return None if not filing else filing[1]
 
     @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
@@ -906,7 +652,7 @@ class LegalEntity(
         return None
 
     @staticmethod
-    def validate_identifier(entity_type: EntityTypes, identifier: str) -> bool:
+    def validate_identifier(entity_type: BusinessCommon.EntityTypes, identifier: str) -> bool:
         """Validate the identifier meets the Registry naming standards.
 
         All legal entities with BC Reg are PREFIX + 7 digits
@@ -951,13 +697,13 @@ class LegalEntity(
                 return False
 
         if self.entity_type == LegalEntity.EntityTypes.PERSON.value:
-            if not (self.first_name or self.middle_initial or self.last_name) or self.legal_name:
+            if not (self.first_name or self.middle_initial or self.last_name) or self._legal_name:
                 return False
         return True
 
     @classmethod
     def find_by_id(cls, legal_entity_id: int):
-        """Return a legal enntity by the internal id."""
+        """Return a legal entity by the internal id."""
         legal_entity = None
         if legal_entity_id:
             legal_entity = cls.query.filter_by(id=legal_entity_id).one_or_none()

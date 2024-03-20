@@ -186,15 +186,12 @@ develop = false
 datedelta = "^1.4"
 Flask-SQLAlchemy = "^3.0.5"
 pycountry = "^22.3.5"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.10"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.19"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", branch = "feature-legal-name", subdirectory = "python/common/sql-versioning"}
 
 [package.source]
-type = "git"
-url = "https://github.com/bcgov/lear.git"
-reference = "feature-legal-name"
-resolved_reference = "d9669d000ae4d5c1761c6a701ca2e9c746360662"
-subdirectory = "python/common/business-registry-model"
+type = "directory"
+url = "../../python/common/business-registry-model"
 
 [[package]]
 name = "cachetools"
@@ -1260,6 +1257,28 @@ files = [
 ]
 
 [[package]]
+name = "psycopg2"
+version = "2.9.9"
+description = "psycopg2 - Python-PostgreSQL Database Adapter"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "psycopg2-2.9.9-cp310-cp310-win32.whl", hash = "sha256:38a8dcc6856f569068b47de286b472b7c473ac7977243593a288ebce0dc89516"},
+    {file = "psycopg2-2.9.9-cp310-cp310-win_amd64.whl", hash = "sha256:426f9f29bde126913a20a96ff8ce7d73fd8a216cfb323b1f04da402d452853c3"},
+    {file = "psycopg2-2.9.9-cp311-cp311-win32.whl", hash = "sha256:ade01303ccf7ae12c356a5e10911c9e1c51136003a9a1d92f7aa9d010fb98372"},
+    {file = "psycopg2-2.9.9-cp311-cp311-win_amd64.whl", hash = "sha256:121081ea2e76729acfb0673ff33755e8703d45e926e416cb59bae3a86c6a4981"},
+    {file = "psycopg2-2.9.9-cp312-cp312-win32.whl", hash = "sha256:d735786acc7dd25815e89cc4ad529a43af779db2e25aa7c626de864127e5a024"},
+    {file = "psycopg2-2.9.9-cp312-cp312-win_amd64.whl", hash = "sha256:a7653d00b732afb6fc597e29c50ad28087dcb4fbfb28e86092277a559ae4e693"},
+    {file = "psycopg2-2.9.9-cp37-cp37m-win32.whl", hash = "sha256:5e0d98cade4f0e0304d7d6f25bbfbc5bd186e07b38eac65379309c4ca3193efa"},
+    {file = "psycopg2-2.9.9-cp37-cp37m-win_amd64.whl", hash = "sha256:7e2dacf8b009a1c1e843b5213a87f7c544b2b042476ed7755be813eaf4e8347a"},
+    {file = "psycopg2-2.9.9-cp38-cp38-win32.whl", hash = "sha256:ff432630e510709564c01dafdbe996cb552e0b9f3f065eb89bdce5bd31fabf4c"},
+    {file = "psycopg2-2.9.9-cp38-cp38-win_amd64.whl", hash = "sha256:bac58c024c9922c23550af2a581998624d6e02350f4ae9c5f0bc642c633a2d5e"},
+    {file = "psycopg2-2.9.9-cp39-cp39-win32.whl", hash = "sha256:c92811b2d4c9b6ea0285942b2e7cac98a59e166d59c588fe5cfe1eda58e72d59"},
+    {file = "psycopg2-2.9.9-cp39-cp39-win_amd64.whl", hash = "sha256:de80739447af31525feddeb8effd640782cf5998e1a4e9192ebdf829717e3913"},
+    {file = "psycopg2-2.9.9.tar.gz", hash = "sha256:d1454bde93fb1e224166811694d600e746430c006fbb031ea06ecc2ea41bf156"},
+]
+
+[[package]]
 name = "pyasn1"
 version = "0.5.0"
 description = "Pure-Python implementation of ASN.1 types and DER/BER/CER codecs (X.208)"
@@ -1549,8 +1568,8 @@ attrs = ">=22.2.0"
 rpds-py = ">=0.7.0"
 
 [[package]]
-name = "registry-schemas"
-version = "2.18.10"
+name = "registry_schemas"
+version = "2.18.19"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -1560,14 +1579,15 @@ develop = false
 [package.dependencies]
 flask = "*"
 jsonschema = {version = "*", extras = ["format"]}
+referencing = "*"
 requests = "*"
 strict-rfc3339 = "*"
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.10"
-resolved_reference = "9d341fe050bf7844905a3914380e71180d14d336"
+reference = "2.18.19"
+resolved_reference = "c9f4d10f33fdb14157573acac48945c6e7750f24"
 
 [[package]]
 name = "requests"
@@ -2103,4 +2123,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ca49998a51db9743ea622d92335cc718487a283d7fa3af97ec13c3250a79376e"
+content-hash = "12085771b95e9b803a49945e0ba39ad5c5b6d3407105f4bbc2732f093e5da5b4"
