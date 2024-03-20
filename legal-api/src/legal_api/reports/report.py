@@ -441,7 +441,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     @staticmethod
     def _populate_business_info_to_filing(filing: Filing, business: any):
-        founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
+        founding_datetime = LegislationDatetime.as_legislation_timezone(
+            business.founding_date if business.is_legal_entity else business.start_date
+        )
         if filing.transaction_id:
             business_json = VersionedBusinessDetailsService.get_business_revision(filing, business)
         else:
