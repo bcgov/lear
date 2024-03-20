@@ -20,6 +20,7 @@ import pycountry
 from sql_versioning import history_cls
 from sqlalchemy import or_
 from sqlalchemy.sql.expression import null
+from sqlalchemy_continuum import version_class
 
 from legal_api.models import (
     Address,
@@ -541,7 +542,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return amalgamating_businesses
 
     @staticmethod
-    def party_role_revision_json(transaction_id, party_role_revision, is_ia_or_after) -> dict:
+    def party_role_revision_json(filing, party_role_revision, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
         cessation_date = (
             datetime.date(party_role_revision.cessation_date).isoformat()
