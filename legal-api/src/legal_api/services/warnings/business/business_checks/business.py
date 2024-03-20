@@ -25,7 +25,7 @@ def check_business(business: any) -> list:
 
     if business.is_firm:
         result = firms_check(business)
-    elif business.legal_type in (
+    elif business.entity_type in (
         LegalEntity.EntityTypes.BC_CCC,
         LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
         LegalEntity.EntityTypes.COMP.value,

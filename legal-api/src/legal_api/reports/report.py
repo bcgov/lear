@@ -344,7 +344,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.filing_json.get("filing").get(self._filing.filing_type).get("nameRequest", {}).get("legalType")
         )
         if not legal_type and self._business:
-            legal_type = self._business.legal_type
+            legal_type = self._business.entity_type
 
         filing["numberedDescription"] = LegalEntity.BUSINESSES.get(legal_type, {}).get("numberedDescription")
         filing["numberedLegalNameSuffix"] = LegalEntity.BUSINESSES.get(legal_type, {}).get("numberedLegalNameSuffix")

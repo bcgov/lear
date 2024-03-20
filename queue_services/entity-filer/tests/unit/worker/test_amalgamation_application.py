@@ -194,7 +194,7 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
     assert filing_rec.status == Filing.Status.COMPLETED.value
     assert business.identifier
     assert business.founding_date == effective_date
-    assert business.legal_type == filing["filing"][filing_type]["nameRequest"]["legalType"]
+    assert business.entity_type == filing["filing"][filing_type]["nameRequest"]["legalType"]
     assert business.legal_name == primary_or_holding_business_name
     assert business.state == LegalEntity.State.ACTIVE
 
