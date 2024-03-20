@@ -749,7 +749,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # when TED is dissolved by staff (with court order) and TING is restored, user can modify TING data
             # which should not be reflected here
             ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
-                self._filing.transaction_id, ting_business)
+                self._filing.transaction_id, ting_business.id)
         return ting_business
 
     def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals, too-many-branches
@@ -815,7 +815,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.\
-            get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
+            get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
 
         # Change of Name
         prev_legal_name = versioned_business.legal_name
@@ -974,7 +974,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_business = VersionedBusinessDetailsService.\
-                get_business_revision_obj(prev_completed_filing.transaction_id, self._business)
+                get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
 
             self._format_name_request_data(filing, versioned_business)
             self._format_name_translations_data(filing, prev_completed_filing)
@@ -988,7 +988,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['nameRequest'] = name_request_json
         prev_legal_name = versioned_business.legal_name
         business = VersionedBusinessDetailsService.\
-            get_business_revision_obj(self._filing.transaction_id, self._business)
+            get_business_revision_obj(self._filing.transaction_id, self._business.id)
         if prev_legal_name != business.legal_name:
             filing['previousLegalName'] = prev_legal_name
             filing['newLegalName'] = business.legal_name

@@ -1,4 +1,4 @@
-{% if stateFilings|length > 0 and not business.isAmalgamating %}
+{% if stateFilings|length > 0 %}
 <div class="no-page-break">
   <div class="separator mt-4"></div>
   <div class="section-title mt-4">
@@ -26,6 +26,14 @@
                 </div>
                 <div class="pt-2">
                   <span>Continuation Out Date: {{ filing.continuationOutDate }}</span>
+                </div>
+              {% elif filing.filingType == 'amalgamationApplication' %}
+                <!-- filingType `amalgamationApplication` will be present only for amalgamating business (TING) -->
+                <div class="pt-2">
+                  <span>Name of Amalgamated Business: {{ filing.legalName }}</span>
+                </div>
+                <div class="pt-2">
+                  <span>Incorporation Number: {{ filing.identifier }}</span>
                 </div>
               {% else %}
                 <span>Filing Date:</span>

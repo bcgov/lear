@@ -539,7 +539,7 @@ class Filing:
                 # get extra outputs
                 if filing.storage.transaction_id and \
                         (bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                        filing.storage.transaction_id, business)):
+                        filing.storage.transaction_id, business.id)):
                     business = bus_rev_temp
 
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]

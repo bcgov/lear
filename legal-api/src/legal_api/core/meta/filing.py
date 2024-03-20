@@ -83,19 +83,19 @@ FILINGS: Final = {
         }
     },
     'agmExtension': {
-            'name': 'agmExtension',
-            'title': 'AGM Extension',
-            'displayName': 'Request for AGM Extension',
-            'codes': {
+        'name': 'agmExtension',
+        'title': 'AGM Extension',
+        'displayName': 'Request for AGM Extension',
+        'codes': {
                 'BC': 'AGMDT',
                 'BEN': 'AGMDT',
                 'ULC': 'AGMDT',
                 'CC': 'AGMDT'
-            },
-            'additional': [
-                {'types': 'BC, BEN, CC, ULC', 'outputs': ['letterOfAgmExtension', ]},
-            ],
         },
+        'additional': [
+            {'types': 'BC, BEN, CC, ULC', 'outputs': ['letterOfAgmExtension', ]},
+        ],
+    },
     'agmLocationChange': {
         'name': 'agmLocationChange',
         'title': 'AGM Location Change',
@@ -502,7 +502,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         business_revision = business
         # retrieve business revision at time of filing so legal type is correct when returned for display name
         if filing.transaction_id and \
-                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, business)):
+                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, business.id)):
             business_revision = bus_rev_temp
 
         if isinstance(names, MutableMapping):
