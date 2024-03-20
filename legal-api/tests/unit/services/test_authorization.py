@@ -42,7 +42,7 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from legal_api.models import Address, EntityRole, Filing, User
+from legal_api.models import Address, AmalgamatingBusiness, EntityRole, Filing, User
 from legal_api.models.legal_entity import LegalEntity
 from legal_api.services.authz import (
     BASIC_USER,
@@ -1352,7 +1352,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, user
             False,
         ),
         (
-            "staff_historical_allowed",
+            "staff_historical_alloweds",
             LegalEntity.State.HISTORICAL,
             "restoration",
             "fullRestoration",
@@ -2409,6 +2409,89 @@ def test_get_allowed_filings_blocker_admin_freeze(
                 )
             filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
             assert filing_types == expected
+
+
+@pytest.mark.parametrize(
+    "test_name,business_exists,state,legal_types,username,roles,expected",
+    [
+        # historical business - staff user
+        (
+            "staff_historical_cp",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+        ),
+        (
+            "staff_historical_corps",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+        ),
+        ("staff_historical_llc", True, LegalEntity.State.HISTORICAL, ["LLC"], "staff", [STAFF_ROLE], []),
+        (
+            "staff_historical_firms",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+        ),
+        # historical business - general user
+        ("general_user_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
+        (
+            "general_user_historical_corps",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            [],
+        ),
+        ("general_user_historical_llc", True, LegalEntity.State.HISTORICAL, ["LLC"], "general", [BASIC_USER], []),
+        (
+            "general_user_historical_firms",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            [],
+        ),
+    ],
+)
+def test_get_allowed_filings_blocker_for_amalgamating_business(
+    monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username, roles, expected
+):
+    """Assert that get allowed returns valid filings when business is not in good standing."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {"Authorization": "Bearer " + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr("flask.request.headers.get", mock_auth)
+
+        for legal_type in legal_types:
+            business = None
+            identifier = (f"BC{random.SystemRandom().getrandbits(0x58)}")[:9]
+            business = factory_legal_entity(identifier=identifier, entity_type=legal_type, state=state)
+
+            with patch.object(
+                type(business), "amalgamating_businesses", new_callable=PropertyMock
+            ) as mock_amalgamating_business:
+                mock_amalgamating_business = [
+                    {"role": AmalgamatingBusiness.Role.amalgamating.name, "identifier": identifier}
+                ]
+                filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                assert filing_types == expected
 
 
 @pytest.mark.parametrize(
