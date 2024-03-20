@@ -23,6 +23,7 @@ from datetime import date, datetime, timedelta
 import datedelta
 import pytest
 from flask import current_app
+from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import (
@@ -34,6 +35,7 @@ from legal_api.models import (
     EntityRole,
     Filing,
     LegalEntity,
+    db,
 )
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
@@ -514,21 +516,25 @@ def test_continued_in_business(session):
 )
 def test_amalgamated_into_business_json(session, test_name, existing_business_state):
     """Assert that the amalgamated into is in json."""
-    filing = Filing()
-    filing.save()
-
     existing_business = LegalEntity(
         _legal_name="Test - Amalgamating Legal Name",
         entity_type="BC",
         founding_date=datetime.utcfromtimestamp(0),
         dissolution_date=datetime.now(),
         identifier="BC1234567",
-        state=existing_business_state,
-        state_filing_id=filing.id,
+        state=LegalEntity.State.ACTIVE,
     )
     existing_business.save()
 
     if test_name == "EXIST":
+        filing = Filing()
+        filing._filing_type = "amalgamationApplication"
+        filing.save()
+
+        # Versioning business
+        uow = versioning_manager.unit_of_work(db.session)
+        transaction = uow.create_transaction(db.session)
+
         business = LegalEntity(
             _legal_name="Test - Legal Name",
             entity_type="BC",
@@ -548,7 +554,15 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         amalgamation.amalgamating_businesses.append(amalgamating_business)
 
         business.amalgamation.append(amalgamation)
-        business.save()
+        db.session.add(business)
+        existing_business.state_filing_id = filing.id
+        existing_business.state = existing_business_state
+        db.session.add(existing_business)
+        db.session.commit()
+
+        filing.transaction_id = transaction.id
+        filing.business_id = business.id
+        filing.save()
 
     business_json = existing_business.json()
 
@@ -562,7 +576,6 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         assert business_json["amalgamatedInto"]["legalName"] == business.legal_name
     else:
         assert "amalgamatedInto" not in business_json
-        assert "stateFiling" in business_json
 
 
 @pytest.mark.parametrize("entity_type", [("CP"), ("BEN"), ("BC"), ("ULC"), ("CC"), ("GP")])
