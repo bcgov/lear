@@ -32,6 +32,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """This module contains all the services used."""
+from .business_service import BusinessService
 from .gcp_queue import GcpQueue
 
+business_service = BusinessService()
 queue = GcpQueue()

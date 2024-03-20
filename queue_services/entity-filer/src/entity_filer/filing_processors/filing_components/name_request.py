@@ -64,4 +64,4 @@ def consume_nr(business: LegalEntity, filing: Filing, filing_type="incorporation
 def set_legal_name(business: LegalEntity, name_request_info: dict):
     """Set the legal_name in the business object."""
     if legal_name := name_request_info.get("legalName", None):
-        business.legal_name = legal_name
+        business._legal_name = legal_name
