@@ -461,7 +461,7 @@ class BusinessDocument:
                         ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
                             amalgamation_application.transaction_id,
                             amalgamating_business.business_id)
-                        identifier = ting_business._identifier
+                        identifier = ting_business._identifier  # pylint: disable=protected-access;
                         business_legal_name = ting_business.legal_name
 
                     amalgamated_businesses_info = {

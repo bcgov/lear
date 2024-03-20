@@ -23,8 +23,6 @@ from sqlalchemy_continuum import version_class
 from legal_api.models import (
     Address,
     Alias,
-    AmalgamatingBusiness,
-    Amalgamation,
     Business,
     Filing,
     Office,
