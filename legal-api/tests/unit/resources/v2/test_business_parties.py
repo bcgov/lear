@@ -239,7 +239,7 @@ def test_get_business_ceased_parties(session, client, jwt, test_name, params, ex
             datetime.datetime(2013, 5, 17),
             EntityRole.RoleTypes.director,
         )
-        legal_entity.entityty_roles.append(party_role)
+        legal_entity.entity_roles.append(party_role)
         legal_entity.save()
 
     # test

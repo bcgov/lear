@@ -43,7 +43,7 @@ def create_filing(session,  business_id=None,
     if filing_json:
         filing.filing_json = filing_json
     if business_id:
-        filing.business_id = business_id
+        filing.legal_entity_id = business_id
 
     filing.save()
     return filing

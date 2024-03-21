@@ -64,7 +64,7 @@ def _get_pdfs(
             attach_order += 1
 
         corp_name = business.get("legalName")
-        business_data = LegalEntity.find_by_internal_id(filing.business_id)
+        business_data = LegalEntity.find_by_internal_id(filing.legal_entity_id)
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={

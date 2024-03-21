@@ -531,10 +531,6 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         filing._filing_type = "amalgamationApplication"
         filing.save()
 
-        # Versioning business
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
-
         business = LegalEntity(
             _legal_name="Test - Legal Name",
             entity_type="BC",
@@ -560,8 +556,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         db.session.add(existing_business)
         db.session.commit()
 
-        filing.transaction_id = transaction.id
-        filing.business_id = business.id
+        filing.legal_entity_id = business.id
         filing.save()
 
     business_json = existing_business.json()

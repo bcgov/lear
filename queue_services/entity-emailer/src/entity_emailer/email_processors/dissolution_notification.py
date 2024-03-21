@@ -70,7 +70,7 @@ def _get_pdfs(
                 attach_order += 1
 
         corp_name = business.get("legalName")
-        business_data = LegalEntity.find_by_internal_id(filing.business_id)
+        business_data = LegalEntity.find_by_internal_id(filing.legal_entity_id)
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
@@ -237,7 +237,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         "SP",
         "GP",
     ]:  # Send email to all proprietor, partner, completing party
-        business_data = LegalEntity.find_by_internal_id(filing.business_id)
+        business_data = LegalEntity.find_by_internal_id(filing.legal_entity_id)
         for party in filing.filing_json["filing"]["dissolution"]["parties"]:
             if party["officer"].get("email"):
                 recipients.append(party["officer"]["email"])
