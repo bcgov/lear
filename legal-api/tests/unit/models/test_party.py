@@ -86,7 +86,7 @@ def test_invalid_org_party_type(session):
         middle_initial="test",
         title="INV",
     )
-    member2 = LegalEntity.entity_type=LegalEntity.EntityTypes.PERSON.value, _legal_name="BC1234567 LTD")
+    member2 = LegalEntity(entity_type=LegalEntity.EntityTypes.PERSON.value, _legal_name="BC1234567 LTD")
     with pytest.raises(BusinessException) as party_type_err1:
         member1.save()
     session.rollback()
