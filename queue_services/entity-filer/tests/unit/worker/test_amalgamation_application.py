@@ -19,7 +19,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Filing, LegalEntity
+from business_model.models import AmalgamatingBusiness, Amalgamation, Filing, LegalEntity
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
