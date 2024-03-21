@@ -26,7 +26,7 @@ from tests.unit.models import factory_alternate_name, factory_legal_entity
 from tests.unit.services.utils import create_header
 
 
-def test_update_bn_move_GP(session, client, jwt):
+def test_update_bn_move_gp(session, client, jwt):
     """Assert that the endpoint updates tax_id."""
     identifier = "FM0000001"
     legal_entity = factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.PARTNERSHIP.value)
@@ -47,7 +47,7 @@ def test_update_bn_move_GP(session, client, jwt):
             assert LegalEntity.find_by_tax_id(new_bn)
 
 
-def test_update_bn_move_SP(session, client, jwt):
+def test_update_bn_move_sp(session, client, jwt):
     """Assert that the endpoint updates bn15."""
     identifier = "FM0000001"
     owner_identifier = "BC0000001"
