@@ -18,9 +18,8 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-from entity_queue_common.service_utils import QueueException
 from legal_api import db
-from legal_api.models import (
+from business_model.models import (
     AmalgamatingBusiness,
     Amalgamation,
     Filing,
@@ -29,7 +28,6 @@ from legal_api.models import (
     PartyRole,
     RegistrationBootstrap,
 )
-from legal_api.services.bootstrap import AccountService
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
