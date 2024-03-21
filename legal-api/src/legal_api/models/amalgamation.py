@@ -79,13 +79,27 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
         }
 
     @classmethod
-    def get_amalgamation_revision_obj(cls, transaction_id, business_id):
+    def get_revision_by_id(cls, transaction_id, amalgamation_id):
+        """Get amalgamation for the given id."""
+        # pylint: disable=singleton-comparison;
+        amalgamation_version = version_class(Amalgamation)
+        amalgamation = db.session.query(amalgamation_version) \
+            .filter(amalgamation_version.transaction_id <= transaction_id) \
+            .filter(amalgamation_version.operation_type == 0) \
+            .filter(amalgamation_version.id == amalgamation_id) \
+            .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
+                        amalgamation_version.end_transaction_id > transaction_id)) \
+            .order_by(amalgamation_version.transaction_id).one_or_none()
+        return amalgamation
+
+    @classmethod
+    def get_revision(cls, transaction_id, business_id):
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
         amalgamation_version = version_class(Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
-            .filter(amalgamation_version.operation_type != 2) \
+            .filter(amalgamation_version.operation_type == 0) \
             .filter(amalgamation_version.business_id == business_id) \
             .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
                         amalgamation_version.end_transaction_id > transaction_id)) \
@@ -93,9 +107,9 @@ class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
         return amalgamation
 
     @classmethod
-    def get_amalgamation_revision_json(cls, transaction_id, business_id):
+    def get_revision_json(cls, transaction_id, business_id):
         """Get amalgamation json for the given transaction id."""
-        amalgamation = Amalgamation.get_amalgamation_revision_obj(transaction_id, business_id)
+        amalgamation = Amalgamation.get_revision(transaction_id, business_id)
         from .business import Business  # pylint: disable=import-outside-toplevel
         business = Business.find_by_internal_id(amalgamation.business_id)
 

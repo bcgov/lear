@@ -21,11 +21,11 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, Business, CorpType, Filing
-from legal_api.models.amalgamation import Amalgamation
+from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
+from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -86,7 +86,6 @@ class BusinessDocument:
         template_parts = [
             'business-summary/alterations',
             'business-summary/amalgamations',
-            'business-summary/amalgamating',
             'business-summary/businessDetails',
             'business-summary/liquidation',
             'business-summary/nameChanges',
@@ -312,12 +311,21 @@ class BusinessDocument:
                                                                       'voluntaryLiquidation', 'putBackOn',
                                                                       'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
-        # If it is amalgamating business
-        if business.get('business').get('amalgamatedInto'):
-            amalgamating_business = self._business.amalgamating_businesses.one_or_none()
-            amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-            filing = Filing.find_by_id(amalgamation.filing_id)
-            state_filings.insert(0, self._format_state_filing(filing))
+
+        # If it has amalgamating businesses
+        if (amalgamating_businesses := AmalgamatingBusiness.get_all_revision(self._business.id)):
+            for amalgamating_business in amalgamating_businesses:
+                amalgamation = Amalgamation.get_revision_by_id(amalgamating_business.transaction_id,
+                                                               amalgamating_business.amalgamation_id)
+                filing = Filing.find_by_id(amalgamation.filing_id)
+                state_filing = self._format_state_filing(filing)
+                amalgamation_json = Amalgamation.get_revision_json(filing.transaction_id, filing.business_id)
+                state_filings.append({
+                    **state_filing,
+                    **amalgamation_json
+                })
+            state_filings = sorted(state_filings, key=lambda x: x['effectiveDateTime'], reverse=True)
+
         business['stateFilings'] = state_filings
 
     def _set_record_keepers(self, business: dict):
@@ -441,15 +449,20 @@ class BusinessDocument:
                 }
                 amalgamated_businesses.append(amalgamated_businesses_info)
             else:
-                amalgamation = self._business.amalgamation.one_or_none()
-                amalgamating_businesses = amalgamation.amalgamating_businesses.all()
+                amalgamation = Amalgamation.get_revision(amalgamation_application.transaction_id,
+                                                         amalgamation_application.business_id)
+                amalgamating_businesses = AmalgamatingBusiness.get_revision(amalgamation_application.transaction_id,
+                                                                            amalgamation.id)
                 for amalgamating_business in amalgamating_businesses:
-                    if ting_business := Business.find_by_internal_id(amalgamating_business.business_id):
-                        identifier = ting_business.identifier
-                        business_legal_name = ting_business.legal_name
-                    else:
+                    if amalgamating_business.foreign_name:
                         identifier = amalgamating_business.foreign_identifier or 'Not Available'
                         business_legal_name = amalgamating_business.foreign_name or 'Not Available'
+                    else:
+                        ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
+                            amalgamation_application.transaction_id,
+                            amalgamating_business.business_id)
+                        identifier = ting_business._identifier  # pylint: disable=protected-access;
+                        business_legal_name = ting_business.legal_name
 
                     amalgamated_businesses_info = {
                         'legalName': business_legal_name,
@@ -459,13 +472,10 @@ class BusinessDocument:
         business['amalgamatedEntities'] = amalgamated_businesses
 
     def _set_amalgamating_details(self, business: dict):
-        amalgamating_info = business.get('business', {}).get('amalgamatedInto')
-        if amalgamating_info:
-            business['business']['isAmalgamating'] = True
-            if business.get('amalgamatedEntities'):
-                # Amalgamating business can contain amalgamatedEntities when it is created through an amalgamation
-                # (if a business was a TED and it is now a TING). No need to show amalgamating businesses information
-                business['amalgamatedEntities'] = []
+        if ('amalgamatedInto' in business['business']) and business.get('amalgamatedEntities'):
+            # Amalgamating business can contain amalgamatedEntities when it is created through an amalgamation
+            # (if a business was a TED and it is now a TING). No need to show amalgamating businesses information
+            business['amalgamatedEntities'] = []
 
     def _set_liquidation_details(self, business: dict):
         """Set partial liquidation filing data."""
@@ -525,7 +535,7 @@ class BusinessDocument:
         return corp_type.full_desc if corp_type else ''
 
     FILING_SUMMARY_DISPLAY_NAME = {
-        'amalgamationApplication': 'Amalgamation',
+        'amalgamationApplication': 'Amalgamated Into',
         'dissolution': {
             'voluntary': {
                 'CP': 'Voluntary Dissolution',

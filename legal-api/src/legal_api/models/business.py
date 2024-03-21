@@ -566,8 +566,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if (self.state == Business.State.HISTORICAL and
             (state_filing := Filing.find_by_id(self.state_filing_id)) and
                 state_filing.is_amalgamation_application):
-            return Amalgamation.get_amalgamation_revision_json(state_filing.transaction_id,
-                                                               state_filing.business_id)
+            return Amalgamation.get_revision_json(state_filing.transaction_id,
+                                                  state_filing.business_id)
 
         return None
 

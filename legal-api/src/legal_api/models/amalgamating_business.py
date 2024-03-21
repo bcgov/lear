@@ -18,6 +18,9 @@ Currently this only provides API versioning information
 
 from enum import auto
 
+from sqlalchemy import or_
+from sqlalchemy_continuum import version_class
+
 from ..utils.base import BaseEnum
 from .db import db
 
@@ -53,3 +56,36 @@ class AmalgamatingBusiness(db.Model):  # pylint: disable=too-many-instance-attri
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
+
+    @classmethod
+    def get_revision(cls, transaction_id, amalgamation_id):
+        """Get amalgamating businesses for the given transaction id."""
+        # pylint: disable=singleton-comparison;
+        amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+        amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
+            .filter(amalgamating_businesses_version.transaction_id <= transaction_id) \
+            .filter(amalgamating_businesses_version.operation_type == 0) \
+            .filter(amalgamating_businesses_version.amalgamation_id == amalgamation_id) \
+            .filter(or_(amalgamating_businesses_version.end_transaction_id == None,  # noqa: E711;
+                        amalgamating_businesses_version.end_transaction_id > transaction_id)) \
+            .order_by(amalgamating_businesses_version.transaction_id).all()
+        return amalgamating_businesses
+
+    @classmethod
+    def get_all_revision(cls, business_id):
+        """
+        Get all amalgamating businesses for the given business id.
+
+        ie:
+        1. Business T1 is dissolved as part of amalgamation
+        2. Put back on T1 with a court order
+        3. Business T1 is dissolved as part of another amalgamation
+
+        In this case T1 is involved in 2 amalgamation
+        """
+        amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+        amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
+            .filter(amalgamating_businesses_version.operation_type == 0) \
+            .filter(amalgamating_businesses_version.business_id == business_id) \
+            .order_by(amalgamating_businesses_version.transaction_id).all()
+        return amalgamating_businesses
