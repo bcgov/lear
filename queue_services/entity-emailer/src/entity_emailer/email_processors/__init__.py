@@ -32,8 +32,8 @@ from entity_emailer.services.logging import structured_log
 def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
-    if filing.business_id:
-        business = LegalEntity.find_by_internal_id(filing.business_id)
+    if filing.legal_entity_id:
+        business = LegalEntity.find_by_internal_id(filing.legal_entity_id)
         business_json = business.json()
     else:
         business_json = (filing.json)["filing"].get("business")
