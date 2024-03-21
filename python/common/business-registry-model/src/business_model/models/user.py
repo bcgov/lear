@@ -19,8 +19,8 @@ here as a convenience for audit and db reporting.
 from datetime import datetime
 
 from flask import current_app
-from legal_api.exceptions import BusinessException
-from legal_api.utils.enum import BaseEnum, auto
+from ..exceptions import BusinessException
+from ..utils.enum import BaseEnum, auto
 from sql_versioning import Versioned
 
 from .db import db

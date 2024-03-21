@@ -23,23 +23,13 @@ def upgrade():
 
     with op.batch_alter_table("legal_entities", schema=None) as batch_op:
         batch_op.add_column(sa.Column("change_filing_id", sa.Integer(), nullable=True))
-        batch_op.create_index(
-            batch_op.f("ix_legal_entities_change_filing_id"),
-            ["change_filing_id"],
-            unique=False,
-        )
+        batch_op.create_index(batch_op.f("ix_legal_entities_change_filing_id"), ["change_filing_id"], unique=False)
         batch_op.create_foreign_key(None, "filings", ["change_filing_id"], ["id"])
 
     with op.batch_alter_table("legal_entities_history", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "change_filing_id", sa.Integer(), autoincrement=False, nullable=True
-            )
-        )
+        batch_op.add_column(sa.Column("change_filing_id", sa.Integer(), autoincrement=False, nullable=True))
         batch_op.create_index(
-            batch_op.f("ix_legal_entities_history_change_filing_id"),
-            ["change_filing_id"],
-            unique=False,
+            batch_op.f("ix_legal_entities_history_change_filing_id"), ["change_filing_id"], unique=False
         )
         batch_op.create_foreign_key(None, "filings", ["change_filing_id"], ["id"])
 

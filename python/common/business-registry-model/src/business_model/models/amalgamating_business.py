@@ -18,7 +18,7 @@ Currently this only provides API versioning information
 
 from enum import auto
 
-from ..utils.base import BaseEnum
+from ..utils.enum import BaseEnum
 from .db import db
 
 

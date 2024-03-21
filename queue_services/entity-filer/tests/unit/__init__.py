@@ -402,8 +402,8 @@ def create_business(identifier, legal_type=None, legal_name=None):
 
     business = LegalEntity()
     business.identifier = identifier
-    business.entity_type = legal_type
-    business.legal_name = legal_name
+    business._entity_type = legal_type
+    business._legal_name = legal_name
     business = create_business_address(business, Address.DELIVERY)
     # business = create_business_address(business, Address.MAILING)
     business.save()
@@ -460,11 +460,11 @@ def create_entity(identifier, legal_type, legal_name):
     from business_model import Address, LegalEntity
 
     legal_entity = LegalEntity()
-    legal_entity.entity_type = legal_type
+    legal_entity._entity_type = legal_type
     if legal_entity.entity_type == LegalEntity.EntityTypes.PERSON.value:
         legal_entity.first_name = "my"
         legal_entity.last_name = "self"
-    legal_entity.legal_name = legal_name
+    legal_entity._legal_name = legal_name
     legal_entity.identifier = identifier
     legal_entity.save()
     return legal_entity
@@ -518,7 +518,7 @@ def create_entity_person(party_json):
         first_name=party_json["officer"].get("firstName", "").upper(),
         last_name=party_json["officer"].get("lastName", "").upper(),
         middle_initial=party_json["officer"].get("middleInitial", "").upper(),
-        entity_type=LegalEntity.EntityTypes.PERSON,
+        _entity_type=LegalEntity.EntityTypes.PERSON,
     )
     if party_json.get("mailingAddress"):
         mailing_address = Address(

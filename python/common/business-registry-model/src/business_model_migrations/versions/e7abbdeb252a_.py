@@ -23,11 +23,7 @@ def upgrade():
         batch_op.create_foreign_key(None, "filings", ["change_filing_id"], ["id"])
 
     with op.batch_alter_table("entity_roles_history", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "change_filing_id", sa.Integer(), autoincrement=False, nullable=True
-            )
-        )
+        batch_op.add_column(sa.Column("change_filing_id", sa.Integer(), autoincrement=False, nullable=True))
         batch_op.create_foreign_key(None, "filings", ["change_filing_id"], ["id"])
 
     # ### end Alembic commands ###

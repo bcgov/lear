@@ -46,6 +46,7 @@ class ColinEntity(Versioned, db.Model):
     mailing_address_id = db.Column("mailing_address_id", db.Integer, db.ForeignKey("addresses.id"))
 
     # relationships
+    alternate_names = db.relationship("AlternateName", back_populates="colin_entity", lazy="dynamic")
     delivery_address = db.relationship("Address", foreign_keys=[delivery_address_id])
     mailing_address = db.relationship("Address", foreign_keys=[mailing_address_id])
 
@@ -55,6 +56,14 @@ class ColinEntity(Versioned, db.Model):
         colin_entity = None
         if identifier:
             colin_entity = cls.query.filter_by(identifier=identifier).one_or_none()
+        return colin_entity
+
+    @classmethod
+    def find_by_id(cls, colin_entity_id: int):
+        """Return a colin entity by the internal id."""
+        colin_entity = None
+        if colin_entity_id:
+            colin_entity = cls.query.filter_by(id=colin_entity_id).one_or_none()
         return colin_entity
 
     def save(self):
