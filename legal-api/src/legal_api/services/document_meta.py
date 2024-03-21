@@ -46,7 +46,7 @@ class DocumentMetaService:
         """Create the document meta instance."""
         # init global attributes
         self._business_identifier = None
-        self._entity_type = None
+        self.entity_type = None
         self._filing_status = None
         self._filing_id = None
         self._filing_date = None
@@ -61,12 +61,12 @@ class DocumentMetaService:
         # if this is a temp registration then there is no business, so get legal type from filing
         if self._business_identifier.startswith("T"):
             filing_type = filing["filing"]["header"]["name"]
-            self._entity_type = filing["filing"][filing_type]["nameRequest"]["legalType"]
+            self.entity_type = filing["filing"][filing_type]["nameRequest"]["legalType"]
         else:
             business = BusinessService.fetch_business(self._business_identifier)
             if not business:
                 return []  # business not found
-            self._entity_type = business.entity_type
+            self.entity_type = business.entity_type
 
         self._filing_status = filing["filing"]["header"]["status"]
         is_paper_only = filing["filing"]["header"].get("availableOnPaperOnly", False)
@@ -382,11 +382,11 @@ class DocumentMetaService:
 
     def is_bcomp(self):
         """Return True if this entity is a BCOMP."""
-        return self._entity_type == BusinessCommon.EntityTypes.BCOMP.value
+        return self.entity_type == BusinessCommon.EntityTypes.BCOMP.value
 
     def is_coop(self):
         """Return True if this entity is a COOP."""
-        return self._entity_type == BusinessCommon.EntityTypes.COOP.value
+        return self.entity_type == BusinessCommon.EntityTypes.COOP.value
 
     def is_paid(self):
         """Return True if this filing is PAID."""

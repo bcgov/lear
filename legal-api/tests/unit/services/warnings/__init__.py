@@ -11,7 +11,7 @@ TEST_BUSINESS_NAME: Final = "test business name"
 
 
 def factory_party_person(first_name: str, last_name: str, custom_id: int = None) -> LegalEntity:
-    party = LegalEntity(_entity_type=LegalEntity.EntityTypes.PERSON.value, first_name=first_name, last_name=last_name)
+    party = LegalEntity.entity_type=LegalEntity.EntityTypes.PERSON.value, first_name=first_name, last_name=last_name)
 
     if custom_id is not None:
         party.id = custom_id
@@ -141,7 +141,7 @@ def factory_address(
 
 def factory_legal_entity(entity_type: str, identifier: str, custom_id: int = None):
     legal_entity = LegalEntity(
-        _legal_name="test business", _entity_type=entity_type, identifier=identifier, state="ACTIVE"
+        _legal_name="test business", entity_type=entity_type, identifier=identifier, state="ACTIVE"
     )
 
     if custom_id:

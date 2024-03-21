@@ -33,7 +33,7 @@ def test_get_bn_request_trackers(session, client, jwt):
     """Get all BN request."""
     with nested_session(session):
         identifier = "FM0000001"
-        legal_entity = factory_legal_entity(identifier, _entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
+        legal_entity = factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
 
         request_tracker = RequestTracker(
             request_type=RequestTracker.RequestType.INFORM_CRA,
@@ -60,7 +60,7 @@ def test_get_request_tracker(session, client, jwt):
     """Get request tracker."""
     with nested_session(session):
         identifier = "FM0000001"
-        legal_entity = factory_legal_entity(identifier, _entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
+        legal_entity = factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
 
         request_tracker = RequestTracker(
             request_type=RequestTracker.RequestType.INFORM_CRA,
@@ -104,7 +104,7 @@ def test_get_request_tracker(session, client, jwt):
 def test_resubmit_bn_request(session, client, jwt, request_type, request_xml, identifier):
     """Get all BN request."""
     with nested_session(session):
-        legal_entity = factory_legal_entity(identifier, _entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
+        legal_entity = factory_legal_entity(identifier, entity_type=LegalEntity.EntityTypes.SOLE_PROP.value)
         json_data = {"requestType": request_type.name, "request": request_xml}
         with patch.object(request_tracker, "publish_entity_event"):
             rv = client.post(

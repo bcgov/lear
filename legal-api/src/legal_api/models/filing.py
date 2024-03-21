@@ -914,7 +914,7 @@ class Filing(db.Model):
             db.session.query(Filing)
             .join(LegalEntity, Filing.legal_entity_id == LegalEntity.id)
             .filter(
-                ~LegalEntity._entity_type.in_(
+                ~LegalEntity.entity_type.in_(
                     [
                         LegalEntity.EntityTypes.SOLE_PROP.value,
                         LegalEntity.EntityTypes.PARTNERSHIP.value,
