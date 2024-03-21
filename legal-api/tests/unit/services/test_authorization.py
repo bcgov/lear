@@ -954,6 +954,11 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
                           FilingKey.IA_ULC])),
+        ('general_user_limited_restoration', False, Business.State.ACTIVE, ['ULC'], 'general', [BASIC_USER], #JAMES
+         expected_lookup([FilingKey.AMALGAMATION_REGULAR,
+                          FilingKey.AMALGAMATION_VERTICAL,
+                          FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.IA_ULC])),
         ('general_user_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.REG_SP])),
@@ -1697,6 +1702,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
 @pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,state_filing_types,state_filing_sub_types,expected',
     [
+        
         # active business - staff user
         ('staff_active_cp_unaffected', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          ['restoration', 'restoration', None, 'restoration'],
@@ -1773,6 +1779,14 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
+        ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+         ['restoration', 'restoration'],
+         ['limitedRestoration', 'limitedRestorationExtension'],
+         expected_lookup([FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.VOL_DISS,
+                          FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_cp_unaffected', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
@@ -1851,6 +1865,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
          ['dissolution', None], [None, None], [])
     ]
 )
+#James - Add test cases here
 def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
                                             roles, state_filing_types, state_filing_sub_types, expected):
     """Assert that get allowed returns valid filings when validStateFilings or invalidStateFilings blocker is defined.
