@@ -181,7 +181,7 @@ def factory_legal_entity(
         last_ar_year=last_ar_year,
         last_ledger_timestamp=EPOCH_DATETIME,
         # dissolution_date=EPOCH_DATETIME,
-        _entity_type=entity_type,
+        entity_type=entity_type,
         identifier=identifier,
         tax_id="BN123456789",
         fiscal_year_end_date=FROZEN_DATETIME,
@@ -388,7 +388,7 @@ def factory_party_role(
         first_name=officer["firstName"],
         last_name=officer["lastName"],
         middle_initial=officer["middleInitial"],
-        _entity_type=officer["partyType"],
+        entity_type=officer["partyType"],
         _legal_name=officer["organizationName"],
     )
     legal_entity.entity_delivery_address = delivery_address

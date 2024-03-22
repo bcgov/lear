@@ -44,7 +44,7 @@ def test_party_role_json(session):
     identifier = "CP1234567"
     legal_entity = factory_legal_entity(identifier)
     member = LegalEntity(
-        _entity_type=LegalEntity.EntityTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Michael",
         last_name="Crane",
         middle_initial="Joe",
@@ -86,7 +86,7 @@ def test_find_party_by_name(session):
     identifier = "CP1234567"
     legal_entity = factory_legal_entity(identifier)
     person = LegalEntity(
-        _entity_type=LegalEntity.EntityTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Michael",
         last_name="Crane",
         middle_initial="Joe",
@@ -94,7 +94,7 @@ def test_find_party_by_name(session):
     )
     person.save()
     no_middle_initial = LegalEntity(
-        _entity_type=LegalEntity.EntityTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Testing",
         last_name="NoMiddleInitial",
         middle_initial="",
@@ -170,7 +170,7 @@ def test_get_party_roles(session):
     identifier = "CP1234567"
     legal_entity = factory_legal_entity(identifier)
     member = LegalEntity(
-        _entity_type=LegalEntity.EntityTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Connor",
         last_name="Horton",
         middle_initial="",
@@ -211,7 +211,7 @@ def test_get_party_roles_by_related_entity_id(session):
     identifier = "CP1234567"
     legal_entity = factory_legal_entity(identifier)
     member = LegalEntity(
-        _entity_type=LegalEntity.EntityTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Connor",
         last_name="Horton",
         middle_initial="",
@@ -249,7 +249,7 @@ def test_get_party_roles_by_filing(session):
     identifier = "CP1234567"
     legal_entity = factory_legal_entity(identifier)
     member = LegalEntity(
-        _entity_type=LegalEntity.EntityTypes.PERSON.value,
+        entity_type=LegalEntity.EntityTypes.PERSON.value,
         first_name="Connor",
         last_name="Horton",
         middle_initial="",

@@ -26,16 +26,9 @@ def upgrade():
 
 def downgrade():
     with op.batch_alter_table("legal_entities", schema=None) as batch_op:
-        batch_op.add_column(
-            sa.Column("cco_expiry_date", sa.DateTime(timezone=True), nullable=True)
-        )
+        batch_op.add_column(sa.Column("cco_expiry_date", sa.DateTime(timezone=True), nullable=True))
 
     with op.batch_alter_table("legal_entities_history", schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column(
-                "cco_expiry_date",
-                sa.DateTime(timezone=True),
-                autoincrement=False,
-                nullable=True,
-            )
+            sa.Column("cco_expiry_date", sa.DateTime(timezone=True), autoincrement=False, nullable=True)
         )

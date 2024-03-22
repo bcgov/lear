@@ -21,8 +21,8 @@ from typing import Final
 import datedelta
 from sql_versioning import history_cls
 
-from legal_api.utils.base import BaseEnum
-from legal_api.utils.datetime import datetime
+from ..utils.enum import BaseEnum
+from ..utils.datetime import datetime
 
 from .db import db
 
@@ -119,16 +119,29 @@ class BusinessCommon:
     @property
     def is_alternate_name_entity(self):
         """Return True if the entity is an AlternateName."""
-        from legal_api.models import AlternateName
+        from ..models import AlternateName
 
         return isinstance(self, (AlternateName, history_cls(AlternateName)))
 
     @property
     def is_legal_entity(self):
         """Return True if the entity is a LegalEntity."""
-        from legal_api.models import LegalEntity
+        from ..models import LegalEntity
 
         return isinstance(self, (LegalEntity, history_cls(LegalEntity)))
+
+    @property
+    def entity_type(self):
+        """Return entity_type."""
+        from ..models import AlternateName
+
+        if self.is_legal_entity:
+            return self._entity_type
+
+        if self.is_alternate_name_entity and self.name_type.value == AlternateName.NameType.DBA:
+            return self.EntityTypes.SOLE_PROP.value
+
+        return None
 
     @property
     def compliance_warnings(self):
@@ -204,7 +217,7 @@ class BusinessCommon:
         For SP, returns its operating name from AlternateName.
         For GP, returns its primary operating name from AlternateName.
         """
-        from legal_api.models import AlternateName
+        from ..models import AlternateName
 
         if not self.is_firm:
             return self._legal_name
@@ -220,7 +233,7 @@ class BusinessCommon:
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
         # A firm is always in good standing
-        # from legal_api.models import LegalEntity
+        # from ..models import LegalEntity
 
         if self.is_firm:
             return True
@@ -236,7 +249,7 @@ class BusinessCommon:
 
     def get_filing_by_id(self, filing_id: int):
         """Return the filings for a specific business and filing_id."""
-        from legal_api.models import AlternateName, Filing, LegalEntity
+        from ..models import AlternateName, Filing, LegalEntity
 
         # Determine the model to query based on is_legal_entity property
         if self.is_legal_entity:

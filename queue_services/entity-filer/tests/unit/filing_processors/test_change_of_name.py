@@ -25,7 +25,7 @@ def test_change_of_name_process(app, session):
     con = {"changeOfName": {"legalName": new_name}}
 
     business = create_business(identifier)
-    business.legal_name = "original name"
+    business._legal_name = "original name"
 
     filing_meta = FilingMeta()
 
@@ -52,7 +52,7 @@ def test_change_of_name_with_nr_process(app, session):
     }
 
     business = create_business(identifier)
-    business.legal_name = "original name"
+    business._legal_name = "original name"
 
     filing_meta = FilingMeta()
 

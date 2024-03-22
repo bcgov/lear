@@ -42,7 +42,7 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     # setup
     identifier = "BC1234567"
     business = create_business(identifier)
-    business.entity_type = orig_legal_type
+    business._entity_type = orig_legal_type
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing["filing"]["business"]["legalType"] = orig_legal_type
@@ -119,7 +119,7 @@ def test_alteration_legal_name(app, session, mocker, test_name, legal_name, new_
     """Assert the worker process calls the alteration correctly."""
     identifier = "BC1234567"
     business = create_business(identifier)
-    business.legal_name = legal_name
+    business._legal_name = legal_name
     business.save()
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     if test_name == "numbered_to_name":
@@ -214,7 +214,7 @@ def test_alteration_coop_association_type(app, session, new_association_type):
     # setup
     identifier = "CP1234567"
     business = create_business(identifier)
-    business.entity_type = LegalEntity.EntityTypes.COOP.value
+    business._entity_type = LegalEntity.EntityTypes.COOP.value
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing["filing"]["business"]["legalType"] = LegalEntity.EntityTypes.COOP.value
@@ -242,7 +242,7 @@ def test_alteration_coop_rules_and_memorandum(app, session):
     # setup
     identifier = "CP1234567"
     business = create_business(identifier)
-    business.entity_type = LegalEntity.EntityTypes.COOP.value
+    business._entity_type = LegalEntity.EntityTypes.COOP.value
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing["filing"]["business"]["legalType"] = LegalEntity.EntityTypes.COOP.value

@@ -221,7 +221,7 @@ def test_business_find_by_identifier(session):
     identifier = "CP0000001"
     legal_entity = LegalEntity(
         _legal_name=f"legal_name-{designation}",
-        _entity_type="CP",
+        entity_type="CP",
         founding_date=datetime.utcfromtimestamp(0),
         last_ledger_timestamp=datetime.utcfromtimestamp(0),
         dissolution_date=None,
@@ -325,7 +325,7 @@ def test_good_standing(session, last_ar_date, entity_type, state, limited_restor
         last_ledger_timestamp=datetime.utcfromtimestamp(0),
         dissolution_date=None,
         identifier=f"CP1234{designation}",
-        _entity_type=entity_type,
+        entity_type=entity_type,
         state=state,
         tax_id=f"BN0000{designation}",
         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
@@ -341,7 +341,7 @@ def test_business_json(session):
     """Assert that the business model is saved correctly."""
     legal_entity = LegalEntity(
         _legal_name="legal_name",
-        _entity_type="CP",
+        entity_type="CP",
         founding_date=EPOCH_DATETIME,
         start_date=datetime(2021, 8, 5, 8, 7, 58, 272362),
         last_ledger_timestamp=EPOCH_DATETIME,
@@ -482,7 +482,7 @@ def test_continued_in_business(session):
     """Assert that the continued corp is saved successfully."""
     legal_entity = LegalEntity(
         _legal_name="Test - Legal Name",
-        _entity_type="BC",
+        entity_type="BC",
         founding_date=datetime.utcfromtimestamp(0),
         last_ledger_timestamp=datetime.utcfromtimestamp(0),
         dissolution_date=None,
@@ -519,7 +519,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
 
     existing_business = LegalEntity(
         _legal_name="Test - Amalgamating Legal Name",
-        _entity_type="BC",
+        entity_type="BC",
         founding_date=datetime.utcfromtimestamp(0),
         dissolution_date=datetime.now(),
         identifier="BC1234567",
@@ -531,7 +531,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
     if test_name == "EXIST":
         business = LegalEntity(
             _legal_name="Test - Legal Name",
-            _entity_type="BC",
+            entity_type="BC",
             founding_date=datetime.utcfromtimestamp(0),
             identifier="BC1234568",
             state=LegalEntity.State.ACTIVE,
@@ -570,7 +570,7 @@ def test_legal_name_non_SP(session, entity_type):
     """Assert that correct legal name returned for non-SP entity types."""
     legal_entity = LegalEntity(
         _legal_name="Test - Legal Name",
-        _entity_type=entity_type,
+        entity_type=entity_type,
         founding_date=datetime.utcfromtimestamp(0),
         identifier="BC1234567",
         state=LegalEntity.State.ACTIVE,
@@ -638,7 +638,7 @@ def test_legal_name_firms_SP(session, test_name, partner_info, expected_legal_na
             if len(le_entries) == 1 and (le_entry := le_entries[0]):
                 entity_type = le_entry.get("entityType")
                 le_partner = LegalEntity(
-                    _entity_type=entity_type, founding_date=datetime.utcfromtimestamp(0), state=LegalEntity.State.ACTIVE
+                    entity_type=entity_type, founding_date=datetime.utcfromtimestamp(0), state=LegalEntity.State.ACTIVE
                 )
                 if entity_type == LegalEntity.EntityTypes.PERSON.value:
                     first_name = le_entry.get("firstName")
@@ -692,7 +692,7 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
     sess = session.begin_nested()
     le = LegalEntity(
         _legal_name=legal_name,
-        _entity_type=entity_type,
+        entity_type=entity_type,
         founding_date=datetime.utcfromtimestamp(0),
         identifier="BC1234567",
         state=LegalEntity.State.ACTIVE,
@@ -907,7 +907,7 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
 
         le = LegalEntity(
             _legal_name=le_info["legalName"],
-            _entity_type=le_info["entityType"],
+            entity_type=le_info["entityType"],
             founding_date=founding_date,
             identifier=le_info["identifier"],
         )
@@ -922,7 +922,7 @@ def test_alternate_names(session, test_name, legal_entities_info, alternate_name
                 start_date = datetime.strptime(alternate_name_info["startDate"], "%Y-%m-%dT%H:%M:%S%z")
                 if alternate_name_identifier != le.identifier:
                     le_alternate_name = LegalEntity(
-                        _entity_type=alternate_name_info["entityType"],
+                        entity_type=alternate_name_info["entityType"],
                         founding_date=start_date,
                         identifier=alternate_name_identifier,
                     )

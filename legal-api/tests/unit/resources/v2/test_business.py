@@ -72,7 +72,7 @@ def factory_legal_entity_model(
         tax_id=tax_id,
     )
     if entity_type:
-        b._entity_type = entity_type
+        b.entity_type = entity_type
     b.save()
     return b
 
