@@ -63,7 +63,7 @@ def test_business_not_found(session, app):
             assert len(document_meta.get_documents(filing)) == 0
             # also verify document class properties:
             assert document_meta._legal_entity_identifier == "BC7654321"
-            assert document_meta._entity_type is None
+            assert document_meta.entity_type is None
         sess.rollback()
 
 
@@ -90,7 +90,7 @@ def test_wrong_filing_status(session, app):
             assert len(document_meta.get_documents(filing)) == 0
             # also verify document class properties:
             assert document_meta._legal_entity_identifier == "BC1234567"
-            assert document_meta._entity_type == LegalEntity.EntityTypes.BCOMP.value
+            assert document_meta.entity_type == LegalEntity.EntityTypes.BCOMP.value
         sess.rollback()
 
 

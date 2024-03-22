@@ -40,7 +40,7 @@ legal_name = "Test name request"
 def test_consent_continuation_out_active_and_good_standing(session, test_name, expected_code):
     """Assert Consent Continuation Out can be filed."""
     legal_entity = LegalEntity(
-        identifier="BC1234567", _entity_type="BC", state=LegalEntity.State.ACTIVE, founding_date=datetime.utcnow()
+        identifier="BC1234567", entity_type="BC", state=LegalEntity.State.ACTIVE, founding_date=datetime.utcnow()
     )
     if test_name == "FAIL_NOT_ACTIVE":
         legal_entity.state = LegalEntity.State.HISTORICAL
@@ -182,7 +182,7 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
 def test_consent_continuation_out_court_order(session, test_status, file_number, expected_code):
     """Assert valid court order."""
     legal_entity = LegalEntity(
-        identifier="BC1234567", _entity_type="BC", state=LegalEntity.State.ACTIVE, founding_date=datetime.utcnow()
+        identifier="BC1234567", entity_type="BC", state=LegalEntity.State.ACTIVE, founding_date=datetime.utcnow()
     )
     filing = copy.deepcopy(FILING_HEADER)
     filing["filing"]["consentContinuationOut"] = copy.deepcopy(CONSENT_CONTINUATION_OUT)

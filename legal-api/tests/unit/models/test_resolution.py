@@ -75,7 +75,7 @@ def test_special_resolution_with_optional_data(session):
     date_str = "2020-02-02"
     legal_entity = factory_legal_entity(identifier)
     signing_party = LegalEntity(
-        _entity_type=LegalEntity.EntityTypes.PERSON.value, first_name="Michael", last_name="Crane", middle_initial="Joe"
+        entity_type=LegalEntity.EntityTypes.PERSON.value, first_name="Michael", last_name="Crane", middle_initial="Joe"
     )
     signing_party.save()
     resolution = Resolution(

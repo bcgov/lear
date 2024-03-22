@@ -44,7 +44,7 @@ def test_get_business_resolutions(app, session, client, jwt, requests_mock, test
         resolution_text = "bla bla"
         legal_entity = factory_legal_entity(identifier)
         signing_party = LegalEntity(
-            _entity_type=LegalEntity.EntityTypes.PERSON.value, first_name="signing", last_name="party"
+            entity_type=LegalEntity.EntityTypes.PERSON.value, first_name="signing", last_name="party"
         )
         resolution = Resolution(
             resolution_date=FROZEN_DATETIME,
