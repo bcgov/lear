@@ -83,10 +83,6 @@ class BusinessService:
             return legal_entity if legal_entity.entity_type not in (non_business_types) else None
 
         if alternate_name := AlternateName.find_by_tax_id(old_bn):
-            legal_entity = LegalEntity.find_by_id(alternate_name.legal_entity_id)
-            alternate_name_entity = (
-                alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
-            )
-            return alternate_name_entity
+            return alternate_name
 
         return None
