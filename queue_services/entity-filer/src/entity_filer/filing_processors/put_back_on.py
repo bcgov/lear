@@ -41,4 +41,4 @@ def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta
 
     business.state = LegalEntity.State.ACTIVE
     business.dissolution_date = None
-    business.state_filing_id = None
+    business.state_filing_id = filing_rec.id

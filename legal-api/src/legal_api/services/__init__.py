@@ -20,14 +20,13 @@ from sentry_sdk import capture_message
 from legal_api.models import LegalEntity
 from legal_api.utils.datetime import datetime
 
-from .authz import (
+from .authz import (  # noqa: I001;
     ACCOUNT_IDENTITY,
     BASIC_USER,
     COLIN_SVC_ROLE,
     STAFF_ROLE,
     SYSTEM_ROLE,
     authorized,
-    get_account_by_affiliated_identifier,
     has_roles,
 )
 from .bootstrap import AccountService, RegistrationBootstrapService

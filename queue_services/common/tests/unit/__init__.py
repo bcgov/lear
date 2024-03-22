@@ -372,7 +372,7 @@ def create_filing(token, json_filing=None, business_id=None):
     if json_filing:
         filing.filing_json = json_filing
     if business_id:
-        filing.business_id = business_id
+        filing.legal_entity_id = business_id
 
     filing.save()
     return filing

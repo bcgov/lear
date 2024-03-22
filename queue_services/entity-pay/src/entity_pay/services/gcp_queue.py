@@ -51,8 +51,8 @@ from simple_cloudevent import (
     from_queue_message,
     to_queue_message,
 )
-from werkzeug.local import LocalProxy
 from werkzeug.exceptions import UnsupportedMediaType
+from werkzeug.local import LocalProxy
 
 
 class GcpQueue:

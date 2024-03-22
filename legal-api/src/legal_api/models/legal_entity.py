@@ -278,11 +278,11 @@ class LegalEntity(
             self.EntityTypes.BC_CCC.value,
         ]:
             # For BCOMP min date is next anniversary date.
-            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
+            no_of_years_to_add = next_ar_year - self.founding_date.year
+            ar_min_date = self.founding_date.date() + datedelta.datedelta(years=no_of_years_to_add)
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
 
-        if ar_max_date > datetime.utcnow().date():
-            ar_max_date = datetime.utcnow().date()
+        ar_max_date = min(ar_max_date, datetime.utcnow().date())  # ar_max_date cannot be in future
 
         return ar_min_date, ar_max_date
 
@@ -483,11 +483,8 @@ class LegalEntity(
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
             # TODO: revert once amalgamation tables and migration scripts have been run
-            # if self.state == LegalEntity.State.HISTORICAL and (
-            #     amalgamating_business := self.amalgamating_businesses.one_or_none()
-            # ):
-            #     amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-            #     d["amalgamatedInto"] = amalgamation.json()
+            # if (amalgamated_into := self.get_amalgamated_into()):
+            #     d['amalgamatedInto'] = amalgamated_into
             # else:
             #     d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
             d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
@@ -636,6 +633,40 @@ class LegalEntity(
         ]
         legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
+
+    def get_amalgamated_into(self) -> dict:
+        """Get amalgamated into if this business is part of an amalgamation."""
+        if (
+            self.state == LegalEntity.State.HISTORICAL
+            and (state_filing := Filing.find_by_id(self.state_filing_id))
+            and state_filing.is_amalgamation_application
+        ):
+            return Amalgamation.get_amalgamation_revision_json(
+                state_filing.transaction_id, state_filing.legal_entity_id
+            )
+
+        return None
+
+    @classmethod
+    def is_pending_amalgamating_business(cls, business_identifier):
+        """Check if a business has a pending amalgamation with the provided business identifier."""
+        where_clause = {"identifier": business_identifier}
+
+        # Query the database to find amalgamation filings
+        # pylint: disable=protected-access
+        # pylint: disable=unsubscriptable-object
+        filing = (
+            db.session.query(Filing)
+            .filter(
+                Filing._status == Filing.Status.PAID.value,
+                Filing._filing_type == "amalgamationApplication",
+                Filing.filing_json["filing"]["amalgamationApplication"]["amalgamatingBusinesses"].contains(
+                    [where_clause]
+                ),
+            )
+            .one_or_none()
+        )
+        return filing
 
     @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:

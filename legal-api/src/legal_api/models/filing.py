@@ -125,17 +125,17 @@ class Filing(db.Model):
             "temporaryCorpTypeCode": "ATMP",
             "regular": {
                 "name": "regularAmalgamation",
-                "title": "Regular Amalgamation",
+                "title": "Amalgamation Application (Regular)",
                 "codes": {"BEN": "AMALR", "BC": "AMALR", "ULC": "AMALR", "CC": "AMALR"},
             },
             "vertical": {
                 "name": "verticalAmalgamation",
-                "title": "Vertical Amalgamation",
+                "title": "Amalgamation Application Short-form (Vertical)",
                 "codes": {"BEN": "AMALV", "BC": "AMALV", "ULC": "AMALV", "CC": "AMALV"},
             },
             "horizontal": {
                 "name": "horizontalAmalgamation",
-                "title": "Horizontal Amalgamation",
+                "title": "Amalgamation Application Short-form (Horizontal)",
                 "codes": {"BEN": "AMALH", "BC": "AMALH", "ULC": "AMALH", "CC": "AMALH"},
             },
         },
@@ -650,6 +650,11 @@ class Filing(db.Model):
         ):
             return True
         return False
+
+    @property
+    def is_amalgamation_application(self):
+        """Is this an amalgamation application filing."""
+        return self.filing_type == Filing.FILINGS["amalgamationApplication"].get("name")
 
     @hybrid_property
     def comments_count(self):

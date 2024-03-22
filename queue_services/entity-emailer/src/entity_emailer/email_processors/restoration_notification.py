@@ -108,7 +108,7 @@ def _get_paid_pdfs(
         attach_order += 1
     name_request = filing.json["filing"]["restoration"]["nameRequest"]
     corp_name = name_request.get("legalName")
-    business_data = LegalEntity.find_by_internal_id(filing.business_id)
+    business_data = LegalEntity.find_by_internal_id(filing.legal_entity_id)
     receipt = requests.post(
         f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
         json={

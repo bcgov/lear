@@ -55,6 +55,7 @@ class BusinessBlocker(str, Enum):
     BUSINESS_FROZEN = "BUSINESS_FROZEN"
     DRAFT_PENDING = "DRAFT_PENDING"
     NOT_IN_GOOD_STANDING = "NOT_IN_GOOD_STANDING"
+    AMALGAMATING_BUSINESS = "AMALGAMATING_BUSINESS"
 
 
 class BusinessRequirement(str, Enum):
@@ -157,7 +158,7 @@ def get_allowable_filings_dict():
                     "regular": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -167,7 +168,7 @@ def get_allowable_filings_dict():
                     "vertical": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -177,7 +178,7 @@ def get_allowable_filings_dict():
                     "horizontal": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -283,18 +284,23 @@ def get_allowable_filings_dict():
                 },
                 "putBackOn": {
                     "legalTypes": ["SP", "GP", "BEN", "CP", "BC", "CC", "ULC"],
-                    "blockerChecks": {"validStateFilings": [filing_types_compact.DISSOLUTION_ADMINISTRATIVE]},
                 },
                 "registrarsNotation": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
                 "registrarsOrder": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
                 "restoration": {
                     "fullRestoration": {
                         "legalTypes": ["BC", "BEN", "CC", "ULC"],
-                        "blockerChecks": {"invalidStateFilings": ["continuationIn", "continuationOut"]},
+                        "blockerChecks": {
+                            "invalidStateFilings": ["continuationIn", "continuationOut"],
+                            "business": [BusinessBlocker.AMALGAMATING_BUSINESS],
+                        },
                     },
                     "limitedRestoration": {
                         "legalTypes": ["BC", "BEN", "CC", "ULC"],
-                        "blockerChecks": {"invalidStateFilings": ["continuationIn", "continuationOut"]},
+                        "blockerChecks": {
+                            "invalidStateFilings": ["continuationIn", "continuationOut"],
+                            "business": [BusinessBlocker.AMALGAMATING_BUSINESS],
+                        },
                     },
                 },
             },
@@ -318,7 +324,7 @@ def get_allowable_filings_dict():
                     "regular": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -328,7 +334,7 @@ def get_allowable_filings_dict():
                     "vertical": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -338,7 +344,7 @@ def get_allowable_filings_dict():
                     "horizontal": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -558,6 +564,7 @@ def business_blocker_check(business: any, is_ignore_draft_blockers: bool = False
         BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DRAFT_PENDING: False,
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
+        BusinessBlocker.AMALGAMATING_BUSINESS: False,
     }
 
     if not business:
@@ -573,6 +580,9 @@ def business_blocker_check(business: any, is_ignore_draft_blockers: bool = False
 
     if not business.good_standing:
         business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
+
+    if business.amalgamating_businesses.one_or_none():
+        business_blocker_checks[BusinessBlocker.AMALGAMATING_BUSINESS] = True
 
     return business_blocker_checks
 

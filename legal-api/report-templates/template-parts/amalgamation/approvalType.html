@@ -1,0 +1,15 @@
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">
+    <span>Approval Type</span>
+  </div>
+  {% if courtApproval == True %}
+  <div class="section-data mt-3">
+      The amalgamation is approved by a court order.
+  </div>
+  {% elif courtApproval == False %}
+  <div class="section-data mt-3">
+    The amalgamation is approved without a court order.
+  </div>
+  {%endif%}
+</div>

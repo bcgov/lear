@@ -161,7 +161,7 @@ def get_paid_pdfs(
         attach_order += 1
 
     business_name = business.get("businessName")
-    origin_business = LegalEntity.find_by_internal_id(filing.business_id)
+    origin_business = LegalEntity.find_by_internal_id(filing.legal_entity_id)
 
     sr_receipt = requests.post(
         f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',

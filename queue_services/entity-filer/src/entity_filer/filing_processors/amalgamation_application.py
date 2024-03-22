@@ -18,11 +18,28 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-from business_model import AmalgamatingBusiness, Amalgamation, Document, Filing, LegalEntity, RegistrationBootstrap, db
+from legal_api import db
+from business_model.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    Filing,
+    LegalEntity,
+    OfficeType,
+    PartyRole,
+    RegistrationBootstrap,
+)
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import aliases, filings, legal_entity_info, shares
+from entity_filer.filing_processors.filing_components import (
+    JSON_ROLE_CONVERTER,
+    aliases,
+    business_info,
+    business_profile,
+    filings,
+    legal_entity_info,
+    shares,
+)
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
@@ -86,19 +103,16 @@ def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amal
     for amalgamating_business_json in amalgamating_businesses_json:
         amalgamating_business = AmalgamatingBusiness()
         amalgamating_business.role = amalgamating_business_json.get("role")
-        if (identifier := amalgamating_business_json.get("identifier")) and (
-            business := LegalEntity.find_by_identifier(identifier)
-        ):
-            amalgamating_business.legal_entity_id = business.id
-            dissolve_amalgamating_business(business, filing_rec)
-        else:
-            amalgamating_business.foreign_identifier = amalgamating_business_json.get("corpNumber")
+        identifier = amalgamating_business_json.get("identifier")
+        if foreign_jurisdiction := amalgamating_business_json.get("foreignJurisdiction"):
+            amalgamating_business.foreign_identifier = identifier
             amalgamating_business.foreign_name = amalgamating_business_json.get("legalName")
-
-            foreign_jurisdiction = amalgamating_business_json.get("foreignJurisdiction")
             amalgamating_business.foreign_jurisdiction = foreign_jurisdiction.get("country").upper()
             if region := foreign_jurisdiction.get("region"):
                 amalgamating_business.foreign_jurisdiction_region = region.upper()
+        elif business := LegalEntity.find_by_identifier(identifier):
+            amalgamating_business.legal_entity_id = business.id
+            dissolve_amalgamating_business(business, filing_rec)
 
         amalgamation.amalgamating_businesses.append(amalgamating_business)
 
@@ -112,16 +126,15 @@ def dissolve_amalgamating_business(business: LegalEntity, filing_rec: Filing):
 
 
 def process(
-    business: LegalEntity,  # pylint: disable=too-many-branches
+    business: LegalEntity,  # pylint: disable=too-many-branches, too-many-locals
     filing: Dict,
     filing_rec: Filing,
     filing_meta: FilingMeta,
-):  # pylint: disable=too-many-branches
+):
     """Process the incoming amalgamation application filing."""
     # Extract the filing information for amalgamation
     amalgamation_filing = filing.get("filing", {}).get("amalgamationApplication")
     filing_meta.amalgamation_application = {}
-    amalgamation = Amalgamation()
 
     if not amalgamation_filing:
         raise DefaultException(
@@ -141,13 +154,44 @@ def process(
             f"amalgamationApplication {filing_rec.id} unable to get a business amalgamationApplication number."
         )
 
+    amalgamation = Amalgamation()
+    amalgamation.filing_id = filing_rec.id
+    amalgamation.amalgamation_type = amalgamation_filing.get("type")
+    amalgamation.amalgamation_date = filing_rec.effective_date
+    amalgamation.court_approval = bool(amalgamation_filing.get("courtApproval"))
+    create_amalgamating_businesses(amalgamation_filing, amalgamation, filing_rec)
+    if amalgamation.amalgamation_type in [
+        Amalgamation.AmalgamationTypes.horizontal.name,
+        Amalgamation.AmalgamationTypes.vertical.name,
+    ]:
+        # Include/Replace legal_name, director, office and shares from holding/primary business (won't be a foreign)
+        amalgamating_business = next(
+            x
+            for x in amalgamation.amalgamating_businesses
+            if x.role in [AmalgamatingBusiness.Role.holding.name, AmalgamatingBusiness.Role.primary.name]
+        )
+        primary_or_holding_business = LegalEntity.find_by_internal_id(amalgamating_business.business_id)
+
+        business_info_obj["legalName"] = primary_or_holding_business.legal_name
+
+        _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing)
+        _set_offices(primary_or_holding_business, amalgamation_filing)
+        _set_shares(primary_or_holding_business, amalgamation_filing)
+
+    amalgamation = Amalgamation()
+    amalgamation.filing_id = filing_rec.id
+    amalgamation.amalgamation_type = amalgamation_filing.get("type")
+    amalgamation.amalgamation_date = filing_rec.effective_date
+    amalgamation.court_approval = bool(amalgamation_filing.get("courtApproval"))
+
     # Initial insert of the business record
     business = LegalEntity()
     business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
     business.state = LegalEntity.State.ACTIVE
 
     amalgamation.filing_id = filing_rec.id
-    amalgamation.amalgamation_type = amalgamation_filing.get("type")
+    amalgamation_type = amalgamation_filing.get("type")
+    amalgamation.amalgamation_type = amalgamation_type
     amalgamation.amalgamation_date = filing_rec.effective_date
     amalgamation.court_approval = bool(amalgamation_filing.get("courtApproval"))
     create_amalgamating_businesses(amalgamation_filing, amalgamation, filing_rec)
@@ -186,6 +230,69 @@ def process(
     filing_rec._filing_json = amalgamation_json  # pylint: disable=protected-access; bypass to update filing data
 
     return business, filing_rec, filing_meta
+
+
+def _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing):
+    parties = []
+    active_directors = PartyRole.get_active_directors(primary_or_holding_business.id, filing_rec.effective_date.date())
+    # copy director
+    for director in active_directors:
+        director_json = director.json
+        director_json["roles"] = [{"roleType": "Director", "appointmentDate": filing_rec.effective_date.isoformat()}]
+
+        # cleanup director json
+        del director_json["officer"]["id"]
+        del director_json["role"]
+        del director_json["appointmentDate"]
+        if "cessationDate" in director_json:
+            del director_json["cessationDate"]
+        if "deliveryAddress" in director_json:
+            del director_json["deliveryAddress"]["id"]
+        if "mailingAddress" in director_json:
+            del director_json["mailingAddress"]["id"]
+
+        parties.append(director_json)
+
+    # copy completing party from filing json
+    for party_info in amalgamation_filing.get("parties"):
+        if comp_party_role := next(
+            (
+                x
+                for x in party_info.get("roles")
+                if JSON_ROLE_CONVERTER.get(x["roleType"].lower(), "") == PartyRole.RoleTypes.COMPLETING_PARTY.value
+            ),
+            None,
+        ):
+            party_info["roles"] = [comp_party_role]  # override roles to have only completing party
+            parties.append(party_info)
+            break
+    amalgamation_filing["parties"] = parties
+
+
+def _set_offices(primary_or_holding_business, amalgamation_filing):
+    # copy offices
+    offices = {}
+    officelist = primary_or_holding_business.offices.all()
+    for i in officelist:
+        if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
+            offices[i.office_type] = {}
+            for address in i.addresses:
+                address_json = address.json
+                del address_json["id"]
+                offices[i.office_type][f"{address.address_type}Address"] = address_json
+    amalgamation_filing["offices"] = offices
+
+
+def _set_shares(primary_or_holding_business, amalgamation_filing):
+    # copy shares
+    share_classes = []
+    for share_class in primary_or_holding_business.share_classes.all():
+        share_class_json = share_class.json
+        del share_class_json["id"]
+        for series in share_class_json.get("series", []):
+            del series["id"]
+        share_classes.append(share_class_json)
+    amalgamation_filing["shareStructure"] = {"shareClasses": share_classes}
 
 
 def post_process(business: LegalEntity, filing: Filing):

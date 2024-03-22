@@ -113,7 +113,7 @@ def populate_filing(business: Business, event_filing_data: dict, filing_data: di
     filing._filing_type = target_lear_filing_type
     filing.filing_date = effective_date
     filing._completion_date = effective_date
-    filing.business_id = business.id if business else None
+    filing.legal_entity_id = business.id if business else None
     filing.source = Filing.Source.COLIN.value
     filing.paper_only = get_is_paper_only(filing_data)
 

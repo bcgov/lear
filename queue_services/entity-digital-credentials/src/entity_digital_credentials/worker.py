@@ -130,7 +130,7 @@ async def process_digital_credential(dc_msg: dict, flask_app: Flask):
             if filing.status != FilingCore.Status.COMPLETED.value:
                 raise QueueException(f'Filing with id: {filing_id} processing not complete.')
 
-            business_id = filing.business_id
+            business_id = filing.legal_entity_id
             if not (business := Business.find_by_internal_id(business_id)):  # pylint: disable=superfluous-parens
                 # pylint: disable=broad-exception-raised
                 raise Exception(f'Business with internal id: {business_id} not found.')

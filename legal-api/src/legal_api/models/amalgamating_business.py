@@ -35,7 +35,7 @@ class AmalgamatingBusiness(Versioned, db.Model):  # pylint: disable=too-many-ins
         holding = auto()
         primary = auto()
 
-    # __versioned__ = {}
+    __versioned__ = {}
     __tablename__ = "amalgamating_businesses"
 
     id = db.Column(db.Integer, primary_key=True)

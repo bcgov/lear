@@ -1,0 +1,24 @@
+{% if business.isAmalgamating %}
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Amalgamated Into</div>
+</div>
+
+<div class="mt-2">
+    <span class="section-sub-title">Name of Amalgamated Business: </span>
+    {% if business.amalgamatedInto is defined %}
+    <span class="section-data">{{business.amalgamatedInto.legalName}}</span>
+    {% else %}
+    <span class="section-data">Not Available</span>
+    {% endif %}
+</div>
+
+<div class="mt-2">
+    <span class="section-sub-title">Incorporation Number: </span>
+    {% if business.amalgamatedInto is defined %}
+    <span class="section-data">{{business.amalgamatedInto.identifier}}</span>
+    {% else %}
+    <span class="section-data">Not Available</span>
+    {% endif %}
+</div>
+{% endif %}
