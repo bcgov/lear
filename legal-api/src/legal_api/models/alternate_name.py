@@ -53,6 +53,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "bn15",
             "change_filing_id",
             "end_date",
+            "entity_type",
             "identifier",
             "legal_entity_id",
             "colin_entity_id",
@@ -76,6 +77,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
     id = db.Column(db.Integer, primary_key=True)
     identifier = db.Column("identifier", db.String(10), nullable=True, index=True)
+    entity_type = db.Column("entity_type", db.String(15), index=True)
     name_type = db.Column("name_type", db.Enum(NameType), nullable=False)
     name = db.Column("name", db.String(1000), nullable=False, index=True)
     bn15 = db.Column("bn15", db.String(20), nullable=True)

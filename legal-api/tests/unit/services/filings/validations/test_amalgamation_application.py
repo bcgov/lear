@@ -1600,7 +1600,7 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
     def mock_find_by_identifier(identifier):
         return LegalEntity(
             identifier=identifier,
-            _entity_type=LegalEntity.EntityTypes.BCOMP.value,
+            entity_type=LegalEntity.EntityTypes.BCOMP.value,
             state=LegalEntity.State.ACTIVE if test_status == "SUCCESS" else LegalEntity.State.HISTORICAL,
         )
 
@@ -1651,7 +1651,7 @@ def test_has_future_effective_filing(mocker, app, session, jwt, test_status, exp
     )
     mocker.patch(
         "legal_api.models.legal_entity.LegalEntity.find_by_identifier",
-        return_value=LegalEntity(identifier="BC1234567", _entity_type=LegalEntity.EntityTypes.BCOMP.value),
+        return_value=LegalEntity(identifier="BC1234567", entity_type=LegalEntity.EntityTypes.BCOMP.value),
     )
     mocker.patch(
         "legal_api.models.filing.Filing.get_filings_by_status", return_value=[Filing()] if test_status == "FAIL" else []
@@ -1691,7 +1691,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
     ]
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1750,7 +1750,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
         utc_now = datetime.datetime.now(datetime.timezone.utc)
         return LegalEntity(
             identifier=identifier,
-            _entity_type=LegalEntity.EntityTypes.BCOMP.value,
+            entity_type=LegalEntity.EntityTypes.BCOMP.value,
             state=LegalEntity.State.ACTIVE,
             founding_date=utc_now,
             restoration_expiry_date=utc_now if test_status == "FAIL" else None,
@@ -1806,7 +1806,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
         if test_status == "FAIL" and identifier == "BC7654321":
             return None
 
-        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1858,7 +1858,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
     filing["filing"]["amalgamationApplication"] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1920,7 +1920,7 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(
         filing["filing"]["amalgamationApplication"]["nameRequest"]["legalType"] = "ULC"
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BCOMP.value)
+        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BCOMP.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]
@@ -1982,7 +1982,7 @@ def test_amalgamating_foreign_business_with_ulc_company(
     def mock_find_by_identifier(identifier):
         return LegalEntity(
             identifier=identifier,
-            _entity_type=LegalEntity.EntityTypes.BC_ULC_COMPANY.value
+            entity_type=LegalEntity.EntityTypes.BC_ULC_COMPANY.value
             if test_status == "FAIL"
             else LegalEntity.EntityTypes.BCOMP.value,
         )
@@ -2045,7 +2045,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt, test_status, expected_
     def mock_find_by_identifier(identifier):
         return LegalEntity(
             identifier=identifier,
-            _entity_type=LegalEntity.EntityTypes.BCOMP.value
+            entity_type=LegalEntity.EntityTypes.BCOMP.value
             if test_status == "FAIL"
             else LegalEntity.EntityTypes.BC_CCC.value,
         )
@@ -2108,7 +2108,7 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
     ]
 
     def mock_find_by_identifier(identifier):
-        return LegalEntity(identifier=identifier, _entity_type=LegalEntity.EntityTypes.BC_CCC.value)
+        return LegalEntity(identifier=identifier, entity_type=LegalEntity.EntityTypes.BC_CCC.value)
 
     mocker.patch(
         "legal_api.services.filings.validations.amalgamation_application.validate_name_request", return_value=[]

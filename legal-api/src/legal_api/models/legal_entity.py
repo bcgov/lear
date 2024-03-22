@@ -149,7 +149,7 @@ class LegalEntity(
     last_coa_date = db.Column("last_coa_date", db.DateTime(timezone=True))
     last_cod_date = db.Column("last_cod_date", db.DateTime(timezone=True))
     _legal_name = db.Column("legal_name", db.String(1000), index=True)
-    _entity_type = db.Column("entity_type", db.String(15), index=True)
+    entity_type = db.Column("entity_type", db.String(15), index=True)
     founding_date = db.Column("founding_date", db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column("start_date", db.DateTime(timezone=True))
     restoration_expiry_date = db.Column("restoration_expiry_date", db.DateTime(timezone=True))
@@ -601,7 +601,7 @@ class LegalEntity(
             LegalEntity.EntityTypes.ORGANIZATION.value,
         ]
         legal_entity = (
-            cls.query.filter(~LegalEntity._entity_type.in_(non_business_types))
+            cls.query.filter(~LegalEntity.entity_type.in_(non_business_types))
             .filter_by(identifier=identifier)
             .one_or_none()
         )
@@ -634,7 +634,7 @@ class LegalEntity(
             LegalEntity.EntityTypes.PERSON.value,
             LegalEntity.EntityTypes.ORGANIZATION.value,
         ]
-        legal_entities = cls.query.filter(~LegalEntity._entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
+        legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
 
     @classmethod
