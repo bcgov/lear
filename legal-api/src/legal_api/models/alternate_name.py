@@ -281,6 +281,11 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         alias = {"id": str(self.id), "name": self.name, "type": self.name_type.name}
         return alias
 
+    @property
+    def founding_date(self):
+        """Return the founding_date."""
+        return self.start_date
+
     def json(self, slim=False):
         """Return the Business as a json object.
         None fields are not included.

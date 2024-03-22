@@ -61,7 +61,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return current_app.response_class(response=response.data, status=response.status, mimetype="application/pdf")
 
     def _get_report(self):
-        if self._filing.legal_entity_id:
+        if self._filing.legal_entity_id or self._filing.alternate_name_id:
             self._business = BusinessService.fetch_business_by_filing(self._filing)
             Report._populate_business_info_to_filing(self._filing, self._business)
         if self._report_key == "alteration":
@@ -295,6 +295,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_special_resolution_application(filing, "alteration")
 
     def _set_completing_party(self, filing):
+        business = BusinessService.fetch_business_by_filing(self._filing)
+        if business.is_alternate_name_entity and (business.entity_type == LegalEntity.EntityTypes.SOLE_PROP.value):
+            return
+
         completing_party_role = EntityRole.get_entity_roles_by_filing(
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
@@ -440,12 +444,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return address
 
     @staticmethod
-    def _populate_business_info_to_filing(filing: Filing, legal_entity: LegalEntity):
-        founding_datetime = LegislationDatetime.as_legislation_timezone(legal_entity.founding_date)
+    def _populate_business_info_to_filing(filing: Filing, business: any): 
+        founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
         if filing.transaction_id:
-            business_json = VersionedBusinessDetailsService.get_business_revision(filing, legal_entity)
+            business_json = VersionedBusinessDetailsService.get_business_revision(filing, business)
         else:
-            business_json = legal_entity.json()
+            business_json = business.json()
+
         business_json["formatted_founding_date_time"] = LegislationDatetime.format_as_report_string(founding_datetime)
         business_json["formatted_founding_date"] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
         filing.filing_json["filing"]["business"] = business_json
@@ -701,7 +706,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     ):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(
-            prev_completed_filing, self._business.id
+            prev_completed_filing, self._business
         )
 
         # Change of Name
@@ -734,18 +739,19 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["offices"] = {}
             filing["offices"]["businessOffice"] = business_office
             offices_json = VersionedBusinessDetailsService.get_office_revision(
-                prev_completed_filing, self._filing.legal_entity_id
+                prev_completed_filing, self._business
             )
-            filing["offices"]["businessOffice"]["mailingAddress"]["changed"] = self._compare_address(
-                business_office.get("mailingAddress"), offices_json["businessOffice"]["mailingAddress"]
-            )
-            filing["offices"]["businessOffice"]["deliveryAddress"]["changed"] = self._compare_address(
-                business_office.get("deliveryAddress"), offices_json["businessOffice"]["deliveryAddress"]
-            )
-            filing["offices"]["businessOffice"]["changed"] = (
-                filing["offices"]["businessOffice"]["mailingAddress"]["changed"]
-                or filing["offices"]["businessOffice"]["deliveryAddress"]["changed"]
-            )
+            if offices_json:
+                filing["offices"]["businessOffice"]["mailingAddress"]["changed"] = self._compare_address(
+                    business_office.get("mailingAddress"), offices_json["businessOffice"]["mailingAddress"]
+                )
+                filing["offices"]["businessOffice"]["deliveryAddress"]["changed"] = self._compare_address(
+                    business_office.get("deliveryAddress"), offices_json["businessOffice"]["deliveryAddress"]
+                )
+                filing["offices"]["businessOffice"]["changed"] = (
+                    filing["offices"]["businessOffice"]["mailingAddress"]["changed"]
+                    or filing["offices"]["businessOffice"]["deliveryAddress"]["changed"]
+                )
             with suppress(KeyError):
                 self._format_address(filing[filing_type]["offices"]["businessOffice"]["deliveryAddress"])
             with suppress(KeyError):
