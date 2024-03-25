@@ -19,7 +19,7 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from business_model import AlternateName, Filing, LegalEntity, RegistrationBootstrap
+from business_model import AlternateName, BusinessCommon, Filing, LegalEntity, RegistrationBootstrap
 
 # from entity_filer.exceptions import DefaultException
 from entity_filer.exceptions import DefaultException
@@ -28,7 +28,6 @@ from entity_filer.filing_processors.filing_components import filings, legal_enti
 from entity_filer.filing_processors.filing_components.alternate_name import get_partnership_name
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import (
-    create_entity_with_addresses,
     get_or_create_party,
     merge_all_parties,
 )
@@ -88,7 +87,7 @@ def update_affiliation(business: LegalEntity, filing: Filing):
 
 
 def process(
-    business: LegalEntity,  # pylint: disable=too-many-branches
+    business: any,  # pylint: disable=too-many-branches
     filing: Dict,
     filing_rec: Filing,
     filing_meta: FilingMeta,
@@ -101,10 +100,10 @@ def process(
     if not (registration_filing := filing.get("filing", {}).get("registration")):
         raise DefaultException(f"Registration legal_filing:registration missing from {filing_rec.id}")
 
-    legal_type = registration_filing.get("businessType") or registration_filing.get("nameRequest", {}).get("legalType")
-    if legal_type not in (
-        LegalEntity.EntityTypes.SOLE_PROP,
-        LegalEntity.EntityTypes.PARTNERSHIP,
+    entity_type = registration_filing.get("nameRequest", {}).get("legalType")
+    if entity_type not in (
+        BusinessCommon.EntityTypes.SOLE_PROP,
+        BusinessCommon.EntityTypes.PARTNERSHIP,
     ):
         raise DefaultException(f"{filing_rec.id} has no valid legatype for a Registration.")
 
@@ -116,14 +115,14 @@ def process(
     if not (firm_reg_num := legal_entity_info.get_next_corp_num("FM")):
         raise DefaultException(f"registration {filing_rec.id} unable to get a Firm registration number.")
 
-    match legal_type:
-        case LegalEntity.EntityTypes.SOLE_PROP:
+    match entity_type:
+        case BusinessCommon.EntityTypes.SOLE_PROP:
             # Get or create LE
-            business = merge_sp_registration(firm_reg_num, filing, filing_rec)
+            business, alternate_name = merge_sp_registration(firm_reg_num, filing, filing_rec)
 
-        case LegalEntity.EntityTypes.PARTNERSHIP:
+        case BusinessCommon.EntityTypes.PARTNERSHIP:
             # Create Partnership
-            business = merge_partnership_registration(firm_reg_num, filing, filing_rec, registration_filing)
+            business, alternate_name = merge_partnership_registration(firm_reg_num, filing, filing_rec, registration_filing)
 
         case _:
             # Default and failed
@@ -131,10 +130,11 @@ def process(
             raise DefaultException(f"registration {filing_rec.id} had no valid Firm type.")
 
     # Assuming we should not reset this from a filing
-    if not business.tax_id:
-        business.tax_id = registration_filing.get("business", {}).get("taxId", None)
+    # if not business.tax_id:
+    #     business.tax_id = registration_filing.get("business", {}).get("taxId", None)
 
-    business.state = LegalEntity.State.ACTIVE
+    business.state = BusinessCommon.State.ACTIVE
+    alternate_name.state = BusinessCommon.State.ACTIVE
 
     if nr_number := business_info_obj.get("nrNumber", None):
         # TODO check how this is getting used, may need operating name?
@@ -142,12 +142,14 @@ def process(
             **filing_meta.registration,
             **{
                 "nrNumber": nr_number,
-                "legalName": business_info_obj.get("legalName", None),
+                "operatingName": business_info_obj.get("legalName", None),
             },
         }
 
     if offices := registration_filing["offices"]:
-        update_offices(business, offices)
+        update_offices(alternate_name, offices)
+        if entity_type == BusinessCommon.EntityTypes.PARTNERSHIP:
+            update_offices(business, offices)
 
     if parties := registration_filing.get("parties"):
         merge_all_parties(business, filing_rec, {"parties": parties})
@@ -160,13 +162,13 @@ def process(
     # Update the filing json with identifier and founding date.
     registration_json = copy.deepcopy(filing_rec.filing_json)
     registration_json["filing"]["business"] = {}
-    registration_json["filing"]["business"]["identifier"] = business.identifier
-    registration_json["filing"]["registration"]["business"]["identifier"] = business.identifier
-    registration_json["filing"]["business"]["legalType"] = business.entity_type
+    registration_json["filing"]["business"]["identifier"] = alternate_name.identifier
+    registration_json["filing"]["registration"]["business"]["identifier"] = alternate_name.identifier
+    registration_json["filing"]["business"]["legalType"] = alternate_name.entity_type
     # registration_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data
 
-    return business, filing_rec, filing_meta
+    return business, alternate_name, filing_rec, filing_meta
 
 
 def post_process(business: LegalEntity, filing: Filing):
@@ -190,25 +192,28 @@ def merge_partnership_registration(
     business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
         registration_filing.get("startDate")
     )
+    business.founding_date = filing_rec.effective_date
+    business.tax_id = registration_filing.get("business", {}).get("taxId", None)
+    business._legal_name = get_partnership_name(registration_filing.get("parties"))
+
+    alternate_name = AlternateName(
+        bn15=registration_filing.get("business", {}).get("taxId", None),
+        change_filing_id=filing_rec.id,
+        end_date=registration_filing.get("endDate", None),
+        identifier=registration_num,
+        name=registration_filing.get("nameRequest", {}).get("legalName"),
+        name_type=AlternateName.NameType.DBA,
+        start_date=filing_rec.effective_date,
+        business_start_date=business.start_date,
+    )
 
     if naics_dict := registration_filing.get("business", {}).get("naics"):
         set_naics(business, naics_dict)
+        set_naics(alternate_name, naics_dict)
 
-    business.legal_name = get_partnership_name(registration_filing.get("parties"))
-
-    alternate_name = AlternateName(
-        bn15=registration_filing.get("business", {}).get("taxId"),
-        change_filing_id=filing_rec.id,
-        end_date=registration_filing.get("endDate"),
-        identifier=registration_num,
-        name=registration_filing.get("nameRequest", {}).get("legalName"),
-        name_type=AlternateName.NameType.OPERATING,
-        start_date=registration_filing.get("startDate"),
-        registration_date=filing_rec.effective_date,
-    )
     business.alternate_names.append(alternate_name)
 
-    return business
+    return business, alternate_name
 
 
 def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filing) -> LegalEntity:
@@ -236,27 +241,49 @@ def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filin
 
     operating_name = filing.get("filing", {}).get("registration", {}).get("nameRequest", {}).get("legalName")
     if start := filing.get("filing", {}).get("registration", {}).get("startDate"):
-        start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(start)
+        business_start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(start)
     elif filing.effective_date:
-        start_date = filing.effective_date.isoformat()
+        business_start_date = filing.effective_date
+    else:
+        business_start_date = LegislationDatetime.now()
+
+    if filing_rec.effective_date:
+        start_date = filing_rec.effective_date
     else:
         start_date = LegislationDatetime.now()
 
+    if isinstance(proprietor, LegalEntity) and proprietor.entity_type == BusinessCommon.EntityTypes.PERSON:
+        delivery_address_id = None
+        mailing_address_id = None
+    else:
+        delivery_address_id = delivery_address.id if delivery_address else None
+        mailing_address_id = mailing_address.id if mailing_address else None
+
+    tax_id = filing.get("filing", {}).get("business", {}).get("taxId", None)
+
     alternate_name = AlternateName(
         identifier=registration_num,
-        name_type=AlternateName.NameType.OPERATING,
+        name_type=AlternateName.NameType.DBA,
         change_filing_id=filing_rec.id,
         end_date=None,
         name=operating_name,
         start_date=start_date,
-        registration_date=filing_rec.effective_date,
+        business_start_date=business_start_date,
+        delivery_address_id=delivery_address_id,
+        mailing_address_id=mailing_address_id,
+        bn15=tax_id,
+        email=proprietor.email,
     )
+
+    if naics_dict := filing.get("filing", {}).get("registration", {}).get("business", {}).get("naics"):
+        set_naics(alternate_name, naics_dict)
+
     proprietor.alternate_names.append(alternate_name)
 
-    return proprietor
+    return proprietor, alternate_name
 
 
-def set_naics(legal_entity: LegalEntity, naics_dict: dict):
+def set_naics(business: any, naics_dict: dict):
     """Set the NAICS fields for a business."""
-    legal_entity.naics_code = naics_dict["naicsCode"]
-    legal_entity.naics_description = naics_dict["naicsDescription"]
+    business.naics_code = naics_dict["naicsCode"]
+    business.naics_description = naics_dict["naicsDescription"]

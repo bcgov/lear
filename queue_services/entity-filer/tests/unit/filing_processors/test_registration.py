@@ -19,7 +19,7 @@ from http import HTTPStatus
 from unittest.mock import call, patch
 
 import pytest
-from business_model import Filing, LegalEntity, RegistrationBootstrap
+from business_model import BusinessCommon, ColinEntity, Filing, LegalEntity, RegistrationBootstrap
 
 # from legal_api.services import NaicsService
 from registry_schemas.example_data import FILING_HEADER, REGISTRATION
@@ -27,7 +27,7 @@ from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import registration
 from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
-from tests.unit import create_filing, nested_session
+from tests.unit import create_business, create_filing, nested_session
 
 now = "2023-01-08"
 
@@ -52,11 +52,10 @@ del SP_REGISTRATION["filing"]["registration"]["parties"][1]
 @pytest.mark.parametrize(
     "legal_type,filing",
     [
-        # ('SP', copy.deepcopy(SP_REGISTRATION)),
         ("GP", copy.deepcopy(GP_REGISTRATION)),
     ],
 )
-def test_registration_process(app, session, legal_type, filing):
+def test_gp_registration_process(app, session, legal_type, filing):
     """Assert that the registration object is correctly populated to model objects."""
     # setup
     with nested_session(session):
@@ -77,7 +76,7 @@ def test_registration_process(app, session, legal_type, filing):
 
         # test
         with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-            business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+            business, alternate_name, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         # Legal Entity
@@ -100,26 +99,39 @@ def test_registration_process(app, session, legal_type, filing):
 
         # AlternateNames
         assert len(business.alternate_names.all()) > 0
-        alternate_name = business.alternate_names[0]
         assert alternate_name.identifier.startswith("FM")
         assert alternate_name.name == filing["filing"]["registration"]["nameRequest"]["legalName"]
 
 
 @pytest.mark.parametrize(
-    "legal_type,filing",
+    "scenario,filing",
     [
-        ("SP", copy.deepcopy(SP_REGISTRATION)),
+        ("Individual", copy.deepcopy(SP_REGISTRATION)),
+        ("LEAR DBA", copy.deepcopy(SP_REGISTRATION)),
+        ("COLIN DBA", copy.deepcopy(SP_REGISTRATION)),
     ],
 )
-def test_sp_registration_process(app, session, legal_type, filing):
+def test_sp_registration_process(app, session, scenario, filing):
     """Assert that the registration object is correctly populated to model objects."""
     # setup
     with nested_session(session):
         nr_num = "NR 1234567"
         filing["filing"]["registration"]["nameRequest"]["nrNumber"] = nr_num
         filing["filing"]["registration"]["nameRequest"]["legalName"] = "Test"
-        if legal_type == "SP":
-            del SP_REGISTRATION["filing"]["registration"]["parties"][0]["officer"]["id"]
+
+        if scenario == "LEAR DBA":
+            create_business("BC7654321", BusinessCommon.EntityTypes.BCOMP)
+            filing["filing"]["registration"]["parties"][0]["officer"] = {
+                "identifier": "BC7654321",
+                "organizationName": "ABC COMPANY",
+                "partyType": "organization",
+            }
+
+        elif scenario == "COLIN DBA":
+            filing["filing"]["registration"]["parties"][0]["officer"] = {
+                "organizationName": "ABC COMPANY",
+                "partyType": "organization",
+            }
 
         create_filing("123", filing)
 
@@ -134,17 +146,22 @@ def test_sp_registration_process(app, session, legal_type, filing):
 
         # test
         with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-            business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+            business, alternate_name, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         # assert business.founding_date.replace(tzinfo=None) == effective_date
-        assert business.entity_type == LegalEntity.EntityTypes.PERSON
-        assert business.identifier.startswith("P")
+        if scenario == "Individual":
+            assert business.entity_type == BusinessCommon.EntityTypes.PERSON
+            assert business.identifier.startswith("P")
+        elif scenario == "LEAR DBA":
+            assert business.entity_type == BusinessCommon.EntityTypes.BCOMP
+            assert business.identifier.startswith("BC")
+        else:
+            assert isinstance(business, ColinEntity)
 
-        alternate_name = business.alternate_names.all()[0]
-        # alternate_name = business.alternate_names
-        assert alternate_name.start_date == datetime.fromisoformat(f"{now}T08:00:00+00:00")
+        assert alternate_name.start_date.replace(tzinfo=None) == effective_date
         assert alternate_name.identifier.startswith("FM")
+        assert alternate_name.state == BusinessCommon.State.ACTIVE
 
         assert alternate_name.name == filing["filing"]["registration"]["nameRequest"]["legalName"]
         # TODO I don't think it makes sens to be changing or setting
@@ -152,12 +169,8 @@ def test_sp_registration_process(app, session, legal_type, filing):
         # assert business.naics_code == REGISTRATION['business']['naics']['naicsCode']
         # assert business.naics_description == REGISTRATION['business']['naics']['naicsDescription']
         # assert business.naics_key == naics_response['naicsKey']
-        assert business.tax_id == REGISTRATION["business"]["taxId"]
-        assert business.state == LegalEntity.State.ACTIVE
+        # assert business.tax_id == REGISTRATION["business"]["taxId"]
+        # assert business.state == BusinessCommon.State.ACTIVE
 
-        if legal_type == "SP":
-            assert len(filing_rec.filing_entity_roles.all()) == 1
-            assert len(business.entity_roles.all()) == 0
-        if legal_type == "GP":
-            assert len(filing_rec.filing_entity_roles.all()) == 3
-            assert len(business.entity_roles.all()) == 0
+        assert len(filing_rec.filing_entity_roles.all()) == 1
+        assert not hasattr(business, "entity_roles") or len(business.entity_roles.all()) == 0

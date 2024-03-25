@@ -43,7 +43,7 @@ from http import HTTPStatus
 from typing import Dict, Optional
 
 # from legal_api.core import Filing as FilingCore
-from business_model import Filing, LegalEntity
+from business_model import BusinessCommon, Filing, LegalEntity
 from flask import Blueprint, request
 from simple_cloudevent import SimpleCloudEvent
 from sqlalchemy.exc import OperationalError
@@ -81,6 +81,7 @@ from entity_filer.filing_processors import (
 from entity_filer.filing_processors.filing_components import name_request
 from entity_filer.services import queue
 from entity_filer.services.logging import structured_log
+from entity_filer.services.business_service import BusinessService
 
 # from legal_api.services.bootstrap import AccountService
 from entity_filer.utils.datetime import datetime
@@ -243,8 +244,10 @@ def process_filing(
         x for x in [x for x in worker_filing_json.get("filing", {}).keys()] if Filing.FILINGS.get(x) is not None
     ]
 
-    business = LegalEntity.find_by_internal_id(filing_submission.legal_entity_id)
+    business = BusinessService.fetch_business_by_filing(filing_submission)
     filing_meta = FilingMeta(application_date=filing_submission.effective_date, legal_filings=legal_filings)
+
+    alternate_name = None
 
     # for filing_type, filing in filing_submission.filing_json['filing'].items():
     for filing_type, filing in worker_filing_json["filing"].items():
@@ -319,8 +322,8 @@ def process_filing(
             case "registrarsOrder":
                 registrars_order.process(filing_submission, {filing_type: filing}, filing_meta)
 
-            case "registration":
-                business, filing_submission, filing_meta = registration.process(
+            case "registration": 
+                business, alternate_name, filing_submission, filing_meta = registration.process(
                     business, filing_submission.json, filing_submission, filing_meta
                 )
 
@@ -336,7 +339,11 @@ def process_filing(
             case _:
                 raise Exception()
 
-    business_type = business.entity_type if business else filing_submission["business"]["legal_type"]
+    if alternate_name:
+        business_type = alternate_name.entity_type
+    else:
+        business_type = business.entity_type if business else filing_submission["business"]["legal_type"]
+
     filing_submission.set_processed(business_type)
 
     filing_submission._meta_data = json.loads(  # pylint: disable=W0212
@@ -432,7 +439,11 @@ def process_filing(
         #     )
 
     if any("registration" in x for x in legal_filings):
-        filing_submission.legal_entity_id = business.id
+        if alternate_name.entity_type == BusinessCommon.EntityTypes.SOLE_PROP:
+            filing_submission.alternate_name_id = alternate_name.id
+        else:
+            filing_submission.legal_entity_id = business.id
+
         db.session.add(filing_submission)
         db.session.commit()
         # TODO
