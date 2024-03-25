@@ -22,7 +22,7 @@ from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import dissolution
-from entity_filer.worker import process_filing
+from entity_filer.resources.worker import process_filing
 from tests.unit import create_business, create_filing
 
 # from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
