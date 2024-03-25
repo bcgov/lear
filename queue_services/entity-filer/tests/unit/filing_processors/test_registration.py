@@ -76,7 +76,9 @@ def test_gp_registration_process(app, session, legal_type, filing):
 
         # test
         with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-            business, alternate_name, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+            business, alternate_name, filing_rec, filing_meta = registration.process(
+                None, filing, filing_rec, filing_meta
+            )
 
         # Assertions
         # Legal Entity
@@ -146,7 +148,9 @@ def test_sp_registration_process(app, session, scenario, filing):
 
         # test
         with patch.object(NaicsService, "find_by_code", return_value=naics_response):
-            business, alternate_name, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+            business, alternate_name, filing_rec, filing_meta = registration.process(
+                None, filing, filing_rec, filing_meta
+            )
 
         # Assertions
         # assert business.founding_date.replace(tzinfo=None) == effective_date

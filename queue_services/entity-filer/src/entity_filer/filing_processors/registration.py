@@ -27,10 +27,7 @@ from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings, legal_entity_info
 from entity_filer.filing_processors.filing_components.alternate_name import get_partnership_name
 from entity_filer.filing_processors.filing_components.offices import update_offices
-from entity_filer.filing_processors.filing_components.parties import (
-    get_or_create_party,
-    merge_all_parties,
-)
+from entity_filer.filing_processors.filing_components.parties import get_or_create_party, merge_all_parties
 
 # from legal_api.services.bootstrap import AccountService
 from entity_filer.utils.legislation_datetime import LegislationDatetime
@@ -122,7 +119,9 @@ def process(
 
         case BusinessCommon.EntityTypes.PARTNERSHIP:
             # Create Partnership
-            business, alternate_name = merge_partnership_registration(firm_reg_num, filing, filing_rec, registration_filing)
+            business, alternate_name = merge_partnership_registration(
+                firm_reg_num, filing, filing_rec, registration_filing
+            )
 
         case _:
             # Default and failed

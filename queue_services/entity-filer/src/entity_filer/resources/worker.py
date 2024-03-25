@@ -80,8 +80,8 @@ from entity_filer.filing_processors import (
 )
 from entity_filer.filing_processors.filing_components import name_request
 from entity_filer.services import queue
-from entity_filer.services.logging import structured_log
 from entity_filer.services.business_service import BusinessService
+from entity_filer.services.logging import structured_log
 
 # from legal_api.services.bootstrap import AccountService
 from entity_filer.utils.datetime import datetime
@@ -322,7 +322,7 @@ def process_filing(
             case "registrarsOrder":
                 registrars_order.process(filing_submission, {filing_type: filing}, filing_meta)
 
-            case "registration": 
+            case "registration":
                 business, alternate_name, filing_submission, filing_meta = registration.process(
                     business, filing_submission.json, filing_submission, filing_meta
                 )

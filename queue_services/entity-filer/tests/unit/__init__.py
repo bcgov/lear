@@ -17,9 +17,9 @@ import uuid
 from contextlib import contextmanager
 
 import sqlalchemy
-from freezegun import freeze_time
 from business_model.models import Filing, ShareClass, ShareSeries, db
 from business_model.models.colin_event_id import ColinEventId
+from freezegun import freeze_time
 
 from entity_filer.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME

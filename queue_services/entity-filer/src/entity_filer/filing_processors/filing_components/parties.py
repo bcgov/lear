@@ -137,9 +137,7 @@ def merge_all_parties(legal_entity: LegalEntity, filing: Filing, parties: dict) 
         ) or (
             (not party_identifier)
             and (party_id := party_dict.get("officer", {}).get("id"))
-            and (
-                (party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_id(party_id))
-            )
+            and ((party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_id(party_id)))
         ):
             existing_party = True
 
