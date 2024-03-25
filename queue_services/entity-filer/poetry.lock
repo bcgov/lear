@@ -190,8 +190,11 @@ registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev =
 sql-versioning = {git = "https://github.com/bcgov/lear.git", branch = "feature-legal-name", subdirectory = "python/common/sql-versioning"}
 
 [package.source]
-type = "directory"
-url = "../../python/common/business-registry-model"
+type = "git"
+url = "https://github.com/bcgov/lear.git"
+reference = "feature-legal-name"
+resolved_reference = "b8f00fcff62e687755b8e0a59d3605b78300509e"
+subdirectory = "python/common/business-registry-model"
 
 [[package]]
 name = "cachetools"
@@ -2113,4 +2116,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "12085771b95e9b803a49945e0ba39ad5c5b6d3407105f4bbc2732f093e5da5b4"
+content-hash = "cc4a34d9753123a6a64ed34a4c2287c2aa88992bc3bb3d728a7d994699a5cc59"
