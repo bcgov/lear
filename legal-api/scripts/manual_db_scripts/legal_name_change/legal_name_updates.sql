@@ -200,12 +200,13 @@ where leh.entity_type in ('SP', 'GP')
 
 -- Insert last name change entry for SP/GPs in legal_entities_history table into alternate_names
 INSERT
-INTO alternate_names(legal_entity_id, identifier, name, bn15, start_date, end_date, name_type,
+INTO alternate_names(legal_entity_id, identifier, name, entity_type, bn15, start_date, end_date, name_type,
                      naics_key, naics_code, naics_description, business_start_date, dissolution_date,
                      admin_freeze, state, state_filing_id, last_modified, change_filing_id, version)
 select lnc.id                as legal_entity_id,
        identifier,
        legal_name            as name,
+       entity_type           as entity_type,
        tax_id                as bn15,
        start_date,
        end_date,
@@ -243,13 +244,14 @@ WITH id_values AS (SELECT nextval('alternate_names_id_seq') as an_seq_id, lnc.*
                      AND lnc.legal_name_changed = True
                      and lnc.filing_id != an.change_filing_id)
 INSERT
-INTO alternate_names_history(id, legal_entity_id, identifier, name, bn15, start_date, end_date, name_type,
+INTO alternate_names_history(id, legal_entity_id, identifier, name, entity_type, bn15, start_date, end_date, name_type,
                              naics_key, naics_code, naics_description, business_start_date, dissolution_date,
                              admin_freeze, state, state_filing_id, last_modified, version, change_filing_id, changed)
 SELECT id_values.an_seq_id   as id,
        id_values.id          as legal_entity_id,
        id_values.identifier,
        id_values.legal_name  as name,
+       id_values.entity_type as entity_type,
        id_values.tax_id      as bn15,
        id_values.start_date,
        NULL                  as end_date,
@@ -274,6 +276,7 @@ SELECT id_values.an_seq_id      as id,
        id_values.id             as legal_entity_id,
        id_values.identifier,
        id_values.legal_name     as name,
+       id_values.entity_type    as entity_type,
        id_values.tax_id         as bn15,
        id_values.start_date,
        id_values.end_date       as end_date,
