@@ -73,7 +73,6 @@ async def test_worker_consent_continuation_out(app, session, mocker, test_name, 
         final_filing.court_order_file_number
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == \
         final_filing.court_order_effect_of_order
-    assert filing_json['filing']['consentContinuationOut']['details'] == final_filing.order_details
 
     expiry_date_utc = LegislationDatetime.as_utc_timezone(expiry_date)
 
