@@ -151,6 +151,7 @@ def process(
     business.state = BusinessCommon.State.ACTIVE
 
     # Initial insert of the alternate name record if SP or GP
+    alternate_name = None
     if entity_type in (
         BusinessCommon.EntityTypes.SOLE_PROP,
         BusinessCommon.EntityTypes.PARTNERSHIP,
