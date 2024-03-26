@@ -60,6 +60,7 @@ from legal_api.services.authz import (
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import (
+    factory_alternate_name,
     factory_completed_filing,
     factory_filing,
     factory_incomplete_statuses,
@@ -626,6 +627,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmLocationChange",
                 "alteration",
                 "annualReport",
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "changeOfAddress",
                 "changeOfDirectors",
                 "consentContinuationOut",
@@ -685,6 +687,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmLocationChange",
                 "alteration",
                 "annualReport",
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "changeOfAddress",
                 "changeOfDirectors",
                 "consentContinuationOut",
@@ -3309,7 +3312,7 @@ def test_allowed_filings_blocker_filing_amalgamations(
                     business = create_business(legal_type, state)
                     filing_dict = FILING_DATA.get(filing_type, None)
                     create_incomplete_filing(
-                        business=business,
+                        legal_entity=business,
                         filing_name=filing_type,
                         filing_status=filing_status,
                         filing_dict=filing_dict,
@@ -4174,7 +4177,7 @@ def test_allowed_filings_completed_filing_check(
                     else:
                         filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
                         create_incomplete_filing(
-                            business=business,
+                            legal_entity=business,
                             filing_name="unknown",
                             filing_status=Filing.Status.DRAFT.value,
                             filing_dict=filing_dict,
