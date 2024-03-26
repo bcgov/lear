@@ -141,7 +141,7 @@ def process(
             **filing_meta.registration,
             **{
                 "nrNumber": nr_number,
-                "operatingName": business_info_obj.get("legalName", None),
+                "legalName": business_info_obj.get("legalName", None),
             },
         }
 
