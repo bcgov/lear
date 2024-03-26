@@ -1885,7 +1885,6 @@ def test_get_allowed_actions(
             result = get_allowable_actions(jwt, legal_entity)
             assert result
             assert result["filing"]["filingSubmissionLink"]
-            print(result["filing"]["filingTypes"])
             assert result["filing"]["filingTypes"] == expected
 
 
