@@ -28,6 +28,15 @@ from tests.unit import create_business, create_filing
 # from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date_str_format
 
 
+def has_expected_date_str_format(date_str: str, format: str) -> bool:
+    "Determine if date string confirms to expected format"
+    try:
+        datetime.strptime(date_str, format)
+    except ValueError:
+        return False
+    return True
+
+
 @pytest.mark.parametrize(
     "legal_type,identifier,dissolution_type",
     [
@@ -246,7 +255,7 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
 )
 async def test_amalgamation_administrative_dissolution(app, session, mocker, dissolution_type):
     """Assert that the dissolution is processed."""
-    from tests.unit.test_worker.test_amalgamation_application import test_regular_amalgamation_application_process
+    from tests.unit.worker.test_amalgamation_application import test_regular_amalgamation_application_process
 
     identifier = await test_regular_amalgamation_application_process(app, session)
     # setup
