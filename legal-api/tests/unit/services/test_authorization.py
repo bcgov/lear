@@ -625,6 +625,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -684,6 +685,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
+                {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
                 "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
@@ -1702,6 +1704,9 @@ def test_is_allowed(
                     FilingKey.AGM_EXTENSION,
                     FilingKey.AGM_LOCATION_CHANGE,
                     FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -1762,6 +1767,9 @@ def test_is_allowed(
                     FilingKey.AGM_EXTENSION,
                     FilingKey.AGM_LOCATION_CHANGE,
                     FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -2592,9 +2600,6 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(
                 [
                     FilingKey.ADMN_FRZE,
                     FilingKey.ALTERATION,
-                    FilingKey.AMALGAMATION_REGULAR,
-                    FilingKey.AMALGAMATION_VERTICAL,
-                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -2648,9 +2653,6 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(
             expected_lookup(
                 [
                     FilingKey.ALTERATION,
-                    FilingKey.AMALGAMATION_REGULAR,
-                    FilingKey.AMALGAMATION_VERTICAL,
-                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -3309,7 +3311,7 @@ def test_allowed_filings_blocker_filing_amalgamations(
                     business = create_business(legal_type, state)
                     filing_dict = FILING_DATA.get(filing_type, None)
                     create_incomplete_filing(
-                        business=business,
+                        legal_entity=business,
                         filing_name=filing_type,
                         filing_status=filing_status,
                         filing_dict=filing_dict,
@@ -4174,7 +4176,7 @@ def test_allowed_filings_completed_filing_check(
                     else:
                         filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
                         create_incomplete_filing(
-                            business=business,
+                            legal_entity=business,
                             filing_name="unknown",
                             filing_status=Filing.Status.DRAFT.value,
                             filing_dict=filing_dict,
