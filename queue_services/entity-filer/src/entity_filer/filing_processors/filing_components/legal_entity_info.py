@@ -63,11 +63,11 @@ def set_association_type(legal_entity: LegalEntity, association_type: String) ->
 def set_legal_name(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict):
     """Set the legal_name in the legal_entity object."""
     if legal_name := legal_entity_info.get("legalName", None):
-        legal_entity.legal_name = legal_name
+        legal_entity._legal_name = legal_name
     else:
         entity_type = legal_entity_info.get("legalType", None)
         numbered_legal_name_suffix = LegalEntity.BUSINESSES[entity_type]["numberedBusinessNameSuffix"]
-        legal_entity.legal_name = f"{corp_num[2:]} {numbered_legal_name_suffix}"
+        legal_entity._legal_name = f"{corp_num[2:]} {numbered_legal_name_suffix}"
 
 
 def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict, filing: Filing):

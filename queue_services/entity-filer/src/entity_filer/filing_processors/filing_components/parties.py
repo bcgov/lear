@@ -137,9 +137,7 @@ def merge_all_parties(legal_entity: LegalEntity, filing: Filing, parties: dict) 
         ) or (
             (not party_identifier)
             and (party_id := party_dict.get("officer", {}).get("id"))
-            and (
-                (party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_identifier(party_id))
-            )
+            and ((party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_id(party_id)))
         ):
             existing_party = True
 
@@ -266,7 +264,7 @@ def merge_all_parties(legal_entity: LegalEntity, filing: Filing, parties: dict) 
 
 
 def merge_entity_role_to_filing(
-    party_le: LegalEntity,
+    party_le: any,
     filing: Filing,
     role: EntityRole.RoleTypes,
     delivery_address: Address,
@@ -403,7 +401,10 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
         )
         # mailing_address.save()
         # new_party.mailing_address_id = mailing_address.id
-        new_party.entity_mailing_address = mailing_address
+        if isinstance(new_party, LegalEntity):
+            new_party.entity_mailing_address = mailing_address
+        else:
+            new_party.mailing_address = mailing_address
 
     if party_dict.get("deliveryAddress"):
         delivery_address = Address(
@@ -416,7 +417,10 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
         )
         # delivery_address.save()
         # new_party.delivery_address_id = delivery_address.id
-        new_party.entity_delivery_address = delivery_address
+        if isinstance(new_party, LegalEntity):
+            new_party.entity_delivery_address = delivery_address
+        else:
+            new_party.delivery_address = delivery_address
 
         new_party.save()
     return new_party
@@ -477,7 +481,7 @@ def get_or_create_party(party_dict: dict, filing: Filing):
     ) or (
         (not party_identifier)
         and (party_id := party_dict.get("officer", {}).get("id"))
-        and ((party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_identifier(party_id)))
+        and ((party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_id(party_id)))
     ):
         existing_party = True
 

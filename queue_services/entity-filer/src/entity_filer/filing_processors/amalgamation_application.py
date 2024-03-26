@@ -18,7 +18,6 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-from legal_api import db
 from business_model.models import (
     AmalgamatingBusiness,
     Amalgamation,
@@ -27,15 +26,14 @@ from business_model.models import (
     OfficeType,
     PartyRole,
     RegistrationBootstrap,
+    db,
 )
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import (
+from entity_filer.filing_processors.filing_components import (  # business_info,; business_profile,
     JSON_ROLE_CONVERTER,
     aliases,
-    business_info,
-    business_profile,
     filings,
     legal_entity_info,
     shares,

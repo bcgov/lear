@@ -34,7 +34,6 @@ from ..utils.datetime import datetime, timezone
 from ..utils.legislation_datetime import LegislationDatetime
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alternate_name import AlternateName  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .amalgamation import Amalgamation  # noqa: F401 pylint: disable=unused-import; needed by SQLAlchemy relationship
 from .business_common import BusinessCommon
@@ -150,7 +149,7 @@ class LegalEntity(
     last_coa_date = db.Column("last_coa_date", db.DateTime(timezone=True))
     last_cod_date = db.Column("last_cod_date", db.DateTime(timezone=True))
     _legal_name = db.Column("legal_name", db.String(1000), index=True)
-    _entity_type = db.Column("entity_type", db.String(15), index=True)
+    entity_type = db.Column("entity_type", db.String(15), index=True)
     founding_date = db.Column("founding_date", db.DateTime(timezone=True), default=datetime.utcnow)
     start_date = db.Column("start_date", db.DateTime(timezone=True))
     restoration_expiry_date = db.Column("restoration_expiry_date", db.DateTime(timezone=True))
@@ -206,7 +205,6 @@ class LegalEntity(
     )
     offices = db.relationship("Office", lazy="dynamic", cascade="all, delete, delete-orphan")
     share_classes = db.relationship("ShareClass", lazy="dynamic", cascade="all, delete, delete-orphan")
-    aliases = db.relationship("Alias", lazy="dynamic")
     resolutions = db.relationship("Resolution", lazy="dynamic", foreign_keys="Resolution.legal_entity_id")
     documents = db.relationship("Document", lazy="dynamic")
     consent_continuation_outs = db.relationship("ConsentContinuationOut", lazy="dynamic")
@@ -280,11 +278,11 @@ class LegalEntity(
             self.EntityTypes.BC_CCC.value,
         ]:
             # For BCOMP min date is next anniversary date.
-            ar_min_date = datetime(next_ar_year, self.founding_date.month, self.founding_date.day).date()
+            no_of_years_to_add = next_ar_year - self.founding_date.year
+            ar_min_date = self.founding_date.date() + datedelta.datedelta(years=no_of_years_to_add)
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
 
-        if ar_max_date > datetime.utcnow().date():
-            ar_max_date = datetime.utcnow().date()
+        ar_max_date = min(ar_max_date, datetime.utcnow().date())  # ar_max_date cannot be in future
 
         return ar_min_date, ar_max_date
 
@@ -484,15 +482,10 @@ class LegalEntity(
         if self.fiscal_year_end_date:
             d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
         if self.state_filing_id:
-            # TODO: revert once amalgamation tables and migration scripts have been run
-            # if self.state == LegalEntity.State.HISTORICAL and (
-            #     amalgamating_business := self.amalgamating_businesses.one_or_none()
-            # ):
-            #     amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
-            #     d["amalgamatedInto"] = amalgamation.json()
-            # else:
-            #     d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
-            d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
+            if amalgamated_into := self.get_amalgamated_into():
+                d["amalgamatedInto"] = amalgamated_into
+            else:
+                d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         if self.start_date:
             d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)
@@ -603,7 +596,7 @@ class LegalEntity(
             LegalEntity.EntityTypes.ORGANIZATION.value,
         ]
         legal_entity = (
-            cls.query.filter(~LegalEntity._entity_type.in_(non_business_types))
+            cls.query.filter(~LegalEntity.entity_type.in_(non_business_types))
             .filter_by(identifier=identifier)
             .one_or_none()
         )
@@ -636,8 +629,42 @@ class LegalEntity(
             LegalEntity.EntityTypes.PERSON.value,
             LegalEntity.EntityTypes.ORGANIZATION.value,
         ]
-        legal_entities = cls.query.filter(~LegalEntity._entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
+        legal_entities = cls.query.filter(~LegalEntity.entity_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
         return legal_entities
+
+    def get_amalgamated_into(self) -> dict:
+        """Get amalgamated into if this business is part of an amalgamation."""
+        if (
+            self.state == LegalEntity.State.HISTORICAL
+            and (state_filing := Filing.find_by_id(self.state_filing_id))
+            and state_filing.is_amalgamation_application
+        ):
+            return Amalgamation.get_amalgamation_revision_json(
+                state_filing.transaction_id, state_filing.legal_entity_id
+            )
+
+        return None
+
+    @classmethod
+    def is_pending_amalgamating_business(cls, business_identifier):
+        """Check if a business has a pending amalgamation with the provided business identifier."""
+        where_clause = {"identifier": business_identifier}
+
+        # Query the database to find amalgamation filings
+        # pylint: disable=protected-access
+        # pylint: disable=unsubscriptable-object
+        filing = (
+            db.session.query(Filing)
+            .filter(
+                Filing._status == Filing.Status.PAID.value,
+                Filing._filing_type == "amalgamationApplication",
+                Filing.filing_json["filing"]["amalgamationApplication"]["amalgamatingBusinesses"].contains(
+                    [where_clause]
+                ),
+            )
+            .one_or_none()
+        )
+        return filing
 
     @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:

@@ -17,9 +17,9 @@ import uuid
 from contextlib import contextmanager
 
 import sqlalchemy
-from freezegun import freeze_time
 from business_model.models import Filing, ShareClass, ShareSeries, db
 from business_model.models.colin_event_id import ColinEventId
+from freezegun import freeze_time
 
 from entity_filer.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
@@ -402,7 +402,7 @@ def create_business(identifier, legal_type=None, legal_name=None):
 
     business = LegalEntity()
     business.identifier = identifier
-    business._entity_type = legal_type
+    business.entity_type = legal_type
     business._legal_name = legal_name
     business = create_business_address(business, Address.DELIVERY)
     # business = create_business_address(business, Address.MAILING)
@@ -460,7 +460,7 @@ def create_entity(identifier, legal_type, legal_name):
     from business_model import Address, LegalEntity
 
     legal_entity = LegalEntity()
-    legal_entity._entity_type = legal_type
+    legal_entity.entity_type = legal_type
     if legal_entity.entity_type == LegalEntity.EntityTypes.PERSON.value:
         legal_entity.first_name = "my"
         legal_entity.last_name = "self"
@@ -518,7 +518,7 @@ def create_entity_person(party_json):
         first_name=party_json["officer"].get("firstName", "").upper(),
         last_name=party_json["officer"].get("lastName", "").upper(),
         middle_initial=party_json["officer"].get("middleInitial", "").upper(),
-        _entity_type=LegalEntity.EntityTypes.PERSON,
+        entity_type=LegalEntity.EntityTypes.PERSON,
     )
     if party_json.get("mailingAddress"):
         mailing_address = Address(
