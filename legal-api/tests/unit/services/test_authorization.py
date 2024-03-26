@@ -626,8 +626,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
-                "annualReport",
                 {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
+                "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
                 "consentContinuationOut",
@@ -686,8 +686,8 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
                 "agmExtension",
                 "agmLocationChange",
                 "alteration",
-                "annualReport",
                 {"amalgamationApplication": ["regular", "vertical", "horizontal"]},
+                "annualReport",
                 "changeOfAddress",
                 "changeOfDirectors",
                 "consentContinuationOut",
@@ -752,7 +752,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, user
         monkeypatch.setattr("flask.request.headers.get", mock_auth)
         for entity_type in entity_types:
             filing_types = get_allowed(state, entity_type, jwt)
-            assert sorted(filing_types, key=str) == sorted(expected, key=str)
+            assert filing_types == expected
 
 
 @pytest.mark.parametrize(
