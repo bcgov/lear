@@ -128,10 +128,6 @@ def process(
             # Based on the above checks, this should never happen
             raise DefaultException(f"registration {filing_rec.id} had no valid Firm type.")
 
-    # Assuming we should not reset this from a filing
-    # if not business.tax_id:
-    #     business.tax_id = registration_filing.get("business", {}).get("taxId", None)
-
     business.state = BusinessCommon.State.ACTIVE
     alternate_name.state = BusinessCommon.State.ACTIVE
 
@@ -259,6 +255,9 @@ def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filin
         mailing_address_id = mailing_address.id if mailing_address else None
 
     tax_id = filing.get("filing", {}).get("business", {}).get("taxId", None)
+
+    if proprietor.entity_type == BusinessCommon.EntityTypes.PERSON and not proprietor.tax_id:
+        proprietor.tax_id = tax_id
 
     alternate_name = AlternateName(
         identifier=registration_num,
