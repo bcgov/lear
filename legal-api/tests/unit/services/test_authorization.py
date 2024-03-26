@@ -42,7 +42,7 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from legal_api.models import Address, EntityRole, Filing, User
+from legal_api.models import Address, AmalgamatingBusiness, EntityRole, Filing, User
 from legal_api.models.legal_entity import LegalEntity
 from legal_api.services.authz import (
     BASIC_USER,
@@ -336,19 +336,19 @@ EXPECTED_DATA = {
     FilingKey.AMALGAMATION_REGULAR: {
         "name": "amalgamationApplication",
         "type": "regular",
-        "displayName": "Regular Amalgamation",
+        "displayName": "Amalgamation Application (Regular)",
         "feeCode": "AMALR",
     },
     FilingKey.AMALGAMATION_VERTICAL: {
         "name": "amalgamationApplication",
         "type": "vertical",
-        "displayName": "Vertical Amalgamation",
+        "displayName": "Amalgamation Application Short-form (Vertical)",
         "feeCode": "AMALV",
     },
     FilingKey.AMALGAMATION_HORIZONTAL: {
         "name": "amalgamationApplication",
         "type": "horizontal",
-        "displayName": "Horizontal Amalgamation",
+        "displayName": "Amalgamation Application Short-form (Horizontal)",
         "feeCode": "AMALH",
     },
 }
@@ -1352,7 +1352,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, user
             False,
         ),
         (
-            "staff_historical_allowed",
+            "staff_historical_alloweds",
             LegalEntity.State.HISTORICAL,
             "restoration",
             "fullRestoration",
@@ -1702,9 +1702,6 @@ def test_is_allowed(
                     FilingKey.AGM_EXTENSION,
                     FilingKey.AGM_LOCATION_CHANGE,
                     FilingKey.ALTERATION,
-                    FilingKey.AMALGAMATION_REGULAR,
-                    FilingKey.AMALGAMATION_VERTICAL,
-                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -1765,9 +1762,6 @@ def test_is_allowed(
                     FilingKey.AGM_EXTENSION,
                     FilingKey.AGM_LOCATION_CHANGE,
                     FilingKey.ALTERATION,
-                    FilingKey.AMALGAMATION_REGULAR,
-                    FilingKey.AMALGAMATION_VERTICAL,
-                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -1795,7 +1789,14 @@ def test_is_allowed(
             ["CP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps",
@@ -1807,6 +1808,7 @@ def test_is_allowed(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -1822,7 +1824,14 @@ def test_is_allowed(
             ["SP", "GP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         ("general_user_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
@@ -2189,7 +2198,14 @@ def test_get_allowed_actions(
             ["CP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps",
@@ -2201,6 +2217,7 @@ def test_get_allowed_actions(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -2216,7 +2233,14 @@ def test_get_allowed_actions(
             ["SP", "GP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         ("general_user_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
@@ -2341,7 +2365,14 @@ def test_get_allowed_filings(
             ["CP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps",
@@ -2353,6 +2384,7 @@ def test_get_allowed_filings(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -2368,7 +2400,14 @@ def test_get_allowed_filings(
             ["SP", "GP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         ("general_user_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
@@ -2415,6 +2454,105 @@ def test_get_allowed_filings_blocker_admin_freeze(
                 )
             filing_types = get_allowed_filings(legal_entity, state, legal_type, jwt)
             assert filing_types == expected
+
+
+@pytest.mark.parametrize(
+    "test_name,business_exists,state,legal_types,username,roles,expected",
+    [
+        # historical business - staff user
+        (
+            "staff_historical_cp",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["CP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
+        (
+            "staff_historical_corps",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["BC", "BEN", "CC", "ULC"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
+        ("staff_historical_llc", True, LegalEntity.State.HISTORICAL, ["LLC"], "staff", [STAFF_ROLE], []),
+        (
+            "staff_historical_firms",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["SP", "GP"],
+            "staff",
+            [STAFF_ROLE],
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
+        ),
+        # historical business - general user
+        ("general_user_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
+        (
+            "general_user_historical_corps",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["BC", "BEN", "CC", "ULC"],
+            "general",
+            [BASIC_USER],
+            [],
+        ),
+        ("general_user_historical_llc", True, LegalEntity.State.HISTORICAL, ["LLC"], "general", [BASIC_USER], []),
+        (
+            "general_user_historical_firms",
+            True,
+            LegalEntity.State.HISTORICAL,
+            ["SP", "GP"],
+            "general",
+            [BASIC_USER],
+            [],
+        ),
+    ],
+)
+def test_get_allowed_filings_blocker_for_amalgamating_business(
+    monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username, roles, expected
+):
+    """Assert that get allowed returns valid filings when business is not in good standing."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {"Authorization": "Bearer " + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr("flask.request.headers.get", mock_auth)
+
+        for legal_type in legal_types:
+            business = None
+            identifier = (f"BC{random.SystemRandom().getrandbits(0x58)}")[:9]
+            business = factory_legal_entity(identifier=identifier, entity_type=legal_type, state=state)
+
+            with patch.object(type(business), "amalgamating_businesses", new_callable=PropertyMock):
+                filing_types = get_allowed_filings(business, state, legal_type, jwt)
+                assert filing_types == expected
 
 
 @pytest.mark.parametrize(
@@ -2538,7 +2676,14 @@ def test_get_allowed_filings_blocker_admin_freeze(
             ["CP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps",
@@ -2550,6 +2695,7 @@ def test_get_allowed_filings_blocker_admin_freeze(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -2565,7 +2711,14 @@ def test_get_allowed_filings_blocker_admin_freeze(
             ["SP", "GP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         ("general_user_historical_cp", True, LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
@@ -2702,7 +2855,14 @@ def test_get_allowed_filings_blocker_not_in_good_standing(
             "staff",
             [STAFF_ROLE],
             BLOCKER_FILING_STATUSES,
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps",
@@ -2714,6 +2874,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -2737,7 +2898,14 @@ def test_get_allowed_filings_blocker_not_in_good_standing(
             "staff",
             [STAFF_ROLE],
             BLOCKER_FILING_STATUSES,
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         (
@@ -2927,7 +3095,14 @@ def test_allowed_filings_blocker_filing_incomplete(
             [STAFF_ROLE],
             BLOCKER_FILING_TYPES,
             BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps",
@@ -2940,6 +3115,7 @@ def test_allowed_filings_blocker_filing_incomplete(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -2965,7 +3141,14 @@ def test_allowed_filings_blocker_filing_incomplete(
             [STAFF_ROLE],
             BLOCKER_FILING_TYPES,
             BLOCKER_FILING_STATUSES_AND_ADDITIONAL,
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         (
@@ -3253,7 +3436,14 @@ def test_allowed_filings_blocker_filing_amalgamations(
             ["CP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps",
@@ -3264,6 +3454,7 @@ def test_allowed_filings_blocker_filing_amalgamations(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -3278,7 +3469,14 @@ def test_allowed_filings_blocker_filing_amalgamations(
             ["SP", "GP"],
             "staff",
             [STAFF_ROLE],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         ("general_user_historical_cp", LegalEntity.State.HISTORICAL, ["CP"], "general", [BASIC_USER], []),
@@ -3515,7 +3713,14 @@ def test_allowed_filings_warnings(
             [STAFF_ROLE],
             ["dissolution", None],
             [None, None],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_cp_invalid_state_filing_fail",
@@ -3525,7 +3730,14 @@ def test_allowed_filings_warnings(
             [STAFF_ROLE],
             ["continuationIn"],
             [None],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_corps_unaffected",
@@ -3538,6 +3750,7 @@ def test_allowed_filings_warnings(
             expected_lookup(
                 [
                     FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
                     FilingKey.REGISTRARS_NOTATION,
                     FilingKey.REGISTRARS_ORDER,
                     FilingKey.RESTRN_FULL_CORPS,
@@ -3553,7 +3766,14 @@ def test_allowed_filings_warnings(
             [STAFF_ROLE],
             ["continuationIn", "continuationOut"],
             [None, None],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         (
             "staff_historical_llc_unaffected",
@@ -3573,7 +3793,14 @@ def test_allowed_filings_warnings(
             [STAFF_ROLE],
             ["dissolution", None],
             [None, None],
-            expected_lookup([FilingKey.COURT_ORDER, FilingKey.REGISTRARS_NOTATION, FilingKey.REGISTRARS_ORDER]),
+            expected_lookup(
+                [
+                    FilingKey.COURT_ORDER,
+                    FilingKey.PUT_BACK_ON,
+                    FilingKey.REGISTRARS_NOTATION,
+                    FilingKey.REGISTRARS_ORDER,
+                ]
+            ),
         ),
         # historical business - general user
         (

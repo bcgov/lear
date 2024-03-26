@@ -1,0 +1,8 @@
+Name of Amalgamated Company:
+{% if business.legalName %}
+{{ business.legalName }}
+{% elif nameRequest.legalName %}
+{{ nameRequest.legalName }}
+{% else %}
+{{numberedDescription}}
+{% endif %}

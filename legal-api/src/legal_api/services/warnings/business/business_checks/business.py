@@ -13,6 +13,9 @@
 # limitations under the License.
 
 """Service to check compliancy for a LegalEntity."""
+from legal_api.models import LegalEntity
+
+from .corps import check_business as corps_check
 from .firms import check_business as firms_check  # noqa: I003
 
 
@@ -22,5 +25,12 @@ def check_business(business: any) -> list:
 
     if business.is_firm:
         result = firms_check(business)
+    elif business.entity_type in (
+        LegalEntity.EntityTypes.BC_CCC,
+        LegalEntity.EntityTypes.BC_ULC_COMPANY.value,
+        LegalEntity.EntityTypes.COMP.value,
+        LegalEntity.EntityTypes.BCOMP.value,
+    ):
+        result = corps_check(business)
 
     return result

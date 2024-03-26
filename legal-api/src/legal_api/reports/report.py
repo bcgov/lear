@@ -24,7 +24,18 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from legal_api.models import ConsentContinuationOut, CorpType, Document, EntityRole, Filing, LegalEntity
+from legal_api.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    ConsentContinuationOut,
+    CorpType,
+    Document,
+    EntityRole,
+    Filing,
+    LegalEntity,
+    OfficeType,
+    PartyRole,
+)
 from legal_api.models.legal_entity import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import BusinessService, MinioService, VersionedBusinessDetailsService
@@ -118,6 +129,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         """
         template_path = current_app.config.get("REPORT_TEMPLATE_PATH")
         template_parts = [
+            "amalgamation/amalgamatingCorp",
+            "amalgamation/amalgamationName",
+            "amalgamation/amalgamationStmt",
+            "amalgamation/approvalType",
+            "amalgamation/effectiveDate",
             "bc-annual-report/legalObligations",
             "bc-address-change/addresses",
             "bc-director-change/directors",
@@ -328,8 +344,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["taxId"] = self._business.tax_id
 
     def _set_description(self, filing):
-        legal_type = self._filing.filing_json["filing"].get("business", {}).get("legalType", "NA")
+        legal_type = (
+            self._filing.filing_json.get("filing").get(self._filing.filing_type).get("nameRequest", {}).get("legalType")
+        )
+        if not legal_type and self._business:
+            legal_type = self._business.entity_type
+
         filing["numberedDescription"] = LegalEntity.BUSINESSES.get(legal_type, {}).get("numberedDescription")
+        filing["numberedLegalNameSuffix"] = LegalEntity.BUSINESSES.get(legal_type, {}).get("numberedLegalNameSuffix")
 
         corp_type = CorpType.find_by_id(legal_type)
         filing["entityDescription"] = corp_type.full_desc
@@ -444,13 +466,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return address
 
     @staticmethod
-    def _populate_business_info_to_filing(filing: Filing, business: any): 
-        founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
+    def _populate_business_info_to_filing(filing: Filing, business: any):
+        founding_datetime = LegislationDatetime.as_legislation_timezone(
+            business.founding_date if business.is_legal_entity else business.start_date
+        )
         if filing.transaction_id:
             business_json = VersionedBusinessDetailsService.get_business_revision(filing, business)
         else:
             business_json = business.json()
-
         business_json["formatted_founding_date_time"] = LegislationDatetime.format_as_report_string(founding_datetime)
         business_json["formatted_founding_date"] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
         filing.filing_json["filing"]["business"] = business_json
@@ -693,13 +716,125 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
         filing["newLegalTypeDescription"] = self._get_legal_type_description(new_legal_type) if new_legal_type else None
 
-    def _format_amalgamation_data(self, filling):
-        # FUTURE: format logic for amalgamation application
-        return
+    def _format_amalgamation_data(self, filing):
+        amalgamation = filing["amalgamationApplication"]
+
+        filing["nameRequest"] = amalgamation.get("nameRequest", {})
+        filing["listOfTranslations"] = amalgamation.get("nameTranslations", [])
+        filing["contactPoint"] = amalgamation.get("contactPoint", {})
+        filing["courtApproval"] = amalgamation.get("courtApproval")
+        filing["incorporationAgreement"] = amalgamation.get("incorporationAgreement", {})
+
+        self._set_amalgamating_businesses(filing)
+        if amalgamation["type"] in [
+            Amalgamation.AmalgamationTypes.horizontal.name,
+            Amalgamation.AmalgamationTypes.vertical.name,
+        ]:
+            self._set_from_primary_or_holding_business_data(filing)
+        else:
+            filing["offices"] = amalgamation.get("offices", {})
+            filing["parties"] = amalgamation["parties"]
+            filing["shareClasses"] = amalgamation.get("shareStructure", {}).get("shareClasses", [])
+
+        # Formatting addresses for registered and records office
+        self._format_address(filing["offices"]["registeredOffice"]["deliveryAddress"])
+        self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
+        if "recordsOffice" in filing["offices"]:
+            self._format_address(filing["offices"]["recordsOffice"]["deliveryAddress"])
+            self._format_address(filing["offices"]["recordsOffice"]["mailingAddress"])
+
+        # Formatting parties
+        self._format_directors(filing["parties"])
 
     def _format_certificate_of_amalgamation_data(self, filing):
-        # FUTURE: format logic for certificate of amalgamation
-        return
+        self._set_amalgamating_businesses(filing)
+
+    def _set_amalgamating_businesses(self, filing):
+        amalgamating_businesses = []
+        for amalgamating_business in filing["amalgamationApplication"]["amalgamatingBusinesses"]:
+            identifier = amalgamating_business.get("identifier")
+            if foreign_legal_name := amalgamating_business.get("legalName"):
+                business_legal_name = foreign_legal_name
+            elif ting_business := self._get_versioned_amalgamating_business(identifier):
+                business_legal_name = ting_business.legal_name
+
+            amalgamating_businesses.append({"legalName": business_legal_name, "identifier": identifier})
+        filing["amalgamatingBusinesses"] = amalgamating_businesses
+
+    def _get_versioned_amalgamating_business(self, identifier):
+        # until TED business is created, get it from business table
+        ting_business = LegalEntity.find_by_identifier(identifier)
+        if self._filing.transaction_id:
+            # get TING business from version
+            # when TED is dissolved by staff (with court order) and TING is restored, user can modify TING data
+            # which should not be reflected here
+            ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
+                self._filing.transaction_id, ting_business
+            )
+        return ting_business
+
+    def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals, too-many-branches
+        ting_business = next(
+            x
+            for x in filing["amalgamationApplication"]["amalgamatingBusinesses"]
+            if x["role"] in [AmalgamatingBusiness.Role.holding.name, AmalgamatingBusiness.Role.primary.name]
+        )
+        primary_or_holding_business = self._get_versioned_amalgamating_business(ting_business["identifier"])
+        filing["nameRequest"]["legalName"] = primary_or_holding_business.legal_name
+
+        parties = []
+        # copy director
+        if self._filing.transaction_id:
+            parties_version = VersionedBusinessDetailsService.get_party_role_revision(
+                self._filing.transaction_id, primary_or_holding_business.id, role=PartyRole.RoleTypes.DIRECTOR.value
+            )
+            for director_json in parties_version:
+                director_json["roles"] = [{"roleType": "Director"}]
+                parties.append(director_json)
+        else:
+            active_directors = PartyRole.get_active_directors(
+                primary_or_holding_business.id, self._filing.effective_date.date()
+            )
+            for director in active_directors:
+                director_json = director.json
+                director_json["roles"] = [{"roleType": "Director"}]
+                parties.append(director_json)
+
+        # copy completing party from filing json
+        for party_info in filing["amalgamationApplication"].get("parties"):
+            if comp_party_role := next(
+                (x for x in party_info.get("roles") if x["roleType"].lower() == "completing party"), None
+            ):
+                party_info["roles"] = [comp_party_role]  # override roles to have only completing party
+                parties.append(party_info)
+                break
+        filing["parties"] = parties
+
+        # copy offices
+        offices = {}
+        if self._filing.transaction_id:
+            offices = VersionedBusinessDetailsService.get_office_revision(
+                self._filing.transaction_id, primary_or_holding_business.id
+            )
+        else:
+            officelist = primary_or_holding_business.offices.all()
+            for i in officelist:
+                if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
+                    offices[i.office_type] = {}
+                    for address in i.addresses:
+                        offices[i.office_type][f"{address.address_type}Address"] = address.json
+        filing["offices"] = offices
+
+        # copy shares
+        share_classes = []
+        if self._filing.transaction_id:
+            share_classes = VersionedBusinessDetailsService.get_share_class_revision(
+                self._filing.transaction_id, primary_or_holding_business.id
+            )
+        else:
+            for share_class in primary_or_holding_business.share_classes.all():
+                share_classes.append(share_class.json)
+        filing["shareClasses"] = share_classes
 
     def _format_change_of_registration_data(
         self, filing, filing_type

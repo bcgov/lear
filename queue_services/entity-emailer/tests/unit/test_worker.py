@@ -366,13 +366,13 @@ def test_process_ar_reminder_email(app, session, client):
     """Assert that the ar reminder notification can be processed."""
     # Setup
     filing = prep_incorp_filing(session, "BC1234567", "1", "COMPLETED")
-    business = LegalEntity.find_by_internal_id(filing.business_id)
+    business = LegalEntity.find_by_internal_id(filing.legal_entity_id)
     business.legal_type = "BC"
     business.legal_name = "test business"
     token = "token"
     email_msg = {
         "email": {
-            "businessId": filing.business_id,
+            "businessId": filing.legal_entity_id,
             "type": "annualReport",
             "option": "reminder",
             "arFee": "100",

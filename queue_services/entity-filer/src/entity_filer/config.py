@@ -114,6 +114,12 @@ class Config:  # pylint: disable=too-few-public-methods
     MINIO_BUCKET_BUSINESSES = os.getenv("MINIO_BUCKET_BUSINESSES", "businesses")
     MINIO_SECURE = True
 
+    # pub/sub
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    TOPIC_NAME = os.getenv("TOPIC_NAME", "filer")
+    AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
+    PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
+
 
 class Development(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""

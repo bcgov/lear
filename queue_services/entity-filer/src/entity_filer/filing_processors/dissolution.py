@@ -19,7 +19,7 @@ import dpath
 import sentry_sdk
 
 # from entity_filer.exceptions import DefaultException, logger
-from business_model import Document, Filing, LegalEntity
+from business_model import Document, Filing, LegalEntity, db
 
 # from business_model.document import DocumentType
 from business_model.models.filing import DissolutionTypes
@@ -65,7 +65,12 @@ def process(business: LegalEntity, filing: Dict, filing_rec: Filing, filing_meta
         dissolution_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(dissolution_date_str)
     business.dissolution_date = dissolution_date
 
-    business.state = LegalEntity.State.HISTORICAL
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE and (amalgamation := business.amalgamation.one_or_none()):
+        for amalgamating_business in amalgamation.amalgamating_businesses.all():
+            db.session.delete(amalgamating_business)
+        db.session.delete(amalgamation)
+
+    business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
 
     # add custodial party if in filing

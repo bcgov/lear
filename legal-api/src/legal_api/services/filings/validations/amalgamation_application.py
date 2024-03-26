@@ -18,12 +18,13 @@ from typing import Dict, Final, Optional
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import BusinessCommon, EntityRole, Filing
+from legal_api.models import AmalgamatingBusiness, Amalgamation, BusinessCommon, EntityRole, Filing, LegalEntity
 from legal_api.services import STAFF_ROLE
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.business_service import BusinessService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_foreign_jurisdiction,
     validate_name_request,
     validate_share_structure,
 )
@@ -34,7 +35,7 @@ from legal_api.utils.auth import jwt
 # noqa: I003
 
 
-def validate(business: any, amalgamation_json: Dict, account_id) -> Optional[Error]:
+def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     """Validate the Amalgamation Application filing."""
     filing_type = "amalgamationApplication"
     if not amalgamation_json:
@@ -54,14 +55,16 @@ def validate(business: any, amalgamation_json: Dict, account_id) -> Optional[Err
         msg.extend(validate_name_request(amalgamation_json, entity_type, filing_type))
 
     msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
-    if amalgamation_type == "regular":
+    if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
         msg.extend(validate_offices(amalgamation_json, filing_type))
         err = validate_share_structure(amalgamation_json, filing_type)
         if err:
             msg.extend(err)
 
     msg.extend(validate_amalgamation_court_order(amalgamation_json, filing_type))
-    msg.extend(validate_amalgamating_businesses(amalgamation_json, filing_type, entity_type, account_id))
+    msg.extend(
+        validate_amalgamating_businesses(amalgamation_json, filing_type, entity_type, amalgamation_type, account_id)
+    )
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -69,7 +72,7 @@ def validate(business: any, amalgamation_json: Dict, account_id) -> Optional[Err
 
 
 def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-    amalgamation_json, filing_type, entity_type, account_id
+    amalgamation_json, filing_type, legal_type, amalgamation_type, account_id
 ) -> list:
     """Validate amalgamating businesses."""
     is_staff = jwt.validate_roles([STAFF_ROLE])
@@ -78,114 +81,125 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
         amalgamation_json.get("filing", {}).get(filing_type, {}).get("amalgamatingBusinesses", [])
     )
     amalgamating_businesses_path = f"/filing/{filing_type}/amalgamatingBusinesses"
-    is_any_limited = False
-    is_any_ccc = False
-    is_any_ben = False
-    is_any_ulc = False
+    is_any_business = {
+        BusinessCommon.EntityTypes.BCOMP.value: False,
+        BusinessCommon.EntityTypes.COMP.value: False,
+        BusinessCommon.EntityTypes.BC_CCC.value: False,
+        BusinessCommon.EntityTypes.BC_ULC_COMPANY.value: False,
+    }
     is_any_expro_a = False
+    is_any_foreign = False
+    business_identifiers = []
+    duplicate_businesses = []
+    adoptable_names = []
+    primary_or_holding_business = None
+    amalgamating_business_roles = {
+        AmalgamatingBusiness.Role.amalgamating.name: 0,
+        AmalgamatingBusiness.Role.holding.name: 0,
+        AmalgamatingBusiness.Role.primary.name: 0,
+    }
     amalgamating_businesses = {}
+
+    # collect data for validation
     for amalgamating_business_json in amalgamating_businesses_json:
-        if identifier := amalgamating_business_json.get("identifier"):
+        amalgamating_business_roles[amalgamating_business_json["role"]] += 1
+        identifier = amalgamating_business_json.get("identifier")
+        if identifier in business_identifiers:
+            duplicate_businesses.append(identifier)
+            continue
+
+        business_identifiers.append(identifier)
+
+        # Check if its a foreign business
+        if foreign_jurisdiction := amalgamating_business_json.get("foreignJurisdiction"):
+            is_any_foreign = True
             if (
                 identifier.startswith("A")
-                and (foreign_jurisdiction := amalgamating_business_json.get("foreignJurisdiction"))
                 and foreign_jurisdiction.get("country") == "CA"
                 and foreign_jurisdiction.get("region") == "BC"
             ):
                 is_any_expro_a = True
-
-            if not (business := BusinessService.fetch_business(identifier)):
-                continue
-
+        elif business := BusinessService.fetch_business(identifier):
             amalgamating_businesses[identifier] = business
+            is_any_business[business.entity_type] = True
+            if legal_type == business.entity_type:
+                adoptable_names.append(business.legal_name)
+            if amalgamating_business_json["role"] in [
+                AmalgamatingBusiness.Role.primary.name,
+                AmalgamatingBusiness.Role.holding.name,
+            ]:
+                primary_or_holding_business = business
 
-            if business.entity_type == BusinessCommon.EntityTypes.BCOMP.value:
-                is_any_ben = True
-            elif business.entity_type == BusinessCommon.EntityTypes.COMP.value:
-                is_any_limited = True
-            elif business.entity_type == BusinessCommon.EntityTypes.BC_CCC.value:
-                is_any_ccc = True
-            elif business.entity_type == BusinessCommon.EntityTypes.BC_ULC_COMPANY.value:
-                is_any_ulc = True
+    is_any_bc_company = (
+        is_any_business[BusinessCommon.EntityTypes.BCOMP.value]
+        or is_any_business[BusinessCommon.EntityTypes.COMP.value]
+        or is_any_business[BusinessCommon.EntityTypes.BC_CCC.value]
+        or is_any_business[BusinessCommon.EntityTypes.BC_ULC_COMPANY.value]
+    )
 
-    is_any_bc_company = is_any_ben or is_any_limited or is_any_ccc or is_any_ulc
-
-    for amalgamating_business_json in amalgamating_businesses_json:
-        identifier = amalgamating_business_json.get("identifier")
-        foreign_legal_name = amalgamating_business_json.get("legalName")
-        is_foreign_business = bool(foreign_legal_name)
-        amalgamating_business = amalgamating_businesses.get(identifier)
-
-        if amalgamating_business:
-            if amalgamating_business.state == BusinessCommon.State.HISTORICAL:
-                msg.append(
-                    {
-                        "error": f"Cannot amalgamate with {identifier} which is in historical state.",
-                        "path": amalgamating_businesses_path,
-                    }
+    # validate each TING business
+    for index, amalgamating_business_json in enumerate(amalgamating_businesses_json):
+        # foreignJurisdiction and legalName are dependent in the schema. one cannot be present without the other
+        if foreign_legal_name := amalgamating_business_json.get("legalName"):
+            msg.extend(
+                _validate_foreign_businesses(
+                    is_staff,
+                    is_any_bc_company,
+                    is_any_business[BusinessCommon.EntityTypes.BC_ULC_COMPANY.value],
+                    legal_type,
+                    foreign_legal_name,
+                    amalgamating_business_json,
+                    f"{amalgamating_businesses_path}/{index}",
                 )
-            elif _has_future_effective_filing(amalgamating_business):
-                msg.append(
-                    {"error": f"{identifier} has a future effective filing.", "path": amalgamating_businesses_path}
-                )
-
-        if not is_staff:
-            if amalgamating_business:
-                if not _is_business_affliated(identifier, account_id):
-                    msg.append(
-                        {
-                            "error": f"{identifier} is not affiliated with the currently selected BC Registries account.",  # noqa: E501
-                            "path": amalgamating_businesses_path,
-                        }
-                    )
-
-                if not amalgamating_business.good_standing:
-                    msg.append(
-                        {"error": f"{identifier} is not in good standing.", "path": amalgamating_businesses_path}
-                    )
-            elif identifier:
-                msg.append(
-                    {
-                        "error": f"A business with identifier:{identifier} not found.",
-                        "path": amalgamating_businesses_path,
-                    }
-                )
-
-            if is_foreign_business:
-                msg.append(
-                    {
-                        "error": (
-                            f"{foreign_legal_name} foreign corporation cannot "
-                            "be amalgamated except by Registries staff."
-                        ),
-                        "path": amalgamating_businesses_path,
-                    }
-                )
+            )
         else:
-            if is_foreign_business:
-                if entity_type == BusinessCommon.EntityTypes.BC_ULC_COMPANY.value and is_any_bc_company:
-                    msg.append(
-                        {
-                            "error": (
-                                f"{foreign_legal_name} foreign corporation must not amalgamate with "
-                                "a BC company to form a BC Unlimited Liability Company."
-                            ),
-                            "path": amalgamating_businesses_path,
-                        }
-                    )
+            identifier = amalgamating_business_json.get("identifier")
+            amalgamating_business = amalgamating_businesses.get(identifier)
+            msg.extend(
+                _validate_lear_businesses(
+                    identifier, amalgamating_business, account_id, is_staff, f"{amalgamating_businesses_path}/{index}"
+                )
+            )
 
-                if is_any_ulc:
-                    msg.append(
-                        {
-                            "error": (
-                                "A BC Unlimited Liability Company cannot amalgamate with "
-                                f"a foreign company {foreign_legal_name}."
-                            ),
-                            "path": amalgamating_businesses_path,
-                        }
-                    )
+    if duplicate_businesses:
+        msg.append(
+            {
+                "error": f'Duplicate amalgamating business entry found in list: {", ".join(duplicate_businesses)}.',
+                "path": amalgamating_businesses_path,
+            }
+        )
 
-    if entity_type == BusinessCommon.EntityTypes.BC_CCC.value and not is_any_ccc:
+    name_request = amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {})
+    if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
+        if (
+            not name_request.get("nrNumber")
+            and (adopted_name := name_request.get("legalName"))
+            and adopted_name not in adoptable_names
+        ):
+            msg.append(
+                {
+                    "error": "Adopt a name that have the same business type as the resulting business.",
+                    "path": f"/filing/{filing_type}/nameRequest/legalName",
+                }
+            )
+    elif primary_or_holding_business and primary_or_holding_business.legal_type != legal_type:
+        msg.append(
+            {
+                "error": "Legal type should be same as the legal type in primary or holding business.",
+                "path": f"/filing/{filing_type}/nameRequest/legalType",
+            }
+        )
+
+    msg.extend(
+        _validate_amalgamation_type(
+            amalgamation_type, amalgamating_business_roles, is_any_foreign, is_any_expro_a, amalgamating_businesses_path
+        )
+    )
+
+    if (
+        legal_type == BusinessCommon.EntityTypes.BC_CCC.value
+        and not is_any_business[BusinessCommon.EntityTypes.BC_CCC.value]
+    ):
         msg.append(
             {
                 "error": (
@@ -196,7 +210,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
             }
         )
     elif (
-        entity_type in [BusinessCommon.EntityTypes.BC_CCC.value, BusinessCommon.EntityTypes.BC_ULC_COMPANY.value]
+        legal_type in [BusinessCommon.EntityTypes.BC_CCC.value, BusinessCommon.EntityTypes.BC_ULC_COMPANY.value]
         and is_any_expro_a
         and is_any_bc_company
     ):
@@ -213,18 +227,181 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     return msg
 
 
+def _validate_foreign_businesses(  # pylint: disable=too-many-arguments
+    is_staff,
+    is_any_bc_company,
+    is_any_ulc,
+    legal_type,
+    foreign_legal_name,
+    amalgamating_business,
+    amalgamating_business_path,
+) -> list:
+    msg = []
+    if is_staff:
+        msg.extend(
+            validate_foreign_jurisdiction(
+                amalgamating_business["foreignJurisdiction"],
+                f"{amalgamating_business_path}/foreignJurisdiction",
+                is_region_bc_valid=True,
+                is_region_for_us_required=False,
+            )
+        )
+
+        if legal_type == BusinessCommon.EntityTypes.BC_ULC_COMPANY.value and is_any_bc_company:
+            msg.append(
+                {
+                    "error": (
+                        f"{foreign_legal_name} foreign corporation must not amalgamate with "
+                        "a BC company to form a BC Unlimited Liability Company."
+                    ),
+                    "path": amalgamating_business_path,
+                }
+            )
+
+        if is_any_ulc:
+            msg.append(
+                {
+                    "error": (
+                        "A BC Unlimited Liability Company cannot amalgamate with "
+                        f"a foreign company {foreign_legal_name}."
+                    ),
+                    "path": amalgamating_business_path,
+                }
+            )
+
+        if amalgamating_business["role"] in [
+            AmalgamatingBusiness.Role.primary.name,
+            AmalgamatingBusiness.Role.holding.name,
+        ]:
+            msg.append(
+                {
+                    "error": f"A {foreign_legal_name} foreign corporation cannot be marked as Primary or Holding.",
+                    "path": amalgamating_business_path,
+                }
+            )
+    else:
+        msg.append(
+            {
+                "error": (
+                    f"{foreign_legal_name} foreign corporation cannot " "be amalgamated except by Registries staff."
+                ),
+                "path": amalgamating_business_path,
+            }
+        )
+
+    return msg
+
+
+def _validate_lear_businesses(  # pylint: disable=too-many-arguments
+    identifier, amalgamating_business, account_id, is_staff, amalgamating_business_path
+) -> list:
+    msg = []
+    if amalgamating_business:
+        if amalgamating_business.state == BusinessCommon.State.HISTORICAL:
+            msg.append(
+                {
+                    "error": f"Cannot amalgamate with {identifier} which is in historical state.",
+                    "path": amalgamating_business_path,
+                }
+            )
+        elif _has_pending_filing(amalgamating_business):
+            msg.append(
+                {
+                    "error": f"{identifier} has a draft, pending or future effective filing.",
+                    "path": amalgamating_business_path,
+                }
+            )
+        elif LegalEntity.is_pending_amalgamating_business(identifier):
+            msg.append(
+                {
+                    "error": f"{identifier} is part of a future effective amalgamation filing.",
+                    "path": amalgamating_business_path,
+                }
+            )
+
+        if not is_staff:
+            if not _is_business_affliated(identifier, account_id):
+                msg.append(
+                    {
+                        "error": (
+                            f"{identifier} is not affiliated with the currently " "selected BC Registries account."
+                        ),
+                        "path": amalgamating_business_path,
+                    }
+                )
+
+            if not amalgamating_business.good_standing:
+                msg.append({"error": f"{identifier} is not in good standing.", "path": amalgamating_business_path})
+    else:
+        msg.append({"error": f"A business with identifier:{identifier} not found.", "path": amalgamating_business_path})
+
+    return msg
+
+
+def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
+    amalgamation_type, amalgamating_business_roles, is_any_foreign, is_any_expro_a, amalgamating_businesses_path
+) -> list:
+    msg = []
+    if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and not (
+        amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 2
+        and amalgamating_business_roles[AmalgamatingBusiness.Role.holding.name] == 0
+        and amalgamating_business_roles[AmalgamatingBusiness.Role.primary.name] == 0
+    ):
+        msg.append(
+            {
+                "error": "Regular amalgamation must have 2 or more amalgamating businesses.",
+                "path": amalgamating_businesses_path,
+            }
+        )
+    elif amalgamation_type == Amalgamation.AmalgamationTypes.horizontal.name:
+        if is_any_foreign or is_any_expro_a:
+            msg.append(
+                {
+                    "error": "A foreign corporation or extra-Pro cannot be part of a Horizontal amalgamation.",
+                    "path": amalgamating_businesses_path,
+                }
+            )
+
+        if not (
+            amalgamating_business_roles[AmalgamatingBusiness.Role.primary.name] == 1
+            and amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 1
+            and amalgamating_business_roles[AmalgamatingBusiness.Role.holding.name] == 0
+        ):
+            msg.append(
+                {
+                    "error": "Horizontal amalgamation must have a primary and 1 or more amalgamating businesses.",
+                    "path": amalgamating_businesses_path,
+                }
+            )
+    elif amalgamation_type == Amalgamation.AmalgamationTypes.vertical.name and not (
+        amalgamating_business_roles[AmalgamatingBusiness.Role.holding.name] == 1
+        and amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 1
+        and amalgamating_business_roles[AmalgamatingBusiness.Role.primary.name] == 0
+    ):
+        msg.append(
+            {
+                "error": "Vertical amalgamation must have a holding and 1 or more amalgamating businesses.",
+                "path": amalgamating_businesses_path,
+            }
+        )
+
+    return msg
+
+
 def _is_business_affliated(identifier, account_id):
     if (
         (account_response := AccountService.get_account_by_affiliated_identifier(identifier))
         and (orgs := account_response.get("orgs"))
-        and str(orgs[0].get("id")) == account_id
+        and any(str(org.get("id")) == account_id for org in orgs)
     ):
         return True
     return False
 
 
-def _has_future_effective_filing(amalgamating_business: any):
-    if Filing.get_filings_by_status(amalgamating_business, [Filing.Status.PAID.value, Filing.Status.PENDING.value]):
+def _has_pending_filing(amalgamating_business: any):
+    if Filing.get_filings_by_status(
+        amalgamating_business.id, [Filing.Status.DRAFT.value, Filing.Status.PENDING.value, Filing.Status.PAID.value]
+    ):
         return True
     return False
 
@@ -244,9 +421,15 @@ def validate_party(filing: Dict, amalgamation_type, filing_type) -> list:
                 director_parties += 1
 
     party_path = f"/filing/{filing_type}/parties"
-    if amalgamation_type == "regular" and (completing_parties < 1 or director_parties < 1):
+    if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and (
+        completing_parties < 1 or director_parties < 1
+    ):
         msg.append({"error": "At least one Director and a Completing Party is required.", "path": party_path})
-    elif amalgamation_type in ["vertical", "horizontal"] and completing_parties == 0:
+    elif (
+        amalgamation_type
+        in [Amalgamation.AmalgamationTypes.vertical.name, Amalgamation.AmalgamationTypes.horizontal.name]
+        and completing_parties == 0
+    ):
         msg.append({"error": "A Completing Party is required.", "path": party_path})
 
     return msg

@@ -55,6 +55,7 @@ class BusinessBlocker(str, Enum):
     BUSINESS_FROZEN = "BUSINESS_FROZEN"
     DRAFT_PENDING = "DRAFT_PENDING"
     NOT_IN_GOOD_STANDING = "NOT_IN_GOOD_STANDING"
+    AMALGAMATING_BUSINESS = "AMALGAMATING_BUSINESS"
 
 
 class BusinessRequirement(str, Enum):
@@ -157,7 +158,7 @@ def get_allowable_filings_dict():
                     "regular": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -167,7 +168,7 @@ def get_allowable_filings_dict():
                     "vertical": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -177,7 +178,7 @@ def get_allowable_filings_dict():
                     "horizontal": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -283,18 +284,23 @@ def get_allowable_filings_dict():
                 },
                 "putBackOn": {
                     "legalTypes": ["SP", "GP", "BEN", "CP", "BC", "CC", "ULC"],
-                    "blockerChecks": {"validStateFilings": [filing_types_compact.DISSOLUTION_ADMINISTRATIVE]},
                 },
                 "registrarsNotation": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
                 "registrarsOrder": {"legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC"]},
                 "restoration": {
                     "fullRestoration": {
                         "legalTypes": ["BC", "BEN", "CC", "ULC"],
-                        "blockerChecks": {"invalidStateFilings": ["continuationIn", "continuationOut"]},
+                        "blockerChecks": {
+                            "invalidStateFilings": ["continuationIn", "continuationOut"],
+                            "business": [BusinessBlocker.AMALGAMATING_BUSINESS],
+                        },
                     },
                     "limitedRestoration": {
                         "legalTypes": ["BC", "BEN", "CC", "ULC"],
-                        "blockerChecks": {"invalidStateFilings": ["continuationIn", "continuationOut"]},
+                        "blockerChecks": {
+                            "invalidStateFilings": ["continuationIn", "continuationOut"],
+                            "business": [BusinessBlocker.AMALGAMATING_BUSINESS],
+                        },
                     },
                 },
             },
@@ -318,7 +324,7 @@ def get_allowable_filings_dict():
                     "regular": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -328,7 +334,7 @@ def get_allowable_filings_dict():
                     "vertical": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -338,7 +344,7 @@ def get_allowable_filings_dict():
                     "horizontal": {
                         "legalTypes": ["BEN", "BC", "ULC", "CC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.BUSINESS_FROZEN],
+                            "business": [BusinessBlocker.BUSINESS_FROZEN, BusinessBlocker.NOT_IN_GOOD_STANDING],
                             "futureEffectiveFilings": [
                                 filing_types_compact.DISSOLUTION_VOLUNTARY,
                                 filing_types_compact.DISSOLUTION_ADMINISTRATIVE,
@@ -400,8 +406,8 @@ def get_allowable_filings_dict():
 
 # pylint: disable=(too-many-arguments,too-many-locals
 def is_allowed(
-    legal_entity: LegalEntity,
-    state: LegalEntity.State,
+    business: any,
+    state: BusinessCommon.State,
     filing_type: str,
     legal_type: str,
     jwt: JwtManager,
@@ -416,7 +422,7 @@ def is_allowed(
         if filing and filing.status == Filing.Status.DRAFT.value:
             is_ignore_draft_blockers = True
 
-    allowable_filings = get_allowed_filings(legal_entity, state, legal_type, jwt, is_ignore_draft_blockers)
+    allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:
         if allowable_filing["name"] == filing_type:
@@ -510,9 +516,9 @@ def get_allowed_filings(
     return allowable_filing_types
 
 
-def has_blocker(legal_entity: LegalEntity, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
+def has_blocker(business: any, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
-    if not legal_entity:
+    if not business:
         return False
 
     if not (blocker_checks := allowable_filing.get("blockerChecks", {})):
@@ -527,13 +533,13 @@ def has_blocker(legal_entity: LegalEntity, state_filing: Filing, allowable_filin
     if has_blocker_invalid_state_filing(state_filing, blocker_checks):
         return True
 
-    if has_blocker_completed_filing(legal_entity, blocker_checks):
+    if has_blocker_completed_filing(business, blocker_checks):
         return True
 
-    if has_blocker_future_effective_filing(legal_entity, blocker_checks):
+    if has_blocker_future_effective_filing(business, blocker_checks):
         return True
 
-    if has_blocker_warning_filing(legal_entity.warnings, blocker_checks):
+    if has_blocker_warning_filing(business.warnings, blocker_checks):
         return True
 
     return False
@@ -558,6 +564,7 @@ def business_blocker_check(business: any, is_ignore_draft_blockers: bool = False
         BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DRAFT_PENDING: False,
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
+        BusinessBlocker.AMALGAMATING_BUSINESS: False,
     }
 
     if not business:
@@ -573,6 +580,9 @@ def business_blocker_check(business: any, is_ignore_draft_blockers: bool = False
 
     if not business.good_standing:
         business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
+
+    if business.is_legal_entity and business.amalgamating_businesses.one_or_none():
+        business_blocker_checks[BusinessBlocker.AMALGAMATING_BUSINESS] = True
 
     return business_blocker_checks
 
@@ -623,14 +633,14 @@ def has_blocker_invalid_state_filing(state_filing: Filing, blocker_checks: dict)
     return has_filing_match(state_filing, state_filing_types)
 
 
-def has_blocker_completed_filing(legal_entity: LegalEntity, blocker_checks: dict):
+def has_blocker_completed_filing(business: any, blocker_checks: dict):
     """Check if business has an completed filing."""
     if not (complete_filing_types := blocker_checks.get("completedFilings", [])):
         return False
 
     filing_type_pairs = [(parse_filing_info(x)) for x in complete_filing_types]
     completed_filings = Filing.get_filings_by_type_pairs(
-        legal_entity, filing_type_pairs, [Filing.Status.COMPLETED.value], True
+        business, filing_type_pairs, [Filing.Status.COMPLETED.value], True
     )
 
     if len(completed_filings) == len(complete_filing_types):
@@ -639,7 +649,7 @@ def has_blocker_completed_filing(legal_entity: LegalEntity, blocker_checks: dict
     return True
 
 
-def has_blocker_future_effective_filing(legal_entity: LegalEntity, blocker_checks: dict):
+def has_blocker_future_effective_filing(business: any, blocker_checks: dict):
     """Check if business has a future effective filing."""
     if not (fed_filing_types := blocker_checks.get("futureEffectiveFilings", [])):
         return False
@@ -647,7 +657,7 @@ def has_blocker_future_effective_filing(legal_entity: LegalEntity, blocker_check
     filing_type_pairs = [(parse_filing_info(x)) for x in fed_filing_types]
 
     pending_filings = Filing.get_filings_by_type_pairs(
-        legal_entity, filing_type_pairs, [Filing.Status.PENDING.value, Filing.Status.PAID.value], True
+        business, filing_type_pairs, [Filing.Status.PENDING.value, Filing.Status.PAID.value], True
     )
 
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -694,7 +704,7 @@ def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
     return warning_matches
 
 
-def get_allowed(state: LegalEntity.State, legal_type: str, jwt: JwtManager):
+def get_allowed(state: BusinessCommon.State, legal_type: str, jwt: JwtManager):
     """Get allowed type of filing types for the current user."""
     user_role = "general"
     if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):

@@ -38,12 +38,11 @@ class RegistrationBootstrapService:
             return {"error": babel("An account number must be provided.")}
 
         bootstrap = RegistrationBootstrap(account=account)
-        allowed_encoded = string.ascii_letters + string.digits
 
         # try to create a bootstrap registration with a unique ID
         for _ in range(5):
-            bootstrap.identifier = "T" + "".join(secrets.choice(allowed_encoded) for _ in range(9))
             try:
+                bootstrap.identifier = RegistrationBootstrapService._generate_temp_identifier()
                 bootstrap.save()
                 return bootstrap
             except FlushError:
@@ -52,6 +51,17 @@ class RegistrationBootstrapService:
                 break
 
         return {"error": babel("Unable to create bootstrap registration.")}
+
+    @staticmethod
+    def _generate_temp_identifier():
+        """Generate a 10 character string which starts with `T` and have at least 1 digit."""
+        allowed_encoded = string.ascii_letters + string.digits
+        identifier = None
+        while True:
+            identifier = "T" + "".join(secrets.choice(allowed_encoded) for _ in range(9))
+            if any(c.isdigit() for c in identifier):  # identifier requires at least 1 digit (as per auth-api)
+                break
+        return identifier
 
     @staticmethod
     def delete_bootstrap(bootstrap: RegistrationBootstrap):

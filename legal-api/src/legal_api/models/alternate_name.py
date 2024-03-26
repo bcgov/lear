@@ -153,6 +153,14 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         )
         return aliases
 
+    @classmethod
+    def find_by_tax_id(cls, bn15: str):
+        """Return a Business by the tax_id."""
+        alternate_name = None
+        if bn15:
+            alternate_name = cls.query.filter_by(bn15=bn15).one_or_none()
+        return alternate_name
+
     @property
     def office_mailing_address(self):
         """Return the mailing address."""
@@ -325,9 +333,11 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
                     "identifier": self.identifier,
                     "name": self.name,
                     "nameRegisteredDate": self.start_date.isoformat(),
-                    "nameStartDate": LegislationDatetime.format_as_legislation_date(self.business_start_date)
-                    if self.business_start_date
-                    else None,
+                    "nameStartDate": (
+                        LegislationDatetime.format_as_legislation_date(self.business_start_date)
+                        if self.business_start_date
+                        else None
+                    ),
                     "nameType": self.name_type.name,
                     "operatingName": self.name,  # will be removed in the future
                 }

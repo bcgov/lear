@@ -251,24 +251,15 @@ class EntityRole(Versioned, db.Model):
     @staticmethod
     def get_entity_roles(legal_entity_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
-        entity_roles = (
-            db.session.query(EntityRole)
-            .filter(EntityRole.legal_entity_id == legal_entity_id)
-            .filter(cast(EntityRole.appointment_date, Date) <= end_date)
-            .filter(
-                or_(
-                    EntityRole.cessation_date.is_(None),
-                    cast(EntityRole.cessation_date, Date) > end_date,
-                )
+        entity_roles = db.session.query(EntityRole).filter(EntityRole.legal_entity_id == legal_entity_id)
+
+        if end_date is not None:
+            entity_roles = entity_roles.filter(cast(EntityRole.appointment_date, Date) <= end_date).filter(
+                or_(EntityRole.cessation_date.is_(None), cast(EntityRole.cessation_date, Date) > end_date)
             )
-        )
 
         if role is not None:
-            try:
-                role_type = EntityRole.RoleTypes[role.lower()]
-            except KeyError:
-                return []
-            entity_roles = entity_roles.filter(EntityRole.role_type == role_type)
+            entity_roles = entity_roles.filter(EntityRole.role == role.lower())
 
         entity_roles = entity_roles.all()
         return entity_roles

@@ -20,14 +20,13 @@ from sentry_sdk import capture_message
 from legal_api.models import LegalEntity
 from legal_api.utils.datetime import datetime
 
-from .authz import (
+from .authz import (  # noqa: I001;
     ACCOUNT_IDENTITY,
     BASIC_USER,
     COLIN_SVC_ROLE,
     STAFF_ROLE,
     SYSTEM_ROLE,
     authorized,
-    get_account_by_affiliated_identifier,
     has_roles,
 )
 from .bootstrap import AccountService, RegistrationBootstrapService
@@ -51,23 +50,23 @@ digital_credentials = DigitalCredentialsService()
 business_service = BusinessService()
 
 
-def publish_event(legal_entity: LegalEntity, event_type: str, data: dict, subject: str, message_id: str = None):
+def publish_event(business: any, event_type: str, data: dict, subject: str, message_id: str = None):
     """Publish the event message onto the given NATS subject."""
     try:
         payload = {  # pylint: disable=unused-variable;  # noqa: F841
             "specversion": "1.x-wip",
             "type": event_type,
-            "source": "".join([current_app.config.get("LEGAL_API_BASE_URL"), "/", legal_entity.identifier]),
+            "source": "".join([current_app.config.get("LEGAL_API_BASE_URL"), "/", business.identifier]),
             "id": message_id or str(uuid.uuid4()),
             "time": datetime.utcnow().isoformat(),
             "datacontenttype": "application/json",
-            "identifier": legal_entity.identifier,
+            "identifier": business.identifier,
             "data": data,
         }
         # queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
         capture_message(
-            f"Legal-api queue publish {subject} error: legal_entity.id=" + str(legal_entity.id) + str(err),
+            f"Legal-api queue publish {subject} error: legal_entity.id=" + str(business.id) + str(err),
             level="error",
         )
-        current_app.logger.error("Queue Publish %s Error: legal_entity.id=%s", subject, legal_entity.id, exc_info=True)
+        current_app.logger.error("Queue Publish %s Error: legal_entity.id=%s", subject, business.id, exc_info=True)

@@ -9,6 +9,41 @@
         [[common/certificateStyle.html]]
     </head>
     <body>
+        <div class="outer-container">
+            <div class="outer-container-header">
+                <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
+                [[common/correctedOnCertificate.html]]
+            </div>      
+
+            <div class="certificate-statements">
+                [[common/certificateLogo.html]]
+
+                <div class="cert-title-container">
+                    <div class="sub-header-1">Certificate  of</div>
+                    <div class="certificate-header">AMALGAMATION</div>
+                    <div class="sub-header-2">{{ entityAct }}</div>
+                </div>
+
+                <div class="certify-clause-container">
+                    <div>I hereby certify that the following businesses were amalgamated under the name</div>
+                    <div class="company-name-header">{{ business.legalName }}</div>
+                    <div>on {{ effective_date_time }}</div>
+                    <div class="mt-2">
+                    {% for entity in amalgamatingBusinesses %}
+                        {% if entity != amalgamatingBusinesses[0] %}
+                        <span>, and </span>
+                        {% endif %}
+                    <span class="upper-text">{{ entity.legalName }} ({{ entity.identifier }})</span>
+                    {% endfor %}
+                    </div>
+                    <div class="cert-separator"></div>
+                    <div class="cert-issued-by">
+                        <div>Issued under my hand at Victoria, British Columbia</div>
+                        <div>on {{ business.formatted_founding_date }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </body>
     [[common/certificateFooter.html]]
 </html>
