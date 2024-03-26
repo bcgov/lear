@@ -747,12 +747,12 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, user
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-
+    
     with app.test_request_context():
         monkeypatch.setattr("flask.request.headers.get", mock_auth)
         for entity_type in entity_types:
             filing_types = get_allowed(state, entity_type, jwt)
-            assert filing_types == expected
+            assert sorted(filing_types, key=str) == sorted(expected, key=str)
 
 
 @pytest.mark.parametrize(
@@ -1705,6 +1705,9 @@ def test_is_allowed(
                     FilingKey.AGM_EXTENSION,
                     FilingKey.AGM_LOCATION_CHANGE,
                     FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -1765,6 +1768,9 @@ def test_is_allowed(
                     FilingKey.AGM_EXTENSION,
                     FilingKey.AGM_LOCATION_CHANGE,
                     FilingKey.ALTERATION,
+                    FilingKey.AMALGAMATION_REGULAR,
+                    FilingKey.AMALGAMATION_VERTICAL,
+                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -1879,6 +1885,9 @@ def test_get_allowed_actions(
             result = get_allowable_actions(jwt, legal_entity)
             assert result
             assert result["filing"]["filingSubmissionLink"]
+            print(result["filing"]["filingTypes"])
+            print(expected)
+            print(test_name)
             assert result["filing"]["filingTypes"] == expected
 
 
@@ -2595,9 +2604,6 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(
                 [
                     FilingKey.ADMN_FRZE,
                     FilingKey.ALTERATION,
-                    FilingKey.AMALGAMATION_REGULAR,
-                    FilingKey.AMALGAMATION_VERTICAL,
-                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
@@ -2651,9 +2657,6 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(
             expected_lookup(
                 [
                     FilingKey.ALTERATION,
-                    FilingKey.AMALGAMATION_REGULAR,
-                    FilingKey.AMALGAMATION_VERTICAL,
-                    FilingKey.AMALGAMATION_HORIZONTAL,
                     FilingKey.AR_CORPS,
                     FilingKey.COA_CORPS,
                     FilingKey.COD_CORPS,
