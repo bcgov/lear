@@ -128,9 +128,6 @@ def process(
             # Based on the above checks, this should never happen
             raise DefaultException(f"registration {filing_rec.id} had no valid Firm type.")
 
-    business.state = BusinessCommon.State.ACTIVE
-    alternate_name.state = BusinessCommon.State.ACTIVE
-
     if nr_number := business_info_obj.get("nrNumber", None):
         # TODO check how this is getting used, may need operating name?
         filing_meta.registration = {
