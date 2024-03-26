@@ -32,7 +32,7 @@ def process(business: LegalEntity, filing: Dict, filing_rec: Filing):
                 first_name=signatory.get("givenName").upper() if signatory.get("givenName") else None,
                 last_name=signatory.get("familyName", "").upper(),
                 middle_initial=signatory.get("additionalName").upper() if signatory.get("additionalName") else None,
-                _entity_type=LegalEntity.EntityTypes.PERSON,
+                entity_type=LegalEntity.EntityTypes.PERSON,
             )
             resolution.signing_legal_entity = signatory_le
 

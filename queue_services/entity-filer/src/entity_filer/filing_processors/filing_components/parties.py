@@ -379,7 +379,7 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
             .get("middleInitial", party_dict["officer"].get("middleName", ""))
             .upper(),
             email=party_dict["officer"].get("email"),
-            _entity_type=LegalEntity.EntityTypes.PERSON,
+            entity_type=LegalEntity.EntityTypes.PERSON,
             identifier=person_reg_num,
         )
     elif party_type == "organization":
