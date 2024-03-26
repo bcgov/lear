@@ -18,12 +18,18 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-from business_model import Document, Filing, LegalEntity, RegistrationBootstrap
+from business_model import AlternateName, BusinessCommon, Document, Filing, LegalEntity, RegistrationBootstrap
 from business_model.models.document import DocumentType
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import aliases, filings, legal_entity_info, shares
+from entity_filer.filing_processors.filing_components import (
+    aliases,
+    alternate_name as alternate_name_info,
+    filings,
+    legal_entity_info,
+    shares,
+)
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
@@ -35,7 +41,7 @@ from entity_filer.filing_processors.filing_components.parties import merge_all_p
 # from entity_filer.utils import replace_file_with_certified_copy
 
 
-def update_affiliation(business: LegalEntity, filing: Filing):
+def update_affiliation(business: any, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     # TODO remove all of this
     pass
@@ -74,7 +80,7 @@ def update_affiliation(business: LegalEntity, filing: Filing):
     #     )
 
 
-def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Filing):
+def _update_cooperative(incorp_filing: Dict, business: any, filing: Filing):
     cooperative_obj = incorp_filing.get("cooperative", None)  # noqa F841; remove this comment when below is done
     # TODO remove all this
     # if cooperative_obj:
@@ -110,7 +116,7 @@ def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Fili
 
 
 def process(
-    business: LegalEntity,  # pylint: disable=too-many-branches,too-many-locals
+    business: any,  # pylint: disable=too-many-branches,too-many-locals
     filing: Dict,
     filing_rec: Filing,
     filing_meta: FilingMeta,
@@ -126,6 +132,7 @@ def process(
         raise DefaultException(f"Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}")
 
     business_info_obj = incorp_filing.get("nameRequest")
+    entity_type = business_info_obj.get("legalType")
 
     if filing_rec.colin_event_ids:
         corp_num = filing["filing"]["business"]["identifier"]
@@ -141,7 +148,19 @@ def process(
     business = LegalEntity()
     business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
     business = _update_cooperative(incorp_filing, business, filing_rec)
-    business.state = LegalEntity.State.ACTIVE
+    business.state = BusinessCommon.State.ACTIVE
+
+    # Initial insert of the alternate name record if SP or GP
+    if entity_type in (
+        BusinessCommon.EntityTypes.SOLE_PROP,
+        BusinessCommon.EntityTypes.PARTNERSHIP,
+    ):
+        alternate_name = AlternateName()
+        alternate_name = alternate_name_info.update_alternate_name_info(
+            business, alternate_name, business_info_obj, filing_rec
+        )
+        alternate_name = _update_cooperative(incorp_filing, alternate_name, filing_rec)
+        alternate_name.state = BusinessCommon.State.ACTIVE
 
     if nr_number := business_info_obj.get("nrNumber", None):
         filing_meta.incorporation_application = {
@@ -156,7 +175,7 @@ def process(
         raise DefaultException(f"IA incorporationApplication {filing_rec.id}, Unable to create business.")
 
     if offices := incorp_filing["offices"]:
-        update_offices(business, offices)
+        update_offices(alternate_name if alternate_name else business, offices)
 
     if parties := incorp_filing.get("parties"):
         merge_all_parties(business, filing_rec, {"parties": parties})
@@ -179,10 +198,10 @@ def process(
         ia_json["filing"]["business"]["legalType"] = business.entity_type
         ia_json["filing"]["business"]["foundingDate"] = business.founding_date.isoformat()
         filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
-    return business, filing_rec, filing_meta
+    return business, alternate_name, filing_rec, filing_meta
 
 
-def post_process(business: LegalEntity, filing: Filing):
+def post_process(business: any, filing: Filing):
     """Post processing activities for incorporations.
 
     THIS SHOULD NOT ALTER THE MODEL
