@@ -131,19 +131,6 @@ class BusinessCommon:
         return isinstance(self, (LegalEntity, history_cls(LegalEntity)))
 
     @property
-    def entity_type(self):
-        """Return entity_type."""
-        from ..models import AlternateName
-
-        if self.is_legal_entity:
-            return self._entity_type
-
-        if self.is_alternate_name_entity and self.name_type.value == AlternateName.NameType.DBA:
-            return self.EntityTypes.SOLE_PROP.value
-
-        return None
-
-    @property
     def compliance_warnings(self):
         """Return compliance warnings."""
         if not hasattr(self, "_compliance_warnings"):
