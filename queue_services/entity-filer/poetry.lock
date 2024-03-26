@@ -192,7 +192,7 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", branch = "feature-l
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "feature-legal-name"
-resolved_reference = "511f86afddcf96f64e178cab2248fea7747037e8"
+resolved_reference = "b8f00fcff62e687755b8e0a59d3605b78300509e"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
