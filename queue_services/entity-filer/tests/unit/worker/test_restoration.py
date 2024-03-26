@@ -304,7 +304,7 @@ def test_update_party(app, session, mocker):
             last_name="Crane",
             middle_initial="Joe",
             title="VP",
-            _entity_type=LegalEntity.EntityTypes.PERSON,
+            entity_type=LegalEntity.EntityTypes.PERSON,
         )
         member.save()
         assert member.id
