@@ -344,7 +344,7 @@ def get_allowable_filings_dict():
                     'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT],
-                        'invalidStateFilings': ['restoration.limitedRestoration', 
+                        'invalidStateFilings': ['restoration.limitedRestoration',
                                                 'restoration.limitedRestorationExtension']
                     }
                 },
