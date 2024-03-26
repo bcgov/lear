@@ -309,16 +309,16 @@ FILINGS: Final = {
             {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
         ],
         'voluntary': {
-            'title': ReportTitles.VOLUNTARY_DISSOLUTION,
+            'title': ReportTitles.VOLUNTARY_DISSOLUTION.value,
             'displayName': {
-                'CP': ReportTitles.VOLUNTARY_DISSOLUTION,
-                'BC': ReportTitles.VOLUNTARY_DISSOLUTION,
-                'BEN': ReportTitles.VOLUNTARY_DISSOLUTION,
-                'ULC': ReportTitles.VOLUNTARY_DISSOLUTION,
-                'CC': ReportTitles.VOLUNTARY_DISSOLUTION,
-                'LLC': ReportTitles.VOLUNTARY_DISSOLUTION,
-                'SP': ReportTitles.STATEMENT_DISSOLUTION,
-                'GP': ReportTitles.STATEMENT_DISSOLUTION
+                'CP': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'BC': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'BEN': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'ULC': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'CC': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'LLC': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'SP': ReportTitles.STATEMENT_DISSOLUTION.value,
+                'GP': ReportTitles.STATEMENT_DISSOLUTION.value
             },
             'codes': {
                 'CP': 'DIS_VOL',
@@ -332,16 +332,16 @@ FILINGS: Final = {
             },
         },
         'administrative': {
-            'title': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
+            'title': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
             'displayName': {
-                'CP': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
-                'BC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
-                'BEN': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
-                'ULC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
-                'CC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
-                'LLC': ReportTitles.ADMINISTRATIVE_DISSOLUTION,
-                'SP': ReportTitles.STATEMENT_DISSOLUTION,
-                'GP': ReportTitles.STATEMENT_DISSOLUTION
+                'CP': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'BC': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'BEN': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'ULC': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'CC': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'LLC': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'SP': ReportTitles.STATEMENT_DISSOLUTION.value,
+                'GP': ReportTitles.STATEMENT_DISSOLUTION.value
             },
             'codes': {
                 'CP': 'DIS_VOL',

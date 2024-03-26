@@ -562,12 +562,20 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         return None if not filing else filing[1]
 
     def get_amalgamated_into(self) -> dict:
-        """Get amalgamated into if this business is part of an amalgamation."""
+        """Get amalgamated into if this business is part of an amalgamation.
+
+        Return TED:
+            1. TED is Active and TING is Historical
+            2. TED is Historical and TING is Historical (Yet to be Active)
+        Return None:
+            1. Not a TING (not part of an amalgamation)
+            2. TED is Historical and TING is Active (through putBackOn filing)
+        """
         if (self.state == Business.State.HISTORICAL and
+            self.state_filing_id and
             (state_filing := Filing.find_by_id(self.state_filing_id)) and
                 state_filing.is_amalgamation_application):
-            return Amalgamation.get_revision_json(state_filing.transaction_id,
-                                                  state_filing.business_id)
+            return Amalgamation.get_revision_json(state_filing.transaction_id, state_filing.business_id)
 
         return None
 

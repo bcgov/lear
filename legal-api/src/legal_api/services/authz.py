@@ -618,7 +618,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if not business.good_standing:
         business_blocker_checks[BusinessBlocker.NOT_IN_GOOD_STANDING] = True
 
-    if business.amalgamating_businesses.one_or_none():
+    if business.get_amalgamated_into():
         business_blocker_checks[BusinessBlocker.AMALGAMATING_BUSINESS] = True
 
     return business_blocker_checks
