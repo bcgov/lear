@@ -747,7 +747,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, entity_types, user
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
-    
+
     with app.test_request_context():
         monkeypatch.setattr("flask.request.headers.get", mock_auth)
         for entity_type in entity_types:
@@ -1886,8 +1886,6 @@ def test_get_allowed_actions(
             assert result
             assert result["filing"]["filingSubmissionLink"]
             print(result["filing"]["filingTypes"])
-            print(expected)
-            print(test_name)
             assert result["filing"]["filingTypes"] == expected
 
 
