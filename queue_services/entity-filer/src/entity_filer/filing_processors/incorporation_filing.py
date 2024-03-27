@@ -129,16 +129,12 @@ def process(
 
     business_info_obj = incorp_filing.get("nameRequest")
     entity_type = business_info_obj.get("legalType")
-    firm_types = (
-        BusinessCommon.EntityTypes.SOLE_PROP,
-        BusinessCommon.EntityTypes.PARTNERSHIP,
-    )
 
     if filing_rec.colin_event_ids:
         corp_num = filing["filing"]["business"]["identifier"]
     else:
         # Reserve the Corp Number for this entity
-        corp_num = legal_entity_info.get_next_corp_num("FM" if entity_type in firm_types else entity_type)
+        corp_num = legal_entity_info.get_next_corp_num(entity_type)
         if not corp_num:
             raise DefaultException(
                 f"incorporationApplication {filing_rec.id} unable to get a business registration number."
@@ -152,7 +148,10 @@ def process(
 
     # Initial insert of the alternate name record if SP or GP
     alternate_name = None
-    if entity_type in firm_types:
+    if entity_type in (
+        BusinessCommon.EntityTypes.SOLE_PROP,
+        BusinessCommon.EntityTypes.PARTNERSHIP,
+    ):
         alternate_name = AlternateName()
         alternate_name = alternate_name_info.update_alternate_name_info(
             alternate_name, business, business_info_obj, filing_rec
