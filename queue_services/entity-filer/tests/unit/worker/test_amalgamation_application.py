@@ -24,7 +24,7 @@ from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
 from entity_filer.resources.worker import FilingMessage, process_filing
-from tests.unit import create_entity, create_filing, create_entity_person, create_entity_role, create_share_class
+from tests.unit import create_entity, create_entity_person, create_entity_role, create_filing, create_share_class
 
 
 def test_regular_amalgamation_application_process(app, session):

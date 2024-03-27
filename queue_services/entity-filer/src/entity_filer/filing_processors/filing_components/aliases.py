@@ -29,7 +29,7 @@ def update_aliases(business: LegalEntity, aliases) -> Dict:
         ):
             existing_alias.alias = alias["name"].upper()
         else:
-            new_alias = Alias(alias=alias["name"].upper(), type=Alias.AliasType.TRANSLATION.value)
+            new_alias = Alias(alias=alias["name"].upper(), type=Alias.AliasType.TRANSLATION.value)  # noqa: F841
             # TODO: Due to model changes, aliases now returns a query object, which cannot be appended to.
             # business.aliases.append(new_alias)
 

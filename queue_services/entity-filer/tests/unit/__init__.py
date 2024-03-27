@@ -16,11 +16,10 @@ import base64
 import uuid
 from contextlib import contextmanager
 
-from sqlalchemy import exc
-from freezegun import freeze_time
 from business_model.models import Filing, ShareClass, ShareSeries, db
 from business_model.models.colin_event_id import ColinEventId
 from freezegun import freeze_time
+from sqlalchemy import exc
 
 from entity_filer.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
@@ -638,7 +637,7 @@ def nested_session(session):
         sess.rollback()
     except AssertionError as err:
         raise err
-    except exc.ResourceClosedError as err:
+    except exc.ResourceClosedError as err:  # noqa: F841
         # mean the close out of the transaction got fouled in pytest
         pass
     except Exception as err:

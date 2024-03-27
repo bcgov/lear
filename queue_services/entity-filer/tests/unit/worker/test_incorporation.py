@@ -22,15 +22,12 @@ from http import HTTPStatus
 from unittest.mock import call, patch
 
 import pytest
-
 from business_model import EntityRole, Filing
 from flask import current_app
-
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.resources.worker import FilingMessage, process_filing
 from entity_filer.services import BusinessService
-
 from tests.unit import create_filing
 
 
