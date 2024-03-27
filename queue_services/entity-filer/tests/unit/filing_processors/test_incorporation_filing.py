@@ -28,7 +28,6 @@ from entity_filer.filing_processors import incorporation_filing
 from entity_filer.filing_processors.filing_components import legal_entity_info
 from tests.unit import create_filing, nested_session
 
-
 SP_INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 SP_INCORPORATION_FILING_TEMPLATE["filing"]["incorporationApplication"]["nameRequest"]["legalType"] = "SP"
 
@@ -169,7 +168,9 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     next_corp_num = "BC0001095"
-    with patch.object(legal_entity_info, "get_next_corp_num", return_value=next_corp_num) as mock_get_next_corp_num:  # noqa F841
+    with patch.object(
+        legal_entity_info, "get_next_corp_num", return_value=next_corp_num
+    ) as mock_get_next_corp_num:  # noqa F841
         filing["filing"]["incorporationApplication"]["nameRequest"]["legalType"] = legal_type
         create_filing("123", filing)
 
@@ -178,9 +179,7 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
         # test
-        business, _, filing_rec, filing_meta = incorporation_filing.process(
-            None, filing, filing_rec, filing_meta
-        )
+        business, _, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -259,9 +258,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, _, filing_rec, filing_meta = incorporation_filing.process(
-        None, filing, filing_rec, filing_meta
-    )
+    business, _, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == corp_num
