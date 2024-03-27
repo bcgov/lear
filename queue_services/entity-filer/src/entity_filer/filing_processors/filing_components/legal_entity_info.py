@@ -17,7 +17,7 @@ from tokenize import String
 from typing import Dict
 
 import requests
-from business_model import EntityRole, Filing, LegalEntity, LegalEntityIdentifier, LegalEntityType
+from business_model import BusinessCommon, Filing, LegalEntity, LegalEntityIdentifier, LegalEntityType
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 
@@ -60,22 +60,22 @@ def set_association_type(legal_entity: LegalEntity, association_type: String) ->
     return None
 
 
-def set_legal_name(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict):
+def set_legal_name(corp_num: str, legal_entity: LegalEntity, business_info: Dict):
     """Set the legal_name in the legal_entity object."""
-    if legal_name := legal_entity_info.get("legalName", None):
+    if legal_name := business_info.get("legalName", None):
         legal_entity._legal_name = legal_name
     else:
-        entity_type = legal_entity_info.get("legalType", None)
+        entity_type = business_info.get("legalType", None)
         numbered_legal_name_suffix = LegalEntity.BUSINESSES[entity_type]["numberedBusinessNameSuffix"]
         legal_entity._legal_name = f"{corp_num[2:]} {numbered_legal_name_suffix}"
 
 
-def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict, filing: Filing):
+def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, business_info: Dict, filing: Filing):
     """Format and update the legal_entity entity from incorporation filing."""
-    if corp_num and legal_entity and legal_entity_info and filing:
-        set_legal_name(corp_num, legal_entity, legal_entity_info)
+    if corp_num and legal_entity and business_info and filing:
+        set_legal_name(corp_num, legal_entity, business_info)
         legal_entity.identifier = corp_num
-        legal_entity.entity_type = legal_entity_info.get("legalType", None)
+        legal_entity.entity_type = business_info.get("legalType", None)
         legal_entity.founding_date = filing.effective_date
         legal_entity.last_coa_date = filing.effective_date
         legal_entity.last_cod_date = filing.effective_date
@@ -100,6 +100,13 @@ def update_naics_info(legal_entity: LegalEntity, naics: Dict):
 
 def get_next_corp_num(entity_type: str):
     """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
+    # Handle firms
+    if entity_type in (
+        BusinessCommon.EntityTypes.SOLE_PROP,
+        BusinessCommon.EntityTypes.PARTNERSHIP,
+    ):
+        entity_type = "FM"
+
     # this gets called if the new services are generating the LegalEntity.identifier.
     if entity_type in LegalEntityType:
         if business_type := LegalEntityType.get_enum_by_value(entity_type):

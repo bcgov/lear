@@ -16,7 +16,8 @@ import base64
 import uuid
 from contextlib import contextmanager
 
-import sqlalchemy
+from sqlalchemy import exc
+from freezegun import freeze_time
 from business_model.models import Filing, ShareClass, ShareSeries, db
 from business_model.models.colin_event_id import ColinEventId
 from freezegun import freeze_time
@@ -635,10 +636,12 @@ def nested_session(session):
         sess = session.begin_nested()
         yield sess
         sess.rollback()
-    except sqlalchemy.exc.ResourceClosedError:
-        print("couldn't rollback, as the session is closed.")
+    except AssertionError as err:
+        raise err
+    except exc.ResourceClosedError as err:
+        # mean the close out of the transaction got fouled in pytest
+        pass
     except Exception as err:
-        print(err)
-        raise Exception() from err
+        raise err
     finally:
         pass
