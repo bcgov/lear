@@ -31,9 +31,6 @@ def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: 
     logger.debug('processing adminFreeze: %s', filing)
 
     freeze = bool(dpath.util.get(admin_freeze_filing, '/freeze'))
-    filing_rec.order_details = admin_freeze_filing.get('details')
     business.admin_freeze = freeze
 
-    filing_meta.admin_freeze = {}
-    filing_meta.admin_freeze = {**filing_meta.admin_freeze,
-                                **{'freeze': freeze}}
+    filing_meta.admin_freeze = {'freeze': freeze}
