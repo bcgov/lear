@@ -311,10 +311,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_special_resolution_application(filing, "alteration")
 
     def _set_completing_party(self, filing):
-        business = BusinessService.fetch_business_by_filing(self._filing)
-        if business.is_alternate_name_entity and (business.entity_type == LegalEntity.EntityTypes.SOLE_PROP.value):
-            return
-
         completing_party_role = EntityRole.get_entity_roles_by_filing(
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
