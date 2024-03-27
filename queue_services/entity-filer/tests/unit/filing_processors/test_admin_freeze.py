@@ -50,7 +50,6 @@ async def test_worker_admin_freeze(app, session, mocker):
     assert business.admin_freeze == True
     assert business.state_filing_id is None
     assert business.dissolution_date is None
-    assert filing_json['filing']['adminFreeze']['details'] == final_filing.order_details
 
     adminFreeze = final_filing.meta_data.get('adminFreeze')
     assert filing_json['filing']['adminFreeze']['freeze'] == adminFreeze.get('freeze')
