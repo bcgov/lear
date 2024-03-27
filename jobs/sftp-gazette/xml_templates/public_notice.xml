@@ -1,0 +1,20 @@
+<public_notice>{% for i in range(headItems|count) %} 
+    <filing_desc>
+      <category>{{headItems[i].split(':')[0]}}</category>{% if headItems[i].split(':')[1] !='' %} 
+      <subcategory>{{headItems[i].split(':')[1]}}</subcategory>{% endif %}{% if headItems[i].split(':')[2] !='' %}
+      <corp_class>{{headItems[i].split(':')[2]}}</corp_class>{% endif %}
+      <description>{{headItems[i].split(':')[3]}}:</description>
+    </filing_desc>{% endfor %}  
+    
+    <filings>{% for i in range(filingItems|count) %}  {% for j in range(filingItems[i]|count) %} 
+        <filing_detail> 
+            <corp_num>{{filingItems[i][j][5]}}</corp_num>
+            <effective_date>{{filingItems[i][0][8].strftime('%B %d, %Y')}}</effective_date>
+            <category>{{filingItems[i][0][0]}}</category>{% if filingItems[i][0][1] !='' %} 
+            <subcategory>{{filingItems[i][0][1]}}</subcategory>{% endif %}{% if filingItems[i][0][2] !='' %} 
+            <corp_class>{{filingItems[i][0][2]}}</corp_class>{% endif %}  
+            <text>{{filingItems[i][j][4]}}</text>     
+        </filing_detail> {% endfor %}  {% endfor %}
+    </filings>
+</public_notice>
+
