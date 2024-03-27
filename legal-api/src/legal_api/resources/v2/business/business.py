@@ -189,6 +189,8 @@ def search_businesses():
                 draft['legalName'] = (Business.BUSINESSES
                                       .get(draft_dao.json_legal_type, {})
                                       .get('numberedDescription'))
+                if draft['legalName'] is None:
+                    draft['legalName'] = 'Amalgamated Business'
             draft_results.append(draft)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
