@@ -60,7 +60,7 @@ def update_offices(business: any, offices_structure: Dict) -> Optional[List]:
     return err
 
 
-def delete_existing_offices(business: LegalEntity):
+def delete_existing_offices(business: any):
     """Delete the existing offices for a business."""
     if existing_offices := business.offices.all():
         for office in existing_offices:

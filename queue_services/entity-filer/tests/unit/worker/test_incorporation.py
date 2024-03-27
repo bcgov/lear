@@ -22,19 +22,12 @@ from http import HTTPStatus
 from unittest.mock import call, patch
 
 import pytest
-
-# # from entity_queue_common.messages import get_data_from_msg
-# from entity_queue_common.service_utils import subscribe_to_queue
-from business_model import EntityRole, Filing, LegalEntity
+from business_model import EntityRole, Filing
 from flask import current_app
-
-# from legal_api.services import RegistrationBootstrapService
-# from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from entity_filer.resources.worker import FilingMessage, process_filing
-
-# from tests.pytest_marks import colin_api_integration, integration_affiliation, integration_namex_api
+from entity_filer.services import BusinessService
 from tests.unit import create_filing
 
 
@@ -75,7 +68,7 @@ def test_incorporation_filing(app, session, bootstrap, requests_mock):
 
     # Check outcome
     filing = Filing.find_by_id(filing_id)
-    business = LegalEntity.find_by_internal_id(filing.legal_entity_id)
+    business = BusinessService.fetch_business_by_filing(filing)
 
     filing_json = filing.filing_json
     assert business
