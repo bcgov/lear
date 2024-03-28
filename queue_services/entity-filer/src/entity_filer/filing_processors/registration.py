@@ -187,6 +187,7 @@ def merge_partnership_registration(
     business.founding_date = filing_rec.effective_date
     business.tax_id = registration_filing.get("business", {}).get("taxId", None)
     business._legal_name = get_partnership_name(registration_filing.get("parties"))
+    business.state = BusinessCommon.State.ACTIVE
 
     alternate_name = AlternateName(
         bn15=registration_filing.get("business", {}).get("taxId", None),
@@ -197,6 +198,7 @@ def merge_partnership_registration(
         name_type=AlternateName.NameType.DBA,
         start_date=filing_rec.effective_date,
         business_start_date=business.start_date,
+        state=BusinessCommon.State.ACTIVE,
     )
 
     if naics_dict := registration_filing.get("business", {}).get("naics"):
@@ -253,7 +255,11 @@ def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filin
 
     tax_id = filing.get("filing", {}).get("business", {}).get("taxId", None)
 
-    if proprietor.entity_type == BusinessCommon.EntityTypes.PERSON and not proprietor.tax_id:
+    if (
+        isinstance(proprietor, LegalEntity)
+        and proprietor.entity_type == BusinessCommon.EntityTypes.PERSON
+        and not proprietor.tax_id
+    ):
         proprietor.tax_id = tax_id
 
     alternate_name = AlternateName(
@@ -268,6 +274,7 @@ def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filin
         mailing_address_id=mailing_address_id,
         bn15=tax_id,
         email=proprietor.email,
+        state=BusinessCommon.State.ACTIVE,
     )
 
     if naics_dict := filing.get("filing", {}).get("registration", {}).get("business", {}).get("naics"):
