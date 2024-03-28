@@ -20,6 +20,7 @@ import pycountry
 from sql_versioning import history_cls
 from sqlalchemy import or_
 from sqlalchemy.sql.expression import null
+from sqlalchemy.orm import defer
 from sqlalchemy_continuum import version_class
 
 from legal_api.models import (
@@ -583,15 +584,17 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_party_revision(filing, party_id) -> dict:
         """Consolidates all party changes up to the given transaction id."""
+        business_attr = LegalEntity if filing.legal_entity_id else AlternateName
         party_current = (
-            db.session.query(LegalEntity)
-            .filter(LegalEntity.change_filing_id == filing.id)
-            .filter(LegalEntity.id == party_id)
+            db.session.query(business_attr)
+            .filter(business_attr.change_filing_id == filing.id)
+            .filter(business_attr.id == party_id)
         )
 
-        party_version = history_cls(LegalEntity)
+        party_version = history_cls(business_attr)
         party_history = (
             db.session.query(party_version)
+            .options(defer(party_version.changed)) # TODO: remove this after update history_cls
             .filter(party_version.change_filing_id == filing.id)
             .filter(party_version.id == party_id)
         )
@@ -812,6 +815,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def business_revision_json(business_revision, business_json):
         """Return the business revision as a json object."""
+        if not business_revision:
+            return business_json
+
         if business_revision.is_legal_entity:
             business_json["hasRestrictions"] = business_revision.restriction_ind
             business_json["restorationExpiryDate"] = (
