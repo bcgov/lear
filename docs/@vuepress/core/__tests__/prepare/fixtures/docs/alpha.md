@@ -1,5 +1,0 @@
----
-title: VuePress Alpha
----
-
-# Alpha
