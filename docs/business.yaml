@@ -1,0 +1,4180 @@
+openapi: 3.0.1
+info:
+  title: businesses
+  version: '2.0'
+  description: |-
+    Businesses provideas all of the services needed to manage legal entities.
+    This encompasses all types of businesses authorized to do business by the Registrar.
+  contact:
+    name: BC Registry
+    email: admin@daxiom.com
+    url: 'https://developer.bcregistry.daxiom.ca/'
+  license:
+    name: BSD-3-Clause
+    url: 'https://opensource.org/license/bsd-3-clause'
+servers:
+  - url: 'https://bcregistry-sandbox.apigee.net/business/api/v2'
+    description: sandbox
+  - url: 'http://localhost:3000/business/api/v2'
+    description: local
+  - url: 'https://bcregistry-dev.apigee.net/business/api/v2'
+    description: dev
+  - url: 'https://bcregistry-test.apigee.net/business/api/v2'
+    description: test
+  - url: 'https://bcregistry-prod.apigee.net/business/api/v2'
+    description: prod
+paths:
+  '/businesses/{identifier}':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get_business
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Business'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Business'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      operationId: get-business
+      description: 'Based on the users role, this returns basic information about a business.'
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+      tags:
+        - business
+  '/businesses/{identifier}/filings':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get filing ledger
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ledger'
+      operationId: get-businesses-identifier-filings
+      description: Return the current ledger of filings for a business.
+      tags:
+        - business
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+    post:
+      summary: submit new filing
+      operationId: post-businesses-identifier-filings
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      description: Submit a filing to alter the state and data of a business.
+      tags:
+        - business
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Filing'
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: draft
+          description: 'save draft, no validation'
+        - schema:
+            type: boolean
+          in: query
+          name: only_validate
+          description: 'only validate, don''t save'
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/filings/{filingId}/documents':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+      - $ref: '#/components/parameters/filingId'
+    get:
+      summary: filing documents list
+      tags:
+        - business
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Filing_documents'
+      operationId: get-businesses-identifier-filings-filingId-documents
+      description: Returns the list of documents available for a filing.
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/addresses':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get business addresses
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Office'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      operationId: get-businesses-identifier-addresses
+      description: Returns the current addresses for the businesses. The number of addresses are based on the legal type.
+      tags:
+        - business
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/filings/{filingId}/documents/{documentName}':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+      - $ref: '#/components/parameters/filingId'
+      - $ref: '#/components/parameters/documentName'
+    get:
+      summary: filing document
+      tags:
+        - business
+      responses:
+        '200':
+          description: Created
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: byte
+                description: PDF Document
+                readOnly: true
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      operationId: get-businesses-identifier-filings-filingId-document
+      description: Return the requested document.
+      parameters:
+        - schema:
+            type: string
+            default: application/pdf
+            enum:
+              - application/pdf
+              - application/json
+          in: header
+          description: The mimetype of the object
+          name: Content-type
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/documents/{documentName}':
+    parameters:
+      - name: identifier
+        in: path
+        required: true
+        description: The unique identifier for the business or organization.
+        schema:
+          type: string
+          example: BC1234567
+      - schema:
+          type: string
+          enum:
+            - summary
+            - cogs
+            - cstat
+            - lseal
+        name: documentName
+        in: path
+        required: true
+        description: The name of the document being requested
+    get:
+      summary: business document
+      tags:
+        - business
+      responses:
+        '200':
+          description: Created
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: byte
+                description: PDF Document
+                readOnly: true
+            application/json:
+              schema:
+                x-examples:
+                  example-1:
+                    alterations: []
+                    amalgamatedEntities: []
+                    business:
+                      adminFreeze: false
+                      arMaxDate: '2022-08-05'
+                      arMinDate: '2022-12-15'
+                      associationType: null
+                      complianceWarnings: []
+                      coopType: Not Available
+                      dissolutionDate: '2022-01-11T20:03:33.857887+00:00'
+                      fiscalYearEndDate: '2021-12-15'
+                      foundingDate: '2021-12-15T19:54:10.809174+00:00'
+                      goodStanding: false
+                      hasCorrections: false
+                      hasRestrictions: false
+                      identifier: BC0870884
+                      lastAddressChangeDate: '2021-12-15'
+                      lastAnnualGeneralMeetingDate: ''
+                      lastAnnualReportDate: ''
+                      lastDirectorChangeDate: '2021-12-15'
+                      lastLedgerTimestamp: '2021-12-15T19:54:33.898570+00:00'
+                      lastModified: '2021-12-15T19:54:33.898532+00:00'
+                      legalName: 0870884 B.C. LTD.
+                      legalType: BEN
+                      naicsCode: null
+                      naicsDescription: null
+                      naicsKey: null
+                      nextAnnualReport: '2022-12-15T08:00:00+00:00'
+                      state: HISTORICAL
+                      stateFiling: 'https://LEGAL_API_BASE_URL/api/v1/businesses/BC0870884/filings/113730'
+                      warnings: []
+                    entityAct: Business Corporations Act
+                    entityDescription: BC Benefit Company
+                    liquidation: {}
+                    listOfTranslations:
+                      - id: '319'
+                        name: TEST TRANSLATION A
+                        type: TRANSLATION
+                      - id: '320'
+                        name: TEST TRANSLATION B
+                        type: TRANSLATION
+                    nameChanges:
+                      - filingDateTime: '2021-12-28T21:40:16.696239+00:00'
+                        fromLegalName: LM LOGISTICS INC.
+                        toLegalName: 0870884 B.C. LTD.
+                      - filingDateTime: '2021-12-23T00:34:34.520725+00:00'
+                        fromLegalName: 0870884 B.C. LTD.
+                        toLegalName: LM LOGISTICS INC.
+                    offices:
+                      custodialOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 2334725
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 2334724
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                      recordsOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 2317157
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 2317156
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                      registeredOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 2317159
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 2317158
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                    parties:
+                      - deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          id: 2334722
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          id: 2334723
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        officer:
+                          email: null
+                          firstName: LEKSHMI
+                          id: 474411
+                          lastName: MALLIKA
+                          partyType: person
+                        roles:
+                          - appointmentDate: '2022-01-11'
+                            cessationDate: null
+                            roleType: Custodian
+                      - deliveryAddress:
+                          addressCity: AB1
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317160
+                          postalCode: V8X 5J8
+                          streetAddress: '#400A - 4000 SEYMOUR PLACE'
+                          streetAddressAdditional: PENTHOUSE
+                        mailingAddress:
+                          addressCity: AB1
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317161
+                          postalCode: V8X 5J8
+                          streetAddress: '#400A - 4000 SEYMOUR PLACE'
+                          streetAddressAdditional: PENTHOUSE
+                        officer:
+                          email: null
+                          firstName: BCREGTEST DALIA
+                          id: 468575
+                          lastName: ONE
+                          partyType: person
+                        roles:
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Completing Party
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Incorporator
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Director
+                      - deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317162
+                          postalCode: V8Z 5C5
+                          streetAddress: 3948 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317163
+                          postalCode: V8Z 5C5
+                          streetAddress: 3948 Helen Rd
+                          streetAddressAdditional: ''
+                        officer:
+                          email: null
+                          firstName: LEKSHMI
+                          id: 468576
+                          lastName: GOKUL
+                          partyType: person
+                        roles:
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Director
+                    registrarInfo:
+                      endDate: null
+                      name: T.K. SPARKS
+                      startDate: '2022-06-01T00:00:00'
+                      title: Registrar of Companies
+                    reportDateTime: '2022-08-05T18:30:42.147556+00:00'
+                    reportType: summary
+                    stateFilings:
+                      - effectiveDateTime: '2022-01-11T20:03:51.343818+00:00'
+                        filingDateTime: '2022-01-11T20:03:33.857807+00:00'
+                        filingName: Voluntary Dissolution
+                type: object
+                properties:
+                  alterations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        filingDateTime:
+                          type: string
+                          format: date-time
+                        fromLegalType:
+                          type: string
+                        toLegalType:
+                          type: string
+                  amalgamatedEntities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        identifier:
+                          type: string
+                        name:
+                          type: string
+                      required:
+                        - identifier
+                        - name
+                  business:
+                    $ref: '#/components/schemas/Business'
+                  entityAct:
+                    type: string
+                  entityDescription:
+                    type: string
+                  liquidation:
+                    type: object
+                    properties:
+                      filingDateTime:
+                        type: string
+                        format: date-time
+                  listOfTranslations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                          enum:
+                            - DBA
+                            - TRANSLATION
+                      required:
+                        - name
+                        - type
+                  nameChanges:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        filingDateTime:
+                          type: string
+                          format: date-time
+                        fromLegalName:
+                          type: string
+                        toLegalName:
+                          type: string
+                      required:
+                        - filingDateTime
+                        - fromLegalName
+                        - toLegalName
+                  offices:
+                    oneOf:
+                      - properties:
+                          recordsOffice:
+                            $ref: '#/components/schemas/Office'
+                          registeredOffice:
+                            $ref: '#/components/schemas/Office'
+                          custodialOffice:
+                            $ref: '#/components/schemas/Office'
+                        required:
+                          - registeredOffice
+                      - properties:
+                          businessOffice:
+                            $ref: '#/components/schemas/Office'
+                        required:
+                          - businessOffice
+                    type: object
+                  parties:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/party'
+                  registrarInfo:
+                    type: object
+                    required:
+                      - startDate
+                      - name
+                    properties:
+                      startDate:
+                        type: string
+                        format: date-time
+                        example: '2022-06-01T00:00:00'
+                      endDate:
+                        type: string
+                        format: date-time
+                        example: '2022-06-01T00:00:00'
+                        nullable: true
+                      name:
+                        type: string
+                      title:
+                        type: string
+                        example: Registrar of Companies
+                  reportDateTime:
+                    type: string
+                    format: date-time
+                    example: '2022-08-05T19:50:04.960880+00:00'
+                  reportType:
+                    type: string
+                    enum:
+                      - summary
+                      - cogs
+                      - cstat
+                      - lseal
+                  stateFilings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        effectiveDateTime:
+                          type: string
+                          format: date-time
+                        filingDateTime:
+                          type: string
+                          format: date-time
+                        filingName:
+                          type: string
+                          example: Voluntary Dissolution
+                required:
+                  - business
+                  - entityAct
+                  - entityDescription
+                  - registrarInfo
+                  - reportDateTime
+                  - reportType
+              examples:
+                summary-json:
+                  value:
+                    alterations: []
+                    amalgamatedEntities: []
+                    business:
+                      adminFreeze: false
+                      arMaxDate: '2022-08-05'
+                      arMinDate: '2022-12-15'
+                      associationType: null
+                      complianceWarnings: []
+                      coopType: Not Available
+                      dissolutionDate: '2022-01-11T20:03:33.857887+00:00'
+                      fiscalYearEndDate: '2021-12-15'
+                      foundingDate: '2021-12-15T19:54:10.809174+00:00'
+                      goodStanding: false
+                      hasCorrections: false
+                      hasRestrictions: false
+                      identifier: BC0870884
+                      lastAddressChangeDate: '2021-12-15'
+                      lastAnnualGeneralMeetingDate: ''
+                      lastAnnualReportDate: ''
+                      lastDirectorChangeDate: '2021-12-15'
+                      lastLedgerTimestamp: '2021-12-15T19:54:33.898570+00:00'
+                      lastModified: '2021-12-15T19:54:33.898532+00:00'
+                      legalName: 0870884 B.C. LTD.
+                      legalType: BEN
+                      naicsCode: null
+                      naicsDescription: null
+                      naicsKey: null
+                      nextAnnualReport: '2022-12-15T08:00:00+00:00'
+                      state: HISTORICAL
+                      stateFiling: 'https://LEGAL_API_BASE_URL/api/v1/businesses/BC0870884/filings/113730'
+                      warnings: []
+                    entityAct: Business Corporations Act
+                    entityDescription: BC Benefit Company
+                    liquidation: {}
+                    listOfTranslations:
+                      - id: '319'
+                        name: TEST TRANSLATION A
+                        type: TRANSLATION
+                      - id: '320'
+                        name: TEST TRANSLATION B
+                        type: TRANSLATION
+                    nameChanges:
+                      - filingDateTime: '2021-12-28T21:40:16.696239+00:00'
+                        fromLegalName: LM LOGISTICS INC.
+                        toLegalName: 0870884 B.C. LTD.
+                      - filingDateTime: '2021-12-23T00:34:34.520725+00:00'
+                        fromLegalName: 0870884 B.C. LTD.
+                        toLegalName: LM LOGISTICS INC.
+                    offices:
+                      custodialOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 2334725
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 2334724
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                      recordsOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 2317157
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 2317156
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                      registeredOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 2317159
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 2317158
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                    parties:
+                      - deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          id: 2334722
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          id: 2334723
+                          postalCode: V8Z 5C5
+                          streetAddress: 3950 Helen Rd
+                          streetAddressAdditional: ''
+                        officer:
+                          email: null
+                          firstName: LEKSHMI
+                          id: 474411
+                          lastName: MALLIKA
+                          partyType: person
+                        roles:
+                          - appointmentDate: '2022-01-11'
+                            cessationDate: null
+                            roleType: Custodian
+                      - deliveryAddress:
+                          addressCity: AB1
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317160
+                          postalCode: V8X 5J8
+                          streetAddress: '#400A - 4000 SEYMOUR PLACE'
+                          streetAddressAdditional: PENTHOUSE
+                        mailingAddress:
+                          addressCity: AB1
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317161
+                          postalCode: V8X 5J8
+                          streetAddress: '#400A - 4000 SEYMOUR PLACE'
+                          streetAddressAdditional: PENTHOUSE
+                        officer:
+                          email: null
+                          firstName: BCREGTEST DALIA
+                          id: 468575
+                          lastName: ONE
+                          partyType: person
+                        roles:
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Completing Party
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Incorporator
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Director
+                      - deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317162
+                          postalCode: V8Z 5C5
+                          streetAddress: 3948 Helen Rd
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          deliveryInstructions: null
+                          id: 2317163
+                          postalCode: V8Z 5C5
+                          streetAddress: 3948 Helen Rd
+                          streetAddressAdditional: ''
+                        officer:
+                          email: null
+                          firstName: LEKSHMI
+                          id: 468576
+                          lastName: GOKUL
+                          partyType: person
+                        roles:
+                          - appointmentDate: '2021-12-15'
+                            cessationDate: null
+                            roleType: Director
+                    registrarInfo:
+                      endDate: null
+                      name: T.K. SPARKS
+                      startDate: '2022-06-01T00:00:00'
+                      title: Registrar of Companies
+                    reportDateTime: '2022-08-05T18:30:42.147556+00:00'
+                    reportType: summary
+                    stateFilings:
+                      - effectiveDateTime: '2022-01-11T20:03:51.343818+00:00'
+                        filingDateTime: '2022-01-11T20:03:33.857807+00:00'
+                        filingName: Voluntary Dissolution
+                cogs-json:
+                  value:
+                    business:
+                      adminFreeze: false
+                      arMaxDate: '2022-08-05'
+                      arMinDate: '2022-09-15'
+                      associationType: null
+                      complianceWarnings: []
+                      coopType: Not Available
+                      fiscalYearEndDate: '2021-09-15'
+                      foundingDate: '2021-09-15T16:00:14.432669+00:00'
+                      goodStanding: true
+                      hasCorrections: false
+                      hasRestrictions: false
+                      identifier: BC0870737
+                      lastAddressChangeDate: '2021-09-15'
+                      lastAnnualGeneralMeetingDate: ''
+                      lastAnnualReportDate: ''
+                      lastDirectorChangeDate: '2021-09-15'
+                      lastLedgerTimestamp: '2021-09-15T16:01:39.303977+00:00'
+                      lastModified: '2021-09-15T16:01:39.303957+00:00'
+                      legalName: TEST CONSUMED STATE 2 LTD.
+                      legalType: BEN
+                      naicsCode: null
+                      naicsDescription: null
+                      naicsKey: null
+                      nextAnnualReport: '2022-09-15T07:00:00+00:00'
+                      state: ACTIVE
+                      warnings: []
+                    entityAct: Business Corporations Act
+                    entityDescription: BC Benefit Company
+                    registrarInfo:
+                      endDate: null
+                      name: T.K. SPARKS
+                      startDate: '2022-06-01T00:00:00'
+                      title: Registrar of Companies
+                    reportDateTime: '2022-08-05T16:49:06.231324+00:00'
+                    reportType: cogs
+                cstat-json:
+                  value:
+                    business:
+                      adminFreeze: false
+                      arMaxDate: '2022-08-05'
+                      arMinDate: '2022-09-14'
+                      associationType: null
+                      complianceWarnings: []
+                      coopType: Not Available
+                      fiscalYearEndDate: '2021-09-14'
+                      foundingDate: '2019-09-14T17:17:45.348163+00:00'
+                      goodStanding: true
+                      hasCorrections: false
+                      hasRestrictions: false
+                      identifier: BC0870731
+                      lastAddressChangeDate: '2021-09-14'
+                      lastAnnualGeneralMeetingDate: ''
+                      lastAnnualReportDate: '2021-09-14'
+                      lastDirectorChangeDate: '2021-09-22'
+                      lastLedgerTimestamp: '2021-09-14T17:18:01.298719+00:00'
+                      lastModified: '2021-09-14T17:18:01.298697+00:00'
+                      legalName: TESTING CONV CORP.
+                      legalType: BEN
+                      naicsCode: null
+                      naicsDescription: null
+                      naicsKey: null
+                      nextAnnualReport: '2022-09-14T07:00:00+00:00'
+                      state: ACTIVE
+                      warnings: []
+                    entityAct: Business Corporations Act
+                    entityDescription: BC Benefit Company
+                    registrarInfo:
+                      endDate: null
+                      name: T.K. SPARKS
+                      startDate: '2022-06-01T00:00:00'
+                      title: Registrar of Companies
+                    reportDateTime: '2022-08-05T19:49:15.643657+00:00'
+                    reportType: cstat
+                lseal-json:
+                  value:
+                    business:
+                      adminFreeze: false
+                      arMaxDate: '2022-01-23'
+                      arMinDate: '2021-11-24'
+                      associationType: null
+                      complianceWarnings: []
+                      coopType: Not Available
+                      fiscalYearEndDate: '2020-11-24'
+                      foundingDate: '2020-11-24T18:23:53.498863+00:00'
+                      goodStanding: false
+                      hasCorrections: false
+                      hasRestrictions: false
+                      identifier: BC1230038
+                      lastAddressChangeDate: '2020-11-24'
+                      lastAnnualGeneralMeetingDate: ''
+                      lastAnnualReportDate: ''
+                      lastDirectorChangeDate: '2020-11-24'
+                      lastLedgerTimestamp: '2020-11-24T18:24:27.179623+00:00'
+                      lastModified: '2020-11-24T18:24:27.179616+00:00'
+                      legalName: 1230038 B.C. LTD.
+                      legalType: BEN
+                      naicsCode: null
+                      naicsDescription: null
+                      naicsKey: null
+                      nextAnnualReport: '2021-11-24T08:00:00+00:00'
+                      state: ACTIVE
+                      warnings: []
+                    entityAct: Business Corporations Act
+                    entityDescription: BC Benefit Company
+                    offices:
+                      recordsOffice:
+                        deliveryAddress:
+                          addressCity: Montréal
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 38012
+                          postalCode: H4E 1G8
+                          streetAddress: 4-1900 Av De l'Église
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Montréal
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 38011
+                          postalCode: H4E 1G8
+                          streetAddress: 4-1900 Av De l'Église
+                          streetAddressAdditional: ''
+                      registeredOffice:
+                        deliveryAddress:
+                          addressCity: Montréal
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: delivery
+                          deliveryInstructions: ''
+                          id: 38014
+                          postalCode: H4E 1G8
+                          streetAddress: 4-1900 Av De l'Église
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Montréal
+                          addressCountry: Canada
+                          addressCountryDescription: Canada
+                          addressRegion: BC
+                          addressType: mailing
+                          deliveryInstructions: ''
+                          id: 38013
+                          postalCode: H4E 1G8
+                          streetAddress: 4-1900 Av De l'Église
+                          streetAddressAdditional: ''
+                    registrarInfo:
+                      endDate: null
+                      name: T.K. SPARKS
+                      startDate: '2022-06-01T00:00:00'
+                      title: Registrar of Companies
+                    reportDateTime: '2022-08-05T19:50:04.960880+00:00'
+                    reportType: lseal
+                    stateFilings: []
+      operationId: get-businesses-identifier-document-documentName
+      description: Return the requested document.
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - application/pdf
+              - application/json
+          in: header
+          name: Accept
+          description: The accept mimetype of the object
+        - $ref: '#/components/parameters/accountId'
+  /businesses:
+    post:
+      summary: save business creation filing
+      tags:
+        - business
+      responses:
+        '201':
+          description: 'Created '
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+      operationId: post-businesses
+      description: Submitting a creation filing for a business will create that type of business if it is a fully valid filing and payment has been completed.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/Incorporation_application'
+                - $ref: '#/components/schemas/Registration'
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: draft
+          description: Set to save a draft in the ledger. No validations are performed.
+        - schema:
+            type: boolean
+          in: query
+          description: 'Validate the submission, but do not save or process it. Errors and warnings are returned if there are any.'
+          name: only_validate
+        - $ref: '#/components/parameters/accountId'
+    parameters: []
+  '/businesses/{identifier}/parties':
+    parameters:
+      - schema:
+          type: string
+        description: business identifier is the registration or incorporation number of the business.
+        name: identifier
+        in: path
+        required: true
+    get:
+      summary: get_all_parties
+      tags:
+        - business
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/party'
+      operationId: get-businesses-identifier-parties
+      description: Get all associated parties with a business.
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  /businesses/search:
+    get:
+      summary: business_autocomplete
+      tags:
+        - search
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                type: object
+                x-examples:
+                  example-1:
+                    responseHeader:
+                      status: 0
+                      QTime: 35
+                    suggest:
+                      elec:
+                        numFound: 3
+                        suggestions:
+                          - term: electronics and computer1
+                            weight: 2199
+                          - term: electronics
+                            weight: 649
+                          - term: electronics and stuff2
+                            weight: 279
+                properties:
+                  responseHeader:
+                    type: object
+                    properties:
+                      status:
+                        type: integer
+                        description: success state of the search
+                      QTime:
+                        type: integer
+                        description: Time the suggestion took to generate in ms.
+                  suggest:
+                    type: object
+                    properties:
+                      search-term:
+                        type: object
+                        description: The search term that was entered
+                        properties:
+                          numFound:
+                            type: integer
+                            description: number of suggestion weighted high enough to return
+                          suggestions:
+                            type: array
+                            description: Array of suggestion in weighted order
+                            items:
+                              $ref: '#/components/schemas/Suggestion_item'
+      operationId: get-businesses-search
+      description: The search resource returns autocomplete suggestions for matching businesses.
+      parameters:
+        - schema:
+            type: string
+            minLength: 1
+          in: query
+          name: q
+          description: 'partial string of a business name, identifier or BN'
+        - $ref: '#/components/parameters/accountId'
+      x-internal: false
+    parameters: []
+components:
+  schemas:
+    Address:
+      type: object
+      title: Address Schema
+      description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country,   postal code and instructions for delivery.'
+      properties:
+        streetAddress:
+          type: string
+          maxLength: 50
+          description: 'Address line 1: appt no, house no, building name, street name/number.'
+          example: 5-4761 Bay Street
+        streetAddressAdditional:
+          type: string
+          maxLength: 50
+          description: 'Address line 2: extra address details added to line 1. '
+        addressCity:
+          type: string
+          maxLength: 40
+          example: Victoria
+          description: 'City, town, municipality.'
+        addressRegion:
+          type: string
+          maxLength: 2
+          example: 'BC for British Columbia '
+          description: '2 char code for province, state, territory or district.'
+        addressCountry:
+          type: string
+          example: Canada
+          description: 'Country name or abbreviation eg: USA.'
+        postalCode:
+          type: string
+          maxLength: 15
+          example: V8R 2P1
+          description: 'Postal, Pin, Zip, or letters/digits representing po stcode. '
+        deliveryInstructions:
+          type: string
+          example: '"Our apartment is located at the back of the building."'
+          description: 'Specific instructions for the freight forwarder or carrier '
+      required:
+        - streetAddress
+        - addressCity
+        - addressRegion
+        - addressCountry
+        - postalCode
+      x-examples:
+        Example 1:
+          streetAddress: 5-4761 Bay Street
+          streetAddressAdditional: Student Residence
+          addressCity: Victoria
+          addressRegion: 'BC for British Columbia '
+          addressCountry: Canada
+          postalCode: V8R 2P1
+          deliveryInstructions: '"Our apartment is located at the back of the building."'
+    Agreement_type:
+      type: object
+      title: Incorporation Agreement Type
+      description: 'Agreement to adopt articles of incorpoation. '
+      x-examples:
+        Example 1: {}
+      x-extension-1: null
+      properties:
+        agreementType:
+          type: string
+          enum:
+            - sample
+            - custom
+          example: Sample or custom
+          description: 'Example: Sample and custom'
+      required:
+        - agreementType
+    Alteration:
+      type: object
+      title: Alteration Filing
+      description: 'Notice of Alteration allows alteration of information on the company''s notice of articles, except changes to the company''s directors or the registered or records office addresses.'
+      properties:
+        alteration:
+          type: object
+          required:
+            - business
+            - contactPoint
+          properties:
+            business:
+              $ref: '#/components/schemas/Business'
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+            provisionsRemoved:
+              type: boolean
+              title: Has Pre-existing company provisions?
+              description: Removal of the pre-existing company provisions Yes/No.
+            nameRequest:
+              $ref: '#/components/schemas/Name_request'
+            nameTranslations:
+              type: array
+              description: 'Add, delete or change any translation of a company’s name.'
+              items:
+                type: string
+                example: A translation of company name does not include company names that are specified in an English and/or French form.
+            shareStructure:
+              type: object
+              description: 'Refers to the kinds, classes and special rights and restrictions of shares that a company is authorized to issue.  '
+              properties:
+                resolutionDates:
+                  type: array
+                  description: 'Date the resolution was adopted. '
+                  items:
+                    type: string
+                    format: date
+                shareClasses:
+                  type: array
+                  description: 'example: Class A shares.'
+                  items:
+                    $ref: '#/components/schemas/Share_structure'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
+      required:
+        - alteration
+      x-examples:
+        Example 1:
+          alteration:
+            business:
+              lastLedgerTimestamp: '2020-11-24T18:24:27.179623+00:00'
+              fiscalYearEndDate: '2020-11-24'
+              dissolutionDate: '2020-11-24T18:23:53.498863+00:00'
+              foundingDate: '2020-11-24T18:23:53.498863+00:00'
+              identifier: 'BC1234567 is an identifier for a corporation '
+              legalName: '1234567 B.C. Ltd. is a legal name for a corporation '
+              state: ACTIVE
+              legalType: 'GP: General Partnership'
+              taxId: BN123456789
+              goodStanding: true
+              adminFreeze: true
+              naics:
+                naicsCode: 32621 is the code for 'Tires Manufacturing' description
+                naicsDescription: '''Tires Manufacturing'' is the description for code 32621'
+              natureOfBusiness: '***This field has been replaced by the NAICS code and NAICS description***'
+              complianceWarnings:
+                - code: INVALID_LEGAL_STRUCTURE_DIRECTORS
+                  message: A minimum of 3 directors is required
+                  filing: 'https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'
+            contactPoint:
+              email: abc.def@gov.bc.ca
+              phone: string
+              extension: 1234
+            provisionsRemoved: true
+            nameRequest:
+              nrNumber: NR 0119436
+              legalType: B.C. Company
+              legalName: ABC Inc.
+              requestType: BC Company Change of Name
+              status: Expired
+              expires: '2019-08-24T14:15:22Z'
+              consent: Consent to use name
+              submittedBy: John Smith
+              address:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Student Residences
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our apartment is located at the back of the building."'
+            nameTranslations:
+              - A translation of company name does not include company names that are specified in an English and/or French form.
+            shareStructure:
+              resolutionDates:
+                - '2019-08-24'
+              shareClasses:
+                - resolutionDates:
+                    - '2019-08-24'
+                  shareClasses:
+                    - name: Redeemable Shares
+                      priority: 0
+                      maxNumberOfShares: 100
+                      parValue: 50
+                      currency: CAD
+                      hasMaximumShares: true
+                      hasParValue: true
+                      hasRightsOrRestrictions: true
+                      series:
+                        - name: Redeemable Preference Shares
+                          priority: 0
+                          hasMaximumShares: true
+                          hasRightsOrRestrictions: true
+            courtOrder:
+              courtOrder:
+                fileNumber: L041638
+                orderDate: '2019-08-24T14:15:22Z'
+                effectOfOrder: The Company will cease operations
+                orderDetails: The Company is ordered to dissolve
+    Annual_report:
+      type: object
+      title: Annual Report Filing
+      description: To file any change or confirm the information shown in the Corporate Register. Must be filed within two months of the anniversary date of incorporation.
+      properties:
+        annualReport:
+          type: object
+          description: To file any change or confirm the information shown in the Corporate Register. Must be filed within two months of the anniversary date of incorporation.
+          required:
+            - annualReportDate
+            - directors
+            - offices
+          properties:
+            annualGeneralMeetingDate:
+              type: string
+              format: date
+              description: 'Date the AGM (annual general meeting) took place. '
+            annualReportDate:
+              type: string
+              format: date
+              description: 'Fiscal Year covered in the annual report. '
+            directors:
+              type: array
+              description: Individual who is a member of the board of directors of the company as a result of having been elected or appointed to that position
+              items:
+                type: object
+                properties:
+                  officer:
+                    type: object
+                    description: Person responsible for the management and day-to-day operations of the company.
+                    required:
+                      - firstName
+                      - lastName
+                    properties:
+                      firstName:
+                        type: string
+                        maxLength: 30
+                        description: First name of the director/officer.
+                      lastName:
+                        type: string
+                        maxLength: 30
+                        description: Last name of the director/officer.
+                      middleInitial:
+                        type: string
+                        maxLength: 30
+                        description: The middle name initial of the director/officer.
+                      prevFirstName:
+                        title: 'previous first name, in the case of a legal name change in a filing'
+                        type: string
+                        maxLength: 30
+                        description: Previous first name of director/officer if changed.
+                      prevLastName:
+                        title: 'previous last name, in the case of a legal name change in a filing'
+                        type: string
+                        maxLength: 30
+                        description: Previous last name of director/officer if changed.
+                      prevMiddleInitial:
+                        title: 'previous middle name, in the case of a legal name change in a filing'
+                        type: string
+                        maxLength: 30
+                        description: Previous middle name initial if changed.
+                  deliveryAddress:
+                    $ref: '#/components/schemas/Address'
+                  mailingAddress:
+                    $ref: '#/components/schemas/Address'
+                  title:
+                    type: string
+                    example: Chief Executive Officer
+                    description: Position in a corporation occupied by a director/officer.
+                  appointmentDate:
+                    type: string
+                    format: date
+                    description: Date the director or officer has started in the role.
+                  cessationDate:
+                    type: string
+                    format: date
+                    example: 'Date the officer has ended his/her role '
+                    description: Date the director or officer has been terminated in the role.
+                required:
+                  - officer
+                  - deliveryAddress
+                  - appointmentDate
+                  - cessationDate
+            offices:
+              $ref: '#/components/schemas/Office'
+      required:
+        - annualReport
+      x-examples:
+        Example 1:
+          annualReport:
+            annualGeneralMeetingDate: '2019-08-24'
+            annualReportDate: '2019-08-24'
+            directors:
+              - officer:
+                  firstName: Mary
+                  lastName: Smith
+                  middleInitial: A
+                  prevFirstName: Anna
+                  prevLastName: White
+                  prevMiddleInitial: B
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Samuel Building
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our apartment is located at the back of the building."'
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Samuel Building
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our apartment is located at the back of the building."'
+                title: Chief Executive Officer
+                appointmentDate: '2019-05-20'
+                cessationDate: '2019-08-10'
+            offices:
+              officeType: 'Head office '
+              mailingAddress:
+                streetAddress: 5-4999 Fort Street
+                streetAddressAdditional: string
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our local is located at the back of the building."'
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Community Center A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our local is located at the back of the building."'
+    Business:
+      type: object
+      title: Businesses Schema
+      x-examples:
+        example-1:
+          lastLedgerTimestamp: '2020-11-24T18:24:27.179623+00:00'
+          fiscalYearEndDate: '2020-11-24'
+          dissolutionDate: '2020-11-24T18:23:53.498863+00:00'
+          foundingDate: '2020-11-24T18:23:53.498863+00:00'
+          identifier: BC1234567
+          legalName: E.P. CHARLTON & CO. LIMITED
+          legalType: BEN
+          taxId: BN123456789
+          state: ACTIVE
+          goodStanding: true
+          adminFreeze: true
+          natureOfBusiness: This field has been replaced by the NAICS code and NAICS description
+          naics:
+            naicsCode: 32621 is the code for 'Tires Manufacturing' description
+            naicsDescription: '''Tires Manufacturing'' is the description for code 32621'
+          complianceWarnings:
+            - code: INVALID_LEGAL_STRUCTURE_DIRECTORS
+              message: A minimum of 3 directors is required.
+              filing: 'https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'
+      description: 'Organization or enterprising entity engaged in commercial, industrial, or professional activities.'
+      properties:
+        lastLedgerTimestamp:
+          type: string
+          format: date-time
+          example: '2020-11-24T18:24:27.179623+00:00'
+          description: Recorded date/time of a company's financial transactions.
+        fiscalYearEndDate:
+          type: string
+          format: date
+          example: '2020-11-24'
+          description: The fiscal year end is the date on which a company finishes a 12-month business cycle.
+        dissolutionDate:
+          type: string
+          format: date-time
+          example: '2020-11-24T18:23:53.498863+00:00'
+          description: Date the business has ceased operations.
+        foundingDate:
+          type: string
+          format: date-time
+          example: '2020-11-24T18:23:53.498863+00:00'
+          description: 'The date written on the company''s certificate of incorporation. '
+        identifier:
+          type: string
+          example: 'BC1234567 is an identifier for a corporation '
+          pattern: '^[A-Z]{1,3}[0-9]{7}|T[A-Za-z0-9]{9}$'
+          description: 'Unique code(letters & numbers) to identify a business, issued by the provincial or federal registry.'
+        legalName:
+          type: string
+          description: Name that appears on the formation document of the business.
+          example: '1234567 B.C. Ltd. is a legal name for a corporation '
+        state:
+          type: string
+          enum:
+            - ACTIVE
+            - HISTORICAL
+          description: Indicates if the company is operational(active) or not.
+        legalType:
+          type: string
+          enum:
+            - BEN
+            - CP
+            - SP
+            - GP
+            - BC
+          example: 'GP: General Partnership'
+          description: 'Type of business eg: individual(SP), partnership(GP).'
+        taxId:
+          type: string
+          pattern: '^[0-9]{9}$'
+          example: BN123456789
+          description: 'Company unique business number assigned by CRA: BN9 or BN15. '
+        goodStanding:
+          type: boolean
+          description: Being in good standing means that the company is not in the process of being dissolved for non-filing of federal and/or provincial tax returns or non-filing of the BC annual report.
+        adminFreeze:
+          type: boolean
+          description: 'Example: If a business is not in good standing or investigated for fraud BC Registry Admin might freeze the business to prevent further filing from them.  '
+        naics:
+          $ref: '#/components/schemas/Naics'
+        natureOfBusiness:
+          type: string
+          maxLength: 1000
+          minLength: 0
+          example: '*** Not used, has been replaced by NAICS code and description***'
+          description: '*** Not used, has been replaced by NAICS code and description***'
+        complianceWarnings:
+          type: array
+          description: Changed for 'Warning' instead of 'compliance warning’
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                description: 'eg: INVALID_LEGAL_STRUCTURE_DIRECTORS'
+                example: INVALID_LEGAL_STRUCTURE_DIRECTORS
+              message:
+                type: string
+                description: 'Text describing reason for warning: ''A minimum of 3 directors is required.'''
+                example: '''A minimum of 3 directors is required.'''
+              filing:
+                type: string
+                description: Filing link related to the warning.
+                example: '''https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'''
+      required:
+        - identifier
+    Change_of_address:
+      type: object
+      description: 'Change of an address used by the business, could be different types of address eg: delivery address.  '
+      properties:
+        changeOfAddress:
+          type: object
+          description: 'Change of an address used by the business, could be different types of address eg: delivery address.  '
+          properties:
+            legalType:
+              type: string
+              example: Mailing address
+              description: 'Type of address to be changed eg: delivery address.   '
+            registeredOffice:
+              $ref: '#/components/schemas/Office'
+            recordsOffice:
+              $ref: '#/components/schemas/Office'
+      x-examples:
+        Example 1:
+          changeOfAddress:
+            legalType: Mailing address
+            registeredOffice:
+              officeType: 'Head office '
+              mailingAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+            recordsOffice:
+              officeType: Head office
+              mailingAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Buillding A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+    Change_of_directors:
+      type: object
+      description: 'Add or remove a director, or update information regarding a current director.'
+      properties:
+        changeOfDirectors:
+          type: array
+          description: 'Add or remove a director, or update information regarding a current director.'
+          items:
+            $ref: '#/components/schemas/party'
+      x-examples:
+        Example 1:
+          changeOfDirectors:
+            - party:
+                taxId: BN123456789
+                roles:
+                  - appointmentDate: '2019-08-24'
+                    cessationDate: '2019-08-24'
+                    roleType: Completing Party
+                officer:
+                  givenName: John
+                  familyName: Smith
+                  additionalName: Adam
+                  middleInitial: A
+                  taxId: BN123456789
+                  email: abc.def@gov.bc.ca
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: BC for British Columbia
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: string
+                  addressCity: Victoria
+                  addressRegion: BC for British Columbia
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                title: Chief Executive Officer
+    Change_of_name:
+      type: object
+      title: Change of Entity Name
+      description: Change of legal name filing.
+      properties:
+        changeOfName:
+          anyOf:
+            - $ref: '#/components/schemas/Name_request'
+            - type: object
+              properties:
+                legalName:
+                  type: string
+                  description: Name that appears on the formation document of the business.
+          description: Change the legal name of a business.
+      required:
+        - changeOfName
+      x-examples:
+        Example 1:
+          changeOfName:
+            nrNumber: NR 0119436
+            legalType: BC Corporation
+            legalName: ABC Inc.
+            requestType: Benefit Company Inc.
+            status: Expired
+            expires: '2019-08-24T14:15:22Z'
+            consent: 'NAME: Consent to use name'
+            submittedBy: John Smith
+            address:
+              streetAddress: 5-4761 Bay Street
+              streetAddressAdditional: Building C
+              addressCity: Victoria
+              addressRegion: 'BC for British Columbia '
+              addressCountry: Canada
+              postalCode: V8R 2P1
+              deliveryInstructions: '"Our unit is located at the back of the building."'
+    Change_of_registration:
+      type: object
+      description: 'Filing to alter the information of a business that uses a registration, such as Sole Proprietor or General Partnership.'
+      title: Change of Registration Filing
+      properties:
+        changeOfRegistration:
+          type: object
+          properties:
+            business:
+              $ref: '#/components/schemas/Business'
+            offices:
+              type: object
+              description: 'Addresses used by the business eg: office address.'
+              properties:
+                businessOffice:
+                  $ref: '#/components/schemas/Office'
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+            nameRequest:
+              $ref: '#/components/schemas/Name_request'
+            parties:
+              type: array
+              items:
+                $ref: '#/components/schemas/party'
+      x-examples:
+        Example 1:
+          changeOfRegistration:
+            business:
+              lastLedgerTimestamp: '2020-11-24T18:24:27.179623+00:00'
+              fiscalYearEndDate: '2020-11-24'
+              dissolutionDate: '2020-11-24T18:23:53.498863+00:00'
+              foundingDate: '2020-11-24T18:23:53.498863+00:00'
+              identifier: 'BC1234567 is an identifier for a corporation '
+              legalName: '1234567 B.C. Ltd. is a legal name for a corporation '
+              state: ACTIVE
+              legalType: 'GP: General Partnership'
+              taxId: BN123456789
+              goodStanding: true
+              adminFreeze: true
+              naics:
+                naicsCode: 32621 is the code for 'Tires Manufacturing' description.'
+                naicsDescription: '''Tires Manufacturing'' is the description for code 32621.'
+              natureOfBusiness: This field has been replaced by the NAICS code and NAICS description
+              complianceWarnings:
+                - code: string
+                  message: string
+                  filing: string
+            offices:
+              businessOffice:
+                officeType: 'Head office '
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4999 Bay Street
+                  streetAddressAdditional: Building B
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the front of the building."'
+            contactPoint:
+              email: abc.def@gov.bc.ca
+              phone: (555) 555-5555
+              extension: 1234
+            nameRequest:
+              nrNumber: NR 0119436
+              legalType: B.C. Company
+              legalName: ABC Inc.
+              requestType: Benefit Company Inc.
+              status: Expired
+              expires: '2019-08-24T14:15:22Z'
+              consent: 'Name: Consent to use name'
+              submittedBy: John Smith
+              address:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Officer
+                  officer:
+                    givenName: John
+                    familyName: Smith
+                    additionalName: Adam
+                    middleInitial: A
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: Building A
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: Building A
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit apartment is located at the back of the building."'
+                  title: Chief Executive Officer
+    Comment:
+      type: object
+      description: 'Extra detail or note to post regarding the filing. '
+      properties:
+        comment:
+          type: string
+          maxLength: 4096
+          description: 'Extra detail or note to post regarding the filing.  '
+          example: '''BC Registry contacted the business owner by email on March 12'' '
+        submitterDisplayName:
+          type: string
+          description: 'Display the name of the person making the filing.  '
+        timestamp:
+          type: string
+          format: date-time
+          example: '2022-04-19 15:59:55'
+          description: Date and time the comment has been posted.
+        reference:
+          oneOf:
+            - properties:
+                businessId:
+                  type: string
+                  example: C1234567
+                  description: 'Business Identifier-Business Number. '
+            - properties:
+                filingId:
+                  type: string
+                  description: Filing referred to in comment.
+          description: 'What busineess and filing the comment is for. '
+          type: object
+      title: ''
+      x-examples:
+        Example 1:
+          comment: '''BC Registry contacted the business owner by email on March 12'''
+          submitterDisplayName: John Smith
+          timestamp: '2022-04-19 15:59:55'
+          reference:
+            businessId: C1234567
+    Contact_point:
+      type: object
+      title: Business Contact Point Schema
+      description: Contact information to use for the business.
+      x-examples:
+        Example 1:
+          email: abc.def@gov.bc.ca
+          phone: (555) 555-5555
+          extension: 1234
+      properties:
+        email:
+          type: string
+          format: email
+          description: email address to be used to contact the business.
+          example: abc.def@gov.bc.ca
+        phone:
+          type: string
+          format: phone
+          example: (250) 234-4433
+          description: 'Phone number to be used to contact the business eg: (250) 234-4433.'
+        extension:
+          type: number
+          example: (555) 555-5555
+          description: Extension number of the business contact phone number (555) 555-5555.
+      required:
+        - email
+    Conversion:
+      type: object
+      title: Conversion Filing
+      description: 'Filing to change the business type of an organization eg: convert from a Member-Funded Society to a BC Company.'
+      x-examples:
+        Example 1:
+          conversion:
+            nameRequest:
+              nrNumber: NR 0119436
+              legalType: BC Corporation
+              legalName: ABC Inc.
+              requestType: BC Benefit Company Change of Name
+              status: COMPLETED
+              expires: '2019-08-24T14:15:22Z'
+              consent: 'NAME: Consent to use name'
+              submittedBy: John Smith
+              address:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+            offices:
+              registeredOffice:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+              recordsOffice:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building A
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Completing Party
+                  officer:
+                    givenName: John
+                    familyName: Lane
+                    additionalName: Adam
+                    middleInitial: A
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: Building A
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: Building A
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the back of the building."'
+                  title: Chief Executive Officer
+            shareStructure:
+              resolutionDates:
+                - '2019-08-24'
+              shareClasses:
+                - name: Common A
+                  priority: 3
+                  maxNumberOfShares: 100
+                  parValue: 50
+                  currency: CAD
+                  hasMaximumShares: true
+                  hasParValue: true
+                  hasRightsOrRestrictions: true
+                  series:
+                    - name: CLASS A
+                      priority: 3
+                      hasMaximumShares: true
+                      hasRightsOrRestrictions: true
+            contactPoint:
+              email: abc.def@gov.bc.ca
+              phone: string
+              extension: 1234
+            incorporationAgreement:
+              agreementType: '"The Company has as its articles the following articles."'
+      properties:
+        conversion:
+          type: object
+          title: Conversion Filing
+          description: 'Filing to change the business type of an organization eg: convert from a Member-Funded Society to a BC Company'
+          required:
+            - nameRequest
+            - offices
+            - parties
+            - shareStructure
+            - contactPoint
+          properties:
+            nameRequest:
+              $ref: '#/components/schemas/Name_request'
+            offices:
+              type: object
+              description: A registered office is the statutory address of a registered business entity.
+              properties:
+                registeredOffice:
+                  $ref: '#/components/schemas/Address'
+                recordsOffice:
+                  $ref: '#/components/schemas/Address'
+            parties:
+              type: array
+              description: 'Director(s) and filing applicant information of business to convert. '
+              items:
+                $ref: '#/components/schemas/party'
+            shareStructure:
+              $ref: '#/components/schemas/Share_structure'
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+            incorporationAgreement:
+              $ref: '#/components/schemas/Agreement_type'
+      required:
+        - conversion
+    Cooperative:
+      type: object
+      title: Cooperative Schema
+      description: Owned and controlled business from which benefits are derived and distributed equitably on the basis of use or as a business owned and controlled by the people who use its services.
+      x-examples:
+        Example 1:
+          cooperativeAssociationType: CP
+          rulesFileKey: cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf
+          rulesFileName: Field not used
+          memorandumFileKey: cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf
+          memorandumFileName: Field not used
+      properties:
+        cooperativeAssociationType:
+          type: string
+          title: The association type for cooperative filing
+          enum:
+            - CP
+            - HC
+            - CSC
+          example: '''CP'''
+          description: 'Defines cooperatives by type of membership eg: Financial Cooperatives.'
+        rulesFileKey:
+          type: string
+          title: The Identifier for rules file in file server
+          example: cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf
+          description: 'Unique code identifying the memorendum of the cooperative eg: "cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf"'
+        rulesFileName:
+          type: string
+          title: The file name while uploading
+          description: '***Item not used***'
+          example: '***Item not used***'
+        memorandumFileKey:
+          type: string
+          title: The Identifier for memorandum file in file server
+          example: cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf
+          description: 'Unique code identifying the memorendum of the cooperative eg: "cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf"'
+        memorandumFileName:
+          type: string
+          title: The file name while uploading
+          description: '***Item not used***'
+          example: '***Item not used***'
+      required:
+        - cooperativeAssociationType
+        - rulesFileKey
+        - rulesFileName
+        - memorandumFileKey
+        - memorandumFileName
+    Correction:
+      type: object
+      title: Correction Filing
+      description: '***Item not used*** Update of business information to fix/correct erroneous information. '
+      properties:
+        correction:
+          type: object
+          required:
+            - correctedFilingId
+            - correctedFilingType
+            - comment
+          properties:
+            correctedFilingId:
+              type: integer
+              title: The id of the filing being corrected.
+              description: 'Identification of filing that needs correction. '
+            correctedFilingType:
+              type: string
+              title: The type of the main filing being corrected.
+              enum:
+                - annualReport
+                - changeOfDirectors
+                - changeOfAddress
+                - dissolution
+                - specialResolution
+                - changeOfName
+                - incorporationApplication
+                - amalgamationApplication
+                - dissolved
+                - amendedAGM
+                - restoration
+                - amendedAnnualReport
+                - amendedChangeOfDirectors
+                - appointReceiver
+                - continuedOut
+                - correction
+              description: 'Type of filing that needs correction. '
+            comment:
+              type: string
+              description: 'Comment on what is corrected and why. '
+            correctedFilingDate:
+              type: string
+              format: date
+              title: The submission date of the final version of the filing being corrected.
+              description: 'The date the correction is filed. '
+            diff:
+              type: array
+              description: What will be changed in the correction filing.
+              items:
+                $ref: '#/components/schemas/Diff'
+      required:
+        - correction
+    Court_order:
+      type: object
+      title: Court Order Information Schema
+      description: Order issued by the Provincial Court Registry.
+      properties:
+        courtOrder:
+          type: object
+          required:
+            - fileNumber
+          properties:
+            fileNumber:
+              type: string
+              minLength: 5
+              maxLength: 20
+              description: The court assigns each court order a unique file number up to 20 characters in length.
+            orderDate:
+              type: string
+              description: The date and time that the court order has been issued.
+              format: date-time
+            effectOfOrder:
+              type: string
+              minLength: 0
+              maxLength: 500
+              description: Textual description of the effect of the order on the legal entity.
+            orderDetails:
+              type: string
+              minLength: 0
+              maxLength: 2000
+              description: A brief note to explain the purpose of the Court Order.
+      required:
+        - courtOrder
+      x-examples:
+        Example 1:
+          courtOrder:
+            fileNumber: L041638
+            orderDate: '2019-08-24T14:15:22Z'
+            effectOfOrder: The Company will cease operations
+            orderDetails: The Company is ordered to dissolve
+    Diff:
+      title: Differences filed in a correction
+      anyOf:
+        - properties:
+            '':
+              type: string
+              description: Description of the changes in correction filing.
+      properties:
+        diff:
+          type: array
+          items:
+            type: object
+            required:
+              - oldValue
+              - newValue
+              - path
+            properties:
+              oldValue:
+                title: Original Value
+              newValue:
+                title: Corrected Value
+              path:
+                type: string
+                title: Path of the property in json
+      description: '***Item not used*** What will be changed in the correction filing.'
+      type: object
+    Dissolution:
+      title: Dissolution Filing
+      type: object
+      description: 'Application for a company dissolution. '
+      x-examples:
+        Example 1:
+          dissolution:
+            dissolutionDate: '2019-08-24'
+            dissolutionType: administrative
+            dissolutionStatementType: The company has made adequate provision for the payment of each of its liabilities
+            hasLiabilities: true
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Director
+                  officer:
+                    givenName: John
+                    familyName: Smith
+                    additionalName: Adam
+                    middleInitial: A
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: Building A
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 2-111 Fort Street
+                    streetAddressAdditional: Building ABC
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the front of the building."'
+                  title: Chief Executive Officer
+            courtOrder:
+              courtOrder:
+                fileNumber: L041638
+                orderDate: '2019-08-24T14:15:22Z'
+                effectOfOrder: The Company will cease operations
+                orderDetails: The Company is ordered to dissolve
+            custodialOffice:
+              officeType: 'Head office '
+              mailingAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building C
+                addressCity: Victoria
+                addressRegion: BC for British Columbia
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building C
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+            affidavitFileKey: 011e332d-1b8e-4218-8710-ad8ac1fbc592.pdf
+            affidavitFileName: Field not used
+      properties:
+        dissolution:
+          type: object
+          description: 'Application for a company dissolution '
+          required:
+            - dissolutionDate
+            - dissolutionType
+          properties:
+            dissolutionDate:
+              type: string
+              format: date
+              description: 'The dissolution is to take effect at 12:01a.m. Pacific Time on being a date that is not more than ten days after the date of the filing of the application.'
+            dissolutionType:
+              type: string
+              title: 'The Type of Dissolution, such as Administrative, Voluntary, etc.'
+              enum:
+                - administrative
+                - involuntary
+                - voluntary
+                - voluntaryLiquidation
+                - courtOrderedLiquidation
+              description: 'Type of dissolution stated in the filing eg: Court ordered liquidation.'
+            dissolutionStatementType:
+              type: string
+              example: The company has made adequate provision for the payment of each of its liabilities
+              description: Statement to describe the company’s liabilities
+            hasLiabilities:
+              title: The dissolved company has outstanding liabilities.
+              type: boolean
+              description: 'Whether the company has liability or not: Yes/No.'
+            parties:
+              type: array
+              description: Can be the company directors or applicant of the filing.
+              items:
+                $ref: '#/components/schemas/party'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
+            custodialOffice:
+              $ref: '#/components/schemas/Office'
+            affidavitFileKey:
+              type: string
+              title: The Identifier for affidavit file in file server
+              description: Unique identifier for the dissolution filing affidavit.
+            affidavitFileName:
+              type: string
+              title: The file name while uploading
+              description: '***Item not used***'
+              example: '***Item not used***'
+      required:
+        - dissolution
+    filing_header:
+      type: object
+      description: 'Information identigying the filing. '
+      x-examples:
+        Example 1:
+          header:
+            name: alteration
+            availableOnPaperOnly: true
+            inColinOnly: true
+            date: '2019-08-24'
+            certifiedBy: John Smith
+            email: John.Smith@gmail.ca
+            filingId: 1234
+            effectiveDate: '2019-08-24T14:15:22Z'
+            paymentToken: string value
+            submitter: John Smith
+            status: DRAFT
+            affectedFilings: '[1234,4856]'
+            isCorrected: true
+            isCorrectionPending: true
+            comments:
+              - comment: '''BC Registry contacted the business owner by email on March 12'' '
+                submitterDisplayName: John Smith
+                timestamp: '2022-04-19 15:59:55'
+                reference:
+                  businessId: C1234567
+            waiveFees: true
+            priority: true
+            routingSlipNumber: '123456789'
+            folioNumber: '1332'
+            datNumber: C234567890
+            bcolAccountNumber: '910207'
+            sbcAccount: 82763
+            paymentAccount: '180670'
+            paymentMethod: ONLINE_BANKING
+            isPaymentActionRequired: true
+          '': string
+      properties:
+        header:
+          type: object
+          required:
+            - name
+            - date
+            - certifiedBy
+          properties:
+            name:
+              type: string
+              title: The type of the main filing.
+              enum:
+                - alteration
+                - annualReport
+                - amalgamationApplication
+                - appointReceiver
+                - changeOfDirectors
+                - changeOfAddress
+                - changeOfName
+                - changeOfRegistration
+                - continuedOut
+                - conversion
+                - correction
+                - courtOrder
+                - dissolution
+                - dissolved
+                - incorporationApplication
+                - registration
+                - restoration
+                - specialResolution
+                - transition
+                - registrarsNotation
+                - registrarsOrder
+              description: 'Filing name. '
+            availableOnPaperOnly:
+              type: boolean
+              description: 'If filing results(ouputs) available only on paper: Yes/No. '
+            inColinOnly:
+              type: boolean
+              description: 'Filing information stored in COLIN only: Yes/No.'
+            date:
+              type: string
+              format: date
+              title: The submission date of the final version of the filing.
+              description: 'Date of the filing. '
+            certifiedBy:
+              type: string
+              description: 'Staff certifying filing. '
+            email:
+              type: string
+              format: email
+              description: email contact for the filing.
+            filingId:
+              type: integer
+              title: The id of the filing.
+              default: 0
+              description: 'Filing identifier eg: 1234. '
+              example: 1234
+            effectiveDate:
+              type: string
+              format: date-time
+              title: The date and time a filing should become valid and applied.
+              description: Date and time the filing is taking effect.
+            paymentToken:
+              type: string
+              title: A valid payment token for this filing against this business.
+              description: 'Replaces sensitive payment information with a unique identifier, received back from SBC_PAY'
+            submitter:
+              type: string
+              title: Account name of the person submitting this filing.
+              description: 'Person/applicant submitting the filing. '
+            status:
+              type: string
+              title: The status of this filing.
+              enum:
+                - DRAFT
+                - PENDING
+                - COMPLETED
+                - ERROR
+              description: 'Status of the filing eg: ''draft''. '
+              example: '"DRAFT", "PENDING", "COMPLETED", "ERROR"'
+            affectedFilings:
+              type: array
+              title: List of affected filings (ids) from this filing.
+              description: 'Filings related to the header eg: [1234,4856].'
+              items:
+                type: integer
+                example: '[1234,4856]'
+            isCorrected:
+              type: boolean
+              title: Has this filing been corrected?
+              description: 'If filing has been corrected: Yes/No.'
+            isCorrectionPending:
+              type: boolean
+              title: Is a correction pending for this filing?
+              description: 'If filing correction are in pending status: Yes/No.'
+            comments:
+              type: array
+              title: List of filing comments.
+              description: 'Notes about filing. '
+              items:
+                $ref: '#/components/schemas/Comment'
+            waiveFees:
+              type: boolean
+              description: 'Are fees being waived for the filing: Yes/No.'
+            priority:
+              type: boolean
+              description: 'Is it a priority filing: Yes/No. '
+            routingSlipNumber:
+              type: string
+              title: A valid routing slip number in case of a staff filing.
+              maxLength: 9
+              pattern: '^\d{9}$'
+              description: If filing paid with cash or cheque there will be a routing slip of 9 digits.
+            folioNumber:
+              type: string
+              title: A folio number used for payment tracking purposes.
+              maxLength: 50
+              description: 'Reference number to help keep track of transactions eg: used in BCOL. '
+              example: '1332'
+            datNumber:
+              type: string
+              title: A dat number used for payment tracking purposes.
+              maxLength: 10
+              pattern: '^[A-Z]{1}[0-9]{7,9}$'
+              description: Payment identifyer (9 digits) for FAS payments.
+              example: C234567890
+            bcolAccountNumber:
+              type: string
+              title: BCOL account number.
+              maxLength: 6
+              pattern: ^(.*)$
+              example: '910207'
+              description: 'BCOL account number to be debited if paying with a BCOL account eg: 910207.'
+            sbcAccount:
+              type: integer
+              title: authorization system account number.
+              description: 'SBC_AUTH account number. '
+            paymentAccount:
+              type: string
+              title: payment org account identifier.
+              maxLength: 30
+              pattern: ^(.*)$
+              description: 'Payment identifyer from where the payment will be debited. '
+              example: '180670'
+            paymentMethod:
+              type: string
+              title: payment method.
+              enum:
+                - ONLINE_BANKING
+                - CC
+                - DIRECT_PAY
+                - DRAWDOWN
+                - INTERNAL
+              description: 'Method of payment used to pay for filing, possible values are: ONLINE_BANKING,CC,DIRECT_PAY,DRAWDOWN,INTERNAL.'
+              example: credit card CC
+            isPaymentActionRequired:
+              type: boolean
+              title: flag for payment redirect.
+              description: Further action required to finalize the payment.
+        '':
+          type: string
+          x-stoplight:
+            id: 7nl2sc9w8mtqr
+          description: Header name.
+      required:
+        - header
+    Filing:
+      type: object
+      title: Registry Filing Envelope
+      x-examples:
+        example-1:
+          header:
+            header:
+              name: alteration
+              availableOnPaperOnly: true
+              inColinOnly: true
+              date: '2019-08-24'
+              certifiedBy: string
+              email: user@example.com
+              filingId: 0
+              effectiveDate: '2019-08-24T14:15:22Z'
+              paymentToken: string
+              submitter: string
+              status: DRAFT
+              affectedFilings:
+                - 0
+              isCorrected: true
+              isCorrectionPending: true
+              comments:
+                - comment: string
+                  submitterDisplayName: string
+                  timestamp: '2019-08-24T14:15:22Z'
+                  reference:
+                    businessId: string
+              waiveFees: true
+              priority: true
+              routingSlipNumber: string
+              folioNumber: string
+              datNumber: string
+              bcolAccountNumber: string
+              sbcAccount: 0
+              paymentAccount: string
+              paymentMethod: ONLINE_BANKING
+              isPaymentActionRequired: true
+          business:
+            business:
+              lastLedgerTimestamp: '2019-08-24T14:15:22Z'
+              dissolutionDate: '2019-08-24'
+              fiscalYearEndDate: '2019-08-24'
+              foundingDate: '2019-08-24T14:15:22Z'
+              identifier: string
+              legalName: string
+              legalType: BC
+              taxId: string
+              state: ACTIVE
+              stateFiling: string
+              goodStanding: true
+              adminFreeze: true
+              complianceWarnings:
+                - code: string
+                  message: string
+                  filing: string
+              naics:
+                naicsCode: string
+                naicsDescription: string
+              natureOfBusiness: string
+          filing:
+            incorporationApplication:
+              contactPoint:
+                email: user@example.com
+                phone: string
+                extension: 0
+              cooperative:
+                cooperativeAssociationType: CP
+                rulesFileKey: string
+                rulesFileName: string
+                memorandumFileKey: string
+                memorandumFileName: string
+              incorporationAgreement:
+                agreementType: sample
+              nameRequest:
+                nrNumber: string
+                legalName: string
+                legalType: string
+                requestType: string
+                status: string
+                expires: '2019-08-24T14:15:22Z'
+                consent: string
+                submittedBy: string
+                address:
+                  streetAddress: string
+                  streetAddressAdditional: string
+                  addressCity: string
+                  addressCountry: string
+                  addressRegion: st
+                  postalCode: string
+                  deliveryInstructions: string
+              nameTranslations:
+                - id: string
+                  name: string
+              offices:
+                registeredOffice:
+                  officeType: string
+                  mailingAddress:
+                    streetAddress: string
+                    streetAddressAdditional: string
+                    addressCity: string
+                    addressCountry: string
+                    addressRegion: st
+                    postalCode: string
+                    deliveryInstructions: string
+                  deliveryAddress:
+                    streetAddress: string
+                    streetAddressAdditional: string
+                    addressCity: string
+                    addressCountry: string
+                    addressRegion: st
+                    postalCode: string
+                    deliveryInstructions: string
+                recordsOffice:
+                  officeType: string
+                  mailingAddress:
+                    streetAddress: string
+                    streetAddressAdditional: string
+                    addressCity: string
+                    addressCountry: string
+                    addressRegion: st
+                    postalCode: string
+                    deliveryInstructions: string
+                  deliveryAddress:
+                    streetAddress: string
+                    streetAddressAdditional: string
+                    addressCity: string
+                    addressCountry: string
+                    addressRegion: st
+                    postalCode: string
+                    deliveryInstructions: string
+              parties:
+                - party:
+                    taxId: string
+                    roles:
+                      - appointmentDate: '2019-08-24'
+                        cessationDate: '2019-08-24'
+                        roleType: Completing Party
+                    officer:
+                      givenName: string
+                      familyName: string
+                      additionalName: string
+                      middleInitial: string
+                      taxId: string
+                      email: user@example.com
+                    deliveryAddress:
+                      streetAddress: string
+                      streetAddressAdditional: string
+                      addressCity: string
+                      addressCountry: string
+                      addressRegion: st
+                      postalCode: string
+                      deliveryInstructions: string
+                    mailingAddress:
+                      streetAddress: string
+                      streetAddressAdditional: string
+                      addressCity: string
+                      addressCountry: string
+                      addressRegion: st
+                      postalCode: string
+                      deliveryInstructions: string
+                    title: string
+              shareStructure:
+                resolutionDates:
+                  - '2019-08-24'
+                shareClasses:
+                  - name: string
+                    priority: 0
+                    maxNumberOfShares: 0
+                    parValue: 0
+                    currency: string
+                    hasMaximumShares: true
+                    hasParValue: true
+                    hasRightsOrRestrictions: true
+                    series:
+                      - name: string
+                        priority: 0
+                        maxNumberOfShares: 0
+                        hasMaximumShares: true
+                        hasRightsOrRestrictions: true
+      description: Submitting updates related to a business or incorporating/registering a new business.
+      properties:
+        header:
+          $ref: '#/components/schemas/filing_header'
+        business:
+          $ref: '#/components/schemas/Business'
+        filing:
+          oneOf:
+            - oneOf:
+                - $ref: '#/components/schemas/Incorporation_application'
+                - $ref: '#/components/schemas/Registration'
+            - anyOf:
+                - $ref: '#/components/schemas/Alteration'
+                - $ref: '#/components/schemas/Alteration'
+                - $ref: '#/components/schemas/Annual_report'
+                - $ref: '#/components/schemas/Change_of_address'
+                - $ref: '#/components/schemas/Change_of_directors'
+                - $ref: '#/components/schemas/Change_of_name'
+                - $ref: '#/components/schemas/Change_of_registration'
+                - $ref: '#/components/schemas/Conversion'
+                - $ref: '#/components/schemas/Court_order'
+                - $ref: '#/components/schemas/Correction'
+                - $ref: '#/components/schemas/Dissolution'
+                - $ref: '#/components/schemas/Incorporation_application'
+                - $ref: '#/components/schemas/Registrars_notation'
+                - $ref: '#/components/schemas/Registrars_order'
+                - $ref: '#/components/schemas/Registration'
+                - $ref: '#/components/schemas/Restoration'
+                - $ref: '#/components/schemas/Special_resolution'
+                - $ref: '#/components/schemas/Transition'
+                - $ref: '#/components/schemas/Unmanaged'
+          description: Submitting updates related to a business or incorporating/registering a new business.
+      required:
+        - header
+    Incorporation_application:
+      title: Incorporation Application Filing
+      type: object
+      description: Filing of Articles of Incorporation. The incorporation is to take effect at the time that the application is filed with the registrar.
+      x-examples:
+        Example 1:
+          incorporationApplication:
+            contactPoint:
+              email: abc.def@gov.bc.ca
+              phone: (250) 213-3412
+              extension: 1234
+            cooperative:
+              cooperativeAssociationType: Worker Cooperative
+              rulesFileKey: string
+              rulesFileName: string
+              memorandumFileKey: string
+              memorandumFileName: string
+            incorporationAgreement:
+              agreementType: Sample or custom
+            nameRequest:
+              nrNumber: string
+              legalType: string
+              legalName: string
+              requestType: Benefit Company Inc.
+              status: Expired
+              expires: '2019-08-24T14:15:22Z'
+              consent: string
+              submittedBy: string
+              address:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: string
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our apartment is located at the back of the building."'
+            nameTranslations:
+              - id: string
+                name: string
+            offices:
+              registeredOffice:
+                officeType: 'Head office '
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: string
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our apartment is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: string
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our apartment is located at the back of the building."'
+              recordsOffice:
+                officeType: 'Head office '
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: string
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our apartment is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: string
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our apartment is located at the back of the building."'
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Completing Party
+                  officer:
+                    givenName: string
+                    familyName: string
+                    additionalName: string
+                    middleInitial: string
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: string
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our apartment is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: string
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our apartment is located at the back of the building."'
+                  title: Chief Executive Officer
+            shareStructure:
+              resolutionDates:
+                - '2019-08-24'
+              shareClasses:
+                - name: string
+                  priority: 0
+                  maxNumberOfShares: 0
+                  parValue: 0
+                  currency: string
+                  hasMaximumShares: true
+                  hasParValue: true
+                  hasRightsOrRestrictions: true
+                  series:
+                    - name: string
+                      priority: 0
+                      hasMaximumShares: true
+                      hasRightsOrRestrictions: true
+      properties:
+        incorporationApplication:
+          type: object
+          description: Filing of Articles of Incorporation. The incorporation is to take effect at the time that the application is filed with the registrar.
+          required:
+            - contactPoint
+            - nameRequest
+            - offices
+            - parties
+          properties:
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+            cooperative:
+              $ref: '#/components/schemas/Cooperative'
+            incorporationAgreement:
+              $ref: '#/components/schemas/Agreement_type'
+            nameRequest:
+              $ref: '#/components/schemas/Name_request'
+            nameTranslations:
+              $ref: '#/components/schemas/Name_translations'
+            offices:
+              type: object
+              description: 'Addresses related to the business.   '
+              properties:
+                registeredOffice:
+                  $ref: '#/components/schemas/Office'
+                recordsOffice:
+                  $ref: '#/components/schemas/Office'
+            parties:
+              type: array
+              description: 'Persons having a role in the corporation eg: company officer.'
+              items:
+                $ref: '#/components/schemas/party'
+            shareStructure:
+              $ref: '#/components/schemas/Share_structure'
+      required:
+        - incorporationApplication
+    Filing_documents:
+      type: object
+      description: 'Documents submitted (uploaded) with filing.  '
+      x-examples:
+        Example 1:
+          documents:
+            certificate: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/BC0871331/filings/143690/documents/certificate'
+            legalFilings:
+              - incorporationApplication: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/BC0871331/filings/143690/documents/incorporationApplication'
+            noticeOfArticles: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/BC0871331/filings/143690/documents/noticeOfArticles'
+            receipt: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/BC0871331/filings/143690/documents/receipt'
+      properties:
+        documents:
+          type: object
+          description: Documents submitted (uploaded) with filing.
+          properties:
+            legalFilings:
+              type: array
+              description: 'Filings required by law. '
+              items:
+                type: object
+                properties:
+                  legalFilingNameKey:
+                    type: string
+                    format: uri
+                    description: 'Name of legal filing. '
+                    example: '"http://example.com"'
+            receipt:
+              type: string
+              description: 'Confirmation of filing and payment completion.  '
+    Ledger:
+      type: array
+      x-examples:
+        example-1:
+          availableOnPaperOnly: false
+          businessIdentifier: CP0000840
+          commentsCount: 3
+          commentsLink: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/CP0000840/filings/112962/comments'
+          data:
+            applicationDate: '2021-10-19T07:00:00+00:00'
+            legalFilings:
+              - changeOfAddress
+          displayName: Address Change
+          documentsLink: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/CP0000840/filings/112962/documents'
+          effectiveDate: 'Tue, 19 Oct 2021 07:00:00 GMT'
+          filingId: 112962
+          filingLink: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/CP0000840/filings/112962'
+          isFutureEffective: false
+          name: changeOfAddress
+          paymentStatusCode: COMPLETED
+          status: COMPLETED
+          submittedDate: 'Wed, 20 Oct 2021 17:55:05 GMT'
+          submitter: Registry Staff
+      items:
+        $ref: '#/components/schemas/Ledger_item'
+      description: 'Business record to summarize revenues and expenses of the business eg: common ledger for asset accounts.'
+    Ledger_item:
+      type: object
+      description: 'Ledger items track accounting items eg: assets, liabilities, capital, revenues, and expenses.'
+      x-examples:
+        Example 1:
+          availableOnPaperOnly: true
+          businessIdentifier: BC1234567
+          commentsCount: 1
+          commentsLink: 'http://example.com'
+          data:
+            applicationDate: '2019-08-24T14:15:22Z'
+            legalFilings:
+              - alteration
+          documentsLink: 'http://example.com'
+          displayName: Alteration info doc
+          effectiveDate: '2019-08-24T14:15:22Z'
+          filingId: 112962
+          filingLink: 'https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/businesses/CP0000840/filings/112962'
+          name: changeOfAddress
+          isFutureEffective: true
+          paymentStatusCode: CREATED
+          status: COMPLETED
+          submittedDate: 'Wed, 20 Oct 2021 17:55:05 GMT'
+          submitter: Registry Staff
+      properties:
+        availableOnPaperOnly:
+          type: boolean
+          description: Yes if information only accessible on paper.
+        businessIdentifier:
+          type: string
+          minLength: 1
+          description: 'Business idetifier eg: BC123456 or business number (BN9) BN123456789. '
+        commentsCount:
+          type: number
+          description: 'Number of comments/notes posted for the ledger item. '
+        commentsLink:
+          type: string
+          minLength: 1
+          format: uri
+          description: URL related to comments for further details.
+        data:
+          type: object
+          required:
+            - applicationDate
+            - legalFilings
+          properties:
+            applicationDate:
+              type: string
+              format: date-time
+              minLength: 1
+              description: Date the filing application was done.
+            legalFilings:
+              type: array
+              description: Filing that business is legally required to do.
+              items:
+                type: string
+                enum:
+                  - alteration
+                  - annualReport
+                  - amalgamationApplication
+                  - appointReceiver
+                  - changeOfDirectors
+                  - changeOfAddress
+                  - changeOfName
+                  - changeOfRegistration
+                  - continuedOut
+                  - conversion
+                  - correction
+                  - courtOrder
+                  - dissolution
+                  - dissolved
+                  - incorporationApplication
+                  - registration
+                  - restoration
+                  - specialResolution
+                  - transition
+                  - registrarsNotation
+                  - registrarsOrder
+        documentsLink:
+          type: string
+          minLength: 1
+          format: uri
+          description: 'Link for documents related to ledger. '
+        displayName:
+          type: string
+          minLength: 1
+          description: Name to be displayed for ledger item.
+        effectiveDate:
+          type: string
+          minLength: 1
+          format: date-time
+          description: Date ledger item takes effect.
+        filingId:
+          type: number
+          description: 'Number identifying ledger item filing. '
+        filingLink:
+          type: string
+          minLength: 1
+          format: uri
+          description: 'Link related to ledger item filing.  '
+        name:
+          type: string
+          minLength: 1
+          description: 'Name related to ledger item. '
+        isFutureEffective:
+          type: boolean
+          description: Identify if ledger item filing effective date is further than the application date (yes/no).
+        paymentStatusCode:
+          type: string
+          minLength: 1
+          description: 'Code indicating the state of the payment eg: Completed. '
+          example: Completed
+        status:
+          type: string
+          minLength: 1
+          description: 'Text describing the state of the ledger item. '
+        submittedDate:
+          type: string
+          minLength: 1
+          description: 'Date the ledger item was submitted. '
+        submitter:
+          type: string
+          minLength: 1
+          description: 'Name of the person submitting the ledger item. '
+      required:
+        - availableOnPaperOnly
+        - businessIdentifier
+        - commentsCount
+        - commentsLink
+        - data
+        - documentsLink
+        - displayName
+        - effectiveDate
+        - filingId
+        - filingLink
+        - name
+        - isFutureEffective
+        - paymentStatusCode
+        - status
+        - submittedDate
+        - submitter
+    Naics:
+      type: object
+      title: NAICS Schema
+      description: NAICS is an abbreviation for The North American Industry Classification System and is a standard used to classify business activities.
+      properties:
+        naicsCode:
+          type: string
+          pattern: '^[0-9]{5,9}$'
+          description: 'Six digits unique identifier assigned to a business activity.  '
+          example: 32621 is the code for 'Tires Manufacturing' description
+        naicsDescription:
+          type: string
+          example: 32621 is the code for 'Tires Manufacturing' description
+          description: 'Description of the business activity linked to the NAICS code.  '
+      x-examples:
+        Example 1:
+          naicsCode: 32621 is the code for description 'Tires Manufacturing'
+          naicsDescription: '''Tires Manufacturing'' is the description for code 32621'
+    Name_request:
+      type: object
+      title: Name Request Schema
+      description: 'Filing requesting approval for a business name.  '
+      properties:
+        nrNumber:
+          type: string
+          maxLength: 10
+          description: 'Unique number identifying the request. '
+        legalType:
+          type: string
+          description: 'Type of business requesting name approval eg: Benefit Company.'
+        legalName:
+          type: string
+          description: 'Legal name requested for approval. '
+        requestType:
+          type: string
+          title: The type of Name Request
+          example: Benefit Company Inc.
+          description: 'Representing the type of business and type of change eg: BC Benefit Company Change of Name.'
+        status:
+          type: string
+          description: 'Status of the request eg: completed.'
+          example: 'Expired '
+        expires:
+          type: string
+          format: date-time
+          description: Date and time the request will be in 'expired' status.
+        consent:
+          type: string
+          description: Authorization to use the requested name.
+        submittedBy:
+          type: string
+          description: 'Name of the person submitting the request. '
+        address:
+          $ref: '#/components/schemas/Address'
+      required:
+        - legalType
+      x-examples:
+        Example 1:
+          nrNumber: NR 0119514
+          legalType: B.C. Company
+          legalName: JOHN SMITH COMPANY (LIMITED)
+          requestType: B.C. Company - Incorporation/Amalgamation
+          status: Completed
+          expires: '2019-08-24T14:15:22Z'
+          consent: 'NAME: consent to use name'
+          submittedBy: Registry Staff
+          address:
+            streetAddress: 5-4761 Bay Street
+            streetAddressAdditional: Building A
+            addressCity: Victoria
+            addressRegion: 'BC for British Columbia '
+            addressCountry: Canada
+            postalCode: V8R 2P1
+            deliveryInstructions: '"Our apartment is located at the back of the building."'
+    Name_translations:
+      type: array
+      title: Name Translations Schema
+      description: 'Used when business name is to be translated. '
+      x-examples:
+        Example 1:
+          - id: '1234'
+            name: Compagnie ABC
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            description: 'Name unique identifyer eg: 1234. '
+            example: '1234'
+          name:
+            type: string
+            maxLength: 50
+            title: Name Translation
+            pattern: '^[ A-Za-zÀ-ÿ_@./#’&+-]*$'
+            description: 'Text indicating name translation to be used. '
+        required:
+          - name
+    Office:
+      title: Office Schema
+      type: object
+      description: 'Addresses related to the business.   '
+      properties:
+        officeType:
+          type: string
+          example: 'Head office '
+          description: 'Type of office eg: registered office. '
+        mailingAddress:
+          $ref: '#/components/schemas/Address'
+        deliveryAddress:
+          $ref: '#/components/schemas/Address'
+      x-examples:
+        Example 1:
+          officeType: Head office
+          mailingAddress:
+            streetAddress: 5-4761 Bay Street
+            streetAddressAdditional: Building A
+            addressCity: Victoria
+            addressRegion: 'BC for British Columbia '
+            addressCountry: Canada
+            postalCode: V8R 2P1
+            deliveryInstructions: '"Our apartment is located at the back of the building."'
+          deliveryAddress:
+            streetAddress: 5-4761 Bay Street
+            streetAddressAdditional: Building A
+            addressCity: Victoria
+            addressRegion: 'BC for British Columbia '
+            addressCountry: Canada
+            postalCode: V8R 2P1
+            deliveryInstructions: '"Our apartment is located at the back of the building."'
+    party:
+      type: object
+      title: party
+      description: 'Represent a person and its role in relation to a business. '
+      properties:
+        party:
+          type: object
+          description: 'Represent a person and its role in relation to a business. '
+          properties:
+            taxId:
+              type: string
+              description: 'Company unique business number assigned by CRA: BN9 or BN15 eg: BN123456789.'
+              example: BN123456789
+            roles:
+              type: array
+              description: 'Role of the person in relation to the business eg: director'
+              items:
+                $ref: '#/components/schemas/partyRole'
+            officer:
+              oneOf:
+                - $ref: '#/components/schemas/Person'
+                - $ref: '#/components/schemas/Business'
+                - $ref: '#/components/schemas/Business'
+              description: Officer is a key management executive of the business
+            deliveryAddress:
+              $ref: '#/components/schemas/Address'
+            mailingAddress:
+              $ref: '#/components/schemas/Address'
+            title:
+              type: string
+              example: Chief Executive Officer
+              description: 'Title of the party in relation to the business eg: Chief Executive Officer '
+          required:
+            - roles
+            - officer
+            - mailingAddress
+      x-examples:
+        Example 1:
+          party:
+            taxId: BN123456789
+            roles:
+              - appointmentDate: '2019-08-24'
+                cessationDate: '2019-08-24'
+                roleType: Officer
+            officer:
+              givenName: John
+              familyName: Smith
+              additionalName: Adam
+              middleInitial: A
+              taxId: BN123456789
+              email: abc.def@gov.bc.ca
+            deliveryAddress:
+              streetAddress: 5-4761 Bay Street
+              streetAddressAdditional: Building A
+              addressCity: Victoria
+              addressRegion: 'BC for British Columbia '
+              addressCountry: Canada
+              postalCode: V8R 2P1
+              deliveryInstructions: '"Our apartment is located at the back of the building."'
+            mailingAddress:
+              streetAddress: 5-4761 Bay Street
+              streetAddressAdditional: Building A
+              addressCity: Victoria
+              addressRegion: 'BC for British Columbia '
+              addressCountry: Canada
+              postalCode: V8R 2P1
+              deliveryInstructions: '"Our apartment is located at the back of the building."'
+            title: Chief Executive Officer
+    party - copy:
+      type: object
+      x-stoplight:
+        id: ee4nvid30gu0u
+      title: party
+      description: 'Represent a person and its role in relation to a business. '
+      properties:
+        party:
+          type: object
+          description: 'Represent a person and its role in relation to a business. '
+          properties:
+            taxId:
+              type: string
+              example: BN123456789
+              description: 'Company unique business number assigned by CRA: BN9 or BN15 eg: BN123456789.'
+            roles:
+              type: array
+              description: 'Role of the person in relation to the business eg: director.'
+              items:
+                $ref: '#/components/schemas/partyRole'
+            officer:
+              oneOf:
+                - $ref: '#/components/schemas/Person'
+                - $ref: '#/components/schemas/Business'
+                - $ref: '#/components/schemas/Business'
+              description: Officer is a key management executive of the business
+            deliveryAddress:
+              $ref: '#/components/schemas/Address'
+            mailingAddress:
+              $ref: '#/components/schemas/Address'
+            title:
+              type: string
+              example: Chief Executive Officer
+              description: 'Title of the party in relation to the business eg: Chief Executive Officer.'
+          required:
+            - roles
+            - officer
+            - mailingAddress
+      x-examples:
+        Example 1:
+          party:
+            taxId: BN123456789
+            roles:
+              - appointmentDate: '2019-08-24'
+                cessationDate: '2019-08-24'
+                roleType: Completing Party
+            officer:
+              givenName: John
+              familyName: smith
+              additionalName: Adam
+              middleInitial: A
+              taxId: BN123456789
+              email: abc.def@gov.bc.ca
+            deliveryAddress:
+              streetAddress: 5-4761 Bay Street
+              streetAddressAdditional: Building A
+              addressCity: Victoria
+              addressRegion: 'BC for British Columbia '
+              addressCountry: Canada
+              postalCode: V8R 2P1
+              deliveryInstructions: '"Our apartment is located at the back of the building."'
+            mailingAddress:
+              streetAddress: 5-4761 Bay Street
+              streetAddressAdditional: Building A
+              addressCity: Victoria
+              addressRegion: 'BC for British Columbia '
+              addressCountry: Canada
+              postalCode: V8R 2P1
+              deliveryInstructions: '"Our apartment is located at the back of the building."'
+            title: Chief Executive Officer
+    partyRole:
+      type: object
+      description: 'Role of the person in relation to the business eg: director.'
+      properties:
+        appointmentDate:
+          type: string
+          format: date
+          description: Date the person has been appointed to the role.
+        cessationDate:
+          type: string
+          format: date
+          description: Date the person's role has been terminated.
+        roleType:
+          type: string
+          enum:
+            - Completing Party
+            - Custodian
+            - Liquidator
+            - Director
+            - Incorporator
+            - Proprietor
+            - Partner
+          description: 'The role a person occupies in the business eg: officer.'
+      x-examples:
+        Example 1:
+          appointmentDate: '2019-08-24'
+          cessationDate: '2019-08-24'
+          roleType: Director
+    Person:
+      type: object
+      title: Person Schema
+      description: 'An individual that is currently or had previously occupied a role in relation to a business. '
+      properties:
+        givenName:
+          type: string
+          maxLength: 30
+          description: First name of the individual.
+        familyName:
+          type: string
+          maxLength: 30
+          description: Last name or surname of the individual.
+        additionalName:
+          type: string
+          title: 'An additional name for a Person, can be used for a middle name.'
+          maxLength: 30
+          description: 'Other name used by the individual. '
+        middleInitial:
+          type: string
+          maxLength: 30
+          description: Initial of the individual's middle name.
+        taxId:
+          type: string
+          title: The CRA business number
+          pattern: '^[0-9]{9}$'
+          description: 'Company unique business number assigned by CRA: BN9 or BN15 '
+          example: BN123456789
+        email:
+          type: string
+          format: email
+          example: abc.def@gov.bc.ca
+          description: email address of the individual for contact information.
+      x-examples:
+        Example 1:
+          givenName: John
+          familyName: Smith
+          additionalName: Adam
+          middleInitial: A
+          taxId: BN123456789
+          email: abc.def@gov.bc.ca
+    Registrars_notation:
+      title: Registrars Notation Information Schema
+      type: object
+      description: ' Notation regarding a registrar order.'
+      properties:
+        registrarsNotation:
+          type: object
+          required:
+            - orderDetails
+          properties:
+            fileNumber:
+              type: string
+              minLength: 0
+              maxLength: 20
+              description: The court assigns each court order a unique file number up to 20 characters in length.
+            orderDate:
+              type: string
+              description: The date and time of the order.
+              format: date-time
+            effectOfOrder:
+              type: string
+              minLength: 0
+              maxLength: 500
+              default: planOfArrangement
+              description: The effect that the order has on the business.
+            orderDetails:
+              type: string
+              minLength: 1
+              maxLength: 2000
+              description: A brief note to explain the purpose of the order.
+      required:
+        - registrarsNotation
+      x-examples:
+        Example 1:
+          registrarsNotation:
+            fileNumber: A1234
+            orderDate: '2019-08-24T14:15:22Z'
+            effectOfOrder: planOfArrangement
+            orderDetails: Court order to process with liquidation of assets
+    Registrars_order:
+      type: object
+      title: Registrars Order Information Schema
+      properties:
+        registrarsOrder:
+          type: object
+          required:
+            - orderDetails
+          description: 'Order issued by the registrar eg: update an AGM date.'
+          properties:
+            fileNumber:
+              type: string
+              minLength: 0
+              maxLength: 20
+              description: Number identifying the registrar order.
+            orderDate:
+              type: string
+              description: The date and time of the order.
+              format: date-time
+            effectOfOrder:
+              type: string
+              minLength: 0
+              maxLength: 500
+              description: The effect the order will have on the business.
+            orderDetails:
+              type: string
+              minLength: 1
+              maxLength: 2000
+              description: A brief note to explain the purpose of the Order.
+      required:
+        - registrarsOrder
+      description: 'Order issued by the registrar eg: update an AGM date.'
+      x-examples:
+        Example 1:
+          registrarsOrder:
+            fileNumber: A1234
+            orderDate: '2019-08-24T14:15:22Z'
+            effectOfOrder: Company will be dissolved
+            orderDetails: Order to proceed with company dissolution
+    Restoration:
+      title: Restoration Filing
+      type: object
+      description: 'Filing to request a company to be restored eg: after dissolution a company can apply for full or limited restoration.'
+      properties:
+        restoration:
+          type: object
+          required:
+            - date
+            - type
+          properties:
+            date:
+              type: string
+              format: date
+              description: Date the restoration request is filed.
+            type:
+              type: string
+              title: 'The Type of Restoration, such as Full Restoration, Limited Restoration, etc.'
+              enum:
+                - fullRestoration
+                - limitedRestoration
+              description: 'Type of restoration requested eg: limited, full.'
+            expiry:
+              title: The date the limited restoration is ends.
+              type: string
+              format: date
+              description: 'The date until which the restoration will be in effect: usually for limited restoration.  '
+      required:
+        - restoration
+      x-examples:
+        Example 1:
+          restoration:
+            date: '2019-08-24'
+            type: limitedRestoration
+            expiry: '2020-02-20'
+    Registration:
+      title: Registration Filing
+      type: object
+      description: 'Filing to register a business eg: sole proprietorship, general partnership.'
+      properties:
+        registration:
+          type: object
+          required:
+            - offices
+            - contactPoint
+            - startDate
+            - nameRequest
+            - parties
+          description: 'Filing to register a business eg: sole proprietorship, general partnership.'
+          properties:
+            business:
+              $ref: '#/components/schemas/Business'
+            offices:
+              type: object
+              description: 'Addresses related to the business eg: records office mailing address.'
+              properties:
+                businessOffice:
+                  $ref: '#/components/schemas/Office'
+            businessType:
+              type: string
+              title: The business type of Sole Proprietorship (Doing Business As) Registration.
+              enum:
+                - SP
+                - DBA
+              description: 'Type of business to register eg: general partnership.'
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+            startDate:
+              type: string
+              format: date
+              description: 'The date the business operations start. '
+            nameRequest:
+              $ref: '#/components/schemas/Name_request'
+            parties:
+              type: array
+              description: The persons related to the business and their role.
+              items:
+                $ref: '#/components/schemas/party'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
+      required:
+        - registration
+      x-examples:
+        Example 1:
+          registration:
+            business:
+              lastLedgerTimestamp: '2020-11-24T18:24:27.179623+00:00'
+              fiscalYearEndDate: '2020-11-24'
+              dissolutionDate: '2020-11-24T18:23:53.498863+00:00'
+              foundingDate: '2020-11-24T18:23:53.498863+00:00'
+              identifier: 'BC1234567 is an identifier for a corporation '
+              legalName: '1234567 B.C. Ltd. is a legal name for a corporation '
+              state: ACTIVE
+              legalType: 'GP: General Partnership'
+              taxId: BN123456789
+              goodStanding: true
+              adminFreeze: true
+              naics:
+                naicsCode: 32621 is the code for 'Tires Manufacturing' description
+                naicsDescription: 32621 is the code for 'Tires Manufacturing' description
+              natureOfBusiness: string
+              complianceWarnings:
+                - code: INVALID_LEGAL_STRUCTURE_DIRECTORS
+                  message: INVALID_LEGAL_STRUCTURE_DIRECTORS
+                  filing: '''https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'''
+            offices:
+              businessOffice:
+                officeType: 'Head office '
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+            businessType: SP
+            contactPoint:
+              email: abc.def@gov.bc.ca
+              phone: (555) 555-5555
+              extension: 1234
+            startDate: '2019-08-24'
+            nameRequest:
+              nrNumber: string
+              legalType: string
+              legalName: string
+              requestType: Benefit Company Inc.
+              status: 'Expired '
+              expires: '2019-08-24T14:15:22Z'
+              consent: string
+              submittedBy: string
+              address:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: string
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our apartment is located at the back of the building."'
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Completing Party
+                  officer:
+                    givenName: string
+                    familyName: string
+                    additionalName: string
+                    middleInitial: string
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: string
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our apartment is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: string
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our apartment is located at the back of the building."'
+                  title: Chief Executive Officer
+            courtOrder:
+              courtOrder:
+                fileNumber: string
+                orderDate: '2019-08-24T14:15:22Z'
+                effectOfOrder: string
+                orderDetails: string
+    shareSeries:
+      type: object
+      description: Describe share structure of a company.
+      properties:
+        name:
+          type: string
+          title: The name of the share series.
+          description: 'Type of shares eg: general shares.'
+        priority:
+          type: integer
+          title: 'The display order that indicates priority. '
+          description: Priority related to share type or class.
+        hasMaximumShares:
+          type: boolean
+          title: Has maximum number of shares?
+          description: If there is a maximum number of shares that the company can issue to the investors Yes/No.
+        hasRightsOrRestrictions:
+          type: boolean
+          title: Has special rights or restrictions?
+          description: 'If there are conditions to be met before the shares can be sold. '
+      required:
+        - name
+        - priority
+        - hasMaximumShares
+        - hasRightsOrRestrictions
+      title: ''
+      x-examples:
+        Example 1:
+          name: convertible shares
+          priority: 100
+          hasMaximumShares: true
+          hasRightsOrRestrictions: true
+    shareClass:
+      type: object
+      description: 'Designation that describes the different types of shares the company can issue, typically designated by letters of the alphabet, such as A or B. '
+      x-examples:
+        Example 1:
+          name: Redeemable Shares
+          priority: 2
+          maxNumberOfShares: 100
+          parValue: 50
+          currency: CAD
+          hasMaximumShares: true
+          hasParValue: true
+          hasRightsOrRestrictions: true
+          series:
+            - name: Redeemable Preference Shares
+              priority: 2
+              hasMaximumShares: true
+              hasRightsOrRestrictions: true
+      properties:
+        name:
+          type: string
+          title: The name of the share class.
+          description: 'Type of shares eg: general shares.'
+        priority:
+          type: integer
+          title: 'The display order of the shares that indicates priority. '
+          description: 'The display order that indicates priority eg: 2. with value 2, the share class will be displayed the second, after share class with priority 1. '
+          example: 'Eg: with value 2, the share class will be displayed the second, after share class with priority 1. '
+        maxNumberOfShares:
+          type: number
+          title: 'Maximum number of shares in the class. '
+          description: The maximum number of shares that a corporation can issue to the investors called authorized shares.
+        parValue:
+          type: number
+          title: 'Initial value of each share. '
+          description: 'The value of a single common share as set by a corporation''s charter. '
+        currency:
+          type: string
+          description: The currency in which the Share is traded on the Exchange.
+        hasMaximumShares:
+          type: boolean
+          title: Has maximum number of shares?
+          description: 'If there is a maximum number of shares that the company can issue to the investors Yes/No.   '
+        hasParValue:
+          type: boolean
+          title: Has initial value of each share?
+          description: If company has Par Value defined in charter Yes/No.
+        hasRightsOrRestrictions:
+          type: boolean
+          title: Has special rights or restrictions?
+          description: 'If there are conditions to be met before the shares can be sold. '
+        series:
+          type: array
+          description: A subdivision of a class of shares. If a corporation's articles permit shares of a class to be issued in one or more series.
+          items:
+            $ref: '#/components/schemas/shareSeries'
+      required:
+        - name
+        - priority
+        - maxNumberOfShares
+        - parValue
+        - currency
+        - hasMaximumShares
+        - hasParValue
+        - hasRightsOrRestrictions
+    Special_resolution:
+      type: object
+      title: Special Resolution Filing
+      description: 'Special resolutions are needed for certain changes as defined in the Corporations Act eg: decisions to change the company''s name. '
+      properties:
+        specialResolution:
+          type: object
+          description: 'Special resolutions are needed for certain changes as defined in the Corporations Act eg: decisions to change the company''s name. '
+          required:
+            - resolution
+          properties:
+            meetingDate:
+              type: string
+              format: date
+              description: 'Date of the meeting when the special resolution was adopted.   '
+              example: '2023-01-20'
+            resolution:
+              type: string
+              maxLength: 1000
+              description: 'Description of the change that was adopted eg:  amendments to memorandum and articles of association.'
+            resolutionDate:
+              type: string
+              format: date
+              description: Date the resolution is to take effect.
+            signingDate:
+              type: string
+              format: date
+              description: 'The date the resolution was authorized.  '
+            signatory:
+              $ref: '#/components/schemas/Person'
+      required:
+        - specialResolution
+      x-examples:
+        Example 1:
+          specialResolution:
+            meetingDate: '2023-01-20'
+            resolution: Issuance of preferred shares
+            resolutionDate: '2019-08-24'
+            signingDate: '2019-08-24'
+            signatory:
+              givenName: John
+              familyName: Smith
+              additionalName: Adam
+              middleInitial: A
+              taxId: BN123456789
+              email: abc.def@gov.bc.ca
+    Share_structure:
+      type: object
+      title: Share Structure Schema
+      description: 'The type, series, and classes of shares that the company has been authorized. '
+      properties:
+        resolutionDates:
+          type: array
+          description: 'The date the share structure of the company was adopted. '
+          items:
+            type: string
+            format: date
+        shareClasses:
+          type: array
+          description: 'Designation that describes the different types of shares the company can issue, typically designated by letters of the alphabet, such as A or B. '
+          items:
+            $ref: '#/components/schemas/shareClass'
+      required:
+        - shareClasses
+      x-examples:
+        Example 1:
+          resolutionDates:
+            - '2019-08-24'
+          shareClasses:
+            - name: Redeemable shares
+              priority: 2
+              maxNumberOfShares: 100
+              parValue: 50
+              currency: CAD
+              hasMaximumShares: true
+              hasParValue: true
+              hasRightsOrRestrictions: true
+              series:
+                - name: Redeemable shares class A
+                  priority: 2
+                  hasMaximumShares: true
+                  hasRightsOrRestrictions: true
+    Suggestion_item:
+      type: object
+      description: '***Item not used*** A suggestion from an auto-search'
+      properties:
+        name:
+          type: string
+          description: Matching term
+        identifier:
+          type: string
+        BN:
+          type: string
+        target:
+          type: string
+        weight:
+          type: integer
+          description: The weight of the search term is scored by the matching algorithm against the search term provided.
+      title: ''
+      x-examples:
+        Example 1:
+          name: string
+          identifier: string
+          BN: '123456789'
+          target: string
+          weight: 0
+    Suggestion_item - copy:
+      type: object
+      x-stoplight:
+        id: 21kymuins8gxo
+      description: A suggestion from an auto-search
+      properties:
+        name:
+          type: string
+          description: Matching term
+        identifier:
+          type: string
+        BN:
+          type: string
+        target:
+          type: string
+        weight:
+          type: integer
+          description: The weight of the search term is scored by the matching algorithm against the search term provided.
+      title: ''
+    Transition:
+      type: object
+      title: Transition Filing
+      description: Companies must file a Transition Application to update certain information that is on file with BC Registry.
+      properties:
+        transition:
+          type: object
+          description: Companies must file a Transition Application to update certain information that is on file with BC Registry.
+          required:
+            - offices
+            - parties
+            - shareStructure
+            - hasProvisions
+          properties:
+            nameTranslations:
+              $ref: '#/components/schemas/Name_translations'
+            offices:
+              type: object
+              description: Addresses related to the business.
+              properties:
+                registeredOffice:
+                  $ref: '#/components/schemas/Office'
+                recordsOffice:
+                  $ref: '#/components/schemas/Office'
+            parties:
+              type: array
+              description: 'Persons having a role in the company transition. '
+              items:
+                $ref: '#/components/schemas/party'
+            shareStructure:
+              $ref: '#/components/schemas/Share_structure'
+            hasProvisions:
+              type: boolean
+              title: Has Pre-existing company provisions?
+              description: If the company has funds set aside to cover specific anticipated future expenses or other financial impacts Yes/No.
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+      required:
+        - transition
+      x-examples:
+        Example 1:
+          transition:
+            nameTranslations:
+              - id: string
+                name: string
+            offices:
+              registeredOffice:
+                officeType: Head office
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+              recordsOffice:
+                officeType: Records Office
+                mailingAddress:
+                  streetAddress: 2-3342 Fort Street
+                  streetAddressAdditional: Building C
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our office is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 311-1112 View Street
+                  streetAddressAdditional: 3rd floor
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Receptopn is on 2nd floor."'
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2021-06-14'
+                      roleType: Officer
+                  officer:
+                    givenName: Mary
+                    familyName: Williams
+                    additionalName: Lucy
+                    middleInitial: L
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-111 Bay Street
+                    streetAddressAdditional: Building B
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: string
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located in front of the building."'
+                  title: Chief Executive Officer
+            shareStructure:
+              resolutionDates:
+                - '2019-08-24'
+              shareClasses:
+                - name: string
+                  priority: 0
+                  maxNumberOfShares: 0
+                  parValue: 0
+                  currency: string
+                  hasMaximumShares: true
+                  hasParValue: true
+                  hasRightsOrRestrictions: true
+                  series:
+                    - name: string
+                      priority: 0
+                      hasMaximumShares: true
+                      hasRightsOrRestrictions: true
+            hasProvisions: true
+            contactPoint:
+              email: abc.def@gov.bc.ca
+              phone: string
+              extension: 1234
+    Unmanaged:
+      title: Unmanaged Filing
+      required:
+        - unmanaged
+      type: object
+      properties:
+        unManaged:
+          type: object
+          required:
+            - displayName
+          properties:
+            displayName:
+              type: string
+              title: Display name of the filing.
+      description: '***Item not used*** '
+  securitySchemes:
+    api_key:
+      type: apiKey
+      description: API Gateway assigned API key for a consumer with the PPR API privilege. Required for all requests.
+      name: x-apikey
+      in: header
+    jwt:
+      type: oauth2
+      flows:
+        password:
+          tokenUrl: ''
+          refreshUrl: ''
+          scopes: {}
+      description: ''
+  headers:
+    AccessControlAllowOrigin:
+      schema:
+        type: string
+        description: Access-Control-Allow-Origin
+        x-examples:
+          notify_1:
+            value: ''
+    AccessControlAllowMethods:
+      schema:
+        type: string
+        description: Access-Control-Allow-Methods
+        x-examples:
+          notify_1:
+            value: 'GET, PUT, POST, PATCH'
+    AccessControlAllowHeaders:
+      schema:
+        type: string
+        description: Access-Control-Allow-Headers
+        x-examples:
+          notify_1:
+            value: 'content-type, accept, x-apikey, authorization'
+    AccessControlMaxAge:
+      schema:
+        type: integer
+        description: Access-Control-Max-Age
+        x-examples:
+          notify_1:
+            value: 362880
+  parameters:
+    accountId:
+      name: Account-Id
+      in: header
+      description: The account that the user is operating on behalf of.
+      required: true
+      schema:
+        type: string
+      example: '1234567'
+    identifier:
+      name: identifier
+      in: path
+      required: true
+      description: The unique identifier for the business or organization.
+      schema:
+        type: string
+    filingId:
+      name: filingId
+      in: path
+      required: true
+      description: The unique id of the filing
+      schema:
+        type: string
+    documentName:
+      name: documentName
+      in: path
+      required: true
+      description: The name of the legalName of the document.
+      schema:
+        type: string
+tags:
+  - name: business
+    description: business services
+  - name: search
+    description: search services
+security:
+  - api_key: []
