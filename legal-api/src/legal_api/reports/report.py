@@ -243,7 +243,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing = copy.deepcopy(self._filing.filing_json["filing"])
             filing["header"]["filingId"] = self._filing.id
             filing["header"]["status"] = self._filing.status
-            # self._format_filing_json(filing)
+            self._format_filing_json(filing)
 
         filing["header"]["reportType"] = self._report_key
 
