@@ -19,8 +19,8 @@ from datetime import datetime
 import pycountry
 from sql_versioning import history_cls
 from sqlalchemy import or_
-from sqlalchemy.sql.expression import null
 from sqlalchemy.orm import defer
+from sqlalchemy.sql.expression import null
 from sqlalchemy_continuum import version_class
 
 from legal_api.models import (
@@ -594,7 +594,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         party_version = history_cls(business_attr)
         party_history = (
             db.session.query(party_version)
-            .options(defer(party_version.changed)) # TODO: remove this after update history_cls
+            .options(defer(party_version.changed))  # TODO: remove this after update history_cls
             .filter(party_version.change_filing_id == filing.id)
             .filter(party_version.id == party_id)
         )

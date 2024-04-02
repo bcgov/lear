@@ -869,9 +869,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if business_office := filing.get(filing_type).get("offices", {}).get("businessOffice"):
             filing["offices"] = {}
             filing["offices"]["businessOffice"] = business_office
-            offices_json = VersionedBusinessDetailsService.get_office_revision(
-                prev_completed_filing, self._business
-            )
+            offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing, self._business)
             if offices_json:
                 filing["offices"]["businessOffice"]["mailingAddress"]["changed"] = self._compare_address(
                     business_office.get("mailingAddress"), offices_json["businessOffice"]["mailingAddress"]
