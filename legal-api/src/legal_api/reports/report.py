@@ -237,13 +237,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _get_template_data(self):
         if self._report_key in ["noticeOfArticles", "amendedRegistrationStatement", "correctedRegistrationStatement"]:
-            filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
+            filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business)
             self._format_noa_data(filing)
         else:
             filing = copy.deepcopy(self._filing.filing_json["filing"])
             filing["header"]["filingId"] = self._filing.id
             filing["header"]["status"] = self._filing.status
-            self._format_filing_json(filing)
+            # self._format_filing_json(filing)
 
         filing["header"]["reportType"] = self._report_key
 
@@ -315,7 +315,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
         if completing_party_role:
-            filing["completingParty"] = completing_party_role[0].party.json
+            filing["completingParty"] = completing_party_role[0].json
             with suppress(KeyError):
                 self._format_address(filing["completingParty"]["deliveryAddress"])
             with suppress(KeyError):
