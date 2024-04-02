@@ -423,7 +423,6 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
         else:
             new_party.delivery_address = delivery_address
 
-        # new_party.save()
     return new_party
 
 
