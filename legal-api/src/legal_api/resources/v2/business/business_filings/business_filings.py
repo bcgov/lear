@@ -664,7 +664,7 @@ class ListFilingResource():
                 'priority': priority_flag,
                 'waiveFees': waive_fees_flag
             })
-        elif any(filing_type in x for x in ['dissolution']):
+        elif filing_type == 'dissolution':
             dissolution_type = filing_json['filing']['dissolution']['dissolutionType']
             if dissolution_type == 'voluntary':
                 filing_type_code = Filing.FILINGS.get('dissolution', {}).get(dissolution_type).get('codes', {}) \
@@ -694,8 +694,7 @@ class ListFilingResource():
                     'filingTypeCode': 'NOFEE',
                     'waiveFees': waive_fees_flag
                 })
-        elif any(filing_type in x for x in ['courtOrder', 'registrarsNotation', 'registrarsOrder',
-                 'putBackOn', 'adminFreeze']):
+        elif filing_type in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn', 'adminFreeze']:
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
                 'filingTypeCode': filing_type_code,
@@ -727,25 +726,19 @@ class ListFilingResource():
                 if k in ['changeOfDirectors', 'changeOfAddress']:
                     priority = False if filing_type == 'annualReport' else priority_flag
 
-                if k == 'incorporationApplication':
+                if k in ['incorporationApplication', 'amalgamationApplication', 'alteration']:
                     filing_types.append({
                         'filingTypeCode': filing_type_code,
-                        'futureEffective': ListFilingResource.is_future_effective_filing(filing_json)
+                        'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
+                        'priority': priority,
+                        'waiveFees': waive_fees_flag
                     })
                 elif filing_type_code:
-                    if k == 'alteration':
-                        filing_types.append({
-                            'filingTypeCode': filing_type_code,
-                            'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
-                            'priority': priority,
-                            'waiveFees': waive_fees_flag
-                        })
-                    else:
-                        filing_types.append({
-                            'filingTypeCode': filing_type_code,
-                            'priority': priority,
-                            'waiveFees': waive_fees_flag
-                        })
+                    filing_types.append({
+                        'filingTypeCode': filing_type_code,
+                        'priority': priority,
+                        'waiveFees': waive_fees_flag
+                    })
         return filing_types
 
     @staticmethod
