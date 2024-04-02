@@ -218,6 +218,7 @@ def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filin
 
     # Find the Proprietor
     proprietor = None
+    proprietor_dict = None
     for party in parties_dict:
         for role in party.get("roles"):
             if role.get("roleType") == "Proprietor":
