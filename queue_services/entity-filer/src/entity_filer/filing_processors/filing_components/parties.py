@@ -137,6 +137,7 @@ def merge_all_parties(legal_entity: LegalEntity, filing: Filing, parties: dict) 
         ) or (
             (not party_identifier)
             and (party_id := party_dict.get("officer", {}).get("id"))
+            and party_id.isnumeric()
             and ((party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_id(party_id)))
         ):
             existing_party = True
@@ -422,7 +423,7 @@ def create_entity_with_addresses(party_dict) -> LegalEntity:
         else:
             new_party.delivery_address = delivery_address
 
-        new_party.save()
+        # new_party.save()
     return new_party
 
 
@@ -481,6 +482,7 @@ def get_or_create_party(party_dict: dict, filing: Filing):
     ) or (
         (not party_identifier)
         and (party_id := party_dict.get("officer", {}).get("id"))
+        and party_id.isnumeric()
         and ((party_le := LegalEntity.find_by_id(party_id)) or (party_le := ColinEntity.find_by_id(party_id)))
     ):
         existing_party = True
