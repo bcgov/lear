@@ -377,7 +377,7 @@ class LegalEntity(
                             )
                             if alternate_name.business_start_date
                             else None,
-                            "nameType": alternate_name.name_type.name
+                            "nameType": alternate_name.name_type.name,
                         }
                     )
                 else:

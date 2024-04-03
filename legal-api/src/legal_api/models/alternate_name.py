@@ -333,7 +333,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
                         if self.business_start_date
                         else None
                     ),
-                    "nameType": self.name_type.name
+                    "nameType": self.name_type.name,
                 }
             ],
         }

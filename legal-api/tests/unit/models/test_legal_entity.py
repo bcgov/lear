@@ -761,7 +761,7 @@ def test_business_name(session, entity_type, legal_name, expected_business_name)
             # expected_alternate_names
             [
                 {
-                    "identifier": ALTERNATE_NAME_1_IDENTIFIER
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "entityType": "SP",
                     "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                     "nameStartDate": ALTERNATE_NAME_1_START_DATE,
