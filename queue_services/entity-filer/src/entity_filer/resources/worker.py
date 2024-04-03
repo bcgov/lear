@@ -308,7 +308,7 @@ def process_filing(
                 dissolution.process(business, {filing_type: filing}, filing_submission, filing_meta)
 
             case "incorporationApplication":
-                business, alternate_name, filing_submission, filing_meta = incorporation_filing.process(
+                business, filing_submission, filing_meta = incorporation_filing.process(
                     business, filing_submission.json, filing_submission, filing_meta
                 )
 
@@ -420,10 +420,7 @@ def process_filing(
         # )
 
     if any("incorporationApplication" in x for x in legal_filings):
-        if alternate_name:
-            filing_submission.alternate_name_id = alternate_name.id
-        else:
-            filing_submission.legal_entity_id = business.id
+        filing_submission.legal_entity_id = business.id
 
         db.session.add(filing_submission)
         db.session.commit()

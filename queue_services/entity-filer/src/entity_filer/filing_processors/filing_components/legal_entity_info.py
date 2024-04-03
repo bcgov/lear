@@ -100,13 +100,6 @@ def update_naics_info(legal_entity: LegalEntity, naics: Dict):
 
 def get_next_corp_num(entity_type: str):
     """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
-    # Handle firms
-    if entity_type in (
-        BusinessCommon.EntityTypes.SOLE_PROP,
-        BusinessCommon.EntityTypes.PARTNERSHIP,
-    ):
-        entity_type = "FM"
-
     # this gets called if the new services are generating the LegalEntity.identifier.
     if entity_type in LegalEntityType:
         if business_type := LegalEntityType.get_enum_by_value(entity_type):

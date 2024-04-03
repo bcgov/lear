@@ -28,12 +28,6 @@ from entity_filer.filing_processors import incorporation_filing
 from entity_filer.filing_processors.filing_components import legal_entity_info
 from tests.unit import create_filing, nested_session
 
-SP_INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-SP_INCORPORATION_FILING_TEMPLATE["filing"]["incorporationApplication"]["nameRequest"]["legalType"] = "SP"
-
-GP_INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-GP_INCORPORATION_FILING_TEMPLATE["filing"]["incorporationApplication"]["nameRequest"]["legalType"] = "GP"
-
 COOP_INCORPORATION_FILING_TEMPLATE = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 del COOP_INCORPORATION_FILING_TEMPLATE["filing"]["incorporationApplication"]["offices"]["recordsOffice"]
 del COOP_INCORPORATION_FILING_TEMPLATE["filing"]["incorporationApplication"]["parties"][1]
@@ -62,8 +56,6 @@ INCORPORATION_FILING_TEMPLATE["filing"]["incorporationApplication"]["courtOrder"
         ("CP", copy.deepcopy(COOP_INCORPORATION_FILING_TEMPLATE), "CP0001095"),
         ("ULC", copy.deepcopy(INCORPORATION_FILING_TEMPLATE), "BC0001095"),
         ("CC", copy.deepcopy(INCORPORATION_FILING_TEMPLATE), "BC0001095"),
-        ("SP", copy.deepcopy(SP_INCORPORATION_FILING_TEMPLATE), "FM0001095"),
-        ("GP", copy.deepcopy(GP_INCORPORATION_FILING_TEMPLATE), "FM0001095"),
     ],
 )
 def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, next_corp_num):
@@ -93,7 +85,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
             filing_meta = FilingMeta(application_date=effective_date)
 
             # test
-            business, alternate_name, filing_rec, filing_meta = incorporation_filing.process(
+            business, filing_rec, filing_meta = incorporation_filing.process(
                 None, filing, filing_rec, filing_meta
             )
 
@@ -137,11 +129,6 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
                 # memorandum_file_obj = MinioService.get_file(memorandum_file_key_uploaded_by_user)
                 # assert memorandum_file_obj
                 # assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
-            if legal_type in ("SP", "GP"):
-                assert alternate_name
-                assert business.name == filing["filing"]["incorporationApplication"]["nameRequest"]["legalName"]
-                assert len(filing_rec.filing_entity_roles.all()) == 3
-                assert len(alternate_name.offices.all()) == 2
 
         # TODO: This assert_called_with thinks it gets called with 'P' as legalType for some reason
         # mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
@@ -179,7 +166,7 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
         # test
-        business, _, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -212,8 +199,6 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         ("short number", "BEN", "1234", "BC0001234"),
         ("full 9 number", "BEN", "1234567", "BC1234567"),
         ("too big number", "BEN", "12345678", None),
-        ("sp 9 number", "SP", "1234567", "FM1234567"),
-        ("gp 9 number", "GP", "1234567", "FM1234567"),
     ],
 )
 def test_get_next_corp_num(requests_mock, app, session, test_name, legal_type, response, expected):
@@ -258,7 +243,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, _, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
+    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == corp_num
@@ -301,7 +286,7 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type, le
         filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
         # test
-        business, _, filing_rec, filing_meta = incorporation_filing.process(
+        business, filing_rec, filing_meta = incorporation_filing.process(
             None, filing, filing_rec, filing_meta=filing_meta
         )
 

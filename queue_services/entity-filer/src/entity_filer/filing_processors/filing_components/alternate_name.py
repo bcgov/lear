@@ -28,21 +28,6 @@ from entity_filer.filing_processors.filing_components.parties import get_or_crea
 from entity_filer.utils.legislation_datetime import LegislationDatetime
 
 
-def update_alternate_name_info(
-    alternate_name: AlternateName, legal_entity: LegalEntity, business_info: Dict, filing: Filing
-):
-    """Format and update the alternate_name entity from incorporation filing."""
-    if legal_entity and alternate_name and business_info and filing:
-        alternate_name.name = business_info.get("legalName", None)
-        alternate_name.identifier = legal_entity.identifier
-        alternate_name.entity_type = business_info.get("legalType", None)
-        alternate_name.start_date = filing.effective_date
-        alternate_name.business_start_date = filing.effective_date
-        alternate_name.legal_entity_id = legal_entity.id
-        return alternate_name
-    return None
-
-
 def update_partner_change(
     legal_entity: LegalEntity,
     filing_type: str,

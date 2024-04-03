@@ -37,7 +37,7 @@ from entity_filer.filing_processors.filing_components.parties import merge_all_p
 # from entity_filer.utils import replace_file_with_certified_copy
 
 
-def update_affiliation(business: any, filing: Filing):
+def update_affiliation(business: LegalEntity, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     # TODO remove all of this
     pass
@@ -76,7 +76,7 @@ def update_affiliation(business: any, filing: Filing):
     #     )
 
 
-def _update_cooperative(incorp_filing: Dict, business: any, filing: Filing):
+def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Filing):
     cooperative_obj = incorp_filing.get("cooperative", None)  # noqa F841; remove this comment when below is done
     # TODO remove all this
     # if cooperative_obj:
@@ -130,6 +130,12 @@ def process(
     business_info_obj = incorp_filing.get("nameRequest")
     entity_type = business_info_obj.get("legalType")
 
+    if entity_type in (
+        BusinessCommon.EntityTypes.SOLE_PROP,
+        BusinessCommon.EntityTypes.PARTNERSHIP,
+    ):
+        raise DefaultException(f"Cannot process firm type businesses: IA legal_filing:incorporationApplication {filing_rec.id}")
+
     if filing_rec.colin_event_ids:
         corp_num = filing["filing"]["business"]["identifier"]
     else:
@@ -146,19 +152,6 @@ def process(
     business = _update_cooperative(incorp_filing, business, filing_rec)
     business.state = BusinessCommon.State.ACTIVE
 
-    # Initial insert of the alternate name record if SP or GP
-    alternate_name = None
-    if entity_type in (
-        BusinessCommon.EntityTypes.SOLE_PROP,
-        BusinessCommon.EntityTypes.PARTNERSHIP,
-    ):
-        alternate_name = AlternateName()
-        alternate_name = alternate_name_info.update_alternate_name_info(
-            alternate_name, business, business_info_obj, filing_rec
-        )
-        alternate_name = _update_cooperative(incorp_filing, alternate_name, filing_rec)
-        alternate_name.state = BusinessCommon.State.ACTIVE
-
     if nr_number := business_info_obj.get("nrNumber", None):
         filing_meta.incorporation_application = {
             **filing_meta.incorporation_application,
@@ -172,7 +165,7 @@ def process(
         raise DefaultException(f"IA incorporationApplication {filing_rec.id}, Unable to create business.")
 
     if offices := incorp_filing["offices"]:
-        update_offices(alternate_name if alternate_name else business, offices)
+        update_offices(business, offices)
 
     if parties := incorp_filing.get("parties"):
         merge_all_parties(business, filing_rec, {"parties": parties})
@@ -195,10 +188,10 @@ def process(
         ia_json["filing"]["business"]["legalType"] = business.entity_type
         ia_json["filing"]["business"]["foundingDate"] = business.founding_date.isoformat()
         filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
-    return business, alternate_name, filing_rec, filing_meta
+    return business, filing_rec, filing_meta
 
 
-def post_process(business: any, filing: Filing):
+def post_process(business: LegalEntity, filing: Filing):
     """Post processing activities for incorporations.
 
     THIS SHOULD NOT ALTER THE MODEL
