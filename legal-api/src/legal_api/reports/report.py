@@ -72,7 +72,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return current_app.response_class(response=response.data, status=response.status, mimetype="application/pdf")
 
     def _get_report(self):
-        if self._filing.legal_entity_id:
+        if self._filing.legal_entity_id or self._filing.alternate_name_id:
             self._business = BusinessService.fetch_business_by_filing(self._filing)
             Report._populate_business_info_to_filing(self._filing, self._business)
         if self._report_key == "alteration":
@@ -315,7 +315,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
         if completing_party_role:
-            filing["completingParty"] = completing_party_role[0].party.json
+            filing["completingParty"] = completing_party_role[0].json
             with suppress(KeyError):
                 self._format_address(filing["completingParty"]["deliveryAddress"])
             with suppress(KeyError):
@@ -654,7 +654,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["extended_agm_date"] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
 
         filing["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            self._filing.transaction_id, self._business.id  # pylint: disable=no-member
+            self._filing, self._business  # pylint: disable=no-member
         )
         with suppress(KeyError):
             self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
@@ -665,7 +665,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["location"] = self._filing.filing_json["filing"].get("agmLocationChange", {}).get("agmLocation", "")
 
         filing["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            self._filing.transaction_id, self._business.id  # pylint: disable=no-member
+            self._filing, self._business  # pylint: disable=no-member
         )
 
         with suppress(KeyError):
@@ -837,7 +837,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     ):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(
-            prev_completed_filing, self._business.id
+            prev_completed_filing, self._business
         )
 
         # Change of Name
