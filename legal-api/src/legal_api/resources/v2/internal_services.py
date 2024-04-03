@@ -79,7 +79,7 @@ def create_registrars_notation_filing(business: any, user: User, old_bn: str):
             "header": {"name": "registrarsNotation", "date": date.today().isoformat(), "certifiedBy": "system"},
             "business": {"identifier": business.identifier, "legalType": business.entity_type},
             "registrarsNotation": {
-                "orderDetails": f"Business Number changed from {old_bn} to {new_bn }"
+                "orderDetails": f"Business Number changed from {old_bn} to {new_bn}"
                 + " based on a request from the CRA."
             },
         }
