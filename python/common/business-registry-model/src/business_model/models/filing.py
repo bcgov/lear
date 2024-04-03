@@ -1063,7 +1063,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     # changes are part of the class and are not externalized
     if filing.filing_type == "lear_epoch":
         filing._status = Filing.Status.EPOCH.value  # pylint: disable=protected-access
-    elif filing.transaction_id:
+    elif filing.completion_date:
         filing._status = Filing.Status.COMPLETED.value  # pylint: disable=protected-access
     elif filing.payment_completion_date or filing.source == Filing.Source.COLIN.value:
         filing._status = Filing.Status.PAID.value  # pylint: disable=protected-access
