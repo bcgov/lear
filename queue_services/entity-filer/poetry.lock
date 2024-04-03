@@ -192,7 +192,7 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", branch = "feature-l
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "feature-legal-name"
-resolved_reference = "6cb66416f5bfe0e561792461fda2f4dbddfaf17e"
+resolved_reference = "abc274397627f6542f7821c4d276492b01c36c21"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -1188,13 +1188,13 @@ files = [
 
 [[package]]
 name = "pg8000"
-version = "1.30.5"
+version = "1.31.1"
 description = "PostgreSQL interface library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pg8000-1.30.5-py3-none-any.whl", hash = "sha256:1abf18da652b0ad8e9cbfe57ed841c350b5330c33d8151303555db1fe5ce57f8"},
-    {file = "pg8000-1.30.5.tar.gz", hash = "sha256:072f7ad00cd723695cb2e9fc02c1dfb84c781455e97b8de6f4c4281eea08078c"},
+    {file = "pg8000-1.31.1-py3-none-any.whl", hash = "sha256:69aac9dba4114c9c8d0408232d54eaf7d06d271df7765caeed39960e057800e4"},
+    {file = "pg8000-1.31.1.tar.gz", hash = "sha256:b11130d4c615dd3062ea8fed8143064a7978b7fe6d44f14b72261d43c8e27087"},
 ]
 
 [package.dependencies]
@@ -1624,13 +1624,13 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "requests-mock"
-version = "1.12.0"
+version = "1.12.1"
 description = "Mock out responses from the requests package"
 optional = false
-python-versions = "*"
+python-versions = ">=3.5"
 files = [
-    {file = "requests-mock-1.12.0.tar.gz", hash = "sha256:4e34f2a2752f0b78397fb414526605d95fcdeab021ac1f26d18960e7eb41f6a8"},
-    {file = "requests_mock-1.12.0-py2.py3-none-any.whl", hash = "sha256:4f6fdf956de568e0bac99eee4ad96b391c602e614cc0ad33e7f5c72edd699e70"},
+    {file = "requests-mock-1.12.1.tar.gz", hash = "sha256:e9e12e333b525156e82a3c852f22016b9158220d2f47454de9cae8a77d371401"},
+    {file = "requests_mock-1.12.1-py2.py3-none-any.whl", hash = "sha256:b1e37054004cdd5e56c84454cc7df12b25f90f382159087f4b6915aaeef39563"},
 ]
 
 [package.dependencies]
@@ -1820,13 +1820,13 @@ asn1crypto = ">=1.5.1"
 
 [[package]]
 name = "sentry-sdk"
-version = "1.43.0"
+version = "1.44.0"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.43.0.tar.gz", hash = "sha256:41df73af89d22921d8733714fb0fc5586c3461907e06688e6537d01a27e0e0f6"},
-    {file = "sentry_sdk-1.43.0-py2.py3-none-any.whl", hash = "sha256:8d768724839ca18d7b4c7463ef7528c40b7aa2bfbf7fe554d5f9a7c044acfd36"},
+    {file = "sentry-sdk-1.44.0.tar.gz", hash = "sha256:f7125a9235795811962d52ff796dc032cd1d0dd98b59beaced8380371cd9c13c"},
+    {file = "sentry_sdk-1.44.0-py2.py3-none-any.whl", hash = "sha256:eb65289da013ca92fad2694851ad2f086aa3825e808dc285bd7dcaf63602bb18"},
 ]
 
 [package.dependencies]
@@ -1923,7 +1923,7 @@ develop = false
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "feature-legal-name"
-resolved_reference = "6cb66416f5bfe0e561792461fda2f4dbddfaf17e"
+resolved_reference = "abc274397627f6542f7821c4d276492b01c36c21"
 subdirectory = "python/common/sql-versioning"
 
 [[package]]
@@ -2118,13 +2118,13 @@ tests = ["pytest", "pytest-cov"]
 
 [[package]]
 name = "werkzeug"
-version = "3.0.1"
+version = "3.0.2"
 description = "The comprehensive WSGI web application library."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "werkzeug-3.0.1-py3-none-any.whl", hash = "sha256:90a285dc0e42ad56b34e696398b8122ee4c681833fb35b8334a095d82c56da10"},
-    {file = "werkzeug-3.0.1.tar.gz", hash = "sha256:507e811ecea72b18a404947aded4b3390e1db8f826b494d76550ef45bb3b1dcc"},
+    {file = "werkzeug-3.0.2-py3-none-any.whl", hash = "sha256:3aac3f5da756f93030740bc235d3e09449efcf65f2f55e3602e1d851b8f48795"},
+    {file = "werkzeug-3.0.2.tar.gz", hash = "sha256:e39b645a6ac92822588e7b39a692e7828724ceae0b0d702ef96701f90e70128d"},
 ]
 
 [package.dependencies]
