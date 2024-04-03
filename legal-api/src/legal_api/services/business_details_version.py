@@ -19,6 +19,7 @@ from datetime import datetime
 import pycountry
 from sql_versioning import history_cls
 from sqlalchemy import or_
+from sqlalchemy.orm import defer
 from sqlalchemy.sql.expression import null
 from sqlalchemy_continuum import version_class
 
@@ -462,6 +463,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         name_translations_version = history_cls(AlternateName)
         name_translations_history = (
             db.session.query(name_translations_version)
+            .options(defer(name_translations_version.changed))
             .filter(name_translations_version.change_filing_id == filing.id)
             .filter(name_translations_version.legal_entity_id == legal_entity_id)
             .filter(name_translations_version.name_type == "TRANSLATION")
@@ -812,6 +814,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def business_revision_json(business_revision, business_json):
         """Return the business revision as a json object."""
+        if not business_revision:
+            return business_json
+
         if business_revision.is_legal_entity:
             business_json["hasRestrictions"] = business_revision.restriction_ind
             business_json["restorationExpiryDate"] = (

@@ -315,7 +315,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
         if completing_party_role:
-            filing["completingParty"] = completing_party_role[0].party.json
+            filing["completingParty"] = completing_party_role[0].json
             with suppress(KeyError):
                 self._format_address(filing["completingParty"]["deliveryAddress"])
             with suppress(KeyError):
@@ -677,7 +677,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["listOfTranslations"] = filing["alteration"].get("nameTranslations", [])
             # Get previous translations for deleted translations. No record created in aliases version for deletions
             filing["previousNameTranslations"] = VersionedBusinessDetailsService.get_name_translations_revision(
-                self._filing.transaction_id, self._business.id
+                self._filing, self._business.id
             )
         if filing["alteration"].get("shareStructure", None):
             filing["shareClasses"] = filing["alteration"]["shareStructure"].get("shareClasses", [])
