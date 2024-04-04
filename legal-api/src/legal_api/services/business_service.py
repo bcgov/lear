@@ -14,7 +14,6 @@
 
 """This provides the service for businesses(legal entities and alternate name entities."""
 from legal_api.models import AlternateName, LegalEntity
-from legal_api.models.business_common import BusinessCommon
 
 
 class BusinessService:
