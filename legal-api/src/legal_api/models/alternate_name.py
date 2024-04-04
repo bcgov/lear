@@ -334,7 +334,6 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
                         else None
                     ),
                     "nameType": self.name_type.name,
-                    "operatingName": self.name,  # will be removed in the future
                 }
             ],
         }

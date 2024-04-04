@@ -964,7 +964,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
         filings = factory_completed_filing(legal_entity, ar)
 
         rv = client.put(
-            f"/api/v2/businesses/{identifier}/filings/{filings.id+1}",
+            f"/api/v2/businesses/{identifier}/filings/{filings.id + 1}",
             json=ar,
             headers=create_header(jwt, [STAFF_ROLE], identifier),
         )
@@ -989,7 +989,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
         identifier = "CP0000001"
 
         rv = client.put(
-            f"/api/v2/businesses/{identifier}/filings/{filings.id+1}",
+            f"/api/v2/businesses/{identifier}/filings/{filings.id + 1}",
             json=ar,
             headers=create_header(jwt, [STAFF_ROLE], identifier),
         )
@@ -1006,7 +1006,7 @@ def test_update_ar_with_missing_json_body_fails(session, client, jwt):
         filings = factory_filing(b, ANNUAL_REPORT)
 
         rv = client.put(
-            f"/api/v2/businesses/{identifier}/filings/{filings.id+1}",
+            f"/api/v2/businesses/{identifier}/filings/{filings.id + 1}",
             json=None,
             headers=create_header(jwt, [STAFF_ROLE], identifier),
         )
