@@ -189,7 +189,7 @@ def search_businesses():
                 draft['legalName'] = (Business.BUSINESSES
                                       .get(draft_dao.json_legal_type, {})
                                       .get('numberedDescription'))
-                if draft['legalName'] == {}:
+                if draft['draftType'] == 'ATMP' and not draft['legalName']:
                     draft['legalName'] = 'Amalgamated Business'
             draft_results.append(draft)
 

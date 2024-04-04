@@ -338,6 +338,48 @@ def test_get_business_with_court_orders(session, client, jwt):
     assert rv.json['business']['identifier'] == identifier
     assert rv.json['business']['hasCourtOrders'] == True
 
+@pytest.mark.parametrize('identifier, legal_type, draft_type, nr_number', [
+    ('Tb31yQIuBw', 'COMP', 'ATMP', None),
+    # Add more scenarios here as needed
+])
+def test_draft_amalgamation_name_selection(session, client, jwt, identifier, legal_type, draft_type, nr_number):
+    """Test draft regular amalgamation with various name selection scenarios."""
+    # Setup a temporary registration and draft filing
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header'] = {
+        'name': 'amalgamationApplication',
+        'identifier': identifier,
+        'legalType': legal_type,
+    }
+    json_data['filing']['amalgamationApplication'] = {
+        'type': 'regular',
+        'nameRequest': {
+            'nrNumber': nr_number,
+            'legalName': None  # Explicitly showing no name is set for this scenario
+        }
+    }
+
+    # Save the draft filing
+    filing = factory_pending_filing(None, json_data)
+    filing.temp_reg = identifier
+    filing.save()
+
+    # Make a request to retrieve the draft businesses
+    rv = client.post('/api/v2/businesses/search', json={'identifiers': [identifier]}, headers=create_header(jwt, [SYSTEM_ROLE]))
+    
+    assert rv.status_code == HTTPStatus.OK, "Failed to retrieve draft businesses"
+
+    # Extract and assert on the draft entity
+    draft_entities = rv.json.get('draftEntities', [])
+    assert len(draft_entities) == 1, "Did not find expected draft entity"
+    
+    draft_entity = draft_entities[0]
+    assert draft_entity.get('legalName') == 'Amalgamated Business', f"Expected legal name to be Amalgamated Business but got '{draft_entity.get('legalName')}'"
+
 
 def test_post_affiliated_businesses(session, client, jwt):
     """Assert that the affiliated businesses endpoint returns as expected."""
