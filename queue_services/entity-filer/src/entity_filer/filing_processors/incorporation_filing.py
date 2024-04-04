@@ -128,19 +128,12 @@ def process(
         raise DefaultException(f"Business Already Exist: IA legal_filing:incorporationApplication {filing_rec.id}")
 
     business_info_obj = incorp_filing.get("nameRequest")
-    entity_type = business_info_obj.get("legalType")
-
-    if entity_type in (
-        BusinessCommon.EntityTypes.SOLE_PROP,
-        BusinessCommon.EntityTypes.PARTNERSHIP,
-    ):
-        raise DefaultException(f"Cannot process firm type businesses: IA legal_filing:incorporationApplication {filing_rec.id}")
 
     if filing_rec.colin_event_ids:
         corp_num = filing["filing"]["business"]["identifier"]
     else:
         # Reserve the Corp Number for this entity
-        corp_num = legal_entity_info.get_next_corp_num(entity_type)
+        corp_num = legal_entity_info.get_next_corp_num(business_info_obj["legalType"])
         if not corp_num:
             raise DefaultException(
                 f"incorporationApplication {filing_rec.id} unable to get a business registration number."
