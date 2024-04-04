@@ -76,11 +76,11 @@ class GcpQueue:
         self.gcp_auth_key = app.config.get("GCP_AUTH_KEY")
         if self.gcp_auth_key:
             try:
-                audience = current_app.config.get(
+                audience = app.config.get(
                     "AUDIENCE",
                     "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber",
                 )
-                publisher_audience = current_app.config.get(
+                publisher_audience = app.config.get(
                     "PUBLISHER_AUDIENCE",
                     "https://pubsub.googleapis.com/google.pubsub.v1.Publisher",
                 )
@@ -155,7 +155,7 @@ class GcpQueue:
                 message.pop("specversion", None)
                 ce = SimpleCloudEvent(**message)
                 return ce
-            except (UnsupportedMediaType, Exception) as err:
+            except (UnsupportedMediaType, Exception):
                 return None
 
         # A wrapped pubsub message has an envelope and
