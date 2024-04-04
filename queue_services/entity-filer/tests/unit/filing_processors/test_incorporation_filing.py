@@ -85,9 +85,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
             filing_meta = FilingMeta(application_date=effective_date)
 
             # test
-            business, filing_rec, filing_meta = incorporation_filing.process(
-                None, filing, filing_rec, filing_meta
-            )
+            business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
             # Assertions
             assert business.identifier == next_corp_num
