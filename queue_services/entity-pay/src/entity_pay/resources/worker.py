@@ -119,7 +119,7 @@ def worker():
     # 4. Publish to email Q
     # ##
     with suppress(Exception):
-        mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
+        mail_topic = current_app.config.get("BUSINESS_EMAILER_TOPIC", "mailer")
         # pylint: disable-next=unused-variable
         ret = queue.publish(topic=mail_topic, payload=queue.to_queue_message(cloud_event))
         structured_log(request, "INFO", f"publish to emailer for pay-id: {payment_token.id}")
@@ -128,7 +128,7 @@ def worker():
     # ##
     with suppress(Exception):
         if filing.effective_date <= filing.payment_completion_date:
-            filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
+            filer_topic = current_app.config.get("BUSINESS_FILER_TOPIC", "filer")
             ret = queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))  # noqa: F841
             structured_log(request, "INFO", f"publish to filer for pay-id: {payment_token.id}")
 
