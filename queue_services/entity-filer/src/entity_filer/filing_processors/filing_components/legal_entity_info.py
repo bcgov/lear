@@ -60,22 +60,22 @@ def set_association_type(legal_entity: LegalEntity, association_type: String) ->
     return None
 
 
-def set_legal_name(corp_num: str, legal_entity: LegalEntity, business_info: Dict):
+def set_legal_name(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict):
     """Set the legal_name in the legal_entity object."""
-    if legal_name := business_info.get("legalName", None):
+    if legal_name := legal_entity_info.get("legalName", None):
         legal_entity._legal_name = legal_name
     else:
-        entity_type = business_info.get("legalType", None)
+        entity_type = legal_entity_info.get("legalType", None)
         numbered_legal_name_suffix = LegalEntity.BUSINESSES[entity_type]["numberedBusinessNameSuffix"]
         legal_entity._legal_name = f"{corp_num[2:]} {numbered_legal_name_suffix}"
 
 
-def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, business_info: Dict, filing: Filing):
+def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, legal_entity_info: Dict, filing: Filing):
     """Format and update the legal_entity entity from incorporation filing."""
-    if corp_num and legal_entity and business_info and filing:
-        set_legal_name(corp_num, legal_entity, business_info)
+    if corp_num and legal_entity and legal_entity_info and filing:
+        set_legal_name(corp_num, legal_entity, legal_entity_info)
         legal_entity.identifier = corp_num
-        legal_entity.entity_type = business_info.get("legalType", None)
+        legal_entity.entity_type = legal_entity_info.get("legalType", None)
         legal_entity.founding_date = filing.effective_date
         legal_entity.last_coa_date = filing.effective_date
         legal_entity.last_cod_date = filing.effective_date
