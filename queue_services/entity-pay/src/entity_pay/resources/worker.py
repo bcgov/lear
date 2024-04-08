@@ -129,8 +129,6 @@ def worker():
     with suppress(Exception):
         if filing.effective_date <= filing.payment_completion_date:
             filer_topic = current_app.config.get("BUSINESS_FILER_TOPIC", "filer")
-            print("JOJO")
-            print(queue.to_queue_message(cloud_event))
             ret = queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))  # noqa: F841
             structured_log(request, "INFO", f"publish to filer for pay-id: {payment_token.id}")
 
