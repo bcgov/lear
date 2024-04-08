@@ -128,8 +128,10 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
                 # assert memorandum_file_obj
                 # assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
 
-        # TODO: This assert_called_with thinks it gets called with 'P' as legalType for some reason
-        # mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+        all_calls = mock_get_next_corp_num.mock_calls
+        assert all_calls
+        assert len(all_calls) > 0
+        all_calls[0].assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
 @pytest.mark.parametrize(
@@ -187,8 +189,10 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         assert parties[1]["officer"]["partyType"] == "organization"
         assert parties[1]["officer"]["organizationName"] == "Xyz Inc."
 
-    # TODO: This assert_called_with thinks it gets called with 'P' as legalType for some reason
-    # mock_get_next_corp_num.assert_called_with(filing["filing"]["incorporationApplication"]["nameRequest"]["legalType"])
+    all_calls = mock_get_next_corp_num.mock_calls
+    assert all_calls
+    assert len(all_calls) > 0
+    all_calls[0].assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
 @pytest.mark.parametrize(
