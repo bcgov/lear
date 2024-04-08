@@ -20,7 +20,6 @@ import pycountry
 from sql_versioning import history_cls
 from sqlalchemy import or_
 from sqlalchemy.sql.expression import null
-from sqlalchemy_continuum import version_class
 
 from legal_api.models import (
     Address,
@@ -500,44 +499,26 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return resolutions_arr
 
     @staticmethod
-    def get_amalgamation_revision_obj(transaction_id, business_id):
+    def get_amalgamation_revision_obj(filing, legal_entity_id):
         """Get amalgamation for the given transaction id."""
-        amalgamation_version = version_class(Amalgamation)
+        amalgamation_version = history_cls(Amalgamation)
         amalgamation = (
             db.session.query(amalgamation_version)
-            .filter(amalgamation_version.transaction_id <= transaction_id)
-            .filter(amalgamation_version.operation_type != 2)
-            .filter(amalgamation_version.business_id == business_id)
-            .filter(
-                or_(
-                    amalgamation_version.end_transaction_id
-                    == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                    amalgamation_version.end_transaction_id > transaction_id,
-                )
-            )
-            .order_by(amalgamation_version.transaction_id)
-            .one_or_none()
+            .filter(amalgamation_version.change_filing_id == filing.id)
+            .filter(amalgamation_version.legal_entity_id == legal_entity_id)
+            .first()
         )
         return amalgamation
 
     @staticmethod
-    def get_amalgamating_businesses_revision_obj(transaction_id, amalgamation_id):
+    def get_amalgamating_businesses_revision_obj(filing, amalgamation_id):
         """Get amalgamating businesses for the given transaction id."""
-        amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+        amalgamating_businesses_version = history_cls(AmalgamatingBusiness)
         amalgamating_businesses = (
             db.session.query(amalgamating_businesses_version)
-            .filter(amalgamating_businesses_version.transaction_id <= transaction_id)
-            .filter(amalgamating_businesses_version.operation_type != 2)
+            .filter(amalgamating_businesses_version.change_filing_id == filing.id)
             .filter(amalgamating_businesses_version.amalgamation_id == amalgamation_id)
-            .filter(
-                or_(
-                    amalgamating_businesses_version.end_transaction_id
-                    == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                    amalgamating_businesses_version.end_transaction_id > transaction_id,
-                )
-            )
-            .order_by(amalgamating_businesses_version.transaction_id)
-            .all()
+            .first()
         )
         return amalgamating_businesses
 
