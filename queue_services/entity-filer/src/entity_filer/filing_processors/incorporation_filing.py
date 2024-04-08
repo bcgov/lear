@@ -18,12 +18,14 @@ from http import HTTPStatus
 from typing import Dict
 
 import sentry_sdk
-from business_model import Document, Filing, LegalEntity, RegistrationBootstrap
+from business_model import AlternateName, BusinessCommon, Document, Filing, LegalEntity, RegistrationBootstrap
 from business_model.models.document import DocumentType
 
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import aliases, filings, legal_entity_info, shares
+from entity_filer.filing_processors.filing_components import aliases
+from entity_filer.filing_processors.filing_components import alternate_name as alternate_name_info
+from entity_filer.filing_processors.filing_components import filings, legal_entity_info, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import merge_all_parties
 
@@ -110,7 +112,7 @@ def _update_cooperative(incorp_filing: Dict, business: LegalEntity, filing: Fili
 
 
 def process(
-    business: LegalEntity,  # pylint: disable=too-many-branches,too-many-locals
+    business: any,  # pylint: disable=too-many-branches,too-many-locals
     filing: Dict,
     filing_rec: Filing,
     filing_meta: FilingMeta,
@@ -141,7 +143,7 @@ def process(
     business = LegalEntity()
     business = legal_entity_info.update_legal_entity_info(corp_num, business, business_info_obj, filing_rec)
     business = _update_cooperative(incorp_filing, business, filing_rec)
-    business.state = LegalEntity.State.ACTIVE
+    business.state = BusinessCommon.State.ACTIVE
 
     if nr_number := business_info_obj.get("nrNumber", None):
         filing_meta.incorporation_application = {
