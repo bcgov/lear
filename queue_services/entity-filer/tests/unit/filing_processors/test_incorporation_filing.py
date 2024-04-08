@@ -131,7 +131,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
         all_calls = mock_get_next_corp_num.mock_calls
         assert all_calls
         assert len(all_calls) > 0
-        all_calls[0].assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+        all_calls[0].assert_called_with(filing["filing"]["incorporationApplication"]["nameRequest"]["legalType"])
 
 
 @pytest.mark.parametrize(
@@ -192,7 +192,7 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
     all_calls = mock_get_next_corp_num.mock_calls
     assert all_calls
     assert len(all_calls) > 0
-    all_calls[0].assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+    all_calls[0].assert_called_with(filing["filing"]["incorporationApplication"]["nameRequest"]["legalType"])
 
 
 @pytest.mark.parametrize(
