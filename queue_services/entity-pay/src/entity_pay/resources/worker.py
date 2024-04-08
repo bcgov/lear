@@ -106,13 +106,13 @@ def worker():
 
     # None of these should bail as the filing has been marked PAID
     cloud_event = SimpleCloudEvent(
-        source=__name__[: __name__.find(".")],
+        source="business_pay",
         subject="filing",
-        type="Filing",
+        type="filingMessage",
         data={
-            "filingId": filing.id,
-            "filingType": filing.filing_type,
-            "filingEffectiveDate": filing.effective_date.isoformat(),
+            "filingMessage": {
+                "filingIdentifier": filing.id
+            }
         },
     )
     # None of these should bail as the filing has been marked PAID
@@ -129,6 +129,8 @@ def worker():
     with suppress(Exception):
         if filing.effective_date <= filing.payment_completion_date:
             filer_topic = current_app.config.get("BUSINESS_FILER_TOPIC", "filer")
+            print("JOJO")
+            print(queue.to_queue_message(cloud_event))
             ret = queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))  # noqa: F841
             structured_log(request, "INFO", f"publish to filer for pay-id: {payment_token.id}")
 
