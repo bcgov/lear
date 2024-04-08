@@ -109,11 +109,7 @@ def worker():
         source="business_pay",
         subject="filing",
         type="filingMessage",
-        data={
-            "filingMessage": {
-                "filingIdentifier": filing.id
-            }
-        },
+        data={"filingMessage": {"filingIdentifier": filing.id}},
     )
     # None of these should bail as the filing has been marked PAID
     # 4. Publish to email Q
