@@ -106,14 +106,10 @@ def worker():
 
     # None of these should bail as the filing has been marked PAID
     cloud_event = SimpleCloudEvent(
-        source=__name__[: __name__.find(".")],
+        source="business_pay",
         subject="filing",
-        type="Filing",
-        data={
-            "filingId": filing.id,
-            "filingType": filing.filing_type,
-            "filingEffectiveDate": filing.effective_date.isoformat(),
-        },
+        type="filingMessage",
+        data={"filingMessage": {"filingIdentifier": filing.id}},
     )
     # None of these should bail as the filing has been marked PAID
     # 4. Publish to email Q
