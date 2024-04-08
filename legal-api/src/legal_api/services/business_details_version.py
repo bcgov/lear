@@ -20,6 +20,8 @@ import pycountry
 from sql_versioning import history_cls
 from sqlalchemy import or_
 from sqlalchemy.orm import defer
+from sqlalchemy import literal_column
+from sqlalchemy import func
 from sqlalchemy.sql.expression import null
 from sqlalchemy_continuum import version_class
 
@@ -453,6 +455,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_name_translations_revision(filing, legal_entity_id) -> dict:
         """Consolidates all name translations up to the given transaction id."""
+        # timestamp_value = '2023-01-01 00:00:00'
+        # try:
+        #     changed_column = func.to_timestamp(timestamp_value, 'YYYY-MM-DD HH24:MI:SS').label('changed')
+        # except Exception as err:
+        #     raise err    
         name_translations_current = (
             db.session.query(AlternateName)
             .filter(AlternateName.change_filing_id == filing.id)
@@ -461,14 +468,44 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )
 
         name_translations_version = history_cls(AlternateName)
+        columns_to_select = [col for col in name_translations_version.__table__.columns if col.name != 'changed']
         name_translations_history = (
-            db.session.query(name_translations_version)
-            .options(defer(name_translations_version.changed))
+            db.session.query(*columns_to_select)
+            # .with_entities(
+            #     name_translations_version.id,
+            #     name_translations_version.identifier,
+            #     name_translations_version.entity_type,
+            #     name_translations_version.name_type,
+            #     name_translations_version.name,
+            #     name_translations_version.bn15,
+            #     name_translations_version.start_date,
+            #     name_translations_version.end_date,
+            #     name_translations_version.naics_code,
+            #     name_translations_version.naics_key,
+            #     name_translations_version.naics_description,
+            #     name_translations_version.business_start_date,
+            #     name_translations_version.dissolution_date,
+            #     name_translations_version.state,
+            #     name_translations_version.admin_freeze,
+            #     name_translations_version.last_modified,
+            #     name_translations_version.email,
+            #     name_translations_version.delivery_address_id,
+            #     name_translations_version.mailing_address_id,
+            #     name_translations_version.legal_entity_id,
+            #     name_translations_version.colin_entity_id,
+            #     name_translations_version.change_filing_id,
+            #     name_translations_version.state_filing_id,
+            #     name_translations_version.version
+            # )
+            # .options(defer(name_translations_version.changed))
             .filter(name_translations_version.change_filing_id == filing.id)
             .filter(name_translations_version.legal_entity_id == legal_entity_id)
             .filter(name_translations_version.name_type == "TRANSLATION")
         )
-        name_translations_list = name_translations_current.union(name_translations_history).all()
+        try: 
+            name_translations_list = name_translations_current.union(name_translations_history).all()
+        except Exception as err:
+            raise err
 
         name_translations_arr = []
         for name_translation in name_translations_list:
