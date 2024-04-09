@@ -1547,18 +1547,18 @@ components:
             - name: 'Name Translation 2'
               nameStartDate: '2023-01-25'
               nameType: 'TRANSLATION'
-            - entityType: 'SP',
-              identifier: 'FM1111111',
-              name: 'Some DBA Name',
-              nameRegisteredDate": '2021-03-16T21:36:07.009977+00:00',
-              nameStartDate": '2021-03-10',
-              nameType": 'DBA'
-            - entityType: 'SP',
-              identifier: 'FM2222222',
-              name: 'Another DBA Name',
-              nameRegisteredDate": '2022-04-16T21:36:07.009977+00:00',
-              nameStartDate": '2022-04-10',
-              nameType": 'DBA'
+            - entityType: 'SP'
+              identifier: 'FM1111111'
+              name: 'Some DBA Name'
+              nameRegisteredDate: '2021-03-16T21:36:07.009977+00:00'
+              nameStartDate: '2021-03-10'
+              nameType: 'DBA'
+            - entityType: 'SP'
+              identifier: 'FM2222222'
+              name: 'Another DBA Name'
+              nameRegisteredDate: '2022-04-16T21:36:07.009977+00:00'
+              nameStartDate: '2022-04-10'
+              nameType: 'DBA'
       description: 'Organization or enterprising entity engaged in commercial, industrial, or professional activities.'
       properties:
         lastLedgerTimestamp:
@@ -1643,7 +1643,7 @@ components:
                 type: string
                 description: Filing link related to the warning.
                 example: '''https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'''
-        alternateName:
+        alternateNames:
           type: array
           description: The alternate name of the business
           items:
@@ -1664,7 +1664,7 @@ components:
               name:
                 type: string
                 title: The alternate name of the business.
-                default: ""
+                default: ''
                 examples:
                   - alternate_name_of_business
                 pattern: '^(.*)$'
@@ -1672,21 +1672,21 @@ components:
                 type: string
                 format: date-time
                 title: The timestamp of the registered date.
-                default: ""
+                default: ''
                 examples:
                   - '1970-01-01T00:00:00+00:00'
               nameStartDate:
                 type: string
                 format: date
                 title: The start date of the alternate name
-                default: ""
+                default: ''
                 examples:
                   - '1970-01-01'
               nameEndDate:
                 type: string
                 format: date
                 title: The end date of the alternate name
-                default: ""
+                default: ''
                 examples:
                   - '1970-01-01'
               nameType:
