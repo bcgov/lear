@@ -121,7 +121,11 @@ class BusinessDocument:
             # get document data
             business_json["reportType"] = self._document_key
             business_json["business"] = self._legal_entity.json()
-            business_json["business"]["businessName"] = self._legal_entity.business_name
+            if self._legal_entity.alternate_names:
+                business_json["business"]["businessName"] = self._legal_entity.alternate_names[0].name
+            else:
+                business_json["business"]["businessName"] = self._legal_entity.business_name
+ 
             business_json["registrarInfo"] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
             self._set_description(business_json)
             self._set_epoch_date(business_json)
@@ -303,6 +307,8 @@ class BusinessDocument:
                 party["mailingAddress"] = BusinessDocument._format_address(party["mailingAddress"])
             if party.get("deliveryAddress"):
                 party["deliveryAddress"] = BusinessDocument._format_address(party["deliveryAddress"])
+            if not party.get("officer", {}).get("partyType") and not party.get("officer", {}).get("lastName"):
+                party["officer"]["partyType"] = "organization"
         legal_entity["parties"] = party_json
 
     def _set_name_translations(self, legal_entity: dict):
@@ -343,7 +349,7 @@ class BusinessDocument:
             custodian_json = [
                 party_role.json
                 for party_role in self._legal_entity.entity_roles.all()
-                if party_role.role.lower() == "custodian"
+                if party_role.role_type.lower() == "custodian"
             ]
             for custodian in custodian_json:
                 custodian["mailingAddress"] = BusinessDocument._format_address(custodian["mailingAddress"])
@@ -456,7 +462,7 @@ class BusinessDocument:
     def _set_amalgamation_details(self, legal_entity: dict):
         """Set amalgamation filing data."""
         amalgamated_businesses = []
-        filings = Filing.get_filings_by_types(self._legal_entity.id, ["amalgamationApplication"])
+        filings = Filing.get_filings_by_types(self._legal_entity, ["amalgamationApplication"])
         if filings:
             amalgamation_application = filings[0]
             legal_entity["business"]["amalgamatedEntity"] = True
@@ -518,7 +524,10 @@ class BusinessDocument:
     def _set_meta_info(self, legal_entity: dict):
         legal_entity["environment"] = f"{self._get_environment()} BUSINESS #{self._legal_entity.identifier}".lstrip()
         legal_entity["meta_title"] = "Business Summary on {}".format(legal_entity["report_date_time"])
-        legal_entity["meta_subject"] = "{} ({})".format(self._legal_entity.legal_name, self._legal_entity.identifier)
+        if self._legal_entity.alternate_names and self._legal_entity.legal_name == None:
+            legal_entity["meta_subject"] = "{} ({})".format(self._legal_entity.alternate_names[0].name, self._legal_entity.identifier) 
+        else:
+            legal_entity["meta_subject"] = "{} ({})".format(self._legal_entity.legal_name, self._legal_entity.identifier)
 
     @staticmethod
     def _get_environment():
