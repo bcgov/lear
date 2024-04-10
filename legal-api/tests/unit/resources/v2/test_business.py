@@ -339,7 +339,7 @@ def test_get_business_with_court_orders(session, client, jwt):
     assert rv.json['business']['hasCourtOrders'] == True
 
 @pytest.mark.parametrize('identifier, legal_type, nr_number, legal_name, result', [
-    ('Tb31yQIuBw', Business.LegalTypes.COMP.value, None, None, 'Numbered Limited Company'),
+    ('Tb31yQIuBw', Business.LegalTypes.COMP.value, None, None, 'Numabered Limited Company'),
     ('Tb31yQIuBw', Business.LegalTypes.COMP.value, 'NR 1245670', 'Test NR name', 'Test NR name'),
     ('Tb31yQIuBw', Business.LegalTypes.COMP.value, None, '0870754 B.C. LTD.', '0870754 B.C. LTD.')
     # Add more scenarios here as needed
@@ -361,7 +361,6 @@ def test_draft_amalgamation_name_selection(session, client, jwt, identifier, leg
             }
         }
     }
-    json_data['filing']['header']['name'] = 'amalgamationApplication'
     json_data['filing']['amalgamationApplication'] = {
         'type': 'regular',
         'nameRequest': {
