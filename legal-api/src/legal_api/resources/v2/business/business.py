@@ -190,7 +190,7 @@ def search_businesses():
                 # Fallback to a generic legal name based on the legal type if no specific legal name is found
                 draft['legalName'] = (Business.BUSINESSES
                                       .get(draft_dao.json_legal_type, {})
-                                      .get('numberedDescription'))
+                                      .get('numberedDescription', 'Numbered Limited Company'))
             draft_results.append(draft)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
