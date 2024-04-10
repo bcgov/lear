@@ -175,22 +175,25 @@ def search_businesses():
         draft_results = []
         for draft_dao in draft_query.all():
             draft = {
-                'identifier': draft_dao.temp_reg,
-                'legalType': draft_dao.json_legal_type
+                'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
+                'legalType': draft_dao.json_legal_type  # Legal type of the draft entity
             }
             if draft_dao.json_nr:
-                draft['nrNumber'] = draft_dao.json_nr
+                draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
+            # Retrieves the legal name from the filing JSON. Defaults to None if not found.
             draft['legalName'] = (draft_dao.filing_json.get('filing', {})
                                   .get(draft_dao.filing_type, {})
                                   .get('nameRequest', {})
                                   .get('legalName'))
             draft['draftType'] = Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode')
             if draft['legalName'] is None:
+                # Fallback to a generic legal name based on the legal type if no specific legal name is found
                 draft['legalName'] = (Business.BUSINESSES
                                       .get(draft_dao.json_legal_type, {})
                                       .get('numberedDescription'))
+                # For draft type amalgamated businesses with no option selected or numbered option selected
                 if draft['draftType'] == 'ATMP' and not draft['legalName']:
-                    draft['legalName'] = 'Amalgamated Business'
+                    draft['legalName'] = 'Numbered XXX Company'
             draft_results.append(draft)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
