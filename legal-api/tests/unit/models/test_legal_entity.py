@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta
 import datedelta
 import pytest
 from flask import current_app
-from sqlalchemy_continuum import versioning_manager
+from sql_versioning import versioned_session
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import (
@@ -516,6 +516,8 @@ def test_continued_in_business(session):
 )
 def test_amalgamated_into_business_json(session, test_name, existing_business_state):
     """Assert that the amalgamated into is in json."""
+    versioned_session(db.session)
+
     existing_business = LegalEntity(
         _legal_name="Test - Amalgamating Legal Name",
         entity_type="BC",
@@ -540,6 +542,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         )
         amalgamation = Amalgamation()
         amalgamation.filing_id = filing.id
+        amalgamation.legal_entity_id = existing_business.id
         amalgamation.change_filing_id = filing.id
         amalgamation.amalgamation_type = "regular"
         amalgamation.amalgamation_date = datetime.now()
@@ -550,6 +553,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         amalgamating_business.legal_entity_id = existing_business.id
         amalgamating_business.change_filing_id = filing.id
         amalgamation.amalgamating_businesses.append(amalgamating_business)
+        amalgamation.save()
 
         business.amalgamation.append(amalgamation)
         db.session.add(business)
