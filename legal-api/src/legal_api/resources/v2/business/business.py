@@ -191,9 +191,6 @@ def search_businesses():
                 draft['legalName'] = (Business.BUSINESSES
                                       .get(draft_dao.json_legal_type, {})
                                       .get('numberedDescription'))
-                # For draft type amalgamated businesses with no option selected or numbered option selected
-                if draft['draftType'] == 'ATMP' and not draft['legalName']:
-                    draft['legalName'] = 'Numbered XXX Company'
             draft_results.append(draft)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
