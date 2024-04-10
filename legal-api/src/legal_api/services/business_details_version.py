@@ -230,7 +230,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
             business_revision = (
                 db.session.query(business_version)
-                .filter(business_version.change_filing_id == filing.id)
+                .filter(business_version.change_filing_id <= filing.id)
                 .filter(business_version.id == business.id)
                 .first()
             )
@@ -812,9 +812,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def business_revision_json(business_revision, business_json):
         """Return the business revision as a json object."""
-        if not business_revision:
-            return business_json
-
         if business_revision.is_legal_entity:
             business_json["hasRestrictions"] = business_revision.restriction_ind
             business_json["restorationExpiryDate"] = (

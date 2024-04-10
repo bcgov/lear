@@ -315,7 +315,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
         if completing_party_role:
-            filing["completingParty"] = completing_party_role[0].json
+            filing["completingParty"] = completing_party_role[0].related_entity.party_json
             with suppress(KeyError):
                 self._format_address(filing["completingParty"]["deliveryAddress"])
             with suppress(KeyError):
