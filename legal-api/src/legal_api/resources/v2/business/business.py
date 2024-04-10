@@ -179,8 +179,8 @@ def search_businesses():
                 'legalType': draft_dao.json_legal_type  # Legal type of the draft entity
             }
             if draft_dao.json_nr:
-                draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
-            # Retrieves the legal name from the filing JSON. Defaults to None if not found.
+                draft['nrNumber'] = draft_dao.json_nr # Name request number, if available
+             # Retrieves the legal name from the filing JSON. Defaults to None if not found.
             draft['legalName'] = (draft_dao.filing_json.get('filing', {})
                                   .get(draft_dao.filing_type, {})
                                   .get('nameRequest', {})
@@ -190,7 +190,7 @@ def search_businesses():
                 # Fallback to a generic legal name based on the legal type if no specific legal name is found
                 draft['legalName'] = (Business.BUSINESSES
                                       .get(draft_dao.json_legal_type, {})
-                                      .get('numberedDescription', 'Numbered Limited Company'))
+                                      .get('numberedDescription'))
             draft_results.append(draft)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK

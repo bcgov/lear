@@ -352,7 +352,15 @@ def test_draft_amalgamation_name_selection(session, client, jwt, identifier, leg
     temp_reg._identifier = identifier
     temp_reg.save()
 
-    json_data = copy.deepcopy(FILING_HEADER)
+    json_data = {
+        'filing': {
+            'header': {
+                'name': 'amalgamationApplication',
+                'date': '2019-04-08',
+                'certifiedBy': 'full name'
+            }
+        }
+    }
     json_data['filing']['header']['name'] = 'amalgamationApplication'
     json_data['filing']['amalgamationApplication'] = {
         'type': 'regular',
