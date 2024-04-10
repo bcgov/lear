@@ -19,7 +19,6 @@ from datetime import datetime
 import pycountry
 from sql_versioning import history_cls
 from sqlalchemy import or_
-from sqlalchemy.orm import defer
 from sqlalchemy.sql.expression import null
 from sqlalchemy_continuum import version_class
 
@@ -40,6 +39,8 @@ from legal_api.models import (
     db,
 )
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
+from .business_service import BusinessService
 
 
 class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-methods
@@ -309,13 +310,16 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(office_history.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
 
-        valid_office_types = current_types.union(historical_types).distinct().all()
+        valid_office_types = (
+            current_types.union(historical_types).distinct().all()
+        )  # result is like [("businessOffice", )]
 
         address_history = history_cls(Address)
-        for valid_office_type in valid_office_types:
+        for item in valid_office_types:
+            valid_office_type = item[0]
             office, _ = (
-                offices_current.filter(Office.office_type == valid_office_type.office_type)
-                .union(offices_historical.filter(office_history.office_type == valid_office_type.office_type))
+                offices_current.filter(Office.office_type == valid_office_type)
+                .union(offices_historical.filter(office_history.office_type == valid_office_type))
                 .first()
             )
 
@@ -584,19 +588,32 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_party_revision(filing, party_id) -> dict:
         """Consolidates all party changes up to the given transaction id."""
-        business_attr = LegalEntity if filing.legal_entity_id else AlternateName
+        business = BusinessService.fetch_business_by_filing(filing)
+        if filing.legal_entity_id:
+            business_attr = LegalEntity
+            party_version = history_cls(business_attr)
+            business_attr_id = business_attr.id
+            party_version_business_id = party_version.id
+        else:
+            business_attr = AlternateName
+            party_version = history_cls(business_attr)
+            business_attr_id = business_attr.legal_entity_id
+            party_version_business_id = party_version.legal_entity_id
+            if business.is_owned_by_colin_entity:
+                business_attr_id = business_attr.colin_entity_id
+                party_version_business_id = party_version.colin_entity_id
+
         party_current = (
             db.session.query(business_attr)
             .filter(business_attr.change_filing_id == filing.id)
-            .filter(business_attr.id == party_id)
+            .filter(business_attr_id == int(party_id))
         )
 
-        party_version = history_cls(business_attr)
+        columns_to_select = [col for col in party_version.__table__.columns if col.name != "changed"]
         party_history = (
-            db.session.query(party_version)
-            .options(defer(party_version.changed))  # TODO: remove this after update history_cls
+            db.session.query(*columns_to_select)
             .filter(party_version.change_filing_id == filing.id)
-            .filter(party_version.id == party_id)
+            .filter(party_version_business_id == int(party_id))
         )
         party = party_current.union(party_history).one_or_none()
         return party
@@ -623,7 +640,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 "officer": {
                     "organizationName": party_revision.legal_name,
                     "partyType": BusinessCommon.EntityTypes.ORGANIZATION.value,
-                    "identifier": party_revision._identifier,  # pylint: disable=protected-access
+                    "identifier": party_revision.identifier,  # pylint: disable=protected-access
                 }
             }
         if party_revision.email:
@@ -634,10 +651,15 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def party_revision_json(filing, party_revision, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
         member = VersionedBusinessDetailsService.party_revision_type_json(party_revision, is_ia_or_after)
-        if party_revision.delivery_address_id:
-            address_revision = VersionedBusinessDetailsService.get_address_revision(
-                filing, party_revision.delivery_address_id
-            )
+
+        delivery_address_id = party_revision.delivery_address_id
+        mailing_address_id = party_revision.mailing_address_id
+        if party_revision.is_alternate_name_entity and party_revision.is_owned_by_legal_entity_person:
+            delivery_address_id = party_revision.legal_entity.delivery_address_id
+            mailing_address_id = party_revision.legal_entity.mailing_address_id
+
+        if delivery_address_id:
+            address_revision = VersionedBusinessDetailsService.get_address_revision(filing, delivery_address_id)
             # This condition can be removed once we correct data in address and address_version table
             # by removing empty address entry.
             if address_revision and address_revision.postal_code:
@@ -645,9 +667,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 if "addressType" in member_address:
                     del member_address["addressType"]
                 member["deliveryAddress"] = member_address
-        if party_revision.mailing_address_id:
+        if mailing_address_id:
             member_mailing_address = VersionedBusinessDetailsService.address_revision_json(
-                VersionedBusinessDetailsService.get_address_revision(filing, party_revision.mailing_address_id)
+                VersionedBusinessDetailsService.get_address_revision(filing, mailing_address_id)
             )
             if "addressType" in member_mailing_address:
                 del member_mailing_address["addressType"]
@@ -737,8 +759,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )
 
         address_version = history_cls(Address)
+        columns_to_select = [col for col in address_version.__table__.columns if col.name != "changed"]
         address_history = (
-            db.session.query(address_version)
+            db.session.query(*columns_to_select)
             .filter(address_version.change_filing_id == filing.id)
             .filter(address_version.id == address_id)
         )

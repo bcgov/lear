@@ -211,6 +211,24 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
         return bool(self.colin_entity)
 
     @property
+    def entity_delivery_address(self):
+        """Return if owned by colin entity."""
+        return (
+            self.legal_entity.entity_delivery_address
+            if self.is_owned_by_legal_entity_person
+            else self.owner_delivery_address
+        )
+
+    @property
+    def entity_mailing_address(self):
+        """Return if owned by colin entity."""
+        return (
+            self.legal_entity.entity_mailing_address
+            if self.is_owned_by_legal_entity_person
+            else self.owner_mailing_address
+        )
+
+    @property
     def owner_data_json(self):
         """Return if owner data for SP only."""
         json = {
@@ -226,15 +244,8 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             ],
         }
 
-        delivery_address = None
-        mailing_address = None
-
-        if self.is_owned_by_legal_entity_person:
-            delivery_address = self.legal_entity.entity_delivery_address
-            mailing_address = self.legal_entity.entity_mailing_address
-        else:
-            delivery_address = self.owner_delivery_address
-            mailing_address = self.owner_mailing_address
+        delivery_address = self.entity_delivery_address
+        mailing_address = self.entity_mailing_address
 
         if delivery_address:
             member_address = delivery_address.json

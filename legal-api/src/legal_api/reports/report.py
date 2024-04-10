@@ -315,7 +315,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
         if completing_party_role:
-            filing["completingParty"] = completing_party_role[0].json
+            related_entity = completing_party_role[0].related_entity
+            filing["completingParty"] = related_entity.party_json
             with suppress(KeyError):
                 self._format_address(filing["completingParty"]["deliveryAddress"])
             with suppress(KeyError):
@@ -870,17 +871,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["offices"] = {}
             filing["offices"]["businessOffice"] = business_office
             offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing, self._business)
-            if offices_json:
-                filing["offices"]["businessOffice"]["mailingAddress"]["changed"] = self._compare_address(
-                    business_office.get("mailingAddress"), offices_json["businessOffice"]["mailingAddress"]
-                )
-                filing["offices"]["businessOffice"]["deliveryAddress"]["changed"] = self._compare_address(
-                    business_office.get("deliveryAddress"), offices_json["businessOffice"]["deliveryAddress"]
-                )
-                filing["offices"]["businessOffice"]["changed"] = (
-                    filing["offices"]["businessOffice"]["mailingAddress"]["changed"]
-                    or filing["offices"]["businessOffice"]["deliveryAddress"]["changed"]
-                )
+            filing["offices"]["businessOffice"]["mailingAddress"]["changed"] = self._compare_address(
+                business_office.get("mailingAddress"), offices_json["businessOffice"]["mailingAddress"]
+            )
+            filing["offices"]["businessOffice"]["deliveryAddress"]["changed"] = self._compare_address(
+                business_office.get("deliveryAddress"), offices_json["businessOffice"]["deliveryAddress"]
+            )
+            filing["offices"]["businessOffice"]["changed"] = (
+                filing["offices"]["businessOffice"]["mailingAddress"]["changed"]
+                or filing["offices"]["businessOffice"]["deliveryAddress"]["changed"]
+            )
             with suppress(KeyError):
                 self._format_address(filing[filing_type]["offices"]["businessOffice"]["deliveryAddress"])
             with suppress(KeyError):
@@ -902,6 +902,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing, prev_party, True
                     )
+                    # current_party type is person, but prev_party type is organization
+                    # so has issue at _has_party_name_change()
                     if self._has_party_name_change(prev_party_json, party):
                         party["nameChanged"] = True
                         party["previousName"] = self._get_party_name(prev_party_json)
