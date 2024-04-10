@@ -547,13 +547,13 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         amalgamation.amalgamation_type = "regular"
         amalgamation.amalgamation_date = datetime.now()
         amalgamation.court_approval = True
+        amalgamation.save()
 
         amalgamating_business = AmalgamatingBusiness()
         amalgamating_business.role = "amalgamating"
         amalgamating_business.legal_entity_id = existing_business.id
         amalgamating_business.change_filing_id = filing.id
         amalgamation.amalgamating_businesses.append(amalgamating_business)
-        amalgamation.save()
 
         business.amalgamation.append(amalgamation)
         db.session.add(business)

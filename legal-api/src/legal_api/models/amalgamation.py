@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from enum import auto
 
-from sql_versioning import history_cls, Versioned
+from sql_versioning import Versioned, history_cls
 
 from ..utils.enum import BaseEnum
 from .db import db
@@ -95,7 +95,7 @@ class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-at
     def get_amalgamation_revision_json(cls, filing, legal_entity_id):
         """Get amalgamation json for the given transaction id."""
         from legal_api.services import business_service
-        
+
         amalgamation = Amalgamation.get_amalgamation_revision_obj(filing, legal_entity_id)
 
         business = business_service.fetch_business_by_filing(filing)
