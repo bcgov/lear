@@ -294,7 +294,7 @@ class EntityRole(Versioned, db.Model):
         """Return the parties that match the filter conditions."""
         entity_roles = (
             db.session.query(EntityRole)
-            .filter(EntityRole.filing_id == filing_id)
+            .filter(EntityRole.filing_id <= filing_id)
             .filter(cast(EntityRole.appointment_date, Date) <= end_date)
             .filter(
                 or_(

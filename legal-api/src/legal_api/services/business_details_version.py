@@ -226,14 +226,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         business_revision = business
 
         # The history table has the old revisions, not the current one.
-        if business_revision and business_revision.change_filing_id != filing.id:
+        if business_revision and business_revision.change_filing_id > filing.id:
             business_version = (
                 history_cls(LegalEntity) if business_revision.is_legal_entity else history_cls(AlternateName)
             )
 
             business_revision = (
                 db.session.query(business_version)
-                .filter(business_version.change_filing_id == filing.id)
+                .filter(business_version.change_filing_id <= filing.id)
                 .filter(business_version.id == business.id)
                 .first()
             )
@@ -819,8 +819,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def business_revision_json(business_revision, business_json):
         """Return the business revision as a json object."""
-        if not business_revision:
-            return business_json
 
         if business_revision.is_legal_entity:
             business_json["hasRestrictions"] = business_revision.restriction_ind
