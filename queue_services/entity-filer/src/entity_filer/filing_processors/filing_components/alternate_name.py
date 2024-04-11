@@ -75,10 +75,12 @@ def update_partner_change(
         )
         legal_entity.alternate_names.append(new_alternate_name)
 
-        filing_meta.update({
-            "fromLegalName": alternate_name.name,
-            "toLegalName": to_legal_name,
-        })
+        filing_meta.update(
+            {
+                "fromLegalName": alternate_name.name,
+                "toLegalName": to_legal_name,
+            }
+        )
 
     # Update nature of business for LegalEntity and AlternateName
     current_alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
@@ -86,11 +88,13 @@ def update_partner_change(
         naics_code := naics.get("naicsCode")
     ):
         if legal_entity.naics_code != naics_code:
-            filing_meta.update({
-                "fromNaicsCode": legal_entity.naics_code,
-                "toNaicsCode": naics_code,
-                "naicsDescription": naics.get("naicsDescription"),
-            })
+            filing_meta.update(
+                {
+                    "fromNaicsCode": legal_entity.naics_code,
+                    "toNaicsCode": naics_code,
+                    "naicsDescription": naics.get("naicsDescription"),
+                }
+            )
             legal_entity_info.update_naics_info(legal_entity, naics)
             legal_entity_info.update_naics_info(current_alternate_name, naics)
 
@@ -123,13 +127,17 @@ def update_proprietor_change(
 
         if not proprietor:
             raise DefaultException(f"No Proprietor in the SP {filing_type} for filing:{change_filing_rec.id}")
-    
+
     # Update operating name
     name_request = dpath.util.get(change_filing, f"/{filing_type}/nameRequest", default=None)
     identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
     if name_request and (to_legal_name := name_request.get("legalName")):
         alternate_name = AlternateName.find_by_identifier(identifier)
-        proprietor = LegalEntity.find_by_id(alternate_name.legal_entity_id) if alternate_name.legal_entity_id else ColinEntity.find_by_id(alternate_name.colin_entity_id)
+        proprietor = (
+            LegalEntity.find_by_id(alternate_name.legal_entity_id)
+            if alternate_name.legal_entity_id
+            else ColinEntity.find_by_id(alternate_name.colin_entity_id)
+        )
 
         if start := change_filing.get("filing", {}).get(f"{filing_type}", {}).get("startDate"):
             business_start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(start)
@@ -172,26 +180,31 @@ def update_proprietor_change(
         )
         proprietor.alternate_names.append(new_alternate_name)
 
-        filing_meta.update({
-            "fromLegalName": alternate_name.name,
-            "toLegalName": to_legal_name,
-        })
+        filing_meta.update(
+            {
+                "fromLegalName": alternate_name.name,
+                "toLegalName": to_legal_name,
+            }
+        )
 
         # Update nature of business for AlternateName
         if (naics := change_filing.get(f"{filing_type}", {}).get("business", {}).get("naics")) and (
             naics_code := naics.get("naicsCode")
         ):
             if new_alternate_name.naics_code != naics_code:
-                filing_meta.update({
-                    "fromNaicsCode": new_alternate_name.naics_code,
-                    "toNaicsCode": naics_code,
-                    "naicsDescription": naics.get("naicsDescription"),
-                })
+                filing_meta.update(
+                    {
+                        "fromNaicsCode": new_alternate_name.naics_code,
+                        "toNaicsCode": naics_code,
+                        "naicsDescription": naics.get("naicsDescription"),
+                    }
+                )
                 legal_entity_info.update_naics_info(new_alternate_name, naics)
 
         return proprietor, new_alternate_name
 
     return None, None
+
 
 def get_partnership_name(parties_dict: dict):
     """Set the legal_name of the partnership."""

@@ -96,8 +96,7 @@ def test_change_of_registration_operating_name_sp(
         identifier=identifier,
         entity_type=BusinessCommon.EntityTypes.SOLE_PROP,
         name=operating_name,
-        change_filing_id=filing.id
-
+        change_filing_id=filing.id,
     )
     proprietor.alternate_names.append(alternate_name)
     proprietor.save()
@@ -170,7 +169,6 @@ def test_change_of_registration_operating_name_gp(
 
     business = create_entity(identifier, legal_type, None)
 
-
     alternate_name = create_alternate_name(
         identifier=identifier,
         entity_type=BusinessCommon.EntityTypes.PARTNERSHIP,
@@ -230,17 +228,13 @@ def test_change_of_registration_business_address(
     proprietor_identifier = "P1234567"
     if legal_type == BusinessCommon.EntityTypes.SOLE_PROP.value:
         proprietor = create_entity(proprietor_identifier, "person", legal_name)
-        business = create_alternate_name(
-            identifier=identifier,
-            entity_type=BusinessCommon.EntityTypes.SOLE_PROP
-        )
+        business = create_alternate_name(identifier=identifier, entity_type=BusinessCommon.EntityTypes.SOLE_PROP)
         proprietor.alternate_names.append(business)
         proprietor.save()
     else:
         business = create_entity(identifier, legal_type, legal_name)
         alternate_name = create_alternate_name(
-            identifier=identifier,
-            entity_type=BusinessCommon.EntityTypes.PARTNERSHIP
+            identifier=identifier, entity_type=BusinessCommon.EntityTypes.PARTNERSHIP
         )
         business.alternate_names.append(alternate_name)
         business.save()
@@ -315,23 +309,21 @@ def test_change_of_registration_business_address(
         ("sp_court_order", "SP", "Test Firm", SP_CHANGE_OF_REGISTRATION),
     ],
 )
-def test_worker_change_of_registration_court_order(app, session, mocker, test_name, legal_type, legal_name, filing_template):
+def test_worker_change_of_registration_court_order(
+    app, session, mocker, test_name, legal_type, legal_name, filing_template
+):
     """Assert the worker process the court order correctly."""
     identifier = "FM1234567"
     proprietor_identifier = "P1234567"
     if legal_type == BusinessCommon.EntityTypes.SOLE_PROP.value:
         proprietor = create_entity(proprietor_identifier, "person", legal_name)
-        business = create_alternate_name(
-            identifier=identifier,
-            entity_type=BusinessCommon.EntityTypes.SOLE_PROP
-        )
+        business = create_alternate_name(identifier=identifier, entity_type=BusinessCommon.EntityTypes.SOLE_PROP)
         proprietor.alternate_names.append(business)
         proprietor.save()
     else:
         business = create_entity(identifier, legal_type, legal_name)
         alternate_name = create_alternate_name(
-            identifier=identifier,
-            entity_type=BusinessCommon.EntityTypes.PARTNERSHIP
+            identifier=identifier, entity_type=BusinessCommon.EntityTypes.PARTNERSHIP
         )
         business.alternate_names.append(alternate_name)
         business.save()
@@ -384,10 +376,7 @@ def test_worker_change_of_registration_court_order(app, session, mocker, test_na
 def test_worker_proprietor_name_and_address_change(app, session, mocker):
     """Assert the worker process the name and address change correctly."""
     identifier = "FM1234567"
-    alternate_name = create_alternate_name(
-        identifier=identifier,
-        entity_type=BusinessCommon.EntityTypes.SOLE_PROP
-    )
+    alternate_name = create_alternate_name(identifier=identifier, entity_type=BusinessCommon.EntityTypes.SOLE_PROP)
 
     party = create_entity_person(SP_CHANGE_OF_REGISTRATION["filing"]["changeOfRegistration"]["parties"][0])
     party_id = party.id
@@ -427,7 +416,9 @@ def test_worker_proprietor_name_and_address_change(app, session, mocker):
     # Check outcome
     party = LegalEntity.find_by_internal_id(party_id)
     assert party.first_name == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["firstName"].upper()
-    assert party.middle_initial == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["middleName"].upper()
+    assert (
+        party.middle_initial == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["middleName"].upper()
+    )
     assert party.last_name == filing["filing"]["changeOfRegistration"]["parties"][0]["officer"]["lastName"].upper()
     assert (
         party.entity_delivery_address.street
@@ -451,10 +442,7 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
     """Assert the worker process the partner name and address change correctly."""
     identifier = "FM1234567"
     business = create_entity(identifier, "GP", "Test Entity")
-    alternate_name = create_alternate_name(
-        identifier=identifier,
-        entity_type=BusinessCommon.EntityTypes.PARTNERSHIP
-    )
+    alternate_name = create_alternate_name(identifier=identifier, entity_type=BusinessCommon.EntityTypes.PARTNERSHIP)
     business.alternate_names.append(alternate_name)
     business_id = business.id
 

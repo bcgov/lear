@@ -18,9 +18,10 @@ from typing import Dict
 
 import requests
 from business_model import EntityRole, Filing, LegalEntity, LegalEntityIdentifier, LegalEntityType
-from entity_filer.services.naics import NaicsService
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
+
+from entity_filer.services.naics import NaicsService
 
 
 def set_corp_type(legal_entity: LegalEntity, legal_entity_info: Dict) -> Dict:
@@ -80,7 +81,7 @@ def update_naics_info(business: any, naics: Dict):
     """Update naics info."""
     # TODO update NAICS info
     business.naics_code = naics.get("naicsCode")
-    if business.naics_code and (naics_structure:=NaicsService.find_by_code(business.naics_code)):
+    if business.naics_code and (naics_structure := NaicsService.find_by_code(business.naics_code)):
         business.naics_key = naics_structure["naicsKey"]
     else:
         business.naics_code = None

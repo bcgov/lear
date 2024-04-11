@@ -285,7 +285,9 @@ def process_filing(
                 change_of_name.process(business, {filing_type: filing}, filing_meta)
 
             case "changeOfRegistration":
-                business, alternate_name = change_of_registration.process(business, filing_submission, {filing_type: filing}, filing_meta)
+                business, alternate_name = change_of_registration.process(
+                    business, filing_submission, {filing_type: filing}, filing_meta
+                )
 
             case "consentContinuationOut":
                 consent_continuation_out.process(business, filing_submission, {filing_type: filing}, filing_meta)
@@ -408,8 +410,10 @@ def process_filing(
         #     corp_type_code=business.legal_type
         # )
 
-    if business and business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"] and any(
-        "correction" in x for x in legal_filings
+    if (
+        business
+        and business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"]
+        and any("correction" in x for x in legal_filings)
     ):
         # TODO
         pass

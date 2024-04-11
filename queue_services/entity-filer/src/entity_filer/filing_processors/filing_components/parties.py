@@ -455,6 +455,7 @@ def get_address_for_filing(party_address: Address, address_dict: dict) -> Addres
 
     return None
 
+
 def delete_non_memoized_entity_role(
     legal_entity: LegalEntity, filing: Filing, keep_list, role: EntityRole.RoleTypes
 ) -> []:

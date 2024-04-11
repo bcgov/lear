@@ -23,11 +23,10 @@ from http import HTTPStatus
 from typing import Dict, Union
 
 import requests
+from business_model import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
 from sqlalchemy.orm.exc import FlushError  # noqa: I001
-
-from business_model import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
 
 
 class RegistrationBootstrapService:
