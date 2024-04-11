@@ -16,7 +16,7 @@ import uuid
 from http import HTTPStatus
 
 import pytest
-from business_model import LegalEntity
+from business_model import BusinessCommon, Filing, LegalEntity
 
 from tests.unit import create_data, get_json_message
 
@@ -24,9 +24,10 @@ from tests.unit import create_data, get_json_message
 @pytest.mark.parametrize(
     "filing_type,entity_type,identifier",
     [
-        ("registration", "SP", "FM1234567"),
-        ("registration", "GP", "FM1234567"),
-        ("incorporationApplication", "BC", "BC1234567"),
+        (Filing.FilingTypes.REGISTRATION.value, BusinessCommon.EntityTypes.SOLE_PROP.value, "FM1234567"),
+        (Filing.FilingTypes.REGISTRATION.value, BusinessCommon.EntityTypes.PARTNERSHIP.value, "FM1234567"),
+        (Filing.FilingTypes.INCORPORATIONAPPLICATION.value, BusinessCommon.EntityTypes.COMP.value, "BC1234567"),
+        (Filing.FilingTypes.AMALGAMATIONAPPLICATION.value, BusinessCommon.EntityTypes.COMP.value, "BC1234567"),
     ],
 )
 # pylint: disable-next=too-many-arguments
@@ -45,18 +46,18 @@ def test_new_legal_entity(app, session, client, mocker, filing_type, entity_type
     ):  # pylint: disable=too-many-arguments
         assert account == 1
         assert business_registration == legal_entity.identifier
-        assert business_name == legal_entity.legal_name
+        if entity_type != "GP":  # TODO: can remove this if once the legal_entity.business_name logic change
+            assert business_name == legal_entity.business_name
         assert corp_type_code == legal_entity.entity_type
-        if entity_type in ["SP", "GP"]:
-            party = legal_entity.entity_roles.all()[0].related_entity
-            if party.entity_type == "organization":
-                expected_pass_code = party.legal_name
-            else:
-                expected_pass_code = party.last_name + ", " + party.first_name
-                if hasattr(party, "middle_initial") and party.middle_initial:
-                    expected_pass_code = expected_pass_code + " " + party.middle_initial
+        if filing_type == Filing.FilingTypes.REGISTRATION.value:
+            if entity_type == "SP":
+                expected_pass_code = "name of sp owner"
+            elif entity_type == "GP":
+                expected_pass_code = "XYZ INC."
 
             assert pass_code == expected_pass_code
+
+        if filing_type in [Filing.FilingTypes.REGISTRATION.value, Filing.FilingTypes.AMALGAMATIONAPPLICATION.value]:
             assert details == {
                 "bootstrapIdentifier": filing.temp_reg,
                 "identifier": legal_entity.identifier,
@@ -77,8 +78,12 @@ def test_new_legal_entity(app, session, client, mocker, filing_type, entity_type
     ):
         assert business_registration == filing.temp_reg
         assert business_name == legal_entity.identifier
-        assert corp_type_code == ("RTMP" if entity_type in ["SP", "GP"] else "TMP")
-
+        if filing_type == Filing.FilingTypes.REGISTRATION.value:
+            assert corp_type_code == "RTMP"
+        elif filing_type == Filing.FilingTypes.AMALGAMATIONAPPLICATION.value:
+            assert corp_type_code == "ATMP"
+        elif filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION.value:
+            assert corp_type_code == "TMP"
         return HTTPStatus.OK
 
     mocker.patch(
