@@ -31,7 +31,7 @@ marshmallow==2.20.5
 Werkzeug==0.16.1
 certifi==2020.4.5.1
 urllib3==1.25.9
-idna==2.9
+idna==3.7
 pylint
 pylint-flask
 pep8
