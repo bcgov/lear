@@ -83,8 +83,8 @@ class Config:  # pylint: disable=too-few-public-methods
 
     # pub/sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
-    ENTITY_MAILER_TOPIC = os.getenv("ENTITY_MAILER_TOPIC", "mailer")
-    ENTITY_FILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "filer")
+    BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", "mailer")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "filer")
     AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
     PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
 

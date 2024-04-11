@@ -79,8 +79,7 @@ from entity_filer.filing_processors import (
     transition,
 )
 from entity_filer.filing_processors.filing_components import name_request
-from entity_filer.services import queue
-from entity_filer.services.business_service import BusinessService
+from entity_filer.services import BusinessService, queue
 from entity_filer.services.logging import structured_log
 
 # from legal_api.services.bootstrap import AccountService
@@ -351,6 +350,8 @@ def process_filing(
     )
 
     db.session.add(business)
+    if alternate_name:
+        db.session.add(alternate_name)
     db.session.add(filing_submission)
     db.session.commit()
 
@@ -420,6 +421,7 @@ def process_filing(
 
     if any("incorporationApplication" in x for x in legal_filings):
         filing_submission.legal_entity_id = business.id
+
         db.session.add(filing_submission)
         db.session.commit()
         # TODO
