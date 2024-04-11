@@ -199,6 +199,7 @@ def merge_partnership_registration(
         start_date=filing_rec.effective_date,
         business_start_date=business.start_date,
         state=BusinessCommon.State.ACTIVE,
+        entity_type=BusinessCommon.EntityTypes.PARTNERSHIP,
     )
 
     if naics_dict := registration_filing.get("business", {}).get("naics"):
@@ -276,6 +277,7 @@ def merge_sp_registration(registration_num: str, filing: Dict, filing_rec: Filin
         bn15=tax_id,
         email=proprietor.email,
         state=BusinessCommon.State.ACTIVE,
+        entity_type=BusinessCommon.EntityTypes.SOLE_PROP,
     )
 
     if naics_dict := filing.get("filing", {}).get("registration", {}).get("business", {}).get("naics"):

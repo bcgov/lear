@@ -16,7 +16,7 @@ import base64
 import uuid
 from contextlib import contextmanager
 
-from business_model.models import Filing, ShareClass, ShareSeries, db
+from business_model.models import AlternateName, BusinessCommon, Filing, ShareClass, ShareSeries, db
 from business_model.models.colin_event_id import ColinEventId
 from freezegun import freeze_time
 from sqlalchemy import exc
@@ -464,7 +464,8 @@ def create_entity(identifier, legal_type, legal_name):
     if legal_entity.entity_type == LegalEntity.EntityTypes.PERSON.value:
         legal_entity.first_name = "my"
         legal_entity.last_name = "self"
-    legal_entity._legal_name = legal_name
+    else:
+        legal_entity._legal_name = legal_name
     legal_entity.identifier = identifier
     legal_entity.save()
     return legal_entity
@@ -511,7 +512,7 @@ def create_office_address(business, office, address_type):
 
 
 def create_entity_person(party_json):
-    """Create a director."""
+    """Create a director/partner/proprietor."""
     from business_model import Address, LegalEntity
 
     new_party = LegalEntity(
@@ -627,6 +628,45 @@ def factory_completed_filing(
         legal_entity.save()
 
     return filing
+
+
+def create_alternate_name(
+    identifier=None,
+    entity_type=None,
+    name="OPERATING NAME",
+    name_type=AlternateName.NameType.DBA,
+    bn15=None,
+    legal_entity_id=None,
+    business_start_date=EPOCH_DATETIME,
+    start_date=EPOCH_DATETIME,
+    end_date=None,
+    state=BusinessCommon.State.ACTIVE,
+    naics_code=None,
+    naics_desc=None,
+    admin_freeze=False,
+    change_filing_id=None,
+):
+    """Create an alternate name."""
+
+    alternate_name = AlternateName(
+        identifier=identifier,
+        name=name,
+        name_type=name_type,
+        bn15=bn15,
+        legal_entity_id=legal_entity_id,
+        business_start_date=business_start_date,
+        start_date=start_date,
+        end_date=end_date,
+        state=state,
+        naics_code=naics_code,
+        naics_description=naics_desc,
+        admin_freeze=admin_freeze,
+        change_filing_id=change_filing_id,
+        entity_type=entity_type,
+    )
+
+    alternate_name.save()
+    return alternate_name
 
 
 @contextmanager

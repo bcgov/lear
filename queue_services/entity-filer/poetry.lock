@@ -192,7 +192,7 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", branch = "feature-l
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "feature-legal-name"
-resolved_reference = "76fe8d1d73951a400a6db552321bfc1703e8496a"
+resolved_reference = "f0c26b2b43004f76bf3180cb30bd21efb0129c6a"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -648,13 +648,13 @@ requests = ["requests (>=2.20.0,<3.0.0.dev0)"]
 
 [[package]]
 name = "google-cloud-pubsub"
-version = "2.21.0"
+version = "2.21.1"
 description = "Google Cloud Pub/Sub API client library"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-cloud-pubsub-2.21.0.tar.gz", hash = "sha256:94017f0bc9a85fa3f4d913f312e930a0fe21775bd68dde5c666e2f1b1addf811"},
-    {file = "google_cloud_pubsub-2.21.0-py2.py3-none-any.whl", hash = "sha256:fabd19e08faa1f70081b0e5ea003a3c031a1d2c1b798cf1be5ded2dbf1d1dbef"},
+    {file = "google-cloud-pubsub-2.21.1.tar.gz", hash = "sha256:31fcf07444b7f813a616c4b650e1fbf1dc998a088fe0059a76164855ac17f05c"},
+    {file = "google_cloud_pubsub-2.21.1-py2.py3-none-any.whl", hash = "sha256:55a3602ec45bc09626604d712032288a8ee3566145cb83523cff908938f69a4b"},
 ]
 
 [package.dependencies]
@@ -1820,13 +1820,13 @@ asn1crypto = ">=1.5.1"
 
 [[package]]
 name = "sentry-sdk"
-version = "1.44.0"
+version = "1.44.1"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.44.0.tar.gz", hash = "sha256:f7125a9235795811962d52ff796dc032cd1d0dd98b59beaced8380371cd9c13c"},
-    {file = "sentry_sdk-1.44.0-py2.py3-none-any.whl", hash = "sha256:eb65289da013ca92fad2694851ad2f086aa3825e808dc285bd7dcaf63602bb18"},
+    {file = "sentry-sdk-1.44.1.tar.gz", hash = "sha256:24e6a53eeabffd2f95d952aa35ca52f0f4201d17f820ac9d3ff7244c665aaf68"},
+    {file = "sentry_sdk-1.44.1-py2.py3-none-any.whl", hash = "sha256:5f75eb91d8ab6037c754a87b8501cc581b2827e923682f593bed3539ce5b3999"},
 ]
 
 [package.dependencies]
@@ -1923,7 +1923,7 @@ develop = false
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "feature-legal-name"
-resolved_reference = "abc274397627f6542f7821c4d276492b01c36c21"
+resolved_reference = "b8278f5f7832ab58f65792b40ed99ec8cd81e6b6"
 subdirectory = "python/common/sql-versioning"
 
 [[package]]
