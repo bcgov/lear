@@ -956,14 +956,14 @@ def test_business_name(
                 {
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "entityType": "SP",
-                    "operatingName": ALTERNATE_NAME_1,
+                    "name": ALTERNATE_NAME_1,
                     "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                     "startDate": ALTERNATE_NAME_1_START_DATE,
                 },
                 {
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "entityType": "GP",
-                    "operatingName": ALTERNATE_NAME_2,
+                    "name": ALTERNATE_NAME_2,
                     "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                     "startDate": ALTERNATE_NAME_2_START_DATE,
                 },
@@ -975,14 +975,14 @@ def test_business_name(
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                     "nameStartDate": ALTERNATE_NAME_1_START_DATE,
-                    "operatingName": ALTERNATE_NAME_1,
+                    "name": ALTERNATE_NAME_1,
                 },
                 {
                     "entityType": "GP",
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                     "nameStartDate": ALTERNATE_NAME_2_START_DATE,
-                    "operatingName": ALTERNATE_NAME_2,
+                    "name": ALTERNATE_NAME_2,
                 },
             ],
         ),
@@ -1002,7 +1002,7 @@ def test_business_name(
                 {
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "entityType": "SP",
-                    "operatingName": ALTERNATE_NAME_1,
+                    "name": ALTERNATE_NAME_1,
                     "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                     "startDate": ALTERNATE_NAME_1_START_DATE,
                 }
@@ -1014,7 +1014,7 @@ def test_business_name(
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                     "nameStartDate": ALTERNATE_NAME_1_START_DATE,
-                    "operatingName": ALTERNATE_NAME_1,
+                    "name": ALTERNATE_NAME_1,
                 }
             ],
         ),
@@ -1034,7 +1034,7 @@ def test_business_name(
                 {
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "entityType": "GP",
-                    "operatingName": ALTERNATE_NAME_2,
+                    "name": ALTERNATE_NAME_2,
                     "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                     "startDate": ALTERNATE_NAME_2_START_DATE,
                 }
@@ -1046,7 +1046,7 @@ def test_business_name(
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                     "nameStartDate": ALTERNATE_NAME_2_START_DATE,
-                    "operatingName": ALTERNATE_NAME_2,
+                    "name": ALTERNATE_NAME_2,
                 }
             ],
         ),
@@ -1069,14 +1069,14 @@ def test_business_name(
                 {
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "entityType": "GP",
-                    "operatingName": ALTERNATE_NAME_1,
+                    "name": ALTERNATE_NAME_1,
                     "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                     "startDate": ALTERNATE_NAME_1_START_DATE,
                 },
                 {
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "entityType": "SP",
-                    "operatingName": ALTERNATE_NAME_2,
+                    "name": ALTERNATE_NAME_2,
                     "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                     "startDate": ALTERNATE_NAME_2_START_DATE,
                 },
@@ -1088,14 +1088,14 @@ def test_business_name(
                     "identifier": ALTERNATE_NAME_1_IDENTIFIER,
                     "nameRegisteredDate": ALTERNATE_NAME_1_REGISTERED_DATE,
                     "nameStartDate": ALTERNATE_NAME_1_START_DATE,
-                    "operatingName": ALTERNATE_NAME_1,
+                    "name": ALTERNATE_NAME_1,
                 },
                 {
                     "entityType": "SP",
                     "identifier": ALTERNATE_NAME_2_IDENTIFIER,
                     "nameRegisteredDate": ALTERNATE_NAME_2_REGISTERED_DATE,
                     "nameStartDate": ALTERNATE_NAME_2_START_DATE,
-                    "operatingName": ALTERNATE_NAME_2,
+                    "name": ALTERNATE_NAME_2,
                 },
             ],
         ),
@@ -1151,7 +1151,7 @@ def test_alternate_names(
                 alternate_name = AlternateName(
                     identifier=alternate_name_identifier,
                     name_type=AlternateName.NameType.OPERATING,
-                    name=alternate_name_info["operatingName"],
+                    name=alternate_name_info["name"],
                     bn15="111111100BC1111",
                     start_date=start_date,
                     legal_entity_id=le.id,
@@ -1270,7 +1270,7 @@ def test_sole_proprietor(
 
         name_dict = {
             "identifier": "FM1234567",
-            "operatingName": "Harry Lime Questionable Goods Broker",
+            "name": "Harry Lime Questionable Goods Broker",
             "entityType": "person",
             "nameStartDate": "2023-10-29",
         }
@@ -1339,7 +1339,7 @@ def test_find_by_FM_identifier(
 
         name_dict = {
             "identifier": "FM1234567",
-            "operatingName": "Harry Lime Questionable Goods Broker",
+            "name": "Harry Lime Questionable Goods Broker",
             "entityType": "person",
             "nameStartDate": "2023-10-29",
         }
@@ -1409,7 +1409,7 @@ def test_find_by_FM_name(
 
         name_dict = {
             "identifier": "FM1234567",
-            "operatingName": "Harry Lime Questionable Goods Broker",
+            "name": "Harry Lime Questionable Goods Broker",
             "entityType": "person",
             "nameStartDate": "2023-10-29",
         }

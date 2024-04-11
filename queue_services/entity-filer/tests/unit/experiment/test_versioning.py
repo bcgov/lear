@@ -8,7 +8,7 @@ SKIP_NON_MANUAL_RUN = True
 
 @pytest.mark.skipif(SKIP_NON_MANUAL_RUN, reason="experiment - manual run")
 def test_le_version(session):
-    le = LegalEntity(legal_name="racoon-dog")
+    le = LegalEntity(_legal_name="racoon-dog")
     le.save()
 
     le.dissolution_date = datetime.datetime.now()

@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "gcp_queue"
+version = "0.1.0"
+description = ""
+authors = ["thorwolpert <thor@wolpert.ca>"]
+readme = "README.md"
+packages = [{include = "gcp_queue"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+flask = "^3.0.2"
+google-auth = "^2.28.2"
+google-cloud-pubsub = "^2.20.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-mock = "^3.11.1"
+pytest-cov = "^4.0.0"
+requests-mock = "^1.11.0"
+black = "^23.12.1"
+zimports = "^0.6.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

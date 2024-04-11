@@ -24,7 +24,7 @@ from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import legal_entity_info
 from entity_filer.resources.worker import FilingMessage, process_filing
-from tests.unit import create_entity, create_filing, create_party, create_party_role, create_share_class
+from tests.unit import create_entity, create_entity_person, create_entity_role, create_filing, create_share_class
 
 
 def test_regular_amalgamation_application_process(app, session):
@@ -127,7 +127,7 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
 
     create_share_class(amalgamating_business_1)
 
-    party = create_party(
+    party = create_entity_person(
         {
             "officer": {
                 "firstName": f"{amalgamating_business_1.identifier} first_name",
@@ -150,7 +150,7 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
             },
         }
     )
-    create_party_role(amalgamating_business_1, party, ["director"], datetime.utcnow())
+    create_entity_role(amalgamating_business_1, party, ["director"], datetime.utcnow())
 
     amalgamating_business_1_id = amalgamating_business_1.id
     amalgamating_business_2_id = create_entity(amalgamating_identifier_2, "BC", "amalgamating business 2").id

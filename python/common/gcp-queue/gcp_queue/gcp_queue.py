@@ -3,7 +3,7 @@
 # Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
 # The template for the license can be found here
-#    https://opensource.org/license/bsd-3-clause/
+#    opensource.org/license/bsd-3-clause/
 #
 # Redistribution and use in source and binary forms,
 # with or without modification, are permitted provided that the
@@ -35,29 +35,30 @@
 from __future__ import annotations
 
 import base64
-import json
-from concurrent.futures import TimeoutError  # pylint: disable=W0622
 from concurrent.futures import CancelledError
+from concurrent.futures import TimeoutError
 from contextlib import suppress
+import json
 from typing import Optional
 
-from flask import Flask, current_app
+from flask import current_app
+from flask import Flask
 from google.auth import jwt
 from google.cloud import pubsub_v1
-from simple_cloudevent import (
-    CloudEventVersionException,
-    InvalidCloudEventError,
-    SimpleCloudEvent,
-    from_queue_message,
-    to_queue_message,
-)
+from simple_cloudevent import CloudEventVersionException
+from simple_cloudevent import from_queue_message
+from simple_cloudevent import InvalidCloudEventError
+from simple_cloudevent import SimpleCloudEvent
+from simple_cloudevent import to_queue_message
+from werkzeug.exceptions import UnsupportedMediaType
 from werkzeug.local import LocalProxy
 
 
 class GcpQueue:
-    """Class representing a GcpQueue"""
+    """Provides Queue type services"""
 
     def __init__(self, app: Flask = None):
+        """Initializes the GCP Queue class"""
         self.audience = None
         self.credentials_pub = None
         self.gcp_auth_key = None
@@ -69,38 +70,50 @@ class GcpQueue:
             self.init_app(app)
 
     def init_app(self, app: Flask):
-        """Function initialize app."""
+        """Initializes the application"""
+
         self.gcp_auth_key = app.config.get("GCP_AUTH_KEY")
         if self.gcp_auth_key:
             try:
                 audience = current_app.config.get(
                     "AUDIENCE",
-                    "https://pubsub.googleapis.com/google.\
-                        pubsub.v1.Subscriber",
+                    "pubsub.googleapis.com/google.pubsub.v1.Subscriber",
                 )
                 publisher_audience = current_app.config.get(
                     "PUBLISHER_AUDIENCE",
-                    "https://pubsub.googleapis.com/google.pubsub.v1.Publisher",
+                    "pubsub.googleapis.com/google.pubsub.v1.Publisher",
                 )
 
-                self.service_account_info = json.loads(base64.b64decode(self.gcp_auth_key).decode("utf-8"))
-                credentials = jwt.Credentials.from_service_account_info(self.service_account_info, audience=audience)
-                self.credentials_pub = credentials.with_claims(audience=publisher_audience)
+                self.service_account_info = json.loads(
+                    base64.b64decode(self.gcp_auth_key).decode("utf-8")
+                )
+                credentials = jwt.Credentials.from_service_account_info(
+                    self.service_account_info, audience=audience
+                )
+                self.credentials_pub = credentials.with_claims(
+                    audience=publisher_audience
+                )
             except Exception as error:  # noqa: B902
-                raise Exception("Unable to create a connection", error) from error  # pylint: disable=W0719
+                raise Exception(
+                    "Unable to create a connection", error
+                ) from error  # pylint: disable=W0719
 
     @property
     def publisher(self):
-        """Function publisher"""
+        """Returns the publisher"""
+
         if not self._publisher and self.credentials_pub:
-            self._publisher = pubsub_v1.PublisherClient(credentials=self.credentials_pub)
+            self._publisher = pubsub_v1.PublisherClient(
+                credentials=self.credentials_pub
+            )
         else:
             self._publisher = pubsub_v1.PublisherClient()
         return self._publisher
 
     @staticmethod
     def is_valid_envelope(msg: dict):
-        """Function determine valid envelope."""
+        """Checks if the envelope is valid"""
+
         if (
             msg.get("subscription")
             and (message := msg.get("message"))
@@ -112,14 +125,19 @@ class GcpQueue:
 
     @staticmethod
     def get_envelope(request: LocalProxy) -> Optional[dict]:
-        """Function return envelope."""
+        """Returns the envelope"""
+
         with suppress(Exception):
-            if (envelope := request.get_json()) and GcpQueue.is_valid_envelope(envelope):
+            if (envelope := request.get_json()) and GcpQueue.is_valid_envelope(
+                envelope
+            ):
                 return envelope
         return None
 
     @staticmethod
-    def get_simple_cloud_event(request: LocalProxy, return_raw: bool = False) -> type[SimpleCloudEvent | dict | None]:
+    def get_simple_cloud_event(
+        request: LocalProxy, return_raw: bool = False, wrapped: bool = False
+    ) -> type[SimpleCloudEvent | dict | None]:
         """Return a SimpleCloudEvent if one is in session from the PubSub call.
 
         Parameters
@@ -139,9 +157,20 @@ class GcpQueue:
                 SimpleCloudEvent -or-
                 None - if there is no SimpleCloudEvent
 
-                dict - if return_raw was set to true
-                       and it's not a SimpleCloudEvent -or-
+                dict - if return_raw was set to true and it's not a SimpleCloudEvent -or-
         """
+        if not wrapped:
+            try:
+                message = request.get_json()
+                message.pop("datacontenttype", None)
+                message.pop("specversion", None)
+                ce = SimpleCloudEvent(**message)
+                return ce
+            except (UnsupportedMediaType, Exception) as err:
+                return None
+
+        # A wrapped pubsub message has an envelope and
+        # encrypted data payload
         if not (envelope := GcpQueue.get_envelope(request)):
             return None
 
@@ -160,6 +189,8 @@ class GcpQueue:
             ):
                 if return_raw and str_data:
                     return str_data
+
+        # we fell out the bottom here
         return None
 
     def publish(self, topic: str, payload: bytes):
@@ -172,14 +203,17 @@ class GcpQueue:
 
             return future.result()
         except (CancelledError, TimeoutError) as error:
-            raise Exception("Unable to post to queue", error) from error  # pylint: disable=W0719
+            raise Exception(
+                "Unable to post to queue", error
+            ) from error  # pylint: disable=W0719
 
     @staticmethod
     def to_queue_message(ce: SimpleCloudEvent):
-        """Function return message to queue."""
+        """Return a byte string of the CloudEvent in JSON format"""
+
         return to_queue_message(ce)
 
     @staticmethod
     def from_queue_message(data: dict):
-        """Function return message from queue."""
+        """Convert a queue message back to a simple CloudEvent"""
         return from_queue_message(data)

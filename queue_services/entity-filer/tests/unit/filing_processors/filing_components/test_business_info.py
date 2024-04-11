@@ -38,7 +38,7 @@ def test_set_corp_type(
     """Assert that the corp type is set correctly."""
     new_data = {"legalType": new_legal_type}
 
-    legal_entity = LegalEntity(_entity_type=original_legal_type)
+    legal_entity = LegalEntity(entity_type=original_legal_type)
     err = legal_entity_info.set_corp_type(legal_entity, new_data)
 
     assert legal_entity.entity_type == expected_legal_type

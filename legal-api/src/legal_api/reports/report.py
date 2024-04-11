@@ -315,8 +315,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._filing.id, datetime.utcnow(), EntityRole.RoleTypes.completing_party.name
         )
         if completing_party_role:
-            related_entity = completing_party_role[0].related_entity
-            filing["completingParty"] = related_entity.party_json
+            filing["completingParty"] = completing_party_role[0].related_entity.party_json
             with suppress(KeyError):
                 self._format_address(filing["completingParty"]["deliveryAddress"])
             with suppress(KeyError):
@@ -655,7 +654,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["extended_agm_date"] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
 
         filing["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            self._filing.transaction_id, self._business.id  # pylint: disable=no-member
+            self._filing, self._business  # pylint: disable=no-member
         )
         with suppress(KeyError):
             self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
@@ -666,7 +665,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["location"] = self._filing.filing_json["filing"].get("agmLocationChange", {}).get("agmLocation", "")
 
         filing["offices"] = VersionedBusinessDetailsService.get_office_revision(
-            self._filing.transaction_id, self._business.id  # pylint: disable=no-member
+            self._filing, self._business  # pylint: disable=no-member
         )
 
         with suppress(KeyError):

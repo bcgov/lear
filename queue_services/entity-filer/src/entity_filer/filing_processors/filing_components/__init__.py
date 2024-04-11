@@ -72,7 +72,7 @@ def update_address(address: Address, new_info: dict) -> Address:
     return address
 
 
-def create_office(legal_entity, office_type, addresses) -> Office:
+def create_office(business, office_type, addresses) -> Office:
     """Create a new office for incorporation."""
     office = Office()
     office.office_type = office_type
@@ -80,7 +80,10 @@ def create_office(legal_entity, office_type, addresses) -> Office:
     # Iterate addresses and add to this office
     for k, v in addresses.items():
         address = create_address(v, k)
-        address.legal_entity_id = legal_entity.id
+        if business.is_legal_entity:
+            address.legal_entity_id = business.id
+        else:
+            address.alternate_name_id = business.id
         if address:
             office.addresses.append(address)
     return office

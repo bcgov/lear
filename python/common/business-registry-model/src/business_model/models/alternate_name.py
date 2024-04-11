@@ -53,6 +53,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             "bn15",
             "change_filing_id",
             "end_date",
+            "entity_type",
             "identifier",
             "legal_entity_id",
             "colin_entity_id",
@@ -76,6 +77,7 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
 
     id = db.Column(db.Integer, primary_key=True)
     identifier = db.Column("identifier", db.String(10), nullable=True, index=True)
+    entity_type = db.Column("entity_type", db.String(15), index=True)
     name_type = db.Column("name_type", db.Enum(NameType), nullable=False)
     name = db.Column("name", db.String(1000), nullable=False, index=True)
     bn15 = db.Column("bn15", db.String(20), nullable=True)
@@ -150,6 +152,14 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
             .all()
         )
         return aliases
+
+    @classmethod
+    def find_by_tax_id(cls, bn15: str):
+        """Return a Business by the tax_id."""
+        alternate_name = None
+        if bn15:
+            alternate_name = cls.query.filter_by(bn15=bn15).one_or_none()
+        return alternate_name
 
     @property
     def office_mailing_address(self):
@@ -318,11 +328,12 @@ class AlternateName(Versioned, db.Model, BusinessCommon):
                     "identifier": self.identifier,
                     "name": self.name,
                     "nameRegisteredDate": self.start_date.isoformat(),
-                    "nameStartDate": LegislationDatetime.format_as_legislation_date(self.business_start_date)
-                    if self.business_start_date
-                    else None,
-                    "nameType": self.name_type.name,
-                    "operatingName": self.name,  # will be removed in the future
+                    "nameStartDate": (
+                        LegislationDatetime.format_as_legislation_date(self.business_start_date)
+                        if self.business_start_date
+                        else None
+                    ),
+                    "nameType": self.name_type.name
                 }
             ],
         }

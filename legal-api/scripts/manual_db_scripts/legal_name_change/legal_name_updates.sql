@@ -96,6 +96,27 @@ BEGIN
 END ;
 $$;
 
+-- INDEXES TO IMPROVE CONVERSION PERFORMANCE
+-- For creating temp_legal_name_changes table
+CREATE INDEX idx_legal_entities_id_version ON legal_entities (id, version);
+CREATE INDEX idx_filings_id_legal_entity_id ON filings (id, legal_entity_id);
+-- Index to help with has_non_legal_name_change()
+CREATE INDEX ix_legal_entities_history_identifier_version ON legal_entities_history (identifier, version);
+CREATE INDEX ix_legal_entities_history_id_version ON legal_entities_history (id, version);
+
+-- For update_legal_name() used later in the script
+CREATE INDEX idx_entity_roles_related_entity_id ON entity_roles(related_entity_id);
+CREATE INDEX idx_entity_roles_related_colin_entity_id ON entity_roles(related_colin_entity_id);
+CREATE INDEX idx_entity_roles_legal_entity_id ON entity_roles(legal_entity_id);
+
+-- Should probably exist - may need to move to model so migrations generate these?
+-- Improves performance when doing operations on legal_entities like bulk deletes as FKs with larger data sets are
+-- indexed.
+CREATE INDEX ix_alternate_names_legal_entity_id ON alternate_names(legal_entity_id);
+CREATE INDEX ix_alternate_names_history_legal_entity_id ON alternate_names_history(legal_entity_id);
+CREATE INDEX ix_entity_roles_history_legal_entity_id ON entity_roles_history(legal_entity_id);
+CREATE INDEX ix_party_roles_legal_entity_id ON party_roles(legal_entity_id);
+CREATE INDEX ix_party_roles_history_legal_entity_id ON party_roles_history(legal_entity_id);
 
 -- A temp table to determine which SP/GP legal entities_history records contain legal name changes and the necessary
 -- query logic to determine correct end transaction ids/dates so that they can be used for
@@ -197,6 +218,11 @@ from legal_entities_history leh
 where leh.entity_type in ('SP', 'GP')
 ;
 
+-- Create Indexes on temp_legal_name_changes table
+CREATE INDEX ix_temp_legal_names_changes_id_version ON temp_legal_name_changes (id, version);
+CREATE INDEX ix_temp_legal_names_changes_filing_id ON temp_legal_name_changes (filing_id);
+CREATE INDEX ix_temp_legal_names_changes_legal_name_changed ON temp_legal_name_changes (legal_name_changed);
+
 
 -- Insert last name change entry for SP/GPs in legal_entities_history table into alternate_names
 INSERT
@@ -228,10 +254,10 @@ from temp_legal_name_changes lnc
                       count(version) as new_version
                from temp_legal_name_changes lnc
                where lnc.filing_id is not null
-                 and lnc.legal_name_changed = True
+                 --and lnc.legal_name_changed = True
                group by id) max_version on lnc.id = max_version.id and lnc.version = max_version.version_match
 where lnc.filing_id is not null
-  and lnc.legal_name_changed = True
+  --and lnc.legal_name_changed = True
 order by lnc.version desc
 ;
 
@@ -298,15 +324,15 @@ FROM id_values;
 
 -- Delete legal_entities_history entries that are only name changes.  These will be represented in the
 -- alternate_names_history table
-delete
-from legal_entities_history leh
-    using temp_legal_name_changes lnc
-where leh.id = lnc.id
-  and leh.version = lnc.version
-  and leh.version != 1
-  and legal_name_changed
-  and not non_legal_name_change
-;
+-- delete
+-- from legal_entities_history leh
+--     using temp_legal_name_changes lnc
+-- where leh.id = lnc.id
+--   and leh.version = lnc.version
+--   and leh.version != 1
+--   and legal_name_changed
+--   and not non_legal_name_change
+-- ;
 
 
 -- Update version numbers to ensure correct version numbers are in place for each legal_entities_history entries.
@@ -488,6 +514,10 @@ from parties p
          left join filings f on f.id = p.change_filing_id
 ;
 
+-- Create Indexes on temp_parties_legal_name table
+CREATE INDEX ix_temp_parties_legal_name_version ON temp_parties_legal_name (version);
+CREATE INDEX ix_temp_parties_legal_name_party_id ON temp_parties_legal_name (party_id);
+CREATE INDEX ix_temp_parties_legal_name_is_proprietor_person ON temp_parties_legal_name (is_proprietor_person);
 
 -- ************************************************************************************************
 -- INSERT legal_entities records for parties
@@ -926,7 +956,8 @@ DECLARE
     row_leh    legal_entities_history%ROWTYPE;
 BEGIN
 
-    RAISE NOTICE 'cast_le_to_leh - 1';
+    RAISE NOTICE '======';
+    RAISE NOTICE 'cast_le_to_leh - 1 %', row_le;
     -- Convert row_le to hstore
     hstore_le := hstore(row_le);
 
@@ -935,6 +966,7 @@ BEGIN
 
     -- Convert hstore_leh to legal_entities_history type
     row_leh := populate_record(NULL::legal_entities_history, hstore_leh);
+    RAISE NOTICE 'cast_ result - %', row_leh;
 
     RETURN row_leh;
 EXCEPTION
@@ -986,7 +1018,6 @@ select *
 from clone_and_insert
 ;
 
-
 -- For each entry in temp_parties_legal_name table that has no matching change_filing_id in
 -- legal_entities/legal_entities_history tables
 WITH unmatched_entries AS
@@ -1008,7 +1039,8 @@ WITH unmatched_entries AS
      WHERE tp.is_proprietor_person
        AND le.id IS NULL
        AND leh.id IS NULL
-       AND tp.version = maxTp.version)
+       AND tp.version = maxTp.version
+     )
 -- find the most recent legal_entities_history entry, relative to the change_filing_id
    , previous_history_entries AS
     (SELECT leh.*
@@ -1029,7 +1061,8 @@ WITH unmatched_entries AS
                      FROM legal_entities le
                               join temp_parties_legal_name prev_tp on le.id = prev_tp.new_legal_entity_id and
                                                                       le.change_filing_id = prev_tp.change_filing_id
-                     WHERE le.id = ue.new_legal_entity_id),
+                     WHERE le.id = ue.new_legal_entity_id
+                     LIMIT 1),
                     jsonb_build_object(
                             'version', 1
                     )
@@ -1082,7 +1115,8 @@ FROM (SELECT *
       FROM clone_and_insert
       UNION ALL
       SELECT *
-      FROM create_new_history_entry) AS temp
+      FROM create_new_history_entry
+) AS temp
 ;
 
 
@@ -1185,13 +1219,15 @@ FROM (SELECT le.*,
              rhd.delivery_address_id as rhd_delivery_address_id,
              rhd.mailing_address_id  as rhd_mailing_address_id,
              rhd.email               as rhd_email,
-             rhd.entity_type         as rhd_entity_type,
+             COALESCE(rhd.entity_type, le.entity_type) as rhd_entity_type,
              pm.party_id
       FROM legal_entities le
                JOIN recent_history_details rhd ON le.id = rhd.id
                LEFT JOIN party_matches pm ON le.id = pm.id) AS combined
 WHERE le.id = combined.id
-  AND combined.party_id IS NULL;
+  AND combined.party_id IS NULL
+  AND le.entity_type in ('SP', 'person')
+;
 
 -- if LE SP history record is found and there is a match is found in party or party history tables, just bump the
 -- version num of the active LE SP record using the history record
@@ -1207,13 +1243,15 @@ FROM (SELECT le.*,
              rhd.delivery_address_id as rhd_delivery_address_id,
              rhd.mailing_address_id  as rhd_mailing_address_id,
              rhd.email               as rhd_email,
-             rhd.entity_type         as rhd_entity_type,
+             COALESCE(rhd.entity_type, le.entity_type)  as rhd_entity_type,
              pm.party_id
       FROM legal_entities le
                JOIN recent_history_details rhd ON le.id = rhd.id
                LEFT JOIN party_matches pm ON le.id = pm.id) AS combined
 WHERE le.id = combined.id
-  AND combined.party_id IS NOT NULL;
+  AND combined.party_id IS NOT NULL
+  AND le.entity_type in ('SP', 'person')
+;
 
 
 DROP TABLE recent_history;
@@ -1221,7 +1259,7 @@ DROP TABLE recent_history_details;
 DROP TABLE party_matches;
 
 -- ************************************************************************************************
--- PARTY_ROLES/PARTY_ROLES_history -> ENTIYTY_ROLES/ENTITY_ROLES_history
+-- PARTY_ROLES/PARTY_ROLES_history -> ENTITY_ROLES/ENTITY_ROLES_history
 -- ************************************************************************************************
 
 CREATE TABLE temp_party_roles_legal_name AS
@@ -1774,10 +1812,12 @@ FROM legal_entities_history
 WHERE id IN (SELECT sp_id
              FROM temp_sp_dba_entity_role);
 
+-- TODO PROD - investigate temp_sp_dba_entity_role entries sp_id = le_match_id
 DELETE
 FROM legal_entities
 WHERE id IN (SELECT sp_id
-             FROM temp_sp_dba_entity_role);
+             FROM temp_sp_dba_entity_role
+             WHERE sp_id != le_match_id);
 
 
 -- Move remaining SP DBA COLIN associations that need to reside with alternate_names
@@ -1798,6 +1838,7 @@ from legal_entities le
 where le.entity_type = 'SP'
   and er.role_type = 'proprietor';
 
+CREATE INDEX ix_temp_sp_dba_colin_entity_role_sp_id ON temp_sp_dba_colin_entity_role (sp_id);
 
 UPDATE alternate_names an
 SET legal_entity_id     = null,
@@ -1856,11 +1897,11 @@ FROM legal_entities_history
 WHERE id IN (SELECT sp_id
              FROM temp_sp_dba_colin_entity_role);
 
+-- Leverage indexing for this delete as it takes a long time on large datasets due to FK reference checks when
+-- removing a record
 DELETE
 FROM legal_entities
-WHERE id IN (SELECT sp_id
-             FROM temp_sp_dba_colin_entity_role);
-
+USING temp_sp_dba_colin_entity_role where legal_entities.id = temp_sp_dba_colin_entity_role.sp_id;
 
 -- Set fields that do not need to be populated for proprietor individuals to null
 update public.legal_entities
@@ -1920,6 +1961,76 @@ FROM legal_entities_history_person lehp
 WHERE leh.id = lehp.id;
 
 
+-- Update SPs for legal entities with corresponding 'person' entity and remove SP legal entity
+create table temp_sp_person_proprietor as
+    (select distinct
+         p.*,
+         pr.legal_entity_id,
+         tpln.new_legal_entity_id
+     from parties p
+              join party_roles pr on pr.party_id = p.id and pr.role = 'proprietor'
+              join legal_entities pr_le on pr_le.id = pr.legal_entity_id and pr_le.entity_type = 'SP'
+              join alternate_names an on an.legal_entity_id = pr_le.id
+              join temp_parties_legal_name tpln on tpln.party_id = p.id and tpln.is_proprietor_person
+              join legal_entities le on le.id = tpln.new_legal_entity_id and le.entity_type = 'person');
+
+
+update alternate_names an
+set legal_entity_id = tspp.new_legal_entity_id
+from temp_sp_person_proprietor tspp
+where an.legal_entity_id = tspp.legal_entity_id
+;
+
+update alternate_names_history anh
+set legal_entity_id = tspp.new_legal_entity_id
+from temp_sp_person_proprietor tspp
+where anh.legal_entity_id = tspp.legal_entity_id
+;
+
+update entity_roles er
+set legal_entity_id = tspp.new_legal_entity_id
+from temp_sp_person_proprietor tspp
+where er.legal_entity_id = tspp.legal_entity_id
+;
+
+update party_roles pr
+set legal_entity_id = tspp.new_legal_entity_id
+from temp_sp_person_proprietor tspp
+where pr.legal_entity_id = tspp.legal_entity_id
+;
+
+delete from legal_entities
+where id in (select legal_entity_id from temp_sp_person_proprietor);
+
+-- Update alternate name mapping and remove SPs with no party roles
+CREATE TABLE temp_sp_with_no_party_roles as (select distinct le.id              as legal_entity_id,
+                                                             an.id              as an_id,
+                                                             an.legal_entity_id as an_legal_entity_id
+                                             from legal_entities le
+                                                      join alternate_names an on an.legal_entity_id = le.id
+                                                      left join party_roles pr on pr.legal_entity_id = le.id
+                                             where le.entity_type = 'SP'
+                                               and an.legal_entity_id is not null
+                                               and pr.id is null);
+
+update alternate_names an
+set legal_entity_id = null
+from temp_sp_with_no_party_roles tsnpr
+where an.legal_entity_id = tsnpr.legal_entity_id
+;
+
+update alternate_names_history anh
+set legal_entity_id = null
+from temp_sp_with_no_party_roles tsnpr
+where anh.legal_entity_id = tsnpr.legal_entity_id
+;
+
+delete
+from legal_entities
+where id in (select legal_entity_id from temp_sp_with_no_party_roles tsnpr);
+
+
+
 -- DROP temporarily created columns, functions and tables
 DROP TABLE temp_legal_name_changes;
 DROP TABLE temp_parties_legal_name;
@@ -1927,6 +2038,8 @@ DROP TABLE temp_party_roles_legal_name;
 DROP TABLE temp_sp_person_entity_role;
 DROP TABLE temp_sp_dba_entity_role;
 DROP TABLE temp_sp_dba_colin_entity_role;
+DROP TABLE temp_sp_person_proprietor;
+DROP TABLE temp_sp_with_no_party_roles;
 DROP FUNCTION has_non_legal_name_change;
 DROP FUNCTION update_filing_json_party_ids;
 DROP FUNCTION rename_jsonb_key;

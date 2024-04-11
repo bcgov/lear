@@ -21,7 +21,7 @@ from business_model import LegalEntity
 from entity_filer.filing_processors.filing_components import create_office
 
 
-def update_offices(business: LegalEntity, offices_structure: Dict) -> Optional[List]:
+def update_offices(business: any, offices_structure: Dict) -> Optional[List]:
     """Manage the office for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -60,7 +60,7 @@ def update_offices(business: LegalEntity, offices_structure: Dict) -> Optional[L
     return err
 
 
-def delete_existing_offices(business: LegalEntity):
+def delete_existing_offices(business: any):
     """Delete the existing offices for a business."""
     if existing_offices := business.offices.all():
         for office in existing_offices:

@@ -42,10 +42,10 @@ def test_get_business_revision_obj(session):
     le_revision = db.session.query(legal_entity_version).filter(legal_entity_version.id == legal_entity.id).all()
     assert len(le_revision) == 1
 
-    dissolution_le = VersionedBusinessDetailsService.get_business_revision_obj(dissolution_filing, legal_entity.id)
+    dissolution_le = VersionedBusinessDetailsService.get_business_revision_obj(dissolution_filing, legal_entity)
     assert dissolution_le.state == legal_entity.State.HISTORICAL
 
-    ia_le = VersionedBusinessDetailsService.get_business_revision_obj(ia_filing, legal_entity.id)
+    ia_le = VersionedBusinessDetailsService.get_business_revision_obj(ia_filing, legal_entity)
     assert ia_le.state == legal_entity.State.ACTIVE
 
 
@@ -113,7 +113,7 @@ def test_find_last_value_from_business_revision(session):
     assert limited_restoration_le.restoration_expiry_date == restoration_expiry_date
 
     # final status
-    le = VersionedBusinessDetailsService.get_business_revision_obj(full_restoration_filing, legal_entity.id)
+    le = VersionedBusinessDetailsService.get_business_revision_obj(full_restoration_filing, legal_entity)
     assert le.state == legal_entity.State.ACTIVE
     assert le.restoration_expiry_date is None
     assert le.dissolution_date is None
@@ -170,7 +170,7 @@ def test_get_office_revision(session):
 
     factory_offices(legal_entity, office_types=[OfficeType.CUSTODIAL], change_filing=dis_filing)
     legal_entity.save()
-    ia_offices_version = VersionedBusinessDetailsService.get_office_revision(ia_filing, legal_entity.id)
+    ia_offices_version = VersionedBusinessDetailsService.get_office_revision(ia_filing, legal_entity)
     assert ia_offices_version
     assert len(ia_offices_version) == 2
     assert all(office_type in [OfficeType.REGISTERED, OfficeType.RECORDS] for office_type in ia_offices_version.keys())
@@ -184,7 +184,7 @@ def test_get_office_revision(session):
             == f"incorporationApplication {office_type} Mailing Street"
         )
 
-    alt_offices_version = VersionedBusinessDetailsService.get_office_revision(alt_filing, legal_entity.id)
+    alt_offices_version = VersionedBusinessDetailsService.get_office_revision(alt_filing, legal_entity)
     assert alt_offices_version
     assert len(alt_offices_version) == 1  # OfficeType.RECORDS deleted in alteration filing
     assert all(office_type in [OfficeType.REGISTERED] for office_type in alt_offices_version.keys())
@@ -198,7 +198,7 @@ def test_get_office_revision(session):
             == f"incorporationApplication {office_type} Mailing Street"
         )
 
-    dis_offices_version = VersionedBusinessDetailsService.get_office_revision(dis_filing, legal_entity.id)
+    dis_offices_version = VersionedBusinessDetailsService.get_office_revision(dis_filing, legal_entity)
     assert dis_offices_version
     assert len(dis_offices_version) == 2
     assert all(

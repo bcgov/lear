@@ -42,7 +42,7 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     # setup
     identifier = "BC1234567"
     business = create_business(identifier)
-    business._entity_type = orig_legal_type
+    business.entity_type = orig_legal_type
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing["filing"]["business"]["legalType"] = orig_legal_type
@@ -214,7 +214,7 @@ def test_alteration_coop_association_type(app, session, new_association_type):
     # setup
     identifier = "CP1234567"
     business = create_business(identifier)
-    business._entity_type = LegalEntity.EntityTypes.COOP.value
+    business.entity_type = LegalEntity.EntityTypes.COOP.value
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing["filing"]["business"]["legalType"] = LegalEntity.EntityTypes.COOP.value
@@ -242,7 +242,7 @@ def test_alteration_coop_rules_and_memorandum(app, session):
     # setup
     identifier = "CP1234567"
     business = create_business(identifier)
-    business._entity_type = LegalEntity.EntityTypes.COOP.value
+    business.entity_type = LegalEntity.EntityTypes.COOP.value
 
     alteration_filing = copy.deepcopy(FILING_HEADER)
     alteration_filing["filing"]["business"]["legalType"] = LegalEntity.EntityTypes.COOP.value
