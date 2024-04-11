@@ -94,7 +94,7 @@ class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-at
     @classmethod
     def get_amalgamation_revision_json(cls, filing, legal_entity_id):
         """Get amalgamation json for the given transaction id."""
-        from legal_api.services import business_service
+        from legal_api.services import business_service  # pylint: disable=import-outside-toplevel
 
         amalgamation = Amalgamation.get_amalgamation_revision_obj(filing, legal_entity_id)
 
