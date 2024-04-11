@@ -91,7 +91,7 @@ class GcpQueue:
             self._publisher = pubsub_v1.PublisherClient(credentials=self.credentials_pub)
         else:
             self._publisher = pubsub_v1.PublisherClient()
-        return self.credentials_pub
+        return self._publisher
 
     @staticmethod
     def is_valid_envelope(msg: dict):
