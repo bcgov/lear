@@ -338,11 +338,13 @@ def test_get_business_with_court_orders(session, client, jwt):
     assert rv.json['business']['identifier'] == identifier
     assert rv.json['business']['hasCourtOrders'] == True
 
-@pytest.mark.parametrize('identifier, legal_type, nr_number', [
-    ('Tb31yQIuBw', Business.LegalTypes.COMP.value, None),
+@pytest.mark.parametrize('identifier, legal_type, nr_number, legal_name, result', [
+    ('Tb31yQIuBw', Business.LegalTypes.COMP.value, None, None, 'Numbered Limited Company'),
+    ('Tb31yQIuBw', Business.LegalTypes.COMP.value, 'NR 1245670', 'Test NR name', 'Test NR name'),
+    ('Tb31yQIuBw', Business.LegalTypes.COMP.value, None, '0870754 B.C. LTD.', '0870754 B.C. LTD.')
     # Add more scenarios here as needed
 ])
-def test_draft_amalgamation_name_selection(session, client, jwt, identifier, legal_type, nr_number):
+def test_draft_amalgamation_name_selection(session, client, jwt, identifier, legal_type, nr_number, legal_name, result):
     """Test draft regular amalgamation with various name selection scenarios."""
     
     # Setup a temporary registration and draft filing
@@ -350,13 +352,20 @@ def test_draft_amalgamation_name_selection(session, client, jwt, identifier, leg
     temp_reg._identifier = identifier
     temp_reg.save()
 
-    json_data = copy.deepcopy(FILING_HEADER)
-    json_data['filing']['header']['name'] = 'amalgamationApplication'
+    json_data = {
+        'filing': {
+            'header': {
+                'name': 'amalgamationApplication',
+                'date': '2019-04-08',
+                'certifiedBy': 'full name'
+            }
+        }
+    }
     json_data['filing']['amalgamationApplication'] = {
         'type': 'regular',
         'nameRequest': {
             'nrNumber': nr_number,
-            'legalName': None,  # Explicitly showing no name is set for this scenario
+            'legalName': legal_name,
             'legalType': legal_type
         }
     }
@@ -376,7 +385,7 @@ def test_draft_amalgamation_name_selection(session, client, jwt, identifier, leg
     assert len(draft_entities) == 1, "Did not find expected draft entity"
     
     draft_entity = draft_entities[0]
-    assert draft_entity.get('legalName') == 'Amalgamated Business', f"Expected legal name to be Amalgamated Business but got '{draft_entity.get('legalName')}'"
+    assert draft_entity.get('legalName') == result, f"Expected legal name to be Amalgamated Business but got '{draft_entity.get('legalName')}'"
 
 
 def test_post_affiliated_businesses(session, client, jwt):
