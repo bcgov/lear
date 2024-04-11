@@ -176,7 +176,7 @@ INSERT INTO public.filings (
         tech_correction_json,
         temp_reg,
         transaction_id
-) 
+)
 SELECT
         id,
         application_date,
@@ -789,7 +789,10 @@ FROM public.resolutions r
          left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.resolutions_version
                     group by id) rv on r.id = rv.id
-         left join public.filings f on f.transaction_id = rv.transaction_id;
+         left join (select *
+                    from public.filings
+                    order by filing_date desc
+                    limit 1) f on f.transaction_id = rv.transaction_id;
 
 
 
@@ -839,7 +842,10 @@ FROM public.share_classes sc
          left join (select id, max(transaction_id) as transaction_id, count(transaction_id) as version
                     from public.share_classes_version
                     group by id) scv on sc.id = scv.id
-         left join public.filings f on f.transaction_id = scv.transaction_id;
+        left join (select *
+                    from public.filings
+                    order by filing_date desc
+                    limit 1) f on f.transaction_id = scv.transaction_id;
 
 
 -- share_classes_version -> share_classes_history
