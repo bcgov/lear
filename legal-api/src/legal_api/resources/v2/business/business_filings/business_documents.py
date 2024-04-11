@@ -121,6 +121,15 @@ def _get_receipt(business: any, filing: Filing, token):
     headers = {"Authorization": "Bearer " + token}
 
     url = f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.storage.payment_token}/receipts'
+
+    business_number = ""
+    if business:
+        if business.is_alternate_name_entity and business.bn15:
+            business_number = business.bn15
+
+        if business.is_legal_entity and business.tax_id:
+            business_number = business.tax_id
+
     receipt = requests.post(
         url,
         json={
@@ -130,7 +139,7 @@ def _get_receipt(business: any, filing: Filing, token):
             ),
             "effectiveDateTime": effective_date if effective_date else "",
             "filingIdentifier": str(filing.id),
-            "businessNumber": business.tax_id if business and business.tax_id else "",
+            "businessNumber": business_number,
         },
         headers=headers,
     )

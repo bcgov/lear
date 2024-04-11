@@ -230,7 +230,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
             business_revision = (
                 db.session.query(business_version)
-                .filter(business_version.change_filing_id == filing.id)
+                .filter(business_version.change_filing_id <= filing.id)
                 .filter(business_version.id == business.id)
                 .first()
             )
@@ -278,7 +278,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
         offices_current = (
             db.session.query(Office, null().label("changed"))
-            .filter(Office.change_filing_id == filing_id)
+            .filter(Office.change_filing_id <= filing_id)
             .filter(office_attribute == business.id)
             .filter(Office.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
@@ -289,21 +289,21 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )
         offices_historical = (
             db.session.query(office_history)
-            .filter(office_history.change_filing_id == filing_id)
+            .filter(office_history.change_filing_id <= filing_id)
             .filter(office_history_attribute == business.id)
             .filter(office_history.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
 
-        # Get all of the valid types in effect for this LegalEntity and Filing
+        # Get all of the valid types in effect for this Business and Filing
         current_types = (
             db.session.query(Office.office_type.label("office_type"))
-            .filter(Office.change_filing_id == filing_id)
+            .filter(Office.change_filing_id <= filing_id)
             .filter(office_attribute == business.id)
             .filter(Office.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
         historical_types = (
             db.session.query(office_history.office_type.label("office_type"))
-            .filter(office_history.change_filing_id == filing_id)
+            .filter(office_history.change_filing_id <= filing_id)
             .filter(office_history_attribute == business.id)
             .filter(office_history.deactivated_date == None)  # noqa: E711,E501;
         )  # pylint: disable=singleton-comparison
@@ -322,13 +322,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
             addresses_current = (
                 db.session.query(Address, null().label("changed"))
-                .filter(Address.change_filing_id == filing_id)
+                .filter(Address.change_filing_id <= filing_id)
                 .filter(Address.office_id == office.id)
             )
 
             addresses_historical = (
                 db.session.query(address_history)
-                .filter(address_history.change_filing_id == filing_id)
+                .filter(address_history.change_filing_id <= filing_id)
                 .filter(address_history.office_id == office.id)
             )
 
