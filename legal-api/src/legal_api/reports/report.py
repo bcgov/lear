@@ -677,7 +677,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["listOfTranslations"] = filing["alteration"].get("nameTranslations", [])
             # Get previous translations for deleted translations. No record created in aliases version for deletions
             filing["previousNameTranslations"] = VersionedBusinessDetailsService.get_name_translations_revision(
-                self._filing.transaction_id, self._business.id
+                self._filing, self._business.id
             )
         if filing["alteration"].get("shareStructure", None):
             filing["shareClasses"] = filing["alteration"]["shareStructure"].get("shareClasses", [])
