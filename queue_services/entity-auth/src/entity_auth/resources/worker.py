@@ -253,18 +253,23 @@ def get_firm_affiliation_passcode(business: AlternateName | LegalEntity):
             pass_code = business.legal_entity.last_name + ", " + business.legal_entity.first_name
             if business.legal_entity.middle_initial:
                 pass_code = pass_code + " " + business.legal_entity.middle_initial
-        elif business.is_owned_by_legal_entity_org or business.is_owned_by_colin_entity:
+        elif business.is_owned_by_legal_entity_org:
             pass_code = business.legal_name
+        elif business.is_owned_by_colin_entity:
+            pass_code = business.colin_entity.organization_name
 
     elif entity_roles := EntityRole.get_entity_roles(business.id, end_date):
-        party = entity_roles[0].related_entity
-
-        if party.entity_type == "organization":
-            pass_code = party.legal_name
+        entity_role = entity_roles[0]
+        if entity_role.is_related_colin_entity:
+            pass_code = entity_role.related_colin_entity.name
         else:
-            pass_code = party.last_name + ", " + party.first_name
-            if hasattr(party, "middle_initial") and party.middle_initial:
-                pass_code = pass_code + " " + party.middle_initial
+            party = entity_role.related_entity
+            if party.entity_type == "organization":
+                pass_code = party.legal_name
+            else:
+                pass_code = party.last_name + ", " + party.first_name
+                if hasattr(party, "middle_initial") and party.middle_initial:
+                    pass_code = pass_code + " " + party.middle_initial
 
     return pass_code
 
