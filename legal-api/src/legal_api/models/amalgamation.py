@@ -82,14 +82,22 @@ class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-at
     def get_amalgamation_revision_obj(cls, filing, legal_entity_id):
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
-        amalgamation_version = history_cls(Amalgamation)
-        amalgamation = (
-            db.session.query(amalgamation_version)
-            .filter(amalgamation_version.change_filing_id == filing.id)
-            .filter(amalgamation_version.legal_entity_id == legal_entity_id)
-            .first()
+        amalgamation_revision = (
+            db.session.query(Amalgamation)
+            .filter(Amalgamation.legal_entity_id == legal_entity_id)
+            .one_or_none()
         )
-        return amalgamation
+
+        # The history table has the old revisions, not the current one.
+        if amalgamation_revision and amalgamation_revision.change_filing_id != filing.id:
+            amalgamation_version = history_cls(Amalgamation)
+            amalgamation_revision = (
+                db.session.query(amalgamation_version)
+                .filter(amalgamation_version.change_filing_id == filing.id)
+                .filter(amalgamation_version.legal_entity_id == legal_entity_id)
+                .first()
+            )
+        return amalgamation_revision
 
     @classmethod
     def get_amalgamation_revision_json(cls, filing, legal_entity_id):
