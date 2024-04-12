@@ -83,9 +83,7 @@ class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-at
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
         amalgamation_revision = (
-            db.session.query(Amalgamation)
-            .filter(Amalgamation.legal_entity_id == legal_entity_id)
-            .one_or_none()
+            db.session.query(Amalgamation).filter(Amalgamation.legal_entity_id == legal_entity_id).one_or_none()
         )
 
         # The history table has the old revisions, not the current one.
