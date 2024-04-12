@@ -19,7 +19,6 @@ import uuid
 from datedelta import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
-from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
@@ -123,6 +122,7 @@ def factory_alternate_name(
     identifier=None,
     name=None,
     name_type=AlternateName.NameType.DBA,
+    entity_type=None,
     bn15=None,
     legal_entity_id=None,
     start_date=EPOCH_DATETIME,
@@ -139,6 +139,7 @@ def factory_alternate_name(
         identifier=identifier,
         name=name,
         name_type=name_type,
+        entity_type=entity_type,
         bn15=bn15,
         legal_entity_id=legal_entity_id,
         start_date=start_date,

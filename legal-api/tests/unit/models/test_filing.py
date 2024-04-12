@@ -36,7 +36,6 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
 )
 from sqlalchemy.exc import DataError
-from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Filing, LegalEntity, User

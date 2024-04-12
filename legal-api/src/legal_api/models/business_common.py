@@ -187,7 +187,7 @@ class BusinessCommon:
         """
         from . import ColinEntity, LegalEntity
 
-        if self.entity_type == self.EntityTypes.SOLE_PROP:
+        if self.is_alternate_name_entity:
             if self.legal_entity_id:
                 owner = LegalEntity.find_by_id(self.legal_entity_id)
                 return owner._legal_name if owner else None

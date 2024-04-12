@@ -638,9 +638,7 @@ class LegalEntity(
             and (state_filing := Filing.find_by_id(self.state_filing_id))
             and state_filing.is_amalgamation_application
         ):
-            return Amalgamation.get_amalgamation_revision_json(
-                state_filing.transaction_id, state_filing.legal_entity_id
-            )
+            return Amalgamation.get_amalgamation_revision_json(state_filing, state_filing.legal_entity_id)
 
         return None
 
