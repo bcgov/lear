@@ -279,7 +279,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         office_attribute = Office.legal_entity_id if business.is_legal_entity else Office.alternate_name_id
 
         offices_current = (
-            db.session.query(Office, null().label("changed"))
+            db.session.query(Office)
             .filter(Office.change_filing_id <= filing_id)
             .filter(office_attribute == business.id)
             .filter(Office.deactivated_date == None)  # noqa: E711,E501;
@@ -289,8 +289,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         office_history_attribute = (
             office_history.legal_entity_id if business.is_legal_entity else office_history.alternate_name_id
         )
+        office_history_columns = VersionedBusinessDetailsService.select_revision_columns(office_history)
         offices_historical = (
-            db.session.query(office_history)
+            db.session.query(*office_history_columns)
             .filter(office_history.change_filing_id <= filing_id)
             .filter(office_history_attribute == business.id)
             .filter(office_history.deactivated_date == None)  # noqa: E711,E501;
@@ -315,9 +316,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )  # result is like [("businessOffice", )]
 
         address_history = history_cls(Address)
+        add_history_columns = VersionedBusinessDetailsService.select_revision_columns(address_history)
         for item in valid_office_types:
             valid_office_type = item[0]
-            office, _ = (
+            office = (
                 offices_current.filter(Office.office_type == valid_office_type)
                 .union(offices_historical.filter(office_history.office_type == valid_office_type))
                 .first()
@@ -326,20 +328,19 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             offices_json[office.office_type] = {}
 
             addresses_current = (
-                db.session.query(Address, null().label("changed"))
+                db.session.query(Address)
                 .filter(Address.change_filing_id <= filing_id)
                 .filter(Address.office_id == office.id)
             )
 
             addresses_historical = (
-                db.session.query(address_history)
+                db.session.query(*add_history_columns)
                 .filter(address_history.change_filing_id <= filing_id)
                 .filter(address_history.office_id == office.id)
             )
 
-            addresses_result = addresses_current.union(addresses_historical).all()
-            for address_result in addresses_result:
-                address, _ = address_result
+            addresses = addresses_current.union(addresses_historical).all()
+            for address in addresses:
                 offices_json[office.office_type][
                     f"{address.address_type}Address"
                 ] = VersionedBusinessDetailsService.address_revision_json(address)
@@ -609,7 +610,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(business_attr_id == int(party_id))
         )
 
-        columns_to_select = [col for col in party_version.__table__.columns if col.name != "changed"]
+        columns_to_select = VersionedBusinessDetailsService.select_revision_columns(party_version)
         party_history = (
             db.session.query(*columns_to_select)
             .filter(party_version.change_filing_id == filing.id)
@@ -759,7 +760,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )
 
         address_version = history_cls(Address)
-        columns_to_select = [col for col in address_version.__table__.columns if col.name != "changed"]
+        columns_to_select = VersionedBusinessDetailsService.select_revision_columns(address_version)
         address_history = (
             db.session.query(*columns_to_select)
             .filter(address_version.change_filing_id == filing.id)
@@ -887,3 +888,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_contact_point_revision(filing):
         """Return contact point from filing json."""
         return filing.json["filing"]["incorporationApplication"].get("contactPoint", {})
+
+    @staticmethod
+    def select_revision_columns(revision_table):
+        """Return contact point from filing json."""
+        return [col for col in revision_table.__table__.columns if col.name != "changed"]
