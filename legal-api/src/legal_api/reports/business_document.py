@@ -125,7 +125,7 @@ class BusinessDocument:
                 business_json["business"]["businessName"] = self._legal_entity.alternate_names[0].name
             else:
                 business_json["business"]["businessName"] = self._legal_entity.business_name
- 
+
             business_json["registrarInfo"] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
             self._set_description(business_json)
             self._set_epoch_date(business_json)
@@ -524,10 +524,14 @@ class BusinessDocument:
     def _set_meta_info(self, legal_entity: dict):
         legal_entity["environment"] = f"{self._get_environment()} BUSINESS #{self._legal_entity.identifier}".lstrip()
         legal_entity["meta_title"] = "Business Summary on {}".format(legal_entity["report_date_time"])
-        if self._legal_entity.alternate_names and self._legal_entity.legal_name == None:
-            legal_entity["meta_subject"] = "{} ({})".format(self._legal_entity.alternate_names[0].name, self._legal_entity.identifier) 
+        if self._legal_entity.alternate_names and self._legal_entity.legal_name is None:
+            legal_entity["meta_subject"] = "{} ({})".format(
+                self._legal_entity.alternate_names[0].name, self._legal_entity.identifier
+            )
         else:
-            legal_entity["meta_subject"] = "{} ({})".format(self._legal_entity.legal_name, self._legal_entity.identifier)
+            legal_entity["meta_subject"] = "{} ({})".format(
+                self._legal_entity.legal_name, self._legal_entity.identifier
+            )
 
     @staticmethod
     def _get_environment():
