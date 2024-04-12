@@ -14,7 +14,7 @@
 """The Unit Tests and the helper routines."""
 import base64
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 
 from business_model import Address, AlternateName, EntityRole, Filing, LegalEntity, Office
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
@@ -44,23 +44,21 @@ def create_filing(
 
 
 def create_legal_entity(
-    identifier,
-    entity_type=None,
-    legal_name=None,
-    bn9=None,
-    tax_id=None,
-    change_filing_id=None,
+    identifier, entity_type=None, legal_name=None, bn9=None, tax_id=None, change_filing_id=None, legal_entity=None
 ):  # pylint: disable=too-many-arguments
     """Return a test legal_entity."""
-    legal_entity = LegalEntity()
-    legal_entity.identifier = identifier
-    legal_entity.entity_type = entity_type
-    legal_entity.bn9 = bn9
-    legal_entity.change_filing_id = change_filing_id
+    if entity_type != "SP":
+        legal_entity = LegalEntity()
+        legal_entity.identifier = identifier
+        legal_entity.entity_type = entity_type
+        legal_entity._legal_name = legal_name
+        legal_entity.bn9 = bn9
+        legal_entity.change_filing_id = change_filing_id
 
-    alternate_name = create_alternate_name(operating_name=legal_name, tax_id=tax_id)
-    alternate_name.change_filing_id = change_filing_id
-    legal_entity.alternate_names.append(alternate_name)
+    if entity_type in ["SP", "GP"]:
+        alternate_name = create_alternate_name(identifier, entity_type, legal_name, change_filing_id, tax_id=tax_id)
+        alternate_name.change_filing_id = change_filing_id
+        legal_entity.alternate_names.append(alternate_name)
 
     office = create_business_address(change_filing_id=change_filing_id)
     legal_entity.offices.append(office)
@@ -68,14 +66,16 @@ def create_legal_entity(
     return legal_entity
 
 
-def create_alternate_name(operating_name, tax_id=None):
+def create_alternate_name(identifier, entity_type, operating_name, change_filing_id, tax_id=None):
     """Create operating name."""
     alternate_name = AlternateName(
-        # identifier="BC1234567",
-        name_type=AlternateName.NameType.OPERATING,
+        identifier=identifier,
+        entity_type=entity_type,
+        name_type=AlternateName.NameType.DBA,
         name=operating_name,
         bn15=tax_id,
-        start_date=datetime.utcnow(),
+        start_date=datetime.now(timezone.utc),
+        change_filing_id=change_filing_id,
     )
     return alternate_name
 
@@ -156,7 +156,7 @@ def create_entity_role(legal_entity, related_entity, roles, appointment_date=EPO
 
 
 def create_data(filing_type, entity_type, identifier, bn9=None, tax_id=None):
-    """Test data for registration."""
+    """Test data."""
     person_json = {
         "officer": {
             "id": 2,
@@ -191,9 +191,11 @@ def create_data(filing_type, entity_type, identifier, bn9=None, tax_id=None):
             filing_type: {"nameRequest": {"nrNumber": "NR1234567"}},
         }
     }
-    if filing_type == "dissolution":
+    if filing_type == Filing.FilingTypes.AMALGAMATIONAPPLICATION.value:
+        json_filing["filing"][filing_type]["type"] = "regular"
+    elif filing_type == Filing.FilingTypes.DISSOLUTION.value:
         json_filing["filing"][filing_type]["dissolutionType"] = "voluntry"
-    elif filing_type == "restoration":
+    elif filing_type == Filing.FilingTypes.RESTORATION.value:
         json_filing["filing"][filing_type]["type"] = "fullRestoration"
 
     filing = create_filing(json_filing=json_filing)
@@ -204,14 +206,18 @@ def create_data(filing_type, entity_type, identifier, bn9=None, tax_id=None):
 
     filing.save()
 
+    legal_entity = None
+    if entity_type == "SP":
+        legal_entity = create_legal_entity("BC1234567", "BC", "name of sp owner")
     legal_entity = create_legal_entity(
         identifier,
         entity_type=entity_type,
         legal_name=f"test-{filing_type}-{entity_type}",
         tax_id=tax_id,
         change_filing_id=filing.id,
+        legal_entity=legal_entity,
     )
-    if filing_type == "dissolution":
+    if filing_type == Filing.FilingTypes.DISSOLUTION.value:
         legal_entity.state = LegalEntity.State.HISTORICAL.name
     related_entity_json = person_json
     if entity_type == "GP":
@@ -225,10 +231,14 @@ def create_data(filing_type, entity_type, identifier, bn9=None, tax_id=None):
     create_entity_role(legal_entity, related_entity, [role])
     legal_entity.save()
 
-    filing.legal_entity_id = legal_entity.id
+    if entity_type == "SP":
+        filing.alternate_name_id = legal_entity.alternate_names[0].id
+    else:
+        filing.legal_entity_id = legal_entity.id
+
     filing.save()
 
-    return filing, legal_entity
+    return filing, legal_entity.alternate_names[0] if entity_type in ["SP", "GP"] else legal_entity
 
 
 def get_json_message(filing_id, identifier, message_id, type):  # pylint: disable=redefined-builtin
