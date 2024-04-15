@@ -26,6 +26,7 @@ from entity_filer.filing_processors.filing_components.alternate_name import (
     update_partner_change,
     update_proprietor_change,
 )
+from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import get_or_create_party, merge_all_parties
 from entity_filer.filing_processors.registration import get_partnership_name
 
@@ -38,7 +39,8 @@ def process(
 ):
     """Render the change of registration filing onto the business model objects."""
     filing_meta.change_of_registration = {}
-    match business.entity_type:
+    entity_type = business.entity_type
+    match entity_type:
         case BusinessCommon.EntityTypes.PARTNERSHIP:
             business, alternate_name = update_partner_change(
                 legal_entity=business,
@@ -60,12 +62,10 @@ def process(
 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
-        business_office_json = dpath.util.get(change_filing, "/changeOfRegistration/offices/businessOffice")
-        for updated_address in business_office_json.values():
-            if updated_address.get("id", None):
-                address = Address.find_by_id(updated_address.get("id"))
-                if address:
-                    update_address(address, updated_address)
+        offices = dpath.util.get(change_filing, "/changeOfRegistration/offices")
+        update_offices(alternate_name, offices)
+        if entity_type == BusinessCommon.EntityTypes.PARTNERSHIP:
+            update_offices(business, offices)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
