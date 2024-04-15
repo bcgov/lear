@@ -24,6 +24,7 @@ from entity_filer import db
 from entity_filer.exceptions import DefaultException
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import legal_entity_info
+from entity_filer.filing_processors.filing_components.offices import delete_existing_offices
 from entity_filer.filing_processors.filing_components.parties import get_or_create_party
 from entity_filer.utils.legislation_datetime import LegislationDatetime
 
@@ -52,6 +53,8 @@ def update_partner_change(
         else:
             business_start_date = alternate_name.business_start_date
 
+        existing_offices = delete_existing_offices(alternate_name)
+
         # alternate_name.delete()
         db.session.add(alternate_name)
         db.session.commit()
@@ -74,6 +77,8 @@ def update_partner_change(
             naics_description=alternate_name.naics_description,
         )
         legal_entity.alternate_names.append(new_alternate_name)
+        for office in existing_offices:
+            new_alternate_name.append(office)
 
         filing_meta.update(
             {
@@ -154,6 +159,8 @@ def update_proprietor_change(
         alternate_name.end_date = change_filing_rec.effective_date
         alternate_name.change_filing_id = change_filing_rec.id
 
+        existing_offices = delete_existing_offices(alternate_name)
+
         # alternate_name.delete()
         db.session.add(alternate_name)
         db.session.commit()
@@ -179,6 +186,8 @@ def update_proprietor_change(
             naics_description=alternate_name.naics_description,
         )
         proprietor.alternate_names.append(new_alternate_name)
+        for office in existing_offices:
+            new_alternate_name.append(office)
 
         filing_meta.update(
             {
