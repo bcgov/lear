@@ -63,9 +63,10 @@ def process(
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
         offices = dpath.util.get(change_filing, "/changeOfRegistration/offices")
-        update_offices(alternate_name, offices)
         if entity_type == BusinessCommon.EntityTypes.PARTNERSHIP:
             update_offices(business, offices)
+        else:
+            update_offices(alternate_name, offices)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):

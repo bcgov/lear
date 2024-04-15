@@ -139,9 +139,10 @@ def process(
         }
 
     if offices := registration_filing["offices"]:
-        update_offices(alternate_name, offices)
         if entity_type == BusinessCommon.EntityTypes.PARTNERSHIP:
             update_offices(business, offices)
+        else:
+            update_offices(alternate_name, offices)
 
     if parties := registration_filing.get("parties"):
         merge_all_parties(business, filing_rec, {"parties": parties})
@@ -198,13 +199,11 @@ def merge_partnership_registration(
         name_type=AlternateName.NameType.DBA,
         start_date=filing_rec.effective_date,
         business_start_date=business.start_date,
-        state=BusinessCommon.State.ACTIVE,
         entity_type=BusinessCommon.EntityTypes.PARTNERSHIP,
     )
 
     if naics_dict := registration_filing.get("business", {}).get("naics"):
         set_naics(business, naics_dict)
-        set_naics(alternate_name, naics_dict)
 
     business.alternate_names.append(alternate_name)
 

@@ -53,8 +53,6 @@ def update_partner_change(
         else:
             business_start_date = alternate_name.business_start_date
 
-        existing_offices = delete_existing_offices(alternate_name)
-
         # alternate_name.delete()
         db.session.add(alternate_name)
         db.session.commit()
@@ -70,15 +68,9 @@ def update_partner_change(
             name_type=AlternateName.NameType.DBA,
             start_date=alternate_name.start_date,
             business_start_date=business_start_date,
-            state=BusinessCommon.State.ACTIVE,
             entity_type=BusinessCommon.EntityTypes.PARTNERSHIP,
-            naics_key=alternate_name.naics_key,
-            naics_code=alternate_name.naics_code,
-            naics_description=alternate_name.naics_description,
         )
         legal_entity.alternate_names.append(new_alternate_name)
-        for office in existing_offices:
-            new_alternate_name.append(office)
 
         filing_meta.update(
             {
@@ -87,7 +79,7 @@ def update_partner_change(
             }
         )
 
-    # Update nature of business for LegalEntity and AlternateName
+    # Update nature of business for LegalEntity
     current_alternate_name = AlternateName.find_by_identifier(legal_entity.identifier)
     if (naics := change_filing.get(f"{filing_type}", {}).get("business", {}).get("naics")) and (
         naics_code := naics.get("naicsCode")
@@ -101,7 +93,6 @@ def update_partner_change(
                 }
             )
             legal_entity_info.update_naics_info(legal_entity, naics)
-            legal_entity_info.update_naics_info(current_alternate_name, naics)
 
     return legal_entity, current_alternate_name
 
