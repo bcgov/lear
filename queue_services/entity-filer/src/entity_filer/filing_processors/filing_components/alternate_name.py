@@ -136,18 +136,24 @@ def update_proprietor_change(
     # Update operating name
     name_request = dpath.util.get(change_filing, f"/{filing_type}/nameRequest", default=None)
     identifier = dpath.util.get(change_filing_rec.filing_json, "filing/business/identifier")
+    alternate_name = AlternateName.find_by_identifier(identifier)
+    proprietor = (
+        LegalEntity.find_by_id(alternate_name.legal_entity_id)
+        if alternate_name.legal_entity_id
+        else ColinEntity.find_by_id(alternate_name.colin_entity_id)
+    )
     if name_request and (to_legal_name := name_request.get("legalName")):
-        alternate_name = AlternateName.find_by_identifier(identifier)
-        proprietor = (
-            LegalEntity.find_by_id(alternate_name.legal_entity_id)
-            if alternate_name.legal_entity_id
-            else ColinEntity.find_by_id(alternate_name.colin_entity_id)
-        )
-
         if start := change_filing.get("filing", {}).get(f"{filing_type}", {}).get("startDate"):
             business_start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(start)
         else:
             business_start_date = alternate_name.business_start_date
+
+        if isinstance(proprietor, ColinEntity):
+            delivery_address = proprietor.delivery_address
+            mailing_address = proprietor.mailing_address
+        else:
+            delivery_address = proprietor.entity_delivery_address
+            mailing_address = proprietor.entity_mailing_address
 
         if isinstance(proprietor, LegalEntity) and proprietor.entity_type == BusinessCommon.EntityTypes.PERSON:
             delivery_address_id = None
@@ -212,7 +218,7 @@ def update_proprietor_change(
 
         return proprietor, new_alternate_name
 
-    return None, None
+    return proprietor, alternate_name
 
 
 def get_partnership_name(parties_dict: dict):

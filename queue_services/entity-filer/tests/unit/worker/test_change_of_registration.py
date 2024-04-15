@@ -27,6 +27,7 @@ from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, COURT
 # from legal_api.services import NaicsService
 from entity_filer.filing_processors.filing_components.legal_entity_info import NaicsService
 from entity_filer.resources.worker import FilingMessage, process_filing
+from entity_filer.services import BusinessService
 from tests.unit import (
     create_alternate_name,
     create_entity,
@@ -288,17 +289,22 @@ def test_change_of_registration_business_address(
         process_filing(filing_msg)
 
     # Check outcome
-    changed_delivery_address = Address.find_by_id(business_delivery_address_id)
+    business = BusinessService.fetch_business_by_filing(filing_submission)
+    mailing_address = business.office_mailing_address.one_or_none()
+    delivery_address = business.office_delivery_address.one_or_none()
+
+    assert mailing_address
+    assert delivery_address
     for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
         assert (
-            changed_delivery_address.json[key]
-            == filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"]["deliveryAddress"][key]
-        )
-    changed_mailing_address = Address.find_by_id(business_mailing_address_id)
-    for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
-        assert (
-            changed_mailing_address.json[key]
+            mailing_address.json[key]
             == filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"]["mailingAddress"][key]
+        )
+
+    for key in ["streetAddress", "postalCode", "addressCity", "addressRegion"]:
+        assert (
+            delivery_address.json[key]
+            == filing["filing"]["changeOfRegistration"]["offices"]["businessOffice"]["deliveryAddress"][key]
         )
 
 
