@@ -209,9 +209,7 @@ class BusinessCommon:
         if not self.is_firm:
             return self._legal_name
 
-        if self.is_alternate_name_entity and (
-            alternate_name := AlternateName.find_by_identifier(identifier=self.identifier)
-        ):
+        if alternate_name := AlternateName.find_by_identifier(identifier=self.identifier):
             return alternate_name.name
 
         return None
