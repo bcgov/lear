@@ -528,7 +528,7 @@ def test_worker_partner_name_and_address_change(app, session, mocker, test_name)
         assert business.entity_roles.all()[1].cessation_date is None
 
     if test_name == "gp_delete_partner":
-        assert len(business.entity_roles.all())==1
+        assert len(business.entity_roles.all()) == 1
 
     if test_name == "gp_add_partner":
         assert len(EntityRole.get_parties_by_role(business_id, "partner")) == 3
