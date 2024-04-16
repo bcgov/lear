@@ -520,7 +520,7 @@ class BusinessDocument:
     def _set_meta_info(self, legal_entity: dict):
         legal_entity["environment"] = f"{self._get_environment()} BUSINESS #{self._business.identifier}".lstrip()
         legal_entity["meta_title"] = "Business Summary on {}".format(legal_entity["report_date_time"])
-        legal_entity["meta_subject"] = "{} ({})".format(self._business.business_name, self._legal_entity.identifier)
+        legal_entity["meta_subject"] = "{} ({})".format(self._business.business_name, self._business.identifier)
 
     @staticmethod
     def _get_environment():
