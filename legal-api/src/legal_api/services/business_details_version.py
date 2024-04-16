@@ -459,7 +459,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         )
 
         name_translations_version = history_cls(AlternateName)
-        columns_to_select = [col for col in name_translations_version.__table__.columns if col.name != 'changed']
+        columns_to_select = [col for col in name_translations_version.__table__.columns if col.name != "changed"]
         name_translations_history = (
             db.session.query(*columns_to_select)
             .filter(name_translations_version.change_filing_id == filing.id)
