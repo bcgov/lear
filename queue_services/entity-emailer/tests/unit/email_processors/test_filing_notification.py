@@ -93,6 +93,9 @@ def test_maintenance_notification(app, session, mocker, status, filing_type, sub
     mocker.patch(
         'entity_emailer.email_processors.filing_notification.get_user_email_from_auth',
         return_value='user@email.com')
+    mocker.patch(
+        'entity_emailer.email_processors.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
                 as mock_get_recipients:

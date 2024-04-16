@@ -143,11 +143,11 @@ def get_org_id_for_temp_identifier(identifier, token: str) -> int:
     """Get org id from auth for the specific identifier."""
     account_response = get_account_by_affiliated_identifier(identifier, token)
     orgs = account_response.get('orgs')
-    return orgs[0].get('id') # Temp identifer cannot be present in more than one account
+    return orgs[0].get('id')  # Temp identifer cannot be present in more than one account
 
 
 def get_entity_dashboard_url(identifier, token: str) -> str:
-    """Get my business registry url when temp identifier otherwise entity dashboard url"""
+    """Get my business registry url when temp identifier otherwise entity dashboard url."""
     entity_dashboard_url = None
     if identifier.startswith('T'):
         org_id = get_org_id_for_temp_identifier(identifier, token)
