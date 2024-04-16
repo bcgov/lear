@@ -84,6 +84,7 @@ class ColinEntity(Versioned, db.Model):
                 "id": self.id,
                 "organizationName": self.organization_name,
                 "identifier": self.identifier,
+                "partyType": "organization",
             }
         }
         member["officer"]["email"] = self.email

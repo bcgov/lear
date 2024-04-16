@@ -303,8 +303,6 @@ class BusinessDocument:
                 party["mailingAddress"] = BusinessDocument._format_address(party["mailingAddress"])
             if party.get("deliveryAddress"):
                 party["deliveryAddress"] = BusinessDocument._format_address(party["deliveryAddress"])
-            if not party.get("officer", {}).get("partyType") and not party.get("officer", {}).get("lastName"):
-                party["officer"]["partyType"] = "organization"
         legal_entity["parties"] = party_json
 
     def _set_name_translations(self, legal_entity: dict):
