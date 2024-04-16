@@ -26,6 +26,7 @@ from jinja2 import Template
 from legal_api.models import Business, Filing, UserRoles
 
 from entity_emailer.email_processors import (
+    get_entity_dashboard_url,
     get_filing_info,
     get_recipients,
     get_user_email_from_auth,
@@ -254,7 +255,7 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.get('identifier', ''),
+        entity_dashboard_url=get_entity_dashboard_url(business.get('identifier'), token),
         email_header=filing_name.upper(),
         filing_type=filing_type,
         numbered_description=numbered_description,

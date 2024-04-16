@@ -25,12 +25,15 @@ from tests.unit import prep_incorp_filing, prep_maintenance_filing
     ('PAID'),
     ('COMPLETED'),
 ])
-def test_incorp_notification(app, session, status):
+def test_incorp_notification(app, session, mocker, status):
     """Assert that the legal name is changed."""
     # setup filing + business for email
     filing = prep_incorp_filing(session, 'BC1234567', '1', status, 'BC')
     token = 'token'
     # test processor
+    mocker.patch(
+        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': status}, token)
@@ -60,12 +63,15 @@ def test_incorp_notification(app, session, status):
     ('ULC'),
     ('CC'),
 ])
-def test_numbered_incorp_notification(app, session, legal_type):
+def test_numbered_incorp_notification(app, session, mocker, legal_type):
     """Assert that the legal name is changed."""
     # setup filing + business for email
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', legal_type=legal_type)
     token = 'token'
     # test processor
+    mocker.patch(
+        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]):
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
@@ -93,6 +99,9 @@ def test_maintenance_notification(app, session, mocker, status, filing_type, sub
     mocker.patch(
         'entity_emailer.email_processors.filing_notification.get_user_email_from_auth',
         return_value='user@email.com')
+    mocker.patch(
+        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
                 as mock_get_recipients:

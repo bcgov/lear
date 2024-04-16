@@ -54,12 +54,15 @@ def test_process_filing_missing_app(app, session):
     ('PAID'),
     ('COMPLETED'),
 ])
-def test_process_incorp_email(app, session, option):
+def test_process_incorp_email(app, session, mocker, option):
     """Assert that an INCORP email msg is processed correctly."""
     # setup filing + business for email
     filing = prep_incorp_filing(session, 'BC1234567', '1', option, 'BC')
     token = '1'
     # test worker
+    mocker.patch(
+        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
