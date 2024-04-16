@@ -66,6 +66,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     # urls
     DASHBOARD_URL = os.getenv('DASHBOARD_URL', None)
+    AUTH_WEB_URL = os.getenv('AUTH_WEB_URL', None)
     NOTIFY_API_URL = os.getenv('NOTIFY_API_URL', None)
     LEGAL_API_URL = os.getenv('LEGAL_API_URL', None)
     PAY_API_URL = os.getenv('PAY_API_URL', None)
