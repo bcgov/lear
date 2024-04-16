@@ -468,6 +468,7 @@ def delete_non_memoized_entity_role(
 
         candidate.cessation_date = filing.effective_date
         candidate.change_filing_id = filing.id
+        candidate.delete()
 
     return None
 
