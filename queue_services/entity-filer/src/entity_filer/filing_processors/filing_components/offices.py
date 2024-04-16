@@ -65,3 +65,5 @@ def delete_existing_offices(business: any):
     if existing_offices := business.offices.all():
         for office in existing_offices:
             business.offices.remove(office)
+        return existing_offices
+    return []

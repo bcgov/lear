@@ -21,13 +21,7 @@ from business_model import EntityRole, Filing, LegalEntity, LegalEntityIdentifie
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 
-# from legal_api.services import NaicsService
-
-
-class NaicsService:
-    @staticmethod
-    def find_by_code(naics_code: str):
-        return None
+from entity_filer.services.naics import NaicsService
 
 
 def set_corp_type(legal_entity: LegalEntity, legal_entity_info: Dict) -> Dict:
@@ -83,19 +77,16 @@ def update_legal_entity_info(corp_num: str, legal_entity: LegalEntity, legal_ent
     return None
 
 
-def update_naics_info(legal_entity: LegalEntity, naics: Dict):
+def update_naics_info(business: any, naics: Dict):
     """Update naics info."""
     # TODO update NAICS info
-    legal_entity.naics_code = naics.get("naicsCode")
-    if legal_entity.naics_code:
-        # TODO: Uncomment next 2 lines when find_by_code implemented and delete "pass"
-        # naics_structure = NaicsService.find_by_code(legal_entity.naics_code)
-        # legal_entity.naics_key = naics_structure["naicsKey"]
-        pass
+    business.naics_code = naics.get("naicsCode")
+    if business.naics_code and (naics_structure := NaicsService.find_by_code(business.naics_code)):
+        business.naics_key = naics_structure["naicsKey"]
     else:
-        legal_entity.naics_code = None
-        legal_entity.naics_key = None
-    legal_entity.naics_description = naics.get("naicsDescription")
+        business.naics_code = None
+        business.naics_key = None
+    business.naics_description = naics.get("naicsDescription")
 
 
 def get_next_corp_num(entity_type: str):

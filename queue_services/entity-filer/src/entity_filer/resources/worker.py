@@ -285,7 +285,9 @@ def process_filing(
                 change_of_name.process(business, {filing_type: filing}, filing_meta)
 
             case "changeOfRegistration":
-                change_of_registration.process(business, filing_submission, {filing_type: filing}, filing_meta)
+                business, alternate_name = change_of_registration.process(
+                    business, filing_submission, {filing_type: filing}, filing_meta
+                )
 
             case "consentContinuationOut":
                 consent_continuation_out.process(business, filing_submission, {filing_type: filing}, filing_meta)
@@ -341,7 +343,7 @@ def process_filing(
     if alternate_name:
         business_type = alternate_name.entity_type
     else:
-        business_type = business.entity_type if business else filing_submission["business"]["legal_type"]
+        business_type = business.entity_type if business else filing_submission.json_legal_type
 
     filing_submission.set_processed(business_type)
 
@@ -349,7 +351,8 @@ def process_filing(
         json.dumps(filing_meta.asjson, default=json_serial)
     )
 
-    db.session.add(business)
+    if business:
+        db.session.add(business)
     if alternate_name:
         db.session.add(alternate_name)
     db.session.add(filing_submission)
@@ -407,8 +410,10 @@ def process_filing(
         #     corp_type_code=business.legal_type
         # )
 
-    if business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"] and any(
-        "correction" in x for x in legal_filings
+    if (
+        business
+        and business.entity_type in ["SP", "GP", "BC", "BEN", "CC", "ULC", "CP"]
+        and any("correction" in x for x in legal_filings)
     ):
         # TODO
         pass
