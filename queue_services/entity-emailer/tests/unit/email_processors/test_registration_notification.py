@@ -35,7 +35,7 @@ def test_registration_notification(app, session, mocker, status, legal_type):
     token = 'token'
     # test processor
     mocker.patch(
-        'entity_emailer.email_processors.get_entity_dashboard_url',
+        'entity_emailer.email_processors.registration_notification.get_entity_dashboard_url',
         return_value='https://dummyurl.gov.bc.ca')
     with patch.object(registration_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = registration_notification.process(
