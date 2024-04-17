@@ -40,7 +40,6 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     continuation_out_filing.comments.append(
         Comment(
-            comment=details,
             staff_id=continuation_out_filing.submitter_id
         )
     )
