@@ -16,7 +16,7 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Comment, Filing
+from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
