@@ -189,7 +189,7 @@ def factory_filing(business, data_dict,
                    is_future_effective=False):
     """Create a filing."""
     filing = Filing()
-    filing.business_id = business.id
+    filing.business_id = business.id if business else None
     filing.filing_date = filing_date
     filing.filing_json = data_dict
     if filing_type:
