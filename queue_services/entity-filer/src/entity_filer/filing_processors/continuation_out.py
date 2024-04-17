@@ -32,7 +32,6 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     continuation_out_json = filing['continuationOut']
 
-    details = continuation_out_json.get('details')
     legal_name = continuation_out_json.get('legalName')
     continuation_out_date_str = continuation_out_json.get('continuationOutDate')
     continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
