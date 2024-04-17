@@ -15,7 +15,7 @@ click==7.1.2
 ecdsa==0.14.1
 flask-jwt-oidc==0.1.5
 flask-restplus==0.13.0
-gunicorn==20.0.4
+gunicorn==22.0.0
 idna==2.10
 itsdangerous==1.1.0
 jsonschema==3.2.0
