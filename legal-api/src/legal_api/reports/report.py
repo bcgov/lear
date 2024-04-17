@@ -237,7 +237,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _get_template_data(self):
         if self._report_key in ["noticeOfArticles", "amendedRegistrationStatement", "correctedRegistrationStatement"]:
-            filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
+            filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business)
             self._format_noa_data(filing)
         else:
             filing = copy.deepcopy(self._filing.filing_json["filing"])
@@ -869,9 +869,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if business_office := filing.get(filing_type).get("offices", {}).get("businessOffice"):
             filing["offices"] = {}
             filing["offices"]["businessOffice"] = business_office
-            offices_json = VersionedBusinessDetailsService.get_office_revision(
-                prev_completed_filing, self._filing.legal_entity_id
-            )
+            offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing, self._business)
             filing["offices"]["businessOffice"]["mailingAddress"]["changed"] = self._compare_address(
                 business_office.get("mailingAddress"), offices_json["businessOffice"]["mailingAddress"]
             )
@@ -903,6 +901,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing, prev_party, True
                     )
+                    # current_party type is person, but prev_party type is organization
+                    # so has issue at _has_party_name_change()
                     if self._has_party_name_change(prev_party_json, party):
                         party["nameChanged"] = True
                         party["previousName"] = self._get_party_name(prev_party_json)
