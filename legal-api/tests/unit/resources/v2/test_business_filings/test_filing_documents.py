@@ -54,7 +54,7 @@ from registry_schemas.example_data import (
 from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION
 
 from legal_api.core import Filing, FilingMeta, FILINGS
-from legal_api.models import Business, Comment, Filing as FilingStorage, UserRoles
+from legal_api.models import Business, Comment, Filing as FilingStorage, RegistrationBootstrap, UserRoles
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -1229,6 +1229,89 @@ def filer_action(filing_name, filing_json, meta_data, business):
         meta_data['alteration']['uploadNewRules'] = True
 
     return meta_data
+
+@pytest.mark.parametrize('test_name, temp_identifier, identifier, entity_type, filing_name, legal_filing, status, expected_msg, expected_http_code', [
+    ('ben_ia_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP.value,
+     'incorporationApplication', INCORPORATION, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/incorporationApplication'},
+                    ]}},
+     HTTPStatus.OK
+     ),
+     ('ben_ia_completed', 'Tb31yQIuBw', 'BC7654321', Business.LegalTypes.BCOMP.value,
+      'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
+      {}, HTTPStatus.NOT_FOUND
+     ),
+     ('ben_amalgamation_paid', 'Tb31yQIuBw', None, 
+     Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.PAID,
+     {'documents': {
+        'legalFilings': [
+            {'amalgamationApplication': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/amalgamationApplication'}
+        ],
+        'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt'
+    }
+     }, HTTPStatus.OK
+     ),
+     ('ben_amalgamation_completed', 'Tb31yQIuBw', 'BC7654321', 
+     Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.COMPLETED,
+     {}, HTTPStatus.NOT_FOUND
+     ),
+     ('sp_registration_paid', 'Tb31yQIuBw', None, Business.LegalTypes.SOLE_PROP.value,
+     'registration', REGISTRATION, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt'
+         }
+     },
+     HTTPStatus.OK
+     ),
+    ('sp_registration_completed', 'Tb31yQIuBw', 'FM7654321', Business.LegalTypes.SOLE_PROP.value,
+     'registration', REGISTRATION, Filing.Status.COMPLETED,
+     {}, HTTPStatus.NOT_FOUND
+     ),
+])
+def test_temp_document_list_for_various_filing_states(session, client, jwt,
+                                                 test_name,
+                                                 temp_identifier,
+                                                 identifier,
+                                                 entity_type,
+                                                 filing_name, legal_filing,
+                                                 status, expected_msg, expected_http_code):
+    """Test document list based on filing states with temp identifier."""
+    # Setup
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_name
+    filing_json['filing']['business']['legalType'] = entity_type
+    if filing_name == 'incorporationApplication':
+        legal_filing['nameRequest']['legalType'] = entity_type
+    filing_json['filing'][filing_name] = legal_filing
+
+    filing_date = datetime.utcnow()
+
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = temp_identifier
+    temp_reg.save()
+
+    business = None
+    if status == 'COMPLETED':
+        business = factory_business(identifier, entity_type=entity_type)
+    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing.skip_status_listener = True
+    filing._status = status
+    filing._payment_completion_date = '2017-10-01'
+    filing.temp_reg = temp_identifier
+    filing.save()
+
+    rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
+
+    # remove the filing ID
+    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+
+    assert rv.status_code == expected_http_code
+    assert rv_data == expected
 
 
 def test_get_receipt(session, client, jwt, requests_mock):
