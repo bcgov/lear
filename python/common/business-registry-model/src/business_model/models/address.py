@@ -44,6 +44,7 @@ class Address(Versioned, db.Model):  # pylint: disable=too-many-instance-attribu
             "id",
             "address_type",
             "legal_entity_id",
+            "alternate_name_id",
             "city",
             "change_filing_id",
             "country",
@@ -69,6 +70,7 @@ class Address(Versioned, db.Model):  # pylint: disable=too-many-instance-attribu
     # parent keys
     legal_entity_id = db.Column("legal_entity_id", db.Integer, db.ForeignKey("legal_entities.id"), index=True)
     change_filing_id = db.Column("change_filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
+    alternate_name_id = db.Column("alternate_name_id", db.Integer, db.ForeignKey("alternate_names.id"), nullable=True)
     office_id = db.Column(
         "office_id",
         db.Integer,

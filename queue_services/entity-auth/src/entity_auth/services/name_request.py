@@ -16,7 +16,7 @@ import json
 from http import HTTPStatus
 
 import requests
-from business_model import Filing, LegalEntity, RegistrationBootstrap
+from business_model import AlternateName, Filing, LegalEntity, RegistrationBootstrap
 from flask import current_app, request
 
 from entity_auth.exceptions import NamexException
@@ -25,7 +25,7 @@ from entity_auth.services.logging import structured_log
 from .bootstrap import AccountService
 
 
-def consume_nr(legal_entity: LegalEntity, filing: Filing):
+def consume_nr(business: AlternateName | LegalEntity, filing: Filing):
     """Update nr to consumed state."""
     try:
         # skip this if none (nrNumber will not be available for numbered company)
@@ -39,7 +39,7 @@ def consume_nr(legal_entity: LegalEntity, filing: Filing):
             token = AccountService.get_bearer_token()
 
             # Create an entity record
-            data = json.dumps({"consume": {"corpNum": legal_entity.identifier}})
+            data = json.dumps({"consume": {"corpNum": business.identifier}})
             rv = requests.patch(
                 url="".join([namex_svc_url, nr_num]),
                 headers={

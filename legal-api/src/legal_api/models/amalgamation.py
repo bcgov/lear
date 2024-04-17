@@ -19,11 +19,9 @@ from __future__ import annotations
 
 from enum import auto
 
-from sql_versioning import Versioned
-from sqlalchemy import or_
-from sqlalchemy_continuum import version_class
+from sql_versioning import Versioned, history_cls
 
-from ..utils.base import BaseEnum
+from ..utils.enum import BaseEnum
 from .db import db
 
 
@@ -38,7 +36,6 @@ class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-at
         vertical = auto()
         horizontal = auto()
 
-    __versioned__ = {}
     __tablename__ = "amalgamations"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -82,33 +79,32 @@ class Amalgamation(Versioned, db.Model):  # pylint: disable=too-many-instance-at
         }
 
     @classmethod
-    def get_amalgamation_revision_obj(cls, transaction_id, business_id):
+    def get_amalgamation_revision_obj(cls, filing, legal_entity_id):
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
-        amalgamation_version = version_class(Amalgamation)
-        amalgamation = (
-            db.session.query(amalgamation_version)
-            .filter(amalgamation_version.transaction_id <= transaction_id)
-            .filter(amalgamation_version.operation_type != 2)
-            .filter(amalgamation_version.business_id == business_id)
-            .filter(
-                or_(
-                    amalgamation_version.end_transaction_id == None,  # noqa: E711;
-                    amalgamation_version.end_transaction_id > transaction_id,
-                )
-            )
-            .order_by(amalgamation_version.transaction_id)
-            .one_or_none()
+        amalgamation_revision = (
+            db.session.query(Amalgamation).filter(Amalgamation.legal_entity_id == legal_entity_id).one_or_none()
         )
-        return amalgamation
+
+        # The history table has the old revisions, not the current one.
+        if amalgamation_revision and amalgamation_revision.change_filing_id != filing.id:
+            amalgamation_version = history_cls(Amalgamation)
+            amalgamation_revision = (
+                db.session.query(amalgamation_version)
+                .filter(amalgamation_version.change_filing_id == filing.id)
+                .filter(amalgamation_version.legal_entity_id == legal_entity_id)
+                .first()
+            )
+        return amalgamation_revision
 
     @classmethod
-    def get_amalgamation_revision_json(cls, transaction_id, business_id):
+    def get_amalgamation_revision_json(cls, filing, legal_entity_id):
         """Get amalgamation json for the given transaction id."""
-        amalgamation = Amalgamation.get_amalgamation_revision_obj(transaction_id, business_id)
-        from .legal_entity import LegalEntity  # pylint: disable=import-outside-toplevel
+        from legal_api.services import business_service  # pylint: disable=import-outside-toplevel
 
-        business = LegalEntity.find_by_internal_id(amalgamation.business_id)
+        amalgamation = Amalgamation.get_amalgamation_revision_obj(filing, legal_entity_id)
+
+        business = business_service.fetch_business_by_filing(filing)
 
         return {
             "amalgamationDate": amalgamation.amalgamation_date.isoformat(),

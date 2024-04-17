@@ -38,7 +38,7 @@ class BusinessDocument:
 
     def __init__(self, business, document_key):
         """Create the Report instance."""
-        self._legal_entity = business
+        self._business = business
         self._document_key = document_key
         self._report_date_time = LegislationDatetime.now()
         self._epoch_filing_date = None
@@ -63,7 +63,7 @@ class BusinessDocument:
     def _get_report_filename(self):
         report_date = str(self._report_date_time)[:19]
         return "{}_{}_{}.pdf".format(
-            self._legal_entity.identifier, report_date, ReportMeta.reports[self._document_key]["reportName"]
+            self._business.identifier, report_date, ReportMeta.reports[self._document_key]["reportName"]
         ).replace(" ", "_")
 
     def _get_template(self):
@@ -120,8 +120,8 @@ class BusinessDocument:
         try:
             # get document data
             business_json["reportType"] = self._document_key
-            business_json["business"] = self._legal_entity.json()
-            business_json["business"]["businessName"] = self._legal_entity.business_name
+            business_json["business"] = self._business.json()
+            business_json["business"]["businessName"] = self._business.business_name
             business_json["registrarInfo"] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
             self._set_description(business_json)
             self._set_epoch_date(business_json)
@@ -138,8 +138,8 @@ class BusinessDocument:
                 self._set_amalgamating_details(business_json)
                 self._set_liquidation_details(business_json)
 
-            if self._legal_entity.entity_type in ["SP", "GP"]:
-                registration_filing = Filing.get_filings_by_types(self._legal_entity, ["registration"])
+            if self._business.entity_type in ["SP", "GP"]:
+                registration_filing = Filing.get_filings_by_types(self._business, ["registration"])
                 if registration_filing:
                     business_json["business"]["registrationDateTime"] = registration_filing[
                         0
@@ -176,14 +176,14 @@ class BusinessDocument:
 
     def _set_epoch_date(self, legal_entity: dict):
         """Set the epoch filing date (date it was imported from COLIN)."""
-        epoch_filing = Filing.get_filings_by_status(self._legal_entity, [Filing.Status.EPOCH])
+        epoch_filing = Filing.get_filings_by_status(self._business, [Filing.Status.EPOCH])
         if epoch_filing:
             self._epoch_filing_date = epoch_filing[0].effective_date
             legal_entity["business"]["epochFilingDate"] = self._epoch_filing_date.isoformat()
 
     def _set_description(self, legal_entity: dict):
         """Set business descriptors used by json and pdf template."""
-        legal_type = self._legal_entity.entity_type
+        legal_type = self._business.entity_type
         corp_type = CorpType.find_by_id(legal_type)
         legal_entity["entityDescription"] = corp_type.full_desc
         act = {
@@ -194,8 +194,8 @@ class BusinessDocument:
         legal_entity["entityAct"] = act.get(legal_type, "Business Corporations Act")
 
         legal_entity["business"]["coopType"] = (
-            BusinessDocument.CP_TYPE_DESCRIPTION[self._legal_entity.association_type]
-            if self._legal_entity.association_type
+            BusinessDocument.CP_TYPE_DESCRIPTION[self._business.association_type]
+            if self._business.association_type
             else NOT_AVAILABLE
         )
 
@@ -207,19 +207,19 @@ class BusinessDocument:
             LegalEntity.EntityTypes.PARTNERSHIP.value: "General Partnership",
             LegalEntity.EntityTypes.SOLE_PROP.value: "Sole Proprietorship",
         }
-        legal_entity["entityShortDescription"] = description.get(self._legal_entity.entity_type, "Corporation")
+        legal_entity["entityShortDescription"] = description.get(self._business.entity_type, "Corporation")
         legal_entity["entityInformalDescription"] = legal_entity["entityShortDescription"].lower()
 
     def _set_dates(self, legal_entity: dict):  # pylint: disable=too-many-branches
         """Set the business json with formatted dates."""
         # business dates
-        if self._legal_entity.last_ar_date:
-            last_ar_date = self._legal_entity.last_ar_date.strftime(OUTPUT_DATE_FORMAT)
+        if self._business.last_ar_date:
+            last_ar_date = self._business.last_ar_date.strftime(OUTPUT_DATE_FORMAT)
         else:
             last_ar_date = NOT_AVAILABLE
         legal_entity["business"]["last_ar_date"] = last_ar_date
-        if self._legal_entity.last_agm_date:
-            last_agm_date = self._legal_entity.last_agm_date.strftime(OUTPUT_DATE_FORMAT)
+        if self._business.last_agm_date:
+            last_agm_date = self._business.last_agm_date.strftime(OUTPUT_DATE_FORMAT)
         else:
             last_agm_date = NOT_AVAILABLE
         legal_entity["business"]["last_agm_date"] = last_agm_date
@@ -227,9 +227,9 @@ class BusinessDocument:
             legal_entity["business"]["epochFilingDate"] = LegislationDatetime.as_legislation_timezone(
                 datetime.fromisoformat(epoch_date)
             ).strftime(OUTPUT_DATE_FORMAT)
-        if self._legal_entity.restoration_expiry_date:
+        if self._business.restoration_expiry_date:
             legal_entity["business"]["restorationExpiryDate"] = LegislationDatetime.format_as_report_string(
-                self._legal_entity.restoration_expiry_date
+                self._business.restoration_expiry_date
             )
         # state change dates
         for filing in legal_entity.get("stateFilings", []):
@@ -258,27 +258,27 @@ class BusinessDocument:
                 datetime.fromisoformat(registration_datetime_str)
             )
         # founding dates
-        founding_datetime = LegislationDatetime.as_legislation_timezone(self._legal_entity.founding_date)
+        founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
         legal_entity["formatted_founding_date_time"] = LegislationDatetime.format_as_report_string(founding_datetime)
         legal_entity["formatted_founding_date"] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
         # dissolution dates
-        if self._legal_entity.dissolution_date:
-            dissolution_datetime = LegislationDatetime.as_legislation_timezone(self._legal_entity.dissolution_date)
+        if self._business.dissolution_date:
+            dissolution_datetime = LegislationDatetime.as_legislation_timezone(self._business.dissolution_date)
             legal_entity["formatted_dissolution_date"] = dissolution_datetime.strftime(OUTPUT_DATE_FORMAT)
         # report dates
         legal_entity["report_date_time"] = LegislationDatetime.format_as_report_string(self._report_date_time)
         legal_entity["report_date"] = self._report_date_time.strftime(OUTPUT_DATE_FORMAT)
-        if self._legal_entity.start_date:
-            legal_entity["start_date_utc"] = self._legal_entity.start_date.strftime(OUTPUT_DATE_FORMAT)
-        if self._legal_entity.restoration_expiry_date:
+        if self._business.start_date:
+            legal_entity["start_date_utc"] = self._business.start_date.strftime(OUTPUT_DATE_FORMAT)
+        if self._business.restoration_expiry_date:
             formatted_restoration_expiry_date = LegislationDatetime.format_as_report_expiry_string(
-                self._legal_entity.restoration_expiry_date
+                self._business.restoration_expiry_date
             )
             legal_entity["formatted_restoration_expiry_date"] = formatted_restoration_expiry_date
 
     def _set_addresses(self, legal_entity: dict):
         """Set business addresses."""
-        address_json = get_addresses(self._legal_entity.identifier).json
+        address_json = get_addresses(self._business.identifier).json
         for office_type in ["registeredOffice", "recordsOffice", "businessOffice"]:
             if office_type in address_json:
                 for key, value in address_json[office_type].items():
@@ -287,7 +287,7 @@ class BusinessDocument:
 
     def _set_directors(self, legal_entity: dict):
         """Set directors (these have a different schema than parties)."""
-        directors_json = get_directors(self._legal_entity.identifier).json["directors"]
+        directors_json = get_directors(self._business.identifier).json["directors"]
         for director in directors_json:
             if director.get("mailingAddress"):
                 director["mailingAddress"] = BusinessDocument._format_address(director["mailingAddress"])
@@ -297,7 +297,7 @@ class BusinessDocument:
 
     def _set_parties(self, legal_entity: dict):
         """Set the parties of the business (all parties)."""
-        party_json = get_parties(self._legal_entity.identifier).json["parties"]
+        party_json = get_parties(self._business.identifier).json["parties"]
         for party in party_json:
             if party.get("mailingAddress"):
                 party["mailingAddress"] = BusinessDocument._format_address(party["mailingAddress"])
@@ -307,7 +307,7 @@ class BusinessDocument:
 
     def _set_name_translations(self, legal_entity: dict):
         """Set the aliases."""
-        aliases = AlternateName.find_by_name_type(self._legal_entity.id, "TRANSLATION")
+        aliases = AlternateName.find_by_name_type(self._business.id, "TRANSLATION")
         legal_entity["listOfTranslations"] = [alias.json for alias in aliases]
 
     def _set_business_state_changes(self, legal_entity: dict):
@@ -315,7 +315,7 @@ class BusinessDocument:
         state_filings = []
         # Any filings like restoration, liquidation etc. that changes the state must be included here
         for filing in Filing.get_filings_by_types(
-            self._legal_entity,
+            self._business,
             [
                 "dissolution",
                 "restorationApplication",
@@ -331,7 +331,7 @@ class BusinessDocument:
             state_filings.append(self._format_state_filing(filing))
         # If it is amalgamating business
         if legal_entity.get("business").get("amalgamatedInto"):
-            amalgamating_business = self._legal_entity.amalgamating_businesses.one_or_none()
+            amalgamating_business = self._business.amalgamating_businesses.one_or_none()
             amalgamation = Amalgamation.find_by_id(amalgamating_business.amalgamation_id)
             filing = Filing.find_by_id(amalgamation.filing_id)
             state_filings.insert(0, self._format_state_filing(filing))
@@ -339,11 +339,11 @@ class BusinessDocument:
 
     def _set_record_keepers(self, legal_entity: dict):
         """Set the custodians of the business (parties with custodian role)."""
-        if self._legal_entity.state.name == "HISTORICAL":
+        if self._business.state.name == "HISTORICAL":
             custodian_json = [
                 party_role.json
-                for party_role in self._legal_entity.entity_roles.all()
-                if party_role.role.lower() == "custodian"
+                for party_role in self._business.entity_roles.all()
+                if party_role.role_type.lower() == "custodian"
             ]
             for custodian in custodian_json:
                 custodian["mailingAddress"] = BusinessDocument._format_address(custodian["mailingAddress"])
@@ -356,7 +356,7 @@ class BusinessDocument:
         alterations = []
         # Any future filings that includes a company name/type change must be added here
         for filing in Filing.get_filings_by_types(
-            self._legal_entity,
+            self._business,
             ["alteration", "correction", "changeOfName", "changeOfRegistration", "specialResolution"],
         ):
             filing_meta = filing.meta_data
@@ -415,10 +415,10 @@ class BusinessDocument:
         filing_meta = filing.meta_data
         if filing.filing_type == "dissolution":
             filing_info["filingName"] = BusinessDocument._get_summary_display_name(
-                filing.filing_type, filing_meta["dissolution"]["dissolutionType"], self._legal_entity.entity_type
+                filing.filing_type, filing_meta["dissolution"]["dissolutionType"], self._business.entity_type
             )
             if (
-                self._legal_entity.entity_type in ["SP", "GP"]
+                self._business.entity_type in ["SP", "GP"]
                 and filing_meta["dissolution"]["dissolutionType"] == "voluntary"
             ):
                 filing_info["dissolution_date_str"] = LegislationDatetime.as_legislation_timezone_from_date_str(
@@ -426,7 +426,7 @@ class BusinessDocument:
                 ).strftime(OUTPUT_DATE_FORMAT)
         elif filing.filing_type == "restoration":
             filing_info["filingName"] = BusinessDocument._get_summary_display_name(
-                filing.filing_type, filing.filing_sub_type, self._legal_entity.entity_type
+                filing.filing_type, filing.filing_sub_type, self._business.entity_type
             )
             if filing.filing_sub_type in ["limitedRestoration", "limitedRestorationExtension"]:
                 expiry_date = filing_meta["restoration"]["expiry"]
@@ -456,7 +456,7 @@ class BusinessDocument:
     def _set_amalgamation_details(self, legal_entity: dict):
         """Set amalgamation filing data."""
         amalgamated_businesses = []
-        filings = Filing.get_filings_by_types(self._legal_entity.id, ["amalgamationApplication"])
+        filings = Filing.get_filings_by_types(self._business, ["amalgamationApplication"])
         if filings:
             amalgamation_application = filings[0]
             legal_entity["business"]["amalgamatedEntity"] = True
@@ -465,7 +465,7 @@ class BusinessDocument:
                 amalgamated_businesses_info = {"legalName": "Not Available", "identifier": "Not Available"}
                 amalgamated_businesses.append(amalgamated_businesses_info)
             else:
-                amalgamation = self._legal_entity.amalgamation.one_or_none()
+                amalgamation = self._business.amalgamation.one_or_none()
                 amalgamating_businesses = amalgamation.amalgamating_businesses.all()
                 for amalgamating_business in amalgamating_businesses:
                     if ting_business := LegalEntity.find_by_internal_id(amalgamating_business.legal_entity_id):
@@ -491,7 +491,7 @@ class BusinessDocument:
     def _set_liquidation_details(self, legal_entity: dict):
         """Set partial liquidation filing data."""
         liquidation_info = {}
-        liquidation = Filing.get_filings_by_types(self._legal_entity, ["voluntaryLiquidation"])
+        liquidation = Filing.get_filings_by_types(self._business, ["voluntaryLiquidation"])
         if liquidation:
             liquidation_info["filingDateTime"] = liquidation[0].filing_date.isoformat()
             legal_entity["business"]["state"] = LegalEntity.State.LIQUIDATION.name
@@ -516,9 +516,9 @@ class BusinessDocument:
         return address
 
     def _set_meta_info(self, legal_entity: dict):
-        legal_entity["environment"] = f"{self._get_environment()} BUSINESS #{self._legal_entity.identifier}".lstrip()
+        legal_entity["environment"] = f"{self._get_environment()} BUSINESS #{self._business.identifier}".lstrip()
         legal_entity["meta_title"] = "Business Summary on {}".format(legal_entity["report_date_time"])
-        legal_entity["meta_subject"] = "{} ({})".format(self._legal_entity.legal_name, self._legal_entity.identifier)
+        legal_entity["meta_subject"] = "{} ({})".format(self._business.business_name, self._business.identifier)
 
     @staticmethod
     def _get_environment():

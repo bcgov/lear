@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO: remove this file once filer refers to common module
 """This provides the service for businesses(legal entities and alternate name entities."""
-from __future__ import annotations
-
 from business_model import AlternateName, BusinessCommon, LegalEntity
 
 
@@ -33,14 +32,7 @@ class BusinessService:
             return legal_entity
 
         if identifier.startswith("FM") and (alternate_name := AlternateName.find_by_identifier(identifier)):
-            if alternate_name.is_owned_by_colin_entity:
-                return alternate_name
-
-            legal_entity = LegalEntity.find_by_id(alternate_name.legal_entity_id)
-            alternate_name_entity = (
-                alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
-            )
-            return alternate_name_entity
+            return alternate_name
 
         return None
 
@@ -58,13 +50,6 @@ class BusinessService:
         if (alternate_name_id := filing.alternate_name_id) and (
             alternate_name := AlternateName.find_by_internal_id(alternate_name_id)
         ):
-            if alternate_name.is_owned_by_colin_entity:
-                return alternate_name
-
-            legal_entity = LegalEntity.find_by_id(alternate_name.legal_entity_id)
-            alternate_name_entity = (
-                alternate_name if legal_entity.entity_type != BusinessCommon.EntityTypes.PARTNERSHIP.value else None
-            )
-            return alternate_name_entity
+            return alternate_name
 
         return None

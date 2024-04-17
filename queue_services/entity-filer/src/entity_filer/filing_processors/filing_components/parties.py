@@ -162,6 +162,8 @@ def merge_all_parties(legal_entity: LegalEntity, filing: Filing, parties: dict) 
                 party_le.entity_delivery_address, party_dict.get("deliveryAddress")
             )
             mailing_address = get_address_for_filing(party_le.entity_mailing_address, party_dict.get("mailingAddress"))
+            party_le.entity_delivery_address = delivery_address
+            party_le.entity_mailing_address = mailing_address
         else:
             # New People and Orgs use the attached addresses
             if isinstance(party_le, ColinEntity):
@@ -439,16 +441,19 @@ def get_address_for_filing(party_address: Address, address_dict: dict) -> Addres
     ):
         return party_address
 
-    new_address = Address(
-        street=address_dict["streetAddress"],
-        city=address_dict["addressCity"],
-        country=address_dict["addressCountry"],
-        postal_code=address_dict["postalCode"],
-        region=address_dict["addressRegion"],
-        delivery_instructions=address_dict.get("deliveryInstructions", ""),
-    )
-    # new_address.save()
-    return new_address
+    if address_dict:
+        new_address = Address(
+            street=address_dict["streetAddress"],
+            city=address_dict["addressCity"],
+            country=address_dict["addressCountry"],
+            postal_code=address_dict["postalCode"],
+            region=address_dict["addressRegion"],
+            delivery_instructions=address_dict.get("deliveryInstructions", ""),
+        )
+        # new_address.save()
+        return new_address
+
+    return None
 
 
 def delete_non_memoized_entity_role(
@@ -504,6 +509,8 @@ def get_or_create_party(party_dict: dict, filing: Filing):
         update_person_info(party_le, party_dict)
         delivery_address = get_address_for_filing(party_le.entity_delivery_address, party_dict.get("deliveryAddress"))
         mailing_address = get_address_for_filing(party_le.entity_mailing_address, party_dict.get("mailingAddress"))
+        party_le.entity_delivery_address = delivery_address
+        party_le.entity_mailing_address = mailing_address
     else:
         # New People and Orgs use the attached addresses
         if isinstance(party_le, ColinEntity):
