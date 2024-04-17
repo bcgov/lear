@@ -572,7 +572,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_party_revision(filing, party_id) -> dict:
         """Consolidates all party changes up to the given transaction id."""
         business = BusinessService.fetch_business_by_filing(filing)
-        if filing.legal_entity_id:
+        if filing.legal_entity_id or business.legal_entity_id:
             business_attr = LegalEntity
             party_version = history_cls(business_attr)
             business_attr_id = business_attr.id
@@ -745,7 +745,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         columns_to_select = VersionedBusinessDetailsService.select_revision_columns(address_version)
         address_history = (
             db.session.query(*columns_to_select)
-            .filter(address_version.change_filing_id == filing.id)
+            .filter(address_version.change_filing_id <= filing.id)
             .filter(address_version.id == address_id)
         )
         address = address_current.union(address_history).one_or_none()
