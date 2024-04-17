@@ -38,12 +38,6 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
     foreign_jurisdiction = continuation_out_json.get('foreignJurisdiction')
     foreign_jurisdiction_country = foreign_jurisdiction.get('country').upper()
 
-    continuation_out_filing.comments.append(
-        Comment(
-            staff_id=continuation_out_filing.submitter_id
-        )
-    )
-
     business.state = Business.State.HISTORICAL
     business.state_filing_id = continuation_out_filing.id
     business.dissolution_date = continuation_out_date
