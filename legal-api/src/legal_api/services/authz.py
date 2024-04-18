@@ -209,6 +209,11 @@ def get_allowable_filings_dict():
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
+                'continuationIn': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                    # only show filing when providing allowable filings not specific to a business
+                    'businessRequirement': BusinessRequirement.NOT_EXIST
+                },
                 'consentContinuationOut': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC'],
                     'blockerChecks': {
@@ -408,6 +413,11 @@ def get_allowable_filings_dict():
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
+                },
+                'continuationIn': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                    # only show filing when providing allowable filings not specific to a business
+                    'businessRequirement': BusinessRequirement.NOT_EXIST
                 },
                 'dissolution': {
                     'voluntary': {

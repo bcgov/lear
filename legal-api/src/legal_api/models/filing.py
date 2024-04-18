@@ -197,6 +197,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CC': 'CONTO'
             }
         },
+        'continuationIn': {
+            'name': 'continuationIn',
+            'title': 'Continuation In',
+            'codes': {
+                'BC': 'CONTI',
+                'BEN': 'CONTI',
+                'ULC': 'CONTI',
+                'CC': 'CONTI'
+            }
+        },
         'continuationOut': {
             'name': 'continuationOut',
             'title': 'Continuation Out',

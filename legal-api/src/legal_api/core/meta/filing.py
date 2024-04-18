@@ -254,6 +254,22 @@ FILINGS: Final = {
             {'types': 'BC,BEN,CC,ULC', 'outputs': ['letterOfConsent', ]},
         ]
     },
+    'continuationIn': {
+        'name': 'continuationIn',
+        'title': 'Continuation In',
+        'displayName': {
+            'BC': 'BC Limited Company Continuation In Application',
+            'BEN': 'BC Benefit Company Continuation In Application',
+            'CC': 'BC Community Contribution Company Continuation In Application',
+            'ULC': 'BC Unlimited Liability Company Continuation In Application',
+        },
+        'codes': {
+            'BC': 'CONTI',
+            'BEN': 'CONTI',
+            'ULC': 'CONTI',
+            'CC': 'CONTI'
+        }
+    },
     'continuationOut': {
         'name': 'continuationOut',
         'title': 'Continuation Out',
