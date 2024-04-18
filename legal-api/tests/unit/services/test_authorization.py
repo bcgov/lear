@@ -978,6 +978,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONTINUATION_IN_ULC,
                           FilingKey.IA_ULC])),
         ('general_user_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'general', [BASIC_USER],
