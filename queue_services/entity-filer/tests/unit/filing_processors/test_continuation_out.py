@@ -53,8 +53,6 @@ async def test_worker_continuation_out(app, session):
 
     assert filing_json['filing']['continuationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
     assert filing_json['filing']['continuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
-    assert filing_json['filing']['continuationOut']['details'] == final_filing.comments[0].comment
-    assert final_filing.submitter_id == final_filing.comments[0].staff_id
 
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == final_filing.id

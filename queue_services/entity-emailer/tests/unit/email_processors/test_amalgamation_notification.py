@@ -25,13 +25,16 @@ from tests.unit import prep_amalgamation_filing
     (Filing.Status.PAID.value),
     (Filing.Status.COMPLETED.value)
 ])
-def test_amalgamation_notification(app, session, status):
+def test_amalgamation_notification(app, session, mocker, status):
     """Assert Amalgamation notification is created."""
     # setup filing + business for email
     legal_name = 'test business'
     filing = prep_amalgamation_filing(session, 'BC1234567', '1', status, legal_name)
     token = 'token'
     # test processor
+    mocker.patch(
+        'entity_emailer.email_processors.amalgamation_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(amalgamation_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = amalgamation_notification.process(
             {'filingId': filing.id, 'type': 'amalgamationApplication', 'option': status}, token)

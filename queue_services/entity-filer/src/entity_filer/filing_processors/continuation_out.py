@@ -16,7 +16,7 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Comment, Filing
+from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
@@ -32,19 +32,11 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     continuation_out_json = filing['continuationOut']
 
-    details = continuation_out_json.get('details')
     legal_name = continuation_out_json.get('legalName')
     continuation_out_date_str = continuation_out_json.get('continuationOutDate')
     continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
     foreign_jurisdiction = continuation_out_json.get('foreignJurisdiction')
     foreign_jurisdiction_country = foreign_jurisdiction.get('country').upper()
-
-    continuation_out_filing.comments.append(
-        Comment(
-            comment=details,
-            staff_id=continuation_out_filing.submitter_id
-        )
-    )
 
     business.state = Business.State.HISTORICAL
     business.state_filing_id = continuation_out_filing.id

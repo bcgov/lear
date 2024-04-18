@@ -71,6 +71,8 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
         ), HTTPStatus.NOT_FOUND
 
     if not legal_filing_name:
+        if identifier.startswith('T') and filing.status == Filing.Status.COMPLETED:
+            return {}, HTTPStatus.NOT_FOUND
         return _get_document_list(business, filing)
 
     if legal_filing_name and ('application/pdf' in request.accept_mimetypes):

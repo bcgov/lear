@@ -122,6 +122,42 @@ def get_user_from_auth(user_name: str, token: str) -> requests.Response:
     return user_info
 
 
+def get_account_by_affiliated_identifier(identifier: str, token: str):
+    """Return the account affiliated to the business."""
+    auth_url = current_app.config.get('AUTH_URL')
+    url = f'{auth_url}/orgs?affiliation={identifier}'
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+
+    res = requests.get(url, headers=headers)
+    try:
+        return res.json()
+    except Exception:  # noqa B902; pylint: disable=W0703;
+        current_app.logger.error('Failed to get response')
+        return None
+
+
+def get_org_id_for_temp_identifier(identifier, token: str) -> int:
+    """Get org id from auth for the specific identifier."""
+    account_response = get_account_by_affiliated_identifier(identifier, token)
+    orgs = account_response.get('orgs')
+    return orgs[0].get('id')  # Temp identifer cannot be present in more than one account
+
+
+def get_entity_dashboard_url(identifier, token: str) -> str:
+    """Get my business registry url when temp identifier otherwise entity dashboard url."""
+    entity_dashboard_url = None
+    if identifier.startswith('T'):
+        org_id = get_org_id_for_temp_identifier(identifier, token)
+        auth_web_url = current_app.config.get('AUTH_WEB_URL')
+        entity_dashboard_url = f'{auth_web_url}account/{org_id}/business'
+    else:
+        entity_dashboard_url = current_app.config.get('DASHBOARD_URL') + identifier
+    return entity_dashboard_url
+
+
 def substitute_template_parts(template_code: str) -> str:
     """Substitute template parts in main template.
 
