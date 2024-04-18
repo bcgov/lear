@@ -106,6 +106,10 @@ class FilingKey(str, Enum):
     IA_BEN = 'IA_BEN'
     IA_CC = 'IA_CC'
     IA_ULC = 'IA_ULC'
+    CONT_IN_BC = 'CONT_IN_BC'
+    CONT_IN_BEN = 'CONT_IN_BEN'
+    CONT_IN_CC = 'CONT_IN_CC'
+    CONT_IN_ULC = 'CONT_IN_ULC'
     REG_SP = 'REG_SP'
     REG_GP = 'REG_GP'
     CORRCTN = 'CORRCTN'
@@ -185,6 +189,14 @@ EXPECTED_DATA = {
                       'name': 'incorporationApplication'},
     FilingKey.IA_ULC: {'displayName': 'BC Unlimited Liability Company Incorporation Application', 'feeCode': 'BCINC',
                        'name': 'incorporationApplication'},
+    FilingKey.CONT_IN_BC: {'displayName': 'BC Limited Company Continuation In Application', 'feeCode': 'CONTI',
+                            'name': 'continuationIn'},
+    FilingKey.CONT_IN_BEN: {'displayName': 'BC Benefit Company Continuation In Application', 'feeCode': 'CONTI',
+                            'name': 'continuationIn'},
+    FilingKey.CONT_IN_CC: {'displayName': 'BC Community Contribution Company Continuation In Application',
+                           'feeCode': 'CONTI', 'name': 'continuationIn'},
+    FilingKey.CONT_IN_ULC: {'displayName': 'BC Unlimited Liability Company Continuation In Application',
+                            'feeCode': 'CONTI', 'name': 'continuationIn'},
     FilingKey.REG_SP: {'displayName': 'BC Sole Proprietorship Registration', 'feeCode': 'FRREG',
                        'name': 'registration'},
     FilingKey.REG_GP: {'displayName': 'BC General Partnership Registration', 'feeCode': 'FRREG',
@@ -909,21 +921,25 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_BC,
                           FilingKey.IA_BC])),
         ('staff_no_business_ben', False, Business.State.ACTIVE, ['BEN'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_BEN,
                           FilingKey.IA_BEN])),
         ('staff_no_business_cc', False, Business.State.ACTIVE, ['CC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_CC,
                           FilingKey.IA_CC])),
         ('staff_no_business_ulc', False, Business.State.ACTIVE, ['ULC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_ULC,
                           FilingKey.IA_ULC])),
         ('staff_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'staff', [STAFF_ROLE],
@@ -938,21 +954,25 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_BC,
                           FilingKey.IA_BC])),
         ('general_user_no_business_ben', False, Business.State.ACTIVE, ['BEN'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_BEN,
                           FilingKey.IA_BEN])),
         ('general_user_no_business_cc', False, Business.State.ACTIVE, ['CC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_CC,
                           FilingKey.IA_CC])),
         ('general_user_no_business_ulc', False, Business.State.ACTIVE, ['ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.CONT_IN_ULC,
                           FilingKey.IA_ULC])),
         ('general_user_limited_restoration', False, Business.State.ACTIVE, ['ULC'], 'general', [BASIC_USER], #JAMES
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
