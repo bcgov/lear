@@ -24,12 +24,12 @@ class SFTPService:  # pylint: disable=too-few-public-methods
     """SFTP  Service class."""
     
     @staticmethod
-    def get_connection(server_name: str) -> Connection:
+    def get_connection() -> Connection:
         # pylint: disable=protected-access
-        return SFTPService._connect(server_name)
+        return SFTPService._connect()
 
     @staticmethod
-    def _connect(server_name: str) -> Connection:
+    def _connect() -> Connection:
 
         sftp_host = Config.SFTP_HOST
         sftp_port = Config.SFTP_PORT
@@ -42,8 +42,8 @@ class SFTPService:  # pylint: disable=too-few-public-methods
             ftp_host_key_data = Config.SFTP_HOST_KEY.encode()
             key = paramiko.RSAKey(data=decodebytes(ftp_host_key_data))
             cnopts.hostkeys.add(sftp_host, 'ssh-rsa', key)
-
-        sftp_priv_key_file = Config.SFTP_ARCHIVE_DIRECTORY + 'sftp_priv_key_file'
+        
+        sftp_priv_key_file = os.path.join(os.getcwd(), r'data/') + 'sftp_priv_key_file'
 
         # only create key file if it doesn't exist
         if not os.path.isfile(sftp_priv_key_file):
@@ -58,8 +58,6 @@ class SFTPService:  # pylint: disable=too-few-public-methods
             'private_key_pass': Config.BCREG_FTP_PRIVATE_KEY_PASSPHRASE
         }
 
-        # cnopts.hostkeys = None
-        # Connection(host=sftp_host, username='TESTPUB',  password='742mH273', cnopts=cnopts, port=int(sftp_port))
         sftp_connection = Connection(host=sftp_host, **sft_credentials, cnopts=cnopts, port=int(sftp_port))
         logging.info('sftp_connection successful')
 

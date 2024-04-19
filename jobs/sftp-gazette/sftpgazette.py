@@ -103,7 +103,7 @@ def send_email(note_book, emailtype, errormessage):
 
 def processnotebooks(notebookdirectory, data_dir):
     """Process data."""
-
+    
     logging.info('Start processing directory: %s', notebookdirectory)
 
     try:
@@ -111,7 +111,7 @@ def processnotebooks(notebookdirectory, data_dir):
                             data_dir + 'temp.ipynb', parameters=None)
         os.remove(data_dir+'temp.ipynb')
 
-        # FtpProcessor.process_ftp(data_dir)
+        FtpProcessor.process_ftp(data_dir)
 
         pm.execute_notebook(os.path.join(notebookdirectory, "update_database.ipynb"),
                             data_dir + 'temp.ipynb', parameters=None)

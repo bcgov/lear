@@ -1,9 +1,0 @@
-[
-    {
-        "vault": "entity",
-        "application": [
-            "notebook-email-common",
-            "sftp-gazette-report"
-        ]
-    }
-]
