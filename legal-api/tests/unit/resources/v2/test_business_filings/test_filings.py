@@ -31,9 +31,11 @@ from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLAT
 from reportlab.lib.pagesizes import letter
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
+    AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CONTINUATION_IN,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     CP_SPECIAL_RESOLUTION_TEMPLATE,
@@ -41,6 +43,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
+    REGISTRATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE
 )
@@ -64,18 +67,29 @@ from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.utils import create_header
 
 
-def test_get_temp_business_filing(session, client, jwt):
+@pytest.mark.parametrize(
+    'legal_type, filing_type, filing_json',
+    [
+        ('BEN', 'incorporationApplication', INCORPORATION),
+        ('CBEN', 'continuationIn', CONTINUATION_IN),
+        ('BC', 'amalgamationApplication', AMALGAMATION_APPLICATION),
+        ('SP', 'registration', REGISTRATION),
+    ]
+)
+def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type, filing_json):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     #
     # setup
     identifier = 'Tb31yQIuBw'
-    filing_name = 'incorporationApplication'
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
     temp_reg.save()
     json_data = copy.deepcopy(FILING_HEADER)
-    json_data['filing']['header']['name'] = filing_name
-    json_data['filing'][filing_name] = copy.deepcopy(INCORPORATION)
+    json_data['filing']['header']['name'] = filing_type
+    del json_data['filing']['business']
+    filing_json = copy.deepcopy(filing_json)
+    filing_json['nameRequest']['legalType'] = legal_type
+    json_data['filing'][filing_type] = filing_json
     filings = factory_pending_filing(None, json_data)
     filings.temp_reg = identifier
     filings.save()
@@ -88,8 +102,8 @@ def test_get_temp_business_filing(session, client, jwt):
     #
     # validate
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json['filing']['header']['name'] == filing_name
-    assert rv.json['filing'][filing_name] == INCORPORATION
+    assert rv.json['filing']['header']['name'] == filing_type
+    assert rv.json['filing'][filing_type] == filing_json
 
 
 def test_get_one_business_filing_by_id(session, client, jwt):
@@ -1036,6 +1050,7 @@ AGM_LOCATION_CHANGE_FILING['filing']['agmLocationChange'] = {}
 AGM_EXTENSION_FILING = copy.deepcopy(FILING_HEADER)
 AGM_EXTENSION_FILING['filing']['agmExtension'] = {}
 
+
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
     filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
@@ -1049,6 +1064,7 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         return Filing.FILINGS[filing_name].get(filing_sub_type, {}).get('codes', {}).get(legal_type)
 
     return Filing.FILINGS[filing_name].get('codes', {}).get(legal_type)
+
 
 @pytest.mark.parametrize(
     'identifier, base_filing, filing_name, orig_legal_type, free, additional_fee_codes, has_fed',
@@ -1109,7 +1125,7 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', AGM_EXTENSION_FILING, 'agmExtension', Business.LegalTypes.BC_CCC.value, False, [], False),
         ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value, False, [], True),
         ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value, False, [], True),
-        ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication', 
+        ('T1234567', INCORPORATION_FILING_TEMPLATE, 'incorporationApplication',
          Business.LegalTypes.BCOMP.value, False, [], True),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, False, [], True),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, False, [], True),
@@ -1171,7 +1187,7 @@ def test_get_correct_fee_codes(
         if filing_name in ['incorporationApplication', 'alteration', 'dissolution']:
             assert future_effective is False
         else:
-            assert future_effective is None 
+            assert future_effective is None
 
     assert all(elem in
                map(lambda x: x['filingTypeCode'], ListFilingResource.get_filing_types(business, filing))
@@ -1314,7 +1330,7 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
                  return_value=[])
 
     identifier = 'CP1234567'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR*10), None, Business.LegalTypes.COOP.value)
+    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR * 10), None, Business.LegalTypes.COOP.value)
     factory_business_mailing_address(b)
     sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
     del sr['filing']['changeOfName']

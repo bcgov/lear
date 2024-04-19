@@ -105,16 +105,10 @@ def get_businesses(identifier: str):
 def post_businesses():
     """Create a valid filing, else error out."""
     json_input = request.get_json()
-    valid_filing_types = [
-        Filing.FILINGS['incorporationApplication']['name'],
-        Filing.FILINGS['registration']['name'],
-        Filing.FILINGS['amalgamationApplication']['name']
-    ]
-
     try:
         filing_account_id = json_input['filing']['header']['accountId']
         filing_type = json_input['filing']['header']['name']
-        if filing_type not in valid_filing_types:
+        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES:
             raise TypeError
     except (TypeError, KeyError):
         return {'error': babel('Requires a valid filing.')}, HTTPStatus.BAD_REQUEST

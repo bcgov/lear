@@ -58,6 +58,13 @@ def test_business_identifier(session):
 
 TEST_IDENTIFIER_DATA = [
     ('CP1234567', True),
+    ('BC1234567', True),
+    ('C1234567', True),
+    ('FM1234567', True),
+    ('cp1234567', False),
+    ('bc1234567', False),
+    ('c1234567', False),
+    ('fm1234567', False),
     ('CP0000000', False),
     ('CP000000A', False),
     ('AB0000001', False),

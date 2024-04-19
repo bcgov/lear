@@ -210,7 +210,7 @@ def get_allowable_filings_dict():
                     }
                 },
                 'continuationIn': {
-                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                    'legalTypes': ['C', 'CBEN', 'CUL', 'CCC'],
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
                 },
@@ -415,7 +415,7 @@ def get_allowable_filings_dict():
                     }
                 },
                 'continuationIn': {
-                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
+                    'legalTypes': ['C', 'CBEN', 'CUL', 'CCC'],
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
                 },
