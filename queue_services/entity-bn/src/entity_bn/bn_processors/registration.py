@@ -16,6 +16,7 @@ import json
 import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
+from sqlalchemy import func
 
 import requests
 from entity_queue_common.service_utils import QueueException, logger
@@ -241,11 +242,40 @@ def _get_program_account(identifier, transaction_id):
         return None, str(err)
 
 
-def _get_firm_legal_name(business: Business):
-    """Get firm legal name."""
-    parties = [party_role.party for party_role in business.party_roles.all()
-               if party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value,
-                                              PartyRole.RoleTypes.PROPRIETOR.value)]
+def _sort_party_name(party):
+    """Sort party's name """
+    organization_name = party.get('organization_name', '')
+    last_name = party.get('last_name', '')
+    first_name = party.get('first_name', '')
+    middle_initial = party.get('middle_initial', '')
+
+    sort_name = (
+        organization_name +
+        (' ' + last_name if last_name else '') +
+        (' ' + first_name if first_name else '') +
+        (' ' + middle_initial if middle_initial else '')
+    )
+    return sort_name.strip()
+
+
+def _get_firm_legal_name(business: Business, filing: Filing):
+    """Get sorted firm legal name."""
+    sort_name = func.trim(
+        func.coalesce(Party.organization_name, '') +
+        func.coalesce(Party.last_name + ' ', '') +
+        func.coalesce(Party.first_name + ' ', '') +
+        func.coalesce(Party.middle_initial, '')
+    )
+
+    parties_query = business.party_roles.join(Party).filter(
+        func.lower(PartyRole.role).in_([func.lower(value) for value in [
+            PartyRole.RoleTypes.PARTNER.value,
+            PartyRole.RoleTypes.PROPRIETOR.value
+        ]])
+    ).order_by(sort_name)  
+    
+    parties = [party_role.party for party_role in parties_query.all()]
+    
     legal_names = ','.join(party.name for party in parties[:2])
     if len(parties) > 2:  # Include only 2 parties in legal name
         legal_names += ', et al'
