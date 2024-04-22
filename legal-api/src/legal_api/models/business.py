@@ -18,8 +18,8 @@ The Business class and Schema are held in this module
 from enum import Enum, auto
 from typing import Final, Optional
 
-import datedelta
 import re
+import datedelta
 from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -639,7 +639,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if identifier[:2] == 'NR':
             return True
 
-        if not re.match('^(CP|XCP|BC|C|FM)\d{7}$', identifier):
+        if not re.match(r'^(CP|XCP|BC|C|FM)\d{7}$', identifier):
             return False
 
         try:

@@ -987,11 +987,10 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.IA_ULC])),
         ('general_user_no_business_cul', False, Business.State.ACTIVE, ['CUL'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.CONTINUATION_IN_CUL])),
-        ('general_user_limited_restoration', False, Business.State.ACTIVE, ['ULC'], 'general', [BASIC_USER],  # JAMES
+        ('general_user_limited_restoration', False, Business.State.ACTIVE, ['ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
-                          FilingKey.CONTINUATION_IN_CUL,
                           FilingKey.IA_ULC])),
         ('general_user_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'general', [BASIC_USER],
