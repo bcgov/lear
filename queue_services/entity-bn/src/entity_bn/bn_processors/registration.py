@@ -258,7 +258,7 @@ def _sort_party_name(party):
     return sort_name.strip()
 
 
-def _get_firm_legal_name(business: Business, filing: Filing):
+def _get_firm_legal_name(business: Business):
     """Get sorted firm legal name."""
     sort_name = func.trim(
         func.coalesce(Party.organization_name, '') +
@@ -272,10 +272,10 @@ def _get_firm_legal_name(business: Business, filing: Filing):
             PartyRole.RoleTypes.PARTNER.value,
             PartyRole.RoleTypes.PROPRIETOR.value
         ]])
-    ).order_by(sort_name)  
-    
+    ).order_by(sort_name)
+
     parties = [party_role.party for party_role in parties_query.all()]
-    
+
     legal_names = ','.join(party.name for party in parties[:2])
     if len(parties) > 2:  # Include only 2 parties in legal name
         legal_names += ', et al'

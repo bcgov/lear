@@ -15,14 +15,13 @@
 import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
-from sqlalchemy import func
 
 import dpath
 from flask import current_app
 from legal_api.models import Address, Business, Filing, Party, PartyRole, RequestTracker, db
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from sqlalchemy_continuum import version_class
 
 from entity_bn.bn_processors import (
@@ -105,7 +104,7 @@ def change_name(business: Business, filing: Filing,  # pylint: disable=too-many-
             ]]),
             PartyRole.cessation_date.is_(None)
         ).order_by(sort_name)
-        
+
         parties = [party_role.party for party_role in parties_query.all()]
         new_name = ','.join(party.name for party in parties[:2])
         if len(parties) > 2:
