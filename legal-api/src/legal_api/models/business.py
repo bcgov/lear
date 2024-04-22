@@ -169,6 +169,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'numberedDescription': 'Numbered Community Contribution Company'
         }
     }
+
+    # CORPS Continuation In has the same suffix and desc
     BUSINESSES[LegalTypes.BCOMP_CONTINUE_IN] = BUSINESSES[LegalTypes.BCOMP]
     BUSINESSES[LegalTypes.CONTINUE_IN] = BUSINESSES[LegalTypes.COMP]
     BUSINESSES[LegalTypes.ULC_CONTINUE_IN] = BUSINESSES[LegalTypes.BC_ULC_COMPANY]
