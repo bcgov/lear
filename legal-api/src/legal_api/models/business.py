@@ -15,10 +15,10 @@
 
 The Business class and Schema are held in this module
 """
+import re
 from enum import Enum, auto
 from typing import Final, Optional
 
-import re
 import datedelta
 from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
