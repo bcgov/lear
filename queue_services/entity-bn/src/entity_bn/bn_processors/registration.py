@@ -242,22 +242,6 @@ def _get_program_account(identifier, transaction_id):
         return None, str(err)
 
 
-def _sort_party_name(party):
-    """Sort party's name """
-    organization_name = party.get('organization_name', '')
-    last_name = party.get('last_name', '')
-    first_name = party.get('first_name', '')
-    middle_initial = party.get('middle_initial', '')
-
-    sort_name = (
-        organization_name +
-        (' ' + last_name if last_name else '') +
-        (' ' + first_name if first_name else '') +
-        (' ' + middle_initial if middle_initial else '')
-    )
-    return sort_name.strip()
-
-
 def _get_firm_legal_name(business: Business):
     """Get sorted firm legal name."""
     sort_name = func.trim(
