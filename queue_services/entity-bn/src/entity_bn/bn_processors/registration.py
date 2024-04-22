@@ -16,7 +16,6 @@ import json
 import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
-from sqlalchemy import func
 
 import requests
 from entity_queue_common.service_utils import QueueException, logger
@@ -25,6 +24,7 @@ from legal_api.models import Business, Party, PartyRole, RequestTracker
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from sqlalchemy import func
 
 from entity_bn.bn_processors import (
     build_input_xml,
