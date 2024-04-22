@@ -1542,23 +1542,23 @@ components:
               filing: 'https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'
           alternateNames:
             - name: 'Name Translation 1'
-              nameStartDate: '2021-11-28'
-              nameType: 'TRANSLATION'
+              startDate: '2021-11-28'
+              type: 'TRANSLATION'
             - name: 'Name Translation 2'
-              nameStartDate: '2023-01-25'
-              nameType: 'TRANSLATION'
+              startDate: '2023-01-25'
+              type: 'TRANSLATION'
             - entityType: 'SP'
               identifier: 'FM1111111'
               name: 'Some DBA Name'
-              nameRegisteredDate: '2021-03-16T21:36:07.009977+00:00'
-              nameStartDate: '2021-03-10'
-              nameType: 'DBA'
+              registeredDate: '2021-03-16T21:36:07.009977+00:00'
+              startDate: '2021-03-10'
+              type: 'DBA'
             - entityType: 'SP'
               identifier: 'FM2222222'
               name: 'Another DBA Name'
-              nameRegisteredDate: '2022-04-16T21:36:07.009977+00:00'
-              nameStartDate: '2022-04-10'
-              nameType: 'DBA'
+              registeredDate: '2022-04-16T21:36:07.009977+00:00'
+              startDate: '2022-04-10'
+              type: 'DBA'
       description: 'Organization or enterprising entity engaged in commercial, industrial, or professional activities.'
       properties:
         lastLedgerTimestamp:
@@ -1668,28 +1668,28 @@ components:
                 examples:
                   - alternate_name_of_business
                 pattern: '^(.*)$'
-              nameRegisteredDate:
+              registeredDate:
                 type: string
                 format: date-time
                 title: The timestamp of the registered date.
                 default: ''
                 examples:
                   - '1970-01-01T00:00:00+00:00'
-              nameStartDate:
+              startDate:
                 type: string
                 format: date
                 title: The start date of the alternate name
                 default: ''
                 examples:
                   - '1970-01-01'
-              nameEndDate:
+              endDate:
                 type: string
                 format: date
                 title: The end date of the alternate name
                 default: ''
                 examples:
                   - '1970-01-01'
-              nameType:
+              type:
                 type: string
                 title: The type of the alternate name
                 enum:
