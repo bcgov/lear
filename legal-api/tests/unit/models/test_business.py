@@ -18,16 +18,19 @@ Test-Suite to ensure that the Business Model is working as expected.
 """
 from datetime import datetime, timedelta
 from flask import current_app
+from unittest.mock import patch
 
 import datedelta
 import pytest
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, db
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole, db
+from legal_api.services import flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 from tests.unit import has_expected_date_str_format
+from tests.unit.models import factory_party_role
 
 
 def factory_business(designation: str = '001'):
@@ -473,3 +476,66 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         assert business_json['amalgamatedInto']['legalName'] == business.legal_name
     else:
         assert not 'amalgamatedInto' in business_json
+
+
+@pytest.mark.parametrize('test_name, legal_type, flag_on', [
+    ('GP_FLAG_ON', 'GP', True),
+    ('SP_FLAG_ON', 'SP', True),
+    ('GP_FLAG_OFF', 'GP', False),
+    ('SP_FLAG_OFF', 'SP', False),
+    ('NON_FIRM_FLAG_ON', 'BC', True),
+    ('NON_FIRM_FLAG_OFF', 'BC', False),
+])
+def test_firm_business_json(session, test_name, legal_type, flag_on):
+    """Assert that correct legal name is in json (legal name easy fix)."""
+    business = Business(
+        legal_name='TEST ABC',
+        legal_type=legal_type,
+        founding_date=datetime.utcfromtimestamp(0),
+        last_ledger_timestamp=datetime.utcfromtimestamp(0),
+        dissolution_date=None,
+        identifier='BC1234567',
+        state=Business.State.ACTIVE,
+    )
+
+    officer1 = {
+        'firstName': 'Jane',
+        'lastName': 'Doe',
+        'middleInitial': 'A',
+        'partyType': 'person',
+        'organizationName': ''
+    }
+    officer2 = {
+        'firstName': 'John',
+        'lastName': 'Doe',
+        'middleInitial': 'B',
+        'partyType': 'person',
+        'organizationName': ''
+    }
+
+    if legal_type == Business.LegalTypes.SOLE_PROP:
+        proprietor_role = factory_party_role(None, None, officer1, None, None, PartyRole.RoleTypes.PROPRIETOR)
+        business.party_roles.append(proprietor_role)
+    elif legal_type == Business.LegalTypes.PARTNERSHIP:
+        partner_role1 = factory_party_role(None, None, officer1, None, None, PartyRole.RoleTypes.PARTNER)
+        partner_role2 = factory_party_role(None, None, officer2, None, None, PartyRole.RoleTypes.PARTNER)
+        business.party_roles.append(partner_role1)
+        business.party_roles.append(partner_role2)
+    else:
+        party_role = factory_party_role(None, None, officer1, None, None, PartyRole.RoleTypes.DIRECTOR)
+        business.party_roles.append(party_role)
+    
+    business.save()
+
+    with patch.object(flags, 'is_on', return_value=flag_on):
+        business_json = business.json()
+        if flag_on and legal_type in [
+                Business.LegalTypes.SOLE_PROP.value,
+                Business.LegalTypes.PARTNERSHIP.value
+            ]:
+                if legal_type == Business.LegalTypes.SOLE_PROP.value:
+                    assert business_json['legalName'] == 'JANE A DOE'
+                else:
+                    assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
+        else:
+            assert business_json['legalName'] == 'TEST ABC'
