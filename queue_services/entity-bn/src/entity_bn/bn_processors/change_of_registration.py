@@ -21,7 +21,7 @@ from flask import current_app
 from legal_api.models import Address, Business, Filing, Party, PartyRole, RequestTracker, db
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from sqlalchemy_continuum import version_class
 
 from entity_bn.bn_processors import (
@@ -90,12 +90,25 @@ def change_name(business: Business, filing: Filing,  # pylint: disable=too-many-
     if name_type == RequestTracker.RequestType.CHANGE_NAME:
         new_name = business.legal_name
     elif name_type == RequestTracker.RequestType.CHANGE_PARTY:
-        parties = [party_role.party for party_role in business.party_roles.all()
-                   if party_role.role.lower() in (
-                       PartyRole.RoleTypes.PARTNER.value,
-                       PartyRole.RoleTypes.PROPRIETOR.value) and not party_role.cessation_date
-                   ]
-        new_name = ','.join(party.name for party in parties)
+        # return sorted and only first 2 names
+        sort_name = func.trim(
+            func.coalesce(Party.organization_name, '') +
+            func.coalesce(Party.last_name + ' ', '') +
+            func.coalesce(Party.first_name + ' ', '') +
+            func.coalesce(Party.middle_initial, '')
+        )
+        parties_query = business.party_roles.join(Party).filter(
+            func.lower(PartyRole.role).in_([func.lower(value) for value in [
+                PartyRole.RoleTypes.PARTNER.value,
+                PartyRole.RoleTypes.PROPRIETOR.value
+            ]]),
+            PartyRole.cessation_date.is_(None)
+        ).order_by(sort_name)
+
+        parties = [party_role.party for party_role in parties_query.all()]
+        new_name = ','.join(party.name for party in parties[:2])
+        if len(parties) > 2:
+            new_name += ', et al'
 
     input_xml = build_input_xml('change_name', {
         'retryNumber': str(request_tracker.retry_number),

@@ -82,7 +82,6 @@ def create_party(party_json):
         organization_name=party_json['officer'].get('organizationName', '').upper(),
         email=party_json['officer'].get('email'),
         identifier=party_json['officer'].get('identifier'),
-        tax_id=party_json['officer'].get('taxId'),
         party_type=party_json['officer'].get('partyType')
     )
     if party_json.get('mailingAddress'):

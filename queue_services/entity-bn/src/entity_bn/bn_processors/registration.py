@@ -24,6 +24,7 @@ from legal_api.models import Business, Party, PartyRole, RequestTracker
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from sqlalchemy import func
 
 from entity_bn.bn_processors import (
     build_input_xml,
@@ -242,10 +243,23 @@ def _get_program_account(identifier, transaction_id):
 
 
 def _get_firm_legal_name(business: Business):
-    """Get firm legal name."""
-    parties = [party_role.party for party_role in business.party_roles.all()
-               if party_role.role.lower() in (PartyRole.RoleTypes.PARTNER.value,
-                                              PartyRole.RoleTypes.PROPRIETOR.value)]
+    """Get sorted firm legal name."""
+    sort_name = func.trim(
+        func.coalesce(Party.organization_name, '') +
+        func.coalesce(Party.last_name + ' ', '') +
+        func.coalesce(Party.first_name + ' ', '') +
+        func.coalesce(Party.middle_initial, '')
+    )
+
+    parties_query = business.party_roles.join(Party).filter(
+        func.lower(PartyRole.role).in_([func.lower(value) for value in [
+            PartyRole.RoleTypes.PARTNER.value,
+            PartyRole.RoleTypes.PROPRIETOR.value
+        ]])
+    ).order_by(sort_name)
+
+    parties = [party_role.party for party_role in parties_query.all()]
+
     legal_names = ','.join(party.name for party in parties[:2])
     if len(parties) > 2:  # Include only 2 parties in legal name
         legal_names += ', et al'
