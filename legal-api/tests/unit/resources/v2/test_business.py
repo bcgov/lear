@@ -21,7 +21,7 @@ from http import HTTPStatus
 import pytest
 
 import registry_schemas
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_ORDER_FILING_TEMPLATE, FILING_HEADER,\
+from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_ORDER_FILING_TEMPLATE, FILING_HEADER, \
     FILING_TEMPLATE, INCORPORATION
 
 from legal_api.models import Business, Filing, RegistrationBootstrap
@@ -74,7 +74,8 @@ def test_create_bootstrap_failure_filing(client, jwt):
 @pytest.mark.parametrize('filing_name', [
     'incorporationApplication',
     'registration',
-    'amalgamationApplication'
+    'amalgamationApplication',
+    'continuationIn',
 ])
 def test_create_bootstrap_minimal_draft_filing(client, jwt, filing_name):
     """Assert that a minimal filing can be used to create a draft filing."""
@@ -172,7 +173,7 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
-    
+
     if calls_auth:
         # should not call auth for staff/system/account_identity
         requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
@@ -338,6 +339,7 @@ def test_get_business_with_court_orders(session, client, jwt):
     assert rv.json['business']['identifier'] == identifier
     assert rv.json['business']['hasCourtOrders'] == True
 
+
 @pytest.mark.parametrize('identifier, legal_type, nr_number, legal_name, result', [
     ('Tb31yQIuBw', Business.LegalTypes.COMP.value, None, None, 'Numbered Limited Company'),
     ('Tb31yQIuBw', Business.LegalTypes.COMP.value, 'NR 1245670', 'Test NR name', 'Test NR name'),
@@ -346,7 +348,7 @@ def test_get_business_with_court_orders(session, client, jwt):
 ])
 def test_draft_amalgamation_name_selection(session, client, jwt, identifier, legal_type, nr_number, legal_name, result):
     """Test draft regular amalgamation with various name selection scenarios."""
-    
+
     # Setup a temporary registration and draft filing
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
@@ -377,13 +379,13 @@ def test_draft_amalgamation_name_selection(session, client, jwt, identifier, leg
 
     # Make a request to retrieve the draft businesses
     rv = client.post('/api/v2/businesses/search', json={'identifiers': [identifier]}, headers=create_header(jwt, [SYSTEM_ROLE]))
-    
+
     assert rv.status_code == HTTPStatus.OK, "Failed to retrieve draft businesses"
 
     # Extract and assert on the draft entity
     draft_entities = rv.json.get('draftEntities', [])
     assert len(draft_entities) == 1, "Did not find expected draft entity"
-    
+
     draft_entity = draft_entities[0]
     assert draft_entity.get('legalName') == result, f"Expected legal name to be Amalgamated Business but got '{draft_entity.get('legalName')}'"
 
@@ -391,17 +393,20 @@ def test_draft_amalgamation_name_selection(session, client, jwt, identifier, leg
 def test_post_affiliated_businesses(session, client, jwt):
     """Assert that the affiliated businesses endpoint returns as expected."""
     # setup
-    identifiers = ['CP1234567', 'BC1234567', 'Tb31yQIuBw', 'Tb31yQIuBq', 'Tb31yQIuBz', 'Tb31yQIuBy']
+    identifiers = ['CP1234567', 'BC1234567', 'Tb31yQIuBv', 'Tb31yQIuBw', 'Tb31yQIuBx', 'Tb31yQIuBy', 'Tb31yQIuBz']
     businesses = [
         (identifiers[0], Business.LegalTypes.COOP.value, None),
         (identifiers[1], Business.LegalTypes.BCOMP.value, '123456789BC0001')]
     draft_businesses = [
-        (identifiers[2], 'registration', Business.LegalTypes.BCOMP.value, None),
-        (identifiers[3], 'incorporationApplication', Business.LegalTypes.SOLE_PROP.value, 'NR 1234567'),
-        (identifiers[4], 'amalgamationApplication', Business.LegalTypes.COMP.value, 'NR 1234567')]
+        (identifiers[2], 'incorporationApplication', Business.LegalTypes.COOP.value, None),
+        (identifiers[3], 'incorporationApplication', Business.LegalTypes.BCOMP.value, None),
+        (identifiers[4], 'continuationIn', Business.LegalTypes.BCOMP_CONTINUE_IN.value, None),
+        (identifiers[5], 'amalgamationApplication', Business.LegalTypes.COMP.value, 'NR 1234567'),
+        (identifiers[6], 'registration', Business.LegalTypes.SOLE_PROP.value, 'NR 1234567'),
+    ]
 
     # NB: these are real businesses now so temp should not get returned
-    old_draft_businesses = [identifiers[4]]
+    old_draft_businesses = [identifiers[2]]
 
     for business in businesses:
         factory_business_model(legal_name=business[0] + 'name',
@@ -422,11 +427,17 @@ def test_post_affiliated_businesses(session, client, jwt):
         json_data = copy.deepcopy(FILING_HEADER)
         json_data['filing']['header']['name'] = filing_name
         json_data['filing']['header']['identifier'] = draft_business[0]
-        json_data['filing']['header']['legalType'] = draft_business[2]
+        del json_data['filing']['business']
+        json_data['filing'][filing_name] = {
+            'nameRequest': {
+                'legalType': draft_business[2]
+            }
+        }
         if draft_business[3]:
-            json_data['filing'][filing_name] = {
-                'nameRequest': {'nrNumber': draft_business[3],
-                                'legalName': 'name example'}
+            json_data['filing'][filing_name]['nameRequest'] = {
+                **json_data['filing'][filing_name]['nameRequest'],
+                'nrNumber': draft_business[3],
+                'legalName': 'name example',
             }
         if filing_name == 'amalgamationApplication':
             json_data['filing'][filing_name] = {
@@ -457,8 +468,10 @@ def test_post_affiliated_businesses(session, client, jwt):
             # if NR number is present, assert 'legalName' is also expected to be present
             assert 'legalName' in draft_entity
         else:
-            # assert 'legalName' is None or empty if no NR number is provided
-            assert draft_entity.get('legalName') is None or draft_entity.get('legalName') == ''
+            # assert 'legalName' is numberedDescription if no NR number is provided
+            assert (draft_entity.get('legalName') ==
+                    Business.BUSINESSES[expected_draft_business[2]]['numberedDescription'])
+
 
 def test_post_affiliated_businesses_unathorized(session, client, jwt):
     """Assert that the affiliated businesses endpoint unauthorized if not a system token."""
@@ -474,21 +487,3 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
                      json={},
                      headers=create_header(jwt, [SYSTEM_ROLE]))
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-
-
-# def test_get_business_unauthorized(app, session, client, jwt, requests_mock):
-#     """Assert that business is not returned for an unauthorized user."""
-#     # setup
-#     identifier = 'CP7654321'
-#     business = factory_business(identifier)
-#     business.save()
-
-#     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
-
-#     # test
-#     rv = client.get(f'/api/v2/businesses/{identifier}',
-#                     headers=create_header(jwt, [PUBLIC_USER], identifier)
-#                     )
-#     # check
-#     assert rv.status_code == HTTPStatus.UNAUTHORIZED
-#     assert rv.json == {'message': f'You are not authorized to view business {identifier}.'}

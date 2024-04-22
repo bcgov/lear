@@ -15,6 +15,7 @@
 
 The Business class and Schema are held in this module
 """
+import re
 from enum import Enum, auto
 from typing import Final, Optional
 
@@ -63,6 +64,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         COOP = 'CP'  # aka COOPERATIVE in namex
         BCOMP = 'BEN'  # aka BENEFIT_COMPANY in namex
+        BCOMP_CONTINUE_IN = 'CBEN'
         COMP = 'BC'  # aka CORPORATION in namex
         CONTINUE_IN = 'C'
         CO_1860 = 'QA'
@@ -78,6 +80,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         ULC_CO_1890 = 'UQD'
         ULC_CO_1897 = 'UQE'
         BC_CCC = 'CC'
+        CCC_CONTINUE_IN = 'CCC'
         EXTRA_PRO_A = 'A'
         EXTRA_PRO_B = 'B'
         CEMETARY = 'CEM'
@@ -95,7 +98,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         TRUST = 'T'
         TRAMWAYS = 'TMY'
         XPRO_COOP = 'XCP'
-        CCC_CONTINUE_IN = 'CCC'
         SOCIETY = 'S'
         XPRO_SOCIETY = 'XS'
         SOLE_PROP = 'SP'
@@ -111,6 +113,17 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         # DOING_BUSINESS_AS = 'DBA'
         # XPRO_CORPORATION = 'XCR'
         # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
+
+    CORPS: Final = [
+        LegalTypes.BCOMP.value,
+        LegalTypes.COMP.value,
+        LegalTypes.BC_CCC.value,
+        LegalTypes.BC_ULC_COMPANY.value,
+        LegalTypes.BCOMP_CONTINUE_IN.value,
+        LegalTypes.CONTINUE_IN.value,
+        LegalTypes.CCC_CONTINUE_IN.value,
+        LegalTypes.ULC_CONTINUE_IN.value,
+    ]
 
     LIMITED_COMPANIES: Final = [LegalTypes.COMP,
                                 LegalTypes.CONTINUE_IN,
@@ -156,6 +169,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'numberedDescription': 'Numbered Community Contribution Company'
         }
     }
+
+    # CORPS Continuation In has the same suffix and desc
+    BUSINESSES[LegalTypes.BCOMP_CONTINUE_IN] = BUSINESSES[LegalTypes.BCOMP]
+    BUSINESSES[LegalTypes.CONTINUE_IN] = BUSINESSES[LegalTypes.COMP]
+    BUSINESSES[LegalTypes.ULC_CONTINUE_IN] = BUSINESSES[LegalTypes.BC_ULC_COMPANY]
+    BUSINESSES[LegalTypes.CCC_CONTINUE_IN] = BUSINESSES[LegalTypes.BC_CCC]
 
     __versioned__ = {}
     __tablename__ = 'businesses'
@@ -290,10 +309,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             else:
                 # If this is a CO-OP, set the max date as April 30th next year.
                 ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
-        elif self.legal_type in [self.LegalTypes.BCOMP.value,
-                                 self.LegalTypes.COMP.value,
-                                 self.LegalTypes.BC_ULC_COMPANY.value,
-                                 self.LegalTypes.BC_CCC.value]:
+        elif self.legal_type in self.CORPS:
             # For BCOMP min date is next anniversary date.
             no_of_years_to_add = next_ar_year - self.founding_date.year
             ar_min_date = self.founding_date.date() + datedelta.datedelta(years=no_of_years_to_add)
@@ -614,6 +630,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         CP = BC COOPS prefix;
         XCP = Expro COOP prefix
+        BC = BC CORPS (BEN, BC, CC, ULC)
+        C = Continuation In BC CORPS (CBEN, C, CCC, CUL)
+        FM = Firms (SP, GP)
 
         Examples:
             ie: CP1234567 or XCP1234567
@@ -622,7 +641,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if identifier[:2] == 'NR':
             return True
 
-        if len(identifier) < 9:
+        if not re.match(r'^(CP|XCP|BC|C|FM)\d{7}$', identifier):
             return False
 
         try:
@@ -630,9 +649,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             if d == 0:
                 return False
         except ValueError:
-            return False
-        # TODO This is not correct for entity types that are not Coops
-        if identifier[:-7] not in ('CP', 'XCP', 'BC', 'FM'):
             return False
 
         return True

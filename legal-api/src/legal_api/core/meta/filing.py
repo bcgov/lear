@@ -258,16 +258,16 @@ FILINGS: Final = {
         'name': 'continuationIn',
         'title': 'Continuation In',
         'displayName': {
-            'BC': 'BC Limited Company Continuation In Application',
-            'BEN': 'BC Benefit Company Continuation In Application',
-            'CC': 'BC Community Contribution Company Continuation In Application',
-            'ULC': 'BC Unlimited Liability Company Continuation In Application',
+            'C': 'BC Limited Company Continuation In Application',
+            'CBEN': 'BC Benefit Company Continuation In Application',
+            'CCC': 'BC Community Contribution Company Continuation In Application',
+            'CUL': 'BC Unlimited Liability Company Continuation In Application',
         },
         'codes': {
-            'BC': 'CONTI',
-            'BEN': 'CONTI',
-            'ULC': 'CONTI',
-            'CC': 'CONTI'
+            'C': 'CONTI',
+            'CBEN': 'CONTI',
+            'CUL': 'CONTI',
+            'CCC': 'CONTI'
         }
     },
     'continuationOut': {

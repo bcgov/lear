@@ -19,7 +19,7 @@ from __future__ import annotations
 import copy
 from contextlib import suppress
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, Final, List, Optional
 
 from flask import current_app, url_for
 from flask_jwt_oidc import JwtManager
@@ -71,6 +71,7 @@ class Filing:
         CHANGEOFNAME = 'changeOfName'
         CHANGEOFREGISTRATION = 'changeOfRegistration'
         CONSENTCONTINUATIONOUT = 'consentContinuationOut'
+        CONTINUATIONIN = 'continuationIn'
         CONTINUATIONOUT = 'continuationOut'
         CONTINUEDOUT = 'continuedOut'
         CONVERSION = 'conversion'
@@ -100,6 +101,13 @@ class Filing:
         AMALGAMATION_APPLICATION_REGULAR = 'amalgamationApplication.regular'
         AMALGAMATION_APPLICATION_VERTICAL = 'amalgamationApplication.vertical'
         AMALGAMATION_APPLICATION_HORIZONTAL = 'amalgamationApplication.horizontal'
+
+    NEW_BUSINESS_FILING_TYPES: Final = [
+        FilingTypes.AMALGAMATIONAPPLICATION,
+        FilingTypes.CONTINUATIONIN,
+        FilingTypes.INCORPORATIONAPPLICATION,
+        FilingTypes.REGISTRATION,
+    ]
 
     def __init__(self):
         """Create the Filing."""

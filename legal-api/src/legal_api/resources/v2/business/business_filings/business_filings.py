@@ -36,7 +36,7 @@ import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Business, Filing, RegistrationBootstrap, User, UserRoles, db
+from legal_api.models import Address, Business, Filing, OfficeType, RegistrationBootstrap, User, UserRoles, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -365,9 +365,7 @@ class ListFilingResource():
     def check_and_update_nr(filing):
         """Check and update NR to extend expiration date as needed."""
         # if this is an incorporation filing for a name request
-        if filing.filing_type in (Filing.FILINGS['incorporationApplication']['name'],
-                                  Filing.FILINGS['registration']['name'],
-                                  Filing.FILINGS['amalgamationApplication']['name']):
+        if filing.filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
             nr_number = filing.json['filing'][filing.filing_type]['nameRequest'].get('nrNumber', None)
             effective_date = filing.json['filing']['header'].get('effectiveDate', None)
             if effective_date:
@@ -427,11 +425,7 @@ class ListFilingResource():
         if not filing_type:
             return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
 
-        if filing_type not in [
-            Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name'],
-            Filing.FILINGS['amalgamationApplication']['name']
-        ] and business is None:
+        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES and business is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         return None, None
@@ -648,11 +642,7 @@ class ListFilingResource():
         filing_type = filing_json['filing']['header'].get('name', None)
         waive_fees_flag = filing_json['filing']['header'].get('waiveFees', False)
 
-        if filing_type in (
-            Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name'],
-            Filing.FILINGS['amalgamationApplication']['name']
-        ):
+        if filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
             legal_type = filing_json['filing'][filing_type]['nameRequest']['legalType']
         else:
             legal_type = business.legal_type
@@ -726,7 +716,7 @@ class ListFilingResource():
                 if k in ['changeOfDirectors', 'changeOfAddress']:
                     priority = False if filing_type == 'annualReport' else priority_flag
 
-                if k in ['incorporationApplication', 'amalgamationApplication', 'alteration']:
+                if k in ['incorporationApplication', 'amalgamationApplication', 'continuationIn', 'alteration']:
                     filing_types.append({
                         'filingTypeCode': filing_type_code,
                         'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
@@ -758,19 +748,13 @@ class ListFilingResource():
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
 
-        if filing.filing_type in (
-            Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name'],
-            Filing.FILINGS['amalgamationApplication']['name']
-        ):
-            if filing.filing_type in [Filing.FILINGS['incorporationApplication']['name'],
-                                      Filing.FILINGS['amalgamationApplication']['name']]:
-                mailing_address = Address.create_address(
-                    filing.json['filing'][filing.filing_type]['offices']['registeredOffice']['mailingAddress'])
-            elif filing.filing_type == Filing.FILINGS['registration']['name']:
-                mailing_address = Address.create_address(
-                    filing.json['filing']['registration']['offices']['businessOffice']['mailingAddress'])
+        if filing.filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
+            office_type = OfficeType.REGISTERED
+            if filing.filing_type == Filing.FILINGS['registration']['name']:
+                office_type = OfficeType.BUSINESS
 
+            mailing_address = Address.create_address(
+                filing.json['filing'][filing.filing_type]['offices'][office_type]['mailingAddress'])
             corp_type = filing.json['filing'][filing.filing_type]['nameRequest'].get(
                 'legalType', Business.LegalTypes.BCOMP.value)
 
@@ -872,11 +856,7 @@ class ListFilingResource():
     def set_effective_date(business: Business, filing: Filing):
         """Set the effective date of the Filing."""
         filing_type = filing.filing_json['filing']['header']['name']
-        if filing_type in (
-            Filing.FILINGS['incorporationApplication']['name'],
-            Filing.FILINGS['registration']['name'],
-            Filing.FILINGS['amalgamationApplication']['name']
-        ):
+        if filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
             if fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate'):
                 filing.effective_date = datetime.datetime.fromisoformat(fe_date)
                 filing.save()

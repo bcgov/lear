@@ -200,11 +200,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         'continuationIn': {
             'name': 'continuationIn',
             'title': 'Continuation In',
+            'temporaryCorpTypeCode': 'CTMP',
             'codes': {
-                'BC': 'CONTI',
-                'BEN': 'CONTI',
-                'ULC': 'CONTI',
-                'CC': 'CONTI'
+                'C': 'CONTI',
+                'CBEN': 'CONTI',
+                'CUL': 'CONTI',
+                'CCC': 'CONTI'
             }
         },
         'continuationOut': {
