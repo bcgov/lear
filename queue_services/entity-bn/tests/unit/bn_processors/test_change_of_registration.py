@@ -27,6 +27,8 @@ from tests.unit import create_filing, create_registration_data
     ('SP'),
     ('GP'),
 ])
+
+@pytest.mark.asyncio
 async def test_change_of_registration(app, session, mocker, legal_type):
     """Test inform cra about change of SP/GP registration."""
     filing_id, business_id = create_registration_data(legal_type, tax_id='993775204BC0001')
@@ -111,7 +113,7 @@ async def test_change_of_registration(app, session, mocker, legal_type):
     assert request_trackers[0].is_processed
     assert request_trackers[0].retry_number == 0
 
-
+@pytest.mark.asyncio
 @pytest.mark.parametrize('legal_type, tax_id', [
     ('SP', None),
     ('SP', ''),
@@ -196,7 +198,7 @@ async def test_bn15_not_available_change_of_registration(app, session, mocker, l
     assert request_trackers[0].response_object == bn_note
     assert request_trackers[0].retry_number == 0
 
-
+@pytest.mark.asyncio
 @pytest.mark.parametrize('request_type, data', [
     (RequestTracker.RequestType.CHANGE_NAME, {'nameRequest': {'legalName': 'new name'}}),
     (RequestTracker.RequestType.CHANGE_PARTY, {'parties': [{}]}),
@@ -205,6 +207,7 @@ async def test_bn15_not_available_change_of_registration(app, session, mocker, l
     (RequestTracker.RequestType.CHANGE_MAILING_ADDRESS, {'offices': {'businessOffice': {'mailingAddress': {},
                                                                                         'deliveryAddress': {}}}}),
 ])
+
 async def test_retry_change_of_registration(app, session, mocker, request_type, data):
     """Test retry change of SP/GP registration."""
     filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')

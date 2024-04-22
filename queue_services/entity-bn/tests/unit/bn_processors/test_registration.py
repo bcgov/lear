@@ -35,6 +35,8 @@ acknowledgement_response = """<?xml version="1.0"?>
     ('SP'),
     ('GP'),
 ])
+
+@pytest.mark.asyncio
 async def test_registration(app, session, mocker, legal_type):
     """Test inform cra about new SP/GP registration."""
     filing_id, business_id = create_registration_data(legal_type)
@@ -85,7 +87,7 @@ async def test_registration(app, session, mocker, legal_type):
     business = Business.find_by_internal_id(business_id)
     assert business.tax_id == f'{business_number}{business_program_id}{str(program_account_ref_no).zfill(4)}'
 
-
+@pytest.mark.asyncio
 @pytest.mark.parametrize('request_type', [
     (RequestTracker.RequestType.INFORM_CRA),
     (RequestTracker.RequestType.GET_BN),
