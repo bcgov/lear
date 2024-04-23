@@ -25,7 +25,7 @@ import pytest
 from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole, db
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, Party, PartyRole, db
 from legal_api.services import flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
@@ -317,6 +317,10 @@ def test_business_json(session):
         'allowedActions': {}
     }
 
+    from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+    if flags.is_on("enable-legal-name-fix"):
+        d['alternateNames'] = []
+
     assert business.json() == d
 
     # include dissolutionDate
@@ -342,6 +346,244 @@ def test_business_json(session):
     business.tax_id = '123456789'
     d['taxId'] = business.tax_id
     assert business.json() == d
+
+
+ALTERNATE_NAME_1 = "operating name 1"
+ALTERNATE_NAME_1_IDENTIFIER = "FM1111111"
+ALTERNATE_NAME_1_START_DATE = "2023-09-02"
+ALTERNATE_NAME_1_START_DATE_ISO = "2023-09-02T07:00:00+00:00"
+ALTERNATE_NAME_1_REGISTERED_DATE = "2000-01-01"
+ALTERNATE_NAME_1_REGISTERED_DATE_ISO = "2000-01-01T07:00:00+00:00"
+
+ALTERNATE_NAME_2 = "operating name 2"
+ALTERNATE_NAME_2_IDENTIFIER = "FM2222222"
+ALTERNATE_NAME_2_START_DATE = "2023-09-05"
+ALTERNATE_NAME_2_START_DATE_ISO = "2023-09-05T07:00:00+00:00"
+ALTERNATE_NAME_2_REGISTERED_DATE = "2005-01-01"
+ALTERNATE_NAME_2_REGISTERED_DATE_ISO = "2005-01-01T07:00:00+00:00"
+
+
+@pytest.mark.parametrize(
+    "test_name, businesses_info, alternate_names_info, expected_alternate_names",
+    [
+        (
+            "NO_ALTERNATE_NAMES_NON_FIRMS",
+            [
+                {"identifier": "CP1234567", "legalType": "CP", "legalName": "CP Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "BEN", "legalName": "BEN Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "BC", "legalName": "BC Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "ULC", "legalName": "ULC Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "CC", "legalName": "CCC Test XYZ"},
+            ],
+            [],
+            [],
+        ),
+        (
+            "ALTERNATE_NAMES_NON_FIRMS",
+            # business_info
+            [
+                {"identifier": "CP1234567", "legalType": "CP", "legalName": "CP Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "BEN", "legalName": "BEN Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "BC", "legalName": "BC Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "ULC", "legalName": "ULC Test XYZ"},
+                {"identifier": "BC1234567", "legalType": "CC", "legalName": "CCC Test XYZ"},
+            ],
+            # alternate_names_info
+            [
+                {
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
+                    "entityType": "SP",
+                    "name": ALTERNATE_NAME_1,
+                    "registeredDate": ALTERNATE_NAME_1_REGISTERED_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                },
+            ],
+            # expected_alternate_names
+            [
+                {
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
+                    "entityType": "SP",
+                    "registeredDate": ALTERNATE_NAME_1_REGISTERED_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_1_START_DATE,
+                    "name": ALTERNATE_NAME_1,
+                    "type": "DBA",
+                },
+            ],
+        ),
+        (
+            "ALTERNATE_NAMES_FIRMS_SP",
+            # business_info
+            [
+                {
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
+                    "legalType": "SP",
+                    "legalName": ALTERNATE_NAME_1,
+                    "foundingDate": ALTERNATE_NAME_1_REGISTERED_DATE_ISO,
+                }
+            ],
+            # alternate_names_info
+            [
+                {
+                    "identifier": ALTERNATE_NAME_2_IDENTIFIER,
+                    "entityType": "SP",
+                    "name": ALTERNATE_NAME_2,
+                    "registeredDate": ALTERNATE_NAME_2_REGISTERED_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                }
+            ],
+            # expected_alternate_names
+            [
+                {
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
+                    "entityType": "SP",
+                    "registeredDate": ALTERNATE_NAME_1_REGISTERED_DATE_ISO,
+                    "startDate": None,
+                    "name": ALTERNATE_NAME_1,
+                    "type": "DBA",
+                }
+            ],
+        ),
+        (
+            "ALTERNATE_NAMES_FIRMS_GP",
+            # business_info
+            [
+                {
+                    "identifier": ALTERNATE_NAME_2_IDENTIFIER,
+                    "legalType": "GP",
+                    "legalName": ALTERNATE_NAME_2,
+                    "foundingDate": ALTERNATE_NAME_2_REGISTERED_DATE_ISO,
+                }
+            ],
+            # alternate_names_info
+            [
+                {
+                    "identifier": ALTERNATE_NAME_2_IDENTIFIER,
+                    "entityType": "GP",
+                    "name": ALTERNATE_NAME_2,
+                    "registeredDate": ALTERNATE_NAME_2_REGISTERED_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                }
+            ],
+            # expected_alternate_names
+            [
+                {
+                    "identifier": ALTERNATE_NAME_2_IDENTIFIER,
+                    "entityType": "GP",
+                    "registeredDate": ALTERNATE_NAME_2_REGISTERED_DATE_ISO,
+                    "startDate": None,
+                    "name": ALTERNATE_NAME_2,
+                    "type": "DBA",
+                }
+            ],
+        ),
+        # tests scenario where GP has 2 operating names:
+        # 1. operating name for GP when firm first created
+        # 2. operating name for SP that it owns
+        (
+            "ALTERNATE_NAMES_FIRMS_GP_MULTIPLE_NAMES",
+            # business_info
+            [
+                {
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
+                    "legalType": "GP",
+                    "legalName": ALTERNATE_NAME_1,
+                    "foundingDate": ALTERNATE_NAME_1_REGISTERED_DATE_ISO,
+                }
+            ],
+            # alternate_names_info
+            [
+                {
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
+                    "entityType": "GP",
+                    "name": ALTERNATE_NAME_1,
+                    "registeredDate": ALTERNATE_NAME_1_REGISTERED_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_1_START_DATE_ISO,
+                },
+                {
+                    "identifier": ALTERNATE_NAME_2_IDENTIFIER,
+                    "entityType": "SP",
+                    "name": ALTERNATE_NAME_2,
+                    "registeredDate": ALTERNATE_NAME_2_REGISTERED_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_2_START_DATE_ISO,
+                },
+            ],
+            # expected_alternate_names
+            [
+                {
+                    "identifier": ALTERNATE_NAME_2_IDENTIFIER,
+                    "entityType": "SP",
+                    "registeredDate": ALTERNATE_NAME_2_REGISTERED_DATE_ISO,
+                    "startDate": ALTERNATE_NAME_2_START_DATE,
+                    "name": ALTERNATE_NAME_2,
+                    "type": "DBA",
+                },
+                {
+                    "identifier": ALTERNATE_NAME_1_IDENTIFIER,
+                    "entityType": "GP",
+                    "registeredDate": ALTERNATE_NAME_1_REGISTERED_DATE_ISO,
+                    "startDate": None,
+                    "name": ALTERNATE_NAME_1,
+                    "type": "DBA",
+                },
+            ],
+        ),
+    ],
+)
+def test_business_alternate_names(session, test_name, businesses_info, alternate_names_info, expected_alternate_names):
+    """Assert that the business' alternate names are correct."""
+    from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
+    for business_info in businesses_info:
+        session.begin_nested()
+        founding_date_str = business_info.get("foundingDate")
+        start_date_str = business_info.get("startDate")
+        founding_date = datetime.strptime(business_info["foundingDate"], "%Y-%m-%dT%H:%M:%S%z") if founding_date_str else datetime.utcfromtimestamp(0)
+        start_date = datetime.strptime(business_info["startDate"], "%Y-%m-%dT%H:%M:%S%z") if start_date_str else None
+        
+        business = Business(
+            legal_name=business_info["legalName"],
+            legal_type=business_info["legalType"],
+            founding_date=founding_date,
+            start_date=start_date,
+            identifier=business_info["identifier"],
+            state=Business.State.ACTIVE
+        )
+        session.add(business)
+
+        for alternate_name_info in alternate_names_info:
+            business_alternate_name = Business(
+                legal_name=alternate_name_info["name"],
+                legal_type=alternate_name_info["entityType"],
+                founding_date=datetime.strptime(alternate_name_info["registeredDate"], "%Y-%m-%dT%H:%M:%S%z"),
+                start_date=datetime.strptime(alternate_name_info["startDate"], "%Y-%m-%dT%H:%M:%S%z"),
+                identifier=alternate_name_info["identifier"],
+                state=Business.State.ACTIVE
+            )
+            session.add(business_alternate_name)
+            session.flush()
+
+            if alternate_name_info["entityType"] == Business.LegalTypes.SOLE_PROP:
+                party = Party(
+                    party_type=Party.PartyTypes.ORGANIZATION.value,
+                    identifier=business_info["identifier"],
+                    organization_name=business_info["legalName"]
+                )
+                session.add(party)
+
+                party_role = PartyRole(
+                    role=PartyRole.RoleTypes.PROPRIETOR.value,
+                    business_id=business_alternate_name.id,
+                    party=party
+                )
+                session.add(party_role)
+
+        session.flush()
+
+        with patch.object(flags, 'is_on', return_value=True):
+            business_json = business.json()
+        assert 'alternateNames' in business_json
+        assert business_json['alternateNames'] == expected_alternate_names
+        session.rollback()
 
 
 def test_business_relationships_json(session):
