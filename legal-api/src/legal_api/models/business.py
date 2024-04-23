@@ -651,7 +651,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                     filter(PartyRole.role == PartyRole.RoleTypes.PROPRIETOR.value,
                            PartyRole.party_id.in_([p.id for p in parties])
                            ).all()
-                for proprietor in proprietors:  # noqa: E501
+                for proprietor in proprietors:
                     sole_prop = Business.find_by_internal_id(proprietor.business_id)
                     if not sole_prop:
                         continue
