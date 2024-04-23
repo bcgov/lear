@@ -281,10 +281,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         from legal_api.services import flags  # pylint: disable=import-outside-toplevel
 
         flag_on = flags.is_on('enable-legal-name-fix')
-        if self.legal_type in [
-            Business.LegalTypes.PARTNERSHIP.value,
-            Business.LegalTypes.SOLE_PROP.value
-        ] and flag_on:
+        if self.is_firm and flag_on:
             sort_name = func.trim(
                 func.coalesce(Party.organization_name, '') +
                 func.coalesce(Party.last_name+' ', '') +
