@@ -257,8 +257,6 @@ def test_good_standing(session, last_ar_date, legal_type, state, limited_restora
 
 def test_business_json(session):
     """Assert that the business model is saved correctly."""
-    from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
     business = Business(legal_name='legal_name',
                         legal_type='CP',
                         founding_date=EPOCH_DATETIME,
@@ -531,8 +529,6 @@ ALTERNATE_NAME_2_REGISTERED_DATE_ISO = "2005-01-01T07:00:00+00:00"
 )
 def test_business_alternate_names(session, test_name, businesses_info, alternate_names_info, expected_alternate_names):
     """Assert that the business' alternate names are correct."""
-    from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
     for business_info in businesses_info:
         session.begin_nested()
         founding_date_str = business_info.get("foundingDate")
