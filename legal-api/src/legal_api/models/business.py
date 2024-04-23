@@ -669,7 +669,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                         }
                     )
 
-        if self.legal_type in [Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP]:
+        if self.is_firm:
             start_date = LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None
             alternate_names.append(
                 {
