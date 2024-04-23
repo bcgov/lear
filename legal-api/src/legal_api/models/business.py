@@ -290,7 +290,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             )
 
             parties_query = self.party_roles.join(Party).filter(
-                PartyRole.role.in_([
+                func.lower(PartyRole.role).in_([
                     PartyRole.RoleTypes.PARTNER.value,
                     PartyRole.RoleTypes.PROPRIETOR.value
                 ])
