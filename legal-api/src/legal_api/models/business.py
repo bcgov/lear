@@ -40,10 +40,8 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-
 from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .party import Party
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
@@ -407,7 +405,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             if self.restoration_expiry_date:
                 return False  # A business in limited restoration is not in good standing
             else:
-                date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)  # This results in a naive datetime
+                # This cutoff date is a naive datetime. We need to use replace to make it timezone aware
+                date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
 
@@ -486,7 +485,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
-        if flags.is_on("enable-legal-name-fix"):
+        if flags.is_on('enable-legal-name-fix'):
             d['alternateNames'] = self.get_alternate_names()
 
         if self.last_coa_date:
@@ -636,51 +635,54 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         for alias in self.aliases:
             alternate_names.append(
                 {
-                    "name": alias.alias,
-                    "startDate": LegislationDatetime.format_as_legislation_date(self.founding_date),
-                    "type": alias.type
+                    'name': alias.alias,
+                    'startDate': LegislationDatetime.format_as_legislation_date(self.founding_date),
+                    'type': alias.type
                 }
             )
 
         if self.legal_type != Business.LegalTypes.SOLE_PROP:
             parties = db.session.query(Party). \
                 filter(Party.party_type == Party.PartyTypes.ORGANIZATION.value,
-                       Party.identifier == self.identifier,
+                       Party.identifier == self.identifier,  # pylint: disable=comparison-with-callable
                        ).all()
             if parties:
                 proprietors = db.session.query(PartyRole). \
                     filter(PartyRole.role == PartyRole.RoleTypes.PROPRIETOR.value,
-                        PartyRole.party_id.in_([p.id for p in parties])
-                        ).all()
-                for proprietor in proprietors:
+                           PartyRole.party_id.in_([p.id for p in parties])
+                           ).all()
+                for proprietor in proprietors:  # noqa: E501
                     sole_prop = Business.find_by_internal_id(proprietor.business_id)
                     if not sole_prop:
                         continue
+                    if start_date := sole_prop.start_date:
+                        start_date = LegislationDatetime.format_as_legislation_date(sole_prop.start_date)
+
                     alternate_names.append(
                         {
-                            "entityType": sole_prop.legal_type,
-                            "identifier": sole_prop.identifier,
-                            "name": sole_prop.legal_name,
-                            "registeredDate": sole_prop.founding_date.isoformat(),
-                            "startDate": LegislationDatetime.format_as_legislation_date(sole_prop.start_date) if sole_prop.start_date else None,
-                            "type": "DBA"
+                            'entityType': sole_prop.legal_type,
+                            'identifier': sole_prop.identifier,
+                            'name': sole_prop.legal_name,
+                            'registeredDate': sole_prop.founding_date.isoformat(),
+                            'startDate': start_date,
+                            'type': 'DBA'
                         }
                     )
 
         if self.legal_type in [Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP]:
+            start_date = LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None
             alternate_names.append(
                 {
-                    "entityType": self.legal_type,
-                    "identifier": self.identifier,
-                    "name": self.legal_name,
-                    "registeredDate": self.founding_date.isoformat(),
-                    "startDate": LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None,
-                    "type": "DBA" 
+                    'entityType': self.legal_type,
+                    'identifier': self.identifier,
+                    'name': self.legal_name,
+                    'registeredDate': self.founding_date.isoformat(),
+                    'startDate': start_date,
+                    'type': 'DBA'
                 }
             )
 
         return alternate_names
-
 
     def get_amalgamated_into(self) -> dict:
         """Get amalgamated into if this business is part of an amalgamation.
