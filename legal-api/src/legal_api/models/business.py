@@ -26,6 +26,7 @@ from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 from sqlalchemy.sql import func
+from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -632,15 +633,24 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         """
         alternate_names = []
 
-        for alias in self.aliases:
-            alternate_names.append(
-                {
-                    'name': alias.alias,
-                    'startDate': LegislationDatetime.format_as_legislation_date(self.founding_date),
-                    'type': alias.type
-                }
-            )
+        # Get start date value for aliases from filing.effective_date that's tied to
+        # the transaction that created the alias
+        alias_version = version_class(Alias)
+        aliases = db.session.query(alias_version). \
+            filter(alias_version.id.in_([a.id for a in self.aliases]),
+                   alias_version.end_transaction_id is None
+                   ).all()
+        for alias in aliases:
+            filing = db.session.query(Filing). \
+                filter(Filing.transaction_id == alias.transaction_id
+                       ).one_or_none()
+            alternate_names.append({
+                'name': alias.alias,
+                'startDate':  LegislationDatetime.format_as_legislation_date(filing.effective_date),
+                'type': alias.type
+            })
 
+        # Get SP DBA entries if not SP
         if self.legal_type != Business.LegalTypes.SOLE_PROP:
             parties = db.session.query(Party). \
                 filter(Party.party_type == Party.PartyTypes.ORGANIZATION.value,
@@ -669,6 +679,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                         }
                     )
 
+        # For firms also get existing business record
         if self.is_firm:
             start_date = LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None
             alternate_names.append(
