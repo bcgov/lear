@@ -98,10 +98,10 @@ def change_name(business: Business, filing: Filing,  # pylint: disable=too-many-
             func.coalesce(Party.middle_initial, '')
         )
         parties_query = business.party_roles.join(Party).filter(
-            func.lower(PartyRole.role).in_([func.lower(value) for value in [
+            func.lower(PartyRole.role).in_([
                 PartyRole.RoleTypes.PARTNER.value,
                 PartyRole.RoleTypes.PROPRIETOR.value
-            ]]),
+            ]),
             PartyRole.cessation_date.is_(None)
         ).order_by(sort_name)
 

@@ -252,10 +252,10 @@ def _get_firm_legal_name(business: Business):
     )
 
     parties_query = business.party_roles.join(Party).filter(
-        func.lower(PartyRole.role).in_([func.lower(value) for value in [
+        func.lower(PartyRole.role).in_([
             PartyRole.RoleTypes.PARTNER.value,
             PartyRole.RoleTypes.PROPRIETOR.value
-        ]])
+        ])
     ).order_by(sort_name)
 
     parties = [party_role.party for party_role in parties_query.all()]
