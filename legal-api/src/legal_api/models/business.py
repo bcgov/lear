@@ -24,18 +24,22 @@ from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
+from sqlalchemy.sql import func
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .db import db  # noqa: I001
+from .party import Party
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
+
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import;
+
 from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -286,6 +290,40 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         else:
             raise BusinessException('invalid-identifier-format', 406)
 
+    @hybrid_property
+    def business_legal_name(self):
+        """
+        Return correct legal name based on feature flag.
+
+        Legal Name Easy Fix
+        """
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
+        flag_on = flags.is_on('enable-legal-name-fix')
+        if self.is_firm and flag_on:
+            sort_name = func.trim(
+                func.coalesce(Party.organization_name, '') +
+                func.coalesce(Party.last_name+' ', '') +
+                func.coalesce(Party.first_name+' ', '') +
+                func.coalesce(Party.middle_initial, '')
+            )
+
+            parties_query = self.party_roles.join(Party).filter(
+                func.lower(PartyRole.role).in_([
+                    PartyRole.RoleTypes.PARTNER.value,
+                    PartyRole.RoleTypes.PROPRIETOR.value
+                ])
+            ).order_by(sort_name)
+
+            parties = [party_role.party for party_role in parties_query.all()]
+
+            legal_names = ', '.join(party.name for party in parties[:2])
+            if len(parties) > 2:
+                legal_names += ', et al'
+            return legal_names
+
+        return self.legal_name
+
     @property
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
@@ -429,7 +467,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'adminFreeze': self.admin_freeze or False,
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
-            'legalName': self.legal_name,
+            'legalName': self.business_legal_name,
             'legalType': self.legal_type,
             'state': self.state.name if self.state else Business.State.ACTIVE.name
         }

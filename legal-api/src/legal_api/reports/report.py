@@ -465,6 +465,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         else:
             business_json = business.json()
+            business_json['legalName'] = business.legal_name  # legal name easy fix
         business_json['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
         business_json['formatted_founding_date'] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
         filing.filing_json['filing']['business'] = business_json
