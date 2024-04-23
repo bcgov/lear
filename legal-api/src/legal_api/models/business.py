@@ -644,7 +644,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if self.legal_type != Business.LegalTypes.SOLE_PROP:
             parties = db.session.query(Party). \
                 filter(Party.party_type == Party.PartyTypes.ORGANIZATION.value,
-                       Party.identifier == self.identifier,  # pylint: disable=comparison-with-callable
+                       Party.identifier == self._identifier,
                        ).all()
             if parties:
                 proprietors = db.session.query(PartyRole). \
