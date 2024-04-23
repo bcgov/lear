@@ -638,7 +638,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         alias_version = version_class(Alias)
         aliases = db.session.query(alias_version). \
             filter(alias_version.id.in_([a.id for a in self.aliases]),
-                   alias_version.end_transaction_id is None
+                   alias_version.end_transaction_id == None  # noqa: E711; pylint: disable=singleton-comparison
                    ).all()
         for alias in aliases:
             filing = db.session.query(Filing). \
