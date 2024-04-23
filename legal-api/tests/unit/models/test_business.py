@@ -257,6 +257,8 @@ def test_good_standing(session, last_ar_date, legal_type, state, limited_restora
 
 def test_business_json(session):
     """Assert that the business model is saved correctly."""
+    from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
     business = Business(legal_name='legal_name',
                         legal_type='CP',
                         founding_date=EPOCH_DATETIME,
@@ -295,6 +297,7 @@ def test_business_json(session):
     d = {
         **d_slim,
         'foundingDate': EPOCH_DATETIME.isoformat(),
+        'alternateNames': [],
         'lastAddressChangeDate': '',
         'lastDirectorChangeDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
@@ -317,35 +320,32 @@ def test_business_json(session):
         'allowedActions': {}
     }
 
-    from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-    if flags.is_on("enable-legal-name-fix"):
-        d['alternateNames'] = []
+    with patch.object(flags, 'is_on', return_value=True):
+        assert business.json() == d
 
-    assert business.json() == d
+        # include dissolutionDate
+        business.dissolution_date = EPOCH_DATETIME
+        d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(business.dissolution_date)
+        business_json = business.json()
+        assert business_json == d
+        dissolution_date_str = business_json['dissolutionDate']
+        dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
+        assert dissolution_date_format_correct
 
-    # include dissolutionDate
-    business.dissolution_date = EPOCH_DATETIME
-    d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(business.dissolution_date)
-    business_json = business.json()
-    assert business_json == d
-    dissolution_date_str = business_json['dissolutionDate']
-    dissolution_date_format_correct = has_expected_date_str_format(dissolution_date_str, '%Y-%m-%d')
-    assert dissolution_date_format_correct
+        business.dissolution_date = None
+        d.pop('dissolutionDate')
 
-    business.dissolution_date = None
-    d.pop('dissolutionDate')
+        # include fiscalYearEndDate
+        business.fiscal_year_end_date = EPOCH_DATETIME
+        d['fiscalYearEndDate'] = datetime.date(business.fiscal_year_end_date).isoformat()
+        assert business.json() == d
+        business.fiscal_year_end_date = None
+        d.pop('fiscalYearEndDate')
 
-    # include fiscalYearEndDate
-    business.fiscal_year_end_date = EPOCH_DATETIME
-    d['fiscalYearEndDate'] = datetime.date(business.fiscal_year_end_date).isoformat()
-    assert business.json() == d
-    business.fiscal_year_end_date = None
-    d.pop('fiscalYearEndDate')
-
-    # include taxId
-    business.tax_id = '123456789'
-    d['taxId'] = business.tax_id
-    assert business.json() == d
+        # include taxId
+        business.tax_id = '123456789'
+        d['taxId'] = business.tax_id
+        assert business.json() == d
 
 
 ALTERNATE_NAME_1 = "operating name 1"
