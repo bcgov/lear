@@ -480,8 +480,10 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
 
 @pytest.mark.parametrize('test_name, legal_type, flag_on', [
     ('GP_FLAG_ON', 'GP', True),
+    ('GP_FLAG_ON_MORE_PARTNERS', 'GP', True),
     ('SP_FLAG_ON', 'SP', True),
     ('GP_FLAG_OFF', 'GP', False),
+    ('GP_FLAG_OFF_MORE_PARTNERS', 'GP', False),
     ('SP_FLAG_OFF', 'SP', False),
     ('NON_FIRM_FLAG_ON', 'BC', True),
     ('NON_FIRM_FLAG_OFF', 'BC', False),
@@ -513,6 +515,14 @@ def test_firm_business_json(session, test_name, legal_type, flag_on):
         'organizationName': ''
     }
 
+    officer3 = {
+        'firstName': 'John',
+        'lastName': 'Doe',
+        'middleInitial': 'C',
+        'partyType': 'person',
+        'organizationName': ''
+    }
+
     if legal_type == Business.LegalTypes.SOLE_PROP:
         proprietor_role = factory_party_role(None, None, officer1, None, None, PartyRole.RoleTypes.PROPRIETOR)
         business.party_roles.append(proprietor_role)
@@ -521,6 +531,10 @@ def test_firm_business_json(session, test_name, legal_type, flag_on):
         partner_role2 = factory_party_role(None, None, officer2, None, None, PartyRole.RoleTypes.PARTNER)
         business.party_roles.append(partner_role1)
         business.party_roles.append(partner_role2)
+
+        if 'MORE_PARTNERS' in test_name:
+            partner_role3 = factory_party_role(None, None, officer3, None, None, PartyRole.RoleTypes.PARTNER)
+            business.party_roles.append(partner_role3)
     else:
         party_role = factory_party_role(None, None, officer1, None, None, PartyRole.RoleTypes.DIRECTOR)
         business.party_roles.append(party_role)
@@ -536,6 +550,9 @@ def test_firm_business_json(session, test_name, legal_type, flag_on):
                 if legal_type == Business.LegalTypes.SOLE_PROP.value:
                     assert business_json['legalName'] == 'JANE A DOE'
                 else:
-                    assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
+                    if 'MORE_PARTNERS' in test_name:
+                        assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE, et al'
+                    else:
+                        assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
         else:
             assert business_json['legalName'] == 'TEST ABC'
