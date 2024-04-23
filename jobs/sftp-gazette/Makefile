@@ -126,6 +126,8 @@ update-env: ## Update env from 1pass
 		-v "$(VAULTS)" \
 		-r "false" \
 		-f "false"
+tag: push ## tag image
+	oc -n "$(OPENSHIFT_REPOSITORY)-tools" tag $(DOCKER_NAME):latest $(DOCKER_NAME):$(TAG_NAME)
 
 #################################################################################
 # COMMANDS - Local                                                              #

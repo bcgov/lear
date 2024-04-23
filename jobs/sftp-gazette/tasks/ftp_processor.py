@@ -16,20 +16,21 @@ import logging
 from typing import List
 from services.sftp import SFTPService
 
+
 class FtpProcessor:  # pylint:disable=too-few-public-methods
 
     @classmethod
-    def process_ftp(cls, data_dir):        
+    def process_ftp(cls, data_dir):
         with SFTPService.get_connection() as sftp_client:
-            try:            
+            try:
                 file_list = os.listdir(data_dir)
                 logging.info(f'Found {len(file_list)} to be copied.')
-                
-                for file in file_list:                                      
-                    file_full_name = data_dir + file                      
-                    sftp_client.put(file_full_name) 
-                    logging.info('SFTP to Gazette completed for file: %s', file_full_name)    
+
+                for file in file_list:
+                    if file[-4:] == '.xml':
+                        file_full_name = data_dir + file
+                        sftp_client.put(file_full_name)
+                        logging.info('SFTP to Gazette completed for file: %s', file_full_name)
 
             except Exception as e:  # NOQA # pylint: disable=broad-except
                 logging.error(e)
-        
