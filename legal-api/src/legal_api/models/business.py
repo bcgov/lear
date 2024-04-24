@@ -20,11 +20,13 @@ from enum import Enum, auto
 from typing import Final, Optional
 
 import datedelta
+import pytz
 from flask import current_app
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 from sqlalchemy.sql import func
+from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -39,7 +41,6 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-
 from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -406,7 +407,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             if self.restoration_expiry_date:
                 return False  # A business in limited restoration is not in good standing
             else:
-                return last_ar_date + datedelta.datedelta(years=1, months=2, days=1) > datetime.utcnow()
+                # This cutoff date is a naive datetime. We need to use replace to make it timezone aware
+                date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
+                return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
 
     def save(self):
@@ -480,7 +483,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
     def _extend_json(self, d):
         """Include conditional fields to json."""
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
+
+        if flags.is_on('enable-legal-name-fix'):
+            d['alternateNames'] = self.get_alternate_names()
 
         if self.last_coa_date:
             d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
@@ -615,6 +623,78 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             filter(Filing.id == filing_id). \
             one_or_none()
         return None if not filing else filing[1]
+
+    def get_alternate_names(self) -> dict:
+        """Get alternate names for this business.
+
+        - Return name translation (alias table) entries if any
+        - Return SP DBA entries in alternate name entries if not SP
+        - For SP or GP, also return an alternate name from existing business record
+        - Return empty list if there are no alternate name entries
+        """
+        alternate_names = []
+
+        # Get start date value for aliases from filing.effective_date that's tied to
+        # the transaction that created the alias
+        alias_version = version_class(Alias)
+        aliases = db.session.query(alias_version). \
+            filter(alias_version.id.in_([a.id for a in self.aliases]),
+                   alias_version.end_transaction_id == None  # noqa: E711; pylint: disable=singleton-comparison
+                   ).all()
+        for alias in aliases:
+            filing = db.session.query(Filing). \
+                filter(Filing.transaction_id == alias.transaction_id
+                       ).one_or_none()
+            alternate_names.append({
+                'name': alias.alias,
+                'startDate':  LegislationDatetime.format_as_legislation_date(filing.effective_date),
+                'type': alias.type
+            })
+
+        # Get SP DBA entries if not SP
+        if self.legal_type != Business.LegalTypes.SOLE_PROP:
+            parties = db.session.query(Party). \
+                filter(Party.party_type == Party.PartyTypes.ORGANIZATION.value,
+                       Party.identifier == self._identifier,
+                       ).all()
+            if parties:
+                proprietors = db.session.query(PartyRole). \
+                    filter(PartyRole.role == PartyRole.RoleTypes.PROPRIETOR.value,
+                           PartyRole.party_id.in_([p.id for p in parties])
+                           ).all()
+                for proprietor in proprietors:
+                    sole_prop = Business.find_by_internal_id(proprietor.business_id)
+                    if not sole_prop:
+                        continue
+                    if start_date := sole_prop.start_date:
+                        start_date = LegislationDatetime.format_as_legislation_date(sole_prop.start_date)
+
+                    alternate_names.append(
+                        {
+                            'entityType': sole_prop.legal_type,
+                            'identifier': sole_prop.identifier,
+                            'name': sole_prop.legal_name,
+                            'registeredDate': sole_prop.founding_date.isoformat(),
+                            'startDate': start_date,
+                            'type': 'DBA'
+                        }
+                    )
+
+        # For firms also get existing business record
+        if self.is_firm:
+            start_date = LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None
+            alternate_names.append(
+                {
+                    'entityType': self.legal_type,
+                    'identifier': self.identifier,
+                    'name': self.legal_name,
+                    'registeredDate': self.founding_date.isoformat(),
+                    'startDate': start_date,
+                    'type': 'DBA'
+                }
+            )
+
+        return alternate_names
 
     def get_amalgamated_into(self) -> dict:
         """Get amalgamated into if this business is part of an amalgamation.
