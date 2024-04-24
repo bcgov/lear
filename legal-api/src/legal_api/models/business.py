@@ -312,7 +312,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 func.lower(PartyRole.role).in_([
                     PartyRole.RoleTypes.PARTNER.value,
                     PartyRole.RoleTypes.PROPRIETOR.value
-                ])
+                ]),
+                PartyRole.cessation_date.is_(None)
             ).order_by(sort_name)
 
             parties = [party_role.party for party_role in parties_query.all()]
