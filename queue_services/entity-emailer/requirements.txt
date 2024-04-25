@@ -50,7 +50,7 @@ protobuf==3.15.8
 psycopg2-binary==2.8.6
 pyasn1==0.4.8
 pycountry==20.7.3
-pydantic==1.10.2
+pydantic==1.10.13
 PyPDF2==1.26.0
 pyRFC3339==1.1
 pyrsistent==0.17.3
