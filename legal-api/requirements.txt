@@ -41,7 +41,7 @@ psycopg2-binary==2.8.6
 pyRFC3339==1.1
 pyasn1==0.4.8
 pycountry==20.7.3
-pydantic==1.10.2
+pydantic==1.10.13
 pyjwt==2.8.0
 pyrsistent==0.17.3
 python-dateutil==2.8.1
