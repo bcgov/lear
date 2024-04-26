@@ -43,12 +43,6 @@ def process(filing: Dict, filing_meta: FilingMeta):
             'expireDateCurrExt': curr_ext_expiry_date
         }
 
-    if intended_agm_date := dpath.util.get(filing, '/agmExtension/intendedAgmDate', default=None):
-        filing_meta.agm_extension = {
-            **filing_meta.agm_extension,
-            'intendedAgmDate': intended_agm_date
-        }
-
     if expiry_date_approved_ext := dpath.util.get(filing, '/agmExtension/expireDateApprovedExt', default=None):
         filing_meta.agm_extension = {
             **filing_meta.agm_extension,
