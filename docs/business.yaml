@@ -1665,7 +1665,7 @@ components:
                 type: string
                 title: The alternate name of the business.
                 default: ''
-                examples:
+                example:
                   - alternate_name_of_business
                 pattern: '^(.*)$'
               registeredDate:
@@ -1673,21 +1673,21 @@ components:
                 format: date-time
                 title: The timestamp of the registered date.
                 default: ''
-                examples:
+                example:
                   - '1970-01-01T00:00:00+00:00'
               startDate:
                 type: string
                 format: date
                 title: The start date of the alternate name
                 default: ''
-                examples:
+                example:
                   - '1970-01-01'
               endDate:
                 type: string
                 format: date
                 title: The end date of the alternate name
                 default: ''
-                examples:
+                example:
                   - '1970-01-01'
               type:
                 type: string
