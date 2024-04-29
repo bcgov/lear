@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Involuntary dissolutions job."""
-import asyncio
 import logging
 import os
 
-import requests
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from flask import Flask
 from legal_api.models import db  # noqa: I001
