@@ -1,0 +1,16 @@
+[
+    {
+        "vault": "shared",
+        "application": [
+            "nats"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "postgres-legal",
+            "sentry",
+            "launchdarkly"
+        ]
+    }
+]
