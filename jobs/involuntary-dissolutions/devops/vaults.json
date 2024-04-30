@@ -10,7 +10,8 @@
         "application": [
             "postgres-legal",
             "sentry",
-            "launchdarkly"
+            "launchdarkly",
+            "nats-filer"
         ]
     }
 ]
