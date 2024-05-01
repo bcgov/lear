@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module holds data for batch."""
+"""This module holds data for batch processing."""
 from enum import auto
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 
@@ -53,18 +52,6 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
-
-    @property
-    def json(self) -> dict:
-        """Return the batch as a json object."""
-        return {
-            'id': self.id,
-            'step': self.step.name,
-            'status': self.status.name,
-            'createdDate': LegislationDatetime.as_legislation_timezone(self.created_date).isoformat(),
-            'lastUpdated': LegislationDatetime.as_legislation_timezone(self.last_modified).isoformat(),
-            'notes': self.notes
-        }
 
     def save(self):
         """Save the object to the database immediately."""

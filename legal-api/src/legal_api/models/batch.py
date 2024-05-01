@@ -16,7 +16,6 @@ from enum import auto
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 
@@ -47,19 +46,6 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
     start_date = db.Column('start_date', db.DateTime(timezone=True), default=datetime.utcnow)
     end_date = db.Column('end_date', db.DateTime(timezone=True), nullable=True)
     notes = db.Column('notes', db.String(150), default='', nullable=True)
-
-    @property
-    def json(self) -> dict:
-        """Return the batch as a json object."""
-        return {
-            'id': self.id,
-            'batch_type': self.batch_type.name,
-            'status': self.status.name,
-            'batchSize': self.size,
-            'startDate': LegislationDatetime.as_legislation_timezone(self.start_date).isoformat(),
-            'endDate': LegislationDatetime.as_legislation_timezone(self.end_date).isoformat(),
-            'notes': self.notes
-        }
 
     def save(self):
         """Save the object to the database immediately."""
