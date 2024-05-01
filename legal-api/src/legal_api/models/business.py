@@ -467,15 +467,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
     def _slim_json(self):
         """Return a smaller/faster version of the business json."""
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
         d = {
             'adminFreeze': self.admin_freeze or False,
-            'alternateNames': self.get_alternate_names() or [],
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
             'state': self.state.name if self.state else Business.State.ACTIVE.name
         }
+
+        if flags.is_on('enable-legal-name-fix'):
+            d['alternateNames'] = self.get_alternate_names()
 
         if self.tax_id:
             d['taxId'] = self.tax_id
@@ -484,12 +488,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
     def _extend_json(self, d):
         """Include conditional fields to json."""
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
-
-        if flags.is_on('enable-legal-name-fix'):
-            d['alternateNames'] = self.get_alternate_names()
 
         if self.last_coa_date:
             d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
