@@ -296,7 +296,6 @@ def test_business_json(session):
     d = {
         **d_slim,
         'foundingDate': EPOCH_DATETIME.isoformat(),
-        'alternateNames': [],
         'lastAddressChangeDate': '',
         'lastDirectorChangeDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
