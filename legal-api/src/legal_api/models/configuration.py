@@ -13,6 +13,7 @@
 # limitations under the License.
 """This module holds data for configurations."""
 from __future__ import annotations
+
 from croniter import croniter
 from sqlalchemy import event
 
@@ -52,6 +53,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         return configuration
 
     def validate_value(self):
+        """Ensure the value is the correct type before insert or update."""
         # Define keys that should have specific value types
         int_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
         bool_names = {'DISSOLUTIONS_ON_HOLD'}
@@ -60,19 +62,19 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         if self.name in int_names:
             try:
                 int(self.val)
-            except ValueError:
-                raise ValueError(f"Value for key {self.name} must be an integer")
+            except ValueError as exc:
+                raise ValueError(f'Value for key {self.name} must be an integer') from exc
         elif self.name in bool_names:
             if self.val not in {'True', 'False'}:
-                raise ValueError(f"Value for key {self.name} must be a boolean")
+                raise ValueError(f'Value for key {self.name} must be a boolean')
         elif self.name in cron_names:
             if not croniter.is_valid(self.val):
-                raise ValueError(f"Value for key {self.name} must be a cron string")
+                raise ValueError(f'Value for key {self.name} must be a cron string')
 
 
 # Listen to 'before_insert' and 'before_update' events
 @event.listens_for(Configuration, 'before_insert')
 @event.listens_for(Configuration, 'before_update')
 def receive_before_insert(mapper, connection, target):
-    # Validate the value before it gets inserted/updated
+    """Validate the value before it gets inserted/updated."""
     target.validate_value()
