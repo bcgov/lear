@@ -469,6 +469,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         """Return a smaller/faster version of the business json."""
         d = {
             'adminFreeze': self.admin_freeze or False,
+            'alternateNames': self.get_alternate_names() or [],
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
             'legalName': self.business_legal_name,
