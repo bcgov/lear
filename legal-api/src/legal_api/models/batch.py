@@ -45,7 +45,7 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
     status = db.Column('status', db.Enum(BatchStatus), nullable=False)
     size = db.Column('size', db.Integer, nullable=True)
     start_date = db.Column('start_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    end_date = db.Column('end_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    end_date = db.Column('end_date', db.DateTime(timezone=True), nullable=True)
     notes = db.Column('notes', db.String(150), default='', nullable=True)
 
     @property
