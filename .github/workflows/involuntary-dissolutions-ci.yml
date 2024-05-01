@@ -50,6 +50,11 @@ jobs:
   testing:
     needs: setup-job
     runs-on: ubuntu-20.04
+    env:
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_HOST: localhost
+      DATABASE_NAME: postgres
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
