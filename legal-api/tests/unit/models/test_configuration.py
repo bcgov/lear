@@ -64,7 +64,7 @@ def test_find_existing_configuration_by_name(session):
     res = Configuration.find_by_name(num_dissolutions_allowed_name)
     assert res
 
-@pytest.mark.parametrize('config_name,test_val,succeeded', [
+@pytest.mark.parametrize('config_name,test_val,expected', [
     ('NUM_DISSOLUTIONS_ALLOWED', 'ten', False),
     ('NUM_DISSOLUTIONS_ALLOWED', '10', True),
     ('MAX_DISSOLUTIONS_ALLOWED', 'one thousand', False),
@@ -74,12 +74,13 @@ def test_find_existing_configuration_by_name(session):
     ('DISSOLUTIONS_ON_HOLD', '100', False),
     ('DISSOLUTIONS_ON_HOLD', 'True', True),
 ])
-def test_configuration_value_validation(session, config_name, test_val, succeeded):
+def test_configuration_value_validation(session, config_name, test_val, expected):
     configuration = Configuration.find_by_name(config_name)
     configuration.val = test_val
     
-    try:
+    if expected:
         configuration.save()
         assert configuration.val == test_val
-    except ValueError:
-        assert not succeeded
+    else:
+        with pytest.raises(ValueError):
+            configuration.save()
