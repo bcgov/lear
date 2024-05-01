@@ -18,6 +18,8 @@ from .address import Address
 from .alias import Alias
 from .amalgamating_business import AmalgamatingBusiness
 from .amalgamation import Amalgamation
+from .batch import Batch
+from .batch_processing import BatchProcessing
 from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
@@ -43,9 +45,9 @@ from .user import User, UserRoles
 
 
 __all__ = ('db',
-           'Address', 'Alias', 'AmalgamatingBusiness', 'Amalgamation', 'Business', 'ColinLastUpdate', 'Comment',
-           'ConsentContinuationOut', 'CorpType', 'DCConnection', 'DCDefinition', 'DCIssuedCredential',
-           'DCIssuedBusinessUserCredential', 'DCRevocationReason', 'Document', 'DocumentType', 'Filing',
-           'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
+           'Address', 'Alias', 'AmalgamatingBusiness', 'Amalgamation', 'Batch', 'BatchProcessing', 'Business',
+           'ColinLastUpdate', 'Comment', 'ConsentContinuationOut', 'CorpType', 'DCConnection', 'DCDefinition',
+           'DCIssuedCredential', 'DCIssuedBusinessUserCredential', 'DCRevocationReason', 'Document', 'DocumentType',
+           'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
            'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement'
            )
