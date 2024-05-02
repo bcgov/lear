@@ -287,7 +287,8 @@ def test_business_json(session):
         'taxId': '123456789'
     }
 
-    assert business.json(slim=True) == d_slim
+    with patch.object(flags, 'is_on', return_value=True):
+        assert business.json(slim=True) == d_slim
 
     # remove taxId to test it doesn't show up again until the final test
     business.tax_id = None
