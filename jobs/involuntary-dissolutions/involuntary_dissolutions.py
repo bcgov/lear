@@ -68,5 +68,8 @@ def register_shellcontext(app):
 if __name__ == '__main__':
     application = create_app()
     with application.app_context():
-        # TODO: detailed implementation
-        application.logger.debug('Running involuntary dissolutions job')
+        flag_on = flags.is_on('enable-involuntary-dissolution')
+        application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
+        if flag_on:
+            # TODO: detailed implementation
+            application.logger.debug('Running involuntary dissolutions job')
