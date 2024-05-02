@@ -278,6 +278,7 @@ def test_business_json(session):
     # slim json
     d_slim = {
         'adminFreeze': False,
+        'alternateNames': [],
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
         'legalName': 'legal_name',
@@ -286,7 +287,8 @@ def test_business_json(session):
         'taxId': '123456789'
     }
 
-    assert business.json(slim=True) == d_slim
+    with patch.object(flags, 'is_on', return_value=True):
+        assert business.json(slim=True) == d_slim
 
     # remove taxId to test it doesn't show up again until the final test
     business.tax_id = None
@@ -295,7 +297,6 @@ def test_business_json(session):
     d = {
         **d_slim,
         'foundingDate': EPOCH_DATETIME.isoformat(),
-        'alternateNames': [],
         'lastAddressChangeDate': '',
         'lastDirectorChangeDate': '',
         'lastLedgerTimestamp': EPOCH_DATETIME.isoformat(),
