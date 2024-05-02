@@ -1,7 +1,7 @@
 """batches
 
 Revision ID: 9faa0630c3f9
-Revises: 246e135484b3
+Revises: f4f93ea8887e
 Create Date: 2024-05-01 10:29:37.327296
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '9fc8fcdc0a22'
-down_revision = '246e135484b3'
+down_revision = 'f4f93ea8887e'
 branch_labels = None
 depends_on = None
 
