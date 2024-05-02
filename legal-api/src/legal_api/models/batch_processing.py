@@ -71,8 +71,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
                 batch_id: int = None,
                 business_id: int = None,
                 step: BatchProcessingStep = None,
-                status: BatchProcessingStatus = None,
-                notes: str = None) -> dict:
+                status: BatchProcessingStatus = None) -> dict:
         """Return the batch matching."""
         query = db.session.query(BatchProcessing)
         batch_processinges = []

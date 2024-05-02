@@ -63,9 +63,7 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def find_by(cls,  # pylint: disable=too-many-arguments
                 batch_type: BatchType = None,
-                status: BatchStatus = None,
-                size: int = None,
-                notes: str = None) -> dict:
+                status: BatchStatus = None) -> dict:
         """Return the batch matching."""
         query = db.session.query(Batch)
         batches = []
