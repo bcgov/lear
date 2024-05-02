@@ -21,6 +21,7 @@ from .amalgamation import Amalgamation
 from .business import Business  # noqa: I001
 from .colin_update import ColinLastUpdate
 from .comment import Comment
+from .configuration import Configuration
 from .consent_continuation_out import ConsentContinuationOut
 from .corp_type import CorpType
 from .dc_connection import DCConnection
@@ -44,7 +45,7 @@ from .user import User, UserRoles
 
 __all__ = ('db',
            'Address', 'Alias', 'AmalgamatingBusiness', 'Amalgamation', 'Business', 'ColinLastUpdate', 'Comment',
-           'ConsentContinuationOut', 'CorpType', 'DCConnection', 'DCDefinition', 'DCIssuedCredential',
+           'Configuration', 'ConsentContinuationOut', 'CorpType', 'DCConnection', 'DCDefinition', 'DCIssuedCredential',
            'DCIssuedBusinessUserCredential', 'DCRevocationReason', 'Document', 'DocumentType', 'Filing',
            'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker', 'Resolution',
            'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement'
