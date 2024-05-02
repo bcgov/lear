@@ -27,6 +27,7 @@ from legal_api.models import (
     Alias,
     amalgamation,
     amalgamating_business,
+    Batch,
     Business,
     Comment,
     Filing,
@@ -386,3 +387,16 @@ def factory_incomplete_statuses(unknown_statuses:list = []):
 
     return result
 
+
+def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+                  status=Batch.BatchStatus.HOLD,
+                  size=3,
+                  notes=''):
+    batch = Batch(
+        batch_type=batch_type,
+        status=status,
+        size=size,
+        notes=notes
+    )
+    batch.save()
+    return batch
