@@ -89,8 +89,5 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
         if status:
             query = query.filter(BatchProcessing.status == status)
 
-        if notes:
-            query = query.filter(BatchProcessing.notes == notes)
-
         batch_processinges = query.order_by(BatchProcessing.id).all()
         return batch_processinges

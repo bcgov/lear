@@ -76,11 +76,5 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
         if status:
             query = query.filter(Batch.status == status)
 
-        if size:
-            query = query.filter(Batch.size == size)
-
-        if notes:
-            query = query.filter(Batch.notes == notes)
-
         batches = query.order_by(Batch.id).all()
         return batches
