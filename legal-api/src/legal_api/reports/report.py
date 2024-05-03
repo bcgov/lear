@@ -274,7 +274,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_registration_data(filing)
         elif self._report_key == 'changeOfRegistration':
             self._format_change_of_registration_data(filing, 'changeOfRegistration')
-        elif self._report_key == 'certificateOfNameChange':
+        elif self._report_key in ['certificateOfNameChange', 'certificateOfNameCorrection']:
             self._format_name_change_data(filing)
         elif self._report_key == 'certificateOfRestoration':
             self._format_certificate_of_restoration_data(filing)
@@ -1311,6 +1311,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         'certificateOfNameChange': {
             'filingDescription': 'Certificate of Name Change',
+            'fileName': 'certificateOfNameChange'
+        },
+        'certificateOfNameCorrection': {
+            'filingDescription': 'Certificate of Name Correction',
             'fileName': 'certificateOfNameChange'
         },
         'certificateOfDissolution': {

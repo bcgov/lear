@@ -23,14 +23,23 @@
 
           <div class="cert-title-container">
             <div class="sub-header-1">Certificate of</div>
-            <div class="certificate-header">NAME CHANGE</div>
+            {% if header.reportType == 'certificateOfNameCorrection' %}
+              <div class="certificate-header">NAME CORRECTION</div>
+            {% else %}
+              <div class="certificate-header">NAME CHANGE</div>
+            {% endif %}
             <div class="sub-header-2">{{ entityAct }}</div>
           </div>
 
           <div class="certify-clause-container">
             <span>I hereby certify that</span>
             <span class="company-name-header">{{ fromLegalName }}</span>
-            <span>changed its name to</span>
+            {% if header.reportType == 'certificateOfNameCorrection' %}
+            <span>corrected</span>
+            {% else %}
+            <span>changed</span>
+            {% endif %}
+            <span> its name to</span>
             <span class="company-name-header">{{ toLegalName }}</span>
             <span>on {{ effective_date_time }}</span>
             <div class="cert-separator"></div>
