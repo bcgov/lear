@@ -583,7 +583,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Handle output file list modification for corrections."""
         if filing.filing_type == 'correction':
             if filing.meta_data.get('correction', {}).get('toLegalName'):
-                outputs.add('certificateOfNameChange')
+                outputs.add('certificateOfNameCorrection')
             if filing.meta_data.get('correction', {}).get('uploadNewRules'):
                 outputs.add('certifiedRules')
             if filing.meta_data.get('correction', {}).get('uploadNewMemorandum'):

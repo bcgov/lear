@@ -215,7 +215,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('special_res_correction', 'CP7654321', Business.LegalTypes.COOP.value,
      'correction', CORRECTION_CP_SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'certificateOfNameChange': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfNameChange',
+         'certificateOfNameCorrection': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfNameCorrection',
          'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
          'legalFilings': [
              {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
