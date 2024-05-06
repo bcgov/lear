@@ -254,6 +254,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
     send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
+    no_dissolution = db.Column('no_dissolution', db.Boolean, unique=False, default=False)
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
@@ -458,6 +459,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
+            'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions
         }
