@@ -459,7 +459,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
-            'noDissolution': self.no_dissolution,
+            # 'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions
         }
