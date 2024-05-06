@@ -270,7 +270,8 @@ def test_business_json(session):
                         association_type='CP',
                         # NB: default not intitialized since bus not committed before check
                         state=Business.State.ACTIVE,
-                        tax_id='123456789'
+                        tax_id='123456789',
+                        no_dissolution=False
                         )
     # basic json
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
@@ -316,7 +317,8 @@ def test_business_json(session):
         'associationType': 'CP',
         'startDate': '2021-08-05',
         'hasCourtOrders': False,
-        'allowedActions': {}
+        'allowedActions': {},
+        'noDissolution': False
     }
 
     with patch.object(flags, 'is_on', return_value=True):

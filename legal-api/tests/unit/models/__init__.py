@@ -134,7 +134,8 @@ def factory_business(identifier,
                      state=Business.State.ACTIVE,
                      naics_code=None,
                      naics_desc=None,
-                     admin_freeze=False):
+                     admin_freeze=False,
+                     no_dissolution=False):
     """Create a business entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
@@ -152,7 +153,8 @@ def factory_business(identifier,
                         state=state,
                         naics_code=naics_code,
                         naics_description=naics_desc,
-                        admin_freeze=admin_freeze)
+                        admin_freeze=admin_freeze,
+                        no_dissolution=no_dissolution)
 
     # Versioning business
     uow = versioning_manager.unit_of_work(db.session)

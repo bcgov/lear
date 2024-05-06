@@ -84,7 +84,8 @@ def factory_business(legal_type: str, identifier: str):
     business = Business(legal_name='test business',
                         legal_type=legal_type,
                         identifier=identifier,
-                        state='ACTIVE')
+                        state='ACTIVE',
+                        no_dissolution=False)
     return business
 
 

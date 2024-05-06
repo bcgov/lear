@@ -37,7 +37,8 @@ def factory_business_model(legal_name,
                            last_modified,
                            fiscal_year_end_date=None,
                            tax_id=None,
-                           dissolution_date=None):
+                           dissolution_date=None,
+                           no_dissolution=False):
     """Return a valid Business object stamped with the supplied designation."""
     from legal_api.models import Business as BusinessModel
     b = BusinessModel(legal_name=legal_name,
@@ -47,7 +48,8 @@ def factory_business_model(legal_name,
                       last_modified=last_modified,
                       fiscal_year_end_date=fiscal_year_end_date,
                       dissolution_date=dissolution_date,
-                      tax_id=tax_id
+                      tax_id=tax_id,
+                      no_dissolution=no_dissolution
                       )
     b.save()
     return b
