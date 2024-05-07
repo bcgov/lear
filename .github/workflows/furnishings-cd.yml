@@ -55,7 +55,7 @@ jobs:
         if: failure()
         with:
           type: ${{ job.status }}
-          job_name: "*Involuntary Dissolutions Job Built and Deployed to ${{env.TAG_NAME}}*"
+          job_name: "*Furnishings Job Built and Deployed to ${{env.TAG_NAME}}*"
           channel: "#registries-bot"
           url: ${{ secrets.ROCKETCHAT_WEBHOOK }}
           commit: true
@@ -96,7 +96,7 @@ jobs:
         if: failure()
         with:
           type: ${{ job.status }}
-          job_name: "*Involuntary Dissolutions Job Built and Deployed to ${{env.TAG_NAME}}*"
+          job_name: "*Furnishings Job Built and Deployed to ${{env.TAG_NAME}}*"
           channel: "#registries-bot"
           url: ${{ secrets.ROCKETCHAT_WEBHOOK }}
           commit: true
