@@ -14,6 +14,8 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
+from typing import List
+
 from croniter import croniter
 from sqlalchemy import event
 
@@ -35,6 +37,22 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
+
+    @property
+    def json(self):
+        """Return a dict of this object, with keys in JSON format."""
+        configuration = {
+            'name': self.name,
+            'value': self.val,
+            'shortDescription': self.short_description,
+            'fullDescription': self.full_description
+        }
+        return configuration
+
+    @classmethod
+    def all(cls) -> List[Configuration]:
+        """Return the configuration matching the id."""
+        return cls.query.all()
 
     @classmethod
     def find_by_id(cls, config_id: int) -> Configuration:
@@ -64,6 +82,12 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
                 int(self.val)
             except ValueError as exc:
                 raise ValueError(f'Value for key {self.name} must be an integer') from exc
+            num_dissolutions_allowed = self.val if self.name == 'NUM_DISSOLUTIONS_ALLOWED'\
+                else Configuration.find_by_name('NUM_DISSOLUTIONS_ALLOWED').val
+            max_dissolutions_allowed = self.val if self.name == 'MAX_DISSOLUTIONS_ALLOWED'\
+                else Configuration.find_by_name('MAX_DISSOLUTIONS_ALLOWED').val
+            if int(num_dissolutions_allowed) > int(max_dissolutions_allowed):
+                raise ValueError('NUM_DISSOLUTIONS_ALLOWED cannot be greater than MAX_DISSOLUTIONS_ALLOWED.')
         elif self.name in bool_names:
             if self.val not in {'True', 'False'}:
                 raise ValueError(f'Value for key {self.name} must be a boolean')
