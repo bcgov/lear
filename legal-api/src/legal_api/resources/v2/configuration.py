@@ -53,11 +53,22 @@ def update_configurations():
         if data['name']:
             configuration = Configuration.find_by_name(data['name'])
             configuration.val = data.get('value', configuration.val)
-            configuration.full_description = data.get('full_description', configuration.full_description)
-            configuration.short_description = data.get('short_description', configuration.short_description)
+            if not is_max_num_value(data, configuration):
+                return ({
+                    'message': 'NUM_DISSOLUTIONS_ALLOWED must be less than MAX_DISSOLUTIONS_ALLOWED.'
+                    }), HTTPStatus.BAD_REQUEST
             try:
                 configuration.save()
             except ValueError as error:
                 return ({'message': error}, HTTPStatus.BAD_REQUEST)
 
     return HTTPStatus.OK
+
+
+def is_max_num_value(input_data, configuration):
+    """Check NUM_DISSOLUTIONS_ALLOWED, MAX_DISSOLUTIONS_ALLOWED."""
+    num_dissolutions_allowed = input_data['value'] if input_data['name'] == 'NUM_DISSOLUTIONS_ALLOWED'\
+        else configuration.val
+    max_dissolutions_allowed = input_data['value'] if input_data['name'] == 'MAX_DISSOLUTIONS_ALLOWED'\
+        else configuration.val
+    return bool(int(num_dissolutions_allowed) <= int(max_dissolutions_allowed))

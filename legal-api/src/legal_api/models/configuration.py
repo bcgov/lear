@@ -82,12 +82,6 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
                 int(self.val)
             except ValueError as exc:
                 raise ValueError(f'Value for key {self.name} must be an integer') from exc
-            num_dissolutions_allowed = self.val if self.name == 'NUM_DISSOLUTIONS_ALLOWED'\
-                else Configuration.find_by_name('NUM_DISSOLUTIONS_ALLOWED').val
-            max_dissolutions_allowed = self.val if self.name == 'MAX_DISSOLUTIONS_ALLOWED'\
-                else Configuration.find_by_name('MAX_DISSOLUTIONS_ALLOWED').val
-            if int(num_dissolutions_allowed) > int(max_dissolutions_allowed):
-                raise ValueError('NUM_DISSOLUTIONS_ALLOWED cannot be greater than MAX_DISSOLUTIONS_ALLOWED.')
         elif self.name in bool_names:
             if self.val not in {'True', 'False'}:
                 raise ValueError(f'Value for key {self.name} must be a boolean')
