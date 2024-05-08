@@ -26,7 +26,7 @@ def test_get_configurations(app, session, client, jwt):
     """Assert that get results are returned."""
 
     # test
-    rv = client.get(f'/api/v2/admin/configuration',
+    rv = client.get(f'/api/v2/admin/configurations',
                     headers=create_header(jwt, [STAFF_ROLE], 'user'))
 
     # check
@@ -44,7 +44,7 @@ def test_get_configurations_with_invalid_user(app, session, client, jwt):
     """Assert that is unauthorized."""
 
     # test
-    rv = client.get(f'/api/v2/admin/configuration',
+    rv = client.get(f'/api/v2/admin/configurations',
                     headers=create_header(jwt, [BASIC_USER], 'user'))
 
     # check
