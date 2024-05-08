@@ -21,7 +21,7 @@ from legal_api.models import Configuration, UserRoles
 from legal_api.utils.auth import jwt
 
 
-bp = Blueprint('CONFIGURARION', __name__, url_prefix='/api/v2/admin/configuration')
+bp = Blueprint('CONFIGURATION', __name__, url_prefix='/api/v2/admin/configurations')
 
 
 @bp.route('', methods=['GET'])
