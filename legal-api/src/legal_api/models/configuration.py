@@ -14,6 +14,8 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
+from typing import List
+
 from croniter import croniter
 from sqlalchemy import event
 
@@ -35,6 +37,22 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
+
+    @property
+    def json(self):
+        """Return a dict of this object, with keys in JSON format."""
+        configuration = {
+            'name': self.name,
+            'value': self.val,
+            'shortDescription': self.short_description,
+            'fullDescription': self.full_description
+        }
+        return configuration
+
+    @classmethod
+    def all(cls) -> List[Configuration]:
+        """Return the configuration matching the id."""
+        return cls.query.all()
 
     @classmethod
     def find_by_id(cls, config_id: int) -> Configuration:
