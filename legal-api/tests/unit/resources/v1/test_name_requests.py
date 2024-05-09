@@ -19,10 +19,12 @@ Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 from http import HTTPStatus
 
 import copy
+from unittest.mock import patch
+
 import datedelta
 import pytz
 
-from legal_api.services import namex
+from legal_api.services import flags, namex
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_namerequests
 
@@ -179,97 +181,103 @@ def test_name_request_update_expiration(app, client):
 
 def test_validate_nr_consumable_approved():
     """Assert that nr mock data is consumable."""
-    validation_result = namex.validate_nr(nr_consumable_approved)
+    with patch.object(flags, 'is_on', return_value=False):
+        validation_result = namex.validate_nr(nr_consumable_approved)
 
-    assert validation_result['is_consumable']
-    assert validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert not validation_result['consent_required']
-    assert not validation_result['consent_received']
+        assert validation_result['is_consumable']
+        assert validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert not validation_result['consent_required']
+        assert not validation_result['consent_received']
 
 
 def test_validate_nr_not_consumable_rejected():
     """Assert that nr mock data is not consumable as it has been rejected."""
-    validation_result = namex.validate_nr(nr_not_consumable_rejected)
+    with patch.object(flags, 'is_on', return_value=False):
+        validation_result = namex.validate_nr(nr_not_consumable_rejected)
 
-    assert not validation_result['is_consumable']
-    assert not validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert not validation_result['consent_required']
-    assert not validation_result['consent_received']
+        assert not validation_result['is_consumable']
+        assert not validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert not validation_result['consent_required']
+        assert not validation_result['consent_received']
 
 
 def test_validate_nr_not_consumable_expired():
     """Assert that nr mock data is not consumable as it has expired."""
-    validation_result = namex.validate_nr(nr_not_consumable_expired)
+    with patch.object(flags, 'is_on', return_value=False):
+        validation_result = namex.validate_nr(nr_not_consumable_expired)
 
-    assert not validation_result['is_consumable']
-    assert not validation_result['is_approved']
-    assert validation_result['is_expired']
-    assert not validation_result['consent_required']
-    assert not validation_result['consent_received']
+        assert not validation_result['is_consumable']
+        assert not validation_result['is_approved']
+        assert validation_result['is_expired']
+        assert not validation_result['consent_required']
+        assert not validation_result['consent_received']
 
 
 def test_validate_nr_already_consumed():
     """Assert that nr mock data has already been consumed."""
-    validation_result = namex.validate_nr(nr_already_consumed)
+    with patch.object(flags, 'is_on', return_value=False):
+        validation_result = namex.validate_nr(nr_already_consumed)
 
-    assert not validation_result['is_consumable']
-    assert not validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert not validation_result['consent_required']
-    assert not validation_result['consent_received']
+        assert not validation_result['is_consumable']
+        assert not validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert not validation_result['consent_required']
+        assert not validation_result['consent_received']
 
 
 def test_validate_nr_consent_required_not_received():
     """Assert that nr mock data is conditionally approved, but consent not received."""
-    nr_consent_required = copy.deepcopy(nr_consumable_conditional)
-    nr_consent_required['consentFlag'] = 'Y'
-    validation_result = namex.validate_nr(nr_consent_required)
-    assert not validation_result['is_consumable']
-    assert validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert validation_result['consent_required']
-    assert not validation_result['consent_received']
+    with patch.object(flags, 'is_on', return_value=False):
+        nr_consent_required = copy.deepcopy(nr_consumable_conditional)
+        nr_consent_required['consentFlag'] = 'Y'
+        validation_result = namex.validate_nr(nr_consent_required)
+        assert not validation_result['is_consumable']
+        assert validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert validation_result['consent_required']
+        assert not validation_result['consent_received']
 
 
 def test_validate_nr_consent_required_received():
     """Assert that nr mock data is conditionally approved and consent was received."""
-    validation_result = namex.validate_nr(nr_consumable_conditional)
-    assert validation_result['is_consumable']
-    assert validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert validation_result['consent_required']
-    assert validation_result['consent_received']
+    with patch.object(flags, 'is_on', return_value=False):
+        validation_result = namex.validate_nr(nr_consumable_conditional)
+        assert validation_result['is_consumable']
+        assert validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert validation_result['consent_required']
+        assert validation_result['consent_received']
 
-    # N = consent waived
-    nr_consent_waived = copy.deepcopy(nr_consumable_conditional)
-    nr_consent_waived['consentFlag'] = 'N'
-    validation_result = namex.validate_nr(nr_consent_waived)
-    assert validation_result['is_consumable']
-    assert validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert not validation_result['consent_required']
-    assert not validation_result['consent_received']
+        # N = consent waived
+        nr_consent_waived = copy.deepcopy(nr_consumable_conditional)
+        nr_consent_waived['consentFlag'] = 'N'
+        validation_result = namex.validate_nr(nr_consent_waived)
+        assert validation_result['is_consumable']
+        assert validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert not validation_result['consent_required']
+        assert not validation_result['consent_received']
 
-    # None = consent not required
-    nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
-    nr_consent_not_required['consentFlag'] = None
-    validation_result = namex.validate_nr(nr_consent_not_required)
-    assert validation_result['is_consumable']
-    assert validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert not validation_result['consent_required']
-    assert not validation_result['consent_received']
+        # None = consent not required
+        nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
+        nr_consent_not_required['consentFlag'] = None
+        validation_result = namex.validate_nr(nr_consent_not_required)
+        assert validation_result['is_consumable']
+        assert validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert not validation_result['consent_required']
+        assert not validation_result['consent_received']
 
-    nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
-    nr_consent_not_required['consentFlag'] = ''
-    validation_result = namex.validate_nr(nr_consent_not_required)
-    assert validation_result['is_consumable']
-    assert validation_result['is_approved']
-    assert not validation_result['is_expired']
-    assert not validation_result['consent_required']
-    assert not validation_result['consent_received']
+        nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
+        nr_consent_not_required['consentFlag'] = ''
+        validation_result = namex.validate_nr(nr_consent_not_required)
+        assert validation_result['is_consumable']
+        assert validation_result['is_approved']
+        assert not validation_result['is_expired']
+        assert not validation_result['consent_required']
+        assert not validation_result['consent_received']
 
 
 def test_get_approved_name():

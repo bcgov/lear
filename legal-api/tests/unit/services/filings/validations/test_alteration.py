@@ -20,7 +20,7 @@ import pytest
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 from reportlab.lib.pagesizes import letter
 
-from legal_api.services import NameXService
+from legal_api.services import flags, NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business
 from tests.unit.services.filings.test_utils import _upload_file
@@ -82,9 +82,9 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
         }
 
         nr_response = MockResponse(nr_json, 200)
-
-        with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-            err = validate(business, f)
+        with patch.object(flags, 'is_on', return_value=False):
+            with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
+                    err = validate(business, f)
     else:
         del f['filing']['alteration']['nameRequest']
         err = validate(business, f)
