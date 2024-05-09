@@ -43,7 +43,7 @@ def get_configurations():
 def save_configurations():
     configuration = Configuration()
     configuration.name = 'NUM_DISSOLUTIONS_ALLOWED'
-    configuration.name = '100'
+    configuration.val = '100'
     configuration.save()
 
     return configuration, HTTPStatus.CREATED
@@ -68,7 +68,7 @@ def update_configurations():
     for data in configurations:
         if data.get('name', None):
             configuration = Configuration.find_by_name(data['name'])
-            configuration.val = data.get('value', configuration.val)
+            configuration.val = int(data.get('value', configuration.val))
             if not is_validate_max_num_value(data, configuration):
                 return ({
                     'message': 'NUM_DISSOLUTIONS_ALLOWED must be less than MAX_DISSOLUTIONS_ALLOWED.'
