@@ -37,71 +37,67 @@ def get_configurations():
     }), HTTPStatus.OK
 
 
-@bp.route('', methods=['POST'])
-@cross_origin(origin='*')
-# @jwt.has_one_of_roles([UserRoles.staff])
-def save_configurations():
-    configuration = Configuration()
-    configuration.name = 'NUM_DISSOLUTIONS_ALLOWED'
-    configuration.val = '100'
-    configuration.save()
-
-    return configuration, HTTPStatus.CREATED
-
-
 @bp.route('', methods=['PUT'])
 @cross_origin(origin='*')
-# @jwt.has_one_of_roles([UserRoles.staff])
+@jwt.has_one_of_roles([UserRoles.staff])
 def update_configurations():
     """Update the configurations."""
     json_input = request.get_json()
-
     if not json_input:
-        return ({'message': 'Request body cannot be blank'}), HTTPStatus.BAD_REQUEST
+        return {'message': 'Request body cannot be blank'}, HTTPStatus.BAD_REQUEST
 
-    configurations = json_input['configurations']
+    configurations = json_input.get('configurations', [])
+    if not configurations:
+        return {'message': 'Configurations list cannot be empty'}, HTTPStatus.BAD_REQUEST
 
-    valid, msg = has_validate_names(configurations)
-    if not valid:
+    valid_names, msg = has_validate_names(configurations)
+    if not valid_names:
         return ({'message': msg}), HTTPStatus.BAD_REQUEST
 
-    for data in configurations:
-        if data.get('name', None):
-            configuration = Configuration.find_by_name(data['name'])
-            configuration.val = int(data.get('value', configuration.val))
-            if not is_validate_max_num_value(data, configuration):
-                return ({
-                    'message': 'NUM_DISSOLUTIONS_ALLOWED must be less than MAX_DISSOLUTIONS_ALLOWED.'
-                    }), HTTPStatus.BAD_REQUEST
-            try:
-                configuration.save()
-            except ValueError as error:
-                return ({'message': error}, HTTPStatus.BAD_REQUEST)
+    numeric_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
 
-    return HTTPStatus.OK
+    for config_data in configurations:
+        name = config_data.get('name')
+        value = config_data.get('value')
+
+        if name in numeric_names:
+            if not is_valid_numeric_value(name, value):
+                return {'message': f'Invalid value for {name}.'}, HTTPStatus.BAD_REQUEST
+
+        config = Configuration.find_by_name(name)
+        config.val = str(value)
+        try:
+            config.save()
+        except ValueError as e:
+            return {'message': str(e)}, HTTPStatus.BAD_REQUEST
+
+    return {'message': 'Configurations updated successfully'}, HTTPStatus.OK
 
 
-def is_validate_max_num_value(input_data, configuration):
-    """Check NUM_DISSOLUTIONS_ALLOWED, MAX_DISSOLUTIONS_ALLOWED."""
-    num_dissolutions_allowed = input_data['value'] if input_data['name'] == 'NUM_DISSOLUTIONS_ALLOWED'\
-        else configuration.val
-    max_dissolutions_allowed = input_data['value'] if input_data['name'] == 'MAX_DISSOLUTIONS_ALLOWED'\
-        else configuration.val
-    return bool(int(num_dissolutions_allowed) <= int(max_dissolutions_allowed))
+def is_valid_numeric_value(name, value):
+    """Check if the numeric value is valid."""
+    if name == 'NUM_DISSOLUTIONS_ALLOWED':
+        max_value = Configuration.find_by_name('MAX_DISSOLUTIONS_ALLOWED').val
+        return int(value) <= int(max_value)
+    elif name == 'MAX_DISSOLUTIONS_ALLOWED':
+        min_value = Configuration.find_by_name('NUM_DISSOLUTIONS_ALLOWED').val
+        return int(value) >= int(min_value)
+    return False
 
 
 def has_validate_names(input_data):
     """Check if the names are valid and not duplicated."""
-    valid_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED', 'DISSOLUTIONS_ON_HOLD', 'NEW_DISSOLUTIONS_SCHEDULE'}
+    valid_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED',
+                   'DISSOLUTIONS_ON_HOLD', 'NEW_DISSOLUTIONS_SCHEDULE'}
     name_count = {name: 0 for name in valid_names}
 
     for data in input_data:
         name = data.get('name')
         if name not in valid_names:
-            return False, f'{name} is an invalid name'
+            return False, f'{name} is an invalid key.'
         if name_count[name] == 1:
-            return False, f'{name} is duplicated'
+            return False, f'{name} is duplicated.'
         else:
             name_count[name] += 1
-    
+
     return True, None
