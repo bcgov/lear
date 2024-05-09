@@ -14,7 +14,7 @@
 """API endpoints for managing Configuration resource."""
 from http import HTTPStatus
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Configuration, UserRoles
@@ -35,3 +35,73 @@ def get_configurations():
             configuration.json for configuration in configurations
         ]
     }), HTTPStatus.OK
+
+
+@bp.route('', methods=['POST'])
+@cross_origin(origin='*')
+# @jwt.has_one_of_roles([UserRoles.staff])
+def save_configurations():
+    configuration = Configuration()
+    configuration.name = 'NUM_DISSOLUTIONS_ALLOWED'
+    configuration.name = '100'
+    configuration.save()
+
+    return configuration, HTTPStatus.CREATED
+
+
+@bp.route('', methods=['PUT'])
+@cross_origin(origin='*')
+# @jwt.has_one_of_roles([UserRoles.staff])
+def update_configurations():
+    """Update the configurations."""
+    json_input = request.get_json()
+
+    if not json_input:
+        return ({'message': 'Request body cannot be blank'}), HTTPStatus.BAD_REQUEST
+
+    configurations = json_input['configurations']
+
+    valid, msg = has_validate_names(configurations)
+    if not valid:
+        return ({'message': msg}), HTTPStatus.BAD_REQUEST
+
+    for data in configurations:
+        if data.get('name', None):
+            configuration = Configuration.find_by_name(data['name'])
+            configuration.val = data.get('value', configuration.val)
+            if not is_validate_max_num_value(data, configuration):
+                return ({
+                    'message': 'NUM_DISSOLUTIONS_ALLOWED must be less than MAX_DISSOLUTIONS_ALLOWED.'
+                    }), HTTPStatus.BAD_REQUEST
+            try:
+                configuration.save()
+            except ValueError as error:
+                return ({'message': error}, HTTPStatus.BAD_REQUEST)
+
+    return HTTPStatus.OK
+
+
+def is_validate_max_num_value(input_data, configuration):
+    """Check NUM_DISSOLUTIONS_ALLOWED, MAX_DISSOLUTIONS_ALLOWED."""
+    num_dissolutions_allowed = input_data['value'] if input_data['name'] == 'NUM_DISSOLUTIONS_ALLOWED'\
+        else configuration.val
+    max_dissolutions_allowed = input_data['value'] if input_data['name'] == 'MAX_DISSOLUTIONS_ALLOWED'\
+        else configuration.val
+    return bool(int(num_dissolutions_allowed) <= int(max_dissolutions_allowed))
+
+
+def has_validate_names(input_data):
+    """Check if the names are valid and not duplicated."""
+    valid_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED', 'DISSOLUTIONS_ON_HOLD', 'NEW_DISSOLUTIONS_SCHEDULE'}
+    name_count = {name: 0 for name in valid_names}
+
+    for data in input_data:
+        name = data.get('name')
+        if name not in valid_names:
+            return False, f'{name} is an invalid name'
+        if name_count[name] == 1:
+            return False, f'{name} is duplicated'
+        else:
+            name_count[name] += 1
+    
+    return True, None

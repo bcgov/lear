@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that admin/configuration endpoints are working as expected.
 """
+import json
 from http import HTTPStatus
 
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
@@ -49,3 +50,24 @@ def test_get_configurations_with_invalid_user(app, session, client, jwt):
 
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_put_configurations_with_valid_data(app, session, client, jwt):
+    input_data = {
+        'configurations': [
+            {
+                "name": "NUM_DISSOLUTIONS_ALLOWED",
+                "value": "100"
+            },
+            {
+                "name": "MAX_DISSOLUTIONS_ALLOWED",
+                "value": "2000"
+            },
+        ]
+    }
+    
+    # test
+    rv = client.put(f'/api/v2/admin/configurations', json=input_data,
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+        
+    assert rv.status_code == HTTPStatus.OK
