@@ -56,3 +56,28 @@ def test_update_bn_move_missing_data(session, client, jwt, data):
                      headers=create_header(jwt, [UserRoles.system]),
                      json=data)
     assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_get_statistics_dissolution(session, client, jwt):
+    """Assert that the endpoint returns statistic information."""
+    rv = client.get('/api/v2/internal/statistics?view=dissolution',
+                    headers=create_header(jwt, [UserRoles.staff]))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert 'data' in rv.json
+    assert 'eligibleCount' in rv.json['data']
+
+
+def test_get_statistics_missing_query(session, client, jwt):
+    """Assert that the endpoint validates invalid query parameter."""
+    rv = client.get('/api/v2/internal/statistics',
+                    headers=create_header(jwt, [UserRoles.staff]))
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json == {'message': 'Invalid query parameter in request.'}
+
+
+def test_get_statistics_invalid_role(session, client, jwt):
+    """Assert that the endpoint validates invalid user role."""
+    rv = client.get('/api/v2/internal/statistics?view=dissolution',
+                    headers=create_header(jwt, [UserRoles.basic]))
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
