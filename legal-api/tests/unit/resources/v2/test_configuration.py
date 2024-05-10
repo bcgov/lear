@@ -92,7 +92,7 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
      'INVALID_KEY is an invalid key.', HTTPStatus.BAD_REQUEST),
     ('duplicated_key',{'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '1'},
                                           {'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '10'}]},
-     'NUM_DISSOLUTIONS_ALLOWED is duplicated.', HTTPStatus.BAD_REQUEST),
+     'NUM_DISSOLUTIONS_ALLOWED are duplicated.', HTTPStatus.BAD_REQUEST),
     ('dissolution_hold', {'configurations': [{'name': 'DISSOLUTIONS_ON_HOLD','value': '1'}]},
      'Value for key DISSOLUTIONS_ON_HOLD must be a boolean', HTTPStatus.BAD_REQUEST),
     ('dissolution_schedule', {'configurations': [{'name': 'NEW_DISSOLUTIONS_SCHEDULE','value': '1'}]},

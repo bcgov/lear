@@ -19,7 +19,7 @@ from flask_cors import cross_origin
 
 from legal_api.models import Configuration, db, UserRoles
 from legal_api.utils.auth import jwt
-
+from legal_api.services.utils import get_duplicate_keys
 
 bp = Blueprint('CONFIGURATION', __name__, url_prefix='/api/v2/admin/configurations')
 
@@ -50,8 +50,12 @@ def update_configurations():
     if not configurations:
         return {'message': 'Configurations list cannot be empty'}, HTTPStatus.BAD_REQUEST
 
+    duplicated_keys = get_duplicate_keys(data_list=configurations, key_attr='name')
+    if len(duplicated_keys) > 0:
+        duplicated_keys_str = ', '.join(duplicated_keys)
+        return {'message': f'{duplicated_keys_str} are duplicated.'}, HTTPStatus.BAD_REQUEST
+
     numeric_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
-    name_count = {}
     response = []
 
     try:
@@ -66,10 +70,6 @@ def update_configurations():
             config = Configuration.find_by_name(name)
             if not config:
                 raise ValueError(f'{name} is an invalid key.')
-
-            if name_count.get(name, None) == 1:
-                raise ValueError(f'{name} is duplicated.')
-            name_count = {name: 1, **name_count}
 
             config.val = str(value)
             db.session.add(config)

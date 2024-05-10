@@ -86,3 +86,21 @@ def get_int(filing: Dict, path: str) -> str:
         return int(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
+
+
+def get_duplicate_keys(data_list: list, key_attr: str):
+    """Check for duplicated keys"""
+    key_count = {}
+    duplicated_keys = []
+
+    for data in data_list:
+        key_value = data.get(key_attr)
+        
+        if key_value in key_count:
+            if key_count[key_value] == 1:
+                duplicated_keys.append(key_value)
+            key_count[key_value] += 1
+        else:
+            key_count[key_value] = 1
+    
+    return duplicated_keys
