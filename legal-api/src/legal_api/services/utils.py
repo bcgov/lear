@@ -89,7 +89,7 @@ def get_int(filing: Dict, path: str) -> str:
 
 
 def get_duplicate_keys(data_list: list, key_attr: str):
-    """Check for duplicated keys"""
+    """Check for duplicated keys."""
     key_count = {}
     duplicated_keys = []
 

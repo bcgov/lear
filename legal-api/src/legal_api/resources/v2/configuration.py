@@ -17,9 +17,10 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Configuration, db, UserRoles
-from legal_api.utils.auth import jwt
+from legal_api.models import Configuration, UserRoles, db
 from legal_api.services.utils import get_duplicate_keys
+from legal_api.utils.auth import jwt
+
 
 bp = Blueprint('CONFIGURATION', __name__, url_prefix='/api/v2/admin/configurations')
 
@@ -79,7 +80,6 @@ def update_configurations():
         # Rollback transaction
         db.session.rollback()
         return {'message': str(e)}, HTTPStatus.BAD_REQUEST
-
 
     return {'results': response}, HTTPStatus.OK
 
