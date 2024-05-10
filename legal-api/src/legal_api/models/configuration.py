@@ -88,6 +88,8 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         elif self.name in cron_names:
             if not croniter.is_valid(self.val):
                 raise ValueError(f'Value for key {self.name} must be a cron string')
+        else:
+            raise ValueError(f'{self.name} is an invalid key.')
 
 
 # Listen to 'before_insert' and 'before_update' events

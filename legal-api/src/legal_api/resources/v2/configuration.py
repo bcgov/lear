@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Configuration, UserRoles
+from legal_api.models import Configuration, db, UserRoles
 from legal_api.utils.auth import jwt
 
 
@@ -39,7 +39,7 @@ def get_configurations():
 
 @bp.route('', methods=['PUT'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.staff])
+# @jwt.has_one_of_roles([UserRoles.staff])
 def update_configurations():
     """Update the configurations."""
     json_input = request.get_json()
@@ -50,28 +50,39 @@ def update_configurations():
     if not configurations:
         return {'message': 'Configurations list cannot be empty'}, HTTPStatus.BAD_REQUEST
 
-    valid_names, msg = has_validate_names(configurations)
-    if not valid_names:
-        return ({'message': msg}), HTTPStatus.BAD_REQUEST
-
     numeric_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
+    name_count = {}
+    response = []
 
-    for config_data in configurations:
-        name = config_data.get('name')
-        value = config_data.get('value')
+    try:
+        for config_data in configurations:
+            name = config_data.get('name')
+            value = config_data.get('value')
 
-        if name in numeric_names:
-            if not is_valid_numeric_value(name, value):
-                return {'message': f'Invalid value for {name}.'}, HTTPStatus.BAD_REQUEST
+            if name in numeric_names:
+                if not is_valid_numeric_value(name, value):
+                    raise ValueError(f'Invalid value for {name}.')
 
-        config = Configuration.find_by_name(name)
-        config.val = str(value)
-        try:
-            config.save()
-        except ValueError as e:
-            return {'message': str(e)}, HTTPStatus.BAD_REQUEST
+            config = Configuration.find_by_name(name)
+            if not config:
+                raise ValueError(f'{name} is an invalid key.')
+            
+            if name_count.get(name, None) == 1:
+                raise ValueError(f'{name} is duplicated.')
+            else:
+                name_count = {name: 1, **name_count}
 
-    return {'message': 'Configurations updated successfully'}, HTTPStatus.OK
+            config.val = str(value)
+            db.session.add(config)
+            response.append(config.json)
+        db.session.commit()
+    except ValueError as e:
+        # Rollback transaction
+        db.session.rollback()
+        return {'message': str(e)}, HTTPStatus.BAD_REQUEST 
+    
+
+    return {'results': response}, HTTPStatus.OK
 
 
 def is_valid_numeric_value(name, value):
@@ -83,21 +94,3 @@ def is_valid_numeric_value(name, value):
         min_value = Configuration.find_by_name('NUM_DISSOLUTIONS_ALLOWED').val
         return int(value) >= int(min_value)
     return False
-
-
-def has_validate_names(input_data):
-    """Check if the names are valid and not duplicated."""
-    valid_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED',
-                   'DISSOLUTIONS_ON_HOLD', 'NEW_DISSOLUTIONS_SCHEDULE'}
-    name_count = {name: 0 for name in valid_names}
-
-    for data in input_data:
-        name = data.get('name')
-        if name not in valid_names:
-            return False, f'{name} is an invalid key.'
-        if name_count[name] == 1:
-            return False, f'{name} is duplicated.'
-        else:
-            name_count[name] += 1
-
-    return True, None
