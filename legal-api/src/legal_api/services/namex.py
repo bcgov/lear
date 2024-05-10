@@ -116,6 +116,19 @@ class NameXService():
     def validate_nr(nr_json):
         """Provide validation info based on a name request response payload."""
         # Initial validation result state
+        from . import flags  # pylint: disable=import-outside-toplevel
+
+        # This is added specifically for the sandbox environment.
+        # i.e. NR check should only ever have feature flag disabled for sandbox environment.
+        if flags.is_on('disable-nr-check'):
+            return {
+                'is_consumable': True,
+                'is_approved': True,
+                'is_expired': False,
+                'consent_required': None,
+                'consent_received': None
+            }
+
         is_consumable = False
         is_approved = False
         is_expired = False
