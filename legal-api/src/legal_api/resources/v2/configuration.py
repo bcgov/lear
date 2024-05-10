@@ -66,11 +66,10 @@ def update_configurations():
             config = Configuration.find_by_name(name)
             if not config:
                 raise ValueError(f'{name} is an invalid key.')
-            
+
             if name_count.get(name, None) == 1:
                 raise ValueError(f'{name} is duplicated.')
-            else:
-                name_count = {name: 1, **name_count}
+            name_count = {name: 1, **name_count}
 
             config.val = str(value)
             db.session.add(config)
@@ -79,8 +78,8 @@ def update_configurations():
     except ValueError as e:
         # Rollback transaction
         db.session.rollback()
-        return {'message': str(e)}, HTTPStatus.BAD_REQUEST 
-    
+        return {'message': str(e)}, HTTPStatus.BAD_REQUEST
+
 
     return {'results': response}, HTTPStatus.OK
 
