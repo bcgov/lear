@@ -30,6 +30,37 @@ from colin_api.utils.util import cors_preflight
 API = Namespace('businesses', description='Colin API Services - Businesses')
 
 
+@cors_preflight('GET')
+@API.route('/<string:identifier>/public', methods=['GET'])
+class BusinessPublicInfo(Resource):
+    """Meta information about the overall service."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_auth
+    def get(identifier: str):
+        """Return the complete business info."""
+        try:
+            # strip prefix BC
+            if identifier.startswith('BC'):
+                identifier = identifier[-7:]
+
+            # get business
+            business = Business.find_by_identifier(identifier)
+            if not business:
+                return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify(business.as_slim_dict()), HTTPStatus.OK
+
+        except GenericException as err:  # pylint: disable=duplicate-code
+            return jsonify({'message': err.error}), err.status_code
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify(
+                {'message': 'Error when trying to retrieve business record from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
+
 @cors_preflight('GET, POST')
 @API.route('/<string:legal_type>/<string:identifier>', methods=['GET'])
 @API.route('/<string:legal_type>', methods=['POST'])
