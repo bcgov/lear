@@ -1,16 +1,36 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2024 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 """Common setup and fixtures for the pytest suite used by this service."""
 import asyncio
 import contextlib
@@ -117,17 +137,7 @@ def load_sql_file(app, con, file_name: str = "*.sql"):
             con.run(buffer)
         except Exception as err:
             print(err)
-
-    # with open("data/create_database.sql", "r") as file:
-
-    #     for line in file:
-    #         buffer += ' '
-    #         buffer += line
-    #         if line.endswith(";"):
-    #             con.run(buffer)
-
-        
-
+            raise err
 
 def drop_test_db(
     user: str = None,
@@ -160,8 +170,6 @@ def drop_test_db(
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))
 
-
-
 @contextmanager
 def not_raises(exception):
     """Corallary to the pytest raises builtin.
@@ -173,69 +181,22 @@ def not_raises(exception):
     except exception:
         raise pytest.fail(f'DID RAISE {exception}')
 
-
-# # fixture to freeze utcnow to a fixed date-time
-# @pytest.fixture
-# def freeze_datetime_utcnow(monkeypatch):
-#     """Fixture to return a static time for utcnow()."""
-#     class _Datetime:
-#         @classmethod
-#         def utcnow(cls):
-#             return FROZEN_DATETIME
-
-#     monkeypatch.setattr(datetime, 'datetime', _Datetime)
-
-
 @pytest.fixture(scope='session')
 def app():
     """Return a session-wide application configured in TEST mode."""
     test_config = get_named_config('testing')
     _app = create_app(test_config)
-#     _app = Flask(__name__)
-#     _app.config.from_object(get_named_config('testing'))
-#     _db.init_app(_app)
-
     return _app
-
-
-# @pytest.fixture
-# def config(app):
-#     """Return the application config."""
-#     return app.config
-
 
 @pytest.fixture(scope='session')
 def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
 
-@pytest.fixture()
-def mocked_auth(request):
-    try:
-        with patch('google.oauth2.id_token',
-                   return_value={'claim': 'succcess'}):
-            yield
-    except Exception as err:
-        print(err)
-
-# @pytest.fixture(scope='session')
-# def jwt():
-#     """Return a session-wide jwt manager."""
-#     return _jwt
-
-
-# @pytest.fixture(scope='session')
-# def client_ctx(app):  # pylint: disable=redefined-outer-name
-#     """Return session-wide Flask test client."""
-#     with app.test_client() as _client:
-#         yield _client
-
-
 @pytest.fixture(scope='function')
 def client_id():
     """Return a unique client_id that can be used in tests."""
     _id = random.SystemRandom().getrandbits(0x58)
-#     _id = (base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
 
     return f'client-{_id}'
 
@@ -246,7 +207,6 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     Drops all existing tables - Meta follows Postgres FKs
     """
     with app.app_context():
-        database_name = os.getenv('DATABASE_TEST_NAME')
         create_test_db(database=app.config.get('DATABASE_TEST_NAME'),
                        database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
 
@@ -258,84 +218,6 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
 
         drop_test_db(database=app.config.get('DATABASE_TEST_NAME'),
                      database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
-
-# @pytest.fixture(scope='session')
-# def db(app):  # pylint: disable=redefined-outer-name, invalid-name
-#     """Return a session-wide initialised database.
-
-#     Drops all existing tables - Meta follows Postgres FKs
-#     """
-#     with app.app_context():
-#         # Clear out any existing tables
-#         metadata = MetaData(_db.engine)
-#         metadata.reflect()
-#         metadata.drop_all()
-#         _db.drop_all()
-
-#         sequence_sql = """SELECT sequence_name FROM information_schema.sequences
-#                           WHERE sequence_schema='public'
-#                        """
-
-#         sess = _db.session()
-#         for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
-#             try:
-#                 sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
-#                 print('DROP SEQUENCE public.%s ' % seq)
-#             except Exception as err:  # pylint: disable=broad-except  # noqa: B902
-#                 print(f'Error: {err}')
-#         sess.commit()
-
-#         # ##############################################
-#         # There are 2 approaches, an empty database, or the same one that the app will use
-#         #     create the tables
-#         #     _db.create_all()
-#         # or
-#         # Use Alembic to load all of the DB revisions including supporting lookup data
-#         # This is the path we'll use in legal_api!!
-
-#         # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
-#         legal_api_dir = os.path.abspath('..').replace('queue_services', 'legal-api')
-#         legal_api_dir = os.path.join(legal_api_dir, 'migrations')
-#         Migrate(app, _db, directory=legal_api_dir)
-#         upgrade()
-
-#         return _db
-
-
-# @pytest.fixture(scope='function')
-# def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
-#     """Return a function-scoped session."""
-#     with app.app_context():
-#         conn = db.engine.connect()
-#         txn = conn.begin()
-
-#         options = dict(bind=conn, binds={})
-#         sess = db.create_scoped_session(options=options)
-
-#         # establish  a SAVEPOINT just before beginning the test
-#         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
-#         sess.begin_nested()
-
-#         @event.listens_for(sess(), 'after_transaction_end')
-#         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
-#             # Detecting whether this is indeed the nested transaction of the test
-#             if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
-#                 # Handle where test DOESN'T session.commit(),
-#                 sess2.expire_all()
-#                 sess.begin_nested()
-
-#         db.session = sess
-
-#         sql = text('select 1')
-#         sess.execute(sql)
-
-#         yield sess
-
-#         # Cleanup
-#         sess.remove()
-#         # This instruction rollsback any commit that were executed in the tests.
-#         txn.rollback()
-#         conn.close()
 
 @pytest.fixture(scope='function')
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name

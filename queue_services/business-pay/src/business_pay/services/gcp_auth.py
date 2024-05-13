@@ -31,4 +31,24 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Test suite for the integrations to NATS Queue."""
+"""GCP Auth Services."""
+from flask import current_app
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from structured_logging import StructuredLogging
+
+
+logger = StructuredLogging.get_logger()
+
+def verify_gcp_jwt(flask_request):
+    """Verify the bearer token as sign by gcp oauth."""
+    try:
+        bearer_token = flask_request.headers.get("Authorization")
+        token = bearer_token.split(" ")[1]
+        audience = current_app.config.get('GOOGLE_CLIENT_ID')
+        claim = id_token.verify_oauth2_token(
+            token, requests.Request(), audience=audience
+        )
+        return claim
+    except Exception as err:
+        return None

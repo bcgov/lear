@@ -122,24 +122,11 @@ async def worker():
     filing.status = Filing.Status.PAID
     filing.save()
 
-# #     # None of these should bail as the filing has been marked PAID
-# #     cloud_event = SimpleCloudEvent(
-# #         source=__name__[: __name__.find(".")],
-# #         subject="filing",
-# #         type="Filing",
-# #         data={
-# #             "filingId": filing.id,
-# #             "filingType": filing.filing_type,
-# #             "filingEffectiveDate": filing.effective_date.isoformat(),
-# #         },
-# #     )
     # None of these should bail as the filing has been marked PAID
     # 4. Publish to email Q
     # ##
     with suppress(Exception):
         mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
-        # pylint: disable-next=unused-variable
-# #         ret = queue.publish(topic=mail_topic, payload=queue.to_queue_message(cloud_event))
         email_msg = create_email_msg(filing.id, filing.filing_type)
         await nats_queue.connect()
         await nats_queue.publish(subject=mail_topic,
@@ -148,20 +135,14 @@ async def worker():
 
     # 5. Publish to filer Q, if the filing is not a FED (Effective date > now())
     # ##
-    # with suppress(Exception):
-    try:
+    with suppress(Exception):
         if filing.effective_date <= filing.payment_completion_date:
             filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
             queue_message = create_filing_msg(filing.id)
             await nats_queue.connect()
             await nats_queue.publish(subject=filer_topic,
                                      msg=queue_message)
-#             ret = queue.publish(topic=filer_topic, payload=queue.to_queue_message(cloud_event))  # noqa: F841
             logger.info(f"publish to filer for pay-id: {payment_token.id}")
-    except Exception as err:
-        print(err)
-        print(err)
-        print(err)
 
     logger.info(f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
@@ -198,8 +179,3 @@ def dict_keys_to_snake_case(d: dict):
     for k, v in d.items():
         converted[pattern.sub("_", k).lower()] = v
     return converted
-
-
-# def get_filing_by_payment_id(payment_id: int) -> Filing:
-#     """Return the outcome of Filing.get_filing_by_payment_token."""
-#     return Filing.get_filing_by_payment_token(str(payment_id))

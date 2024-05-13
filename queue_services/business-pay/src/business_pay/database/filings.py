@@ -98,6 +98,7 @@ class Filing(db.Model):
 
     @staticmethod
     def get_filing_by_payment_token(pay_token: str) -> Optional[Filing]:
+        """Get the redacted filing based on the payment token."""
         try:
             stmt = text("""SELECT f.id, f.effective_date,
                         f.filing_type, f.filing_sub_type,
@@ -116,5 +117,6 @@ class Filing(db.Model):
         return None
     
     def save(self):
+        """Save the filing to the datbase."""
         db.session.add(self)
         db.session.commit()
