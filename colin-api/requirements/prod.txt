@@ -1,4 +1,5 @@
 cx_Oracle
+datedelta
 gunicorn
 Flask
 Flask-Script
@@ -6,6 +7,7 @@ Flask-Moment
 Flask-RESTX
 flask-jwt-oidc>=0.1.5
 jsonschema
+launchdarkly-server-sdk
 pycountry
 python-dotenv
 psycopg2-binary
