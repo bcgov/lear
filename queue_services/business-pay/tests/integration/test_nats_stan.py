@@ -65,21 +65,19 @@ async def test_connect(stan_server, future, event_loop, client_id):
         msgs.append(msg)
         if len(msgs) == 1:
             future.set_result(True)
-    
-    file_handler_subject = 'main'
-    subject = f'entity_queue.{file_handler_subject}'
-    queue_name = f'entity_durable_name.{file_handler_subject}'
+
+    file_handler_subject = "main"
+    subject = f"entity_queue.{file_handler_subject}"
+    queue_name = f"entity_durable_name.{file_handler_subject}"
     durable_name = queue_name
 
-    await sc.subscribe(subject=subject,
-                       queue=queue_name,
-                       durable_name=durable_name,
-                       cb=cb_file_handler)
+    await sc.subscribe(
+        subject=subject, queue=queue_name, durable_name=durable_name, cb=cb_file_handler
+    )
 
     identifier = 12345
     queue_message = create_filing_msg(identifier)
-    await sc.publish(subject=subject,
-                     payload=json.dumps(queue_message).encode('utf-8'))
+    await sc.publish(subject=subject, payload=json.dumps(queue_message).encode("utf-8"))
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
@@ -93,8 +91,11 @@ async def test_connect(stan_server, future, event_loop, client_id):
     assert len(msgs) == 1
     assert str(identifier) in msgs[0].data.decode()
 
+
 @pytest.mark.asyncio
-async def test_fixture_entity_stan(entity_stan, stan_server, future, event_loop, client_id):
+async def test_fixture_entity_stan(
+    entity_stan, stan_server, future, event_loop, client_id
+):
     """Basic test to ensure the fixtures, loops and Python version are correct."""
 
     # file handler callback
@@ -106,24 +107,22 @@ async def test_fixture_entity_stan(entity_stan, stan_server, future, event_loop,
         msgs.append(msg)
         if len(msgs) == 1:
             future.set_result(True)
-    
-    file_handler_subject = 'main'
-    subject = f'entity_queue.{file_handler_subject}'
-    queue_name = f'entity_durable_name.{file_handler_subject}'
+
+    file_handler_subject = "main"
+    subject = f"entity_queue.{file_handler_subject}"
+    queue_name = f"entity_durable_name.{file_handler_subject}"
     durable_name = queue_name
 
     # entity_stan = await get_stan(event_loop, client_id)
     sc = entity_stan[1]
 
-    await sc.subscribe(subject=subject,
-                       queue=queue_name,
-                       durable_name=durable_name,
-                       cb=cb_file_handler)
+    await sc.subscribe(
+        subject=subject, queue=queue_name, durable_name=durable_name, cb=cb_file_handler
+    )
 
     identifier = 12345
     queue_message = create_filing_msg(identifier)
-    await sc.publish(subject=subject,
-                     payload=json.dumps(queue_message).encode('utf-8'))
+    await sc.publish(subject=subject, payload=json.dumps(queue_message).encode("utf-8"))
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
@@ -135,7 +134,7 @@ async def test_fixture_entity_stan(entity_stan, stan_server, future, event_loop,
     assert str(identifier) in msgs[0].data.decode()
 
 
-@pytest_asyncio.fixture(scope='function')
+@pytest_asyncio.fixture(scope="function")
 async def get_stan(event_loop, client_id):
     nc = NATS()
     # event_loop = asyncio.get_running_loop()
@@ -155,6 +154,7 @@ async def test_nats_queue(app, stan_server, future, event_loop, client_id):
 
     from business_pay.services import nats_queue
     from business_pay.config import Config
+
     # file handler callback
     msgs = []
 
@@ -165,26 +165,25 @@ async def test_nats_queue(app, stan_server, future, event_loop, client_id):
         if len(msgs) == 1:
             future.set_result(True)
 
-    file_handler_subject = 'main'
-    subject = f'entity_queue.{file_handler_subject}'
-    queue_name = f'entity_durable_name.{file_handler_subject}'
+    file_handler_subject = "main"
+    subject = f"entity_queue.{file_handler_subject}"
+    queue_name = f"entity_durable_name.{file_handler_subject}"
     durable_name = queue_name
 
     nats_queue._loop = event_loop
     nats_queue.config = Config
-    nats_queue.stan_connection_options ={'client_id': client_id}
+    nats_queue.stan_connection_options = {"client_id": client_id}
     nats_queue.cb_handler = cb_file_handler
-    nats_queue.subscription_options ={
-        'subject': subject,
-        'queue': queue_name,
-        'durable_name': durable_name,
+    nats_queue.subscription_options = {
+        "subject": subject,
+        "queue": queue_name,
+        "durable_name": durable_name,
     }
     await nats_queue.connect()
 
     identifier = 12345
     queue_message = create_filing_msg(identifier)
-    await nats_queue.publish(subject=subject,
-                     msg=queue_message)
+    await nats_queue.publish(subject=subject, msg=queue_message)
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)

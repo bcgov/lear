@@ -38,24 +38,29 @@ from typing import Callable
 import stan
 
 
-async def helper_add_payment_to_queue(stan_client: stan.aio.client.Client,
-                                      subject: str,
-                                      payment_id: str,
-                                      status_code: str):
+async def helper_add_payment_to_queue(
+    stan_client: stan.aio.client.Client, subject: str, payment_id: str, status_code: str
+):
     """Add a payment token to the Queue."""
-    payload = {'paymentToken': {'id': payment_id,
-                                'statusCode': status_code,
-                                'corpTypeCode': 'BC'}}
-    await stan_client.publish(subject=subject,
-                              payload=json.dumps(payload).encode('utf-8'))
+    payload = {
+        "paymentToken": {
+            "id": payment_id,
+            "statusCode": status_code,
+            "corpTypeCode": "BC",
+        }
+    }
+    await stan_client.publish(
+        subject=subject, payload=json.dumps(payload).encode("utf-8")
+    )
 
 
-async def subscribe_to_queue(stan_client: stan.aio.client.Client,
-                             subject: str,
-                             queue: str,
-                             durable_name: str,
-                             call_back: Callable[[stan.aio.client.Msg], None]) \
-        -> str:
+async def subscribe_to_queue(
+    stan_client: stan.aio.client.Client,
+    subject: str,
+    queue: str,
+    durable_name: str,
+    call_back: Callable[[stan.aio.client.Msg], None],
+) -> str:
     """Subscribe to the Queue using the environment setup.
 
     Args:
@@ -68,8 +73,7 @@ async def subscribe_to_queue(stan_client: stan.aio.client.Client,
     # entity_queue = os.getenv('LEGAL_FILING_STAN_QUEUE')
     # entity_durable_name = os.getenv('LEGAL_FILING_STAN_DURABLE_NAME')
 
-    await stan_client.subscribe(subject=subject,
-                                queue=queue,
-                                durable_name=durable_name,
-                                cb=call_back)
+    await stan_client.subscribe(
+        subject=subject, queue=queue, durable_name=durable_name, cb=call_back
+    )
     return subject

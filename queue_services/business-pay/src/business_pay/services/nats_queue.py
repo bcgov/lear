@@ -45,21 +45,26 @@ from nats.aio.client import Client as NATS  # noqa N814; by convention the name 
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 from flask import Flask
 from structured_logging import StructuredLogging
+
 logger = StructuredLogging.get_logger()
+
 
 class NatsQueue:
     """Class to manage the NATS Queue service."""
-    def __init__(self, *,
-                 app: Flask = None,
-                 loop=None,
-                 cb_handler=None,
-                 nats_connection_options=None,
-                 stan_connection_options=None,
-                 subscription_options=None,
-                 nats_connection=None,
-                 stan_connection=None,
-                 config=None,
-                 name=None,
+
+    def __init__(
+        self,
+        *,
+        app: Flask = None,
+        loop=None,
+        cb_handler=None,
+        nats_connection_options=None,
+        stan_connection_options=None,
+        subscription_options=None,
+        nats_connection=None,
+        stan_connection=None,
+        config=None,
+        name=None,
     ):
         self.sc = stan_connection
         self.nc = nats_connection
@@ -72,29 +77,31 @@ class NatsQueue:
         self.config = config
         self._name = name
         if app:
-            self.init_app(app=app,
-                        loop=loop,
-                        cb_handler=cb_handler,
-                        nats_connection_options=nats_connection_options,
-                        stan_connection_options=stan_connection_options,
-                        subscription_options=subscription_options,
-                        nats_connection=nats_connection,
-                        stan_connection=stan_connection,
-                        config=config,
-                        name=name,
-                        )
+            self.init_app(
+                app=app,
+                loop=loop,
+                cb_handler=cb_handler,
+                nats_connection_options=nats_connection_options,
+                stan_connection_options=stan_connection_options,
+                subscription_options=subscription_options,
+                nats_connection=nats_connection,
+                stan_connection=stan_connection,
+                config=config,
+                name=name,
+            )
 
-    def init_app(self,
-                 app: Flask = None,
-                 loop=None,
-                 cb_handler=None,
-                 nats_connection_options=None,
-                 stan_connection_options=None,
-                 subscription_options=None,
-                 nats_connection=None,
-                 stan_connection=None,
-                 config=None,
-                 name=None,
+    def init_app(
+        self,
+        app: Flask = None,
+        loop=None,
+        cb_handler=None,
+        nats_connection_options=None,
+        stan_connection_options=None,
+        subscription_options=None,
+        nats_connection=None,
+        stan_connection=None,
+        config=None,
+        name=None,
     ):
         """Initialize the application."""
         self.app = app
@@ -110,15 +117,18 @@ class NatsQueue:
         self._name = name
 
         async def conn_lost_cb(error):
-            logger.info('Connection lost:%s', error)
+            logger.info("Connection lost:%s", error)
             for i in range(0, 100):
                 try:
-                    logger.info('Reconnecting, attempt=%i...', i)
+                    logger.info("Reconnecting, attempt=%i...", i)
                     await self.connect()
-                except Exception as e:  # pylint: disable=broad-except; catch all errors from client framework
-                    logger.error('Error %s', e.with_traceback(), stack_info=True)
+                except (
+                    Exception
+                ) as e:  # pylint: disable=broad-except; catch all errors from client framework
+                    logger.error("Error %s", e.with_traceback(), stack_info=True)
                     continue
                 break
+
         self._stan_conn_lost_cb = conn_lost_cb
 
     @property
@@ -157,18 +167,18 @@ class NatsQueue:
                 return
         except Exception as err:
             print(err)
-        
-        if not self.config:
-            logger.error('missing configuration object.')
-            raise AttributeError('missing configuration object.')
 
-        logger.info('Connecting...')
+        if not self.config:
+            logger.error("missing configuration object.")
+            raise AttributeError("missing configuration object.")
+
+        logger.info("Connecting...")
         if self.nc:
             try:
-                logger.debug('close old NATS client')
+                logger.debug("close old NATS client")
                 await self.nc.close()
             except asyncio.CancelledError as err:
-                logger.debug('closing stale connection err:%s', err)
+                logger.debug("closing stale connection err:%s", err)
             finally:
                 self.nc = None
 
@@ -177,26 +187,27 @@ class NatsQueue:
 
         nats_connection_options = {
             **self.config.NATS_CONNECTION_OPTIONS,
-            ** {
+            **{
                 # 'loop': self._loop,
-                'error_cb': error_cb
-                },
-            **self.nats_connection_options
+                "error_cb": error_cb
+            },
+            **self.nats_connection_options,
         }
 
         stan_connection_options = {
             **self.config.STAN_CONNECTION_OPTIONS,
-            **{'nats': self.nc,
-               'conn_lost_cb': self._stan_conn_lost_cb,
-            #    'loop': self._loop,
-               },
-            **self.stan_connection_options
+            **{
+                "nats": self.nc,
+                "conn_lost_cb": self._stan_conn_lost_cb,
+                #    'loop': self._loop,
+            },
+            **self.stan_connection_options,
         }
 
         subscription_options = {
             **self.config.SUBSCRIPTION_OPTIONS,
-            **{'cb': self.cb_handler},
-            **self.subscription_options
+            **{"cb": self.cb_handler},
+            **self.subscription_options,
         }
         try:
             await self.nc.connect(**nats_connection_options)
@@ -205,23 +216,31 @@ class NatsQueue:
         except Exception as err:
             print(err)
 
-        logger.info('Subscribe the callback: %s to the queue: %s.',
-                    subscription_options.get('cb').__name__ if subscription_options.get('cb') else 'no_call_back',
-                    subscription_options.get('queue'))
+        logger.info(
+            "Subscribe the callback: %s to the queue: %s.",
+            (
+                subscription_options.get("cb").__name__
+                if subscription_options.get("cb")
+                else "no_call_back"
+            ),
+            subscription_options.get("queue"),
+        )
 
     async def close(self):
         """Close the stream and nats connections."""
         try:
             await self.sc.close()
             await self.nc.close()
-        except Exception as err:  # pylint: disable=broad-except; catch all errors to log out when closing the service.
-            logger.debug('error when closing the streams: %s', err, stack_info=True)
+        except (
+            Exception
+        ) as err:  # pylint: disable=broad-except; catch all errors to log out when closing the service.
+            logger.debug("error when closing the streams: %s", err, stack_info=True)
 
     async def publish(self, subject: str, msg: Dict):
         """Publish the msg as a JSON struct to the subject, using the streaming NATS connection."""
-        await self.sc.publish(subject=subject,
-                              payload=json.dumps(msg).encode('utf-8'))
+        await self.sc.publish(subject=subject, payload=json.dumps(msg).encode("utf-8"))
+
 
 async def error_cb(e):
     """Emit error message to the log stream."""
-    logger.error('NATS library emitted an error. %s', e, stack_info=True)
+    logger.error("NATS library emitted an error. %s", e, stack_info=True)

@@ -58,6 +58,7 @@ bp = Blueprint("worker", __name__)
 
 logger = StructuredLogging.get_logger()
 
+
 @bp.route("/", methods=("POST",))
 async def worker():
     """Process the incoming cloud event.
@@ -83,9 +84,9 @@ async def worker():
 
     if not (claims := verify_gcp_jwt(request)):
         return {}, HTTPStatus.FORBIDDEN
-    
+
     logger.info(f"Incoming raw msg: {str(request.data)}")
-    
+
     # 1. Get cloud event
     # ##
     if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)):
@@ -97,15 +98,18 @@ async def worker():
 
     # 2. Get payment information
     # ##
-    if not (payment_token := get_payment_token(ce)) or payment_token.status_code != "COMPLETED":
+    if (
+        not (payment_token := get_payment_token(ce))
+        or payment_token.status_code != "COMPLETED"
+    ):
         # no payment info, or not a payment COMPLETED token, take off Q
         return {}, HTTPStatus.OK
 
-
     # 3. Update model
     # ##
-    if not (filing := Filing.get_filing_by_payment_token(
-                     pay_token=str(payment_token.id))):
+    if not (
+        filing := Filing.get_filing_by_payment_token(pay_token=str(payment_token.id))
+    ):
         # The payment token might not be there yet, put back on Q
         return {}, HTTPStatus.NOT_FOUND
 
@@ -118,7 +122,7 @@ async def worker():
 
     # setting the payment_completion_date, marks the filing as paid
     filing.payment_completion_date = datetime.now(timezone.utc)
-    filing.payment_status_code = 'COMPLETED'
+    filing.payment_status_code = "COMPLETED"
     filing.status = Filing.Status.PAID
     filing.save()
 
@@ -129,8 +133,7 @@ async def worker():
         mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
         email_msg = create_email_msg(filing.id, filing.filing_type)
         await nats_queue.connect()
-        await nats_queue.publish(subject=mail_topic,
-                                 msg=email_msg)
+        await nats_queue.publish(subject=mail_topic, msg=email_msg)
         logger.info(f"publish to emailer for pay-id: {payment_token.id}")
 
     # 5. Publish to filer Q, if the filing is not a FED (Effective date > now())
@@ -140,8 +143,7 @@ async def worker():
             filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
             queue_message = create_filing_msg(filing.id)
             await nats_queue.connect()
-            await nats_queue.publish(subject=filer_topic,
-                                     msg=queue_message)
+            await nats_queue.publish(subject=filer_topic, msg=queue_message)
             logger.info(f"publish to filer for pay-id: {payment_token.id}")
 
     logger.info(f"completed ce: {str(ce)}")

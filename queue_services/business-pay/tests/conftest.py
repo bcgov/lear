@@ -59,7 +59,7 @@ from business_pay.database.db import db as _db
 
 # from . import FROZEN_DATETIME
 
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)
 
 
 def create_test_db(
@@ -107,17 +107,18 @@ def create_test_db(
         print(err)  # used in the test suite, so on failure print something
         return False
 
+
 def load_sql_file(app, con, file_name: str = "*.sql"):
     basedir = os.path.abspath(os.path.dirname(__file__))
     datadir = os.path.join(basedir, "data", file_name)
     files = glob(datadir)
-    database_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
-    # con = pg8000.native.Connection("postgres", password="cpsnow") 
-    DB_USER = app.config.get('DB_USER', '')
-    DB_PASSWORD = app.config.get('DB_PASSWORD', '')
-    DB_NAME = app.config.get('DB_NAME', '')
-    DB_HOST = app.config.get('DB_HOST', '')
-    DB_PORT = app.config.get('DB_PORT', '5432')
+    database_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
+    # con = pg8000.native.Connection("postgres", password="cpsnow")
+    DB_USER = app.config.get("DB_USER", "")
+    DB_PASSWORD = app.config.get("DB_PASSWORD", "")
+    DB_NAME = app.config.get("DB_NAME", "")
+    DB_HOST = app.config.get("DB_HOST", "")
+    DB_PORT = app.config.get("DB_PORT", "5432")
     try:
         con = pg8000.native.Connection(
             user=DB_USER,
@@ -127,7 +128,7 @@ def load_sql_file(app, con, file_name: str = "*.sql"):
             port=int(DB_PORT),
         )
     except Exception as err:
-        print (err)
+        print(err)
         raise err
 
     for file in files:
@@ -138,6 +139,7 @@ def load_sql_file(app, con, file_name: str = "*.sql"):
         except Exception as err:
             print(err)
             raise err
+
 
 def drop_test_db(
     user: str = None,
@@ -161,14 +163,13 @@ def drop_test_db(
         WHERE pg_stat_activity.datname = '{database}'
         AND pid <> pg_backend_pid();
     """
-    with contextlib.suppress(
-        sqlalchemy.exc.ProgrammingError, pg8000.Error, Exception
-    ):
+    with contextlib.suppress(sqlalchemy.exc.ProgrammingError, pg8000.Error, Exception):
         with sqlalchemy.create_engine(
             DATABASE_URI, isolation_level="AUTOCOMMIT"
         ).connect() as conn:
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))
+
 
 @contextmanager
 def not_raises(exception):
@@ -179,36 +180,42 @@ def not_raises(exception):
     try:
         yield
     except exception:
-        raise pytest.fail(f'DID RAISE {exception}')
+        raise pytest.fail(f"DID RAISE {exception}")
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def app():
     """Return a session-wide application configured in TEST mode."""
-    test_config = get_named_config('testing')
+    test_config = get_named_config("testing")
     _app = create_app(test_config)
     return _app
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
 
-@pytest.fixture(scope='function')
+
+@pytest.fixture(scope="function")
 def client_id():
     """Return a unique client_id that can be used in tests."""
     _id = random.SystemRandom().getrandbits(0x58)
 
-    return f'client-{_id}'
+    return f"client-{_id}"
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
 
     Drops all existing tables - Meta follows Postgres FKs
     """
     with app.app_context():
-        create_test_db(database=app.config.get('DATABASE_TEST_NAME'),
-                       database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
+        create_test_db(
+            database=app.config.get("DATABASE_TEST_NAME"),
+            database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
+        )
 
         sess = _db.session()
         sess.execute(text("SET TIME ZONE 'UTC';"))
@@ -216,10 +223,13 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
 
         yield _db
 
-        drop_test_db(database=app.config.get('DATABASE_TEST_NAME'),
-                     database_uri=app.config.get('SQLALCHEMY_DATABASE_URI'))
+        drop_test_db(
+            database=app.config.get("DATABASE_TEST_NAME"),
+            database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
+        )
 
-@pytest.fixture(scope='function')
+
+@pytest.fixture(scope="function")
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a function-scoped session."""
     with app.app_context():
@@ -232,23 +242,25 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
             sess = db._make_scoped_session(options=options)
         except Exception as err:
             print(err)
-            print('done')
+            print("done")
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
         sess.begin_nested()
 
-        @event.listens_for(sess(), 'after_transaction_end')
+        @event.listens_for(sess(), "after_transaction_end")
         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
             # Detecting whether this is indeed the nested transaction of the test
-            if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
+            if (
+                trans.nested and not trans._parent.nested
+            ):  # pylint: disable=protected-access
                 # Handle where test DOESN'T session.commit(),
                 sess2.expire_all()
                 sess.begin_nested()
 
         db.session = sess
 
-        sql = text('select 1')
+        sql = text("select 1")
         sess.execute(sql)
 
         yield sess
@@ -259,12 +271,13 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         txn.rollback()
         conn.close()
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def stan_server(docker_services):
     """Create the nats / stan services that the integration tests will use."""
-    if os.getenv('TEST_NATS_DOCKER'):
+    if os.getenv("TEST_NATS_DOCKER"):
         try:
-            docker_services.start('nats')
+            docker_services.start("nats")
         except Exception as err:
             print(err)
         time.sleep(2)
@@ -274,15 +287,15 @@ def stan_server(docker_services):
     # return dsn
 
 
-@pytest_asyncio.fixture(scope='function')
+@pytest_asyncio.fixture(scope="function")
 async def stan(client_id):
     """Create a stan connection for each function, to be used in the tests."""
     event_loop = asyncio.get_running_loop()
     nc = Nats()
     sc = Stan()
-    cluster_name = 'test-cluster'
+    cluster_name = "test-cluster"
 
-    await nc.connect(io_loop=event_loop, name='entity.filing.worker')
+    await nc.connect(io_loop=event_loop, name="entity.filing.worker")
 
     await sc.connect(cluster_name, client_id, nats=nc)
 
@@ -296,7 +309,7 @@ async def stan(client_id):
     # await nc.close()
 
 
-@pytest_asyncio.fixture(scope='function')
+@pytest_asyncio.fixture(scope="function")
 async def entity_stan(app, event_loop, client_id):
     """Create a stan connection for each function.
 
@@ -308,10 +321,10 @@ async def entity_stan(app, event_loop, client_id):
 
     await nc.connect(io_loop=event_loop)
 
-    cluster_name = os.getenv('STAN_CLUSTER_NAME')
+    cluster_name = os.getenv("STAN_CLUSTER_NAME")
 
     if not cluster_name:
-        raise ValueError('Missing env variable: STAN_CLUSTER_NAME')
+        raise ValueError("Missing env variable: STAN_CLUSTER_NAME")
 
     await sc.connect(cluster_name, client_id, nats=nc)
 
@@ -323,7 +336,7 @@ async def entity_stan(app, event_loop, client_id):
     await nc.close()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def future(event_loop):
     """Return a future that is used for managing function tests."""
     # event_loop = asyncio.get_running_loop()
@@ -334,6 +347,7 @@ def future(event_loop):
 @pytest.fixture
 def create_mock_coro(mocker, monkeypatch):
     """Return a mocked coroutine, and optionally patch-it in."""
+
     def _create_mock_patch_coro(to_patch=None):
         mock = mocker.Mock()
 
