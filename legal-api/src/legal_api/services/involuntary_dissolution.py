@@ -35,6 +35,7 @@ class InvoluntaryDissolutionService():
             Business.LegalTypes.CONTINUE_IN.value,
             Business.LegalTypes.ULC_CONTINUE_IN.value,
             Business.LegalTypes.CCC_CONTINUE_IN.value,
+            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
             Business.LegalTypes.EXTRA_PRO_A.value,
             Business.LegalTypes.LIMITED_CO.value
         ]
