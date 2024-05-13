@@ -177,7 +177,7 @@ async def test_full_worker_process(app, session, client_id, stan_server, mocker)
     for msg in msgs:
         if msg.data == b'{"filing": {"id": 12}}':
             found_filing_msg = True
-        elif msg.data == b'{"email": {"filingId": 12, "type": "annualReport"}}':
+        elif msg.data == b'{"email": {"filingId": 12, "type": "annualReport"}, "option": "PAID"}':
             found_email_msg = True
 
     assert found_filing_msg
