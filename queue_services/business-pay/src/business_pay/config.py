@@ -111,6 +111,8 @@ class Config():  # pylint: disable=too-few-public-methods
 
     ENVIRONMENT = os.getenv('ENVIRONMENT', 'prod')
 
+    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', 'google_client_id')
+
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""

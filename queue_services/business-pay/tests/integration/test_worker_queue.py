@@ -50,7 +50,7 @@ def create_filing(session, filing_id, filing_type, payment_token):
 
 
 @pytest.mark.asyncio
-async def test_post_sugar_token(app, client):
+async def test_not_message(app, client):
     # ... same code as before
 
     ##-# using test_client()
@@ -61,15 +61,6 @@ async def test_post_sugar_token(app, client):
 
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, sync_test)
-
-
-@pytest.mark.asyncio
-async def test_not_message(app): #, event_loop):
-    """Return a 4xx when an no JSON present."""
-    with app.test_client() as client:
-        rv = client.post("/")
-
-    assert rv.status_code == HTTPStatus.OK
 
 
 @pytest.mark.asyncio
@@ -87,7 +78,7 @@ async def test_no_message(app, session, client, client_id, future, stan_server):
 
 
 @pytest.mark.asyncio
-async def test_full_worker_process(app, session, client_id, stan_server): #, event_loop):
+async def test_full_worker_process(app, session, client_id, stan_server, mocker):
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     # Call back for the subscription
     # from entity_queue_common.service import ServiceWorker
@@ -101,6 +92,9 @@ async def test_full_worker_process(app, session, client_id, stan_server): #, eve
     filing_id = 12
     filing_type = 'annualReport'
     payment_token = random.SystemRandom().getrandbits(0x58)
+
+    mocker.patch('google.oauth2.id_token.verify_oauth2_token',
+                   return_value={'claim': 'succcess'})
 
      ##-# using test_client()
     def sync_test(loop):
@@ -138,17 +132,9 @@ async def test_full_worker_process(app, session, client_id, stan_server): #, eve
                                                     filing_id=filing_id,
                 )
                 envelope = create_test_envelope(ce)
-         
-
-    #     # file_handler_subject = Config.FILER_PUBLISH_OPTIONS['subject']
-    #     # # await subscribe_to_queue(entity_stan,
-    #     # await subscribe_to_queue(stan,
-    #     #                          file_handler_subject,
-    #     #                          f'entity_queue.{file_handler_subject}',
-    #     #                          f'entity_durable_name.{file_handler_subject}',
-    #     #                          cb_file_handler)
-
-                rv = client.post('/', json=envelope)
+                headers=dict(Authorization=f"Bearer doesn't matter",)
+                 
+                rv = client.post('/', json=envelope, headers=headers)
 
                 assert rv.status_code == HTTPStatus.OK
 

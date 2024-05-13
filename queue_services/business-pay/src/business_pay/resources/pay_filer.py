@@ -48,6 +48,7 @@ from structured_logging import StructuredLogging
 
 from business_pay.services import create_filing_msg
 from business_pay.services import create_email_msg
+from business_pay.services import verify_gcp_jwt
 from business_pay.services import gcp_queue
 from business_pay.services import nats_queue
 from business_pay.database import Filing
@@ -80,6 +81,9 @@ async def worker():
         # logger(request, "INFO", f"No incoming raw msg.")
         return {}, HTTPStatus.OK
 
+    if not (claims := verify_gcp_jwt(request)):
+        return {}, HTTPStatus.FORBIDDEN
+    
     logger.info(f"Incoming raw msg: {str(request.data)}")
     
     # 1. Get cloud event

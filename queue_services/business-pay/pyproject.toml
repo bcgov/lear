@@ -20,6 +20,7 @@ structured-logging = {version = "^0.4.0", source = "sbc-connect"}
 sentry-sdk = {extras = ["flask"], version = "^2.1.1"}
 launchdarkly-server-sdk = "^9.4.0"
 pg8000 = "^1.31.2"
+cachecontrol = "^0.14.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

@@ -20,6 +20,7 @@ import random
 import time
 from contextlib import contextmanager
 from glob import glob
+from unittest.mock import patch
 
 import pg8000
 import pg8000.native
@@ -208,6 +209,14 @@ def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
 
+@pytest.fixture()
+def mocked_auth(request):
+    try:
+        with patch('google.oauth2.id_token',
+                   return_value={'claim': 'succcess'}):
+            yield
+    except Exception as err:
+        print(err)
 
 # @pytest.fixture(scope='session')
 # def jwt():
