@@ -113,7 +113,6 @@ def load_sql_file(app, con, file_name: str = "*.sql"):
     datadir = os.path.join(basedir, "data", file_name)
     files = glob(datadir)
     database_uri = app.config.get("SQLALCHEMY_DATABASE_URI")
-    # con = pg8000.native.Connection("postgres", password="cpsnow")
     DB_USER = app.config.get("DB_USER", "")
     DB_PASSWORD = app.config.get("DB_PASSWORD", "")
     DB_NAME = app.config.get("DB_NAME", "")
