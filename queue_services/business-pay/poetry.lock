@@ -384,22 +384,22 @@ name = "gcp-queue"
 version = "0.3.0"
 description = ""
 optional = false
-python-versions = ">=3.9,<4.0"
-files = [
-    {file = "gcp_queue-0.3.0-py3-none-any.whl", hash = "sha256:8976d61a248cc5460c6d24d6fa2c60b5c10e1f13f2836b413cf44e44c160a254"},
-    {file = "gcp_queue-0.3.0.tar.gz", hash = "sha256:42f2d19eaaca60ebebb488d79721e26c0a94aa1eaaaa6b9b8d76f2d38a40a948"},
-]
+python-versions = "^3.9"
+files = []
+develop = false
 
 [package.dependencies]
 flask = ">=1"
-google-auth = ">=2.28.2,<3.0.0"
-google-cloud-pubsub = ">=2.20.2,<3.0.0"
+google-auth = "^2.28.2"
+google-cloud-pubsub = "^2.20.2"
 simple-cloudevent = {git = "https://github.com/daxiom/simple-cloudevent.py.git"}
 
 [package.source]
-type = "legacy"
-url = "https://northamerica-northeast1-python.pkg.dev/c4hnrd-tools/python/simple"
-reference = "sbc-connect"
+type = "git"
+url = "https://github.com/thorwolpert/sbc-connect-common.git"
+reference = "main"
+resolved_reference = "5031471d380a3b8b6ca8b4249555c258507595b6"
+subdirectory = "python/gcp-queue"
 
 [[package]]
 name = "google-api-core"
@@ -1629,20 +1629,20 @@ name = "structured-logging"
 version = "0.4.0"
 description = ""
 optional = false
-python-versions = ">=3.9,<4.0"
-files = [
-    {file = "structured_logging-0.4.0-py3-none-any.whl", hash = "sha256:33859f81ff9c6c0448f01e9f300c1affbee42047404df6372834b047886b354e"},
-    {file = "structured_logging-0.4.0.tar.gz", hash = "sha256:3e0bdfc4c171773dfd165d111f2a218fa7d81f05bfdb3a4914f9939402b3d079"},
-]
+python-versions = "^3.9"
+files = []
+develop = false
 
 [package.dependencies]
-flask = ">=1"
-structlog = ">=24.1.0,<25.0.0"
+flask = ">= 1"
+structlog = "^24.1.0"
 
 [package.source]
-type = "legacy"
-url = "https://northamerica-northeast1-python.pkg.dev/c4hnrd-tools/python/simple"
-reference = "sbc-connect"
+type = "git"
+url = "https://github.com/thorwolpert/sbc-connect-common.git"
+reference = "main"
+resolved_reference = "5031471d380a3b8b6ca8b4249555c258507595b6"
+subdirectory = "python/structured-logging"
 
 [[package]]
 name = "tomli"
@@ -1735,4 +1735,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "3.9.19"
-content-hash = "dee4177040d4760ed7c4ace516d84d241a633a18f99192379d87d4401726a023"
+content-hash = "8d44b4dddbfa0c06db8462b7f8d7f9daaf00bc81c5933d41fcf6856a512dc1fd"

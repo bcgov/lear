@@ -111,9 +111,11 @@ async def test_full_worker_process(app, session, client_id, stan_server, mocker)
     filing_type = "annualReport"
     payment_token = random.SystemRandom().getrandbits(0x58)
 
-    mocker.patch(
-        "google.oauth2.id_token.verify_oauth2_token", return_value={"claim": "succcess"}
-    )
+    claim = {
+        "email_verified": app.config.get("SUB_SERVICE_ACCOUNT"),
+        "email": app.config.get("SUB_SERVICE_ACCOUNT"),
+    }
+    mocker.patch("google.oauth2.id_token.verify_oauth2_token", return_value=claim)
 
     ##-# using test_client()
     def sync_test(loop):
@@ -191,14 +193,12 @@ def create_test_payment_cloud_event(
         id="fake-id",
         source="fake-for-tests",
         subject="fake-subject",
-        type="payment",
+        type="bc.registry.payment",
         data={
-            "paymentToken": {
-                "id": pay_token,
-                "statusCode": pay_status,
-                "filingIdentifier": filing_id,
-                "corpTypeCode": "BC",
-            }
+            "id": pay_token,
+            "statusCode": pay_status,
+            "filingIdentifier": filing_id,
+            "corpTypeCode": "BC",
         },
     )
     return ce

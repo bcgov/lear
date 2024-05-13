@@ -43,13 +43,19 @@ logger = StructuredLogging.get_logger()
 
 def verify_gcp_jwt(flask_request):
     """Verify the bearer token as sign by gcp oauth."""
+    msg = ""
     try:
         bearer_token = flask_request.headers.get("Authorization")
         token = bearer_token.split(" ")[1]
-        audience = current_app.config.get("GOOGLE_CLIENT_ID")
+        audience = current_app.config.get("SUB_AUDIENCE")
         claim = id_token.verify_oauth2_token(
             token, requests.Request(), audience=audience
         )
-        return claim
+        sa_email = current_app.config.get("SUB_SERVICE_ACCOUNT")
+        if not claim["email_verified"] or claim["email"] != sa_email:
+            msg = f"Invalid service account or email not verified for email: {claim['email']}\n"
+
     except Exception as err:
-        return None
+        msg = f"Invalid token: {err}\n"
+    finally:
+        return msg

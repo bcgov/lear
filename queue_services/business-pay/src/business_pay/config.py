@@ -131,6 +131,16 @@ class Config:  # pylint: disable=too-few-public-methods
     ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "google_client_id")
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    EMAILER_TOPIC = os.getenv("EMAILER_TOPIC", "namex-receipt-dev")
+    AUDIENCE = os.getenv(
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+    )
+    SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
+    SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
 
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods

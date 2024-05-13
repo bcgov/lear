@@ -82,7 +82,8 @@ async def worker():
         # logger(request, "INFO", f"No incoming raw msg.")
         return {}, HTTPStatus.OK
 
-    if not (claims := verify_gcp_jwt(request)):
+    if msg := verify_gcp_jwt(request):
+        logger.info(msg)
         return {}, HTTPStatus.FORBIDDEN
 
     logger.info(f"Incoming raw msg: {str(request.data)}")
@@ -162,13 +163,13 @@ class PaymentToken:
 
 def get_payment_token(ce: SimpleCloudEvent):
     """Return a PaymentToken if enclosed in the cloud event."""
+    # TODO move to common enums for ce.type = bc.registry.payment
     if (
-        (ce.type == "payment")
+        (ce.type == "bc.registry.payment")
         and (data := ce.data)
         and isinstance(data, dict)
-        and (payment_token := data.get("paymentToken", {}))
     ):
-        converted = dict_keys_to_snake_case(payment_token)
+        converted = dict_keys_to_snake_case(data)
         pt = PaymentToken(**converted)
         return pt
     return None
