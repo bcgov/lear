@@ -127,7 +127,6 @@ class Config:  # pylint: disable=too-few-public-methods
 
     ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
 
-    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "google_client_id")
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )
