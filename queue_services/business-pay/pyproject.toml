@@ -33,10 +33,10 @@ zimports = "^0.6.1"
 lovely-pytest-docker = "^0.3.1"
 
 
-[[tool.poetry.source]]
-name = "sbc-connect"
-url = "https://northamerica-northeast1-python.pkg.dev/c4hnrd-tools/python/simple/"
-priority = "explicit"
+# [[tool.poetry.source]]
+# name = "sbc-connect"
+# url = "https://northamerica-northeast1-python.pkg.dev/c4hnrd-tools/python/simple/"
+# priority = "explicit"
 
 [build-system]
 requires = ["poetry-core"]
