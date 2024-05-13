@@ -13,5 +13,12 @@
             "nats-pay",
             "sentry"
         ]
+    },
+    {
+        "vault": "gcp-queue",
+        "application": [
+            "topics",
+            "gtksf3"
+        ]
     }
 ]

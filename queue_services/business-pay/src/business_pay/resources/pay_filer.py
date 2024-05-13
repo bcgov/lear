@@ -131,7 +131,7 @@ async def worker():
     # 4. Publish to email Q
     # ##
     with suppress(Exception):
-        mail_topic = current_app.config.get("ENTITY_MAILER_TOPIC", "mailer")
+        mail_topic = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
         email_msg = create_email_msg(filing.id, filing.filing_type)
         await nats_queue.connect()
         await nats_queue.publish(subject=mail_topic, msg=email_msg)
@@ -141,7 +141,7 @@ async def worker():
     # ##
     with suppress(Exception):
         if filing.effective_date <= filing.payment_completion_date:
-            filer_topic = current_app.config.get("ENTITY_FILER_TOPIC", "filer")
+            filer_topic = current_app.config['FILER_PUBLISH_OPTIONS']['subject']
             queue_message = create_filing_msg(filing.id)
             await nats_queue.connect()
             await nats_queue.publish(subject=filer_topic, msg=queue_message)

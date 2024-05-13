@@ -125,14 +125,9 @@ class Config:  # pylint: disable=too-few-public-methods
         "subject": os.getenv("NATS_EMAILER_SUBJECT", "entity.email"),
     }
 
-    ENTITY_FILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "filer")
-    ENTITY_MAILER_TOPIC = os.getenv("ENTITY_FILER_TOPIC", "mailer")
-
     ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
 
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "google_client_id")
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
-    EMAILER_TOPIC = os.getenv("EMAILER_TOPIC", "namex-receipt-dev")
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )
