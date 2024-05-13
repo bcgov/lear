@@ -81,7 +81,7 @@ def update_configurations():
         db.session.rollback()
         return {'message': str(e)}, HTTPStatus.BAD_REQUEST
 
-    return {'results': response}, HTTPStatus.OK
+    return {'configurations': response}, HTTPStatus.OK
 
 
 def is_valid_numeric_value(name, value):
