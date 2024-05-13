@@ -40,7 +40,7 @@ def get_configurations():
 
 @bp.route('', methods=['PUT'])
 @cross_origin(origin='*')
-# @jwt.has_one_of_roles([UserRoles.staff])
+@jwt.has_one_of_roles([UserRoles.staff])
 def update_configurations():
     """Update the configurations."""
     json_input = request.get_json()
