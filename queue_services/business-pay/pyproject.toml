@@ -1,0 +1,43 @@
+[tool.poetry]
+name = "business-pay"
+version = "0.3.0"
+description = "BC Registries  - business-payment-processor"
+authors = ["thor <thor@wolpert.ca>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.9.19"
+Flask = {extras = ["async"], version = "^3.0.3"}
+Flask-SQLAlchemy = "^3.1.1"
+jsonschema = "^4.22.0"
+python-dotenv = "^1.0.1"
+asyncio-nats-client = "^0.11.5"
+asyncio-nats-streaming = "^0.4.0"
+protobuf = "3.19.5"
+# gcp-queue = {version = "^0.3.0", source = "sbc-connect"}
+gcp-queue = { git = "https://github.com/thorwolpert/sbc-connect-common.git", subdirectory = "python/gcp-queue", branch = "main" }
+# structured-logging = {version = "^0.4.0", source = "sbc-connect"}
+structured-logging = { git = "https://github.com/thorwolpert/sbc-connect-common.git", subdirectory = "python/structured-logging", branch = "main" }
+sentry-sdk = {extras = ["flask"], version = "^2.1.1"}
+launchdarkly-server-sdk = "^9.4.0"
+pg8000 = "^1.31.2"
+cachecontrol = "^0.14.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.0"
+pytest-asyncio = "^0.23.6"
+pytest-mock = "^3.14.0"
+black = "^24.4.2"
+zimports = "^0.6.1"
+lovely-pytest-docker = "^0.3.1"
+
+
+# [[tool.poetry.source]]
+# name = "sbc-connect"
+# url = "https://northamerica-northeast1-python.pkg.dev/c4hnrd-tools/python/simple/"
+# priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
