@@ -398,7 +398,7 @@ simple-cloudevent = {git = "https://github.com/daxiom/simple-cloudevent.py.git"}
 type = "git"
 url = "https://github.com/thorwolpert/sbc-connect-common.git"
 reference = "main"
-resolved_reference = "5031471d380a3b8b6ca8b4249555c258507595b6"
+resolved_reference = "eb74a07e38a831e539681c4def772f0a00296e3b"
 subdirectory = "python/gcp-queue"
 
 [[package]]
@@ -1641,7 +1641,7 @@ structlog = "^24.1.0"
 type = "git"
 url = "https://github.com/thorwolpert/sbc-connect-common.git"
 reference = "main"
-resolved_reference = "5031471d380a3b8b6ca8b4249555c258507595b6"
+resolved_reference = "eb74a07e38a831e539681c4def772f0a00296e3b"
 subdirectory = "python/structured-logging"
 
 [[package]]
