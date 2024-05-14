@@ -19,7 +19,6 @@ from flask_cors import cross_origin
 from sqlalchemy import any_
 
 from legal_api.models import Configuration, UserRoles, db
-from legal_api.services.utils import get_duplicate_keys
 from legal_api.utils.auth import jwt
 
 
@@ -71,7 +70,6 @@ def update_configurations():
     return {'configurations': response}, HTTPStatus.OK
 
 
-
 def validate_configurations(configurations):
     """Validate the configurations before updating."""
     if not configurations:
@@ -96,7 +94,6 @@ def validate_configurations(configurations):
 
 def validate_data_types(configurations):
     """Validate the data types of the configurations."""
-
     try:
         for config in configurations:
             name = config.get('name')
@@ -110,7 +107,6 @@ def validate_data_types(configurations):
 
 def validate_invalid_names(names):
     """Validate if there are any invalid names in configurations to be updated."""
-
     # Query the database for these names
     existing_configs = Configuration.query.filter(Configuration.name.ilike(any_(names))).all()
 
@@ -123,7 +119,6 @@ def validate_invalid_names(names):
 
 def validate_dissolutions_config(configurations):
     """Validate the dissolutions configuration."""
-
     num_dissolutions_match = find_config_by_name(configurations, 'NUM_DISSOLUTIONS_ALLOWED')
     max_dissolutions_match = find_config_by_name(configurations, 'MAX_DISSOLUTIONS_ALLOWED')
 
@@ -137,7 +132,6 @@ def validate_dissolutions_config(configurations):
         num_dissolutions_allowed = Configuration.find_by_name('NUM_DISSOLUTIONS_ALLOWED').val
     num_dissolutions_allowed = int(num_dissolutions_allowed)
 
-
     if max_dissolutions_match:
         max_dissolutions_allowed = int(max_dissolutions_match.get('value'))
     else:
@@ -148,7 +142,6 @@ def validate_dissolutions_config(configurations):
         return 'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.'
 
     return None
-
 
 
 def find_config_by_name(configurations, name):

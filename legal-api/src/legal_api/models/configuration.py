@@ -75,9 +75,9 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         # Define keys that should have specific value types
         Configuration.validate_configuration_value(self.name, self.val)
 
-
     @staticmethod
     def validate_configuration_value(name, val):
+        """Ensure the value is the correct type before insert or update."""
         int_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
         bool_names = {'DISSOLUTIONS_ON_HOLD'}
         cron_names = {'NEW_DISSOLUTIONS_SCHEDULE'}
