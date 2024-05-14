@@ -73,23 +73,26 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
     def validate_value(self):
         """Ensure the value is the correct type before insert or update."""
         # Define keys that should have specific value types
+        Configuration.validate_configuration_value(self.name, self.val)
+
+
+    @staticmethod
+    def validate_configuration_value(name, val):
         int_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
         bool_names = {'DISSOLUTIONS_ON_HOLD'}
         cron_names = {'NEW_DISSOLUTIONS_SCHEDULE'}
 
-        if self.name in int_names:
+        if name in int_names:
             try:
-                int(self.val)
+                int(val)
             except ValueError as exc:
-                raise ValueError(f'Value for key {self.name} must be an integer') from exc
-        elif self.name in bool_names:
-            if self.val not in {'True', 'False'}:
-                raise ValueError(f'Value for key {self.name} must be a boolean')
-        elif self.name in cron_names:
-            if not croniter.is_valid(self.val):
-                raise ValueError(f'Value for key {self.name} must be a cron string')
-        else:
-            raise ValueError(f'{self.name} is an invalid key.')
+                raise ValueError(f'Value for key {name} must be an integer') from exc
+        elif name in bool_names:
+            if val not in {'True', 'False'}:
+                raise ValueError(f'Value for key {name} must be a boolean')
+        elif name in cron_names:
+            if not croniter.is_valid(val):
+                raise ValueError(f'Value for key {name} must be a cron string')
 
 
 # Listen to 'before_insert' and 'before_update' events

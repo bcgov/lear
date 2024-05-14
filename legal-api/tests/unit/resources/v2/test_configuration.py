@@ -67,7 +67,7 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
             },
             {
                 'name': 'DISSOLUTIONS_ON_HOLD',
-                'value': True
+                'value': "True"
             },
             {
                 'name': 'NEW_DISSOLUTIONS_SCHEDULE',
@@ -85,14 +85,14 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
 
 @pytest.mark.parametrize('test_name,input_data,message,status_code', [
     ('num_dissolution', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '4000'}]},
-     'Invalid value for NUM_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
+     'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
     ('max_dissolution', {'configurations': [{'name': 'MAX_DISSOLUTIONS_ALLOWED','value': '1'}]},
-     'Invalid value for MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
+     'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
     ('invalid_key', {'configurations': [{'name': 'INVALID_KEY','value': '1'}]},
-     'INVALID_KEY is an invalid key.', HTTPStatus.BAD_REQUEST),
+     'Invalid name error.', HTTPStatus.BAD_REQUEST),
     ('duplicated_key',{'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '1'},
                                           {'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '10'}]},
-     'NUM_DISSOLUTIONS_ALLOWED are duplicated.', HTTPStatus.BAD_REQUEST),
+     'Duplicate names error.', HTTPStatus.BAD_REQUEST),
     ('dissolution_hold', {'configurations': [{'name': 'DISSOLUTIONS_ON_HOLD','value': '1'}]},
      'Value for key DISSOLUTIONS_ON_HOLD must be a boolean', HTTPStatus.BAD_REQUEST),
     ('dissolution_schedule', {'configurations': [{'name': 'NEW_DISSOLUTIONS_SCHEDULE','value': '1'}]},
