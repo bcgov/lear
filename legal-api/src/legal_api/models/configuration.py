@@ -14,11 +14,8 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
-<<<<<<< HEAD
 from enum import Enum
-=======
 import re
->>>>>>> 21196 - Legal API - Misc configurations table updates
 from typing import List
 
 from croniter import croniter
