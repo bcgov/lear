@@ -14,6 +14,7 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
+from enum import Enum
 from typing import List
 
 from croniter import croniter
@@ -32,6 +33,13 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
     val = db.Column('val', db.String(100), nullable=False)
     short_description = db.Column('short_description', db.String(150), nullable=True)
     full_description = db.Column('full_description', db.String(1000), nullable=True)
+
+    class NamesByValueType(Enum):
+        """Render an Enum of the name of configuration."""
+
+        INT_NAMES = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
+        BOOL_NAMES = {'DISSOLUTIONS_ON_HOLD'}
+        CRON_NAMES = {'NEW_DISSOLUTIONS_SCHEDULE'}
 
     def save(self):
         """Save the object to the database immediately."""
@@ -67,7 +75,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the configuration matching the name."""
         configuration = None
         if config_name:
-            configuration = cls.query.filter_by(name=config_name).one_or_none()
+            configuration = cls.query.filter_by(name=config_name.upper()).one_or_none()
         return configuration
 
     def validate_value(self):
@@ -76,21 +84,21 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         Configuration.validate_configuration_value(self.name, self.val)
 
     @staticmethod
-    def validate_configuration_value(name, val):
+    def validate_configuration_value(name: str, val: str):
         """Ensure the value is the correct type before insert or update."""
-        int_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
-        bool_names = {'DISSOLUTIONS_ON_HOLD'}
-        cron_names = {'NEW_DISSOLUTIONS_SCHEDULE'}
+        if not isinstance(val, str):
+            raise ValueError('Value type must be string.')
 
-        if name in int_names:
+        if name.upper() in Configuration.NameByValueType.INT_NAMES.value:
             try:
-                int(val)
+                if int(val) < 0:
+                    raise ValueError(f'Value for key {name} must be a positive integer')
             except ValueError as exc:
-                raise ValueError(f'Value for key {name} must be an integer') from exc
-        elif name in bool_names:
+                raise ValueError(f'Value for key {name} must be a positive integer') from exc
+        elif name.upper() in Configuration.NameByValueType.BOOL_NAMES.value:
             if val not in {'True', 'False'}:
                 raise ValueError(f'Value for key {name} must be a boolean')
-        elif name in cron_names:
+        elif name.upper() in Configuration.NameByValueType.CRON_NAMES.value:
             if not croniter.is_valid(val):
                 raise ValueError(f'Value for key {name} must be a cron string')
 

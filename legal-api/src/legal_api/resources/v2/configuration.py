@@ -55,7 +55,7 @@ def update_configurations():
     response = []
     try:
         for config_data in configurations:
-            name = config_data.get('name')
+            name = config_data.get('name').upper()
             value = config_data.get('value')
             config = Configuration.find_by_name(name)
             config.val = str(value)
@@ -75,8 +75,8 @@ def validate_configurations(configurations):
     if not configurations:
         return 'Configurations list cannot be empty'
 
-    # Extract names from the requested configuration updates
-    names = [config['name'] for config in configurations]
+    # Extract names with uppercase from the requested configuration updates
+    names = [config['name'].upper() for config in configurations]
     if len(names) != len(set(names)):
         return 'Duplicate names error.'
 
@@ -96,7 +96,7 @@ def validate_data_types(configurations):
     """Validate the data types of the configurations."""
     try:
         for config in configurations:
-            name = config.get('name')
+            name = config.get('name').upper()
             value = config.get('value')
             Configuration.validate_configuration_value(name, value)
     except ValueError as e:
@@ -107,6 +107,7 @@ def validate_data_types(configurations):
 
 def validate_invalid_names(names):
     """Validate if there are any invalid names in configurations to be updated."""
+    # All names should be uppercase.
     # Query the database for these names
     existing_configs = Configuration.query.filter(Configuration.name.ilike(any_(names))).all()
 
@@ -146,4 +147,4 @@ def validate_dissolutions_config(configurations):
 
 def find_config_by_name(configurations, name):
     """Search for a specific configuration by name from configuration payload."""
-    return next((config for config in configurations if config['name'] == name), None)
+    return next((config for config in configurations if config['name'].upper() == name), None)

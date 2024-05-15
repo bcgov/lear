@@ -59,7 +59,7 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
         'configurations': [
             {
                 'name': 'NUM_DISSOLUTIONS_ALLOWED',
-                'value': 400
+                'value': '400'
             },
             {
                 'name': 'MAX_DISSOLUTIONS_ALLOWED',
@@ -67,10 +67,10 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
             },
             {
                 'name': 'DISSOLUTIONS_ON_HOLD',
-                'value': "True"
+                'value': 'True'
             },
             {
-                'name': 'NEW_DISSOLUTIONS_SCHEDULE',
+                'name': 'new_dissolutions_schedule', # should work with downcase name
                 'value': '0 0 2 * *'
             }
         ]
@@ -86,6 +86,8 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
 @pytest.mark.parametrize('test_name,input_data,message,status_code', [
     ('num_dissolution', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '4000'}]},
      'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
+    ('num_dissolution', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': 100}]},
+     'Value type must be string.', HTTPStatus.BAD_REQUEST),
     ('max_dissolution', {'configurations': [{'name': 'MAX_DISSOLUTIONS_ALLOWED','value': '1'}]},
      'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
     ('invalid_key', {'configurations': [{'name': 'INVALID_KEY','value': '1'}]},
