@@ -729,6 +729,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_amalgamating_businesses(self, filing):
         amalgamating_businesses = []
+        business_legal_name = None
         for amalgamating_business in filing['amalgamationApplication']['amalgamatingBusinesses']:
             identifier = amalgamating_business.get('identifier')
             if foreign_legal_name := amalgamating_business.get('legalName'):
