@@ -47,7 +47,8 @@ def update_configurations():
     if not json_input:
         return {'message': 'Request body cannot be blank'}, HTTPStatus.BAD_REQUEST
 
-    configurations = json_input.get('configurations', [])
+    payload = json_input.get('configurations', [])
+    configurations = convert_uppercase_name(payload)
     error_message = validate_configurations(configurations)
     if error_message:
         return {'message': error_message}, HTTPStatus.BAD_REQUEST
@@ -55,7 +56,7 @@ def update_configurations():
     response = []
     try:
         for config_data in configurations:
-            name = config_data.get('name').upper()
+            name = config_data.get('name')
             value = config_data.get('value')
             config = Configuration.find_by_name(name)
             config.val = str(value)
@@ -70,13 +71,21 @@ def update_configurations():
     return {'configurations': response}, HTTPStatus.OK
 
 
+def convert_uppercase_name(payload):
+    """Uppercase the name entries from the incoming payload."""
+    if not payload:
+        return None
+    configurations = [{**config, 'name': config['name'].upper()} if 'name' in config else config for config in payload]
+    return configurations
+
+
 def validate_configurations(configurations):
     """Validate the configurations before updating."""
     if not configurations:
         return 'Configurations list cannot be empty'
 
-    # Extract names with uppercase from the requested configuration updates
-    names = [config['name'].upper() for config in configurations]
+    # Extract names from the requested configuration updates
+    names = [config['name'] for config in configurations]
     if len(names) != len(set(names)):
         return 'Duplicate names error.'
 
@@ -96,7 +105,7 @@ def validate_data_types(configurations):
     """Validate the data types of the configurations."""
     try:
         for config in configurations:
-            name = config.get('name').upper()
+            name = config.get('name')
             value = config.get('value')
             Configuration.validate_configuration_value(name, value)
     except ValueError as e:
@@ -107,7 +116,6 @@ def validate_data_types(configurations):
 
 def validate_invalid_names(names):
     """Validate if there are any invalid names in configurations to be updated."""
-    # All names should be uppercase.
     # Query the database for these names
     existing_configs = Configuration.query.filter(Configuration.name.ilike(any_(names))).all()
 
@@ -120,8 +128,8 @@ def validate_invalid_names(names):
 
 def validate_dissolutions_config(configurations):
     """Validate the dissolutions configuration."""
-    num_dissolutions_match = find_config_by_name(configurations, 'NUM_DISSOLUTIONS_ALLOWED')
-    max_dissolutions_match = find_config_by_name(configurations, 'MAX_DISSOLUTIONS_ALLOWED')
+    num_dissolutions_match = find_config_by_name(configurations, Configuration.Names.NUM_DISSOLUTIONS_ALLOWED.value)
+    max_dissolutions_match = find_config_by_name(configurations, Configuration.Names.MAX_DISSOLUTIONS_ALLOWED.value)
 
     # don't need to validate
     if not num_dissolutions_match and not max_dissolutions_match:
@@ -130,13 +138,13 @@ def validate_dissolutions_config(configurations):
     if num_dissolutions_match:
         num_dissolutions_allowed = int(num_dissolutions_match.get('value'))
     else:
-        num_dissolutions_allowed = Configuration.find_by_name('NUM_DISSOLUTIONS_ALLOWED').val
+        num_dissolutions_allowed = Configuration.find_by_name(Configuration.Names.NUM_DISSOLUTIONS_ALLOWED.value).val
     num_dissolutions_allowed = int(num_dissolutions_allowed)
 
     if max_dissolutions_match:
         max_dissolutions_allowed = int(max_dissolutions_match.get('value'))
     else:
-        max_dissolutions_allowed = Configuration.find_by_name('MAX_DISSOLUTIONS_ALLOWED').val
+        max_dissolutions_allowed = Configuration.find_by_name(Configuration.Names.MAX_DISSOLUTIONS_ALLOWED.value).val
     max_dissolutions_allowed = int(max_dissolutions_allowed)
 
     if num_dissolutions_allowed > max_dissolutions_allowed:
@@ -147,4 +155,4 @@ def validate_dissolutions_config(configurations):
 
 def find_config_by_name(configurations, name):
     """Search for a specific configuration by name from configuration payload."""
-    return next((config for config in configurations if config['name'].upper() == name), None)
+    return next((config for config in configurations if config['name'] == name), None)

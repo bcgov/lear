@@ -34,12 +34,13 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
     short_description = db.Column('short_description', db.String(150), nullable=True)
     full_description = db.Column('full_description', db.String(1000), nullable=True)
 
-    class NamesByValueType(Enum):
+    class Names(Enum):
         """Render an Enum of the name of configuration."""
 
-        INT_NAMES = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
-        BOOL_NAMES = {'DISSOLUTIONS_ON_HOLD'}
-        CRON_NAMES = {'NEW_DISSOLUTIONS_SCHEDULE'}
+        NUM_DISSOLUTIONS_ALLOWED = 'NUM_DISSOLUTIONS_ALLOWED'
+        MAX_DISSOLUTIONS_ALLOWED = 'MAX_DISSOLUTIONS_ALLOWED'
+        DISSOLUTIONS_ON_HOLD = 'DISSOLUTIONS_ON_HOLD'
+        NEW_DISSOLUTIONS_SCHEDULE = 'NEW_DISSOLUTIONS_SCHEDULE'
 
     def save(self):
         """Save the object to the database immediately."""
@@ -75,7 +76,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the configuration matching the name."""
         configuration = None
         if config_name:
-            configuration = cls.query.filter_by(name=config_name.upper()).one_or_none()
+            configuration = cls.query.filter_by(name=config_name).one_or_none()
         return configuration
 
     def validate_value(self):
@@ -89,16 +90,21 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         if not isinstance(val, str):
             raise ValueError('Value type must be string.')
 
-        if name.upper() in Configuration.NameByValueType.INT_NAMES.value:
+        int_names = {Configuration.Names.NUM_DISSOLUTIONS_ALLOWED.value,
+                     Configuration.Names.MAX_DISSOLUTIONS_ALLOWED.value}
+        bool_names = {Configuration.Names.DISSOLUTIONS_ON_HOLD.value}
+        cron_names = {Configuration.Names.NEW_DISSOLUTIONS_SCHEDULE.value}
+
+        if name in int_names:
             try:
                 if int(val) < 0:
                     raise ValueError(f'Value for key {name} must be a positive integer')
             except ValueError as exc:
                 raise ValueError(f'Value for key {name} must be a positive integer') from exc
-        elif name.upper() in Configuration.NameByValueType.BOOL_NAMES.value:
+        elif name in bool_names:
             if val not in {'True', 'False'}:
                 raise ValueError(f'Value for key {name} must be a boolean')
-        elif name.upper() in Configuration.NameByValueType.CRON_NAMES.value:
+        elif name in cron_names:
             if not croniter.is_valid(val):
                 raise ValueError(f'Value for key {name} must be a cron string')
 

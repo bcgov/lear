@@ -84,11 +84,13 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
 
 
 @pytest.mark.parametrize('test_name,input_data,message,status_code', [
-    ('num_dissolution', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '4000'}]},
+    ('num_dissolution_with_over_max', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '4000'}]},
      'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
-    ('num_dissolution', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': 100}]},
+    ('num_dissolution_with_non_str_value', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': 100}]},
      'Value type must be string.', HTTPStatus.BAD_REQUEST),
-    ('max_dissolution', {'configurations': [{'name': 'MAX_DISSOLUTIONS_ALLOWED','value': '1'}]},
+    ('num_dissolution_with_negative_int', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '-200'}]},
+     'Value for key NUM_DISSOLUTIONS_ALLOWED must be a positive integer', HTTPStatus.BAD_REQUEST),
+    ('max_dissolution_less_than_num', {'configurations': [{'name': 'MAX_DISSOLUTIONS_ALLOWED','value': '1'}]},
      'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
     ('invalid_key', {'configurations': [{'name': 'INVALID_KEY','value': '1'}]},
      'Invalid name error.', HTTPStatus.BAD_REQUEST),
