@@ -39,10 +39,11 @@ class Business:  # pylint: disable=too-many-instance-attributes
         COOP = 'CP'
         BCOMP = 'BEN'
         BC_COMP = 'BC'
+        EXTRA_PRO_A = 'A'
 
     class TypeCodes(Enum):
         """Render an Enum of the Corporation Type Codes."""
-
+        EXTRA_PRO_A = 'A'
         COOP = 'CP'
         BCOMP = 'BEN'
         BC_COMP = 'BC'
@@ -81,7 +82,10 @@ class Business:  # pylint: disable=too-many-instance-attributes
             TypeCodes.BC_COMP.value,
             TypeCodes.ULC_COMP.value,
             TypeCodes.CCC_COMP.value
-        ]
+        ],
+        LearBusinessTypes.EXTRA_PRO_A.value: [
+            TypeCodes.EXTRA_PRO_A.value
+        ],
     }
 
     business_number = None
@@ -94,6 +98,9 @@ class Business:  # pylint: disable=too-many-instance-attributes
     founding_date = None
     good_standing = None
     jurisdiction = None
+    home_recogn_dt = None
+    home_juris_num = None
+    home_company_nme = None
     last_agm_date = None
     last_ar_date = None
     last_ledger_timestamp = None
@@ -114,9 +121,31 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 'goodStanding': self.good_standing,
                 'identifier': self.corp_num,
                 'jurisdiction': self.jurisdiction,
+                'homeRecognitionDate': self.home_recogn_dt,
+                'homeJurisdictionNumber': self.home_juris_num,
+                'homeCompanyName': self.home_company_nme,
                 'lastAgmDate': self.last_agm_date,
                 'lastArDate': self.last_ar_date,
                 'lastLedgerTimestamp': self.last_ledger_timestamp,
+                'legalName': self.corp_name,
+                'legalType': self.corp_type,
+                'status': self.status
+            }
+        }
+
+    def as_slim_dict(self) -> Dict:
+        """Return slim dict version of self."""
+        return {
+            'business': {
+                'businessNumber': self.business_number,
+                'corpState': self.corp_state,
+                'corpStateClass': self.corp_state_class,
+                'foundingDate': self.founding_date,
+                'identifier': self.corp_num,
+                'jurisdiction': self.jurisdiction,
+                'homeRecognitionDate': self.home_recogn_dt,
+                'homeJurisdictionNumber': self.home_juris_num,
+                'homeCompanyName': self.home_company_nme,
                 'legalName': self.corp_name,
                 'legalType': self.corp_type,
                 'status': self.status
@@ -194,7 +223,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str, corp_types: List, con=None) -> Business:
+    def find_by_identifier(cls, identifier: str, corp_types: List = None, con=None) -> Business:
         """Return a Business by identifier."""
         business = None
         try:
@@ -203,10 +232,15 @@ class Business:  # pylint: disable=too-many-instance-attributes
                 con = DB.connection
                 # con.begin()
 
+            corp_type_condition = ''
+            if corp_types:
+                corp_type_condition = f'corp.corp_typ_cd in ({stringify_list(corp_types)}) and '
+
             cursor = con.cursor()
             cursor.execute(
                 f"""
                 select corp.corp_num, corp.corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
+                    home_recogn_dt, home_juris_num, home_company_nme,
                     filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state, admin_email,
                     corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class,
                     corp.last_ar_filed_dt, corp.transition_dt, ct.corp_class
@@ -217,7 +251,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
                     join corp_type ct on ct.corp_typ_cd = corp.corp_typ_cd
                     join event on corp.corp_num = event.corp_num
                     left join filing on event.event_id = filing.event_id and filing.filing_typ_cd in ('OTANN', 'ANNBC')
-                where corp.corp_typ_cd in ({stringify_list(corp_types)}) and corp.corp_num=:corp_num
+                where {corp_type_condition} corp.corp_num=:corp_num
                 order by filing.period_end_dt desc nulls last
                 """,
                 corp_num=identifier
@@ -273,6 +307,9 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business_obj.founding_date = convert_to_json_datetime(business['recognition_dts'])
             business_obj.good_standing = cls.is_in_good_standing(business, cursor)
             business_obj.jurisdiction = business['jurisdiction']
+            business_obj.home_recogn_dt = convert_to_json_datetime(business['home_recogn_dt'])
+            business_obj.home_juris_num = business['home_juris_num']
+            business_obj.home_company_nme = business['home_company_nme']
             business_obj.last_agm_date = convert_to_json_date(business['last_agm_date'])
             business_obj.last_ar_date = convert_to_json_date(business['period_end_dt']) if business['period_end_dt'] \
                 else convert_to_json_date(business['last_agm_date'])

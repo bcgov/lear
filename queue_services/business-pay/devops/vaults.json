@@ -1,0 +1,24 @@
+[
+    {
+        "vault": "shared",
+        "application": [
+            "nats"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "postgres-legal",
+            "entity-pay",
+            "nats-pay",
+            "sentry"
+        ]
+    },
+    {
+        "vault": "gcp-queue",
+        "application": [
+            "topics",
+            "gtksf3"
+        ]
+    }
+]
