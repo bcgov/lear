@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that admin/configuration endpoints are working as expected.
 """
+import pytest
 from http import HTTPStatus
 
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
@@ -49,3 +50,67 @@ def test_get_configurations_with_invalid_user(app, session, client, jwt):
 
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_put_configurations_with_valid_data(app, session, client, jwt):
+    """Assert that update values successfully."""
+
+    input_data = {
+        'configurations': [
+            {
+                'name': 'NUM_DISSOLUTIONS_ALLOWED',
+                'value': '400'
+            },
+            {
+                'name': 'MAX_DISSOLUTIONS_ALLOWED',
+                'value': '2500'
+            },
+            {
+                'name': 'DISSOLUTIONS_ON_HOLD',
+                'value': 'True'
+            },
+            {
+                'name': 'new_dissolutions_schedule', # should work with downcase name
+                'value': '0 0 2 * *'
+            }
+        ]
+    }
+    
+    # test
+    rv = client.put(f'/api/v2/admin/configurations', json=input_data,
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+        
+    assert rv.status_code == HTTPStatus.OK
+
+
+@pytest.mark.parametrize('test_name,input_data,message,status_code', [
+    ('num_dissolution_with_over_max', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '4000'}]},
+     'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
+    ('num_dissolution_with_non_str_value', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': 100}]},
+     'Value type must be string.', HTTPStatus.BAD_REQUEST),
+    ('num_dissolution_with_negative_int', {'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '-200'}]},
+     'Value for key NUM_DISSOLUTIONS_ALLOWED must be a positive integer', HTTPStatus.BAD_REQUEST),
+    ('max_dissolution_less_than_num', {'configurations': [{'name': 'MAX_DISSOLUTIONS_ALLOWED','value': '1'}]},
+     'NUM_DISSOLUTIONS_ALLOWED is greater than MAX_DISSOLUTIONS_ALLOWED.', HTTPStatus.BAD_REQUEST),
+    ('invalid_key', {'configurations': [{'name': 'INVALID_KEY','value': '1'}]},
+     'Invalid name error.', HTTPStatus.BAD_REQUEST),
+    ('duplicated_key',{'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '1'},
+                                          {'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '10'}]},
+     'Duplicate names error.', HTTPStatus.BAD_REQUEST),
+    ('dissolution_hold', {'configurations': [{'name': 'DISSOLUTIONS_ON_HOLD','value': '1'}]},
+     'Value for key DISSOLUTIONS_ON_HOLD must be a boolean', HTTPStatus.BAD_REQUEST),
+    ('dissolution_schedule', {'configurations': [{'name': 'NEW_DISSOLUTIONS_SCHEDULE','value': '1'}]},
+     'Value for key NEW_DISSOLUTIONS_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
+    ('blank_request_body', None, 'Request body cannot be blank', HTTPStatus.BAD_REQUEST),
+    ('request_body_without_configuration_list', {'configurations': []}, 'Configurations list cannot be empty', HTTPStatus.BAD_REQUEST),
+])
+def test_put_configurations_with_invalid_data(app, session, client, jwt, test_name, input_data, message, status_code):
+    """Assert that failure update."""
+    
+    # test
+    rv = client.put(f'/api/v2/admin/configurations', json=input_data,
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+        
+    assert rv.status_code == status_code
+    assert 'message' in rv.json
+    assert rv.json['message'] == message
