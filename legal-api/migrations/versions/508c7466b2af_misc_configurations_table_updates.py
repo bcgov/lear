@@ -45,7 +45,5 @@ def downgrade():
                WHERE name = 'DISSOLUTIONS_STAGE_1_SCHEDULE'
                """)
     op.execute("""DELETE FROM configurations
-               WHERE name = 'DISSOLUTIONS_STAGE_2_SCHEDULE' OR
-                     name = 'DISSOLUTIONS_STAGE_3_SCHEDULE' OR
-                     name = 'DISSOLUTIONS_SUMMARY_EMAIL'
+               WHERE name IN ('DISSOLUTIONS_STAGE_2_SCHEDULE', 'DISSOLUTIONS_STAGE_3_SCHEDULE', 'DISSOLUTIONS_SUMMARY_EMAIL')
                """)
