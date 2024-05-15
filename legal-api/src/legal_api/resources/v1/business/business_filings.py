@@ -723,6 +723,7 @@ class ListFilingResource(Resource):
         }
         """
         payment_svc_url = current_app.config.get('PAYMENT_SVC_URL')
+        mailing_address = {}
 
         if filing.filing_type in (
             Filing.FILINGS['incorporationApplication']['name'],
