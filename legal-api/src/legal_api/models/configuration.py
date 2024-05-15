@@ -93,7 +93,6 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
     def validate_value(self):
         """Ensure the value is the correct type before insert or update."""
         # Define keys that should have specific value types
-<<<<<<< HEAD
         Configuration.validate_configuration_value(self.name, self.val)
 
     @staticmethod
@@ -106,18 +105,12 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
                      Configuration.Names.MAX_DISSOLUTIONS_ALLOWED.value}
         bool_names = {Configuration.Names.DISSOLUTIONS_ON_HOLD.value}
         cron_names = {Configuration.Names.NEW_DISSOLUTIONS_SCHEDULE.value}
-=======
-        int_names = {'NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED'}
-        bool_names = {'DISSOLUTIONS_ON_HOLD'}
-        cron_names = {'DISSOLUTIONS_STAGE_1_SCHEDULE', 'DISSOLUTIONS_STAGE_2_SCHEDULE', 'DISSOLUTIONS_STAGE_3_SCHEDULE'}
->>>>>>> 21196 - Legal API - Misc configurations table updates
 
         if name in int_names:
             try:
                 if int(val) < 0:
                     raise ValueError(f'Value for key {name} must be a positive integer')
             except ValueError as exc:
-<<<<<<< HEAD
                 raise ValueError(f'Value for key {name} must be a positive integer') from exc
         elif name in bool_names:
             if val not in {'True', 'False'}:
@@ -125,18 +118,6 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         elif name in cron_names:
             if not croniter.is_valid(val):
                 raise ValueError(f'Value for key {name} must be a cron string')
-=======
-                raise ValueError(f'Value for key {self.name} must be an integer') from exc
-        elif self.name in bool_names:
-            if self.val not in {'True', 'False'}:
-                raise ValueError(f'Value for key {self.name} must be a boolean')
-        elif self.name == 'DISSOLUTIONS_SUMMARY_EMAIL':
-            if not re.match(EMAIL_PATTERN, self.val):
-                raise ValueError(f'Value for key {self.name} must be an email address')
-        elif self.name in cron_names:
-            if not croniter.is_valid(self.val):
-                raise ValueError(f'Value for key {self.name} must be a cron string')
->>>>>>> 21196 - Legal API - Misc configurations table updates
 
 
 # Listen to 'before_insert' and 'before_update' events
