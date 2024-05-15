@@ -77,8 +77,20 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
                 'value': 'True'
             },
             {
-                'name': 'new_dissolutions_schedule', # should work with downcase name
+                'name': 'dissolutions_stage_1_schedule', # should work with downcase name
                 'value': '0 0 2 * *'
+            },
+            {
+                'name': 'DISSOLUTIONS_STAGE_2_SCHEDULE',
+                'value': '0 0 2 * *'
+            },
+            {
+                'name': 'DISSOLUTIONS_STAGE_3_SCHEDULE',
+                'value': '0 0 2 * *'
+            },
+            {
+                'name': 'DISSOLUTIONS_SUMMARY_EMAIL',
+                'value': 'test@no-reply.com'
             }
         ]
     }
@@ -106,8 +118,14 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
      'Duplicate names error.', HTTPStatus.BAD_REQUEST),
     ('dissolution_hold', {'configurations': [{'name': 'DISSOLUTIONS_ON_HOLD','value': '1'}]},
      'Value for key DISSOLUTIONS_ON_HOLD must be a boolean', HTTPStatus.BAD_REQUEST),
-    ('dissolution_schedule', {'configurations': [{'name': 'NEW_DISSOLUTIONS_SCHEDULE','value': '1'}]},
-     'Value for key NEW_DISSOLUTIONS_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
+    ('invalid_dissolution_schedule_1', {'configurations': [{'name': 'DISSOLUTIONS_STAGE_1_SCHEDULE','value': '1'}]},
+     'Value for key DISSOLUTIONS_STAGE_1_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
+    ('invalid_dissolution_schedule_2', {'configurations': [{'name': 'DISSOLUTIONS_STAGE_2_SCHEDULE','value': '1'}]},
+     'Value for key DISSOLUTIONS_STAGE_2_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
+    ('invalid_dissolution_schedule_3', {'configurations': [{'name': 'DISSOLUTIONS_STAGE_3_SCHEDULE','value': '1'}]},
+     'Value for key DISSOLUTIONS_STAGE_3_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
+    ('invalid_email_address', {'configurations': [{'name': 'DISSOLUTIONS_SUMMARY_EMAIL','value': 'asdf'}]},
+     'Value for key DISSOLUTIONS_SUMMARY_EMAIL must be an email address', HTTPStatus.BAD_REQUEST),
     ('blank_request_body', None, 'Request body cannot be blank', HTTPStatus.BAD_REQUEST),
     ('request_body_without_configuration_list', {'configurations': []}, 'Configurations list cannot be empty', HTTPStatus.BAD_REQUEST),
 ])
