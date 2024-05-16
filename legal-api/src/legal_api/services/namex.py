@@ -180,6 +180,15 @@ class NameXService():
     @staticmethod
     def get_approved_name(nr_json) -> str:
         """Get an approved name from nr json, if any."""
+        from . import flags  # pylint: disable=import-outside-toplevel
+
+        # This is added specifically for the sandbox environment.
+        # i.e. NR check should only ever have feature flag disabled for sandbox environment.
+        if flags.is_on('disable-nr-check'):
+            return next((name['name'] for name in nr_json['names']
+                         if name['state']
+                         in ['APPROVED', 'CONDITION']), None)
+
         nr_name = None
         state_to_check = None
         nr_state = nr_json['state']

@@ -22,7 +22,7 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.services import MinioService, namex
+from legal_api.services import MinioService, flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -234,6 +234,11 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           filing_type: str,
                           accepted_request_types: list = None) -> list:
     """Validate name request section."""
+    # This is added specifically for the sandbox environment.
+    # i.e. NR check should only ever have feature flag disabled for sandbox environment.
+    if flags.is_on('disable-nr-check'):
+        return []
+
     nr_path = f'/filing/{filing_type}/nameRequest'
     nr_number_path = f'{nr_path}/nrNumber'
     legal_name_path = f'{nr_path}/legalName'

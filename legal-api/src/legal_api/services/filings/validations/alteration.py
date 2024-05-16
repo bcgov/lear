@@ -20,7 +20,7 @@ from flask_babel import _ as babel  # noqa: N81
 from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.services import namex
+from legal_api.services import flags, namex
 from legal_api.services.utils import get_bool, get_str
 
 from .common_validations import (
@@ -75,6 +75,11 @@ def share_structure_validation(filing):
 
 def company_name_validation(filing):
     """Validate company name."""
+    # This is added specifically for the sandbox environment.
+    # i.e. NR check should only ever have feature flag disabled for sandbox environment.
+    if flags.is_on('disable-nr-check'):
+        return []
+
     msg = []
     nr_path: Final = '/filing/alteration/nameRequest/nrNumber'
     if nr_number := get_str(filing, nr_path):
