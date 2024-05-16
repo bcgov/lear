@@ -11,7 +11,8 @@
             "postgres-legal",
             "sentry",
             "launchdarkly",
-            "nats-filer"
+            "nats-filer",
+            "involuntary-dissolutions"
         ]
     }
 ]
