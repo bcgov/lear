@@ -78,14 +78,12 @@ def test_get_businesses_eligible_count_specific_filing_overdue(session, test_nam
 )
 def test_get_businesses_eligible_count_no_transition_filed(session, test_name, exclude):
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
+    factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
     if test_name == 'TRANSITION':
-        factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
     elif test_name == 'NO_NEED_TRANSITION':
         business.founding_date = datetime.utcnow()
         business.save()
-    else:
-        factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
 
     count = InvoluntaryDissolutionService.get_businesses_eligible_count()
     if exclude:
