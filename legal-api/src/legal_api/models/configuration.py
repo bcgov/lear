@@ -14,6 +14,7 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
+import re
 from enum import Enum
 from typing import List
 
@@ -21,6 +22,13 @@ from croniter import croniter
 from sqlalchemy import event
 
 from .db import db
+
+
+EMAIL_PATTERN = (r'^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|'
+                 r'(".+"))@'
+                 r'((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|'
+                 r'(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
+                 )
 
 
 class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -40,7 +48,10 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         NUM_DISSOLUTIONS_ALLOWED = 'NUM_DISSOLUTIONS_ALLOWED'
         MAX_DISSOLUTIONS_ALLOWED = 'MAX_DISSOLUTIONS_ALLOWED'
         DISSOLUTIONS_ON_HOLD = 'DISSOLUTIONS_ON_HOLD'
-        NEW_DISSOLUTIONS_SCHEDULE = 'NEW_DISSOLUTIONS_SCHEDULE'
+        DISSOLUTIONS_STAGE_1_SCHEDULE = 'DISSOLUTIONS_STAGE_1_SCHEDULE'
+        DISSOLUTIONS_STAGE_2_SCHEDULE = 'DISSOLUTIONS_STAGE_2_SCHEDULE'
+        DISSOLUTIONS_STAGE_3_SCHEDULE = 'DISSOLUTIONS_STAGE_3_SCHEDULE'
+        DISSOLUTIONS_SUMMARY_EMAIL = 'DISSOLUTIONS_SUMMARY_EMAIL'
 
     def save(self):
         """Save the object to the database immediately."""
@@ -93,7 +104,9 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         int_names = {Configuration.Names.NUM_DISSOLUTIONS_ALLOWED.value,
                      Configuration.Names.MAX_DISSOLUTIONS_ALLOWED.value}
         bool_names = {Configuration.Names.DISSOLUTIONS_ON_HOLD.value}
-        cron_names = {Configuration.Names.NEW_DISSOLUTIONS_SCHEDULE.value}
+        cron_names = {Configuration.Names.DISSOLUTIONS_STAGE_1_SCHEDULE.value,
+                      Configuration.Names.DISSOLUTIONS_STAGE_2_SCHEDULE.value,
+                      Configuration.Names.DISSOLUTIONS_STAGE_3_SCHEDULE.value}
 
         if name in int_names:
             try:
@@ -107,6 +120,9 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         elif name in cron_names:
             if not croniter.is_valid(val):
                 raise ValueError(f'Value for key {name} must be a cron string')
+        elif name == Configuration.Names.DISSOLUTIONS_SUMMARY_EMAIL.value:
+            if not re.match(EMAIL_PATTERN, val):
+                raise ValueError(f'Value for key {name} must be an email address')
 
 
 # Listen to 'before_insert' and 'before_update' events
