@@ -282,7 +282,19 @@ def test_validate_nr_consent_required_received():
 
 def test_get_approved_name():
     """Get Approved/Conditional Approved name."""
-    nr_name = namex.get_approved_name(nr_consumable_approved)
-    assert nr_name == nr_consumable_approved['names'][0]['name']
-    nr_name = namex.get_approved_name(nr_consumable_conditional)
-    assert nr_name == nr_consumable_conditional['names'][1]['name']
+    with patch.object(flags, 'is_on', return_value=False):
+        nr_name = namex.get_approved_name(nr_consumable_approved)
+        assert nr_name == nr_consumable_approved['names'][0]['name']
+        nr_name = namex.get_approved_name(nr_consumable_conditional)
+        assert nr_name == nr_consumable_conditional['names'][1]['name']
+
+
+def test_get_approved_name_skips_nr_state_check():
+    """Get Approved/Conditional Approved name for NR has already been consumed."""
+    nr_consumed_approved = copy.deepcopy(nr_consumable_approved)
+    nr_consumed_approved['state'] = 'CONSUMED'
+    with patch.object(flags, 'is_on', return_value=True):
+        nr_name = namex.get_approved_name(nr_consumable_approved)
+        assert nr_name == nr_consumable_approved['names'][0]['name']
+        nr_name = namex.get_approved_name(nr_consumable_conditional)
+        assert nr_name == nr_consumable_conditional['names'][1]['name']

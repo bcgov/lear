@@ -19,13 +19,13 @@ from typing import Final, Optional
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
+from legal_api.core.filing import Filing as coreFiling  # noqa: I001
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
-from legal_api.services import namex
+from legal_api.services import flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
-from legal_api.core.filing import Filing as coreFiling  # noqa: I001
 from .common_validations import (  # noqa: I001
     validate_court_order,
     validate_name_request,
@@ -359,6 +359,11 @@ def validate_correction_effective_date(filing: dict, corrected_filing: dict) -> 
 
 def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Optional[list]:
     """Validate correction of Name Request."""
+    # This is added specifically for the sandbox environment.
+    # i.e. NR check should only ever have feature flag disabled for sandbox environment.
+    if flags.is_on('disable-nr-check'):
+        return []
+
     nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
     nr_number = get_str(corrected_filing.json, nr_path)
     new_nr_number = get_str(filing, nr_path)
