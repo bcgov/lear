@@ -909,7 +909,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing).join(Business). \
             filter(
                 ~Business.legal_type.in_(excluded_businesses),
-                ~Filing.filing_type.in_(excluded_filings),
+                ~Filing._filing_type.in_(excluded_filings),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
