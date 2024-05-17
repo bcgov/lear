@@ -904,11 +904,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_completed_filings_for_colin():
         """Return the filings with statuses in the status array input."""
         from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
+        excluded_filings = ['adminFreeze', 'courtOrder', 'registrarsNotation', 'registrarsOrder']
+        excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
         filings = db.session.query(Filing).join(Business). \
             filter(
-                ~Business.legal_type.in_([
-                    Business.LegalTypes.SOLE_PROP.value,
-                    Business.LegalTypes.PARTNERSHIP.value]),
+                ~Business.legal_type.in_(excluded_businesses),
+                ~Filing._filing_type.in_(excluded_filings),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
