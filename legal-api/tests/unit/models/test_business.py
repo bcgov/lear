@@ -910,3 +910,21 @@ def test_in_dissolution_no_matched_business_id(session):
     )
     batch_processing.save()
     assert business_not_in_dissolution.in_dissolution is False
+
+def test_in_dissolution_batch_processing_withdrawn(session):
+    """Assert that when a batch_processing is withdrawn, business in_dissolution is False"""
+    business_identifier = 'BC1234567'
+    business = factory_business(business_identifier)
+    business.save()
+    batch = factory_batch()
+    batch.save()
+    batch_processing = BatchProcessing(
+        batch_id = batch.id,
+        business_id = business.id,
+        business_identifier = business_identifier,
+        step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+        status = BatchProcessing.BatchProcessingStatus.WITHDRAWN,
+        notes = ''
+    )
+    batch_processing.save()
+    assert business.in_dissolution is False

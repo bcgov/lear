@@ -422,7 +422,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
         find_in_batch_processing = db.session.query(BatchProcessing).filter(
             BatchProcessing.business_id == self.id,
-            BatchProcessing.status != BatchProcessing.BatchProcessingStatus.COMPLETED
+            BatchProcessing.status != BatchProcessing.BatchProcessingStatus.COMPLETED,
+            BatchProcessing.status != BatchProcessing.BatchProcessingStatus.WITHDRAWN,
         ).one_or_none()
         if not find_in_batch_processing:
             return False
