@@ -1665,30 +1665,24 @@ components:
                 type: string
                 title: The alternate name of the business.
                 default: ''
-                example:
-                  - alternate_name_of_business
+                example: operating name of FM1234567
                 pattern: '^(.*)$'
               registeredDate:
                 type: string
                 format: date-time
                 title: The timestamp of the registered date.
-                default: ''
-                example:
-                  - '1970-01-01T00:00:00+00:00'
+                example: '2021-01-01T00:00:00+00:00'
               startDate:
                 type: string
                 format: date
                 title: The start date of the alternate name
-                default: ''
-                example:
-                  - '1970-01-01'
+                example: '2021-01-01'
               endDate:
                 type: string
                 format: date
-                title: The end date of the alternate name
-                default: ''
-                example:
-                  - '1970-01-01'
+                title: The end date of the alternate name (reserved for future use)
+                nullable: true
+                example: ''
               type:
                 type: string
                 title: The type of the alternate name
