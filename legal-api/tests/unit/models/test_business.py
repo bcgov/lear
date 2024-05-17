@@ -808,123 +808,55 @@ def test_firm_business_json(session, test_name, legal_type, flag_on):
             assert business_json['legalName'] == 'TEST ABC'
 
 
-def test_valid_in_dissolution(session):
-    """Assert that a valid business in_dissolution is True"""
-    business_identifier = 'BC1234567'
-    business = factory_business(business_identifier)
-    business.save()
-    batch = factory_batch()
-    batch.save()
-    batch_processing = BatchProcessing(
-        batch_id = batch.id,
-        business_id = business.id,
-        business_identifier = business_identifier,
-        step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-        status = BatchProcessing.BatchProcessingStatus.PROCESSING,
-        notes = ''
-    )
-    batch_processing.save()
-    assert business.in_dissolution is True
-
-def test_in_dissolution_batch_completed(session):
-    """Assert that when a batch is completed, business in_dissolution is False"""
-    business_identifier = 'BC1234567'
-    business = factory_business(business_identifier)
-    business.save()
-    batch = Batch(
-        batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION,
-        status = Batch.BatchStatus.COMPLETED,
-        size = 3,
-        notes = ''
-    )
-    batch.save()
-    batch_processing = BatchProcessing(
-        batch_id = batch.id,
-        business_id = business.id,
-        business_identifier = business_identifier,
-        step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-        status = BatchProcessing.BatchProcessingStatus.PROCESSING,
-        notes = ''
-    )
-    batch_processing.save()
-    assert business.in_dissolution is False
-
-def test_in_dissolution_batch_processing_completed(session):
-    """Assert that when a batch_processing is completed, business in_dissolution is False"""
-    business_identifier = 'BC1234567'
-    business = factory_business(business_identifier)
-    business.save()
-    batch = factory_batch()
-    batch.save()
-    batch_processing = BatchProcessing(
-        batch_id = batch.id,
-        business_id = business.id,
-        business_identifier = business_identifier,
-        step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-        status = BatchProcessing.BatchProcessingStatus.COMPLETED,
-        notes = ''
-    )
-    batch_processing.save()
-    assert business.in_dissolution is False
-
-def test_in_dissolution_both_completed(session):
-    """Assert that when both batch and batch_processing is completed, business in_dissolution is False"""
-    business_identifier = 'BC1234567'
-    business = factory_business(business_identifier)
-    business.save()
-    batch = Batch(
-        batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION,
-        status = Batch.BatchStatus.COMPLETED,
-        size = 3,
-        notes = ''
-    )
-    batch.save()
-    batch_processing = BatchProcessing(
-        batch_id = batch.id,
-        business_id = business.id,
-        business_identifier = business_identifier,
-        step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-        status = BatchProcessing.BatchProcessingStatus.COMPLETED,
-        notes = ''
-    )
-    batch_processing.save()
-    assert business.in_dissolution is False
-
-def test_in_dissolution_no_matched_business_id(session):
-    """Assert that when the business is not in a batch_processing entry, business in_dissolution is False"""
-    business_identifier_in = 'BC1234567'
-    business_identifier_not_in = 'BC7654321'
-    business_in_dissolution = factory_business(business_identifier_in)
-    business_in_dissolution.save()
-    business_not_in_dissolution = factory_business(business_identifier_not_in)
-    business_not_in_dissolution.save()
-    batch = factory_batch()
-    batch.save()
-    batch_processing = BatchProcessing(
-        batch_id = batch.id,
-        business_id = business_in_dissolution.id,
-        business_identifier = business_identifier_in,
-        step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-        status = BatchProcessing.BatchProcessingStatus.COMPLETED,
-        notes = ''
-    )
-    batch_processing.save()
-    assert business_not_in_dissolution.in_dissolution is False
-
-def test_in_dissolution_batch_processing_withdrawn(session):
-    """Assert that when a batch_processing is withdrawn, business in_dissolution is False"""
-    business_identifier = 'BC1234567'
-    business = factory_business(business_identifier)
-    business.save()
-    batch = factory_batch()
-    batch.save()
-    batch_processing = BatchProcessing(
-        batch_id = batch.id,
-        business_id = business.id,
-        business_identifier = business_identifier,
-        step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-        status = BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-        notes = ''
-    )
-    batch_processing.save()
-    assert business.in_dissolution is False
+@pytest.mark.parametrize(
+    'test_name, is_testing_business_id, batch_status, batch_processing_status, expected',
+    [
+        ('test_valid_in_dissolution', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.PROCESSING, True),
+        ('test_batch_is_completed', False, Batch.BatchStatus.COMPLETED, BatchProcessing.BatchProcessingStatus.PROCESSING, False),
+        ('test_batch_processing_completed', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.COMPLETED, False),
+        ('test_both_completed', False, Batch.BatchStatus.COMPLETED, BatchProcessing.BatchProcessingStatus.COMPLETED, False),
+        ('test_no_matched_business_id', True, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.PROCESSING, False),
+        ('test_batch_processing_withdrawn', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.WITHDRAWN, False)
+    ])
+def test_in_dissolution(session, test_name, is_testing_business_id, batch_status, batch_processing_status, expected):
+    if is_testing_business_id:
+        business_identifier_in = 'BC1234567'
+        business_identifier_not_in = 'BC7654321'
+        business_in_dissolution = factory_business(business_identifier_in)
+        business_in_dissolution.save()
+        business_not_in_dissolution = factory_business(business_identifier_not_in)
+        business_not_in_dissolution.save()
+        batch = factory_batch()
+        batch.save()
+        batch_processing = BatchProcessing(
+            batch_id = batch.id,
+            business_id = business_in_dissolution.id,
+            business_identifier = business_identifier_in,
+            step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            status = batch_processing_status,
+            notes = ''
+        )
+        batch_processing.save()
+        assert business_not_in_dissolution.in_dissolution is False
+    else:
+        business_identifier = 'BC1234567'
+        business = factory_business(business_identifier)
+        business.save()
+        batch = Batch(
+            batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+            status = batch_status,
+            size = 3,
+            notes = ''
+        )
+        batch.save()
+        batch_processing = BatchProcessing(
+            batch_id = batch.id,
+            business_id = business.id,
+            business_identifier = business_identifier,
+            step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            status = batch_processing_status,
+            notes = ''
+        )
+        batch_processing.save()
+        assert business.in_dissolution is expected
+        
