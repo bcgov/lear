@@ -48,8 +48,6 @@ from .office import Office  # noqa: F401 pylint: disable=unused-import; needed b
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .batch import Batch
-from .batch_processing import BatchProcessing
 
 
 class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
@@ -417,13 +415,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
-    
+
     @property
     def in_dissolution(self):
-        """
-        Return true if in dissolution, otherwise false.
-        """
-        
+        """Return true if in dissolution, otherwise false."""
         # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
         find_in_batch_processing = db.session.query(BatchProcessing).filter(
             BatchProcessing.business_id == self.id,
@@ -431,13 +426,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         ).one_or_none()
         if not find_in_batch_processing:
             return False
-        
         # check the business belongs to a batch in batches where status is not COMPLETED
-        if find_in_batch_processing:
-            check_batches = db.session.query(Batch). \
-                filter(Batch.id == find_in_batch_processing.batch_id). \
-                filter(Batch.status != Batch.BatchStatus.COMPLETED). \
-                one_or_none()
+        check_batches = db.session.query(Batch). \
+            filter(Batch.id == find_in_batch_processing.batch_id). \
+            filter(Batch.status != Batch.BatchStatus.COMPLETED). \
+            one_or_none()
         return check_batches is not None
 
     @property
