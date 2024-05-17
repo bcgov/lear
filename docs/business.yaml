@@ -1663,29 +1663,29 @@ components:
                 description: 'Unique code(letters & numbers) to identify a business, issued by the provincial or federal registry.'
               name:
                 type: string
-                title: The alternate name of the business.
+                description: The alternate name of the business.
                 default: ''
                 example: operating name of FM1234567
                 pattern: '^(.*)$'
               registeredDate:
                 type: string
                 format: date-time
-                title: The timestamp of the registered date.
+                description: The timestamp of the registered date.
                 example: '2021-01-01T00:00:00+00:00'
               startDate:
                 type: string
                 format: date
-                title: The start date of the alternate name
+                description: The start date of the alternate name
                 example: '2021-01-01'
               endDate:
                 type: string
                 format: date
-                title: The end date of the alternate name (reserved for future use)
+                description: The end date of the alternate name (reserved for future use)
                 nullable: true
                 example: ''
               type:
                 type: string
-                title: The type of the alternate name
+                description: The type of the alternate name
                 enum:
                   - DBA
                   - TRANSLATION
