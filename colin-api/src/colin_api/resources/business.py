@@ -31,7 +31,7 @@ API = Namespace('businesses', description='Colin API Services - Businesses')
 
 
 @cors_preflight('GET')
-@API.route('/<string:identifier>/public', methods=['GET'])
+@API.route('/<string:identifier>/public', methods=['GET', 'OPTIONS'])
 class BusinessPublicInfo(Resource):
     """Meta information about the overall service."""
 
