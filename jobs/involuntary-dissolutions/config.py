@@ -77,6 +77,11 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     TESTING = False
     DEBUG = False
 
+    SUMMARY_STORAGE_PATH = os.getenv('SUMMARY_STORAGE_PATH', '')
+    SECOND_NOTICE_DELAY = os.getenv('SECOND_NOTICE_DELAY', None)
+    STAGE_2_DELAY = os.getenv('STAGE_2_DELAY', None)
+    STAGE_3_DELAY = os.getenv('STAGE_3_DELAY', None)
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Development environment configuration."""
