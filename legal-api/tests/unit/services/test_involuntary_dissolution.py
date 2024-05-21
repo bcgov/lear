@@ -109,25 +109,28 @@ def test_get_businesses_eligible_count_no_dissolution(session, test_name, no_dis
 
 
 @pytest.mark.parametrize(
-        'test_name,exclude', [
-            ('IN_DISSOLUTION', True),
-            ('NOT_IN_DISSOLUTION', False),
+        'test_name, batch_status, batch_processing_status, exclude', [
+            ('IN_DISSOLUTION', 'PROCESSING', 'PROCESSING', True),
+            ('IN_DISSOLUTION_BATCH_COMPLETE', 'COMPLETED', 'WITHDRAWN', False),
+            ('IN_DISSOLUTION_COMPLETED', 'PROCESSING', 'COMPLETED', False),
+            ('IN_DISSOLUTION_WITHDRAWN', 'PROCESSING', 'WITHDRAWN', False),
+            ('NOT_IN_DISSOLUTION', None, None, False),
         ]
 )
-def test_get_businesses_eligible_count_in_dissolution(session, test_name, exclude):
+def test_get_businesses_eligible_count_in_dissolution(session, test_name, batch_status, batch_processing_status, exclude):
     """Assert service returns eligible count for businesses not already in dissolution."""
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
-    if test_name == 'IN_DISSOLUTION':
+    if test_name.startswith('IN_DISSOLUTION'):
         batch = factory_batch(
             batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION.value,
-            status = Batch.BatchStatus.PROCESSING.value,
+            status = batch_status,
         )
-        batch_processing = factory_batch_processing(
+        factory_batch_processing(
             batch_id = batch.id,
             business_id = business.id,
-            identifier = business.identifier
+            identifier = business.identifier,
+            status = batch_processing_status
         )
-        batch_processing.save()
     
     count = InvoluntaryDissolutionService.get_businesses_eligible_count()
     if exclude:

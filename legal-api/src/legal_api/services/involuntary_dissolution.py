@@ -42,9 +42,12 @@ class InvoluntaryDissolutionService():
         ]
 
         subquery = exists().where(BatchProcessing.business_id == Business.id,
-                                  BatchProcessing.status != 'WITHDRAWN',
+                                  BatchProcessing.status.notin_(
+                                      [BatchProcessing.BatchProcessingStatus.WITHDRAWN.value,
+                                       BatchProcessing.BatchProcessingStatus.COMPLETED.value]),
                                   BatchProcessing.batch_id == Batch.id,
-                                  Batch.batch_type == 'INVOLUNTARY_DISSOLUTION')
+                                  Batch.status != Batch.BatchStatus.COMPLETED.value,
+                                  Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION.value)
 
         query = db.session.query(Business).\
             filter(Business.state == Business.State.ACTIVE).\
