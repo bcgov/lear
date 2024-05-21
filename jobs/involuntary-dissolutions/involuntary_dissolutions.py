@@ -12,13 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Involuntary dissolutions job."""
+import asyncio
 import logging
 import os
+import pytz
+from datetime import date, datetime, timedelta
 
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
+from croniter import croniter
 from flask import Flask
-from legal_api.models import db  # noqa: I001
+from legal_api.models import Batch, BatchProcessing, Business, Configuration, db  # noqa: I001
 from legal_api.services.flags import Flags
+from legal_api.services.bootstrap import AccountService
+from legal_api.services.queue import QueueService
 from sentry_sdk.integrations.logging import LoggingIntegration
 
 import config  # pylint: disable=import-error
@@ -64,6 +70,53 @@ def register_shellcontext(app):
 
     app.shell_context_processor(shell_context)
 
+async def dissolution_stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name
+    """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
+    try:
+        # check if batch has already run today
+        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION).filter(Batch.start_date == datetime.today())
+        if batch_today:
+            app.logger.debug('Skipping job run since batch job has already run today.')
+            return
+        
+        # check if batch can be run today
+        new_dissolutions_schedule_config = Configuration.find_by_name(config_name='DISSOLUTIONS_STAGE_1_SCHEDULE')
+        tz = pytz.timezone('US/Pacific')
+        cron_valid = croniter.match(new_dissolutions_schedule_config.val, tz.localize(datetime.today()))
+        if not cron_valid:
+            app.logger.debug('Skipping job run since current day of the week does not match the cron schedule.')
+            return
+        
+        # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
+        num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
+        businesses = []  # TODO: use new InvoluntaryDissolutionService when 21091 is merged
+
+        # create new entry in batches table
+        batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+                      status=Batch.BatchStatus.PROCESSING,
+                      size=businesses.count(),
+                      start_date=datetime.now())
+        batch.save()
+
+        # create batch processing entries for each business being dissolved
+        for business in businesses:
+            batch_processing = BatchProcessing(business_identifier=business.identifier,
+                                               step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+                                               status=BatchProcessing.BatchProcessingStatus.PROCESSING,
+                                               created_date=datetime.now(),
+                                               batch_id=batch.id,
+                                               business_id=business.id)
+            batch_processing.save()
+
+        # TODO: save businesses that have dissolution process started to csv
+        app.logger.debug(businesses)
+
+        # TODO: send summary email to BA inbox email
+        app.logger.debug('Sending email.')
+
+
+    except Exception as err:  # noqa: B902
+        app.logger.error(err)
 
 if __name__ == '__main__':
     application = create_app()
@@ -71,5 +124,5 @@ if __name__ == '__main__':
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
         if flag_on:
-            # TODO: detailed implementation
-            application.logger.debug('Running involuntary dissolutions job')
+            event_loop = asyncio.get_event_loop()
+            event_loop.run_until_complete(dissolution_stage_1_process(application))
