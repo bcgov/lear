@@ -233,6 +233,29 @@ def test_get_businesses_eligible_count_coa_filing(session, test_name, exclude):
 
 
 @pytest.mark.parametrize(
+    'test_name, exclude', [
+        ('LIMITED_RESTORATION', True),
+        ('LIMITED_RESTORATION_EXPIRED', False),
+        ('NON_LIMITED_RESTORATION', False)
+    ]
+)
+def test_get_businesses_eligible_count_limited_restored(session, test_name, exclude):
+    """Assert service returns eligible count excluding business which is in limited restoration status."""
+    bussiness = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
+    if test_name == 'LIMITED_RESTORATION':
+        bussiness.restoration_expiry_date = datetime.utcnow() + datedelta(years=1)
+    elif test_name == 'LIMITED_RESTORATION_EXPIRED':
+        bussiness.restoration_expiry_date = datetime.utcnow() + datedelta(years=-1)
+    bussiness.save()
+
+    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    if exclude:
+        assert count == 0
+    else:
+        assert count == 1
+
+
+@pytest.mark.parametrize(
         'test_name, jurisdiction, region, exclude', [
             ('XPRO_NWPTA', 'CA', 'AB', True),
             ('XPRO_NON_NWPTA', 'CA', 'ON', False),

@@ -65,6 +65,7 @@ class InvoluntaryDissolutionService():
                     _has_future_effective_filing(),
                     _has_change_of_address_filing(),
                     _has_delay_of_dissolution_filing(),
+                    _is_limited_restored(),
                     _is_xpro_from_nwpta()
                 )
             )
@@ -166,6 +167,17 @@ def _has_delay_of_dissolution_filing():
     """
     # TODO to implement in the future
     return False
+
+
+def _is_limited_restored():
+    """Return SQLAlchemy clause for Limited Restoration check.
+
+    Check if the business is in limited restoration status.
+    """
+    return and_(
+        Business.restoration_expiry_date.isnot(None),
+        Business.restoration_expiry_date >= func.timezone('UTC', func.now())
+    )
 
 
 def _is_xpro_from_nwpta():
