@@ -12,7 +12,6 @@
             "entity-emailer",
             "nats-emailer",
             "entity-service-account",
-            "sentry",
             "launchdarkly"
         ]
     },
@@ -22,6 +21,12 @@
             "name-request",
             "bcregistry",
             "auth-web"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+          "entity"
         ]
     }
 ]
