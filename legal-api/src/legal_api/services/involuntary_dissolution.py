@@ -87,7 +87,8 @@ def _has_specific_filing_overdue():
                     Filing._filing_type.in_([  # pylint: disable=protected-access
                         CoreFiling.FilingTypes.RESTORATION.value,
                         CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
-                    ])
+                    ]),
+                    Filing._status == Filing.Status.COMPLETED.value  # pylint: disable=protected-access
                 ).scalar_subquery(),
             Business.last_ar_date
         )
@@ -118,12 +119,15 @@ def _has_no_transition_filed_after_restoration():
                     CoreFiling.FilingTypes.RESTORATION.value,
                     CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
                 ]),
+                restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                 not_(
                     exists().where(
                         and_(
                             transition_filing.business_id == Business.id,
                             transition_filing._filing_type \
                             == CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
+                            transition_filing._status == \
+                            Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
                                 restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
