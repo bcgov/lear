@@ -22,7 +22,7 @@ import pytest
 from datedelta import datedelta
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 
-from legal_api.models import Business
+from legal_api.models import Batch, BatchProcessing, Business
 from legal_api.services import InvoluntaryDissolutionService
 from legal_api.utils.datetime import datetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_pending_filing
@@ -36,6 +36,104 @@ def test_get_businesses_eligible_count(session):
     """Assert service returns the number of businesses eligible for involuntary dissolution."""
     count = InvoluntaryDissolutionService.get_businesses_eligible_count()
     assert count == 0
+
+
+@pytest.mark.parametrize(
+        'test_name, state, exclude', [
+            ('TEST_ACTIVE', 'ACTIVE', False),
+            ('TEST_HISTORICAL', 'HISTORICAL', True),
+            ('TEST_LIQUIDATION', 'LIQUIDATION', True)
+        ]
+)
+def test_get_businesses_eligible_count_active_business(session, test_name, state, exclude):
+    """Assert service returns eligible count for active businesses."""
+    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, state=state)
+    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    if exclude:
+        assert count == 0
+    else:
+        assert count == 1
+
+
+@pytest.mark.parametrize(
+        'test_name, legal_type, exclude', [
+            ('TEST_BC', 'BC', False),
+            ('TEST_ULC', 'ULC', False),
+            ('TEST_CCC', 'CC', False),
+            ('TEST_BEN', 'BEN', False),
+            ('TEST_CONTINUE_IN', 'C', False),
+            ('TEST_ULC_CONTINUE_IN', 'CUL', False),
+            ('TEST_CCC_CONTINUE_IN', 'CCC', False),
+            ('TEST_BEN_CONTINUE_IN', 'CBEN', False),
+            ('TEST_XPRO', 'A', False),
+            ('TEST_LLC', 'LLC', False),
+            ('TEST_COOP', 'CP', True),
+            ('TEST_SP', 'SP', True),
+            ('TEST_GP', 'GP', True)
+        ]
+)
+def test_get_businesses_eligible_count_eligible_type(session, test_name, legal_type, exclude):
+    """Assert service returns eligible count for businesses with eligible types."""
+    factory_business(identifier='BC1234567', entity_type=legal_type)
+
+    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    if exclude:
+        assert count == 0
+    else:
+        assert count == 1
+
+
+@pytest.mark.parametrize(
+        'test_name, no_dissolution, exclude', [
+            ('TEST_NO_DISSOLUTION', True, True),
+            ('TEST_DISSOLUTION', False, False),
+        ]
+)
+def test_get_businesses_eligible_count_no_dissolution(session, test_name, no_dissolution, exclude):
+    """Assert service returns eligible count for businesses with no_dissolution flag off."""
+    business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
+    business.no_dissolution = no_dissolution
+    business.save()
+
+    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    if exclude:
+        assert count == 0
+    else:
+        assert count == 1
+
+
+@pytest.mark.parametrize(
+        'test_name,exclude', [
+            ('IN_DISSOLUTION', True),
+            ('NOT_IN_DISSOLUTION', False),
+        ]
+)
+def test_get_businesses_eligible_count_in_dissolution(session, test_name, exclude):
+    """Assert service returns eligible count for businesses not already in dissolution."""
+    business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
+    if test_name == 'IN_DISSOLUTION':
+        batch = Batch(
+            batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION.value,
+            status = Batch.BatchStatus.PROCESSING.value,
+            size=1,
+            notes=''
+        )
+        batch.save()
+        batch_processing = BatchProcessing(
+            batch_id = batch.id,
+            business_id = business.id,
+            business_identifier = business.identifier,
+            step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1.value,
+            status = BatchProcessing.BatchProcessingStatus.PROCESSING.value,
+            notes = ''
+        )
+        batch_processing.save()
+    
+    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    if exclude:
+        assert count == 0
+    else:
+        assert count == 1
 
 
 @pytest.mark.parametrize(
