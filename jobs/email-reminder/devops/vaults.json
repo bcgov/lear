@@ -12,9 +12,14 @@
             "filings-jobs",
             "nats-emailer",
             "entity-service-account",
-            "sentry",
             "launchdarkly",
             "email-reminder"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+          "entity"
         ]
     }
 ]
