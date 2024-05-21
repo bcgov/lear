@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that the Batch Processing Model is working as expected.
 """
+import json
 
 from legal_api.models import BatchProcessing
 
@@ -59,3 +60,29 @@ def test_find_batch_processing_by_id(session):
     assert res
     assert res.step == batch_processing.step
 
+
+def test_batch_processing_with_meta_data(session):
+    """Assert that a batch processing with meta_data can be created and saved."""
+    business_identifier = 'FM1234567'
+    business = factory_business(business_identifier)
+    batch = factory_batch()
+
+    meta_data = {
+        'missingARs': 1,
+        'warningsSent': 2,
+        'dissolutionTargetDate': '2025-02-01',
+        'missingTransitionFiling': False
+    }
+
+    batch_processing = BatchProcessing()
+    batch_processing.business_id = business.id
+    batch_processing.batch_id = batch.id
+    batch_processing.business_identifier = business_identifier
+    batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
+    batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
+    batch_processing.notes = ''
+    batch_processing.meta_data = json.dumps(meta_data)
+    batch_processing.save()
+
+    assert batch_processing.id
+    assert json.loads(batch_processing.meta_data) == meta_data

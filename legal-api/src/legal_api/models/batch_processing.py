@@ -14,6 +14,8 @@
 """This module holds data for batch processing."""
 from enum import auto
 
+from sqlalchemy.dialects.postgresql import JSONB
+
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
 
@@ -48,6 +50,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     notes = db.Column('notes', db.String(150), default='', nullable=True)
     created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    meta_data = db.Column('meta_data', JSONB, nullable=True)
 
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
