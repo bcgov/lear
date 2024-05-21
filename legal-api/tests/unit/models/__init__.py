@@ -28,6 +28,7 @@ from legal_api.models import (
     amalgamation,
     amalgamating_business,
     Batch,
+    BatchProcessing,
     Business,
     Comment,
     Filing,
@@ -402,3 +403,21 @@ def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
     )
     batch.save()
     return batch
+
+
+def factory_batch_processing(batch_id,
+                             business_id,
+                             identifier,
+                             step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1.value,
+                             status = BatchProcessing.BatchProcessingStatus.PROCESSING.value,
+                             notes = ''):
+    batch_processing = BatchProcessing(
+        batch_id = batch_id,
+        business_id = business_id,
+        business_identifier = identifier,
+        step = step,
+        status = status,
+        notes = notes
+    )
+    batch_processing.save()
+    return batch_processing

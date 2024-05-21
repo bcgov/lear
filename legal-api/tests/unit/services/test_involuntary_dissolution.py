@@ -25,7 +25,13 @@ from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION
 from legal_api.models import Batch, BatchProcessing, Business
 from legal_api.services import InvoluntaryDissolutionService
 from legal_api.utils.datetime import datetime
-from tests.unit.models import factory_business, factory_completed_filing, factory_pending_filing
+from tests.unit.models import (
+    factory_batch,
+    factory_batch_processing,
+    factory_business,
+    factory_completed_filing,
+    factory_pending_filing,
+)
 
 
 RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
@@ -112,20 +118,14 @@ def test_get_businesses_eligible_count_in_dissolution(session, test_name, exclud
     """Assert service returns eligible count for businesses not already in dissolution."""
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     if test_name == 'IN_DISSOLUTION':
-        batch = Batch(
+        batch = factory_batch(
             batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION.value,
             status = Batch.BatchStatus.PROCESSING.value,
-            size=1,
-            notes=''
         )
-        batch.save()
-        batch_processing = BatchProcessing(
+        batch_processing = factory_batch_processing(
             batch_id = batch.id,
             business_id = business.id,
-            business_identifier = business.identifier,
-            step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1.value,
-            status = BatchProcessing.BatchProcessingStatus.PROCESSING.value,
-            notes = ''
+            identifier = business.identifier
         )
         batch_processing.save()
     
