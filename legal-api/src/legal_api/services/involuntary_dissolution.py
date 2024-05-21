@@ -169,5 +169,6 @@ def _is_xpro_from_nwpta():
     return and_(
         Business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value,
         Business.jurisdiction == 'CA',
+        Business.foreign_jurisdiction_region.isnot(None),
         Business.foreign_jurisdiction_region.in_(['AB', 'SK', 'MB'])
     )
