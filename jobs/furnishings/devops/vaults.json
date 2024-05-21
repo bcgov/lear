@@ -9,9 +9,14 @@
         "vault": "entity",
         "application": [
             "postgres-legal",
-            "sentry",
             "launchdarkly",
             "nats-filer"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+          "entity"
         ]
     }
 ]

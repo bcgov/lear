@@ -10,8 +10,7 @@
         "application": [
             "postgres-legal",
             "entity-pay",
-            "nats-pay",
-            "sentry"
+            "nats-pay"
         ]
     },
     {
@@ -19,6 +18,12 @@
         "application": [
             "topics",
             "gtksf3"
+        ]
+    },
+    {
+        "vault": "sentry",
+        "application": [
+          "entity"
         ]
     }
 ]
