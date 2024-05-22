@@ -285,7 +285,8 @@ def test_business_json(session):
         'legalName': 'legal_name',
         'legalType': Business.LegalTypes.COOP.value,
         'state': Business.State.ACTIVE.name,
-        'taxId': '123456789'
+        'taxId': '123456789',
+        'warnings': [],
     }
 
     with patch.object(flags, 'is_on', return_value=True):
@@ -312,7 +313,6 @@ def test_business_json(session):
         'arMinDate': '1971-01-01',
         'arMaxDate': '1972-04-30',
         'complianceWarnings': [],
-        'warnings': [],
         'hasCorrections': False,
         'associationType': 'CP',
         'startDate': '2021-08-05',
