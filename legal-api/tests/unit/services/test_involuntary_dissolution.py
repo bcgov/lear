@@ -22,7 +22,7 @@ import pytest
 from datedelta import datedelta
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 
-from legal_api.models import Batch, BatchProcessing, Business
+from legal_api.models import Batch, Business
 from legal_api.services import InvoluntaryDissolutionService
 from legal_api.utils.datetime import datetime
 from tests.unit.models import (
@@ -122,7 +122,7 @@ def test_get_businesses_eligible_count_in_dissolution(session, test_name, batch_
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     if test_name.startswith('IN_DISSOLUTION'):
         batch = factory_batch(
-            batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION.value,
+            batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION,
             status = batch_status,
         )
         factory_batch_processing(

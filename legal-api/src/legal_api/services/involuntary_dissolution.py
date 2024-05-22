@@ -43,11 +43,11 @@ class InvoluntaryDissolutionService():
 
         subquery = exists().where(BatchProcessing.business_id == Business.id,
                                   BatchProcessing.status.notin_(
-                                      [BatchProcessing.BatchProcessingStatus.WITHDRAWN.value,
-                                       BatchProcessing.BatchProcessingStatus.COMPLETED.value]),
+                                      [BatchProcessing.BatchProcessingStatus.WITHDRAWN,
+                                       BatchProcessing.BatchProcessingStatus.COMPLETED]),
                                   BatchProcessing.batch_id == Batch.id,
-                                  Batch.status != Batch.BatchStatus.COMPLETED.value,
-                                  Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION.value)
+                                  Batch.status != Batch.BatchStatus.COMPLETED,
+                                  Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
 
         query = db.session.query(Business).\
             filter(Business.state == Business.State.ACTIVE).\
@@ -146,7 +146,7 @@ def _has_future_effective_filing():
     """
     return db.session.query(Filing). \
         filter(Filing.business_id == Business.id). \
-        filter(Filing._status.in_([Filing.Status.PENDING, Filing.Status.PAID.value])). \
+        filter(Filing._status.in_([Filing.Status.PENDING.value, Filing.Status.PAID.value])). \
         exists()  # pylint: disable=protected-access
 
 
