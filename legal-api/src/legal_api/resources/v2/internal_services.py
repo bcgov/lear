@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Calls used by internal services."""
-from enum import Enum
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, g, jsonify, request
@@ -20,18 +19,12 @@ from flask_cors import cross_origin
 
 from legal_api.models import Business, Filing, User, UserRoles
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
-from legal_api.services import InvoluntaryDissolutionService, publish_event
+from legal_api.services import publish_event
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import date, datetime
 
 
 bp = Blueprint('INTERNAL_SERVICE', __name__, url_prefix='/api/v2/internal')
-
-
-class ViewTypes(str, Enum):
-    """Render an Enum of Statistic View Types."""
-
-    DISSOLUTION = 'dissolution'
 
 
 @bp.route('/bnmove', methods=['POST'])
@@ -96,26 +89,3 @@ def create_registrars_notation_filing(business: Business, user: User, old_bn: st
     filing.save()
 
     return ListFilingResource.complete_filing(business, filing, False, None)
-
-
-@bp.route('/statistics', methods=['GET'])
-@cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.staff])
-def get_statistics():
-    """Return a JSON object with statistic information."""
-    view_type = request.args.get('view', None)
-
-    if not view_type:
-        return ({'message': 'Invalid query parameter in request.'}, HTTPStatus.BAD_REQUEST)
-
-    data = {}
-    if view_type == ViewTypes.DISSOLUTION:
-        count = InvoluntaryDissolutionService.get_businesses_eligible_count()
-        data = {
-            **data,
-            'eligibleCount': count
-        }
-
-    return jsonify({
-        'data': data
-    }), HTTPStatus.OK
