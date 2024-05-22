@@ -63,7 +63,6 @@ class InvoluntaryDissolutionService():
             filter(
                 ~or_(
                     _has_future_effective_filing(),
-                    _has_change_of_address_filing(),
                     _has_delay_of_dissolution_filing(),
                     _is_limited_restored(),
                     _is_xpro_from_nwpta()
@@ -149,15 +148,6 @@ def _has_future_effective_filing():
         filter(Filing.business_id == Business.id). \
         filter(Filing._status.in_([Filing.Status.PENDING, Filing.Status.PAID.value])). \
         exists()  # pylint: disable=protected-access
-
-
-def _has_change_of_address_filing():
-    """Return SQLAlchemy clause for Change of Address filing check.
-
-    Check if the business has Change of Address filings within last 32 days.
-    """
-    coa_date_cutoff = func.coalesce(Business.last_coa_date, DEFAULT_MIN_DATE) + text("""INTERVAL '32 DAYS'""")
-    return coa_date_cutoff >= func.timezone('UTC', func.now())
 
 
 def _has_delay_of_dissolution_filing():
