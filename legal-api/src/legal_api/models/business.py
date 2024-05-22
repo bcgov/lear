@@ -465,7 +465,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'foundingDate': self.founding_date.isoformat(),
             'hasRestrictions': self.restriction_ind,
             'complianceWarnings': self.compliance_warnings,
-            'warnings': self.warnings,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
@@ -496,7 +495,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'identifier': self.identifier,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
-            'state': self.state.name if self.state else Business.State.ACTIVE.name
+            'state': self.state.name if self.state else Business.State.ACTIVE.name,
+            'warnings': self.warnings
         }
 
         if flags.is_on('enable-legal-name-fix'):
