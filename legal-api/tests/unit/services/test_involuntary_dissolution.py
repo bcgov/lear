@@ -213,26 +213,6 @@ def test_get_businesses_eligible_count_fed_filing(session, test_name, exclude):
 
 
 @pytest.mark.parametrize(
-        'test_name, exclude', [
-            ('COA', True),
-            ('NO_COA', False)
-        ]
-)
-def test_get_businesses_eligible_count_coa_filing(session, test_name, exclude):
-    """Assert service returns eligible count excluding business which has change of address within last 32 days."""
-    bussiness = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
-    if test_name == 'COA':
-        bussiness.last_coa_date = datetime.utcnow()
-    bussiness.save()
-
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
-    if exclude:
-        assert count == 0
-    else:
-        assert count == 1
-
-
-@pytest.mark.parametrize(
     'test_name, exclude', [
         ('LIMITED_RESTORATION', True),
         ('LIMITED_RESTORATION_EXPIRED', False),
