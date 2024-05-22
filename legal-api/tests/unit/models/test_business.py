@@ -819,6 +819,7 @@ def test_firm_business_json(session, test_name, legal_type, flag_on):
         ('test_batch_processing_withdrawn', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.WITHDRAWN, False)
     ])
 def test_in_dissolution(session, test_name, is_testing_business_id, batch_status, batch_processing_status, expected):
+    """Assert in_dissolution works as expected, did not test with different batch types, since at this moment we only have one option in the BatchType Enum"""
     if is_testing_business_id:
         business_identifier_in = 'BC1234567'
         business_identifier_not_in = 'BC7654321'
