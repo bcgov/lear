@@ -408,8 +408,8 @@ def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
 def factory_batch_processing(batch_id,
                              business_id,
                              identifier,
-                             step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1.value,
-                             status = BatchProcessing.BatchProcessingStatus.PROCESSING.value,
+                             step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+                             status = BatchProcessing.BatchProcessingStatus.PROCESSING,
                              notes = ''):
     batch_processing = BatchProcessing(
         batch_id = batch_id,
