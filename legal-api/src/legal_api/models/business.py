@@ -420,19 +420,17 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     def in_dissolution(self):
         """Return true if in dissolution, otherwise false."""
         # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
-        find_in_batch_processing = db.session.query(BatchProcessing).filter(
-            BatchProcessing.business_id == self.id,
-            BatchProcessing.status != BatchProcessing.BatchProcessingStatus.COMPLETED,
-            BatchProcessing.status != BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-        ).one_or_none()
-        if not find_in_batch_processing:
-            return False
-        # check the business belongs to a batch in batches where status is not COMPLETED
-        check_batches = db.session.query(Batch). \
-            filter(Batch.id == find_in_batch_processing.batch_id). \
-            filter(Batch.status != Batch.BatchStatus.COMPLETED). \
+        find_in_batch_processing = db.session.query(BatchProcessing, Batch).\
+            filter(BatchProcessing.business_id == self.id).\
+            filter(BatchProcessing.status.notin_([
+                BatchProcessing.BatchProcessingStatus.COMPLETED,
+                BatchProcessing.BatchProcessingStatus.WITHDRAWN])
+            ). \
+            filter(Batch.id == BatchProcessing.batch_id).\
+            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
+            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
             one_or_none()
-        return check_batches is not None
+        return find_in_batch_processing is not None
 
     def save(self):
         """Render a Business to the local cache."""
