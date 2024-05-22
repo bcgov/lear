@@ -41,6 +41,8 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
+from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -413,6 +415,22 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
+
+    @property
+    def in_dissolution(self):
+        """Return true if in dissolution, otherwise false."""
+        # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
+        find_in_batch_processing = db.session.query(BatchProcessing, Batch).\
+            filter(BatchProcessing.business_id == self.id).\
+            filter(BatchProcessing.status.notin_([
+                BatchProcessing.BatchProcessingStatus.COMPLETED,
+                BatchProcessing.BatchProcessingStatus.WITHDRAWN])
+            ). \
+            filter(Batch.id == BatchProcessing.batch_id).\
+            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
+            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
+            one_or_none()
+        return find_in_batch_processing is not None
 
     def save(self):
         """Render a Business to the local cache."""
