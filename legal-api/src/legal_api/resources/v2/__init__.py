@@ -20,6 +20,7 @@ from .administrative_bn import bp as administrative_bn_bp
 from .business import bp as businesses_bp
 from .business.business_digital_credentials import bp_dc as digital_credentials_bp
 from .configuration import bp as configuration_bp
+from .dissolution import bp as dissolution_bp
 from .document_signature import bp as document_signature_bp
 from .internal_services import bp as internal_bp
 from .meta import bp as meta_bp
@@ -46,6 +47,7 @@ class V2Endpoint:
         self.app.register_blueprint(administrative_bn_bp)
         self.app.register_blueprint(businesses_bp)
         self.app.register_blueprint(digital_credentials_bp)
+        self.app.register_blueprint(dissolution_bp)
         self.app.register_blueprint(document_signature_bp)
         self.app.register_blueprint(namerequest_bp)
         self.app.register_blueprint(naics_bp)

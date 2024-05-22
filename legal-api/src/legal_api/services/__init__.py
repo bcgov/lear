@@ -34,6 +34,7 @@ from .business_details_version import VersionedBusinessDetailsService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
 from .flags import Flags
+from .involuntary_dissolution import InvoluntaryDissolutionService
 from .minio import MinioService
 from .naics import NaicsService
 from .namex import NameXService
