@@ -133,7 +133,8 @@ async def test_full_worker_process(app, session, client_id, stan_server, mocker)
                 if len(msgs) == 1:
                     future.set_result(True)
 
-            nats_queue._loop = loop
+            nats_queue._loop = None
+            # nats_queue._loop = loop
             nats_queue.name = datetime.now().isoformat()
             nats_queue.config = Config
             nats_queue.stan_connection_options = {"client_id": client_id}
@@ -155,11 +156,29 @@ async def test_full_worker_process(app, session, client_id, stan_server, mocker)
                     filing_id=filing_id,
                 )
                 envelope = create_test_envelope(ce)
-                headers = dict(
-                    Authorization=f"Bearer doesn't matter",
-                )
+                headers = {
+                    "Authorization": f"Bearer doesn't matter",
+                    "Content-Type": "application/json",
+                }
+
+                # raw_data = {
+                #             "deliveryAttempt": 5,
+                #             "message": {
+                #                 "data": "eyJkYXRhIjogeyJpZCI6ICIzNjA1MCIsICJzdGF0dXNDb2RlIjogIkNPTVBMRVRFRCIsICJmaWxpbmdJZGVudGlmaWVyIjogMTQ5MTQ4OywgImNvcnBUeXBlQ29kZSI6ICJCQyJ9LCAiZGF0YWNvbnRlbnR0eXBlIjogImFwcGxpY2F0aW9uL2pzb24iLCAiaWQiOiAiZmFiYzY2YzQtZmIxYS00NDhiLWE5MjgtODM2ZTU4ODk5MzA4IiwgInNvdXJjZSI6ICJzYmMtcGF5IiwgInNwZWN2ZXJzaW9uIjogIjEuMCIsICJzdWJqZWN0IjogInBheW1lbnQiLCAidGltZSI6ICIyMDIzLTA3LTEyVDAxOjMzOjI1Ljg1NDMwNCswMDowMCIsICJ0eXBlIjogInBheW1lbnQifQ==",
+                #                 "messageId": "11228420687486520",
+                #                 "message_id": "11228420687486520",
+                #                 "publishTime": "2024-05-15T16:55:58.165Z",
+                #                 "publish_time": "2024-05-15T16:55:58.165Z"
+                #             },
+                #             "subscription": "projects/a083gt-dev/subscriptions/business-pay-subscription-ocp-dev"
+                #         }
+                
+                # draw = raw_data['message']['data']
+                # str_data = base64.b64decode(draw)
+
 
                 rv = client.post("/", json=envelope, headers=headers)
+                # rv = client.post("/", json=raw_data, headers=headers)
 
                 assert rv.status_code == HTTPStatus.OK
 

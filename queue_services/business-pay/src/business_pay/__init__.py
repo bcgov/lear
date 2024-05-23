@@ -37,6 +37,7 @@ This module applied payments against Filings, and if NOT a FED type
 puts a message onto the Filers queue to process the file.
 """
 from __future__ import annotations
+import asyncio
 
 import sentry_sdk
 from flask import Flask
@@ -64,7 +65,13 @@ def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
 
     db.init_app(app)
     gcp_queue.init_app(app)
-    nats_queue.init_app(app)
     register_endpoints(app)
+    
+    try:
+        event_loop = asyncio.get_running_loop()
+    except Exception as err:
+        print(err)
+        event_loop = asyncio.get_event_loop()
+    nats_queue.init_app(app, loop=event_loop)
 
     return app

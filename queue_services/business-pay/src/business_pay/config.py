@@ -135,6 +135,8 @@ class Config:  # pylint: disable=too-few-public-methods
     )
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
+    
+    SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
 
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods

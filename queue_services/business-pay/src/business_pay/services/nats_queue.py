@@ -44,7 +44,10 @@ from typing import Dict
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 from flask import Flask
+from flask import current_app
 from structured_logging import StructuredLogging
+
+from business_pay import Config
 
 logger = StructuredLogging.get_logger()
 
@@ -131,6 +134,9 @@ class NatsQueue:
 
         self._stan_conn_lost_cb = conn_lost_cb
 
+        if not self.config and self.app:
+            self.config = app.config
+
     @property
     async def is_healthy(self):
         """Determine if the service is working."""
@@ -177,13 +183,15 @@ class NatsQueue:
             try:
                 logger.debug("close old NATS client")
                 await self.nc.close()
-            except asyncio.CancelledError as err:
+            except (asyncio.CancelledError, Exception) as err:
                 logger.debug("closing stale connection err:%s", err)
             finally:
                 self.nc = None
 
         self.nc = NATS()
         self.sc = STAN()
+
+        self.config = Config()
 
         nats_connection_options = {
             **self.config.NATS_CONNECTION_OPTIONS,
@@ -199,7 +207,7 @@ class NatsQueue:
             **{
                 "nats": self.nc,
                 "conn_lost_cb": self._stan_conn_lost_cb,
-                #    'loop': self._loop,
+                # 'loop': self._loop,
             },
             **self.stan_connection_options,
         }
@@ -210,9 +218,13 @@ class NatsQueue:
             **self.subscription_options,
         }
         try:
+            logger.debug('starting connections')
             await self.nc.connect(**nats_connection_options)
+            logger.debug('nc connected')
             await self.sc.connect(**stan_connection_options)
+            logger.debug('sc connected')
             await self.sc.subscribe(**subscription_options)
+            logger.debug('subscription completed')
         except Exception as err:
             print(err)
 

@@ -38,6 +38,7 @@ If the Filing is not a FED, then it places a processing message on the Filer Q
 """
 from flask import Flask
 
+from .ops import bp as ops_endpoint
 from .pay_filer import bp as pay_filer_endpoint
 
 
@@ -49,4 +50,9 @@ def register_endpoints(app: Flask):
     app.register_blueprint(
         url_prefix="/",
         blueprint=pay_filer_endpoint,
+    )
+
+    app.register_blueprint(
+        url_prefix="/ops",
+        blueprint=ops_endpoint,
     )
