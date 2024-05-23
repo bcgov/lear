@@ -281,6 +281,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
     amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
     amalgamation = db.relationship('Amalgamation', lazy='dynamic')
+    batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -415,6 +416,18 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
+
+    @property
+    def is_involuntary_dissolution(self):
+        """Return true if in dissolution, otherwise false."""
+        # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
+        is_involuntary_dissolution = db.session.query(BatchProcessing, Batch).\
+            filter(BatchProcessing.business_id == self.id).\
+            filter(Batch.id == BatchProcessing.batch_id).\
+            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
+            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
+            one_or_none()
+        return is_involuntary_dissolution is not None
 
     @property
     def in_dissolution(self):
