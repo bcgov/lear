@@ -16,15 +16,14 @@ import asyncio
 import logging
 import os
 import pytz
-from datetime import date, datetime, timedelta
+from datetime import datetime
 
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from croniter import croniter
 from flask import Flask
 from legal_api.models import Batch, BatchProcessing, Business, Configuration, db  # noqa: I001
 from legal_api.services.flags import Flags
-from legal_api.services.bootstrap import AccountService
-from legal_api.services.queue import QueueService
+from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
 
 import config  # pylint: disable=import-error
@@ -70,7 +69,7 @@ def register_shellcontext(app):
 
     app.shell_context_processor(shell_context)
 
-async def dissolution_stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name
+def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
     """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
     try:
         # check if batch has already run today
@@ -89,7 +88,7 @@ async def dissolution_stage_1_process(app: Flask):  # pylint: disable=redefined-
         
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
-        businesses = []  # TODO: use new InvoluntaryDissolutionService when 21091 is merged
+        businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
 
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
@@ -118,11 +117,11 @@ async def dissolution_stage_1_process(app: Flask):  # pylint: disable=redefined-
     except Exception as err:  # noqa: B902
         app.logger.error(err)
 
+
 if __name__ == '__main__':
     application = create_app()
     with application.app_context():
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
         if flag_on:
-            event_loop = asyncio.get_event_loop()
-            event_loop.run_until_complete(dissolution_stage_1_process(application))
+            initiate_dissolution_process(application)
