@@ -14,18 +14,18 @@
 """API endpoints for managing Configuration resource."""
 from http import HTTPStatus
 
-from flask import Blueprint, jsonify, request
+from flask import jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import any_
 
 from legal_api.models import Configuration, UserRoles, db
 from legal_api.utils.auth import jwt
 
+from admin import bp_admin
+# Blueprint('CONFIGURATION', __name__, url_prefix='/api/v2/admin/configurations')
 
-bp = Blueprint('CONFIGURATION', __name__, url_prefix='/api/v2/admin/configurations')
 
-
-@bp.route('', methods=['GET'])
+@bp_admin.route('/configurations', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_configurations():
@@ -38,7 +38,7 @@ def get_configurations():
     }), HTTPStatus.OK
 
 
-@bp.route('', methods=['PUT'])
+@bp_admin.route('/configurations', methods=['PUT'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.staff])
 def update_configurations():

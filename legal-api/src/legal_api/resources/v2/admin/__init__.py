@@ -11,10 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Admin Entity End-Points.
+"""The Admin End-Points.
 
 Provides all admin services.
 """
 from flask import Blueprint
 
+from .administrative_bn import create_bn_request
+from .configuration import get_configurations, update_configurations
+from .dissolution import get_statistics
+
+
 bp_admin = Blueprint('ADMIN', __name__, url_prefix='api/v2/admin')
+
+__all__ = (
+    'create_bn_request',
+    'get_configurations',
+    'update_configurations',
+    'get_statistics'
+)
