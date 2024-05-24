@@ -1,5 +1,7 @@
 import os
 import psycopg2
+from unittest.mock import patch
+import pytest
 
 def test_connection_failed():
     status = False
@@ -32,3 +34,14 @@ def test_database_connection_succeed():
         status = False
     finally:
         assert status == True
+
+
+@pytest.mark.parametrize(
+    'test_name, filing, expected_msg',
+    [
+        ('test_batch_has_already_run'),
+        ('test_job_cron_valid'),
+    ]
+)
+def test_initiate_dissolution_process(mocker, app, session, test_name):
+    pass

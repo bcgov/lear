@@ -71,7 +71,7 @@ def register_shellcontext(app):
 
     app.shell_context_processor(shell_context)
 
-async def dissolution_stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name
+def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
     """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
     try:
         # check if batch has already run today
@@ -90,7 +90,7 @@ async def dissolution_stage_1_process(app: Flask):  # pylint: disable=redefined-
         
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
-        businesses = []  # TODO: use new InvoluntaryDissolutionService when 21091 is merged
+        businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
 
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
