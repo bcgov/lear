@@ -25,6 +25,7 @@ class EndpointEnum(str, Enum):
     API = '/api'
     BUSINESSES_V2 = '/api/v2/businesses'
     DEFAULT_API = API_V1
+    ADMIN = 'api/v2/admin'
 
 
 class EndpointVersionEnum(str, Enum):

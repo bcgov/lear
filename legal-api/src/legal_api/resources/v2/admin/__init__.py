@@ -21,8 +21,10 @@ from .administrative_bn import create_bn_request
 from .configuration import get_configurations, update_configurations
 from .dissolution import get_statistics
 
+from legal_api.resources.constants import EndpointEnum
 
-bp_admin = Blueprint('ADMIN', __name__, url_prefix='api/v2/admin')
+
+bp_admin = Blueprint('ADMIN', __name__, url_prefix=EndpointEnum.ADMIN)
 
 __all__ = (
     'create_bn_request',
