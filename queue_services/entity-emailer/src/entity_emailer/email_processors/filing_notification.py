@@ -80,7 +80,7 @@ def _get_pdfs(
                     'fileName': f'{file_name}.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': attach_order
+                    'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
@@ -111,7 +111,7 @@ def _get_pdfs(
                     'fileName': 'Receipt.pdf',
                     'fileBytes': receipt_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': attach_order
+                    'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
@@ -132,7 +132,7 @@ def _get_pdfs(
                         'fileName': 'Notice of Articles.pdf',
                         'fileBytes': noa_encoded.decode('utf-8'),
                         'fileUrl': '',
-                        'attachOrder': attach_order
+                        'attachOrder': str(attach_order)
                     }
                 )
                 attach_order += 1
@@ -154,7 +154,7 @@ def _get_pdfs(
                         'fileName': file_name,
                         'fileBytes': certificate_encoded.decode('utf-8'),
                         'fileUrl': '',
-                        'attachOrder': attach_order
+                        'attachOrder': str(attach_order)
                     }
                 )
                 attach_order += 1
@@ -175,7 +175,7 @@ def _get_pdfs(
                             'fileName': 'Certified Rules.pdf',
                             'fileBytes': certified_rules_encoded.decode('utf-8'),
                             'fileUrl': '',
-                            'attachOrder': attach_order
+                            'attachOrder': str(attach_order)
                         }
                     )
                     attach_order += 1
@@ -195,7 +195,7 @@ def _get_pdfs(
                             'fileName': 'Certified Memorandum.pdf',
                             'fileBytes': certified_memorandum_encoded.decode('utf-8'),
                             'fileUrl': '',
-                            'attachOrder': attach_order
+                            'attachOrder': str(attach_order)
                         }
                     )
                     attach_order += 1
@@ -217,7 +217,7 @@ def _get_pdfs(
                         'fileName': file_name,
                         'fileBytes': certificate_encoded.decode('utf-8'),
                         'fileUrl': '',
-                        'attachOrder': attach_order
+                        'attachOrder': str(attach_order)
                     }
                 )
                 attach_order += 1

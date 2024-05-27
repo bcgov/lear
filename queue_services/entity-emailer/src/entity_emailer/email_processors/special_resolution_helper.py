@@ -52,7 +52,7 @@ def get_completed_pdfs(
                 'fileName': 'Special Resolution.pdf',
                 'fileBytes': certificate_encoded.decode('utf-8'),
                 'fileUrl': '',
-                'attachOrder': attach_order
+                'attachOrder': str(attach_order)
             }
         )
         attach_order += 1
@@ -75,7 +75,7 @@ def get_completed_pdfs(
                     'fileName': 'Certificate of Name Change.pdf',
                     'fileBytes': certified_name_change_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': attach_order
+                    'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
@@ -97,7 +97,7 @@ def get_completed_pdfs(
                     'fileName': 'Certified Rules.pdf',
                     'fileBytes': certified_rules_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': attach_order
+                    'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
@@ -116,7 +116,7 @@ def get_completed_pdfs(
                     'fileName': 'Certified Memorandum.pdf',
                     'fileBytes': certified_memorandum_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': attach_order
+                    'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
@@ -157,7 +157,7 @@ def get_paid_pdfs(
                 'fileName': 'Special Resolution Application.pdf',
                 'fileBytes': sr_filing_pdf_encoded.decode('utf-8'),
                 'fileUrl': '',
-                'attachOrder': attach_order
+                'attachOrder': str(attach_order)
             }
         )
         attach_order += 1
@@ -186,7 +186,7 @@ def get_paid_pdfs(
                 'fileName': 'Receipt.pdf',
                 'fileBytes': receipt_encoded.decode('utf-8'),
                 'fileUrl': '',
-                'attachOrder': attach_order
+                'attachOrder': str(attach_order)
             }
         )
         attach_order += 1
