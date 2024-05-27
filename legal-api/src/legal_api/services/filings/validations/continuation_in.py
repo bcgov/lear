@@ -54,8 +54,8 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
     msg.extend(validate_roles(filing_json, legal_type, filing_type))
 
     # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
-    # to work around first and middle name length mismatches between LEAR and COLIN.  BEN & COOP IA filings syncing
-    # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
+    # to work around first and middle name length mismatches between LEAR and COLIN. Syncing back to COLIN
+    # would error out on first and middle name length exceeding 20 characters for completing party
     err = validate_parties_names(filing_json, filing_type)
     if err:
         msg.extend(err)

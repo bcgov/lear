@@ -55,7 +55,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.extend(err)
 
     # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
-    # to work around first and middle name length mismatches between LEAR and COLIN.  BEN & COOP IA filings syncing
+    # to work around first and middle name length mismatches between LEAR and COLIN. IA filings syncing
     # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
     err = validate_parties_names(incorporation_json)
     if err:
