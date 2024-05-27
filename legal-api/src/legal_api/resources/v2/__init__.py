@@ -16,17 +16,15 @@ from typing import Optional
 
 from flask import Flask
 
-from .administrative_bn import bp as administrative_bn_bp
 from .business import bp as businesses_bp
 from .business.business_digital_credentials import bp_dc as digital_credentials_bp
-from .configuration import bp as configuration_bp
-from .dissolution import bp as dissolution_bp
 from .document_signature import bp as document_signature_bp
 from .internal_services import bp as internal_bp
 from .meta import bp as meta_bp
 from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
 from .request_tracker import bp as request_tracker_bp
+from .admin import bp_admin as admin_bp
 
 
 class V2Endpoint:
@@ -44,16 +42,14 @@ class V2Endpoint:
         self.app = app
 
         self.app.register_blueprint(meta_bp)
-        self.app.register_blueprint(administrative_bn_bp)
+        self.app.register_blueprint(admin_bp)
         self.app.register_blueprint(businesses_bp)
         self.app.register_blueprint(digital_credentials_bp)
-        self.app.register_blueprint(dissolution_bp)
         self.app.register_blueprint(document_signature_bp)
         self.app.register_blueprint(namerequest_bp)
         self.app.register_blueprint(naics_bp)
         self.app.register_blueprint(request_tracker_bp)
         self.app.register_blueprint(internal_bp)
-        self.app.register_blueprint(configuration_bp)
 
 
 v2_endpoint = V2Endpoint()
