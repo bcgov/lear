@@ -200,10 +200,9 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
 
 
 # pylint: disable=too-many-branches
-def validate_parties_names(incorporation_json: dict, filing_type: str = 'incorporationApplication') ->\
-        Error:
-    """Validate the party names of the incorporation filing."""
-    parties_array = incorporation_json['filing'][filing_type]['parties']
+def validate_parties_names(filing_json: dict, filing_type: str = 'incorporationApplication') -> Error:
+    """Validate the party names of the filing."""
+    parties_array = filing_json['filing'][filing_type]['parties']
     party_path = f'/filing/{filing_type}/parties'
     msg = []
 

@@ -948,7 +948,7 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_names(filing_json, legal_type)
+        err = validate_parties_names(filing_json)
 
     # validate outcomes
     if expected_msg:
