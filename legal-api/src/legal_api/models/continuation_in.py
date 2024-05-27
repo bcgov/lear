@@ -30,7 +30,7 @@ class ContinuationIn(db.Model):  # pylint: disable=too-many-instance-attributes
     legal_name = db.Column('legal_name', db.String(1000))
     tax_id = db.Column('tax_id', db.String(15))
     incorporation_date = db.Column('incorporation_date', db.DateTime(timezone=True))
-    expro_identifier = db.Column('expro_identifier', db.String(50))
+    expro_identifier = db.Column('expro_identifier', db.String(10))
     expro_legal_name = db.Column('expro_legal_name', db.String(1000))
 
     # parent keys
