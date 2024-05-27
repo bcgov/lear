@@ -48,6 +48,7 @@ class BusinessBlocker(str, Enum):
     DRAFT_PENDING = 'DRAFT_PENDING'
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
+    IN_DISSOLUTION = 'IN_DISSOLUTION'
 
 
 class BusinessRequirement(str, Enum):
@@ -151,7 +152,7 @@ def get_allowable_filings_dict():
                 'alteration': {
                     'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.IN_DISSOLUTION]
                     }
                 },
                 'amalgamationApplication': {
@@ -160,7 +161,8 @@ def get_allowable_filings_dict():
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING],
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -169,7 +171,8 @@ def get_allowable_filings_dict():
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING],
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -178,7 +181,8 @@ def get_allowable_filings_dict():
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING],
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -245,7 +249,9 @@ def get_allowable_filings_dict():
                         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                         'blockerChecks': {
                             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                            'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                            'business': [BusinessBlocker.DEFAULT, 
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION]
                         }
                     },
                     'administrative': {
@@ -348,7 +354,7 @@ def get_allowable_filings_dict():
                 'alteration': {
                     'legalTypes': ['BC', 'BEN', 'ULC', 'CC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT],
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.IN_DISSOLUTION],
                         'invalidStateFilings': ['restoration.limitedRestoration',
                                                 'restoration.limitedRestorationExtension']
                     }
@@ -359,7 +365,8 @@ def get_allowable_filings_dict():
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING],
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -368,7 +375,8 @@ def get_allowable_filings_dict():
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING],
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -377,7 +385,8 @@ def get_allowable_filings_dict():
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING],
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -424,7 +433,9 @@ def get_allowable_filings_dict():
                         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                         'blockerChecks': {
                             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                            'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                            'business': [BusinessBlocker.DEFAULT, 
+                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                         BusinessBlocker.IN_DISSOLUTION]
                         }
                     },
                 },
@@ -611,7 +622,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.BUSINESS_FROZEN: False,
         BusinessBlocker.DRAFT_PENDING: False,
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
-        BusinessBlocker.AMALGAMATING_BUSINESS: False
+        BusinessBlocker.AMALGAMATING_BUSINESS: False,
+        BusinessBlocker.IN_DISSOLUTION: False
     }
 
     if not business:
@@ -630,6 +642,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if business.get_amalgamated_into():
         business_blocker_checks[BusinessBlocker.AMALGAMATING_BUSINESS] = True
+
+    if business.in_dissolution:
+        business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
 
     return business_blocker_checks
 
