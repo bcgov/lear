@@ -68,7 +68,7 @@ def _get_pdfs(
                     'fileName': 'Receipt.pdf',
                     'fileBytes': receipt_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': attach_order
+                    'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
@@ -86,7 +86,7 @@ def _get_pdfs(
                     'fileName': 'Statement of Registration.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
-                    'attachOrder': attach_order
+                    'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
