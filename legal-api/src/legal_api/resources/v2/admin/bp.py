@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Admin End-Points.
+"""The Admin End-Point Blueprint.
 
-Provides all admin services.
+Provides the mount point for all of the admin end-points.
 """
-from .bp import bp_admin
-from .administrative_bn import create_bn_request
-from .configuration import get_configurations, update_configurations
-from .dissolution import get_statistics
 
-__all__ = ('bp_admin',)
+from flask import Blueprint
+
+from legal_api.resources.constants import EndpointEnum
+
+bp_admin = Blueprint('ADMIN', __name__, url_prefix=EndpointEnum.ADMIN)

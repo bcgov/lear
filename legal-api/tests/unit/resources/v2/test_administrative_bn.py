@@ -21,7 +21,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from legal_api.models import Business, UserRoles
-from legal_api.resources.v2 import administrative_bn
+from legal_api.resources.v2.admin import administrative_bn
 
 from tests.unit.models import factory_business
 from tests.unit.services.utils import create_header

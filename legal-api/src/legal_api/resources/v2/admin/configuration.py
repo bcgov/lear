@@ -21,7 +21,7 @@ from sqlalchemy import any_
 from legal_api.models import Configuration, UserRoles, db
 from legal_api.utils.auth import jwt
 
-from admin import bp_admin
+from .bp import bp_admin
 # Blueprint('CONFIGURATION', __name__, url_prefix='/api/v2/admin/configurations')
 
 
