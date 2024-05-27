@@ -249,7 +249,7 @@ def get_allowable_filings_dict():
                         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                         'blockerChecks': {
                             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                            'business': [BusinessBlocker.DEFAULT, 
+                            'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION]
                         }
@@ -433,7 +433,7 @@ def get_allowable_filings_dict():
                         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP'],
                         'blockerChecks': {
                             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                            'business': [BusinessBlocker.DEFAULT, 
+                            'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION]
                         }
