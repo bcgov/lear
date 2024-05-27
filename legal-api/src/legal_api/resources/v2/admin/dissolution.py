@@ -22,7 +22,6 @@ from legal_api.services import InvoluntaryDissolutionService
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
-# Blueprint('INVOLUNTARY_DISSOLUTION', __name__, url_prefix='/api/v2/admin/dissolutions')
 
 
 @bp_admin.route('/dissolutions/statistics', methods=['GET'])

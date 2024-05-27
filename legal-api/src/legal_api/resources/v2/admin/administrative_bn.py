@@ -25,7 +25,6 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
 
 from .bp import bp_admin
-# Blueprint('ADMINISTRATIVE_BN', __name__, url_prefix='/api/v2/admin/bn')
 
 
 @bp_admin.route('bn/<string:identifier>', methods=['POST'])
