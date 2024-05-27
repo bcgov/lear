@@ -15,9 +15,10 @@
 
 Provides all admin services.
 """
-from .bp import bp_admin
 from .administrative_bn import create_bn_request
+from .bp import bp_admin
 from .configuration import get_configurations, update_configurations
 from .dissolution import get_statistics
+
 
 __all__ = ('bp_admin',)

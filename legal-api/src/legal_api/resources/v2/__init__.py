@@ -16,6 +16,7 @@ from typing import Optional
 
 from flask import Flask
 
+from .admin import bp_admin as admin_bp
 from .business import bp as businesses_bp
 from .business.business_digital_credentials import bp_dc as digital_credentials_bp
 from .document_signature import bp as document_signature_bp
@@ -24,7 +25,6 @@ from .meta import bp as meta_bp
 from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
 from .request_tracker import bp as request_tracker_bp
-from .admin import bp_admin as admin_bp
 
 
 class V2Endpoint:
