@@ -25,6 +25,7 @@ from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .configuration import Configuration
 from .consent_continuation_out import ConsentContinuationOut
+from .continuation_in import ContinuationIn
 from .corp_type import CorpType
 from .dc_connection import DCConnection
 from .dc_definition import DCDefinition
@@ -47,8 +48,9 @@ from .user import User, UserRoles
 
 __all__ = ('db',
            'Address', 'Alias', 'AmalgamatingBusiness', 'Amalgamation', 'Batch', 'BatchProcessing', 'Business',
-           'ColinLastUpdate', 'Comment', 'Configuration', 'ConsentContinuationOut', 'CorpType', 'DCConnection',
-           'DCDefinition', 'DCIssuedCredential', 'DCIssuedBusinessUserCredential', 'DCRevocationReason', 'Document',
-           'DocumentType', 'Filing', 'Office', 'OfficeType', 'Party', 'RegistrationBootstrap', 'RequestTracker',
-           'Resolution', 'PartyRole', 'ShareClass', 'ShareSeries', 'User', 'UserRoles', 'NaicsStructure', 'NaicsElement'
+           'ColinLastUpdate', 'Comment', 'Configuration', 'ConsentContinuationOut', 'ContinuationIn', 'CorpType',
+           'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'DCIssuedBusinessUserCredential',
+           'DCRevocationReason', 'Document', 'DocumentType', 'Filing', 'Office', 'OfficeType', 'Party',
+           'RegistrationBootstrap', 'RequestTracker', 'Resolution', 'PartyRole', 'ShareClass', 'ShareSeries',
+           'User', 'UserRoles', 'NaicsStructure', 'NaicsElement'
            )

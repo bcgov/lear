@@ -105,7 +105,7 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        err = validate_parties_names(filing_dict, legal_type, filing_type)
+        err = validate_parties_names(filing_dict, filing_type)
         if err:
             msg.extend(err)
 
@@ -144,7 +144,7 @@ def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        err = validate_parties_names(filing_dict, legal_type, filing_type)
+        err = validate_parties_names(filing_dict, filing_type)
         if err:
             msg.extend(err)
 

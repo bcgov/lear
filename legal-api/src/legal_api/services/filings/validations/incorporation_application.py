@@ -57,7 +57,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
     # to work around first and middle name length mismatches between LEAR and COLIN.  BEN & COOP IA filings syncing
     # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
-    err = validate_parties_names(incorporation_json, legal_type)
+    err = validate_parties_names(incorporation_json)
     if err:
         msg.extend(err)
 
@@ -200,7 +200,7 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
 
 
 # pylint: disable=too-many-branches
-def validate_parties_names(incorporation_json: dict, legal_type: str, filing_type: str = 'incorporationApplication') ->\
+def validate_parties_names(incorporation_json: dict, filing_type: str = 'incorporationApplication') ->\
         Error:
     """Validate the party names of the incorporation filing."""
     parties_array = incorporation_json['filing'][filing_type]['parties']
@@ -208,7 +208,7 @@ def validate_parties_names(incorporation_json: dict, legal_type: str, filing_typ
     msg = []
 
     for item in parties_array:
-        msg.extend(validate_party_name(legal_type, item, party_path))
+        msg.extend(validate_party_name(item, party_path))
 
     if msg:
         return msg

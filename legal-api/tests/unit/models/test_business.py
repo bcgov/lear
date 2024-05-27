@@ -538,7 +538,7 @@ def test_business_alternate_names(session, test_name, businesses_info, alternate
         start_date_str = business_info.get("startDate")
         founding_date = datetime.strptime(business_info["foundingDate"], "%Y-%m-%dT%H:%M:%S%z") if founding_date_str else datetime.utcfromtimestamp(0)
         start_date = datetime.strptime(business_info["startDate"], "%Y-%m-%dT%H:%M:%S%z") if start_date_str else None
-        
+
         business = Business(
             legal_name=business_info["legalName"],
             legal_type=business_info["legalType"],
@@ -644,19 +644,12 @@ def test_continued_in_business(session):
         identifier='BC1234567',
         state=Business.State.ACTIVE,
         jurisdiction='CA',
-        foreign_identifier='C1234567',
         foreign_legal_name='Prev Legal Name',
-        foreign_legal_type='BEN',
-        foreign_incorporation_date=datetime.utcfromtimestamp(0),
     )
     business.save()
     business_json = business.json()
     assert business_json['jurisdiction'] == business.jurisdiction
-    assert business_json['foreignIdentifier'] == business.foreign_identifier
     assert business_json['foreignLegalName'] == business.foreign_legal_name
-    assert business_json['foreignLegalType'] == business.foreign_legal_type
-    assert business_json['foreignIncorporationDate'] == \
-        LegislationDatetime.format_as_legislation_date(business.foreign_incorporation_date)
 
 
 @pytest.mark.parametrize('test_name,existing_business_state', [
@@ -788,22 +781,22 @@ def test_firm_business_json(session, test_name, legal_type, flag_on):
     else:
         party_role = factory_party_role(None, None, officer1, None, None, PartyRole.RoleTypes.DIRECTOR)
         business.party_roles.append(party_role)
-    
+
     business.save()
 
     with patch.object(flags, 'is_on', return_value=flag_on):
         business_json = business.json()
         if flag_on and legal_type in [
-                Business.LegalTypes.SOLE_PROP.value,
-                Business.LegalTypes.PARTNERSHIP.value
-            ]:
-                if legal_type == Business.LegalTypes.SOLE_PROP.value:
-                    assert business_json['legalName'] == 'JANE A DOE'
+            Business.LegalTypes.SOLE_PROP.value,
+            Business.LegalTypes.PARTNERSHIP.value
+        ]:
+            if legal_type == Business.LegalTypes.SOLE_PROP.value:
+                assert business_json['legalName'] == 'JANE A DOE'
+            else:
+                if 'MORE_PARTNERS' in test_name:
+                    assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE, et al'
                 else:
-                    if 'MORE_PARTNERS' in test_name:
-                        assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE, et al'
-                    else:
-                        assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
+                    assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
         else:
             assert business_json['legalName'] == 'TEST ABC'
 
@@ -830,12 +823,12 @@ def test_in_dissolution(session, test_name, is_testing_business_id, batch_status
         batch = factory_batch()
         batch.save()
         batch_processing = BatchProcessing(
-            batch_id = batch.id,
-            business_id = business_in_dissolution.id,
-            business_identifier = business_identifier_in,
-            step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-            status = batch_processing_status,
-            notes = ''
+            batch_id=batch.id,
+            business_id=business_in_dissolution.id,
+            business_identifier=business_identifier_in,
+            step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            status=batch_processing_status,
+            notes=''
         )
         batch_processing.save()
         assert business_not_in_dissolution.in_dissolution is False
@@ -844,20 +837,19 @@ def test_in_dissolution(session, test_name, is_testing_business_id, batch_status
         business = factory_business(business_identifier)
         business.save()
         batch = Batch(
-            batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION,
-            status = batch_status,
-            size = 3,
-            notes = ''
+            batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+            status=batch_status,
+            size=3,
+            notes=''
         )
         batch.save()
         batch_processing = BatchProcessing(
-            batch_id = batch.id,
-            business_id = business.id,
-            business_identifier = business_identifier,
-            step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-            status = batch_processing_status,
-            notes = ''
+            batch_id=batch.id,
+            business_id=business.id,
+            business_identifier=business_identifier,
+            step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            status=batch_processing_status,
+            notes=''
         )
         batch_processing.save()
         assert business.in_dissolution is expected
-        
