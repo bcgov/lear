@@ -19,15 +19,24 @@ from sqlalchemy.orm import aliased
 from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 
 
-DEFAULT_MIN_DATE = func.date('1800-01-01 00:00:00+00:00')
-
-
 class InvoluntaryDissolutionService():
     """Provides services to get information for involuntary dissolution."""
 
-    @staticmethod
-    def get_businesses_eligible_count():
+    @classmethod
+    def check_business_eligibility(cls, identifier: str):
+        """Return true if the business with provided identifier is eligible for dissolution."""
+        query = cls._get_businesses_eligible_query().\
+            filter(Business.identifier == identifier)
+        return bool(query.one_or_none())
+
+    @classmethod
+    def get_businesses_eligible_count(cls):
         """Return the number of businesses eligible for involuntary dissolution."""
+        return cls._get_businesses_eligible_query().count()
+
+    @staticmethod
+    def _get_businesses_eligible_query():
+        """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution."""
         eligible_types = [
             Business.LegalTypes.COMP.value,
             Business.LegalTypes.BC_ULC_COMPANY.value,
@@ -42,12 +51,12 @@ class InvoluntaryDissolutionService():
         ]
 
         subquery = exists().where(BatchProcessing.business_id == Business.id,
-                                  BatchProcessing.status.notin_(
-                                      [BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-                                       BatchProcessing.BatchProcessingStatus.COMPLETED]),
-                                  BatchProcessing.batch_id == Batch.id,
-                                  Batch.status != Batch.BatchStatus.COMPLETED,
-                                  Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
+                                BatchProcessing.status.notin_(
+                                    [BatchProcessing.BatchProcessingStatus.WITHDRAWN,
+                                    BatchProcessing.BatchProcessingStatus.COMPLETED]),
+                                BatchProcessing.batch_id == Batch.id,
+                                Batch.status != Batch.BatchStatus.COMPLETED,
+                                Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
 
         query = db.session.query(Business).\
             filter(Business.state == Business.State.ACTIVE).\
@@ -69,7 +78,7 @@ class InvoluntaryDissolutionService():
                 )
             )
 
-        return query.count()
+        return query
 
 
 def _has_specific_filing_overdue():

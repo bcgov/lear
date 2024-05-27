@@ -38,6 +38,24 @@ RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
 RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 
+@pytest.mark.parametrize(
+        'test_name, eligible', [
+            ('TEST_ELIGIBLE', True),
+            ('TEST_INELIGIBLE', False)
+        ]
+)
+def test_check_business_eligibility(session, test_name, eligible):
+    """Assert service returns check of business eligibility for involuntary dissolution."""
+    identifier = 'BC7654321'
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
+    if not eligible:
+        business.no_dissolution = True
+        business.save()
+
+    result = InvoluntaryDissolutionService.check_business_eligibility(identifier)
+    assert result == eligible 
+
+
 def test_get_businesses_eligible_count(session):
     """Assert service returns the number of businesses eligible for involuntary dissolution."""
     count = InvoluntaryDissolutionService.get_businesses_eligible_count()
