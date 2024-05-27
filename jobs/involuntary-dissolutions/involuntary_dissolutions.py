@@ -78,14 +78,6 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
             app.logger.debug('Skipping job run since batch job has already run today.')
             return
         
-        # check if batch can be run today
-        new_dissolutions_schedule_config = Configuration.find_by_name(config_name='DISSOLUTIONS_STAGE_1_SCHEDULE')
-        tz = pytz.timezone('US/Pacific')
-        cron_valid = croniter.match(new_dissolutions_schedule_config.val, tz.localize(datetime.today()))
-        if not cron_valid:
-            app.logger.debug('Skipping job run since current day of the week does not match the cron schedule.')
-            return
-        
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
         businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
@@ -124,4 +116,11 @@ if __name__ == '__main__':
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
         if flag_on:
-            initiate_dissolution_process(application)
+                        # check if batch can be run today
+            new_dissolutions_schedule_config = Configuration.find_by_name(config_name='DISSOLUTIONS_STAGE_1_SCHEDULE')
+            tz = pytz.timezone('US/Pacific')
+            cron_valid = croniter.match(new_dissolutions_schedule_config.val, tz.localize(datetime.today()))
+            if cron_valid:
+                initiate_dissolution_process(application)
+            else:
+                application.logger.debug('Skipping job run since current day of the week does not match the cron schedule.')
