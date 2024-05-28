@@ -56,6 +56,7 @@ class Jurisdiction(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return continuation in jurisdiction by the business id."""
         jurisdiction = None
         if business_id:
+            # pylint: disable=protected-access
             jurisdiction = (db.session.query(Jurisdiction).join(Filing).
                             filter(Jurisdiction.business_id == business_id).
                             filter(Filing._filing_type == 'continuationIn').

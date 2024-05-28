@@ -954,7 +954,7 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
     if expected_msg:
         assert lists_are_equal(err, expected_msg)
     else:
-        assert err is None
+        assert not err
 
 
 @pytest.mark.parametrize(
