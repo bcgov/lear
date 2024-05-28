@@ -13,7 +13,6 @@
 # limitations under the License.
 """Checks for businesses."""
 from .business_checks.business import check_business
-from .business_checks.involuntary_dissolution import check_involuntary_dissolution
 
 
-__all__ = ('check_business', 'check_involuntary_dissolution')
+__all__ = ('check_business',)

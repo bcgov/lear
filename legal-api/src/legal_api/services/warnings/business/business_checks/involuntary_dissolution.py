@@ -16,7 +16,7 @@
 from . import BusinessWarningCodes, WarningType
 
 
-def check_involuntary_dissolution(business: any) -> list:
+def check_business(business: any) -> list:
     """Check involuntary dissolution for warnings."""
     result = []
 

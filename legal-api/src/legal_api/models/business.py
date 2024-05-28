@@ -132,6 +132,19 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         LegalTypes.ULC_CONTINUE_IN.value,
     ]
 
+    ELIGIBLE_TYPES: Final = [
+        LegalTypes.COMP.value,
+        LegalTypes.BC_ULC_COMPANY.value,
+        LegalTypes.BC_CCC.value,
+        LegalTypes.BCOMP.value,
+        LegalTypes.CONTINUE_IN.value,
+        LegalTypes.ULC_CONTINUE_IN.value,
+        LegalTypes.CCC_CONTINUE_IN.value,
+        LegalTypes.BCOMP_CONTINUE_IN.value,
+        LegalTypes.EXTRA_PRO_A.value,
+        LegalTypes.LIMITED_CO.value
+    ]
+
     LIMITED_COMPANIES: Final = [LegalTypes.COMP,
                                 LegalTypes.CONTINUE_IN,
                                 LegalTypes.CO_1860,

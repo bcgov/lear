@@ -15,7 +15,7 @@
 """Service to check warnings for a business."""
 from legal_api.models import Business
 
-from .business import check_business, check_involuntary_dissolution
+from .business import check_business
 
 
 def check_warnings(business: Business) -> list:
@@ -25,6 +25,5 @@ def check_warnings(business: Business) -> list:
     # Currently only checks for missing business info warnings but in future other warning checks can be included
     # e.g. compliance checks - result.extend(check_compliance(business))
     result.extend(check_business(business))
-    result.extend(check_involuntary_dissolution(business))
 
     return result

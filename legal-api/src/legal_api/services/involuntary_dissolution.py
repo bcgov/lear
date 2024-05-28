@@ -37,19 +37,6 @@ class InvoluntaryDissolutionService():
     @staticmethod
     def _get_businesses_eligible_query():
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution."""
-        eligible_types = [
-            Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BC_ULC_COMPANY.value,
-            Business.LegalTypes.BC_CCC.value,
-            Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.CONTINUE_IN.value,
-            Business.LegalTypes.ULC_CONTINUE_IN.value,
-            Business.LegalTypes.CCC_CONTINUE_IN.value,
-            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-            Business.LegalTypes.EXTRA_PRO_A.value,
-            Business.LegalTypes.LIMITED_CO.value
-        ]
-
         subquery = exists().where(BatchProcessing.business_id == Business.id,
                                   BatchProcessing.status.notin_(
                                     [BatchProcessing.BatchProcessingStatus.WITHDRAWN,
@@ -60,7 +47,7 @@ class InvoluntaryDissolutionService():
 
         query = db.session.query(Business).\
             filter(Business.state == Business.State.ACTIVE).\
-            filter(Business.legal_type.in_(eligible_types)).\
+            filter(Business.legal_type.in_(Business.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False)).\
             filter(not_(subquery)).\
             filter(
