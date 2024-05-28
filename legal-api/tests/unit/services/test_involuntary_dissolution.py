@@ -38,6 +38,24 @@ RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
 RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 
+@pytest.mark.parametrize(
+        'test_name, eligible', [
+            ('TEST_ELIGIBLE', True),
+            ('TEST_INELIGIBLE', False)
+        ]
+)
+def test_check_business_eligibility(session, test_name, eligible):
+    """Assert service returns check of business eligibility for involuntary dissolution."""
+    identifier = 'BC7654321'
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
+    if not eligible:
+        business.no_dissolution = True
+        business.save()
+
+    result = InvoluntaryDissolutionService.check_business_eligibility(identifier)
+    assert result == eligible 
+
+
 def test_get_businesses_eligible_count(session):
     """Assert service returns the number of businesses eligible for involuntary dissolution."""
     count = InvoluntaryDissolutionService.get_businesses_eligible_count()
@@ -51,14 +69,15 @@ def test_get_businesses_eligible_count(session):
             ('TEST_LIQUIDATION', 'LIQUIDATION', True)
         ]
 )
-def test_get_businesses_eligible_count_active_business(session, test_name, state, exclude):
-    """Assert service returns eligible count for active businesses."""
-    factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, state=state)
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+def test_get_businesses_eligible_query_active_business(session, test_name, state, exclude):
+    """Assert service returns eligible business for active businesses."""
+    business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, state=state)
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -78,15 +97,16 @@ def test_get_businesses_eligible_count_active_business(session, test_name, state
             ('TEST_GP', 'GP', True)
         ]
 )
-def test_get_businesses_eligible_count_eligible_type(session, test_name, legal_type, exclude):
-    """Assert service returns eligible count for businesses with eligible types."""
-    factory_business(identifier='BC1234567', entity_type=legal_type)
+def test_get_businesses_eligible_query_eligible_type(session, test_name, legal_type, exclude):
+    """Assert service returns eligible business for businesses with eligible types."""
+    business = factory_business(identifier='BC1234567', entity_type=legal_type)
 
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -95,17 +115,18 @@ def test_get_businesses_eligible_count_eligible_type(session, test_name, legal_t
             ('TEST_DISSOLUTION', False, False),
         ]
 )
-def test_get_businesses_eligible_count_no_dissolution(session, test_name, no_dissolution, exclude):
-    """Assert service returns eligible count for businesses with no_dissolution flag off."""
+def test_get_businesses_eligible_query_no_dissolution(session, test_name, no_dissolution, exclude):
+    """Assert service returns eligible business for businesses with no_dissolution flag off."""
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     business.no_dissolution = no_dissolution
     business.save()
 
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -117,8 +138,8 @@ def test_get_businesses_eligible_count_no_dissolution(session, test_name, no_dis
             ('NOT_IN_DISSOLUTION', None, None, False),
         ]
 )
-def test_get_businesses_eligible_count_in_dissolution(session, test_name, batch_status, batch_processing_status, exclude):
-    """Assert service returns eligible count for businesses not already in dissolution."""
+def test_get_businesses_eligible_query_in_dissolution(session, test_name, batch_status, batch_processing_status, exclude):
+    """Assert service returns eligible business for businesses not already in dissolution."""
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     if test_name.startswith('IN_DISSOLUTION'):
         batch = factory_batch(
@@ -132,11 +153,12 @@ def test_get_businesses_eligible_count_in_dissolution(session, test_name, batch_
             status = batch_processing_status
         )
     
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -147,8 +169,8 @@ def test_get_businesses_eligible_count_in_dissolution(session, test_name, batch_
             ('NO_OVERDUE', True)
         ]
 )
-def test_get_businesses_eligible_count_specific_filing_overdue(session, test_name, exclude):
-    """Assert service returns eligible count including business which has specific filing overdue."""
+def test_get_businesses_eligible_query_specific_filing_overdue(session, test_name, exclude):
+    """Assert service returns eligible business including business which has specific filing overdue."""
     if test_name == 'RECOGNITION_OVERDUE':
         business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     elif test_name == 'RESTORATION_OVERDUE':
@@ -163,11 +185,12 @@ def test_get_businesses_eligible_count_specific_filing_overdue(session, test_nam
 
     business.save()
 
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -177,7 +200,8 @@ def test_get_businesses_eligible_count_specific_filing_overdue(session, test_nam
             ('MISSING_TRANSITION', False)
         ]
 )
-def test_get_businesses_eligible_count_no_transition_filed(session, test_name, exclude):
+def test_get_businesses_eligible_query_no_transition_filed(session, test_name, exclude):
+    """Assert service returns eligible business excluding business which doesn't file transition."""
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
     factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
     if test_name == 'TRANSITION':
@@ -186,11 +210,12 @@ def test_get_businesses_eligible_count_no_transition_filed(session, test_name, e
         business.founding_date = datetime.utcnow()
         business.save()
 
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -199,17 +224,18 @@ def test_get_businesses_eligible_count_no_transition_filed(session, test_name, e
             ('NO_FED', False)
         ]
 )
-def test_get_businesses_eligible_count_fed_filing(session, test_name, exclude):
-    """Assert service returns eligible count excluding business which has future effective filings."""
-    bussiness = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
+def test_get_businesses_eligible_query_fed_filing(session, test_name, exclude):
+    """Assert service returns eligible business excluding business which has future effective filings."""
+    business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     if test_name == 'FED':
-        factory_pending_filing(bussiness, RESTORATION_FILING)
+        factory_pending_filing(business, RESTORATION_FILING)
     
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -219,20 +245,21 @@ def test_get_businesses_eligible_count_fed_filing(session, test_name, exclude):
         ('NON_LIMITED_RESTORATION', False)
     ]
 )
-def test_get_businesses_eligible_count_limited_restored(session, test_name, exclude):
-    """Assert service returns eligible count excluding business which is in limited restoration status."""
-    bussiness = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
+def test_get_businesses_eligible_query_limited_restored(session, test_name, exclude):
+    """Assert service returns eligible business excluding business which is in limited restoration status."""
+    business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     if test_name == 'LIMITED_RESTORATION':
-        bussiness.restoration_expiry_date = datetime.utcnow() + datedelta(years=1)
+        business.restoration_expiry_date = datetime.utcnow() + datedelta(years=1)
     elif test_name == 'LIMITED_RESTORATION_EXPIRED':
-        bussiness.restoration_expiry_date = datetime.utcnow() + datedelta(years=-1)
-    bussiness.save()
+        business.restoration_expiry_date = datetime.utcnow() + datedelta(years=-1)
+    business.save()
 
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
 
 
 @pytest.mark.parametrize(
@@ -242,8 +269,8 @@ def test_get_businesses_eligible_count_limited_restored(session, test_name, excl
             ('NON_XPRO', None, None, False)
         ]
 )
-def test_get_businesses_eligible_count_xpro_from_nwpta(session, test_name, jurisdiction, region, exclude):
-    """Assert service returns eligible count excluding expro from NWPTA jurisdictions."""
+def test_get_businesses_eligible_query_xpro_from_nwpta(session, test_name, jurisdiction, region, exclude):
+    """Assert service returns eligible business excluding expro from NWPTA jurisdictions."""
     if test_name == 'NON_XPRO':
         business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     else:
@@ -252,8 +279,9 @@ def test_get_businesses_eligible_count_xpro_from_nwpta(session, test_name, juris
     business.foreign_jurisdiction_region = region
     business.save()
 
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
-        assert count == 0
+        assert not result
     else:
-        assert count == 1
+        assert result
+        assert result[0] == business
