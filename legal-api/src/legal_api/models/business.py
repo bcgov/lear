@@ -494,6 +494,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'adminFreeze': self.admin_freeze or False,
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
+            'inDissolution': self.in_dissolution,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
             'state': self.state.name if self.state else Business.State.ACTIVE.name

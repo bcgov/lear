@@ -282,6 +282,7 @@ def test_business_json(session):
         'alternateNames': [],
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
+        'inDissolution': False,
         'legalName': 'legal_name',
         'legalType': Business.LegalTypes.COOP.value,
         'state': Business.State.ACTIVE.name,
