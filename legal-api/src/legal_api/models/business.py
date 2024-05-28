@@ -478,6 +478,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
             ).astimezone(timezone.utc).isoformat(),
+            'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions
         }
@@ -493,9 +494,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'adminFreeze': self.admin_freeze or False,
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
+            'inDissolution': self.in_dissolution,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
-            'noDissolution': self.no_dissolution,
             'state': self.state.name if self.state else Business.State.ACTIVE.name
         }
 

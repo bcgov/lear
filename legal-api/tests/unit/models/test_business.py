@@ -282,9 +282,9 @@ def test_business_json(session):
         'alternateNames': [],
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
+        'inDissolution': False,
         'legalName': 'legal_name',
         'legalType': Business.LegalTypes.COOP.value,
-        'noDissolution': False,
         'state': Business.State.ACTIVE.name,
         'taxId': '123456789'
     }
@@ -318,7 +318,8 @@ def test_business_json(session):
         'associationType': 'CP',
         'startDate': '2021-08-05',
         'hasCourtOrders': False,
-        'allowedActions': {}
+        'allowedActions': {},
+        'noDissolution': False
     }
 
     with patch.object(flags, 'is_on', return_value=True):
