@@ -197,6 +197,21 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
     return None
 
 
+def validate_parties_names(filing_json: dict, filing_type: str) -> list:
+    """Validate the parties name for COLIN sync."""
+    # FUTURE: This validation should be removed when COLIN sync back is no longer required.
+    # This is required to work around first and middle name length mismatches between LEAR and COLIN.
+    # Syncing back to COLIN would error out on first and middle name length exceeding 20 characters for party
+    msg = []
+    parties_array = filing_json['filing'][filing_type]['parties']
+    party_path = f'/filing/{filing_type}/parties'
+
+    for item in parties_array:
+        msg.extend(validate_party_name(item, party_path))
+
+    return msg
+
+
 def validate_party_name(party: dict, party_path: str) -> list:
     """Validate party name."""
     msg = []

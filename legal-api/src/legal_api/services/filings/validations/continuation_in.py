@@ -23,6 +23,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
     validate_name_request,
+    validate_parties_names,
     validate_pdf,
     validate_share_structure,
 )
@@ -30,7 +31,6 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_incorporation_effective_date,
     validate_offices,
     validate_parties_mailing_address,
-    validate_parties_names,
 )
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -52,13 +52,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
     msg.extend(validate_offices(filing_json, filing_type))
     msg.extend(validate_roles(filing_json, legal_type, filing_type))
-
-    # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
-    # to work around first and middle name length mismatches between LEAR and COLIN. Syncing back to COLIN
-    # would error out on first and middle name length exceeding 20 characters for completing party
-    err = validate_parties_names(filing_json, filing_type)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_parties_names(filing_json, filing_type))
 
     err = validate_parties_mailing_address(filing_json, legal_type, filing_type)
     if err:

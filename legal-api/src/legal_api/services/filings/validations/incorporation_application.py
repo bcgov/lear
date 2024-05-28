@@ -29,7 +29,7 @@ from legal_api.utils.datetime import datetime as dt
 from .common_validations import (  # noqa: I001
     validate_court_order,
     validate_name_request,
-    validate_party_name,
+    validate_parties_names,
     validate_pdf,
     validate_share_structure,
 )
@@ -54,12 +54,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if err:
         msg.extend(err)
 
-    # FUTURE: this should be removed when COLIN sync back is no longer required. This names validation is required
-    # to work around first and middle name length mismatches between LEAR and COLIN. IA filings syncing
-    # back to COLIN would error out on first and middle name length exceeding 20 characters for completing party
-    err = validate_parties_names(incorporation_json)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_parties_names(incorporation_json, filing_type))
 
     err = validate_parties_mailing_address(incorporation_json, legal_type)
     if err:
@@ -192,22 +187,6 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
         if director_count < min_director_count:
             err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': f'Must have a minimum of {min_director_count} Director', 'path': err_path})
-
-    if msg:
-        return msg
-
-    return None
-
-
-# pylint: disable=too-many-branches
-def validate_parties_names(filing_json: dict, filing_type: str = 'incorporationApplication') -> Error:
-    """Validate the party names of the filing."""
-    parties_array = filing_json['filing'][filing_type]['parties']
-    party_path = f'/filing/{filing_type}/parties'
-    msg = []
-
-    for item in parties_array:
-        msg.extend(validate_party_name(item, party_path))
 
     if msg:
         return msg
