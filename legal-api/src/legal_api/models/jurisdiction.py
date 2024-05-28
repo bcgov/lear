@@ -11,21 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module holds all of the additional data about a continuation in."""
+"""This module holds the data about jurisdiction."""
 from __future__ import annotations
 
 from .db import db
+from .filing import Filing
 
 
-class ContinuationIn(db.Model):  # pylint: disable=too-many-instance-attributes
-    """This class manages the continuation in."""
+class Jurisdiction(db.Model):  # pylint: disable=too-many-instance-attributes
+    """This class manages the jurisdiction."""
 
     __versioned__ = {}
-    __tablename__ = 'continuation_ins'
+    __tablename__ = 'jurisdictions'
 
     id = db.Column(db.Integer, primary_key=True)
-    jurisdiction = db.Column('jurisdiction', db.String(10))
-    jurisdiction_region = db.Column('jurisdiction_region', db.String(10))
+    country = db.Column('country', db.String(10))
+    region = db.Column('region', db.String(10))
     identifier = db.Column('identifier', db.String(50))
     legal_name = db.Column('legal_name', db.String(1000))
     tax_id = db.Column('tax_id', db.String(15))
@@ -35,7 +36,7 @@ class ContinuationIn(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), nullable=False, index=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False)
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False, index=True)
 
     def save(self):
         """Save the object to the database immediately."""
@@ -43,17 +44,20 @@ class ContinuationIn(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, continuation_in_id) -> ContinuationIn:
-        """Return continuation in by the id."""
-        continuation_in = None
-        if continuation_in_id:
-            continuation_in = cls.query.filter_by(id=continuation_in_id).one_or_none()
-        return continuation_in
+    def find_by_id(cls, jurisdiction_id) -> Jurisdiction:
+        """Return jurisdiction by the id."""
+        jurisdiction = None
+        if jurisdiction_id:
+            jurisdiction = cls.query.filter_by(id=jurisdiction_id).one_or_none()
+        return jurisdiction
 
     @classmethod
-    def get_by_business_id(cls, business_id) -> ContinuationIn:
-        """Return continuation in by the business id."""
-        continuation_in = None
+    def get_continuation_in_jurisdiction(cls, business_id) -> Jurisdiction:
+        """Return continuation in jurisdiction by the business id."""
+        jurisdiction = None
         if business_id:
-            continuation_in = cls.query.filter_by(business_id=business_id).one_or_none()
-        return continuation_in
+            jurisdiction = (db.session.query(Jurisdiction).join(Filing).
+                            filter(Jurisdiction.business_id == business_id).
+                            filter(Filing._filing_type == 'continuationIn').
+                            one_or_none())
+        return jurisdiction

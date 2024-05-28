@@ -25,7 +25,6 @@ from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .configuration import Configuration
 from .consent_continuation_out import ConsentContinuationOut
-from .continuation_in import ContinuationIn
 from .corp_type import CorpType
 from .dc_connection import DCConnection
 from .dc_definition import DCDefinition
@@ -34,6 +33,7 @@ from .dc_issued_credential import DCIssuedCredential
 from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
 from .filing import Filing
+from .jurisdiction import Jurisdiction
 from .naics_element import NaicsElement
 from .naics_structure import NaicsStructure
 from .office import Office, OfficeType
@@ -46,11 +46,40 @@ from .share_series import ShareSeries
 from .user import User, UserRoles
 
 
-__all__ = ('db',
-           'Address', 'Alias', 'AmalgamatingBusiness', 'Amalgamation', 'Batch', 'BatchProcessing', 'Business',
-           'ColinLastUpdate', 'Comment', 'Configuration', 'ConsentContinuationOut', 'ContinuationIn', 'CorpType',
-           'DCConnection', 'DCDefinition', 'DCIssuedCredential', 'DCIssuedBusinessUserCredential',
-           'DCRevocationReason', 'Document', 'DocumentType', 'Filing', 'Office', 'OfficeType', 'Party',
-           'RegistrationBootstrap', 'RequestTracker', 'Resolution', 'PartyRole', 'ShareClass', 'ShareSeries',
-           'User', 'UserRoles', 'NaicsStructure', 'NaicsElement'
-           )
+__all__ = (
+    'db',
+    'Address',
+    'Alias',
+    'AmalgamatingBusiness',
+    'Amalgamation',
+    'Batch',
+    'BatchProcessing',
+    'Business',
+    'ColinLastUpdate',
+    'Comment',
+    'Configuration',
+    'ConsentContinuationOut',
+    'CorpType',
+    'DCConnection',
+    'DCDefinition',
+    'DCIssuedCredential',
+    'DCIssuedBusinessUserCredential',
+    'DCRevocationReason',
+    'Document',
+    'DocumentType',
+    'Filing',
+    'Jurisdiction',
+    'NaicsElement',
+    'NaicsStructure',
+    'Office',
+    'OfficeType',
+    'Party',
+    'PartyRole',
+    'RegistrationBootstrap',
+    'RequestTracker',
+    'Resolution',
+    'ShareClass',
+    'ShareSeries',
+    'User',
+    'UserRoles',
+)

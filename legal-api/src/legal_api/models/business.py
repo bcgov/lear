@@ -275,7 +275,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
     amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
     amalgamation = db.relationship('Amalgamation', lazy='dynamic')
-    continuation_in = db.relationship('ContinuationIn', lazy='dynamic')
+    jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):

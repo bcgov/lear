@@ -1,4 +1,4 @@
-"""continuation-in
+"""jurisdiction
 
 Revision ID: c4732cd8abfd
 Revises: ef8f033d317b
@@ -17,10 +17,10 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table('continuation_ins',
+    op.create_table('jurisdictions',
                     sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('jurisdiction', sa.String(length=10), nullable=True),
-                    sa.Column('jurisdiction_region', sa.String(length=10), nullable=True),
+                    sa.Column('country', sa.String(length=10), nullable=False),
+                    sa.Column('region', sa.String(length=10), nullable=True),
                     sa.Column('identifier', sa.String(length=50), nullable=True),
                     sa.Column('legal_name', sa.String(length=1000), nullable=True),
                     sa.Column('tax_id', sa.String(length=15), nullable=True),
@@ -33,12 +33,13 @@ def upgrade():
                     sa.ForeignKeyConstraint(['filing_id'], ['filings.id'], ),
                     sa.PrimaryKeyConstraint('id')
                     )
-    op.create_index(op.f('ix_continuation_ins_business_id'), 'continuation_ins', ['business_id'], unique=False)
+    op.create_index(op.f('ix_jurisdictions_business_id'), 'jurisdictions', ['business_id'], unique=False)
+    op.create_index(op.f('ix_jurisdictions_filing_id'), 'jurisdictions', ['filing_id'], unique=False)
 
-    op.create_table('continuation_ins_version',
+    op.create_table('jurisdictions_version',
                     sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('jurisdiction', sa.String(length=10), nullable=True),
-                    sa.Column('jurisdiction_region', sa.String(length=10), nullable=True),
+                    sa.Column('country', sa.String(length=10), nullable=False),
+                    sa.Column('region', sa.String(length=10), nullable=True),
                     sa.Column('identifier', sa.String(length=50), nullable=True),
                     sa.Column('legal_name', sa.String(length=1000), nullable=True),
                     sa.Column('tax_id', sa.String(length=15), nullable=True),
@@ -54,10 +55,11 @@ def upgrade():
                     sa.ForeignKeyConstraint(['business_id'], ['businesses.id']),
                     sa.PrimaryKeyConstraint('id', 'transaction_id')
                     )
-    op.create_index(op.f('ix_continuation_ins_version_end_transaction_id'), 'continuation_ins_version', ['end_transaction_id'], unique=False)
-    op.create_index(op.f('ix_continuation_ins_version_business_id'), 'continuation_ins_version', ['business_id'], unique=False)
-    op.create_index(op.f('ix_continuation_ins_version_operation_type'), 'continuation_ins_version', ['operation_type'], unique=False)
-    op.create_index(op.f('ix_continuation_ins_version_transaction_id'), 'continuation_ins_version', ['transaction_id'], unique=False)
+    op.create_index(op.f('ix_jurisdictions_version_end_transaction_id'), 'jurisdictions_version', ['end_transaction_id'], unique=False)
+    op.create_index(op.f('ix_jurisdictions_version_business_id'), 'jurisdictions_version', ['business_id'], unique=False)
+    op.create_index(op.f('ix_jurisdictions_version_filing_id'), 'jurisdictions_version', ['filing_id'], unique=False)
+    op.create_index(op.f('ix_jurisdictions_version_operation_type'), 'jurisdictions_version', ['operation_type'], unique=False)
+    op.create_index(op.f('ix_jurisdictions_version_transaction_id'), 'jurisdictions_version', ['transaction_id'], unique=False)
 
     op.drop_column('businesses', 'foreign_legal_type')
     op.drop_column('businesses', 'foreign_identifier')
@@ -83,11 +85,13 @@ def downgrade():
     op.add_column('businesses', sa.Column('foreign_identifier', sa.VARCHAR(length=15), autoincrement=False, nullable=True))
     op.add_column('businesses', sa.Column('foreign_legal_type', sa.VARCHAR(length=10), autoincrement=False, nullable=True))
 
-    op.drop_index(op.f('ix_continuation_ins_version_end_transaction_id'), table_name='continuation_ins_version')
-    op.drop_index(op.f('ix_continuation_ins_version_business_id'), table_name='continuation_ins_version')
-    op.drop_index(op.f('ix_continuation_ins_version_operation_type'), table_name='continuation_ins_version')
-    op.drop_index(op.f('ix_continuation_ins_version_transaction_id'), table_name='continuation_ins_version')
-    op.drop_table('continuation_ins_version')
+    op.drop_index(op.f('ix_jurisdictions_version_end_transaction_id'), table_name='jurisdictions_version')
+    op.drop_index(op.f('ix_jurisdictions_version_business_id'), table_name='jurisdictions_version')
+    op.drop_index(op.f('ix_jurisdictions_version_filing_id'), table_name='jurisdictions_version')
+    op.drop_index(op.f('ix_jurisdictions_version_operation_type'), table_name='jurisdictions_version')
+    op.drop_index(op.f('ix_jurisdictions_version_transaction_id'), table_name='jurisdictions_version')
+    op.drop_table('jurisdictions_version')
 
-    op.drop_index(op.f('ix_continuation_ins_business_id'), table_name='continuation_ins')
-    op.drop_table('continuation_ins')
+    op.drop_index(op.f('ix_jurisdictions_business_id'), table_name='jurisdictions')
+    op.drop_index(op.f('ix_jurisdictions_filing_id'), table_name='jurisdictions')
+    op.drop_table('jurisdictions')

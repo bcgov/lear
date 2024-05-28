@@ -19,30 +19,42 @@ Test-Suite to ensure that the ContinuationIn Model is working as expected.
 import copy
 from registry_schemas.example_data import (
     CONTINUATION_IN,
-    FILING_HEADER,
 )
 
-from legal_api.models.continuation_in import ContinuationIn
+from legal_api.models import Jurisdiction
 
 from tests.unit.models import factory_business, factory_completed_filing
 
 
-def test_continuation_in_save(session):
-    """Assert that the continuation_in was saved."""
+def test_jurisdiction_save(session):
+    """Assert that the jurisdiction was saved."""
     business = factory_business('BC1234567')
-    filing_dict = copy.deepcopy(FILING_HEADER)
+    filing_dict = {
+        'filing': {
+            'header': {
+                'name': 'continuationIn',
+                'date': '2019-04-08',
+                'certifiedBy': 'full name',
+                'email': 'no_one@never.get',
+            }
+        }
+    }
+
     filing_dict['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing = factory_completed_filing(business, filing_dict)
 
-    continuation_in = ContinuationIn()
-    continuation_in.jurisdiction = 'CA'
-    continuation_in.jurisdiction_region = 'AB'
-    continuation_in.identifier = 'AB1234567'
-    continuation_in.legal_name = 'new legal name'
-    continuation_in.incorporation_date = '2024-05-24'
-    continuation_in.business_id = business.id
-    continuation_in.filing_id = filing.id
-    business.continuation_in.append(continuation_in)
+    jurisdiction = Jurisdiction()
+    jurisdiction.country = 'CA'
+    jurisdiction.region = 'AB'
+    jurisdiction.identifier = 'AB1234567'
+    jurisdiction.legal_name = 'new legal name'
+    jurisdiction.incorporation_date = '2024-05-24'
+    jurisdiction.business_id = business.id
+    jurisdiction.filing_id = filing.id
+    business.jurisdictions.append(jurisdiction)
     business.save()
 
-    assert continuation_in.id
+    assert jurisdiction.id
+
+    jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(business.id)
+    assert jurisdiction
