@@ -15,7 +15,7 @@
 import uuid
 from http import HTTPStatus
 
-from flask import Blueprint, current_app
+from flask import current_app
 from flask_cors import cross_origin
 from sentry_sdk import capture_message
 
@@ -24,12 +24,11 @@ from legal_api.services import queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
 
+from .bp import bp_admin
 
-bp = Blueprint('ADMINISTRATIVE_BN', __name__, url_prefix='/api/v2/admin/bn')
 
-
-@bp.route('<string:identifier>', methods=['POST'])
-@bp.route('<string:identifier>/<string:business_number>', methods=['POST'])
+@bp_admin.route('bn/<string:identifier>', methods=['POST'])
+@bp_admin.route('bn/<string:identifier>/<string:business_number>', methods=['POST'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def create_bn_request(identifier: str, business_number: str = None):

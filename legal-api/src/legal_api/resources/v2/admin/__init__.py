@@ -11,25 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Constants used in managing the end-points."""
-from __future__ import annotations
+"""The Admin End-Points.
 
-from enum import Enum
-
-
-class EndpointEnum(str, Enum):
-    """Enumerate the endpoint mounts used in the system."""
-
-    API_V1 = '/api/v1'
-    API_V2 = '/api/v2'
-    API = '/api'
-    BUSINESSES_V2 = '/api/v2/businesses'
-    DEFAULT_API = API_V1
-    ADMIN_V2 = '/api/v2/admin'
+Provides all admin services.
+"""
+from .administrative_bn import create_bn_request
+from .bp import bp_admin
+from .configuration import get_configurations, update_configurations
+from .dissolution import get_statistics
 
 
-class EndpointVersionEnum(str, Enum):
-    """Enumerate the Accept Version Headers."""
-
-    V1 = 'v1'
-    V2 = 'v2'
+__all__ = ('bp_admin',)

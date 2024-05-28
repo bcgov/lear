@@ -19,7 +19,7 @@ from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Business, RequestTracker, UserRoles
-from legal_api.resources.v2.administrative_bn import publish_entity_event
+from legal_api.resources.v2.admin.administrative_bn import publish_entity_event
 from legal_api.utils.auth import jwt
 
 
