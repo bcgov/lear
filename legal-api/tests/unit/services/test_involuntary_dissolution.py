@@ -39,15 +39,16 @@ RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 
 @pytest.mark.parametrize(
-        'test_name, eligible', [
-            ('TEST_ELIGIBLE', True),
-            ('TEST_INELIGIBLE', False)
+        'test_name, isAdminFreeze, eligible', [
+            ('TEST_ELIGIBLE', False, True),
+            ('TEST_INELIGIBLE', False, False),
+            ('TEST_INELIGIBLE_ADMIN_FREEZE', True, False)
         ]
 )
-def test_check_business_eligibility(session, test_name, eligible):
+def test_check_business_eligibility(session, test_name, isAdminFreeze, eligible):
     """Assert service returns check of business eligibility for involuntary dissolution."""
     identifier = 'BC7654321'
-    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, admin_freeze=isAdminFreeze)
     if not eligible:
         business.no_dissolution = True
         business.save()
