@@ -196,19 +196,23 @@ def test_get_businesses_eligible_query_specific_filing_overdue(session, test_nam
 @pytest.mark.parametrize(
         'test_name, exclude', [
             ('TRANSITION', True),
-            ('NO_NEED_TRANSITION', True),
+            ('NO_NEED_TRANSITION_NEW_ACT', True),
+            ('NO_NEED_TRANSITION_1_YEAR', True),
             ('MISSING_TRANSITION', False)
         ]
 )
 def test_get_businesses_eligible_query_no_transition_filed(session, test_name, exclude):
     """Assert service returns eligible business excluding business which doesn't file transition."""
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
-    factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
+    restoration_filing = factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
     if test_name == 'TRANSITION':
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
-    elif test_name == 'NO_NEED_TRANSITION':
+    elif test_name == 'NO_NEED_TRANSITION_NEW_ACT':
         business.founding_date = datetime.utcnow()
         business.save()
+    elif test_name == 'NO_NEED_TRANSITION_1_YEAR':
+        restoration_filing.effective_date = datetime.utcnow()
+        restoration_filing.save()
 
     result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
