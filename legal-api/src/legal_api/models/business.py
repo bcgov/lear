@@ -431,18 +431,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         return True
 
     @property
-    def is_involuntary_dissolution(self):
-        """Return true if in dissolution, otherwise false."""
-        # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
-        is_involuntary_dissolution = db.session.query(BatchProcessing, Batch).\
-            filter(BatchProcessing.business_id == self.id).\
-            filter(Batch.id == BatchProcessing.batch_id).\
-            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
-            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
-            one_or_none()
-        return is_involuntary_dissolution is not None
-
-    @property
     def in_dissolution(self):
         """Return true if in dissolution, otherwise false."""
         # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
