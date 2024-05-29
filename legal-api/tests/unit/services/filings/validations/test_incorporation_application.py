@@ -948,13 +948,13 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_names(filing_json, legal_type)
+        err = validate_parties_names(filing_json, incorporation_application_name)
 
     # validate outcomes
     if expected_msg:
         assert lists_are_equal(err, expected_msg)
     else:
-        assert err is None
+        assert not err
 
 
 @pytest.mark.parametrize(

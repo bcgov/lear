@@ -26,13 +26,13 @@ from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
+    validate_parties_names,
     validate_pdf,
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
 from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
-    validate_parties_names,
     validate_roles,
 )
 from legal_api.services.filings.validations.registration import validate_offices
@@ -105,9 +105,7 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        err = validate_parties_names(filing_dict, legal_type, filing_type)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_parties_names(filing_dict, filing_type))
 
         err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
         if err:
@@ -143,10 +141,8 @@ def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg
         err = validate_roles(filing_dict, legal_type, filing_type)
         if err:
             msg.extend(err)
-        # FUTURE: this should be removed when COLIN sync back is no longer required.
-        err = validate_parties_names(filing_dict, legal_type, filing_type)
-        if err:
-            msg.extend(err)
+
+        msg.extend(validate_parties_names(filing_dict, filing_type))
 
         err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
         if err:

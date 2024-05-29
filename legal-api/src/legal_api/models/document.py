@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from sqlalchemy import Column, String, desc
+from sqlalchemy import desc
 
 from .db import db
 
@@ -28,10 +28,12 @@ from .db import db
 class DocumentType(Enum):
     """Document types."""
 
+    AFFIDAVIT = 'affidavit'
+    AUTHORIZATION_FILE = 'authorization_file'
     COOP_RULES = 'coop_rules'
     COOP_MEMORANDUM = 'coop_memorandum'
-    AFFIDAVIT = 'affidavit'
     COURT_ORDER = 'court_order'
+    DIRECTOR_AFFIDAVIT = 'director_affidavit'
 
 
 class Document(db.Model):
@@ -40,9 +42,10 @@ class Document(db.Model):
     __versioned__ = {}
     __tablename__ = 'documents'
 
-    id = Column(db.Integer, primary_key=True)
-    type = Column('type', String(30), nullable=False)
-    file_key = Column('file_key', String(100), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    type = db.Column('type', db.String(30), nullable=False)
+    file_key = db.Column('file_key', db.String(100), nullable=False)
+    file_name = db.Column('file_name', db.String(1000))
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
@@ -59,8 +62,14 @@ class Document(db.Model):
         return cls.query.filter_by(id=document_id).one_or_none()
 
     @classmethod
-    def find_by_business_id_and_type(cls, business_id: int, document_type: String):
+    def find_all_by(cls, filing_id: int, document_type: str):
+        """Return all the documents matching filing id and document type."""
+        return cls.query.filter_by(filing_id=filing_id, type=document_type).all()
+
+    @classmethod
+    def find_by_business_id_and_type(cls, business_id: int, document_type: str):
         """Return the document matching the business id and type."""
         return cls.query.filter_by(
-            business_id=business_id, type=document_type
-        ).order_by(desc(Document.id)).limit(1).one_or_none()
+            business_id=business_id,
+            type=document_type
+        ).order_by(desc(Document.id)).first()
