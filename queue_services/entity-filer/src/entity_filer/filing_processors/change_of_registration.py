@@ -17,18 +17,15 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
 from legal_api.models import Address, Business, Filing, Party, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     business_info,
-    business_profile,
     create_address,
     create_party,
     create_role,
     filings,
-    name_request,
     update_address,
 )
 

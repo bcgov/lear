@@ -15,10 +15,9 @@
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
-from legal_api.models import Business, Filing
+from legal_api.models import Business
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import name_request
 
 
 def process(business: Business, filing: Dict, filing_meta: FilingMeta):

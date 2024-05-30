@@ -26,7 +26,6 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -36,8 +35,6 @@ from entity_filer.filing_processors.change_of_registration import update_parties
 from entity_filer.filing_processors.filing_components import (
     aliases,
     business_info,
-    business_profile,
-    name_request,
     shares,
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices

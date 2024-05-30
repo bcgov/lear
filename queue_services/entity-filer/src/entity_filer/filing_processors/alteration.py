@@ -16,16 +16,13 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
 from legal_api.models import Business, Filing
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     aliases,
     business_info,
-    business_profile,
     filings,
-    name_request,
     rules_and_memorandum,
     shares,
 )

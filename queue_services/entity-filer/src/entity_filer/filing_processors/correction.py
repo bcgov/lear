@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the correction filing."""
-from contextlib import suppress
 from typing import Dict
 
 import pytz
-import sentry_sdk
 from legal_api.models import Business, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_profile, name_request
 from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 

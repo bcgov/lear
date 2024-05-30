@@ -135,7 +135,7 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
 
     if name_translations := amalgamation_filing.get('nameTranslations'):
         aliases.update_aliases(business, name_translations)
-    
+
     if court_order := amalgamation_filing.get('courtOrder'):
         filings.update_filing_court_order(filing_rec, court_order)
 

@@ -96,7 +96,7 @@ def update_affiliation(business: Business, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-        
+
         pass_code = ''
         if filing.filing_type == 'registration':
             pass_code = business_info.get_firm_affiliation_passcode(business.id)
@@ -134,9 +134,11 @@ def update_affiliation(business: Business, filing: Filing):
                 corp_type_code=Filing.FILINGS[filing.filing_type]['temporaryCorpTypeCode']
             )
 
-        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK) \
-                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK):
+        # pylint: disable=possibly-used-before-assignment;
+        if (rv not in (HTTPStatus.OK, HTTPStatus.CREATED)
+            or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)
+                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK)
+            ):
             raise QueueException
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(

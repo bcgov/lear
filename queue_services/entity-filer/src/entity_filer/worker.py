@@ -273,7 +273,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             if filing_core_submission.filing_type in [
                 FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
                 FilingCore.FilingTypes.CONTINUATIONIN,
-                FilingCore.FilingTypes.CONVERSION, # corps conversion creates new business
+                FilingCore.FilingTypes.CONVERSION,  # corps conversion creates new business
                 FilingCore.FilingTypes.INCORPORATIONAPPLICATION,
                 FilingCore.FilingTypes.REGISTRATION
             ]:
@@ -300,7 +300,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     FilingCore.FilingTypes.PUTBACKON,
                     FilingCore.FilingTypes.RESTORATION
                 ]:
-                    state = business.state.name # state changed to HISTORICAL/ACTIVE
+                    state = business.state.name  # state changed to HISTORICAL/ACTIVE
 
                 AccountService.update_entity(
                     business_registration=business.identifier,

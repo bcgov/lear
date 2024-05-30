@@ -17,13 +17,12 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_info, business_profile, filings, name_request
+from entity_filer.filing_processors.filing_components import business_info, filings
 from entity_filer.filing_processors.filing_components.aliases import update_aliases
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
