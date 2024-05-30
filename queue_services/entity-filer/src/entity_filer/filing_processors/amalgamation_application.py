@@ -17,14 +17,7 @@ from typing import Dict
 
 from entity_queue_common.service_utils import QueueException
 from legal_api import db
-from legal_api.models import (
-    AmalgamatingBusiness,
-    Amalgamation,
-    Business,
-    Filing,
-    OfficeType,
-    PartyRole,
-)
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, OfficeType, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (

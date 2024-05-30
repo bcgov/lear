@@ -32,11 +32,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.change_of_registration import update_parties as upsert_parties
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    business_info,
-    shares,
-)
+from entity_filer.filing_processors.filing_components import aliases, business_info, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 

@@ -18,10 +18,9 @@ from typing import Dict
 
 import requests
 import sentry_sdk
+from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
-
-from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.bootstrap import AccountService
 
@@ -137,8 +136,7 @@ def update_affiliation(business: Business, filing: Filing):
         # pylint: disable=possibly-used-before-assignment;
         if (rv not in (HTTPStatus.OK, HTTPStatus.CREATED)
             or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)
-                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK)
-            ):
+                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK)):
             raise QueueException
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         sentry_sdk.capture_message(
