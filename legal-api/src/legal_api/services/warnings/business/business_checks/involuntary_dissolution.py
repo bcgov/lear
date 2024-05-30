@@ -34,7 +34,7 @@ def check_business(business: any) -> list:
             'message': 'Multiple annual reports not filed.  Eligible for involuntary dissolution.',
             'warningType': WarningType.NOT_IN_GOOD_STANDING
         })
-        batch_processing = business.batch_processing
+        batch_processing = business.batch_processing.one_or_none()
         result.append({
             'code': BusinessWarningCodes.DISSOLUTION_IN_PROGRESS,
             'data': batch_processing.meta_data,

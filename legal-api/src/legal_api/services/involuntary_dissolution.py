@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """This provides the service for involuntary dissolution."""
+from typing import Final
+
 from sqlalchemy import and_, exists, func, not_, or_, text
 from sqlalchemy.orm import aliased
 
@@ -21,6 +23,19 @@ from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 
 class InvoluntaryDissolutionService():
     """Provides services to get information for involuntary dissolution."""
+
+    ELIGIBLE_TYPES: Final = [
+        Business.LegalTypes.COMP.value,
+        Business.LegalTypes.BC_ULC_COMPANY.value,
+        Business.LegalTypes.BC_CCC.value,
+        Business.LegalTypes.BCOMP.value,
+        Business.LegalTypes.CONTINUE_IN.value,
+        Business.LegalTypes.ULC_CONTINUE_IN.value,
+        Business.LegalTypes.CCC_CONTINUE_IN.value,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+        Business.LegalTypes.EXTRA_PRO_A.value,
+        Business.LegalTypes.LIMITED_CO.value
+    ]
 
     @classmethod
     def check_business_eligibility(cls, identifier: str):
@@ -47,7 +62,7 @@ class InvoluntaryDissolutionService():
 
         query = db.session.query(Business).\
             filter(Business.state == Business.State.ACTIVE).\
-            filter(Business.legal_type.in_(Business.ELIGIBLE_TYPES)).\
+            filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False)).\
             filter(not_(subquery)).\
             filter(

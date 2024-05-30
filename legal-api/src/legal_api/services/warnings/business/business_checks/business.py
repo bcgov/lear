@@ -14,6 +14,7 @@
 
 """Service to check compliancy for a business."""
 from legal_api.models import Business
+from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 
 from .corps import check_business as corps_check  # noqa: I003
 from .firms import check_business as firms_check  # noqa: I003
@@ -36,7 +37,7 @@ def check_business(business: any) -> list:
          ):
         result = corps_check(business)
 
-    if business.legal_type in Business.ELIGIBLE_TYPES:
+    if business.legal_type in InvoluntaryDissolutionService.ELIGIBLE_TYPES:
         result.extend(involuntary_dissolution_check(business))
 
     return result
