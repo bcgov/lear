@@ -6,6 +6,7 @@ python-dotenv
 sentry-sdk[flask]
 asyncio-nats-client
 asyncio-nats-streaming
+nest_asyncio
 pycountry
 attr
 Werkzeug
