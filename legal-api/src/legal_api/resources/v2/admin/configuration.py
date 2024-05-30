@@ -28,13 +28,23 @@ from .bp import bp_admin
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_configurations():
-    """Return a list of configurations."""
-    configurations = Configuration.all()
-    return jsonify({
-        'configurations': [
-            configuration.json for configuration in configurations
-        ]
-    }), HTTPStatus.OK
+    """Return a list of configurations, optionally filtered by name."""
+    filter_name = request.args.get('name', None)
+    if filter_name:
+        configuration = Configuration.find_by_name(filter_name)
+        if configuration:
+            return jsonify({
+                'configurations': [configuration.json]
+            }), HTTPStatus.OK
+        else:
+            return {'message': 'Configuration not found'}, HTTPStatus.NOT_FOUND
+    else:
+        configurations = Configuration.all()
+        return jsonify({
+            'configurations': [
+                configuration.json for configuration in configurations
+            ]
+        }), HTTPStatus.OK
 
 
 @bp_admin.route('/configurations', methods=['PUT'])
