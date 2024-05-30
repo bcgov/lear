@@ -62,20 +62,3 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
 
     original_filing.save_to_session()
     return correction_filing
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for correction.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'correction')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['correction']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

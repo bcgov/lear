@@ -34,11 +34,3 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
                                   'toLegalName': new_name}
 
     business.legal_name = new_name
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for change of name.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'changeOfName')

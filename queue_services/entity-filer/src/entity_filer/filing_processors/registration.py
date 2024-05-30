@@ -13,68 +13,16 @@
 # limitations under the License.
 """File processing rules and actions for the registration of a business."""
 import copy
-from contextlib import suppress
-from http import HTTPStatus
 from typing import Dict
 
-import dpath
-import sentry_sdk
 from entity_queue_common.service_utils import QueueException
-from legal_api.models import Business, Filing, RegistrationBootstrap
-from legal_api.services.bootstrap import AccountService
+from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_info, business_profile, filings
+from entity_filer.filing_processors.filing_components import business_info, filings
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
-
-
-def update_affiliation(business: Business, filing: Filing):
-    """Create an affiliation for the business and remove the bootstrap."""
-    try:
-        bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-        pass_code = business_info.get_firm_affiliation_passcode(business.id)
-
-        nr_number = filing.filing_json.get('filing').get('registration', {}).get('nameRequest', {}).get('nrNumber')
-        details = {
-            'bootstrapIdentifier': bootstrap.identifier,
-            'identifier': business.identifier,
-            'nrNumber': nr_number
-        }
-
-        rv = AccountService.create_affiliation(
-            account=bootstrap.account,
-            business_registration=business.identifier,
-            business_name=business.legal_name,
-            corp_type_code=business.legal_type,
-            pass_code=pass_code,
-            details=details
-        )
-
-        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
-            deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
-            sentry_sdk.capture_message(
-                f'Queue Error: Unable to affiliate business:{business.identifier} for filing:{filing.id}',
-                level='error'
-            )
-        else:
-            # update the bootstrap to use the new business identifier for the name
-            bootstrap_update = AccountService.update_entity(
-                business_registration=bootstrap.identifier,
-                business_name=business.identifier,
-                corp_type_code='RTMP'
-            )
-
-        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
-                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK):
-            raise QueueException
-    except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
-        sentry_sdk.capture_message(
-            f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
-            level='error'
-        )
 
 
 def process(business: Business,  # pylint: disable=too-many-branches
@@ -126,9 +74,8 @@ def process(business: Business,  # pylint: disable=too-many-branches
         update_parties(business, parties, filing_rec)
 
     # update court order, if any is present
-    with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(filing, '/registration/courtOrder')
-        filings.update_filing_court_order(filing_rec, court_order_json)
+    if court_order := registration_filing.get('courtOrder'):
+        filings.update_filing_court_order(filing_rec, court_order)
 
     # Update the filing json with identifier and founding date.
     registration_json = copy.deepcopy(filing_rec.filing_json)
@@ -140,18 +87,3 @@ def process(business: Business,  # pylint: disable=too-many-branches
     filing_rec._filing_json = registration_json  # pylint: disable=protected-access; bypass to update filing data
 
     return business, filing_rec, filing_meta
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for registration.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['registration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
-                level='error')

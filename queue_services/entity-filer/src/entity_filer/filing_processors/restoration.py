@@ -97,20 +97,3 @@ def _update_parties(business: Business, parties: dict, filing_rec: Filing):
         business.party_roles.append(party_role)
 
     update_parties(business, parties, filing_rec, False)
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for restoration.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'restoration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['restoration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

@@ -101,21 +101,3 @@ def process(
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')
         rules_and_memorandum.update_memorandum(business, filing_submission, memorandum_file_key)
-
-
-def post_process(business: Business, filing: Filing, correction: bool = False):
-    """Post processing activities for incorporations.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    if not correction:
-        name_request.consume_nr(business, filing, 'alteration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['alteration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

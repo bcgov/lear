@@ -46,6 +46,7 @@ async def test_worker_admin_freeze(app, session, mocker):
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
+    business = Business.find_by_internal_id(final_filing.business_id)
 
     assert business.admin_freeze == True
     assert business.state_filing_id is None

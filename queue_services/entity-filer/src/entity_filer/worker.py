@@ -72,7 +72,7 @@ from entity_filer.filing_processors import (
     special_resolution,
     transition,
 )
-from entity_filer.filing_processors.filing_components import name_request
+from entity_filer.filing_processors.filing_components import business_profile, name_request
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -269,64 +269,69 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             db.session.add(filing_submission)
             db.session.commit()
 
-            # post filing changes to other services
-            if any('dissolution' in x for x in legal_filings):
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type,
-                    state=Business.State.HISTORICAL.name
-                )
-
-            if any('putBackOn' in x for x in legal_filings):
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type,
-                    state=Business.State.ACTIVE.name
-                )
-
-            if filing_core_submission.filing_type == FilingCore.FilingTypes.RESTORATION:
-                restoration.post_process(business, filing_submission)
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type,
-                    state=Business.State.ACTIVE.name
-                )
-
-            if any('alteration' in x for x in legal_filings):
-                alteration.post_process(business, filing_submission, is_correction)
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type
-                )
-
-            if any('changeOfRegistration' in x for x in legal_filings):
-                change_of_registration.post_process(business, filing_submission)
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type
-                )
-
-            if business.legal_type in ['SP', 'GP', 'BC', 'BEN', 'CC', 'ULC', 'CP'] and \
-                    any('correction' in x for x in legal_filings):
-                correction.post_process(business, filing_submission)
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type
-                )
-
-            if any('incorporationApplication' in x for x in legal_filings):
+            # update business id for new business
+            if filing_core_submission.filing_type in [
+                FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
+                FilingCore.FilingTypes.CONTINUATIONIN,
+                FilingCore.FilingTypes.CONVERSION, # corps conversion creates new business
+                FilingCore.FilingTypes.INCORPORATIONAPPLICATION,
+                FilingCore.FilingTypes.REGISTRATION
+            ]:
                 filing_submission.business_id = business.id
                 db.session.add(filing_submission)
                 db.session.commit()
-                incorporation_filing.update_affiliation(business, filing_submission)
+
+                # update affiliation for new business
+                if filing_core_submission.filing_type != FilingCore.FilingTypes.CONVERSION:
+                    business_profile.update_affiliation(business, filing_submission)
+
+            # post filing changes to other services
+            if filing_core_submission.filing_type in [
+                FilingCore.FilingTypes.ALTERATION,
+                FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                FilingCore.FilingTypes.CORRECTION,
+                FilingCore.FilingTypes.DISSOLUTION,
+                FilingCore.FilingTypes.PUTBACKON,
+                FilingCore.FilingTypes.RESTORATION
+            ]:
+                state = None
+                if filing_core_submission.filing_type in [
+                    FilingCore.FilingTypes.DISSOLUTION,
+                    FilingCore.FilingTypes.PUTBACKON,
+                    FilingCore.FilingTypes.RESTORATION
+                ]:
+                    state = business.state.name # state changed to HISTORICAL/ACTIVE
+
+                AccountService.update_entity(
+                    business_registration=business.identifier,
+                    business_name=business.legal_name,
+                    corp_type_code=business.legal_type,
+                    state=state
+                )
+
+            # post filing changes to other services
+            if filing_core_submission.filing_type in [
+                FilingCore.FilingTypes.ALTERATION,
+                FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
+                FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                FilingCore.FilingTypes.CHANGEOFNAME,
+                FilingCore.FilingTypes.CONTINUATIONIN,
+                FilingCore.FilingTypes.CONVERSION,
+                FilingCore.FilingTypes.CORRECTION,
+                FilingCore.FilingTypes.INCORPORATIONAPPLICATION,
+                FilingCore.FilingTypes.REGISTRATION,
+                FilingCore.FilingTypes.RESTORATION,
+            ]:
                 name_request.consume_nr(business, filing_submission)
-                incorporation_filing.post_process(business, filing_submission)
+                if filing_core_submission.filing_type != FilingCore.FilingTypes.CONVERSION:
+                    business_profile.update_business_profile(business, filing_submission)
+
+            # publish MRAS email
+            if filing_core_submission.filing_type in [
+                FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
+                FilingCore.FilingTypes.CONTINUATIONIN,
+                FilingCore.FilingTypes.INCORPORATIONAPPLICATION
+            ]:
                 try:
                     await publish_email_message(
                         qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
@@ -337,31 +342,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         f'on Queue with error:{err}',
                         level='error'
                     )
-
-            if any('registration' in x for x in legal_filings):
-                filing_submission.business_id = business.id
-                db.session.add(filing_submission)
-                db.session.commit()
-                registration.update_affiliation(business, filing_submission)
-                name_request.consume_nr(business, filing_submission, 'registration')
-                registration.post_process(business, filing_submission)
-
-            if any('amalgamationApplication' in x for x in legal_filings):
-                filing_submission.business_id = business.id
-                db.session.add(filing_submission)
-                db.session.commit()
-                amalgamation_application.update_affiliation(business, filing_submission)
-                name_request.consume_nr(business, filing_submission, 'amalgamationApplication')
-                amalgamation_application.post_process(business, filing_submission)
-
-            if any('changeOfName' in x for x in legal_filings):
-                change_of_name.post_process(business, filing_submission)
-
-            if any('conversion' in x for x in legal_filings):
-                filing_submission.business_id = business.id
-                db.session.add(filing_submission)
-                db.session.commit()
-                conversion.post_process(business, filing_submission)
 
             try:
                 await publish_email_message(

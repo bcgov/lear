@@ -13,12 +13,8 @@
 # limitations under the License.
 """File processing rules and actions for the amalgamation application of a business."""
 import copy
-from contextlib import suppress
-from http import HTTPStatus
 from typing import Dict
 
-import dpath
-import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from legal_api import db
 from legal_api.models import (
@@ -28,70 +24,18 @@ from legal_api.models import (
     Filing,
     OfficeType,
     PartyRole,
-    RegistrationBootstrap,
 )
-from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
     JSON_ROLE_CONVERTER,
     aliases,
     business_info,
-    business_profile,
     filings,
     shares,
 )
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
-
-
-def update_affiliation(business: Business, filing: Filing):
-    """Create an affiliation for the business and remove the bootstrap."""
-    try:
-        bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
-
-        nr_number = (filing.filing_json
-                     .get('filing')
-                     .get('amalgamationApplication', {})
-                     .get('nameRequest', {})
-                     .get('nrNumber'))
-        details = {
-            'bootstrapIdentifier': bootstrap.identifier,
-            'identifier': business.identifier,
-            'nrNumber': nr_number
-        }
-
-        rv = AccountService.create_affiliation(
-            account=bootstrap.account,
-            business_registration=business.identifier,
-            business_name=business.legal_name,
-            corp_type_code=business.legal_type,
-            details=details
-        )
-
-        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
-            deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
-            sentry_sdk.capture_message(
-                f'Queue Error: Unable to affiliate business:{business.identifier} for filing:{filing.id}',
-                level='error'
-            )
-        else:
-            # update the bootstrap to use the new business identifier for the name
-            bootstrap_update = AccountService.update_entity(
-                business_registration=bootstrap.identifier,
-                business_name=business.identifier,
-                corp_type_code='ATMP'
-            )
-
-        if rv not in (HTTPStatus.OK, HTTPStatus.CREATED) \
-                or ('deaffiliation' in locals() and deaffiliation != HTTPStatus.OK)\
-                or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK):
-            raise QueueException
-    except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
-        sentry_sdk.capture_message(
-            f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
-            level='error'
-        )
 
 
 def create_amalgamating_businesses(amalgamation_filing: Dict, amalgamation: Amalgamation, filing_rec: Filing):
@@ -191,11 +135,9 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
 
     if name_translations := amalgamation_filing.get('nameTranslations'):
         aliases.update_aliases(business, name_translations)
-
-    # update court order, if any is present
-    with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(filing, '/amalgamationApplication/courtOrder')
-        filings.update_filing_court_order(filing_rec, court_order_json)
+    
+    if court_order := amalgamation_filing.get('courtOrder'):
+        filings.update_filing_court_order(filing_rec, court_order)
 
     # Update the filing json with identifier and founding date.
     amalgamation_json = copy.deepcopy(filing_rec.filing_json)
@@ -268,18 +210,3 @@ def _set_shares(primary_or_holding_business, amalgamation_filing):
             del series['id']
         share_classes.append(share_class_json)
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for amalgamation application.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['amalgamationApplication']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
-                level='error')

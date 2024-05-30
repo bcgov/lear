@@ -112,20 +112,3 @@ def _process_firms_conversion(business: Business, conversion_filing: Dict, filin
         business_start_date = dpath.util.get(conversion_filing, '/filing/conversion/startDate')
         if business_start_date:
             business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for conversion ledger.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'conversion')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['conversion']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
-                level='error')

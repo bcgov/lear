@@ -24,11 +24,11 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.utils import get_str
 
 
-def consume_nr(business: Business, filing: Filing, filing_type='incorporationApplication'):
+def consume_nr(business: Business, filing: Filing):
     """Update the nr to a consumed state."""
     try:
         # skip this if none (nrNumber will not be available for numbered company)
-        if nr_num := get_str(filing.filing_json, f'/filing/{filing_type}/nameRequest/nrNumber'):
+        if nr_num := get_str(filing.filing_json, f'/filing/{filing.filing_type}/nameRequest/nrNumber'):
 
             namex_svc_url = current_app.config.get('NAMEX_API')
             token = AccountService.get_bearer_token()

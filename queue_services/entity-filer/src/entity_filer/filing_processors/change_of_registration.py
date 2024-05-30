@@ -141,20 +141,3 @@ def _create_party_info(business, change_filing_rec, party_info):
             change_filing_rec.filing_party_roles.append(party_role)
         else:
             business.party_roles.append(party_role)
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for change of registration.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'changeOfRegistration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['changeOfRegistration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')
