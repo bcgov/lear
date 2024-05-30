@@ -119,7 +119,7 @@ def _has_no_transition_filed_after_restoration():
     restoration_filing = aliased(Filing)
     transition_filing = aliased(Filing)
 
-    one_year_interval = text("""INTERVAL '1 YEAR'""")
+    restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
 
     return exists().where(
             and_(
@@ -131,7 +131,7 @@ def _has_no_transition_filed_after_restoration():
                     CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
                 ]),
                 restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
-                restoration_filing.effective_date + one_year_interval <= func.timezone('UTC', func.now()),
+                restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
                 not_(
                     exists().where(
                         and_(
@@ -142,7 +142,7 @@ def _has_no_transition_filed_after_restoration():
                             Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
-                                restoration_filing.effective_date + one_year_interval
+                                restoration_filing_effective_cutoff
                             )
                         )
                     )
