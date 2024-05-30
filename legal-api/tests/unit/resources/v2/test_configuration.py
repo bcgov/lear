@@ -59,6 +59,23 @@ def test_get_configurations_with_invalid_user(app, session, client, jwt):
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
+def test_get_configurations_with_filter_name(app, session, client, jwt):
+    """Assert that get results with filter name are returned."""
+    filter_name = 'DISSOLUTIONS_SUMMARY_EMAIL'
+
+    # test
+    rv = client.get(f'/api/v2/admin/configurations?name={filter_name}',
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'configurations' in rv.json
+    results = rv.json['configurations']
+    assert len(results) == 1
+    for res in results:
+        assert res['name'] == filter_name
+
+
 def test_put_configurations_with_valid_data(app, session, client, jwt):
     """Assert that update values successfully."""
 
