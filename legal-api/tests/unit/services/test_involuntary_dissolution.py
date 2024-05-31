@@ -285,3 +285,25 @@ def test_get_businesses_eligible_query_xpro_from_nwpta(session, test_name, juris
     else:
         assert result
         assert result[0] == business
+
+
+@pytest.mark.parametrize(
+    'test_name, admin_freeze, eligible', {
+        ('BUSINESS_NOT_ADMIN_FREEZE', False, True),
+        ('BUSINESS_ADMIN_FREEZE', True, False)
+    }
+)
+def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligible):
+    """Assert service returns eligible business excluding admin frozen businesses"""
+    identifier = 'BC1234567'
+    business = factory_business(identifier=identifier, admin_freeze=admin_freeze, entity_type=Business.LegalTypes.COMP.value)
+    if not eligible:
+        business.no_dissolution = True
+        business.save()
+
+    check_query = InvoluntaryDissolutionService._get_businesses_eligible_query().\
+                    filter(Business.admin_freeze.is_(True)).count()
+    assert check_query == 0
+
+    check_eligibility = InvoluntaryDissolutionService.check_business_eligibility(identifier)
+    assert check_eligibility == eligible
