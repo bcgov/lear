@@ -126,7 +126,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
         assert correction.get('toLegalName') is None
         assert correction.get('fromLegalName') is None
 
-    corrected_filing = Filing.find_by_id(corrected_filing.id)
+    corrected_filing = Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == filing['filing']['correction']['comment']

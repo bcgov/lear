@@ -189,13 +189,13 @@ EXPECTED_DATA = {
                       'name': 'incorporationApplication'},
     FilingKey.IA_ULC: {'displayName': 'BC Unlimited Liability Company Incorporation Application', 'feeCode': 'BCINC',
                        'name': 'incorporationApplication'},
-    FilingKey.CONTINUATION_IN_C: {'displayName': 'BC Limited Company Continuation In Application', 'feeCode': 'CONTI',
+    FilingKey.CONTINUATION_IN_C: {'displayName': 'BC Limited Company Continuation Application', 'feeCode': 'CONTI',
                                   'name': 'continuationIn'},
-    FilingKey.CONTINUATION_IN_CBEN: {'displayName': 'BC Benefit Company Continuation In Application', 'feeCode': 'CONTI',
+    FilingKey.CONTINUATION_IN_CBEN: {'displayName': 'BC Benefit Company Continuation Application', 'feeCode': 'CONTI',
                                      'name': 'continuationIn'},
-    FilingKey.CONTINUATION_IN_CCC: {'displayName': 'BC Community Contribution Company Continuation In Application',
+    FilingKey.CONTINUATION_IN_CCC: {'displayName': 'BC Community Contribution Company Continuation Application',
                                     'feeCode': 'CONTI', 'name': 'continuationIn'},
-    FilingKey.CONTINUATION_IN_CUL: {'displayName': 'BC Unlimited Liability Company Continuation In Application',
+    FilingKey.CONTINUATION_IN_CUL: {'displayName': 'BC Unlimited Liability Company Continuation Application',
                                     'feeCode': 'CONTI', 'name': 'continuationIn'},
     FilingKey.REG_SP: {'displayName': 'BC Sole Proprietorship Registration', 'feeCode': 'FRREG',
                        'name': 'registration'},
@@ -2166,7 +2166,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
     ]
 )
 def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, jwt, test_name, business_exists, state,
-                                                          legal_types, username, roles, expected):
+                                                    legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business is in dissolution."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
     headers = {'Authorization': 'Bearer ' + token}

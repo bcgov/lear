@@ -218,10 +218,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'start_date',
             'jurisdiction',
             'foreign_jurisdiction_region',
-            'foreign_identifier',
             'foreign_legal_name',
-            'foreign_legal_type',
-            'foreign_incorporation_date',
             'send_ar_ind',
             'restoration_expiry_date',
             'continuation_out_date'
@@ -265,10 +262,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
     jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
     foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
-    foreign_identifier = db.Column(db.String(15))
     foreign_legal_name = db.Column(db.String(1000))
-    foreign_legal_type = db.Column(db.String(10))
-    foreign_incorporation_date = db.Column(db.DateTime(timezone=True))
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -282,6 +276,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
     amalgamation = db.relationship('Amalgamation', lazy='dynamic')
     batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
+    jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -309,8 +304,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if self.is_firm and flag_on:
             sort_name = func.trim(
                 func.coalesce(Party.organization_name, '') +
-                func.coalesce(Party.last_name+' ', '') +
-                func.coalesce(Party.first_name+' ', '') +
+                func.coalesce(Party.last_name + ' ', '') +
+                func.coalesce(Party.first_name + ' ', '') +
                 func.coalesce(Party.middle_initial, '')
             )
 
@@ -423,10 +418,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
         find_in_batch_processing = db.session.query(BatchProcessing, Batch).\
             filter(BatchProcessing.business_id == self.id).\
-            filter(BatchProcessing.status.notin_([
-                BatchProcessing.BatchProcessingStatus.COMPLETED,
-                BatchProcessing.BatchProcessingStatus.WITHDRAWN])
-            ). \
+            filter(BatchProcessing.status.notin_([BatchProcessing.BatchProcessingStatus.COMPLETED,
+                                                  BatchProcessing.BatchProcessingStatus.WITHDRAWN])). \
             filter(Batch.id == BatchProcessing.batch_id).\
             filter(Batch.status != Batch.BatchStatus.COMPLETED).\
             filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
@@ -495,6 +488,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'adminFreeze': self.admin_freeze or False,
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
+            'inDissolution': self.in_dissolution,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
             'state': self.state.name if self.state else Business.State.ACTIVE.name
@@ -539,11 +533,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
             d['jurisdictionRegion'] = self.foreign_jurisdiction_region
-            d['foreignIdentifier'] = self.foreign_identifier
             d['foreignLegalName'] = self.foreign_legal_name
-            d['foreignLegalType'] = self.foreign_legal_type
-            d['foreignIncorporationDate'] = LegislationDatetime.format_as_legislation_date(
-                self.foreign_incorporation_date) if self.foreign_incorporation_date else None
 
         d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
         d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')
@@ -669,7 +659,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                        ).one_or_none()
             alternate_names.append({
                 'name': alias.alias,
-                'startDate':  LegislationDatetime.format_as_legislation_date(filing.effective_date),
+                'startDate': LegislationDatetime.format_as_legislation_date(filing.effective_date),
                 'type': alias.type
             })
 

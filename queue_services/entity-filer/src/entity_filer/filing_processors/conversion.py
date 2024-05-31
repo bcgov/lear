@@ -26,20 +26,13 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.change_of_registration import update_parties as upsert_parties
-from entity_filer.filing_processors.filing_components import (
-    aliases,
-    business_info,
-    business_profile,
-    name_request,
-    shares,
-)
+from entity_filer.filing_processors.filing_components import aliases, business_info, shares
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
@@ -112,20 +105,3 @@ def _process_firms_conversion(business: Business, conversion_filing: Dict, filin
         business_start_date = dpath.util.get(conversion_filing, '/filing/conversion/startDate')
         if business_start_date:
             business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for conversion ledger.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'conversion')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['conversion']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
-                level='error')

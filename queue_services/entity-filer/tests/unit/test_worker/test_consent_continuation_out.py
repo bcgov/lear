@@ -42,14 +42,15 @@ async def test_worker_consent_continuation_out(app, session, mocker, test_name, 
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
     business.save()
-
+    business_id=business.id
+    
     filing_json = copy.deepcopy(FILING_TEMPLATE)
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['header']['name'] = 'consentContinuationOut'
     filing_json['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    cco_filing = create_filing(payment_id, filing_json, business_id=business.id)
+    cco_filing = create_filing(payment_id, filing_json, business_id=business_id)
 
     cco_filing.effective_date = LegislationDatetime.as_utc_timezone(effective_date)
     cco_filing.save()
@@ -76,7 +77,7 @@ async def test_worker_consent_continuation_out(app, session, mocker, test_name, 
 
     expiry_date_utc = LegislationDatetime.as_utc_timezone(expiry_date)
 
-    cco = ConsentContinuationOut.get_active_cco(business.id, expiry_date_utc)
+    cco = ConsentContinuationOut.get_active_cco(business_id, expiry_date_utc)
     assert cco
     assert cco[0].foreign_jurisdiction == \
         filing_json['filing']['consentContinuationOut']['foreignJurisdiction']['country']

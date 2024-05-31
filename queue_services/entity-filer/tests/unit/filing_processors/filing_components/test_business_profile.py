@@ -64,6 +64,6 @@ def test_update_business_profile(app, session, requests_mock,
                           status_code=put_status)
 
         # test
-        err = business_profile.update_business_profile(business, new_data['contactPoint'])
+        err = business_profile._update_business_profile(business, new_data['contactPoint'])
 
         assert err == expected_error

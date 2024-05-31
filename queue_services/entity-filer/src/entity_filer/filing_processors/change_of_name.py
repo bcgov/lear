@@ -15,10 +15,9 @@
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
-from legal_api.models import Business, Filing
+from legal_api.models import Business
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import name_request
 
 
 def process(business: Business, filing: Dict, filing_meta: FilingMeta):
@@ -34,11 +33,3 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
                                   'toLegalName': new_name}
 
     business.legal_name = new_name
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for change of name.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'changeOfName')

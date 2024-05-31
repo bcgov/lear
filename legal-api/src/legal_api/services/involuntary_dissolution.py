@@ -14,6 +14,8 @@
 
 """This provides the service for involuntary dissolution."""
 from typing import Final
+from dataclasses import dataclass
+from typing import Tuple
 
 from sqlalchemy import and_, exists, func, not_, or_, text
 from sqlalchemy.orm import aliased
@@ -37,12 +39,28 @@ class InvoluntaryDissolutionService():
         Business.LegalTypes.LIMITED_CO.value
     ]
 
+    @dataclass
+    class EligibilityDetails:
+        """Details about the eligibility of a business for involuntary dissolution."""
+
+        ar_overdue: bool
+        transition_overdue: bool
+
     @classmethod
-    def check_business_eligibility(cls, identifier: str):
-        """Return true if the business with provided identifier is eligible for dissolution."""
+    def check_business_eligibility(cls, identifier: str) -> Tuple[bool, EligibilityDetails]:
+        """Return true if the business with provided identifier is eligible for dissolution.
+
+        Returns eligible, eligibility_details
+        """
         query = cls._get_businesses_eligible_query().\
             filter(Business.identifier == identifier)
-        return bool(query.one_or_none())
+        result = query.one_or_none()
+
+        if result is None:
+            return False, None
+
+        eligibility_details = cls.EligibilityDetails(ar_overdue=result[1], transition_overdue=result[2])
+        return True, eligibility_details
 
     @classmethod
     def get_businesses_eligible_count(cls):
@@ -60,15 +78,23 @@ class InvoluntaryDissolutionService():
                                   Batch.status != Batch.BatchStatus.COMPLETED,
                                   Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
 
-        query = db.session.query(Business).\
+        specific_filing_overdue = _has_specific_filing_overdue()
+        no_transition_filed_after_restoration = _has_no_transition_filed_after_restoration()
+
+        query = db.session.query(
+            Business,
+            specific_filing_overdue.label('ar_overdue'),
+            no_transition_filed_after_restoration.label('transition_overdue')
+        ).\
+            filter(not_(Business.admin_freeze.is_(True))).\
             filter(Business.state == Business.State.ACTIVE).\
             filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False)).\
             filter(not_(subquery)).\
             filter(
                 or_(
-                    _has_specific_filing_overdue(),
-                    _has_no_transition_filed_after_restoration()
+                    specific_filing_overdue,
+                    no_transition_filed_after_restoration
                 )
             ).\
             filter(
@@ -121,6 +147,8 @@ def _has_no_transition_filed_after_restoration():
     restoration_filing = aliased(Filing)
     transition_filing = aliased(Filing)
 
+    restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
+
     return exists().where(
             and_(
                 Business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
@@ -131,6 +159,7 @@ def _has_no_transition_filed_after_restoration():
                     CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
                 ]),
                 restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
                 not_(
                     exists().where(
                         and_(
@@ -141,7 +170,7 @@ def _has_no_transition_filed_after_restoration():
                             Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
-                                restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
+                                restoration_filing_effective_cutoff
                             )
                         )
                     )

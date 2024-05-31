@@ -32,6 +32,7 @@ from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
 from .change_of_registration import validate as change_of_registration_validate
 from .consent_continuation_out import validate as consent_continuation_out_validate
+from .continuation_in import validate as continuation_in_validate
 from .continuation_out import validate as continuation_out_validate
 from .conversion import validate as conversion_validate
 from .correction import validate as correction_validate
@@ -192,6 +193,9 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['amalgamationApplication'].get('name'):
                     err = amalgamation_application_validate(filing_json, account_id)
+
+                elif k == Filing.FILINGS['continuationIn'].get('name'):
+                    err = continuation_in_validate(filing_json)
 
                 if err:
                     return err

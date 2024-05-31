@@ -24,9 +24,10 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.utils import get_str
 
 
-def consume_nr(business: Business, filing: Filing, filing_type='incorporationApplication'):
+def consume_nr(business: Business, filing: Filing, filing_type: str = None):
     """Update the nr to a consumed state."""
     try:
+        filing_type = filing_type if filing_type else filing.filing_type
         # skip this if none (nrNumber will not be available for numbered company)
         if nr_num := get_str(filing.filing_json, f'/filing/{filing_type}/nameRequest/nrNumber'):
 

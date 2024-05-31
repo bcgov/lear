@@ -197,7 +197,22 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
     return None
 
 
-def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
+def validate_parties_names(filing_json: dict, filing_type: str) -> list:
+    """Validate the parties name for COLIN sync."""
+    # FUTURE: This validation should be removed when COLIN sync back is no longer required.
+    # This is required to work around first and middle name length mismatches between LEAR and COLIN.
+    # Syncing back to COLIN would error out on first and middle name length exceeding 20 characters for party
+    msg = []
+    parties_array = filing_json['filing'][filing_type]['parties']
+    party_path = f'/filing/{filing_type}/parties'
+
+    for item in parties_array:
+        msg.extend(validate_party_name(item, party_path))
+
+    return msg
+
+
+def validate_party_name(party: dict, party_path: str) -> list:
     """Validate party name."""
     msg = []
 
@@ -205,7 +220,7 @@ def validate_party_name(legal_type: str, party: dict, party_path: str) -> list:
     officer = party['officer']
     party_type = officer['partyType']
 
-    if party_type == 'person' and legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.COOP.value]:
+    if party_type == 'person':
         party_roles = [x.get('roleType') for x in party['roles']]
         party_roles_str = ', '.join(party_roles)
 
@@ -250,7 +265,11 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     valid_numbered_legal_type = [Business.LegalTypes.BCOMP.value,
                                  Business.LegalTypes.COMP.value,
                                  Business.LegalTypes.BC_CCC.value,
-                                 Business.LegalTypes.BC_ULC_COMPANY.value]
+                                 Business.LegalTypes.BC_ULC_COMPANY.value,
+                                 Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                                 Business.LegalTypes.CONTINUE_IN.value,
+                                 Business.LegalTypes.CCC_CONTINUE_IN.value,
+                                 Business.LegalTypes.ULC_CONTINUE_IN.value]
     if not nr_number and not legal_name:
         if legal_type in valid_numbered_legal_type:
             return []  # It's numbered company
