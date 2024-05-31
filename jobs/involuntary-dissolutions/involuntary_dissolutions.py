@@ -18,19 +18,16 @@ import os
 from datetime import datetime
 
 import pytz
+import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from croniter import croniter
 from flask import Flask
-from sentry_sdk.integrations.logging import LoggingIntegration
-
-import config  # pylint: disable=import-error, wrong-import-order
 from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: I001
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
+from sentry_sdk.integrations.logging import LoggingIntegration
+
+import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
-
-
-import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports, wrong-import-order; conflicts with Flake8
-
 
 
 # noqa: I003
@@ -74,6 +71,7 @@ def register_shellcontext(app):
 
     app.shell_context_processor(shell_context)
 
+
 def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
     """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
     try:
@@ -110,7 +108,6 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
         # TODO: send summary email to BA inbox email
         app.logger.debug('Sending email.')
 
-
     except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
         app.logger.error(err)
 
@@ -131,7 +128,7 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
             if cron_valid:
                 initiate_dissolution_process(application)
             else:
-                application.logger.debug('Skipping job run since current day of the week does not match the cron schedule.')
+                application.logger.debug('Skipping job run since current day of the week does not match the cron schedule.')  # noqa: E501
 
 if __name__ == '__main__':
     application = create_app()
