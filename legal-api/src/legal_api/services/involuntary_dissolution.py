@@ -56,7 +56,7 @@ class InvoluntaryDissolutionService():
     def get_businesses_eligible(cls, num_allowed: int = None):
         """Return the businesses eligible for involuntary dissolution."""
         query = cls._get_businesses_eligible_query()
-        if (num_allowed):
+        if num_allowed:
             eligible_businesses = query.limit(num_allowed).all()
         else:
             eligible_businesses = query.all()
