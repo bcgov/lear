@@ -13,6 +13,9 @@
 # limitations under the License.
 
 """This provides the service for involuntary dissolution."""
+from dataclasses import dataclass
+from typing import Tuple
+
 from sqlalchemy import and_, exists, func, not_, or_, text
 from sqlalchemy.orm import aliased
 
@@ -22,12 +25,28 @@ from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 class InvoluntaryDissolutionService():
     """Provides services to get information for involuntary dissolution."""
 
+    @dataclass
+    class EligibilityDetails:
+        """Details about the eligibility of a business for involuntary dissolution."""
+
+        ar_overdue: bool
+        transition_overdue: bool
+
     @classmethod
-    def check_business_eligibility(cls, identifier: str):
-        """Return true if the business with provided identifier is eligible for dissolution."""
+    def check_business_eligibility(cls, identifier: str) -> Tuple[bool, EligibilityDetails]:
+        """Return true if the business with provided identifier is eligible for dissolution.
+
+        Returns eligible, eligibility_details
+        """
         query = cls._get_businesses_eligible_query().\
             filter(Business.identifier == identifier)
-        return bool(query.one_or_none())
+        result = query.one_or_none()
+
+        if result is None:
+            return False, None
+
+        eligibility_details = cls.EligibilityDetails(ar_overdue=result[1], transition_overdue=result[2])
+        return True, eligibility_details
 
     @classmethod
     def get_businesses_eligible_count(cls):
@@ -58,7 +77,14 @@ class InvoluntaryDissolutionService():
                                   Batch.status != Batch.BatchStatus.COMPLETED,
                                   Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
 
-        query = db.session.query(Business).\
+        specific_filing_overdue = _has_specific_filing_overdue()
+        no_transition_filed_after_restoration = _has_no_transition_filed_after_restoration()
+
+        query = db.session.query(
+            Business,
+            specific_filing_overdue.label('ar_overdue'),
+            no_transition_filed_after_restoration.label('transition_overdue')
+        ).\
             filter(not_(Business.admin_freeze.is_(True))).\
             filter(Business.state == Business.State.ACTIVE).\
             filter(Business.legal_type.in_(eligible_types)).\
@@ -66,8 +92,8 @@ class InvoluntaryDissolutionService():
             filter(not_(subquery)).\
             filter(
                 or_(
-                    _has_specific_filing_overdue(),
-                    _has_no_transition_filed_after_restoration()
+                    specific_filing_overdue,
+                    no_transition_filed_after_restoration
                 )
             ).\
             filter(
