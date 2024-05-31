@@ -52,8 +52,8 @@ def test_check_business_eligibility(session, test_name, eligible):
         business.no_dissolution = True
         business.save()
 
-    result = InvoluntaryDissolutionService.check_business_eligibility(identifier)
-    assert result == eligible 
+    result, eligiblity_details = InvoluntaryDissolutionService.check_business_eligibility(identifier)
+    assert result == eligible
 
 
 def test_get_businesses_eligible_count(session):
@@ -77,7 +77,7 @@ def test_get_businesses_eligible_query_active_business(session, test_name, state
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -106,7 +106,7 @@ def test_get_businesses_eligible_query_eligible_type(session, test_name, legal_t
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -126,7 +126,7 @@ def test_get_businesses_eligible_query_no_dissolution(session, test_name, no_dis
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -152,13 +152,13 @@ def test_get_businesses_eligible_query_in_dissolution(session, test_name, batch_
             identifier = business.identifier,
             status = batch_processing_status
         )
-    
+
     result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -190,7 +190,7 @@ def test_get_businesses_eligible_query_specific_filing_overdue(session, test_nam
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -219,7 +219,7 @@ def test_get_businesses_eligible_query_no_transition_filed(session, test_name, e
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -233,13 +233,13 @@ def test_get_businesses_eligible_query_fed_filing(session, test_name, exclude):
     business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
     if test_name == 'FED':
         factory_pending_filing(business, RESTORATION_FILING)
-    
+
     result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -263,7 +263,7 @@ def test_get_businesses_eligible_query_limited_restored(session, test_name, excl
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -288,7 +288,7 @@ def test_get_businesses_eligible_query_xpro_from_nwpta(session, test_name, juris
         assert not result
     else:
         assert result
-        assert result[0] == business
+        assert result[0][0] == business
 
 
 @pytest.mark.parametrize(
@@ -306,5 +306,5 @@ def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligi
                     filter(Business.admin_freeze.is_(True)).count()
     assert check_query == 0
 
-    check_eligibility = InvoluntaryDissolutionService.check_business_eligibility(identifier)
+    check_eligibility, eligibility_details = InvoluntaryDissolutionService.check_business_eligibility(identifier)
     assert check_eligibility == eligible
