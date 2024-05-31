@@ -79,7 +79,7 @@ def register_shellcontext(app):
 
 
 def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
-    """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
+    """Initiate dissolution process for new businesses that meet dissolution criteria"""
     try:
         # check if batch has already run today
         batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION, start_date=datetime.today())
