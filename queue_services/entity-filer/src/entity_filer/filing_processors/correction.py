@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the correction filing."""
-from contextlib import suppress
 from typing import Dict
 
 import pytz
-import sentry_sdk
 from legal_api.models import Business, Comment, Filing
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_profile, name_request
 from entity_filer.filing_processors.filing_components.correction import correct_business_data
 
 
@@ -62,20 +59,3 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
 
     original_filing.save_to_session()
     return correction_filing
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for correction.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'correction')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['correction']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

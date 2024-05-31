@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import registration
+from entity_filer.filing_processors.filing_components import business_profile
 from tests.unit import create_filing
 
 
@@ -161,7 +162,7 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
         with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
             with patch.object(AccountService, 'update_entity', return_value=HTTPStatus.OK):
                 with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
-                    registration.update_affiliation(business, filing_rec)
+                    business_profile.update_affiliation(business, filing_rec)
                     assert AccountService.create_affiliation.call_count == 1
                     assert AccountService.delete_affiliation.call_count == 0
                     assert AccountService.update_entity.call_count == 1

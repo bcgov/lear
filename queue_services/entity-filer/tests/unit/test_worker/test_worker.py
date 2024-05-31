@@ -422,7 +422,7 @@ async def test_process_filing_completed(app, session, mocker):
     assert business.last_ar_date
 
 
-async def test_correction_filing(app, session):
+async def test_correction_filing(app, session, mocker):
     """Assert we can process a correction filing."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -451,6 +451,7 @@ async def test_correction_filing(app, session):
     correction_filing_id = correction_filing.id
     filing_msg = {'filing': {'id': correction_filing_id}}
 
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
     # TEST
     await process_filing(filing_msg, app)
 

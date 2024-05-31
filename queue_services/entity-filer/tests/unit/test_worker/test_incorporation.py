@@ -27,6 +27,7 @@ from legal_api.services import RegistrationBootstrapService
 from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
+from entity_filer.filing_processors.filing_components import business_profile
 from entity_filer.worker import process_filing
 from tests.pytest_marks import colin_api_integration, integration_affiliation, integration_namex_api
 from tests.unit import create_filing
@@ -94,19 +95,27 @@ async def test_incorporation_filing(app, session, bootstrap):
     ('ULC', 'BC0001095'),
     ('CC', 'BC0001095'),
 ])
-def test_update_affiliation(legal_type, corp_num):
+def test_update_affiliation(app, session, legal_type, corp_num):
     """Assert that affiliation for IA results in expected Auth API calls."""
-    from entity_filer.filing_processors import incorporation_filing
 
-    business = Business(identifier=corp_num, legal_type=legal_type, legal_name='Test')
-    filing = Filing(id=1)
     bootstrap = RegistrationBootstrap(account=1111111, _identifier='TNpUnst/Va')
+    nr_number = 'NR 0000021'
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_number
+    filing = create_filing('123', filing_json)
+    business = Business(identifier=corp_num, legal_type=legal_type, legal_name='Test')
+
+    details = {
+        'bootstrapIdentifier': bootstrap.identifier,
+        'identifier': business.identifier,
+        'nrNumber': nr_number
+    }
 
     with patch.object(AccountService, 'create_affiliation', return_value=HTTPStatus.OK):
         with patch.object(AccountService, 'delete_affiliation', return_value=HTTPStatus.OK):
             with patch.object(AccountService, 'update_entity', return_value=HTTPStatus.OK):
                 with patch.object(RegistrationBootstrap, 'find_by_identifier', return_value=bootstrap):
-                    incorporation_filing.update_affiliation(business, filing)
+                    business_profile.update_affiliation(business, filing)
 
                     assert AccountService.create_affiliation.call_count == 1
                     assert AccountService.delete_affiliation.call_count == 0
@@ -116,7 +125,9 @@ def test_update_affiliation(legal_type, corp_num):
                     expected_affiliation_call_args = call(account=bootstrap.account,
                                                           business_registration=business.identifier,
                                                           business_name=business.legal_name,
-                                                          corp_type_code=business.legal_type)
+                                                          corp_type_code=business.legal_type,
+                                                          pass_code = '',
+                                                          details=details)
                     assert first_affiliation_call_args == expected_affiliation_call_args
 
                     first_update_entity_call_args = AccountService.update_entity.call_args_list[0]
@@ -129,13 +140,12 @@ def test_update_affiliation(legal_type, corp_num):
 def test_update_affiliation_error(mocker):
     """Assert that a message is posted to sentry if an error occurs."""
     import sentry_sdk
-    from entity_filer.filing_processors import incorporation_filing
     filing = Filing(id=1)
     mocker.patch('sentry_sdk.capture_message')
-    incorporation_filing.update_affiliation(None, filing)
+    business_profile.update_affiliation(None, filing)
 
     sentry_sdk.capture_message.assert_called_once_with(
-        f"Queue Error: Affiliation error for filing:{filing.id}, with err:'NoneType' object has no attribute 'account'",
+        f"Queue Error: Affiliation error for filing:{filing.id}, with err:'NoneType' object has no attribute 'get'",
         level='error'
     )
 

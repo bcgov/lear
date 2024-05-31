@@ -17,13 +17,12 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-import sentry_sdk
 from legal_api.models import Business, Filing, PartyRole
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
-from entity_filer.filing_processors.filing_components import business_info, business_profile, filings, name_request
+from entity_filer.filing_processors.filing_components import business_info, filings
 from entity_filer.filing_processors.filing_components.aliases import update_aliases
 from entity_filer.filing_processors.filing_components.offices import update_offices
 from entity_filer.filing_processors.filing_components.parties import update_parties
@@ -97,20 +96,3 @@ def _update_parties(business: Business, parties: dict, filing_rec: Filing):
         business.party_roles.append(party_role)
 
     update_parties(business, parties, filing_rec, False)
-
-
-def post_process(business: Business, filing: Filing):
-    """Post processing activities for restoration.
-
-    THIS SHOULD NOT ALTER THE MODEL
-    """
-    name_request.consume_nr(business, filing, 'restoration')
-
-    with suppress(IndexError, KeyError, TypeError):
-        if err := business_profile.update_business_profile(
-            business,
-            filing.json['filing']['restoration']['contactPoint']
-        ):
-            sentry_sdk.capture_message(
-                f'Queue Error: Update Business for filing:{filing.id},error:{err}',
-                level='error')

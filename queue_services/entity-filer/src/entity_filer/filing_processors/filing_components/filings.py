@@ -20,17 +20,17 @@ from legal_api.models import Filing
 from legal_api.utils.datetime import datetime
 
 
-def update_filing_court_order(filing_submission: Filing, court_order_json: Dict) -> Optional[Dict]:
+def update_filing_court_order(filing_submission: Filing, court_order: Dict) -> Optional[Dict]:
     """Update the court_order info for a Filing."""
     if not Filing:
         return {'error': babel('Filing required before alternate names can be set.')}
 
-    filing_submission.court_order_file_number = court_order_json.get('fileNumber')
-    filing_submission.court_order_effect_of_order = court_order_json.get('effectOfOrder')
-    filing_submission.order_details = court_order_json.get('orderDetails')
+    filing_submission.court_order_file_number = court_order.get('fileNumber')
+    filing_submission.court_order_effect_of_order = court_order.get('effectOfOrder')
+    filing_submission.order_details = court_order.get('orderDetails')
 
     with suppress(IndexError, KeyError, TypeError, ValueError):
-        filing_submission.court_order_date = datetime.fromisoformat(court_order_json.get('orderDate'))
+        filing_submission.court_order_date = datetime.fromisoformat(court_order.get('orderDate'))
 
     return None
 
