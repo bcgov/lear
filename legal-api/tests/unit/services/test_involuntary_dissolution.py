@@ -296,10 +296,7 @@ def test_get_businesses_eligible_query_xpro_from_nwpta(session, test_name, juris
 def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligible):
     """Assert service returns eligible business excluding admin frozen businesses"""
     identifier = 'BC1234567'
-    business = factory_business(identifier=identifier, admin_freeze=admin_freeze, entity_type=Business.LegalTypes.COMP.value)
-    if not eligible:
-        business.no_dissolution = True
-        business.save()
+    factory_business(identifier=identifier, admin_freeze=admin_freeze, entity_type=Business.LegalTypes.COMP.value)
 
     check_query = InvoluntaryDissolutionService._get_businesses_eligible_query().\
                     filter(Business.admin_freeze.is_(True)).count()
