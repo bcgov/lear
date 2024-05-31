@@ -26,7 +26,10 @@ from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
 
-import config  # pylint: disable=import-error
+import config  # pylint: disable=import-error, wrong-import-order
+from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: I001
+from legal_api.services.flags import Flags
+from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from utils.logging import setup_logging  # pylint: disable=import-error
 
 
@@ -75,11 +78,11 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
     """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
     try:
         # check if batch has already run today
-        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION).filter(Batch.start_date == datetime.today())
+        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION, start_date=datetime.today())
         if batch_today:
             app.logger.debug('Skipping job run since batch job has already run today.')
             return
-        
+
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
         businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
@@ -87,7 +90,7 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                       status=Batch.BatchStatus.PROCESSING,
-                      size=businesses.count(),
+                      size=len(businesses),
                       start_date=datetime.now())
         batch.save()
 
@@ -108,7 +111,7 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
         app.logger.debug('Sending email.')
 
 
-    except Exception as err:  # noqa: B902
+    except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
         app.logger.error(err)
 
 def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
