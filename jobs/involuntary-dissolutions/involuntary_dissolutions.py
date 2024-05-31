@@ -30,6 +30,9 @@ import config  # pylint: disable=import-error, wrong-import-order
 from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: I001
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
+from sentry_sdk.integrations.logging import LoggingIntegration
+
+import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
 
 
@@ -74,6 +77,7 @@ def register_shellcontext(app):
 
     app.shell_context_processor(shell_context)
 
+
 def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
     """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
     try:
@@ -109,7 +113,6 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
 
         # TODO: send summary email to BA inbox email
         app.logger.debug('Sending email.')
-
 
     except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
         app.logger.error(err)
