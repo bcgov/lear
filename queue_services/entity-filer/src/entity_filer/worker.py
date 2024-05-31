@@ -38,7 +38,6 @@ from flask import Flask
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
-from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
@@ -129,6 +128,25 @@ async def publish_event(business: Business, filing: Filing):
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
         logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
+
+
+async def publish_mras_email(filing: Filing):
+    """Publish MRAS email message onto the NATS emailer subject."""
+    if filing.filing_type in [
+        FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
+        FilingCore.FilingTypes.CONTINUATIONIN,
+        FilingCore.FilingTypes.INCORPORATIONAPPLICATION
+    ]:
+        try:
+            await publish_email_message(
+                qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing, 'mras')
+        except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+            # mark any failure for human review
+            capture_message(
+                f'Queue Error: Failed to place MRAS email for filing:{filing.id}'
+                f'on Queue with error:{err}',
+                level='error'
+            )
 
 
 async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
@@ -269,14 +287,15 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
             db.session.add(filing_submission)
             db.session.commit()
 
-            # update business id for new business
             if filing_core_submission.filing_type in [
                 FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
                 FilingCore.FilingTypes.CONTINUATIONIN,
-                FilingCore.FilingTypes.CONVERSION,  # corps conversion creates new business (not sure why)
+                # code says corps conversion creates a new business (not sure: why?, in use (not implemented in UI)?)
+                FilingCore.FilingTypes.CONVERSION,
                 FilingCore.FilingTypes.INCORPORATIONAPPLICATION,
                 FilingCore.FilingTypes.REGISTRATION
             ]:
+                # update business id for new business
                 filing_submission.business_id = business.id
                 db.session.add(filing_submission)
                 db.session.commit()
@@ -285,63 +304,33 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 if filing_core_submission.filing_type != FilingCore.FilingTypes.CONVERSION:
                     business_profile.update_affiliation(business, filing_submission)
 
+                name_request.consume_nr(business, filing_submission)
+                business_profile.update_business_profile(business, filing_submission)
+                await publish_mras_email(filing_submission)
+
             # post filing changes to other services
-            if filing_core_submission.filing_type in [
-                FilingCore.FilingTypes.ALTERATION,
-                FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                FilingCore.FilingTypes.CORRECTION,
-                FilingCore.FilingTypes.DISSOLUTION,
-                FilingCore.FilingTypes.PUTBACKON,
-                FilingCore.FilingTypes.RESTORATION
-            ]:
-                state = None
-                if filing_core_submission.filing_type in [
+            filing_types = [list(x.keys())[0] for x in legal_filings]
+            for filing_type in filing_types:
+                if filing_type in [
+                    FilingCore.FilingTypes.ALTERATION,
+                    FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                    FilingCore.FilingTypes.CORRECTION,
                     FilingCore.FilingTypes.DISSOLUTION,
                     FilingCore.FilingTypes.PUTBACKON,
                     FilingCore.FilingTypes.RESTORATION
                 ]:
-                    state = business.state.name  # state changed to HISTORICAL/ACTIVE
+                    business_profile.update_entity(business, filing_type)
 
-                AccountService.update_entity(
-                    business_registration=business.identifier,
-                    business_name=business.legal_name,
-                    corp_type_code=business.legal_type,
-                    state=state
-                )
-
-            # post filing changes to other services
-            if filing_core_submission.filing_type in [
-                FilingCore.FilingTypes.ALTERATION,
-                FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
-                FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                FilingCore.FilingTypes.CHANGEOFNAME,
-                FilingCore.FilingTypes.CONTINUATIONIN,
-                FilingCore.FilingTypes.CONVERSION,
-                FilingCore.FilingTypes.CORRECTION,
-                FilingCore.FilingTypes.INCORPORATIONAPPLICATION,
-                FilingCore.FilingTypes.REGISTRATION,
-                FilingCore.FilingTypes.RESTORATION,
-            ]:
-                name_request.consume_nr(business, filing_submission)
-                if filing_core_submission.filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
-                    business_profile.update_business_profile(business, filing_submission)
-
-            # publish MRAS email
-            if filing_core_submission.filing_type in [
-                FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
-                FilingCore.FilingTypes.CONTINUATIONIN,
-                FilingCore.FilingTypes.INCORPORATIONAPPLICATION
-            ]:
-                try:
-                    await publish_email_message(
-                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, 'mras')
-                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                    # mark any failure for human review
-                    capture_message(
-                        f'Queue Error: Failed to place email for filing:{filing_submission.id}'
-                        f'on Queue with error:{err}',
-                        level='error'
-                    )
+                if filing_type in [
+                    FilingCore.FilingTypes.ALTERATION,
+                    FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                    FilingCore.FilingTypes.CHANGEOFNAME,
+                    FilingCore.FilingTypes.CORRECTION,
+                    FilingCore.FilingTypes.RESTORATION,
+                ]:
+                    name_request.consume_nr(business, filing_submission, filing_type)
+                    if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
+                        business_profile.update_business_profile(business, filing_submission, filing_type)
 
             try:
                 await publish_email_message(

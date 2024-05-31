@@ -27,9 +27,10 @@ from legal_api.services.bootstrap import AccountService
 from entity_filer.filing_processors.filing_components import business_info
 
 
-def update_business_profile(business: Business, filing: Filing):
+def update_business_profile(business: Business, filing: Filing, filing_type: str = None):
     """Update business profile."""
-    if contact_point := filing.filing_json['filing'][filing.filing_type].get('contactPoint'):
+    filing_type = filing_type if filing_type else filing.filing_type
+    if contact_point := filing.filing_json['filing'][filing_type].get('contactPoint'):
         if err := _update_business_profile(business, contact_point):
             sentry_sdk.capture_message(
                 f'Queue Error: Update Business for filing:{filing.id}, error:{err}',
@@ -143,3 +144,17 @@ def update_affiliation(business: Business, filing: Filing):
             f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
             level='error'
         )
+
+
+def update_entity(business: Business, filing_type: str):
+    """Update an entity in auth with the latest change."""
+    state = None
+    if filing_type in ['dissolution', 'putBackOn', 'restoration']:
+        state = business.state.name  # state changed to HISTORICAL/ACTIVE
+
+    AccountService.update_entity(
+        business_registration=business.identifier,
+        business_name=business.legal_name,
+        corp_type_code=business.legal_type,
+        state=state
+    )
