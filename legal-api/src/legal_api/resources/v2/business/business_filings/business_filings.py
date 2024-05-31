@@ -908,6 +908,18 @@ class ListFilingResource():
                      .get('courtOrder', {})
                      .get('fileKey', None)):
             MinioService.delete_file(file_key)
+        elif filing.filing_type == Filing.FILINGS['continuationIn'].get('name'):
+            continuation_in = filing.filing_json.get('filing', {}).get('continuationIn', {})
+
+            # Delete affidavit file
+            if affidavit_file_key := continuation_in.get('foreignJurisdiction', {}).get('affidavitFileKey', None):
+                MinioService.delete_file(affidavit_file_key)
+
+            # Delete authorization file(s)
+            authorization_files = continuation_in.get('authorization', {}).get('files', [])
+            for file in authorization_files:
+                if auth_file_key := file.get('fileKey', None):
+                    MinioService.delete_file(auth_file_key)
 
     @staticmethod
     def details_for_invoice(business_identifier: str, corp_type: str):

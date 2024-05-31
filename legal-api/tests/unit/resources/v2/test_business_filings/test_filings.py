@@ -749,6 +749,64 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
             except S3Error as ex:
                 assert ex.code == 'NoSuchKey'
 
+def test_delete_continuation_in_filing_with_authorization_files_in_draft(session, client, jwt, minio_server):
+    """Assert that a draft continuationIn filing can be deleted and authorization files are removed from Minio."""
+    identifier = 'CP1234568'
+
+    b = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'continuationIn'
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['continuationIn'] = {
+        "foreignJurisdiction": {},
+        "authorization": {
+            "files": []
+        }
+    }
+    file_key_1 = _upload_file(letter, invalid=False)
+    file_key_2 = _upload_file(letter, invalid=False)
+    filing_json['filing']['continuationIn']['authorization']['files'] = [
+        {"fileKey": file_key_1},
+        {"fileKey": file_key_2}
+    ]
+    filing = factory_filing(b, filing_json, filing_type='continuationIn')
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+    assert rv.status_code == HTTPStatus.OK
+    for file_key in [file_key_1, file_key_2]:
+        try:
+            MinioService.get_file_info(file_key)
+        except S3Error as ex:
+            assert ex.code == 'NoSuchKey'
+
+
+def test_delete_continuation_in_filing_with_affidavit_in_draft(session, client, jwt, minio_server):
+    """Assert that a draft continuationIn filing can be deleted and the affidavit file is removed from Minio."""
+    identifier = 'CP1234567'
+
+    b = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'continuationIn'
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['continuationIn'] = {
+        "foreignJurisdiction": {},
+        "authorization": {
+            "files": []
+        }
+    }
+    file_key = _upload_file(letter, invalid=False)
+    filing_json['filing']['continuationIn']['foreignJurisdiction']['affidavitFileKey'] = file_key
+    filing = factory_filing(b, filing_json, filing_type='continuationIn')
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+    assert rv.status_code == HTTPStatus.OK
+    try:
+        MinioService.get_file_info(file_key)
+    except S3Error as ex:
+        assert ex.code == 'NoSuchKey'
+
 
 def test_delete_dissolution_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
     """Assert that a draft filing can be deleted."""
