@@ -59,6 +59,7 @@ class InvoluntaryDissolutionService():
                                   Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
 
         query = db.session.query(Business).\
+            filter(not_(Business.admin_freeze.is_(True))).\
             filter(Business.state == Business.State.ACTIVE).\
             filter(Business.legal_type.in_(eligible_types)).\
             filter(Business.no_dissolution.is_(False)).\
