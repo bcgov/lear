@@ -15,19 +15,24 @@
 import asyncio
 import logging
 import os
-import pytz
 from datetime import datetime
 
-import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
+import pytz
 from croniter import croniter
 from flask import Flask
-from legal_api.models import Batch, BatchProcessing, Business, Configuration, db  # noqa: I001
-from legal_api.services.flags import Flags
-from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
 
-import config  # pylint: disable=import-error
+import config  # pylint: disable=import-error, wrong-import-order
+from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: I001
+from legal_api.services.flags import Flags
+from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from utils.logging import setup_logging  # pylint: disable=import-error
+
+
+import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports, wrong-import-order; conflicts with Flake8
+
+
+
 # noqa: I003
 
 setup_logging(
@@ -73,11 +78,11 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
     """Initiate dissolution process for new businesses where AR has not been filed for 2 yrs and 2 months."""
     try:
         # check if batch has already run today
-        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION).filter(Batch.start_date == datetime.today())
+        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION, start_date=datetime.today())
         if batch_today:
             app.logger.debug('Skipping job run since batch job has already run today.')
             return
-        
+
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
         businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
@@ -85,7 +90,7 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                       status=Batch.BatchStatus.PROCESSING,
-                      size=businesses.count(),
+                      size=len(businesses),
                       start_date=datetime.now())
         batch.save()
 
@@ -106,17 +111,20 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
         app.logger.debug('Sending email.')
 
 
-    except Exception as err:  # noqa: B902
+    except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
         app.logger.error(err)
 
 
-if __name__ == '__main__':
-    application = create_app()
+async def run(loop, application: Flask = None):  # pylint: disable=redefined-outer-name
+    """Run the stage 1-3 methods for dissolving businesses."""
+    if application is None:
+        application = create_app()
+
     with application.app_context():
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
         if flag_on:
-                        # check if batch can be run today
+            # check if batch can be run today
             new_dissolutions_schedule_config = Configuration.find_by_name(config_name='DISSOLUTIONS_STAGE_1_SCHEDULE')
             tz = pytz.timezone('US/Pacific')
             cron_valid = croniter.match(new_dissolutions_schedule_config.val, tz.localize(datetime.today()))
@@ -124,3 +132,12 @@ if __name__ == '__main__':
                 initiate_dissolution_process(application)
             else:
                 application.logger.debug('Skipping job run since current day of the week does not match the cron schedule.')
+
+if __name__ == '__main__':
+    application = create_app()
+    try:
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_until_complete(run(event_loop, application))
+    except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
+        application.logger.error(err)  # pylint: disable=no-member
+        raise err

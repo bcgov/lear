@@ -4,7 +4,7 @@ import pytest
 
 from datetime import datetime
 
-from involuntary_dissolutions import create_app, initiate_dissolution_process
+from involuntary_dissolutions import create_app, run
 from legal_api.models import Configuration, Batch, BatchProcessing, Business
 from tests import factory_business, factory_batch, factory_batch_processing
 from unittest.mock import patch
@@ -48,12 +48,12 @@ def test_batch_already_ran_today():
         factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
 
         # first run
-        initiate_dissolution_process(application)
+        run(application)
         batches = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION)
         assert batches.count() == 1
 
         # second run
-        initiate_dissolution_process(application)
+        run(application)
         batches = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION)
         assert not batches.count() > 1
 
