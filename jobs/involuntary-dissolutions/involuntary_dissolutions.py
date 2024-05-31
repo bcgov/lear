@@ -102,12 +102,6 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
                                                business_id=business.id)
             batch_processing.save()
 
-        # TODO: save businesses that have dissolution process started to csv
-        app.logger.debug(businesses)
-
-        # TODO: send summary email to BA inbox email
-        app.logger.debug('Sending email.')
-
     except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
         app.logger.error(err)
 
