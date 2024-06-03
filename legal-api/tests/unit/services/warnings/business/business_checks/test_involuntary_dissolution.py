@@ -78,7 +78,12 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
             assert result[1]['code'] == 'DISSOLUTION_IN_PROGRESS'
             assert result[1]['message'] == 'Business is in the process of involuntary dissolution.'
             assert result[1]['warningType'] == WarningType.INVOLUNTARY_DISSOLUTION
-            assert result[1]['data'] == json.dumps(meta_data)
+            res_meta_data = json.loads(result[1]['data'])
+            assert res_meta_data == meta_data
+            if 'TRANSITION_OVERDUE' in test_name:
+                assert res_meta_data['overdueTransition'] == True
+            else:
+                assert res_meta_data['overdueARs'] == True
         else:
             assert len(result) == 1
         
