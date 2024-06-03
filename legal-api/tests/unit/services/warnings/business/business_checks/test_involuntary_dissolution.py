@@ -20,8 +20,7 @@ from tests.unit.models import (
     factory_batch,
     factory_batch_processing,
     factory_business,
-    factory_completed_filing,
-    factory_pending_filing,
+    factory_completed_filing
 )
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.involuntary_dissolution import check_business
