@@ -50,7 +50,9 @@ def read(filepath):
     return content
 
 
-REQUIREMENTS = read_requirements('requirements.txt')
+REQUIREMENTS_BASE = read_requirements('requirements.txt')
+REQUIREMENTS_NATS = read_requirements('requirements-nats.txt')
+REQUIREMENTS = REQUIREMENTS_BASE + REQUIREMENTS_NATS
 
 setup(
     name="legal_api",
