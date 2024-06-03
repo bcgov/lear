@@ -40,10 +40,10 @@ def check_business(business: any) -> list:
         if details.transition_overdue:
             result.append(transition_warning)
     elif business.in_dissolution:
-        eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
-        if details.ar_overdue:
+        _, dis_details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
+        if dis_details.ar_overdue:
             result.append(ar_overdue_warning)
-        if details.transition_overdue:
+        if dis_details.transition_overdue:
             result.append(transition_warning)
         batch_processing = business.batch_processing.one_or_none()
         result.append({
