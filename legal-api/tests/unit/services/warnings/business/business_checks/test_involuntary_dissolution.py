@@ -57,8 +57,8 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
 
     if test_name.startswith('IN_DISSOLUTION'):
         assert len(result) == 2
-        assert result[0]['code'] == 'MULTIPLE_ANNUAL_REPORTS_NOT_FILED'
-        assert result[0]['message'] == 'Multiple annual reports not filed.  Eligible for involuntary dissolution.'
+        assert result[0]['code'] == 'TRANSITION_NOT_FILED'
+        assert result[0]['message'] == 'Transition filing not filed.  Eligible for involuntary dissolution.'
         assert result[0]['warningType'] == WarningType.NOT_IN_GOOD_STANDING
 
         assert result[1]['code'] == 'DISSOLUTION_IN_PROGRESS'
@@ -68,8 +68,8 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
     elif test_name.startswith('ELIGIBLE'):
         assert len(result) == 1
         warning = result[0]
-        assert warning['code'] == 'MULTIPLE_ANNUAL_REPORTS_NOT_FILED'
-        assert warning['message'] == 'Multiple annual reports not filed.  Eligible for involuntary dissolution.'
+        assert warning['code'] == 'TRANSITION_NOT_FILED'
+        assert warning['message'] == 'Transition filing not filed.  Eligible for involuntary dissolution.'
         assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
     else:
         assert len(result) == 0

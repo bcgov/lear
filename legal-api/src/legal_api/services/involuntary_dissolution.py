@@ -82,6 +82,18 @@ class InvoluntaryDissolutionService():
         return cls._get_businesses_eligible_query().count()
 
     @staticmethod
+    def get_in_dissolution_batch_processing(business_id: int):
+        """Fetch the BatchProcessing record for a business that is in the process of involuntary dissolution."""
+        return db.session.query(BatchProcessing, Batch).\
+            filter(BatchProcessing.business_id == business_id).\
+            filter(BatchProcessing.status.notin_([BatchProcessing.BatchProcessingStatus.COMPLETED,
+                                                  BatchProcessing.BatchProcessingStatus.WITHDRAWN])). \
+            filter(Batch.id == BatchProcessing.batch_id).\
+            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
+            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
+            one_or_none()
+
+    @staticmethod
     def _get_businesses_eligible_query(exclude_in_dissolution=True):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
