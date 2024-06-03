@@ -43,21 +43,22 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
     """Test the check_business function."""
     identifier = 'BC7654321'
     business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, no_dissolution=no_dissolution)
+    meta_data = {
+        'overdueARs': True,
+        'overdueTransition': False,
+        'warningsSent': 2,
+        'dissolutionTargetDate': '2025-02-01'
+    }
     if 'TRANSITION_OVERDUE' in test_name:
         effective_date = datetime.utcnow() - datedelta(years=3)
         factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration', filing_date=effective_date)
+        meta_data['overdueTransition'] = True
 
     if not no_dissolution:
         batch = factory_batch(
             batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION,
             status = batch_status,
         )
-        meta_data = {
-            'overdueARs': False,
-            'overdueTransition': True,
-            'warningsSent': 2,
-            'dissolutionTargetDate': '2025-02-01'
-        }
         batch_processing = factory_batch_processing(
             batch_id = batch.id,
             business_id = business.id,
