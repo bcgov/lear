@@ -35,9 +35,9 @@ RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 @pytest.mark.parametrize('test_name, no_dissolution, batch_status, batch_processing_status', [
     ('NOT_ELIGIBLE', True, None, None),
-    ('ELIGIBLE', False, 'PROCESSING', 'COMPLETED'),
+    ('ELIGIBLE_AR_OVERDUE', False, 'PROCESSING', 'COMPLETED'),
     ('ELIGIBLE_TRANSITION_OVERDUE', False, 'PROCESSING', 'COMPLETED'),
-    ('IN_DISSOLUTION', False, 'PROCESSING', 'PROCESSING'),
+    ('IN_DISSOLUTION_AR_OVERDUE', False, 'PROCESSING', 'PROCESSING'),
     ('IN_DISSOLUTION_TRANSITION_OVERDUE', False, 'PROCESSING', 'PROCESSING')
 ])
 def test_check_business(session, test_name, no_dissolution, batch_status, batch_processing_status):
