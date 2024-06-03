@@ -13,9 +13,8 @@
 # limitations under the License.
 
 """This provides the service for involuntary dissolution."""
-from typing import Final
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Final, Tuple
 
 from sqlalchemy import and_, exists, func, not_, or_, text
 from sqlalchemy.orm import aliased
@@ -65,7 +64,7 @@ class InvoluntaryDissolutionService():
 
         eligibility_details = cls.EligibilityDetails(ar_overdue=result[1], transition_overdue=result[2])
         return True, eligibility_details
-    
+
     @classmethod
     def get_businesses_eligible(cls, num_allowed: int = None):
         """Return the businesses eligible for involuntary dissolution."""
@@ -89,19 +88,6 @@ class InvoluntaryDissolutionService():
         Args:
             include_in_dissolution (bool): Whether to include the in_dissolution check in the query.
         """
-        eligible_types = [
-            Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BC_ULC_COMPANY.value,
-            Business.LegalTypes.BC_CCC.value,
-            Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.CONTINUE_IN.value,
-            Business.LegalTypes.ULC_CONTINUE_IN.value,
-            Business.LegalTypes.CCC_CONTINUE_IN.value,
-            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-            Business.LegalTypes.EXTRA_PRO_A.value,
-            Business.LegalTypes.LIMITED_CO.value
-        ]
-
         in_dissolution = (
             exists().where(
                 BatchProcessing.business_id == Business.id,
@@ -124,7 +110,7 @@ class InvoluntaryDissolutionService():
         ).\
             filter(not_(Business.admin_freeze.is_(True))).\
             filter(Business.state == Business.State.ACTIVE).\
-            filter(Business.legal_type.in_(eligible_types)).\
+            filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False))
 
         if exclude_in_dissolution:

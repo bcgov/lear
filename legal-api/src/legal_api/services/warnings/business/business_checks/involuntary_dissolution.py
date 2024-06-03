@@ -22,18 +22,29 @@ def check_business(business: any) -> list:
     """Check involuntary dissolution for warnings."""
     result = []
 
-    if InvoluntaryDissolutionService.check_business_eligibility(business.identifier):
-        result.append({
-            'code': BusinessWarningCodes.MULTIPLE_ANNUAL_REPORTS_NOT_FILED,
-            'message': 'Multiple annual reports not filed.  Eligible for involuntary dissolution.',
-            'warningType': WarningType.NOT_IN_GOOD_STANDING
-        })
+    ar_overdue_warning = {
+        'code': BusinessWarningCodes.MULTIPLE_ANNUAL_REPORTS_NOT_FILED,
+        'message': 'Multiple annual reports not filed.  Eligible for involuntary dissolution.',
+        'warningType': WarningType.NOT_IN_GOOD_STANDING
+    }
+    transition_warning = {
+        'code': BusinessWarningCodes.TRANSITION_NOT_FILED,
+        'message': 'Transition filing not filed.  Eligible for involuntary dissolution.',
+        'warningType': WarningType.NOT_IN_GOOD_STANDING
+    }
+
+    eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, True)
+    if eligibility:
+        if details.ar_overdue:
+            result.append(ar_overdue_warning)
+        if details.transition_overdue:
+            result.append(transition_warning)
     elif business.in_dissolution:
-        result.append({
-            'code': BusinessWarningCodes.MULTIPLE_ANNUAL_REPORTS_NOT_FILED,
-            'message': 'Multiple annual reports not filed.  Eligible for involuntary dissolution.',
-            'warningType': WarningType.NOT_IN_GOOD_STANDING
-        })
+        eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
+        if details.ar_overdue:
+            result.append(ar_overdue_warning)
+        if details.transition_overdue:
+            result.append(transition_warning)
         batch_processing = business.batch_processing.one_or_none()
         result.append({
             'code': BusinessWarningCodes.DISSOLUTION_IN_PROGRESS,

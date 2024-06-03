@@ -39,10 +39,10 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
             status = batch_status,
         )
         meta_data = {
-            'missingARs': 1,
+            'overdueARs': True,
+            'overdueTransition': False,
             'warningsSent': 2,
-            'dissolutionTargetDate': '2025-02-01',
-            'missingTransitionFiling': False
+            'dissolutionTargetDate': '2025-02-01'
         }
         batch_processing = factory_batch_processing(
             batch_id = batch.id,
