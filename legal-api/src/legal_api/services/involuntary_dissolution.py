@@ -14,7 +14,7 @@
 
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Final, Tuple
 
 from sqlalchemy import and_, exists, func, not_, or_, text
 from sqlalchemy.orm import aliased
@@ -24,6 +24,19 @@ from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 
 class InvoluntaryDissolutionService():
     """Provides services to get information for involuntary dissolution."""
+
+    ELIGIBLE_TYPES: Final = [
+        Business.LegalTypes.COMP.value,
+        Business.LegalTypes.BC_ULC_COMPANY.value,
+        Business.LegalTypes.BC_CCC.value,
+        Business.LegalTypes.BCOMP.value,
+        Business.LegalTypes.CONTINUE_IN.value,
+        Business.LegalTypes.ULC_CONTINUE_IN.value,
+        Business.LegalTypes.CCC_CONTINUE_IN.value,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+        Business.LegalTypes.EXTRA_PRO_A.value,
+        Business.LegalTypes.LIMITED_CO.value
+    ]
 
     @dataclass
     class EligibilityDetails:
@@ -51,7 +64,7 @@ class InvoluntaryDissolutionService():
 
         eligibility_details = cls.EligibilityDetails(ar_overdue=result[1], transition_overdue=result[2])
         return True, eligibility_details
-    
+
     @classmethod
     def get_businesses_eligible(cls, num_allowed: int = None):
         """Return the businesses eligible for involuntary dissolution."""
@@ -69,25 +82,24 @@ class InvoluntaryDissolutionService():
         return cls._get_businesses_eligible_query().count()
 
     @staticmethod
+    def get_in_dissolution_batch_processing(business_id: int):
+        """Fetch the BatchProcessing record for a business that is in the process of involuntary dissolution."""
+        return db.session.query(BatchProcessing, Batch).\
+            filter(BatchProcessing.business_id == business_id).\
+            filter(BatchProcessing.status.notin_([BatchProcessing.BatchProcessingStatus.COMPLETED,
+                                                  BatchProcessing.BatchProcessingStatus.WITHDRAWN])). \
+            filter(Batch.id == BatchProcessing.batch_id).\
+            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
+            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
+            one_or_none()
+
+    @staticmethod
     def _get_businesses_eligible_query(exclude_in_dissolution=True):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
             include_in_dissolution (bool): Whether to include the in_dissolution check in the query.
         """
-        eligible_types = [
-            Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BC_ULC_COMPANY.value,
-            Business.LegalTypes.BC_CCC.value,
-            Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.CONTINUE_IN.value,
-            Business.LegalTypes.ULC_CONTINUE_IN.value,
-            Business.LegalTypes.CCC_CONTINUE_IN.value,
-            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-            Business.LegalTypes.EXTRA_PRO_A.value,
-            Business.LegalTypes.LIMITED_CO.value
-        ]
-
         in_dissolution = (
             exists().where(
                 BatchProcessing.business_id == Business.id,
@@ -110,7 +122,7 @@ class InvoluntaryDissolutionService():
         ).\
             filter(not_(Business.admin_freeze.is_(True))).\
             filter(Business.state == Business.State.ACTIVE).\
-            filter(Business.legal_type.in_(eligible_types)).\
+            filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False))
 
         if exclude_in_dissolution:
