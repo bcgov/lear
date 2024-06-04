@@ -300,6 +300,7 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
                                    create_completing_party_address=[True]
                                    )
     business.start_date = datetime.utcnow().date()
+    business.no_dissolution = True
     business.save()
     session.commit()
     rv = client.get(f'/api/v2/businesses/{identifier}',
