@@ -90,6 +90,11 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
             configuration = cls.query.filter_by(name=config_name).one_or_none()
         return configuration
 
+    @classmethod
+    def find_by_names(cls, config_names: List[str]) -> List[Configuration]:
+        """Return the configurations matching the names."""
+        return cls.query.filter(cls.name.in_(config_names)).all()
+
     def validate_value(self):
         """Ensure the value is the correct type before insert or update."""
         # Define keys that should have specific value types
