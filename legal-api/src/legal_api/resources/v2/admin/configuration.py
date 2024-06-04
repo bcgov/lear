@@ -31,7 +31,7 @@ def get_configurations():
     """Return a list of configurations, optionally filtered by names."""
     filter_names = request.args.get('names', None)
     if filter_names:
-        names_list = [name.strip() for name in filter_names.split(',') if name.strip()]
+        names_list = [name.strip().upper() for name in filter_names.split(',') if name.strip()]
         if not names_list:
             return {'message': 'Configuration names are invalid'}, HTTPStatus.BAD_REQUEST
 
