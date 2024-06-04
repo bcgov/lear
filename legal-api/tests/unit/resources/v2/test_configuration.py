@@ -78,8 +78,8 @@ def test_get_configurations_with_single_filter_name(app, session, client, jwt):
 
 def test_get_configurations_with_multiple_filter_names(app, session, client, jwt):
     """Assert that get results with multiple filter names are returned."""
-    filter_names = 'DISSOLUTIONS_SUMMARY_EMAIL, NUM_DISSOLUTIONS_ALLOWED'
-    expected_names = [name.strip() for name in filter_names.split(',') if name.strip()]
+    filter_names = 'DISSOLUTIONS_SUMMARY_EMAIL, NUM_DISSOLUTIONS_ALLOWED, dissolutions_on_hold'
+    expected_names = [name.strip().upper() for name in filter_names.split(',') if name.strip()]
 
     # test
     rv = client.get(f'/api/v2/admin/configurations?names={filter_names}',
