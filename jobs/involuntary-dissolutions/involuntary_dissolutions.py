@@ -13,21 +13,16 @@
 # limitations under the License.
 """Involuntary dissolutions job."""
 import asyncio
+import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from croniter import croniter
 from flask import Flask
-from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: I001
-from legal_api.services.flags import Flags
-from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
-from sentry_sdk.integrations.logging import LoggingIntegration
-
-import config  # pylint: disable=import-error, wrong-import-order
-from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: I001
+from legal_api.models import Batch, BatchProcessing, Business, Configuration, db  # noqa: I001
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -79,66 +74,53 @@ def register_shellcontext(app):
 
 
 def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
-    """Initiate dissolution process for new businesses that meet dissolution criteria"""
+    """Initiate dissolution process for new businesses that meet dissolution criteria."""
     try:
         # check if batch has already run today
-        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION, start_date=datetime.today())
-        if batch_today:
+        batch_today = (
+            db.session.query(Batch)
+            .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
+            .filter(Batch.start_date + timedelta(days=1) > datetime.now())
+        ).all()
+
+        if len(batch_today) > 0:
             app.logger.debug('Skipping job run since batch job has already run today.')
             return
 
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
-        businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
+        businesses_eligible = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
+
+        if len(businesses_eligible) == 0:
+            app.logger.debug('Skipping job run since there are no businesses eligible for dissolution.')
+            return
 
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                       status=Batch.BatchStatus.PROCESSING,
-                      size=len(businesses),
+                      size=len(businesses_eligible),
                       start_date=datetime.now())
         batch.save()
 
         # create batch processing entries for each business being dissolved
-        for business in businesses:
+        for business_elgible in businesses_eligible:
+            business, ar_overdue, transition_overdue = business_elgible
             batch_processing = BatchProcessing(business_identifier=business.identifier,
                                                step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                                                status=BatchProcessing.BatchProcessingStatus.PROCESSING,
                                                created_date=datetime.now(),
                                                batch_id=batch.id,
                                                business_id=business.id)
-            batch_processing.save()
 
-    except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
-        app.logger.error(err)
+            stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY', 0))
+            stage_3_delay = timedelta(days=app.config.get('STAGE_3_DELAY', 0))
+            target_dissolution_date = batch_processing.created_date + stage_2_delay + stage_3_delay
 
-def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
-    """Initiate dissolution process for new businesses that meet dissolution criteria"""
-    try:
-        # check if batch has already run today
-        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION, start_date=datetime.today())
-        if batch_today:
-            app.logger.debug('Skipping job run since batch job has already run today.')
-            return
-
-        # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
-        num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
-        businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
-
-        # create new entry in batches table
-        batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
-                      status=Batch.BatchStatus.PROCESSING,
-                      size=len(businesses),
-                      start_date=datetime.now())
-        batch.save()
-
-        # create batch processing entries for each business being dissolved
-        for business in businesses:
-            batch_processing = BatchProcessing(business_identifier=business.identifier,
-                                               step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-                                               status=BatchProcessing.BatchProcessingStatus.PROCESSING,
-                                               created_date=datetime.now(),
-                                               batch_id=batch.id,
-                                               business_id=business.id)
+            batch_processing.meta_data = {
+                'overdueARs': ar_overdue,
+                'overdueTransition': transition_overdue,
+                'targetDissolutionDate': target_dissolution_date.date().isoformat()
+            }
             batch_processing.save()
 
     except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
@@ -153,7 +135,7 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
     with application.app_context():
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
-        if flag_on:
+        if not flag_on:
             # check if batch can be run today
             new_dissolutions_schedule_config = Configuration.find_by_name(config_name='DISSOLUTIONS_STAGE_1_SCHEDULE')
             tz = pytz.timezone('US/Pacific')
