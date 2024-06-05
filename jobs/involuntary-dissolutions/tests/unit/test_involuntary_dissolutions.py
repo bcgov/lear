@@ -31,7 +31,7 @@ from . import factory_batch, factory_batch_processing, factory_business
 CREATED_DATE = (datetime.utcnow() + datedelta(days=-60)).replace(tzinfo=pytz.UTC)
 
 
-def test_initiate_dissolution_process_job_alreay_ran(app, session):
+def test_initiate_dissolution_process_job_already_ran(app, session):
     """Assert that the job is skipped correctly if it already ran today."""
     factory_business(identifier='BC1234567')
 
