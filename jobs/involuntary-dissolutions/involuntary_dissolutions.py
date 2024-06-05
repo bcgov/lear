@@ -134,7 +134,7 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
     with application.app_context():
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
-        if not flag_on:
+        if flag_on:
             # check if batch can be run today
             new_dissolutions_schedule_config = Configuration.find_by_name(config_name='DISSOLUTIONS_STAGE_1_SCHEDULE')
             tz = pytz.timezone('US/Pacific')
