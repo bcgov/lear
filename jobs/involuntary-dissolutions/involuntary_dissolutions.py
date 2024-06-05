@@ -111,9 +111,9 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
                                                batch_id=batch.id,
                                                business_id=business.id)
 
+            stage_1_delay = timedelta(days=app.config.get('STAGE_1_DELAY', 0))
             stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY', 0))
-            stage_3_delay = timedelta(days=app.config.get('STAGE_3_DELAY', 0))
-            target_dissolution_date = batch_processing.created_date + stage_2_delay + stage_3_delay
+            target_dissolution_date = batch_processing.created_date + stage_1_delay + stage_2_delay
 
             batch_processing.meta_data = {
                 'overdueARs': ar_overdue,
