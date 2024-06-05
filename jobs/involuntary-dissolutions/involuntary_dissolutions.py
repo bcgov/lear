@@ -181,6 +181,14 @@ def stage_2_process(app: Flask):
         batch_processing.save()
 
 
+def can_run_today(cron_value: str):
+    """Check if cron string is valid for today."""
+    tz = pytz.timezone('US/Pacific')
+    today = tz.localize(datetime.today())
+    result = croniter.match(cron_value, today)
+    return result
+
+
 def check_run_schedule():
     """Check if any of the dissolution stage is valid for this run."""
     stage_1_schedule_config = Configuration.find_by_name(
@@ -192,11 +200,10 @@ def check_run_schedule():
     stage_3_schedule_config = Configuration.find_by_name(
         config_name=Configuration.Names.DISSOLUTIONS_STAGE_3_SCHEDULE.value
     )
-    tz = pytz.timezone('US/Pacific')
-    today = tz.localize(datetime.today())
-    cron_valid_1 = croniter.match(stage_1_schedule_config.val, today)
-    cron_valid_2 = croniter.match(stage_2_schedule_config.val, today)
-    cron_valid_3 = croniter.match(stage_3_schedule_config.val, today)
+
+    cron_valid_1 = can_run_today(stage_1_schedule_config.val)
+    cron_valid_2 = can_run_today(stage_2_schedule_config.val)
+    cron_valid_3 = can_run_today(stage_3_schedule_config.val)
 
     return cron_valid_1, cron_valid_2, cron_valid_3
 
@@ -211,16 +218,16 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
         if flag_on:
             # check if batch can be run today
-            cron_valids = check_run_schedule()
-            if not any(cron_valids):
+            stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
+            if not any([stage_1_valid, stage_2_valid, stage_3_valid]):
                 application.logger.debug('Skipping job run since current day of the week does not match any cron schedule.')  # noqa: E501
                 return
 
-            if cron_valids[0]:
+            if stage_1_valid:
                 initiate_dissolution_process(application)
-            if cron_valids[1]:
+            if stage_2_valid:
                 stage_2_process(application)
-            if cron_valids[2]:
+            if stage_3_valid:
                 pass
 
 
