@@ -51,6 +51,7 @@ def read(filepath):
 
 
 REQUIREMENTS = read_requirements('requirements.txt')
+REQUIREMENTS_NATS = read_requirements('requirements-nats.txt')
 
 setup(
     name="legal_api",
@@ -66,4 +67,7 @@ setup(
     install_requires=REQUIREMENTS,
     setup_requires=["pytest-runner", ],
     tests_require=["pytest", ],
+    extras_require={
+        'nats': REQUIREMENTS_NATS
+    }
 )
