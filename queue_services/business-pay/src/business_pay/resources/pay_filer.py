@@ -145,17 +145,7 @@ async def worker():
     filing.status = Filing.Status.PAID
     filing.save()
 
-    # None of these should bail as the filing has been marked PAID
-    # 4. Publish to email Q
-    # ##
-    with suppress(Exception):
-        mail_topic = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
-        email_msg = create_email_msg(filing.id, filing.filing_type)
-        await nats_queue.connect()
-        await nats_queue.publish(subject=mail_topic, msg=email_msg)
-        logger.info(f"published to emailer for pay-id: {payment_token.id}")
-
-    # 5. Publish to filer Q, if the filing is not a FED (Effective date > now())
+    # 4. Publish to filer Q, if the filing is not a FED (Effective date > now())
     # ##
     with suppress(Exception):
         logger.debug(f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
@@ -175,6 +165,17 @@ async def worker():
                 logger.debug(f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
 
             logger.info(f"publish to filer for pay-id: {payment_token.id}")
+    
+    # None of these should bail as the filing has been marked PAID
+    # 5. Publish to email Q
+    # ##
+    with suppress(Exception):
+        mail_topic = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
+        email_msg = create_email_msg(filing.id, filing.filing_type)
+        await nats_queue.connect()
+        await nats_queue.publish(subject=mail_topic, msg=email_msg)
+        logger.info(f"published to emailer for pay-id: {payment_token.id}")
+
 
     logger.info(f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
