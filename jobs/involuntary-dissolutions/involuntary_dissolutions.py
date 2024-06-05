@@ -140,8 +140,8 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
 
 def stage_2_process(app: Flask):
     """Run dissolution stage 2 process for businesses meet moving criteria."""
-    if not (stage_2_delay := app.config.get('STAGE_2_DELAY', None)):
-        app.logger.debug('Skipping stage 2 run since config STAGE_2_DELAY is missing.')
+    if not (stage_1_delay := app.config.get('STAGE_1_DELAY', None)):
+        app.logger.debug('Skipping stage 2 run since config STAGE_1_DELAY is missing.')
         return
 
     batch_processings = (
@@ -156,7 +156,7 @@ def stage_2_process(app: Flask):
             BatchProcessing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
         )
         .filter(
-            BatchProcessing.created_date + text(f"""INTERVAL '{stage_2_delay} DAYS'""")
+            BatchProcessing.created_date + text(f"""INTERVAL '{stage_1_delay} DAYS'""")
             <= func.timezone('UTC', func.now())
         )
         .all()
