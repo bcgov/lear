@@ -13,7 +13,6 @@
 # limitations under the License.
 """Involuntary dissolutions job."""
 import asyncio
-import json
 import logging
 import os
 from datetime import datetime, timedelta
@@ -22,7 +21,7 @@ import pytz
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from croniter import croniter
 from flask import Flask
-from legal_api.models import Batch, BatchProcessing, Business, Configuration, db  # noqa: I001
+from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: I001
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
