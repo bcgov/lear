@@ -25,6 +25,7 @@ from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: 
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
+from sqlalchemy import cast, Date
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
@@ -76,10 +77,13 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
     """Initiate dissolution process for new businesses that meet dissolution criteria."""
     try:
         # check if batch has already run today
+        tz = pytz.timezone('US/Pacific')
+        today_date = tz.localize(datetime.today()).date()
+
         batch_today = (
             db.session.query(Batch)
             .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
-            .filter(Batch.start_date + timedelta(days=1) > datetime.now())
+            .filter(cast(Batch.start_date, Date) == today_date)
         ).all()
 
         if len(batch_today) > 0:
