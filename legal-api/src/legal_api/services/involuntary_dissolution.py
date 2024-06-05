@@ -64,7 +64,7 @@ class InvoluntaryDissolutionService():
 
         eligibility_details = cls.EligibilityDetails(ar_overdue=result[1], transition_overdue=result[2])
         return True, eligibility_details
-    
+
     @classmethod
     def get_businesses_eligible(cls, num_allowed: int = None):
         """Return the businesses eligible for involuntary dissolution."""
