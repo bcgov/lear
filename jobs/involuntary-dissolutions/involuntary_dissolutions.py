@@ -25,7 +25,7 @@ from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: 
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
-from sqlalchemy import cast, Date
+from sqlalchemy import Date, cast
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
@@ -73,7 +73,7 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
+def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name,too-many-locals
     """Initiate dissolution process for new businesses that meet dissolution criteria."""
     try:
         # check if batch has already run today
