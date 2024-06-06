@@ -33,6 +33,7 @@ from entity_filer.filing_processors.filing_components.parties import update_part
 from entity_filer.utils import replace_file_with_certified_copy
 
 
+# pylint: disable=too-many-locals
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
