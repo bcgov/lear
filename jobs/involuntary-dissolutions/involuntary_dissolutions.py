@@ -116,12 +116,12 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
                                                business_id=business.id)
 
             if (stage_1_delay_config := app.config.get('STAGE_1_DELAY', 0)):
-                stage_1_delay = timedelta(days=stage_1_delay_config)
+                stage_1_delay = timedelta(days=int(stage_1_delay_config))
             else:
                 stage_1_delay = timedelta(days=0)
 
             if (stage_2_delay_config := app.config.get('STAGE_2_DELAY', 0)):
-                stage_2_delay = timedelta(days=stage_2_delay_config)
+                stage_2_delay = timedelta(days=int(stage_2_delay_config))
             else:
                 stage_2_delay = timedelta(days=0)
 
