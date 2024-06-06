@@ -15,7 +15,7 @@
 import asyncio
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
@@ -25,6 +25,7 @@ from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: 
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
+from sqlalchemy import Date, cast
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
@@ -72,34 +73,65 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name
-    """Initiate dissolution process for new businesses that meet dissolution criteria"""
+def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer-name,too-many-locals
+    """Initiate dissolution process for new businesses that meet dissolution criteria."""
     try:
         # check if batch has already run today
-        batch_today = Batch.find_by(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION, start_date=datetime.today())
-        if batch_today:
+        tz = pytz.timezone('US/Pacific')
+        today_date = tz.localize(datetime.today()).date()
+
+        batch_today = (
+            db.session.query(Batch)
+            .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
+            .filter(cast(Batch.start_date, Date) == today_date)
+        ).all()
+
+        if len(batch_today) > 0:
             app.logger.debug('Skipping job run since batch job has already run today.')
             return
 
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
-        businesses = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
+        businesses_eligible = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
+
+        if len(businesses_eligible) == 0:
+            app.logger.debug('Skipping job run since there are no businesses eligible for dissolution.')
+            return
 
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                       status=Batch.BatchStatus.PROCESSING,
-                      size=len(businesses),
+                      size=len(businesses_eligible),
                       start_date=datetime.now())
         batch.save()
 
         # create batch processing entries for each business being dissolved
-        for business in businesses:
+        for business_elgible in businesses_eligible:
+            business, ar_overdue, transition_overdue = business_elgible
             batch_processing = BatchProcessing(business_identifier=business.identifier,
                                                step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                                                status=BatchProcessing.BatchProcessingStatus.PROCESSING,
                                                created_date=datetime.now(),
                                                batch_id=batch.id,
                                                business_id=business.id)
+
+            if (stage_1_delay_config := app.config.get('STAGE_1_DELAY', 0)):
+                stage_1_delay = timedelta(days=int(stage_1_delay_config))
+            else:
+                stage_1_delay = timedelta(days=0)
+
+            if (stage_2_delay_config := app.config.get('STAGE_2_DELAY', 0)):
+                stage_2_delay = timedelta(days=int(stage_2_delay_config))
+            else:
+                stage_2_delay = timedelta(days=0)
+
+            target_dissolution_date = batch_processing.created_date + stage_1_delay + stage_2_delay
+
+            batch_processing.meta_data = {
+                'overdueARs': ar_overdue,
+                'overdueTransition': transition_overdue,
+                'targetDissolutionDate': target_dissolution_date.date().isoformat()
+            }
             batch_processing.save()
 
     except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
