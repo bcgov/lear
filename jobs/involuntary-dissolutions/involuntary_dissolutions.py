@@ -185,7 +185,7 @@ def can_run_today(cron_value: str):
     """Check if cron string is valid for today."""
     tz = pytz.timezone('US/Pacific')
     today = tz.localize(datetime.today())
-    result = croniter.match(cron_value, today)
+    result = croniter.match(cron_value, datetime(today.year, today.month, today.day))
     return result
 
 
