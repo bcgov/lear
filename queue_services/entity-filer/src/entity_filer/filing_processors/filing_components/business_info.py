@@ -62,11 +62,20 @@ def set_legal_name(corp_num: str, business: Business, business_info: Dict):
     else:
         legal_type = business_info.get('legalType', None)
         numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
-        business.legal_name = f'{corp_num[2:]} {numbered_legal_name_suffix}'
+        numbered_legal_name_prefix = ''
+        if legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                          Business.LegalTypes.ULC_CONTINUE_IN.value,
+                          Business.LegalTypes.CCC_CONTINUE_IN.value,
+                          Business.LegalTypes.CONTINUE_IN.value):
+            numbered_legal_name_prefix = corp_num[1:]
+        else:
+            numbered_legal_name_prefix = corp_num[2:]
+
+        business.legal_name = f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
 
 
 def update_business_info(corp_num: str, business: Business, business_info: Dict, filing: Filing):
-    """Format and update the business entity from incorporation filing."""
+    """Format and update the business entity from filing."""
     if corp_num and business and business_info and filing:
         set_legal_name(corp_num, business, business_info)
         business.identifier = corp_num
@@ -106,6 +115,11 @@ def get_next_corp_num(legal_type: str):
                           Business.LegalTypes.BC_CCC.value,
                           Business.LegalTypes.COMP.value):
             business_type = 'BC'
+        elif legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                            Business.LegalTypes.ULC_CONTINUE_IN.value,
+                            Business.LegalTypes.CCC_CONTINUE_IN.value,
+                            Business.LegalTypes.CONTINUE_IN.value):
+            business_type = 'C'
         else:
             business_type = legal_type
         token = AccountService.get_bearer_token()

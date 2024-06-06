@@ -57,6 +57,7 @@ from entity_filer.filing_processors import (
     change_of_name,
     change_of_registration,
     consent_continuation_out,
+    continuation_in,
     continuation_out,
     conversion,
     correction,
@@ -271,6 +272,13 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         filing_submission,
                         filing_meta)
 
+                elif filing.get('continuationIn'):
+                    business, filing_submission, filing_meta = continuation_in.process(
+                        business,
+                        filing_core_submission.json,
+                        filing_submission,
+                        filing_meta)
+
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
@@ -307,30 +315,29 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 name_request.consume_nr(business, filing_submission)
                 business_profile.update_business_profile(business, filing_submission)
                 await publish_mras_email(filing_submission)
+            else:
+                # post filing changes to other services
+                for filing_type in filing_meta.legal_filings:
+                    if filing_type in [
+                        FilingCore.FilingTypes.ALTERATION,
+                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                        FilingCore.FilingTypes.CORRECTION,
+                        FilingCore.FilingTypes.DISSOLUTION,
+                        FilingCore.FilingTypes.PUTBACKON,
+                        FilingCore.FilingTypes.RESTORATION
+                    ]:
+                        business_profile.update_entity(business, filing_type)
 
-            # post filing changes to other services
-            filing_types = [list(x.keys())[0] for x in legal_filings]
-            for filing_type in filing_types:
-                if filing_type in [
-                    FilingCore.FilingTypes.ALTERATION,
-                    FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                    FilingCore.FilingTypes.CORRECTION,
-                    FilingCore.FilingTypes.DISSOLUTION,
-                    FilingCore.FilingTypes.PUTBACKON,
-                    FilingCore.FilingTypes.RESTORATION
-                ]:
-                    business_profile.update_entity(business, filing_type)
-
-                if filing_type in [
-                    FilingCore.FilingTypes.ALTERATION,
-                    FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                    FilingCore.FilingTypes.CHANGEOFNAME,
-                    FilingCore.FilingTypes.CORRECTION,
-                    FilingCore.FilingTypes.RESTORATION,
-                ]:
-                    name_request.consume_nr(business, filing_submission, filing_type)
-                    if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
-                        business_profile.update_business_profile(business, filing_submission, filing_type)
+                    if filing_type in [
+                        FilingCore.FilingTypes.ALTERATION,
+                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                        FilingCore.FilingTypes.CHANGEOFNAME,
+                        FilingCore.FilingTypes.CORRECTION,
+                        FilingCore.FilingTypes.RESTORATION,
+                    ]:
+                        name_request.consume_nr(business, filing_submission, filing_type)
+                        if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
+                            business_profile.update_business_profile(business, filing_submission, filing_type)
 
             try:
                 await publish_email_message(
