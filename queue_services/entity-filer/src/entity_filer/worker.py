@@ -35,11 +35,15 @@ from entity_queue_common.messages import publish_email_message
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
+from gcp_queue import GcpQueue
+from gcp_queue import SimpleCloudEvent
+from gcp_queue import to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import timezone
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
@@ -76,10 +80,12 @@ from entity_filer.filing_processors.filing_components import name_request
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
+gcp_queue = GcpQueue()
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
+gcp_queue.init_app(FLASK_APP)
 
 
 def get_filing_types(legal_filings: dict):
@@ -96,23 +102,22 @@ def get_filing_types(legal_filings: dict):
     return filing_types
 
 
-async def publish_event(business: Business, filing: Filing):
+def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
     try:
-        payload = {
-            'specversion': '1.x-wip',
-            'type': 'bc.registry.business.' + filing.filing_type,
-            'source': ''.join([
+        subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
+        ce = SimpleCloudEvent(
+            id=str(uuid.uuid4()),
+            source=''.join([
                 APP_CONFIG.LEGAL_API_URL,
                 '/business/',
                 business.identifier,
                 '/filing/',
                 str(filing.id)]),
-            'id': str(uuid.uuid4()),
-            'time': datetime.utcnow().isoformat(),
-            'datacontenttype': 'application/json',
-            'identifier': business.identifier,
-            'data': {
+                subject=subject,
+            time=datetime.now(timezone.utc),
+            type='bc.registry.business.' + filing.filing_type,
+            data= {
                 'filing': {
                     'header': {'filingId': filing.id,
                                'effectiveDate': filing.effective_date.isoformat()
@@ -121,11 +126,10 @@ async def publish_event(business: Business, filing: Filing):
                     'legalFilings': get_filing_types(filing.filing_json)
                 }
             }
-        }
-        if filing.temp_reg:
-            payload['tempidentifier'] = filing.temp_reg
-        subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
-        await qsm.service.publish(subject, payload)
+        )
+        
+        gcp_queue.publish(subject,to_queue_message(ce))
+
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
         logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
@@ -375,7 +379,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 )
 
             try:
-                await publish_event(business, filing_submission)
+                publish_event(business, filing_submission)
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
                 print(err)
