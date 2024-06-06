@@ -220,7 +220,9 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
             # check if batch can be run today
             stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
             if not any([stage_1_valid, stage_2_valid, stage_3_valid]):
-                application.logger.debug('Skipping job run since current day of the week does not match any cron schedule.')  # noqa: E501
+                application.logger.debug(
+                    'Skipping job run since current day of the week does not match any cron schedule.'
+                )
                 return
 
             if stage_1_valid:

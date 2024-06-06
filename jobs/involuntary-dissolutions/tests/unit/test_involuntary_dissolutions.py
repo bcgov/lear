@@ -15,20 +15,40 @@
 """Tests for the Involuntary Dissolutions Job.
 Test suite to ensure that the Involuntary Dissolutions Job is working as expected.
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
 import pytz
 from datedelta import datedelta
-from legal_api.models import Batch, BatchProcessing, Business, Configuration, db
+from legal_api.models import Batch, BatchProcessing, Configuration
 
-from involuntary_dissolutions import initiate_dissolution_process, check_run_schedule, stage_2_process
+from involuntary_dissolutions import check_run_schedule, initiate_dissolution_process, stage_2_process
 
 from . import factory_batch, factory_batch_processing, factory_business
 
 
 CREATED_DATE = (datetime.utcnow() + datedelta(days=-60)).replace(tzinfo=pytz.UTC)
+
+
+def test_check_run_schedule():
+    """Assert that schedule check validates the day of run based on cron string in config."""
+    with patch.object(Configuration, 'find_by_name') as mock_find_by_name:
+        mock_stage_1_config = MagicMock()
+        mock_stage_2_config = MagicMock()
+        mock_stage_3_config = MagicMock()
+        mock_stage_1_config.val = '0 0 * * 1-2'
+        mock_stage_2_config.val = '0 0 * * 2'
+        mock_stage_3_config.val = '0 0 * * 3'
+        mock_find_by_name.side_effect = [mock_stage_1_config, mock_stage_2_config, mock_stage_3_config]
+
+        with patch('involuntary_dissolutions.datetime', wraps=datetime) as mock_datetime:
+            mock_datetime.today.return_value = datetime(2024, 6, 4)
+            cron_valid_1, cron_valid_2, cron_valid_3 = check_run_schedule()
+
+            assert cron_valid_1 is True
+            assert cron_valid_2 is True
+            assert cron_valid_3 is False
 
 
 def test_initiate_dissolution_process_job_already_ran(app, session):
@@ -84,26 +104,6 @@ def test_initiate_dissolution_process(app, session):
         assert batch_processing.status == BatchProcessing.BatchProcessingStatus.PROCESSING
         assert batch_processing.created_date.date() == datetime.now().date()
         assert batch_processing.meta_data
-
-
-def test_check_run_schedule():
-    """Assert that schedule check validates the day of run based on cron string in config."""
-    with patch.object(Configuration, 'find_by_name') as mock_find_by_name:
-        mock_stage_1_config = MagicMock()
-        mock_stage_2_config = MagicMock()
-        mock_stage_3_config = MagicMock()
-        mock_stage_1_config.val = '0 0 * * 1-2'
-        mock_stage_2_config.val = '0 0 * * 2'
-        mock_stage_3_config.val = '0 0 * * 3'
-        mock_find_by_name.side_effect = [mock_stage_1_config, mock_stage_2_config, mock_stage_3_config]
-
-        with patch('involuntary_dissolutions.datetime', wraps=datetime) as mock_datetime:
-            mock_datetime.today.return_value = datetime(2024, 6, 4)
-            cron_valid_1, cron_valid_2, cron_valid_3 = check_run_schedule()
-
-            assert cron_valid_1 is True
-            assert cron_valid_2 is True
-            assert cron_valid_3 is False
 
 
 @pytest.mark.parametrize(
