@@ -2,7 +2,7 @@ Flask==1.1.2
 Jinja2==2.11.3
 MarkupSafe==1.1.1
 Werkzeug==1.0.1
-asyncio-nats-client==0.11.4
+asyncio-nats-client==0.11.5
 asyncio-nats-streaming==0.4.0
 attr==0.3.1
 attrs==23.1.0
@@ -27,3 +27,4 @@ reportlab==3.6.12
 git+https://github.com/bcgov/business-schemas.git@2.18.27#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
+git+https://github.com/bcgov/sbc-connect-common.git#egg=gcp-queue&subdirectory=python/gcp-queue
