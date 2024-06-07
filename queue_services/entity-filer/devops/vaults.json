@@ -27,5 +27,13 @@
         "application": [
           "entity"
         ]
+    },
+    {
+        "vault": "gcp-queue",
+        "application": [
+          "a083gt",
+          "base",
+          "topics"
+        ]
     }
 ]
