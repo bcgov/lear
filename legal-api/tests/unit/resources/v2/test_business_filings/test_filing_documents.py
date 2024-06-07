@@ -51,7 +51,7 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
     CONTINUATION_OUT,
 )
-from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION
+from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION, CONTINUATION_IN
 
 from legal_api.core import Filing, FilingMeta, FILINGS
 from legal_api.models import Business, Comment, Filing as FilingStorage, RegistrationBootstrap, UserRoles
@@ -1152,6 +1152,98 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      }
      },
      HTTPStatus.OK, '2017-10-1'
+     ),
+    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
      )
 ])
 def test_document_list_for_various_filing_states(session, client, jwt,
