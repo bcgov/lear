@@ -43,7 +43,7 @@ def test_check_run_schedule():
         mock_find_by_name.side_effect = [mock_stage_1_config, mock_stage_2_config, mock_stage_3_config]
 
         with patch('involuntary_dissolutions.datetime', wraps=datetime) as mock_datetime:
-            mock_datetime.today.return_value = datetime(2024, 6, 4)
+            mock_datetime.today.return_value = datetime(2024, 6, 4, 1, 2, 3, 4)
             cron_valid_1, cron_valid_2, cron_valid_3 = check_run_schedule()
 
             assert cron_valid_1 is True
