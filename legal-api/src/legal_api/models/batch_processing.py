@@ -14,12 +14,18 @@
 """This module holds data for batch processing."""
 from enum import auto
 
+from datedelta import datedelta
 from sqlalchemy.dialects.postgresql import JSONB
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
 
 from .db import db
+
+
+def default_trigger_date():
+    """Set default value for trigger_date."""
+    return datetime.utcnow() + datedelta(days=42)
 
 
 class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -49,6 +55,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     status = db.Column('status', db.Enum(BatchProcessingStatus), nullable=False)
     notes = db.Column('notes', db.String(150), default='', nullable=True)
     created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    trigger_date = db.Column('trigger_date', db.DateTime(timezone=True), default=default_trigger_date)
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
     meta_data = db.Column('meta_data', JSONB, nullable=True)
 
