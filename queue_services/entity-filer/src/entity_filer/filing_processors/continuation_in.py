@@ -25,7 +25,10 @@ from entity_filer.filing_processors.filing_components.offices import update_offi
 from entity_filer.filing_processors.filing_components.parties import update_parties
 
 
-def create_foreign_jurisdiction(continuation_in: Dict, business: Business, filing: Filing):
+def create_foreign_jurisdiction(continuation_in: Dict,
+                                business: Business,
+                                filing: Filing,
+                                filing_meta: FilingMeta):
     """Create jurisdiction and director affidavit document."""
     foreign_jurisdiction = continuation_in.get('foreignJurisdiction')
 
@@ -37,6 +40,12 @@ def create_foreign_jurisdiction(continuation_in: Dict, business: Business, filin
     incorporation_date = foreign_jurisdiction.get('incorporationDate')
     jurisdiction.incorporation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(incorporation_date)
     jurisdiction.tax_id = foreign_jurisdiction.get('taxId')
+
+    filing_meta.continuation_in = {
+        **filing_meta.continuation_in,
+        'country': jurisdiction.country,
+        'region': jurisdiction.region
+    }
 
     if expro_business := continuation_in.get('business'):
         jurisdiction.expro_identifier = expro_business.get('identifier')
@@ -53,17 +62,35 @@ def create_foreign_jurisdiction(continuation_in: Dict, business: Business, filin
         document.filing_id = filing.id
         business.documents.append(document)
 
+        filing_meta.continuation_in = {
+            **filing_meta.continuation_in,
+            'affidavitFileKey': affidavit_file_key,
+        }
 
-def create_authorization_documents(continuation_in: Dict, business: Business, filing: Filing):
+
+def create_authorization_documents(continuation_in: Dict,
+                                   business: Business,
+                                   filing: Filing,
+                                   filing_meta: FilingMeta):
     """Create authorization documents."""
     authorization_files = continuation_in.get('authorization', {}).get('files', [])
+    files = []
     for file in authorization_files:
         document = Document()
         document.type = DocumentType.AUTHORIZATION_FILE.value
         document.file_key = file.get('fileKey')
         document.file_name = file.get('fileName')
+        files.append({
+            'fileKey': document.file_key,
+            'fileName': document.file_name
+        })
         document.filing_id = filing.id
         business.documents.append(document)
+
+    filing_meta.continuation_in = {
+        **filing_meta.continuation_in,
+        'authorizationFiles': files,
+    }
 
 
 def process(business: Business,  # pylint: disable=too-many-branches,too-many-locals
@@ -106,8 +133,8 @@ def process(business: Business,  # pylint: disable=too-many-branches,too-many-lo
     if not business:
         raise QueueException(f'continuationIn {filing_rec.id}, Unable to create business.')
 
-    create_foreign_jurisdiction(continuation_in, business, filing_rec)
-    create_authorization_documents(continuation_in, business, filing_rec)
+    create_foreign_jurisdiction(continuation_in, business, filing_rec, filing_meta)
+    create_authorization_documents(continuation_in, business, filing_rec, filing_meta)
 
     if offices := continuation_in.get('offices'):
         update_offices(business, offices)

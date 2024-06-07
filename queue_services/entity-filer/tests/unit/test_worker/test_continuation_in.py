@@ -71,6 +71,10 @@ async def test_continuation_in_process(app, session):
     foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
     assert jurisdiction.country == foreign_jurisdiction.get('country')
     assert jurisdiction.region == foreign_jurisdiction.get('region')
+
+    assert filing_rec.meta_data[filing_type]['country'] == jurisdiction.country
+    assert filing_rec.meta_data[filing_type]['region'] == jurisdiction.region
+
     assert jurisdiction.legal_name == foreign_jurisdiction.get('legalName')
     assert jurisdiction.identifier == foreign_jurisdiction.get('identifier')
     assert jurisdiction.incorporation_date == LegislationDatetime.as_utc_timezone_from_legislation_date_str(
@@ -86,10 +90,15 @@ async def test_continuation_in_process(app, session):
     documents = Document.find_all_by(filing_rec.id, DocumentType.DIRECTOR_AFFIDAVIT.value)
     assert len(documents) == 1
     assert documents[0].file_key == foreign_jurisdiction.get('affidavitFileKey')
+    assert filing_rec.meta_data[filing_type]['affidavitFileKey'] == foreign_jurisdiction.get('affidavitFileKey')
 
     documents = Document.find_all_by(filing_rec.id, DocumentType.AUTHORIZATION_FILE.value)
     authorization_files = filing['filing'][filing_type]['authorization'].get('files', [])
     assert len(documents) == len(authorization_files)
     for document in documents:
+        file = next(x for x in authorization_files if x.get('fileKey') == document.file_key)
+        assert file.get('fileName') == document.file_name
+
+        authorization_files = filing_rec.meta_data[filing_type]['authorizationFiles']
         file = next(x for x in authorization_files if x.get('fileKey') == document.file_key)
         assert file.get('fileName') == document.file_name
