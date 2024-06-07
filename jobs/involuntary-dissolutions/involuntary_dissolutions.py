@@ -25,7 +25,7 @@ from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: 
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
-from sqlalchemy import Date, cast
+from sqlalchemy import Date, cast, func, text
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
@@ -138,6 +138,72 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
         app.logger.error(err)
 
 
+def stage_2_process(app: Flask):
+    """Run dissolution stage 2 process for businesses meet moving criteria."""
+    if not (stage_1_delay := app.config.get('STAGE_1_DELAY', None)):
+        app.logger.debug('Skipping stage 2 run since config STAGE_1_DELAY is missing.')
+        return
+
+    batch_processings = (
+        db.session.query(BatchProcessing)
+        .filter(BatchProcessing.batch_id == Batch.id)
+        .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
+        .filter(Batch.status == Batch.BatchStatus.PROCESSING)
+        .filter(
+            BatchProcessing.status == BatchProcessing.BatchProcessingStatus.PROCESSING
+        )
+        .filter(
+            BatchProcessing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
+        )
+        .filter(
+            BatchProcessing.created_date + text(f"""INTERVAL '{stage_1_delay} DAYS'""")
+            <= func.timezone('UTC', func.now())
+        )
+        .all()
+    )
+
+    # TODO: add check if warnings have been sent out & set batch_processing.status to error if not
+
+    for batch_processing in batch_processings:
+        eligible, _ = InvoluntaryDissolutionService.check_business_eligibility(
+            batch_processing.business_identifier, exclude_in_dissolution=False
+        )
+        if eligible:
+            batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+        else:
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
+            batch_processing.notes = 'Moved back into good standing'
+        batch_processing.last_modified = datetime.utcnow()
+        batch_processing.save()
+
+
+def can_run_today(cron_value: str):
+    """Check if cron string is valid for today."""
+    tz = pytz.timezone('US/Pacific')
+    today = tz.localize(datetime.today())
+    result = croniter.match(cron_value, datetime(today.year, today.month, today.day))
+    return result
+
+
+def check_run_schedule():
+    """Check if any of the dissolution stage is valid for this run."""
+    stage_1_schedule_config = Configuration.find_by_name(
+        config_name=Configuration.Names.DISSOLUTIONS_STAGE_1_SCHEDULE.value
+    )
+    stage_2_schedule_config = Configuration.find_by_name(
+        config_name=Configuration.Names.DISSOLUTIONS_STAGE_2_SCHEDULE.value
+    )
+    stage_3_schedule_config = Configuration.find_by_name(
+        config_name=Configuration.Names.DISSOLUTIONS_STAGE_3_SCHEDULE.value
+    )
+
+    cron_valid_1 = can_run_today(stage_1_schedule_config.val)
+    cron_valid_2 = can_run_today(stage_2_schedule_config.val)
+    cron_valid_3 = can_run_today(stage_3_schedule_config.val)
+
+    return cron_valid_1, cron_valid_2, cron_valid_3
+
+
 async def run(loop, application: Flask = None):  # pylint: disable=redefined-outer-name
     """Run the stage 1-3 methods for dissolving businesses."""
     if application is None:
@@ -148,13 +214,23 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
         if flag_on:
             # check if batch can be run today
-            new_dissolutions_schedule_config = Configuration.find_by_name(config_name='DISSOLUTIONS_STAGE_1_SCHEDULE')
-            tz = pytz.timezone('US/Pacific')
-            cron_valid = croniter.match(new_dissolutions_schedule_config.val, tz.localize(datetime.today()))
-            if cron_valid:
+            stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
+            application.logger.debug(
+                f'Run schedule check: stage_1: {stage_1_valid}, stage_2: {stage_2_valid}, stage_3: {stage_3_valid}'
+            )
+            if not any([stage_1_valid, stage_2_valid, stage_3_valid]):
+                application.logger.debug(
+                    'Skipping job run since current day of the week does not match any cron schedule.'
+                )
+                return
+
+            if stage_1_valid:
                 initiate_dissolution_process(application)
-            else:
-                application.logger.debug('Skipping job run since current day of the week does not match the cron schedule.')  # noqa: E501
+            if stage_2_valid:
+                stage_2_process(application)
+            if stage_3_valid:
+                pass
+
 
 if __name__ == '__main__':
     application = create_app()

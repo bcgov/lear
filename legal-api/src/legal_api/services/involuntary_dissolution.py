@@ -98,7 +98,7 @@ class InvoluntaryDissolutionService():
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
-            include_in_dissolution (bool): Whether to include the in_dissolution check in the query.
+            exclude_in_dissolution (bool): If True, exclude businesses already in dissolution.
         """
         in_dissolution = (
             exists().where(
