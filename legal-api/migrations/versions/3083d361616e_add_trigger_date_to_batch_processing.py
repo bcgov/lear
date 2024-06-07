@@ -18,10 +18,6 @@ depends_on = None
 
 def upgrade():
     op.add_column('batch_processing', sa.Column('trigger_date', sa.TIMESTAMP(timezone=True), nullable=True))
-    op.execute("""UPDATE batch_processing
-               SET trigger_date = created_date + INTERVAL '42 DAYS'
-               """)
-    op.alter_column('batch_processing', 'trigger_date', nullable=False)
 
 
 def downgrade():
