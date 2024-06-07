@@ -101,8 +101,42 @@ def get_filing_types(legal_filings: dict):
             filing_types.append(k)
     return filing_types
 
+async def publish_event(business: Business, filing: Filing):
+    """Publish the filing message onto the NATS filing subject."""
+    try:
+        payload = {
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.business.' + filing.filing_type,
+            'source': ''.join([
+                APP_CONFIG.LEGAL_API_URL,
+                '/business/',
+                business.identifier,
+                '/filing/',
+                str(filing.id)]),
+            'id': str(uuid.uuid4()),
+            'time': datetime.utcnow().isoformat(),
+            'datacontenttype': 'application/json',
+            'identifier': business.identifier,
+            'data': {
+                'filing': {
+                    'header': {'filingId': filing.id,
+                               'effectiveDate': filing.effective_date.isoformat()
+                               },
+                    'business': {'identifier': business.identifier},
+                    'legalFilings': get_filing_types(filing.filing_json)
+                }
+            }
+        }
+        if filing.temp_reg:
+            payload['tempidentifier'] = filing.temp_reg
+        subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
+        await qsm.service.publish(subject, payload)
+    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
+        capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
+        logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
-def publish_event(business: Business, filing: Filing):
+
+def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
@@ -355,7 +389,18 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 )
 
             try:
-                publish_event(business, filing_submission)
+                await publish_event(business, filing_submission)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                print(err)
+                capture_message(
+                    f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
+                    f'on Queue with error:{err}',
+                    level='error'
+                )
+
+            try:
+                publish_gcp_queue_event(business, filing_submission)
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
                 print(err)

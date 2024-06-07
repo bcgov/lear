@@ -11,6 +11,7 @@ requests
 requests_mock
 pyhamcrest
 testcontainers==4.5.1
+google-cloud-datastore
 
 # Lint and code style
 pydocstyle<4
