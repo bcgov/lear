@@ -172,11 +172,7 @@ def stage_2_process(app: Flask):
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
-
-            batch_processing.notes = (
-                batch_processing.notes + ', ' if batch_processing.notes else ''
-            )
-            batch_processing.notes += 'Moved back into good standing'
+            batch_processing.notes = 'Moved back into good standing'
         batch_processing.last_modified = datetime.utcnow()
         batch_processing.save()
 
@@ -219,6 +215,9 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
         if flag_on:
             # check if batch can be run today
             stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
+            application.logger.debug(
+                f'Run schedule check: stage_1: {stage_1_valid}, stage_2: {stage_2_valid}, stage_3: {stage_3_valid}'
+            )
             if not any([stage_1_valid, stage_2_valid, stage_3_valid]):
                 application.logger.debug(
                     'Skipping job run since current day of the week does not match any cron schedule.'
