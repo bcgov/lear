@@ -18,7 +18,9 @@ from typing import Dict
 
 from entity_queue_common.service_utils import logger
 from legal_api.models import Business
+from legal_api.models.batch_processing import BatchProcessingStatus
 from legal_api.services.filings import validations
+from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 
 from entity_filer.filing_meta import FilingMeta
 
@@ -43,6 +45,13 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
             business.last_ar_date = agm_date
 
     business.last_ar_year = business.last_ar_year + 1 if business.last_ar_year else business.founding_date.year + 1
+
+    # remove dissolution flag if business can be withdrawn
+    if business.in_dissolution:
+        eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
+        if not eligibility:
+            batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
+            batch_processing.status = BatchProcessingStatus.WITHDRAWN.value
 
     # save the annual report date to the filing meta info
     filing_meta.application_date = ar_date

@@ -19,10 +19,8 @@ import dpath
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, Document, Filing, db
-from legal_api.models.batch_processing import BatchProcessingStatus
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
-from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.minio import MinioService
 from legal_api.services.pdf_service import RegistrarStampData
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -33,7 +31,6 @@ from entity_filer.filing_processors.filing_components.parties import update_part
 from entity_filer.utils import replace_file_with_certified_copy
 
 
-# pylint: disable=too-many-locals
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
@@ -90,13 +87,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     if business.legal_type == Business.LegalTypes.COOP:
         _update_cooperative(dissolution_filing, business, filing_rec, dissolution_type)
-
-    # remove dissolution flag if business can be withdrawn
-    if business.in_dissolution:
-        eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
-        if not eligibility:
-            batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
-            batch_processing.status = BatchProcessingStatus.WITHDRAWN.value
 
     with suppress(IndexError, KeyError, TypeError):
         filing_meta.dissolution = {
