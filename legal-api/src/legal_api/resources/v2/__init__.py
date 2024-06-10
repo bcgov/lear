@@ -22,6 +22,7 @@ from .business.business_digital_credentials import bp_dc as digital_credentials_
 from .document_signature import bp as document_signature_bp
 from .internal_services import bp as internal_bp
 from .meta import bp as meta_bp
+from .minio import bp as minio_bp
 from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
 from .request_tracker import bp as request_tracker_bp
@@ -46,6 +47,7 @@ class V2Endpoint:
         self.app.register_blueprint(businesses_bp)
         self.app.register_blueprint(digital_credentials_bp)
         self.app.register_blueprint(document_signature_bp)
+        self.app.register_blueprint(minio_bp)
         self.app.register_blueprint(namerequest_bp)
         self.app.register_blueprint(naics_bp)
         self.app.register_blueprint(request_tracker_bp)
