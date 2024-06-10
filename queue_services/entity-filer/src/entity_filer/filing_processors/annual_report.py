@@ -25,7 +25,7 @@ from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionSer
 from entity_filer.filing_meta import FilingMeta
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
+def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
     """Render the annual_report onto the business model objects."""
     legal_filing_name = 'annualReport'
     agm_date = filing[legal_filing_name].get('annualGeneralMeetingDate')
@@ -47,7 +47,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     business.last_ar_year = business.last_ar_year + 1 if business.last_ar_year else business.founding_date.year + 1
 
     # remove dissolution flag if business can be withdrawn
-    if business.in_dissolution:
+    if flag_on and business.in_dissolution:
         eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
         if not eligibility:
             batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
