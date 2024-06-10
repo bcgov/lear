@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import Filing
+from legal_api.models import Document, Filing
 from legal_api.services.minio import MinioService
 from legal_api.utils.auth import jwt
 
@@ -26,21 +26,25 @@ from legal_api.utils.auth import jwt
 bp = Blueprint('minio', __name__, url_prefix='/api/v2/documents')
 
 
-def is_complete_filing(filing_id: int) -> bool:
-    """Check if the filing is complete."""
-    filing = Filing.query.get(filing_id)
-    return filing and filing.status == 'COMPLETED'
+def is_draft_filing(file_key: str) -> bool:
+    """Check if the filing is a draft filing."""
+    document = Document.query.filter_by(filing_id=file_key).first()
+    if not document:
+        return False
+    filing = Filing.find_by_id(document.filing_id)
+    return filing and filing.status == 'DRAFT'
 
 
 @bp.route('/<string:document_key>', methods=['DELETE', 'OPTIONS'])
 @cross_origin(origin='*')
 @jwt.requires_auth
 def delete_minio_document(document_key):
-    """Delete Minio document based on the provided file key and filing ID???."""
+    """Delete Minio document based on the provided document key and if it is a draft filing."""
     try:
-
-        MinioService.delete_file(document_key)
-        return jsonify({'message': f'File {document_key} deleted successfully.'}), HTTPStatus.OK
+        if is_draft_filing(document_key):
+            MinioService.delete_file(document_key)
+            return jsonify({'message': f'File {document_key} deleted successfully.'}), HTTPStatus.OK
+        return jsonify({'message': 'Filing is not a draft.'}), HTTPStatus.FORBIDDEN
     except Exception as e:
         current_app.logger.error(f'Error deleting file {document_key}: {e}')
         return jsonify(
