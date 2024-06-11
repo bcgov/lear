@@ -38,7 +38,7 @@ def is_draft_filing(file_key: str) -> bool:
     """Check if the filing is a draft filing."""
     document = Document.find_by_file_key(file_key)
     if not document:
-        return False
+        return True
     filing = Filing.find_by_id(document.filing_id)
     return filing and filing.status == 'DRAFT'
 
@@ -57,4 +57,23 @@ def delete_minio_document(document_key):
         current_app.logger.error(f'Error deleting file {document_key}: {e}')
         return jsonify(
             message=f'Error deleting file {document_key}.'
+        ), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@bp.route('/<string:document_key>', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def get_minio_document(document_key: str):
+    """Get the document from Minio."""
+    try:
+        response = MinioService.get_file(document_key)
+        return current_app.response_class(
+                response=response.data,
+                status=response.status,
+                mimetype='application/pdf'
+            )
+    except Exception as e:
+        current_app.logger.error(f'Error getting file {document_key}: {e}')
+        return jsonify(
+            message=f'Error getting file {document_key}.'
         ), HTTPStatus.INTERNAL_SERVER_ERROR
