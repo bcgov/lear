@@ -43,7 +43,7 @@ def is_draft_filing(file_key: str) -> bool:
     return filing and filing.status == 'DRAFT'
 
 
-@bp.route('/<string:document_key>', methods=['DELETE', 'OPTIONS'])
+@bp.route('/<string:document_key>', methods=['DELETE'])
 @cross_origin(origin='*')
 @jwt.requires_auth
 def delete_minio_document(document_key):
