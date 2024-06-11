@@ -17,8 +17,7 @@ from contextlib import suppress
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
-from legal_api.models import Business
-from legal_api.models.batch_processing import BatchProcessingStatus
+from legal_api.models import BatchProcessing, Business
 from legal_api.services.filings import validations
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 
@@ -51,7 +50,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
         eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
         if not eligibility:
             batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
-            batch_processing.status = BatchProcessingStatus.WITHDRAWN.value
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
 
     # save the annual report date to the filing meta info
     filing_meta.application_date = ar_date

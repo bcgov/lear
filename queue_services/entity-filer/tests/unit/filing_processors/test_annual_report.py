@@ -18,13 +18,15 @@ import random
 from unittest.mock import patch
 
 from freezegun import freeze_time
-from legal_api.models import Business, Filing
+from legal_api.models import BatchProcessing, Business, Filing
 from registry_schemas.example_data import ANNUAL_REPORT
 
 # from entity_filer.filing_processors.filing_components import create_party, create_role
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.worker import process_filing
 from tests.unit import (
+    create_batch,
+    create_batch_processing,
     create_business,
     create_filing,
 )
@@ -98,3 +100,34 @@ async def test_process_ar_filing_no_agm(app, session):
     assert filing.status == Filing.Status.COMPLETED.value
     assert business.last_agm_date == agm_date
     assert datetime.datetime.date(business.last_ar_date) == ar_date
+
+
+def test_process_ar_filing_involuntary_dissolution(app, session):
+    """Assert that an AR filling can be applied to the model correctly."""
+    from entity_filer.filing_processors import annual_report
+    # vars
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    identifier = 'CP1234567'
+
+    # create a business that is not eligible for dissolution. ('CP' is not eligible types)
+    business = create_business(identifier, 'CP')
+    # create the batch and batch_processing that are in processing.
+    batch = create_batch()
+    batch_processing = create_batch_processing(business, batch.id)
+    now = datetime.date(2020, 9, 17)
+    ar_date = datetime.date(2020, 8, 5)
+    agm_date = datetime.date(2020, 7, 1)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business']['identifier'] = identifier
+    ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()
+
+    filing_meta = FilingMeta()
+
+    # TEST
+    with freeze_time(now):
+        filing = create_filing(payment_id, ar, business.id)
+        annual_report.process(business, filing.filing_json['filing'], filing_meta=filing_meta)
+
+    # check it out
+    assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value

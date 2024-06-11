@@ -586,3 +586,39 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
             colin_event.save()
         filing.save()
     return filing
+
+
+def create_batch(status=None, size=None, start_date=None):
+    """Create a batch"""
+    from legal_api.models import Batch
+    batch = Batch()
+    batch.batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION.value
+    batch.status = status if status else Batch.BatchStatus.PROCESSING.value
+    if size:
+        batch.size = size
+    if start_date:
+        batch.start_date = start_date
+
+    batch.save()
+    return batch
+
+
+def create_batch_processing(business, batch_id, step=None, status=None, created_date=None, last_modified=None, meta_data=None):
+    """Create a batch processing"""
+    from legal_api.models import BatchProcessing
+    batch_processing = BatchProcessing()
+    batch_processing.business_identifier = business.business_identifier
+    batch_processing.business_id = business.id
+    batch_processing.step = step if step else BatchProcessing.BatchProcessingStep.DISSOLUTION.value
+    batch_processing.status = status if status else BatchProcessing.BatchProcessingStatus.PROCESSING.value
+    if created_date:
+        batch_processing.created_date = created_date
+    if last_modified:
+        batch_processing.last_modified = last_modified
+    if meta_data:
+        batch_processing.meta_data = meta_data
+
+    batch_processing.batch_id = batch_id
+
+    batch_processing.save()
+    return batch_processing
