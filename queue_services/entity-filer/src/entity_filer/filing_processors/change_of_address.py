@@ -44,8 +44,8 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on: 
 
     if flag_on:
         if business.in_dissolution:
-            batch_processinges = BatchProcessing.find_by(business_id=business.id)
-            for batch_processing in batch_processinges:
+            batch_processings = BatchProcessing.find_by(business_id=business.id)
+            for batch_processing in batch_processings:
                 if batch_processing.status not in [
                     BatchProcessing.BatchProcessingStatus.COMPLETED,
                     BatchProcessing.BatchProcessingStatus.WITHDRAWN
