@@ -40,7 +40,7 @@ def is_draft_filing(file_key: str) -> bool:
     if not document:
         return True
     filing = Filing.find_by_id(document.filing_id)
-    return filing and filing.status == 'DRAFT'
+    return filing and filing.status == Filing.Status.DRAFT.value
 
 
 @bp.route('/<string:document_key>', methods=['DELETE'])
