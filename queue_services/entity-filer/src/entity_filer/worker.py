@@ -165,7 +165,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
                 }
             }
         )
-        
+
         gcp_queue.publish(subject,to_queue_message(ce))
 
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
@@ -236,7 +236,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('annualReport'):
                     flag_on = flags.is_on('enable-involuntary-dissolution')
-                    logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
+                    logger.debug('enable-involuntary-dissolution flag on: %s', flag_on)
                     annual_report.process(business, filing, filing_meta, flag_on)
 
                 elif filing.get('changeOfAddress'):
