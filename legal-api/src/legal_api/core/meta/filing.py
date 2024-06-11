@@ -268,7 +268,10 @@ FILINGS: Final = {
             'CBEN': 'CONTI',
             'CUL': 'CONTI',
             'CCC': 'CONTI'
-        }
+        },
+        'additional': [
+            {'types': 'C,CBEN,CUL,CCC', 'outputs': ['noticeOfArticles', 'certificate']},
+        ]
     },
     'continuationOut': {
         'name': 'continuationOut',

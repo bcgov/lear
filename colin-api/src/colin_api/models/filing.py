@@ -49,6 +49,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         COLIN = 'COLIN'
         LEAR = 'LEAR'
 
+    class FilingSource(Enum):
+        """Enum that holds the sources of a filing."""
+        BAR = 'BAR'
+        LEAR = 'LEAR'
+
     FILING_TYPES = {
         'annualReport': {
             'type_code_list': ['OTANN', 'ANNBC'],
@@ -957,6 +962,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # create new filing user
             cls._insert_filing_user(cursor=cursor, filing=filing)
 
+            filing_source = filing.header.get('source')
             # annualReportDate and annualGeneralMeetingDate will be available in annualReport
             ar_date = filing.body.get('annualReportDate', None)
             agm_date = filing.body.get('annualGeneralMeetingDate', None)
@@ -966,7 +972,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             if filing.filing_type == 'correction':
                 cls._process_correction(cursor, business, filing, corp_num)
             else:
-                ar_text = cls._process_ar(cursor, filing, corp_num, ar_date, agm_date)
+                ar_text = cls._process_ar(cursor, filing, corp_num, ar_date, agm_date, filing_source)
                 dir_text = cls._process_directors(cursor, filing, business, corp_num)
                 office_text = cls._process_office(cursor=cursor, filing=filing)
 
@@ -1027,8 +1033,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
                 # update corporation record
                 is_annual_report = filing.filing_type == 'annualReport'
+                last_ar_filed_dt = Filing._get_last_ar_filed_date(filing.header, business, filing_source)
                 Business.update_corporation(
-                    cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report)
+                    cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report,
+                    last_ar_filed_dt=last_ar_filed_dt)
 
                 # Freeze entity for Alteration
                 if filing.filing_type == 'alteration' or (
@@ -1042,6 +1050,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
             raise err
+
+    @classmethod
+    def _get_last_ar_filed_date(cls, header: dict, business: dict, filing_source: str):
+        last_ar_filed_dt = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        if filing_source == cls.FilingSource.BAR.value:
+            filing_year = header.get('filingYear')
+            recognition_dt = datetime.datetime.fromisoformat(business.get('business').get('foundingDate')).date()
+            last_ar_filed_dt = f'{filing_year}-{recognition_dt.month}-{recognition_dt.day}'
+        return last_ar_filed_dt
 
     @classmethod
     def get_filing_sub_type(cls, filing_type: str, filing_body: dict) -> Optional[str]:
@@ -1067,10 +1084,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     # pylint: disable=too-many-arguments;
-    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str) -> str:
+    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str) -> str:
         """Process specific to annual report."""
         text = ''
-        if filing.filing_type == 'annualReport':
+        if filing.filing_type == 'annualReport' and filing_source != cls.FilingSource.BAR.value:
             # update corp_state TO ACT (active) if it is in good standing. From CRUD:
             # - the current corp_state != 'ACT' and,
             # - they just filed the last outstanding ARs

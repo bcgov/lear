@@ -40,7 +40,6 @@ from .court_order import validate as court_order_validate
 from .dissolution import DissolutionTypes
 from .dissolution import validate as dissolution_validate
 from .incorporation_application import validate as incorporation_application_validate
-from .incorporation_application import validate_correction_ia
 from .put_back_on import validate as put_back_on_validate
 from .registrars_notation import validate as registrars_notation_validate
 from .registrars_order import validate as registrars_order_validate
@@ -68,20 +67,6 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
         if err:
             return err
 
-        # For now the correction validators will get called here, these might be the same rules
-        # so these 2 sections could get collapsed
-        for k in filing_json['filing'].keys():
-            # Check if the JSON key exists in the FILINGS reference Dictionary
-            if Filing.FILINGS.get(k, None):
-
-                if k == Filing.FILINGS['changeOfAddress'].get('name'):
-                    err = coa_validate(business, filing_json)
-
-                elif k == Filing.FILINGS['incorporationApplication'].get('name'):
-                    err = validate_correction_ia(filing_json)
-
-        if err:
-            return err
     elif 'dissolution' in filing_json['filing'].keys() \
             and (dissolution_type := filing_json['filing']['dissolution'].get('dissolutionType', None)) \
             and (dissolution_type in ['voluntary', 'administrative']):
