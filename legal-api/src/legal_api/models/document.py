@@ -73,3 +73,8 @@ class Document(db.Model):
             business_id=business_id,
             type=document_type
         ).order_by(desc(Document.id)).first()
+
+    @classmethod
+    def find_by_file_key(cls, file_key: str):
+        """Return the document matching the file key."""
+        return cls.query.filter_by(file_key=file_key).one_or_none()

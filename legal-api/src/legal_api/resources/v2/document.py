@@ -23,12 +23,20 @@ from legal_api.services.minio import MinioService
 from legal_api.utils.auth import jwt
 
 
-bp = Blueprint('minio', __name__, url_prefix='/api/v2/documents')
+bp = Blueprint('DOCUMENTS2', __name__, url_prefix='/api/v2/documents')
+
+
+@bp.route('/<string:file_name>/signatures', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def get_signatures(file_name: str):
+    """Return a pre-signed URL for the new document."""
+    return MinioService.create_signed_put_url(file_name), HTTPStatus.OK
 
 
 def is_draft_filing(file_key: str) -> bool:
     """Check if the filing is a draft filing."""
-    document = Document.query.filter_by(filing_id=file_key).first()
+    document = Document.find_by_file_key(file_key)
     if not document:
         return False
     filing = Filing.find_by_id(document.filing_id)
