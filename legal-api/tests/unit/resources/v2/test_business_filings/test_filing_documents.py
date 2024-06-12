@@ -36,6 +36,8 @@ from registry_schemas.example_data import (
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
+    CONTINUATION_IN,
+    CONTINUATION_OUT,
     CORRECTION_AR,
     CORRECTION_CP_SPECIAL_RESOLUTION,
     CORRECTION_INCORPORATION,
@@ -49,7 +51,6 @@ from registry_schemas.example_data import (
     RESTORATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
-    CONTINUATION_OUT,
 )
 from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION, CONTINUATION_IN
 
@@ -143,7 +144,7 @@ def test_unpaid_filing(session, client, jwt):
     assert rv.json == {}
 
 
-base_url = 'https://LEGAL_API_BASE_URL'
+base_url = 'http://localhost:5000'
 
 ALTERATION_WITHOUT_NR = copy.deepcopy(ALTERATION)
 del ALTERATION_WITHOUT_NR['nameRequest']['nrNumber']
@@ -1357,7 +1358,7 @@ def filer_action(filing_name, filing_json, meta_data, business):
      ),
     ('ben_ia_completed', 'Tb31yQIuBw', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
-     {}, HTTPStatus.NOT_FOUND
+     {'documents': {}}, HTTPStatus.OK
      ),
     ('ben_amalgamation_paid', 'Tb31yQIuBw', None,
      Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.PAID,
@@ -1371,7 +1372,19 @@ def filer_action(filing_name, filing_json, meta_data, business):
      ),
     ('ben_amalgamation_completed', 'Tb31yQIuBw', 'BC7654321',
      Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.COMPLETED,
-     {}, HTTPStatus.NOT_FOUND
+     {'documents': {}}, HTTPStatus.OK
+     ),
+    ('cben_ci_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
+                    ]}},
+     HTTPStatus.OK
+     ),
+    ('cben_ci_completed', 'Tb31yQIuBw', 'BC7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED,
+     {'documents': {}}, HTTPStatus.OK
      ),
     ('sp_registration_paid', 'Tb31yQIuBw', None, Business.LegalTypes.SOLE_PROP.value,
      'registration', REGISTRATION, Filing.Status.PAID,
@@ -1384,10 +1397,10 @@ def filer_action(filing_name, filing_json, meta_data, business):
      ),
     ('sp_registration_completed', 'Tb31yQIuBw', 'FM7654321', Business.LegalTypes.SOLE_PROP.value,
      'registration', REGISTRATION, Filing.Status.COMPLETED,
-     {}, HTTPStatus.NOT_FOUND
+     {'documents': {}}, HTTPStatus.OK
      ),
 ])
-def test_temp_document_list_for_various_filing_states(session, client, jwt,
+def test_temp_document_list_for_various_filing_states(mocker, session, client, jwt,
                                                       test_name,
                                                       temp_identifier,
                                                       identifier,
@@ -1419,6 +1432,7 @@ def test_temp_document_list_for_various_filing_states(session, client, jwt,
     filing.temp_reg = temp_identifier
     filing.save()
 
+    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
     rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
 

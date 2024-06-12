@@ -26,7 +26,7 @@ from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Document, Filing as FilingModel  # noqa: I001
 from legal_api.reports import get_pdf
-from legal_api.services import authorized, MinioService
+from legal_api.services import MinioService, authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
