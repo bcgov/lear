@@ -98,15 +98,8 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
             return
 
         # get stage_1 & stage_2 delay configs
-        if (stage_1_delay_config := app.config.get('STAGE_1_DELAY', 0)):
-            stage_1_delay = timedelta(days=int(stage_1_delay_config))
-        else:
-            stage_1_delay = timedelta(days=0)
-
-        if (stage_2_delay_config := app.config.get('STAGE_2_DELAY', 0)):
-            stage_2_delay = timedelta(days=int(stage_2_delay_config))
-        else:
-            stage_2_delay = timedelta(days=0)
+        stage_1_delay = timedelta(days=app.config.get('STAGE_1_DELAY'))
+        stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
 
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
@@ -141,10 +134,6 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
 
 def stage_2_process(app: Flask):
     """Run dissolution stage 2 process for businesses meet moving criteria."""
-    if not (stage_2_delay_config := app.config.get('STAGE_2_DELAY', None)):
-        app.logger.debug('Skipping stage 2 run since config STAGE_2_DELAY is missing.')
-        return
-
     batch_processings = (
         db.session.query(BatchProcessing)
         .filter(BatchProcessing.batch_id == Batch.id)
@@ -164,13 +153,15 @@ def stage_2_process(app: Flask):
 
     # TODO: add check if warnings have been sent out & set batch_processing.status to error if not
 
+    stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
+
     for batch_processing in batch_processings:
         eligible, _ = InvoluntaryDissolutionService.check_business_eligibility(
             batch_processing.business_identifier, exclude_in_dissolution=False
         )
         if eligible:
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
-            batch_processing.trigger_date = datetime.utcnow() + timedelta(days=int(stage_2_delay_config))
+            batch_processing.trigger_date = datetime.utcnow() + stage_2_delay
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
