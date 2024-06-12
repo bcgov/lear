@@ -887,7 +887,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION,
      None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'letterOfAgmExtension': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
+         'letterOfAgmExtension': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }
      },
@@ -906,7 +906,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE,
      None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'letterOfAgmLocationChange': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
+         'letterOfAgmLocationChange': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }
      },
@@ -1246,7 +1246,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      HTTPStatus.OK, None
      )
 ])
-def test_document_list_for_various_filing_states(session, client, jwt,
+def test_document_list_for_various_filing_states(session, mocker, client, jwt,
                                                  test_name,
                                                  identifier,
                                                  entity_type,
@@ -1283,6 +1283,22 @@ def test_document_list_for_various_filing_states(session, client, jwt,
         filing._meta_data = filer_action(filing_name_1, filing_json, meta_data, business)
         filing.save()
 
+        if filing_name_1 == 'continuationIn':
+            affidavit_file_key = meta_data['continuationIn']['affidavitFileKey']
+            expected_msg['documents']['staticDocuments'] = [
+                {
+                    'name': 'Director Affidavit',
+                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{affidavit_file_key}'
+                }
+            ]
+            for file in meta_data['continuationIn']['authorizationFiles']:
+                file_key = file.get('fileKey')
+                expected_msg['documents']['staticDocuments'].append({
+                    'name': file.get('fileName'),
+                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
+                })
+
+    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], business.identifier))
 
@@ -1301,6 +1317,12 @@ def filer_action(filing_name, filing_json, meta_data, business):
         meta_data['alteration'] = {}
         meta_data['alteration']['fromLegalName'] = business.legal_name
         meta_data['alteration']['toLegalName'] = legal_name
+
+    if filing_name == 'continuationIn':
+        continuation_in = filing_json['filing']['continuationIn']
+        meta_data['continuationIn'] = {}
+        meta_data['continuationIn']['affidavitFileKey'] = continuation_in['foreignJurisdiction']['affidavitFileKey']
+        meta_data['continuationIn']['authorizationFiles'] = continuation_in['authorization']['files']
 
     if filing_name == 'correction' and business.legal_type == 'CP':
         meta_data['correction'] = {}
