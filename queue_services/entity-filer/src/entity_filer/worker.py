@@ -35,14 +35,11 @@ from entity_queue_common.messages import publish_email_message
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
-from gcp_queue import GcpQueue
-from gcp_queue import SimpleCloudEvent
-from gcp_queue import to_queue_message
+from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
-from legal_api.utils.datetime import datetime
-from legal_api.utils.datetime import timezone
+from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
@@ -100,6 +97,7 @@ def get_filing_types(legal_filings: dict):
         if Filing.FILINGS.get(k, None):
             filing_types.append(k)
     return filing_types
+
 
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
@@ -160,13 +158,13 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
                 business.identifier,
                 '/filing/',
                 str(filing.id)]),
-                subject=subject,
+            subject=subject,
             time=datetime.now(timezone.utc),
             type='bc.registry.business.' + filing.filing_type,
             data=data
         )
-        
-        gcp_queue.publish(subject,to_queue_message(ce))
+
+        gcp_queue.publish(subject, to_queue_message(ce))
 
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')

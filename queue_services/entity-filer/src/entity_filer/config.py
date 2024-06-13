@@ -138,10 +138,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     NAMEX_PAY_TOPIC = os.getenv('NAMEX_PAY_TOPIC', 'namex-pay-dev')
 
     AUDIENCE = os.getenv(
-        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+        'AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
     )
     PUBLISHER_AUDIENCE = os.getenv(
-        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+        'PUBLISHER_AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
     )
 
 
