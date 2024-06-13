@@ -1,5 +1,5 @@
 # platform=linux/amd64
-FROM python:3.8.6-buster
+FROM python:3.9.19-bullseye
 
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"
@@ -22,8 +22,9 @@ WORKDIR /opt/app-root
 # Install the requirements
 COPY ./requirements.txt .
 
-#RUN pip install --upgrade pip
-RUN pip install pip==20.1.1
+RUN pip install --upgrade pip
+RUN pip install --upgrade wheel
+# RUN pip install pip==20.1.1
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
