@@ -7,6 +7,9 @@ ARG BUILD_DATE="missing"
 ENV VCS_REF=${VCS_REF}
 ENV BUILD_DATE=${BUILD_DATE}
 
+# TODO remove this when the conversion to the new queue is completed
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
 LABEL org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.build-date=${BUILD_DATE}
 
