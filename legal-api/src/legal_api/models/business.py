@@ -22,9 +22,10 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
+from sqlalchemy import text, func, exists, and_, not_
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import backref, aliased
 from sqlalchemy.sql import func
 from sqlalchemy_continuum import version_class
 
@@ -397,11 +398,17 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
     @property
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
         # A firm is always in good standing
         if self.is_firm:
             return True
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
+        # When involuntary dissolution feature flag is on, check transition filing
+        if flags.is_on('enable_involuntary_dissolution'):
+            if self._has_no_transition_filed_after_restoration():
+                return False
         # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
         if self.state == Business.State.ACTIVE:
             if self.restoration_expiry_date:
@@ -411,6 +418,45 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
+    
+    def _has_no_transition_filed_after_restoration(self):
+        """Return SQLAlchemy clause for no transition filed after restoration check.
+
+        Check if the business needs to file Transition but does not file it within 12 months after restoration.
+        """
+        from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
+
+        new_act_date = func.date('2004-03-29 00:00:00+00:00')
+        restoration_filing = aliased(Filing)
+        transition_filing = aliased(Filing)
+
+        restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
+        return exists().where(
+            and_(
+                self.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
+                self.founding_date < new_act_date,
+                restoration_filing.business_id == self.id,
+                restoration_filing._filing_type.in_([  # pylint: disable=protected-access
+                    CoreFiling.FilingTypes.RESTORATION.value,
+                    CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
+                ]),
+                restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
+                not_(
+                    exists().where(
+                        and_(
+                            transition_filing.business_id == self.id,
+                            transition_filing._filing_type == CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
+                            transition_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                            transition_filing.effective_date.between(
+                                restoration_filing.effective_date,
+                                restoration_filing_effective_cutoff
+                            )
+                        )
+                    )
+                )
+            )
+        )
 
     @property
     def in_dissolution(self):
