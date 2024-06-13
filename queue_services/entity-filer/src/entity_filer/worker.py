@@ -137,7 +137,7 @@ async def publish_event(business: Business, filing: Filing):
 
 
 def publish_gcp_queue_event(business: Business, filing: Filing):
-    """Publish the filing message onto the NATS filing subject."""
+    """Publish the filing message onto the GCP-QUEUE filing subject."""
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
         data= {
