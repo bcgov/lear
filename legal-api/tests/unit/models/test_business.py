@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that the Business Model is working as expected.
 """
+import copy
 from datetime import datetime, timedelta
 from flask import current_app
 from unittest.mock import patch
@@ -23,6 +24,7 @@ from unittest.mock import patch
 import datedelta
 import pytest
 from sqlalchemy_continuum import versioning_manager
+from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Batch, BatchProcessing, Business, Filing, Party, PartyRole, db
@@ -30,7 +32,12 @@ from legal_api.services import flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 from tests.unit import has_expected_date_str_format
-from tests.unit.models import factory_party_role, factory_batch
+from tests.unit.models import (
+    factory_party_role, 
+    factory_batch, 
+    factory_business as factory_business_from_tests,
+    factory_completed_filing
+)
 
 
 def factory_business(designation: str = '001'):
@@ -253,6 +260,35 @@ def test_good_standing(session, last_ar_date, legal_type, state, limited_restora
     business.save()
 
     assert business.good_standing is expected
+
+RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
+RESTORATION_FILING['filing']['restoration'] = RESTORATION
+@pytest.mark.parametrize('test_name, has_no_transition_filed, good_standing', [
+    ('NO_NEED_TRANSITION_NEW_ACT', False, True),
+    ('NO_NEED_TRANSITION_BUT_IN_LIMITED_RESTORATION', False, False),
+    ('TRANSITION_COMPLETED', False, True),
+    ('TRANSITION_NOT_FILED', True, False)
+])
+def test_good_standing_check_transition_filing(session, test_name, has_no_transition_filed, good_standing):
+    "Assert that the business is in good standing with additional check for transition filing"
+    business = factory_business_from_tests(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
+    restoration_filing = factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
+    if test_name == 'NO_NEED_TRANSITION_NEW_ACT':
+        business.founding_date = datetime.utcnow()
+        business.save()
+    elif test_name == 'NO_NEED_TRANSITION_BUT_IN_LIMITED_RESTORATION':
+        business.restoration_expiry_date = datetime.utcnow() + datedelta.datedelta(years=1)
+        business.save()
+        restoration_filing.effective_date = datetime.utcnow()
+        restoration_filing.save()
+    elif test_name == 'TRANSITION_COMPLETED':
+        factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
+    
+    check_result = business._has_no_transition_filed_after_restoration()
+    assert check_result == has_no_transition_filed
+    with patch.object(flags, 'is_on', return_value=True):
+        assert business.good_standing == good_standing
+
 
 
 def test_business_json(session):

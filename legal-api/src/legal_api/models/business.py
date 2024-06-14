@@ -22,11 +22,10 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
-from sqlalchemy import text, func, exists, and_, not_
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, aliased
-from sqlalchemy.sql import func
+from sqlalchemy.orm import aliased, backref
+from sqlalchemy.sql import and_, exists, func, not_, text
 from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
@@ -35,6 +34,8 @@ from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
+from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
+from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .db import db  # noqa: I001
 from .party import Party
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
@@ -42,8 +43,6 @@ from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unus
 
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
@@ -418,11 +417,11 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 date_cutoff = last_ar_date + datedelta.datedelta(years=1, months=2, days=1)
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
-    
-    def _has_no_transition_filed_after_restoration(self):
-        """Return SQLAlchemy clause for no transition filed after restoration check.
 
-        Check if the business needs to file Transition but does not file it within 12 months after restoration.
+    def _has_no_transition_filed_after_restoration(self) -> bool:
+        """Return True for no transition filed after restoration check. Otherwise, return False.
+
+        Check whether the business needs to file Transition but does not file it within 12 months after restoration.
         """
         from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
 
@@ -431,7 +430,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         transition_filing = aliased(Filing)
 
         restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
-        return exists().where(
+        condition = exists().where(
             and_(
                 self.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 self.founding_date < new_act_date,
@@ -446,8 +445,10 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                     exists().where(
                         and_(
                             transition_filing.business_id == self.id,
-                            transition_filing._filing_type == CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
-                            transition_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                            transition_filing._filing_type == \
+                            CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
+                            transition_filing._status == \
+                            Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
                                 restoration_filing_effective_cutoff
@@ -457,6 +458,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
                 )
             )
         )
+        return db.session.query(condition).scalar()
 
     @property
     def in_dissolution(self):
