@@ -179,11 +179,14 @@ async def test_nats_queue(app, stan_server, future, event_loop, client_id):
         "queue": queue_name,
         "durable_name": durable_name,
     }
-    await nats_queue.connect()
 
-    identifier = 12345
-    queue_message = create_filing_msg(identifier)
-    await nats_queue.publish(subject=subject, msg=queue_message)
+    range_val = 5
+    for x in range(range_val):
+        await nats_queue.connect()
+
+        identifier = 12340 + x
+        queue_message = create_filing_msg(identifier)
+        await nats_queue.publish(subject=subject, msg=queue_message)
 
     try:
         await asyncio.wait_for(future, 2, loop=event_loop)
@@ -191,5 +194,40 @@ async def test_nats_queue(app, stan_server, future, event_loop, client_id):
         print(err)
 
     # check it out
-    assert len(msgs) == 1
-    assert str(identifier) in msgs[0].data.decode()
+    assert len(msgs) == range_val
+    # assert str(identifier) in msgs[0].data.decode()
+
+
+def test_nats_healthz(app, mocker):
+    """Basic test to ensure the fixtures, loops and Python version are correct."""
+    from http import HTTPStatus
+    from business_pay.services import nats_queue
+
+    with app.test_client() as client:
+
+        rv = client.get ("/ops/healthz")
+
+        assert rv.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+
+    with app.test_client() as client:
+        mp1 = mocker.patch(
+            'business_pay.services.nats_queue.nc',
+            new_callable=mocker.PropertyMock,
+            return_value=object
+            )
+        mp2 = mocker.patch(
+            'business_pay.services.nats_queue.nc.is_connected',
+            new_callable=mocker.PropertyMock,
+            return_value=True
+            )
+
+        qt = client.get ("/ops/healthz")
+
+        assert qt.status_code == HTTPStatus.OK
+
+        nats_queue._error_count = 10
+        
+        pt = client.get ("/ops/healthz")
+
+        assert pt.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+

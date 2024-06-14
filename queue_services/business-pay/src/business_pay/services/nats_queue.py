@@ -118,6 +118,7 @@ class NatsQueue:
         self.subscription_options = subscription_options or {}
         self.config = config
         self._name = name
+        self._error_count = 0
 
         async def conn_lost_cb(error):
             logger.info("Connection lost:%s", error)
@@ -142,6 +143,7 @@ class NatsQueue:
         """Determine if the service is working."""
         if self.nc and self.nc.is_connected:
             return True
+        self._error_count += 1
         return False
 
     @property
@@ -150,6 +152,11 @@ class NatsQueue:
         if self.nc and self.nc.is_connected:
             return True
         return False
+
+    @property
+    def error_count(self):
+        """Return the error count."""
+        return self._error_count
 
     @property
     def name(self):
@@ -172,6 +179,9 @@ class NatsQueue:
             if await self.is_healthy:
                 return
         except Exception as err:
+            logger.debug("NATS connection not healthy: %s", err)
+            self.nc = None
+            self.sc = None
             print(err)
 
         if not self.config:
@@ -196,7 +206,7 @@ class NatsQueue:
         nats_connection_options = {
             **self.config.NATS_CONNECTION_OPTIONS,
             **{
-                # 'loop': self._loop,
+                'loop': self._loop,
                 "error_cb": error_cb
             },
             **self.nats_connection_options,
