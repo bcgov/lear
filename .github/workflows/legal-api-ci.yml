@@ -102,6 +102,7 @@ jobs:
           file: ./legal-api/coverage.xml
           flags: legalapi
           name: codecov-legal-api
+          token: ${{ secrets.CODECOV_TOKEN}}
           fail_ci_if_error: true
 
   build-check:
