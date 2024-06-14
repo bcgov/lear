@@ -1,11 +1,14 @@
 # platform=linux/amd64
-FROM python:3.8.6-buster
+FROM python:3.9.19-bullseye
 
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"
 
 ENV VCS_REF=${VCS_REF}
 ENV BUILD_DATE=${BUILD_DATE}
+
+# TODO remove this when the conversion to the new queue is completed
+ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 LABEL org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.build-date=${BUILD_DATE}
@@ -19,8 +22,9 @@ WORKDIR /opt/app-root
 # Install the requirements
 COPY ./requirements.txt .
 
-#RUN pip install --upgrade pip
-RUN pip install pip==20.1.1
+RUN pip install --upgrade pip
+RUN pip install --upgrade wheel
+# RUN pip install pip==20.1.1
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .

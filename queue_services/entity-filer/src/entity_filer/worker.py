@@ -141,9 +141,21 @@ async def publish_event(business: Business, filing: Filing):
 
 
 def publish_gcp_queue_event(business: Business, filing: Filing):
-    """Publish the filing message onto the NATS filing subject."""
+    """Publish the filing message onto the GCP-QUEUE filing subject."""
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
+        data= {
+                'filing': {
+                    'header': {'filingId': filing.id,
+                               'effectiveDate': filing.effective_date.isoformat()
+                               },
+                    'business': {'identifier': business.identifier},
+                    'legalFilings': get_filing_types(filing.filing_json)
+                }
+            }
+        if filing.temp_reg:
+            data['tempidentifier'] = filing.temp_reg
+
         ce = SimpleCloudEvent(
             id=str(uuid.uuid4()),
             source=''.join([
@@ -155,15 +167,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
                 subject=subject,
             time=datetime.now(timezone.utc),
             type='bc.registry.business.' + filing.filing_type,
-            data= {
-                'filing': {
-                    'header': {'filingId': filing.id,
-                               'effectiveDate': filing.effective_date.isoformat()
-                               },
-                    'business': {'identifier': business.identifier},
-                    'legalFilings': get_filing_types(filing.filing_json)
-                }
-            }
+            data=data
         )
 
         gcp_queue.publish(subject,to_queue_message(ce))
