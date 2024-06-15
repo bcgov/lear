@@ -225,9 +225,19 @@ def test_nats_healthz(app, mocker):
 
         assert qt.status_code == HTTPStatus.OK
 
-        nats_queue._error_count = 10
+        nats_queue._error_count = 20
         
         pt = client.get ("/ops/healthz")
 
         assert pt.status_code == HTTPStatus.SERVICE_UNAVAILABLE
 
+def test_nats_readyz(app, mocker):
+    """Basic test to ensure the fixtures, loops and Python version are correct."""
+    from http import HTTPStatus
+    from business_pay.services import nats_queue
+
+    with app.test_client() as client:
+
+        rv = client.get ("/ops/readyz")
+
+        assert rv.status_code == HTTPStatus.OK

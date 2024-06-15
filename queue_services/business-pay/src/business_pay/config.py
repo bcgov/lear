@@ -138,6 +138,7 @@ class Config:  # pylint: disable=too-few-public-methods
     
     SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
 
+    NATS_CONNECT_ERROR_COUNT_MAX =  os.getenv("NATS_CONNECT_ERROR_COUNT_MAX", 10)
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
