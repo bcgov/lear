@@ -25,7 +25,7 @@ from legal_api.models import Batch, BatchProcessing, Configuration, db  # noqa: 
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from sentry_sdk.integrations.logging import LoggingIntegration
-from sqlalchemy import Date, cast, func, text
+from sqlalchemy import Date, cast, func
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
@@ -77,8 +77,7 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
     """Initiate dissolution process for new businesses that meet dissolution criteria."""
     try:
         # check if batch has already run today
-        tz = pytz.timezone('US/Pacific')
-        today_date = tz.localize(datetime.today()).date()
+        today_date = datetime.utcnow().date()
 
         batch_today = (
             db.session.query(Batch)
@@ -98,11 +97,15 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
             app.logger.debug('Skipping job run since there are no businesses eligible for dissolution.')
             return
 
+        # get stage_1 & stage_2 delay configs
+        stage_1_delay = timedelta(days=app.config.get('STAGE_1_DELAY'))
+        stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
+
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                       status=Batch.BatchStatus.PROCESSING,
                       size=len(businesses_eligible),
-                      start_date=datetime.now())
+                      start_date=datetime.utcnow())
         batch.save()
 
         # create batch processing entries for each business being dissolved
@@ -111,19 +114,10 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
             batch_processing = BatchProcessing(business_identifier=business.identifier,
                                                step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                                                status=BatchProcessing.BatchProcessingStatus.PROCESSING,
-                                               created_date=datetime.now(),
+                                               created_date=datetime.utcnow(),
+                                               trigger_date=datetime.utcnow()+stage_1_delay,
                                                batch_id=batch.id,
                                                business_id=business.id)
-
-            if (stage_1_delay_config := app.config.get('STAGE_1_DELAY', 0)):
-                stage_1_delay = timedelta(days=int(stage_1_delay_config))
-            else:
-                stage_1_delay = timedelta(days=0)
-
-            if (stage_2_delay_config := app.config.get('STAGE_2_DELAY', 0)):
-                stage_2_delay = timedelta(days=int(stage_2_delay_config))
-            else:
-                stage_2_delay = timedelta(days=0)
 
             target_dissolution_date = batch_processing.created_date + stage_1_delay + stage_2_delay
 
@@ -140,10 +134,6 @@ def initiate_dissolution_process(app: Flask):  # pylint: disable=redefined-outer
 
 def stage_2_process(app: Flask):
     """Run dissolution stage 2 process for businesses meet moving criteria."""
-    if not (stage_1_delay := app.config.get('STAGE_1_DELAY', None)):
-        app.logger.debug('Skipping stage 2 run since config STAGE_1_DELAY is missing.')
-        return
-
     batch_processings = (
         db.session.query(BatchProcessing)
         .filter(BatchProcessing.batch_id == Batch.id)
@@ -156,13 +146,14 @@ def stage_2_process(app: Flask):
             BatchProcessing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
         )
         .filter(
-            BatchProcessing.created_date + text(f"""INTERVAL '{stage_1_delay} DAYS'""")
-            <= func.timezone('UTC', func.now())
+            BatchProcessing.trigger_date <= func.timezone('UTC', func.now())
         )
         .all()
     )
 
     # TODO: add check if warnings have been sent out & set batch_processing.status to error if not
+
+    stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
 
     for batch_processing in batch_processings:
         eligible, _ = InvoluntaryDissolutionService.check_business_eligibility(
@@ -170,6 +161,7 @@ def stage_2_process(app: Flask):
         )
         if eligible:
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+            batch_processing.trigger_date = datetime.utcnow() + stage_2_delay
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
