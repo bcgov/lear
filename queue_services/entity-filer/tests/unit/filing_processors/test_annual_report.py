@@ -33,22 +33,30 @@ from tests.unit import (
 )
 
 
-@pytest.mark.parametrize('test_name,flag_on', [
-    ('flag is on', True),
-    ('flag is off', False)
+@pytest.mark.parametrize('test_name,flag_on,in_dissolution,eligibility,legal_type,', [
+    ('AR successfully', True, False, False, 'CP'),
+    ('Not withdrawn from the dissolution process', True, True, True, 'CP'),
+    ('Withdrawn from the dissolution process', True, True, False, 'BC'),
+    ('AR successfully when flag is off', False, True, False, 'CP')
 ])
-def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag_on):
+def test_process_ar_filing_involuntary_dissolution(app, session, test_name, in_dissolution, eligibility, legal_type, flag_on):
     """Assert that an AR filling can be applied to the model correctly."""
     from entity_filer.filing_processors import annual_report
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
 
-    # create a business that is not eligible for dissolution. ('CP' is not eligible types)
-    business = create_business(identifier, 'CP')
-    # create the batch and batch_processing that are in processing.
-    batch = create_batch()
-    batch_processing = create_batch_processing(business, batch.id)
+    business = create_business(identifier, legal_type)
+    # create the batch and batch_processing.
+    batch_status = 'PROCESSING'
+    if not in_dissolution:
+        batch_status = 'COMPLETED'
+    batch = create_batch(status=batch_status)
+    batch_processing = create_batch_processing(business=business, batch_id=batch.id, status=batch_status)
+
+    business.no_dissolution = False if eligibility else True
+    business.save()
+
     now = datetime.date(2020, 9, 17)
     ar_date = datetime.date(2020, 8, 5)
     agm_date = datetime.date(2020, 7, 1)
@@ -65,12 +73,12 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
         annual_report.process(business, filing.filing_json['filing'], filing_meta=filing_meta, flag_on=flag_on)
 
     # check it out
-    if flag_on == 'enable-involuntary-dissolution':
+    if flag_on and in_dissolution and not eligibility:
         assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
         assert batch_processing.notes == 'Moved back to good standing'
-
-    assert str(business.last_agm_date) == str(agm_date)
-    assert str(business.last_ar_date) == str(agm_date)
+    else:
+        assert str(business.last_agm_date) == str(agm_date)
+        assert str(business.last_ar_date) == str(agm_date)
 
 
 async def test_process_ar_filing_no_agm(app, session):
