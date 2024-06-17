@@ -22,6 +22,7 @@ launchdarkly-server-sdk = "^9.4.0"
 pg8000 = "^1.31.2"
 cachecontrol = "^0.14.0"
 gunicorn = "^22.0.0"
+nest-asyncio = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"

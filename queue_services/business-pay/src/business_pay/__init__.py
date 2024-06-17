@@ -46,7 +46,7 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from .config import Config, ProdConfig
 from .database.db import db
 from .resources import register_endpoints
-from .services import nats_queue
+from .services import queue
 from .services import gcp_queue
 
 
@@ -64,14 +64,8 @@ def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
         )
 
     db.init_app(app)
-    gcp_queue.init_app(app)
     register_endpoints(app)
-    
-    try:
-        event_loop = asyncio.get_running_loop()
-    except Exception as err:
-        print(err)
-        event_loop = asyncio.get_event_loop()
-    nats_queue.init_app(app, loop=event_loop)
+    gcp_queue.init_app(app)
+    queue.init_app(app)
 
     return app

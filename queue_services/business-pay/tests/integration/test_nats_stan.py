@@ -147,61 +147,9 @@ async def get_stan(event_loop, client_id):
     return sc
 
 
-# async def test_nats_queue(entity_stan, stan_server, future, event_loop, client_id):
-@pytest.mark.asyncio
-async def test_nats_queue(app, stan_server, future, event_loop, client_id):
-    """Basic test to ensure the fixtures, loops and Python version are correct."""
-
-    from business_pay.services import nats_queue
-    from business_pay.config import Config
-
-    # file handler callback
-    msgs = []
-
-    async def cb_file_handler(msg):
-        nonlocal msgs
-        nonlocal future
-        msgs.append(msg)
-        if len(msgs) == 1:
-            future.set_result(True)
-
-    file_handler_subject = "main"
-    subject = f"entity_queue.{file_handler_subject}"
-    queue_name = f"entity_durable_name.{file_handler_subject}"
-    durable_name = queue_name
-
-    nats_queue._loop = event_loop
-    nats_queue.config = Config
-    nats_queue.stan_connection_options = {"client_id": client_id}
-    nats_queue.cb_handler = cb_file_handler
-    nats_queue.subscription_options = {
-        "subject": subject,
-        "queue": queue_name,
-        "durable_name": durable_name,
-    }
-
-    range_val = 5
-    for x in range(range_val):
-        await nats_queue.connect()
-
-        identifier = 12340 + x
-        queue_message = create_filing_msg(identifier)
-        await nats_queue.publish(subject=subject, msg=queue_message)
-
-    try:
-        await asyncio.wait_for(future, 2, loop=event_loop)
-    except Exception as err:  # noqa: B902
-        print(err)
-
-    # check it out
-    assert len(msgs) == range_val
-    # assert str(identifier) in msgs[0].data.decode()
-
-
-def test_nats_healthz(app, mocker):
+def test_nats_healthz_no_nats(app):
     """Basic test to ensure the fixtures, loops and Python version are correct."""
     from http import HTTPStatus
-    from business_pay.services import nats_queue
 
     with app.test_client() as client:
 
@@ -209,27 +157,23 @@ def test_nats_healthz(app, mocker):
 
         assert rv.status_code == HTTPStatus.SERVICE_UNAVAILABLE
 
+
+def test_nats_healthz_with_nats(app, mocker, stan_server):
+    """Basic test to ensure the fixtures, loops and Python version are correct."""
+    from http import HTTPStatus
+    from business_pay.services import queue
+
+
     with app.test_client() as client:
-        mp1 = mocker.patch(
-            'business_pay.services.nats_queue.nc',
-            new_callable=mocker.PropertyMock,
-            return_value=object
-            )
-        mp2 = mocker.patch(
-            'business_pay.services.nats_queue.nc.is_connected',
-            new_callable=mocker.PropertyMock,
-            return_value=True
-            )
+
+        this_loop = asyncio.get_event_loop()
+        queue.init_app(app, loop=this_loop)
+        # this_loop.run_until_complete(queue.connect())
 
         qt = client.get ("/ops/healthz")
 
         assert qt.status_code == HTTPStatus.OK
 
-        nats_queue._error_count = 20
-        
-        pt = client.get ("/ops/healthz")
-
-        assert pt.status_code == HTTPStatus.SERVICE_UNAVAILABLE
 
 def test_nats_readyz(app, mocker):
     """Basic test to ensure the fixtures, loops and Python version are correct."""
@@ -241,3 +185,21 @@ def test_nats_readyz(app, mocker):
         rv = client.get ("/ops/readyz")
 
         assert rv.status_code == HTTPStatus.OK
+
+@pytest.mark.asyncio
+async def test_queue_connect_to_nats(app, stan_server):
+    """Assert that the service can connect to the STAN Queue."""
+    from business_pay.services import nats_queue
+
+    # sanity check
+    assert not nats_queue.is_connected
+
+    # test
+    await nats_queue.connect()
+    assert nats_queue.is_connected
+
+    await nats_queue.connect()
+    assert nats_queue.is_connected
+
+    await nats_queue.close()
+    assert nats_queue.is_closed

@@ -35,13 +35,16 @@
 
 This service registers interest in listening to a Queue and processing received messages.
 """
+from __future__ import annotations
+
 import asyncio
-import functools
 import json
-import signal
 from typing import Dict
 
+import nest_asyncio
+from flask import g
 from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS
+from nats.aio.client import DEFAULT_CONNECT_TIMEOUT
 from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 from flask import Flask
 from flask import current_app
@@ -50,6 +53,15 @@ from structured_logging import StructuredLogging
 from business_pay import Config
 
 logger = StructuredLogging.get_logger()
+
+
+async def error_cb(e):
+    """Emit error message to the log stream."""
+    logger.error("NATS library emitted an error. %s", e, stack_info=True)
+
+async def default_cb(msg):
+    """Default callback handler."""
+    logger.error("NATS default callback happened: %s", msg)
 
 
 class NatsQueue:
@@ -64,13 +76,9 @@ class NatsQueue:
         nats_connection_options=None,
         stan_connection_options=None,
         subscription_options=None,
-        nats_connection=None,
-        stan_connection=None,
         config=None,
         name=None,
     ):
-        self.sc = stan_connection
-        self.nc = nats_connection
         self._start_seq = 0
         self._loop = loop
         self.cb_handler = cb_handler
@@ -87,8 +95,6 @@ class NatsQueue:
                 nats_connection_options=nats_connection_options,
                 stan_connection_options=stan_connection_options,
                 subscription_options=subscription_options,
-                nats_connection=nats_connection,
-                stan_connection=stan_connection,
                 config=config,
                 name=name,
             )
@@ -97,28 +103,24 @@ class NatsQueue:
         self,
         app: Flask = None,
         loop=None,
-        cb_handler=None,
-        nats_connection_options=None,
-        stan_connection_options=None,
-        subscription_options=None,
-        nats_connection=None,
-        stan_connection=None,
+        cb_handler=default_cb,
+        nats_connection_options={},
+        stan_connection_options={},
+        subscription_options={},
         config=None,
         name=None,
     ):
         """Initialize the application."""
         self.app = app
-        self.sc = stan_connection
-        self.nc = nats_connection
         self._start_seq = 0
-        self._loop = loop
         self.cb_handler = cb_handler
-        self.nats_connection_options = nats_connection_options or {}
-        self.stan_connection_options = stan_connection_options or {}
-        self.subscription_options = subscription_options or {}
-        self.config = config
         self._name = name
         self._error_count = 0
+        self.nc = None
+        self.sc = None
+
+        nest_asyncio.apply()
+        self._loop = loop or asyncio.get_event_loop()
 
         async def conn_lost_cb(error):
             logger.info("Connection lost:%s", error)
@@ -135,8 +137,68 @@ class NatsQueue:
 
         self._stan_conn_lost_cb = conn_lost_cb
 
-        if not self.config and self.app:
-            self.config = app.config
+        app.teardown_appcontext(self.teardown)
+
+        default_nats_options = {
+            'io_loop': self._loop,
+            'connect_timeout': app.config.get('NATS_CONNECT_TIMEOUT', DEFAULT_CONNECT_TIMEOUT),
+
+            # NATS handlers
+            'error_cb': self.on_error,
+            'closed_cb': self.on_close,
+            'reconnected_cb': self.on_reconnect,
+            'disconnected_cb': self.on_disconnect,
+        }
+        nats_options = nats_connection_options or {}
+        self.nats_connection_options = {**default_nats_options,
+                        **self.app.config.get('NATS_CONNECTION_OPTIONS', {}),
+                        **nats_options}
+
+        self.stan_connection_options = {
+                        **self.app.config.get('STAN_CONNECTION_OPTIONS', {}),
+                        **stan_connection_options}
+
+        self.subscription_options = {
+                        **self.app.config.get('SUBSCRIPTION_OPTIONS', {}),
+                        **subscription_options}
+
+    def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
+        """Destroy all objects created by this extension."""
+        try:
+            this_loop = self._loop or asyncio.get_event_loop()
+            this_loop.run_until_complete(self.close())
+        except RuntimeError as e:
+            self.logger.error(e)
+
+    @property
+    def is_closed(self):
+        """Return True if the connection toThe cluster is closed."""
+        if self.nc:
+            return self.nc.is_closed
+        return True
+
+    @property
+    def is_connected(self):
+        """Return True if connected to the NATS cluster."""
+        if self.nc:
+            return self.nc.is_connected
+        return False
+
+    async def on_error(self, e):
+        """Handle errors raised by the client library."""
+        self.logger.warning('Error: %s', e)
+
+    async def on_reconnect(self):
+        """Invoke by the client library when attempting to reconnect to NATS."""
+        self.logger.warning('Reconnected to NATS at nats://%s', self.nc.connected_url.netloc if self.nc else 'none')
+
+    async def on_disconnect(self):
+        """Invoke by the client library when disconnected from NATS."""
+        self.logger.warning('Disconnected from NATS')
+
+    async def on_close(self):
+        """Invoke by the client library when the NATS connection is closed."""
+        self.logger.warning('Closed connection to NATS')
 
     @property
     async def is_healthy(self):
@@ -152,6 +214,20 @@ class NatsQueue:
         if self.nc and self.nc.is_connected:
             return True
         return False
+
+    @property
+    def stan(self):
+        """Return the STAN client for the Queue Service."""
+        if not hasattr(g, 'stan'):
+                return None
+        return g.stan
+
+    @property
+    def nats(self):
+        """Return the NATS client for the Queue Service."""
+        if not hasattr(g, 'nats'):
+            return None
+        return g.nats
 
     @property
     def error_count(self):
@@ -173,80 +249,22 @@ class NatsQueue:
 
         Also handles reconnecting when the network has dropped the connection.
         Both the NATS and the STAN clients need to be reinstantiated to work correctly.
-
         """
         try:
-            if await self.is_healthy:
-                return
-        except Exception as err:
-            logger.debug("NATS connection not healthy: %s", err)
-            self.nc = None
-            self.sc = None
-            print(err)
+            if not hasattr(g, 'nats'):
+                g.nats = self.nc = NATS()
+                g.stan = self.sc = STAN()
 
-        if not self.config:
-            logger.error("missing configuration object.")
-            raise AttributeError("missing configuration object.")
-
-        logger.info("Connecting...")
-        if self.nc:
-            try:
-                logger.debug("close old NATS client")
-                await self.nc.close()
-            except (asyncio.CancelledError, Exception) as err:
-                logger.debug("closing stale connection err:%s", err)
-            finally:
-                self.nc = None
-
-        self.nc = NATS()
-        self.sc = STAN()
-
-        self.config = Config()
-
-        nats_connection_options = {
-            **self.config.NATS_CONNECTION_OPTIONS,
-            **{
-                'loop': self._loop,
-                "error_cb": error_cb
-            },
-            **self.nats_connection_options,
-        }
-
-        stan_connection_options = {
-            **self.config.STAN_CONNECTION_OPTIONS,
-            **{
-                "nats": self.nc,
-                "conn_lost_cb": self._stan_conn_lost_cb,
-                # 'loop': self._loop,
-            },
-            **self.stan_connection_options,
-        }
-
-        subscription_options = {
-            **self.config.SUBSCRIPTION_OPTIONS,
-            **{"cb": self.cb_handler},
-            **self.subscription_options,
-        }
-        try:
-            logger.debug('starting connections')
-            await self.nc.connect(**nats_connection_options)
-            logger.debug('nc connected')
-            await self.sc.connect(**stan_connection_options)
-            logger.debug('sc connected')
-            await self.sc.subscribe(**subscription_options)
-            logger.debug('subscription completed')
+            if not g.nats.is_connected:
+                self.stan_connection_options = {
+                    **self.stan_connection_options,
+                    **{'nats': g.nats}
+                }
+                await self.nc.connect(**self.nats_connection_options)
+                await self.sc.connect(**self.stan_connection_options)
+                await self.sc.subscribe(**self.subscription_options)
         except Exception as err:
             print(err)
-
-        logger.info(
-            "Subscribe the callback: %s to the queue: %s.",
-            (
-                subscription_options.get("cb").__name__
-                if subscription_options.get("cb")
-                else "no_call_back"
-            ),
-            subscription_options.get("queue"),
-        )
 
     async def close(self):
         """Close the stream and nats connections."""
@@ -261,8 +279,3 @@ class NatsQueue:
     async def publish(self, subject: str, msg: Dict):
         """Publish the msg as a JSON struct to the subject, using the streaming NATS connection."""
         await self.sc.publish(subject=subject, payload=json.dumps(msg).encode("utf-8"))
-
-
-async def error_cb(e):
-    """Emit error message to the log stream."""
-    logger.error("NATS library emitted an error. %s", e, stack_info=True)

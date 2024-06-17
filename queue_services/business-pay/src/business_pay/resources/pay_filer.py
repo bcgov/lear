@@ -50,7 +50,7 @@ from business_pay.services import create_filing_msg
 from business_pay.services import create_email_msg
 from business_pay.services import verify_gcp_jwt
 from business_pay.services import gcp_queue
-from business_pay.services import nats_queue
+from business_pay.services import queue
 from business_pay.database import Filing
 from business_pay.database import db
 
@@ -153,14 +153,10 @@ async def worker():
             filer_topic = current_app.config['FILER_PUBLISH_OPTIONS']['subject']
             queue_message = create_filing_msg(filing.id)
             logger.debug(f"filer queue_message: {queue_message}")
-            try:
-                await nats_queue.connect()
-                logger.debug(f"connected to nats queue.")
-            except Exception as err:
-                logger.debug(f"NATS connect error: {err}")
  
             try:
-                await nats_queue.publish(subject=filer_topic, msg=queue_message)
+                # await queue.publish(subject=filer_topic, msg=queue_message)
+                queue.publish_json(subject=filer_topic, payload=queue_message)
             except Exception as err:
                 logger.debug(f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
 
@@ -172,8 +168,8 @@ async def worker():
     with suppress(Exception):
         mail_topic = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
         email_msg = create_email_msg(filing.id, filing.filing_type)
-        await nats_queue.connect()
-        await nats_queue.publish(subject=mail_topic, msg=email_msg)
+        # await queue.publish(subject=mail_topic, msg=email_msg)
+        queue.publish_json(subject=mail_topic, payload=email_msg)
         logger.info(f"published to emailer for pay-id: {payment_token.id}")
 
 
