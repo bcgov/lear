@@ -144,7 +144,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
-        data= {
+        data = {
                 'filing': {
                     'header': {'filingId': filing.id,
                                'effectiveDate': filing.effective_date.isoformat()
