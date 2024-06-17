@@ -33,6 +33,7 @@ from .dc_issued_credential import DCIssuedCredential
 from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
 from .filing import Filing
+from .furnishing import Furnishing
 from .jurisdiction import Jurisdiction
 from .naics_element import NaicsElement
 from .naics_structure import NaicsStructure
@@ -68,6 +69,7 @@ __all__ = (
     'Document',
     'DocumentType',
     'Filing',
+    'Furnishing',
     'Jurisdiction',
     'NaicsElement',
     'NaicsStructure',
