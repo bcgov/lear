@@ -607,7 +607,7 @@ def create_batch_processing(business, batch_id, step=None, status=None, created_
     """Create a batch processing"""
     from legal_api.models import BatchProcessing
     batch_processing = BatchProcessing()
-    batch_processing.business_identifier = business.business_identifier
+    batch_processing.business_identifier = business.identifier
     batch_processing.business_id = business.id
     batch_processing.step = step if step else BatchProcessing.BatchProcessingStep.DISSOLUTION.value
     batch_processing.status = status if status else BatchProcessing.BatchProcessingStatus.PROCESSING.value
