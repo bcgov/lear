@@ -553,6 +553,12 @@ class BusinessDocument:
                 'SP': 'Dissolution Application',
                 'GP': 'Dissolution Application'
             },
+            'involuntary': {
+                'BC': 'Involuntary Dissolution',
+                'BEN': 'Involuntary Dissolution',
+                'ULC': 'Involuntary Dissolution',
+                'CC': 'Involuntary Dissolution',
+            },
             'administrative': {
                 'CP': 'Administrative Dissolution',
                 'BC': 'Administrative Dissolution',
