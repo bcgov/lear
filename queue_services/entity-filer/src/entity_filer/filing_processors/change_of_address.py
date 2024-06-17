@@ -49,7 +49,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on: 
                 if batch_processing.status not in [
                     BatchProcessing.BatchProcessingStatus.COMPLETED,
                     BatchProcessing.BatchProcessingStatus.WITHDRAWN
-                ]:
+                ] and datetime.utcnow() + datedelta(days=60) > batch_processing.trigger_date:
                     batch_processing.trigger_date = datetime.utcnow() + datedelta(days=62)
                     batch_processing.meta_data = {
                         **batch_processing.meta_data,
@@ -58,4 +58,4 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on: 
                     target_dissolution_date = date.fromisoformat(batch_processing.meta_data['targetDissolutionDate'])
                     target_dissolution_date += datedelta(days=62)
                     batch_processing.meta_data['targetDissolutionDate'] = target_dissolution_date.isoformat()
-                    batch_processing.last_modified=datetime.utcnow()
+                    batch_processing.last_modified = datetime.utcnow()

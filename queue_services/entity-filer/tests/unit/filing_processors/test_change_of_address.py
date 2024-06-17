@@ -59,33 +59,51 @@ def test_change_of_address_process(app, session):
     assert delivery_address.city == 'new delivery_address city'
 
 
-@pytest.mark.parametrize('test_name, status, step, delay', [
+@pytest.mark.parametrize('test_name, status, step, trigger_date, delay', [
     (
         'DELAY_IN_DISSOLUTION_STAGE_1',
         BatchProcessing.BatchProcessingStatus.PROCESSING,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        datetime.utcnow()+datedelta(days=42),
         True
     ),
     (
         'DELAY_IN_DISSOLUTION_STAGE_2',
         BatchProcessing.BatchProcessingStatus.PROCESSING,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+        datetime.utcnow()+datedelta(days=42),
         True
     ),
     (
         'NO_DELAY_NOT_IN_DISSOLUTION_1',
         BatchProcessing.BatchProcessingStatus.COMPLETED,
         BatchProcessing.BatchProcessingStep.DISSOLUTION,
+        datetime.utcnow()+datedelta(days=42),
         False
     ),
     (
         'NO_DELAY_NOT_IN_DISSOLUTION_2',
         BatchProcessing.BatchProcessingStatus.WITHDRAWN,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        datetime.utcnow()+datedelta(days=42),
+        False
+    ),
+    (
+        'NO_DELAY_TRIGGER_DATE_MORE_THAN_60_DAYS_STAGE_1',
+        BatchProcessing.BatchProcessingStatus.PROCESSING,
+        BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        datetime.utcnow()+datedelta(days=70),
+        False
+    ),
+    (
+        'NO_DELAY_TRIGGER_DATE_MORE_THAN_60_DAYS_STAGE_2',
+        BatchProcessing.BatchProcessingStatus.PROCESSING,
+        BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        datetime.utcnow()+datedelta(days=70),
         False
     )
 ])
-def test_change_of_address_delay_dissolution(app, session, test_name, status, step, delay):
+def test_change_of_address_delay_dissolution(app, session, test_name, status, step, trigger_date, delay):
     """Assert that involuntary dissolution is delayed."""
     identifier = 'CP1234567'
     business = create_business(identifier)
@@ -94,7 +112,8 @@ def test_change_of_address_delay_dissolution(app, session, test_name, status, st
                              business_id=business.id,
                              identifier=business.identifier,
                              status=status,
-                             step=step)
+                             step=step,
+                             trigger_date=trigger_date)
 
     utc_now = datetime.utcnow()
     dissolution_date = utc_now + datedelta(days=72)
