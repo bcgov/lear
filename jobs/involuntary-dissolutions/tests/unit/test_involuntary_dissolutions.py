@@ -29,6 +29,7 @@ from . import factory_batch, factory_batch_processing, factory_business
 
 
 CREATED_DATE = (datetime.utcnow() + datedelta(days=-60)).replace(tzinfo=pytz.UTC)
+TRIGGER_DATE = CREATED_DATE + datedelta(days=42)
 
 
 def test_check_run_schedule():
@@ -103,6 +104,7 @@ def test_initiate_dissolution_process(app, session):
         assert batch_processing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
         assert batch_processing.status == BatchProcessing.BatchProcessingStatus.PROCESSING
         assert batch_processing.created_date.date() == datetime.now().date()
+        assert batch_processing.trigger_date.date() == datetime.now().date() + datedelta(days=42)
         assert batch_processing.meta_data
 
 
@@ -164,6 +166,7 @@ def test_stage_2_process_find_entry(app, session, test_name, batch_status, statu
         status=status,
         step=step,
         created_date=created_date,
+        trigger_date=created_date+datedelta(days=42),
         last_modified=last_modified
     )
 
@@ -197,7 +200,8 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
         batch_id=batch.id,
         business_id=business.id,
         identifier=business.identifier,
-        created_date=CREATED_DATE
+        created_date=CREATED_DATE,
+        trigger_date=TRIGGER_DATE
     )
 
     if test_name == 'MOVE_BACK_2_GOOD_STANDING':
@@ -208,3 +212,8 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
 
     assert batch_processing.status == status
     assert batch_processing.step == step
+
+    if test_name == 'MOVE_2_STAGE_2':
+        assert batch_processing.trigger_date.date() == datetime.utcnow().date() + datedelta(days=30)
+    else:
+        assert batch_processing.trigger_date == TRIGGER_DATE
