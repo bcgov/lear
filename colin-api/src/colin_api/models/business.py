@@ -35,6 +35,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
 
     class TypeCodes(Enum):
         """Render an Enum of the Corporation Type Codes."""
+
         EXTRA_PRO_A = 'A'
         COOP = 'CP'
         BCOMP = 'BEN'

@@ -51,6 +51,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     class FilingSource(Enum):
         """Enum that holds the sources of a filing."""
+
         BAR = 'BAR'
         LEAR = 'LEAR'
 
