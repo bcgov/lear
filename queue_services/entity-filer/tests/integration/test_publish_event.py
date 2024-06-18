@@ -14,16 +14,75 @@
 """Test Suite to ensure event publishing is working as expected."""
 import asyncio
 import json
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
+from queue import Queue
 
 import pytest
-import pytest_asyncio
+# import pytest_asyncio
 from registry_schemas.example_data import ANNUAL_REPORT
+from testcontainers.google import PubSubContainer
+from testcontainers.core.waiting_utils import wait_for_logs
 
 
-@pytest_asyncio.fixture(scope="session")
+def test_publish_gcp_queue_event(app, session):
+    """Assert that filing event is placed on the queue."""
+    # Call back for the subscription
+    from entity_filer.worker import APP_CONFIG, publish_gcp_queue_event, gcp_queue
+    from legal_api.models import Business, Filing
+
+    # Setup
+    gcp_queue.init_app(app)
+
+    event_handler_subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
+
+    filing = Filing()
+    filing.id = 101
+    filing.effective_date = datetime.now(timezone.utc)
+    filing.filing_json = ANNUAL_REPORT
+    business = Business()
+    business.identifier = 'CP1234567'
+    business.legal_name = 'CP1234567 - Legal Name'
+
+    with PubSubContainer() as pubsub:
+        wait_for_logs(pubsub, r"Server started, listening on \d+", timeout=10)
+
+        # Create a new topic
+        publisher = pubsub.get_publisher_client()
+        # topic_path = publisher.topic_path(pubsub.project, "my-topic")
+        # publisher.create_topic(name=topic_path)
+        # topic_path = publisher.topic_path(pubsub.project, "my-topic")
+        publisher.create_topic(name=event_handler_subject)
+
+        # Create a subscription
+        subscriber = pubsub.get_subscriber_client()
+        subscription_path = subscriber.subscription_path(
+            pubsub.project, "my-subscription"
+        )
+        subscriber.create_subscription(
+            request={"name": subscription_path, "topic": event_handler_subject}
+        )
+
+        gcp_queue._publisher = publisher
+
+        # Test
+        publish_gcp_queue_event(business, filing)
+
+        # Receive the message
+        queue = Queue()
+        subscriber.subscribe(subscription_path, queue.put)
+        message = queue.get(timeout=1)
+        message.ack()
+        assert message.data
+        event_data = json.loads(message.data.decode())
+        assert event_data['data']['filing']['header']['filingId'] == 101
+        assert event_data['data']['filing']['business']['identifier'] == 'CP1234567'
+        assert event_data['data']['filing']['legalFilings'] == ['annualReport']
+
+
+# @pytest_asyncio.fixture(scope="session")
 @pytest.mark.asyncio
-async def test_publish_event(app, session, stan_server, event_loop, client_id, entity_stan, future):
+async def test_publish_nats_event(app, session, stan_server, event_loop, client_id, entity_stan, future):
     """Assert that filing event is placed on the queue."""
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker

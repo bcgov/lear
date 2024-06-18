@@ -13,6 +13,9 @@
 # limitations under the License.
 
 """This provides the service for involuntary dissolution."""
+from dataclasses import dataclass
+from typing import Final, Tuple
+
 from sqlalchemy import and_, exists, func, not_, or_, text
 from sqlalchemy.orm import aliased
 
@@ -22,12 +25,56 @@ from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 class InvoluntaryDissolutionService():
     """Provides services to get information for involuntary dissolution."""
 
+    ELIGIBLE_TYPES: Final = [
+        Business.LegalTypes.COMP.value,
+        Business.LegalTypes.BC_ULC_COMPANY.value,
+        Business.LegalTypes.BC_CCC.value,
+        Business.LegalTypes.BCOMP.value,
+        Business.LegalTypes.CONTINUE_IN.value,
+        Business.LegalTypes.ULC_CONTINUE_IN.value,
+        Business.LegalTypes.CCC_CONTINUE_IN.value,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+        Business.LegalTypes.EXTRA_PRO_A.value,
+        Business.LegalTypes.LIMITED_CO.value
+    ]
+
+    @dataclass
+    class EligibilityDetails:
+        """Details about the eligibility of a business for involuntary dissolution."""
+
+        ar_overdue: bool
+        transition_overdue: bool
+
     @classmethod
-    def check_business_eligibility(cls, identifier: str):
-        """Return true if the business with provided identifier is eligible for dissolution."""
-        query = cls._get_businesses_eligible_query().\
+    def check_business_eligibility(
+        cls, identifier: str, exclude_in_dissolution=True
+    ) -> Tuple[bool, EligibilityDetails]:
+        """Return true if the business with provided identifier is eligible for dissolution.
+
+        Returns:
+            eligible (bool): True if the business is eligible for dissolution.
+            eligibility_details (EligibilityDetails): Details regarding eligibility.
+        """
+        query = cls._get_businesses_eligible_query(exclude_in_dissolution).\
             filter(Business.identifier == identifier)
-        return bool(query.one_or_none())
+        result = query.one_or_none()
+
+        if result is None:
+            return False, None
+
+        eligibility_details = cls.EligibilityDetails(ar_overdue=result[1], transition_overdue=result[2])
+        return True, eligibility_details
+
+    @classmethod
+    def get_businesses_eligible(cls, num_allowed: int = None):
+        """Return the businesses eligible for involuntary dissolution."""
+        query = cls._get_businesses_eligible_query()
+        if num_allowed:
+            eligible_businesses = query.limit(num_allowed).all()
+        else:
+            eligible_businesses = query.all()
+
+        return eligible_businesses
 
     @classmethod
     def get_businesses_eligible_count(cls):
@@ -35,38 +82,56 @@ class InvoluntaryDissolutionService():
         return cls._get_businesses_eligible_query().count()
 
     @staticmethod
-    def _get_businesses_eligible_query():
-        """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution."""
-        eligible_types = [
-            Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BC_ULC_COMPANY.value,
-            Business.LegalTypes.BC_CCC.value,
-            Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.CONTINUE_IN.value,
-            Business.LegalTypes.ULC_CONTINUE_IN.value,
-            Business.LegalTypes.CCC_CONTINUE_IN.value,
-            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-            Business.LegalTypes.EXTRA_PRO_A.value,
-            Business.LegalTypes.LIMITED_CO.value
-        ]
+    def get_in_dissolution_batch_processing(business_id: int):
+        """Fetch the BatchProcessing record for a business that is in the process of involuntary dissolution."""
+        return db.session.query(BatchProcessing, Batch).\
+            filter(BatchProcessing.business_id == business_id).\
+            filter(BatchProcessing.status.notin_([BatchProcessing.BatchProcessingStatus.COMPLETED,
+                                                  BatchProcessing.BatchProcessingStatus.WITHDRAWN])). \
+            filter(Batch.id == BatchProcessing.batch_id).\
+            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
+            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
+            one_or_none()
 
-        subquery = exists().where(BatchProcessing.business_id == Business.id,
-                                  BatchProcessing.status.notin_(
-                                    [BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-                                     BatchProcessing.BatchProcessingStatus.COMPLETED]),
-                                  BatchProcessing.batch_id == Batch.id,
-                                  Batch.status != Batch.BatchStatus.COMPLETED,
-                                  Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
+    @staticmethod
+    def _get_businesses_eligible_query(exclude_in_dissolution=True):
+        """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
-        query = db.session.query(Business).\
+        Args:
+            exclude_in_dissolution (bool): If True, exclude businesses already in dissolution.
+        """
+        in_dissolution = (
+            exists().where(
+                BatchProcessing.business_id == Business.id,
+                BatchProcessing.status.notin_([
+                    BatchProcessing.BatchProcessingStatus.WITHDRAWN,
+                    BatchProcessing.BatchProcessingStatus.COMPLETED
+                ]),
+                BatchProcessing.batch_id == Batch.id,
+                Batch.status != Batch.BatchStatus.COMPLETED,
+                Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION
+            )
+        )
+        specific_filing_overdue = _has_specific_filing_overdue()
+        no_transition_filed_after_restoration = _has_no_transition_filed_after_restoration()
+
+        query = db.session.query(
+            Business,
+            specific_filing_overdue.label('ar_overdue'),
+            no_transition_filed_after_restoration.label('transition_overdue')
+        ).\
+            filter(not_(Business.admin_freeze.is_(True))).\
             filter(Business.state == Business.State.ACTIVE).\
-            filter(Business.legal_type.in_(eligible_types)).\
-            filter(Business.no_dissolution.is_(False)).\
-            filter(not_(subquery)).\
-            filter(
+            filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
+            filter(Business.no_dissolution.is_(False))
+
+        if exclude_in_dissolution:
+            query = query.filter(not_(in_dissolution))
+
+        query = query.filter(
                 or_(
-                    _has_specific_filing_overdue(),
-                    _has_no_transition_filed_after_restoration()
+                    specific_filing_overdue,
+                    no_transition_filed_after_restoration
                 )
             ).\
             filter(

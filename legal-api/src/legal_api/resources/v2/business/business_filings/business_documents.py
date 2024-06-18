@@ -24,9 +24,9 @@ from flask_cors import cross_origin
 
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Filing as FilingModel  # noqa: I001
+from legal_api.models import Business, Document, Filing as FilingModel  # noqa: I001
 from legal_api.reports import get_pdf
-from legal_api.services import authorized
+from legal_api.services import MinioService, authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
@@ -43,9 +43,10 @@ OUTPUT_DATE_FORMAT: Final = '%b %-d, %Y at %-I:%M %p Pacific time'
 @cors_preflight('GET, POST')
 @bp.route(DOCUMENTS_BASE_ROUTE, methods=['GET', 'OPTIONS'])
 @bp.route(DOCUMENTS_BASE_ROUTE + '/<string:legal_filing_name>', methods=['GET', 'OPTIONS'])
+@bp.route(DOCUMENTS_BASE_ROUTE + '/static/<string:file_key>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
 @jwt.requires_auth
-def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None):
+def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None, file_key: str = None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
     if not authorized(identifier, jwt, ['view', ]):
@@ -70,23 +71,32 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
                                       **{'filing_id': filing_id, 'identifier': identifier})
         ), HTTPStatus.NOT_FOUND
 
-    if not legal_filing_name:
+    if not legal_filing_name and not file_key:
         if identifier.startswith('T') and filing.status == Filing.Status.COMPLETED:
-            return {}, HTTPStatus.NOT_FOUND
+            return {'documents': {}}, HTTPStatus.OK
         return _get_document_list(business, filing)
 
-    if legal_filing_name and ('application/pdf' in request.accept_mimetypes):
-        if legal_filing_name.lower().startswith('receipt'):
-            return _get_receipt(business, filing, jwt.get_token_auth_header())
+    if 'application/pdf' in request.accept_mimetypes:
+        if legal_filing_name:
+            if legal_filing_name.lower().startswith('receipt'):
+                return _get_receipt(business, filing, jwt.get_token_auth_header())
 
-        return get_pdf(filing.storage, legal_filing_name)
+            return get_pdf(filing.storage, legal_filing_name)
+        elif file_key and (document := Document.find_by_file_key(file_key)):
+            if document.filing_id == filing.id:  # make sure the file belongs to this filing
+                response = MinioService.get_file(document.file_key)
+                return current_app.response_class(
+                    response=response.data,
+                    status=response.status,
+                    mimetype='application/pdf'
+                )
 
     return {}, HTTPStatus.NOT_FOUND
 
 
 def _get_document_list(business, filing):
     """Get list of document outputs."""
-    if not (document_list := Filing.get_document_list(business, filing, request)):
+    if not (document_list := Filing.get_document_list(business, filing, jwt)):
         return {}, HTTPStatus.NOT_FOUND
 
     return jsonify(document_list), HTTPStatus.OK

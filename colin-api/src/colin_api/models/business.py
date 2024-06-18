@@ -481,7 +481,9 @@ class Business:  # pylint: disable=too-many-instance-attributes
             raise err
 
     @classmethod
-    def update_corporation(cls, cursor, corp_num: str, date: str = None, annual_report: bool = False):
+    def update_corporation(cls, cursor, corp_num: str, date: str = None, annual_report: bool = False,
+                           last_ar_filed_dt: str = None):
+        # pylint: disable=too-many-arguments
         """Update corporation record."""
         try:
             if annual_report:
@@ -489,21 +491,24 @@ class Business:  # pylint: disable=too-many-instance-attributes
                     cursor.execute(
                         """
                         UPDATE corporation
-                        SET LAST_AR_FILED_DT = sysdate, LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'),
-                            LAST_LEDGER_DT = sysdate
+                        SET LAST_AR_FILED_DT = TO_DATE(:last_ar_filed_dt, 'YYYY-mm-dd'),
+                        LAST_AGM_DATE = TO_DATE(:agm_date, 'YYYY-mm-dd'), LAST_LEDGER_DT = sysdate
                         WHERE corp_num = :corp_num
                         """,
                         agm_date=date,
-                        corp_num=corp_num
+                        corp_num=corp_num,
+                        last_ar_filed_dt=last_ar_filed_dt
                     )
                 else:
                     cursor.execute(
                         """
                         UPDATE corporation
-                        SET LAST_AR_FILED_DT = sysdate, LAST_LEDGER_DT = sysdate
+                        SET LAST_AR_FILED_DT = TO_DATE(:last_ar_filed_dt, 'YYYY-mm-dd'),
+                        LAST_LEDGER_DT = sysdate
                         WHERE corp_num = :corp_num
                         """,
-                        corp_num=corp_num
+                        corp_num=corp_num,
+                        last_ar_filed_dt=last_ar_filed_dt
                     )
 
             else:

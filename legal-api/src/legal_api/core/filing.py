@@ -456,7 +456,7 @@ class Filing:
     @staticmethod
     def get_document_list(business,  # pylint: disable=too-many-locals disable=too-many-branches
                           filing,
-                          request) -> Optional[dict]:
+                          jwt: JwtManager) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
         no_output_filings = [
             Filing.FilingTypes.CONVERSION.value,
@@ -556,5 +556,9 @@ class Filing:
                 FilingMeta.alter_outputs(filing.storage, business, additional)
                 for doc in additional:
                     documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
+
+                if has_roles(jwt, [UserRoles.staff]):
+                    if static_docs := FilingMeta.get_static_documents(filing.storage, f'{base_url}{doc_url}/static'):
+                        documents['documents']['staticDocuments'] = static_docs
 
         return documents

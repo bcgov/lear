@@ -14,15 +14,14 @@
 """Validation for the Incorporation filing."""
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Final, Optional
+from typing import Final
 
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.core.filing import Filing as coreFiling  # noqa: I001
 from legal_api.errors import Error
-from legal_api.models import Business, Filing
-from legal_api.services import flags, namex
+from legal_api.models import Business
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -302,78 +301,6 @@ def validate_cooperative_documents(incorporation_json: dict):
         msg.extend(memorandum_err)
 
     return msg
-
-
-def validate_correction_ia(filing: dict) -> Optional[Error]:
-    """Validate correction of Incorporation Application."""
-    if not (corrected_filing  # pylint: disable=superfluous-parens; needed to pass pylance
-            := Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])):
-        return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': babel('Missing the id of the filing being corrected.')}])
-
-    msg = []
-    if err := validate_correction_name_request(filing, corrected_filing):
-        msg.extend(err)
-
-    if err := validate_correction_effective_date(filing, corrected_filing):
-        msg.append(err)
-
-    if msg:
-        return Error(HTTPStatus.BAD_REQUEST, msg)
-
-    return None
-
-
-def validate_correction_effective_date(filing: dict, corrected_filing: dict) -> Optional[dict]:
-    """Validate that effective dates follow the rules.
-
-    Currently effective dates cannot be changed.
-    """
-    if new_effective_date := filing.get('filing', {}).get('header', {}).get('effectiveDate'):
-        if new_effective_date != corrected_filing.get('filing', {}).get('header', {}).get('effectiveDate'):
-            return {'error': babel('The effective date of a filing cannot be changed in a correction.')}
-    return None
-
-
-def validate_correction_name_request(filing: dict, corrected_filing: dict) -> Optional[list]:
-    """Validate correction of Name Request."""
-    # This is added specifically for the sandbox environment.
-    # i.e. NR check should only ever have feature flag disabled for sandbox environment.
-    if flags.is_on('disable-nr-check'):
-        return []
-
-    nr_path = '/filing/incorporationApplication/nameRequest/nrNumber'
-    nr_number = get_str(corrected_filing.json, nr_path)
-    new_nr_number = get_str(filing, nr_path)
-    # original filing has no nrNumber and new filing has nr Number (numbered -> named correction)
-    # original filing nrNumber != new filing nrNumber (change of name using NR)
-    msg = []
-    if nr_number == new_nr_number:
-        return None
-
-    # ensure NR is approved or conditionally approved
-    nr_response = namex.query_nr_number(new_nr_number)
-    validation_result = namex.validate_nr(nr_response.json())
-    if not validation_result['is_consumable']:
-        msg.append({'error': babel('Correction of Name Request is not approved.'), 'path': nr_path})
-
-    # ensure business type is BCOMP
-    path = '/filing/incorporationApplication/nameRequest/legalType'
-    legal_type = get_str(filing, path)
-    if legal_type != Business.LegalTypes.BCOMP.value:
-        msg.append({'error': babel('Correction of Name Request is not vaild for this type.'), 'path': path})
-
-    # ensure NR request has the same legal name
-    path = '/filing/incorporationApplication/nameRequest/legalName'
-    legal_name = get_str(filing, path)
-    nr_name = namex.get_approved_name(nr_response.json())
-    if nr_name != legal_name:
-        msg.append({'error': babel('Correction of Name Request has a different legal name.'), 'path': path})
-
-    if msg:
-        return msg
-
-    return None
 
 
 def validate_ia_court_order(filing: dict) -> list:

@@ -35,10 +35,11 @@ from entity_queue_common.messages import publish_email_message
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
+from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
-from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 from sqlalchemy_continuum import versioning_manager
@@ -57,6 +58,7 @@ from entity_filer.filing_processors import (
     change_of_name,
     change_of_registration,
     consent_continuation_out,
+    continuation_in,
     continuation_out,
     conversion,
     correction,
@@ -75,10 +77,12 @@ from entity_filer.filing_processors.filing_components import business_profile, n
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
+gcp_queue = GcpQueue()
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
+gcp_queue.init_app(FLASK_APP)
 
 
 def get_filing_types(legal_filings: dict):
@@ -123,8 +127,47 @@ async def publish_event(business: Business, filing: Filing):
         }
         if filing.temp_reg:
             payload['tempidentifier'] = filing.temp_reg
+
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
+    except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
+        capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
+        logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
+
+
+def publish_gcp_queue_event(business: Business, filing: Filing):
+    """Publish the filing message onto the GCP-QUEUE filing subject."""
+    try:
+        subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
+        data= {
+                'filing': {
+                    'header': {'filingId': filing.id,
+                               'effectiveDate': filing.effective_date.isoformat()
+                               },
+                    'business': {'identifier': business.identifier},
+                    'legalFilings': get_filing_types(filing.filing_json)
+                },
+                'identifier': business.identifier
+            }
+        if filing.temp_reg:
+            data['tempidentifier'] = filing.temp_reg
+
+        ce = SimpleCloudEvent(
+            id=str(uuid.uuid4()),
+            source=''.join([
+                APP_CONFIG.LEGAL_API_URL,
+                '/business/',
+                business.identifier,
+                '/filing/',
+                str(filing.id)]),
+            subject=subject,
+            time=datetime.now(timezone.utc),
+            type='bc.registry.business.' + filing.filing_type,
+            data=data
+        )
+
+        gcp_queue.publish(subject, to_queue_message(ce))
+
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
         logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
@@ -271,6 +314,13 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         filing_submission,
                         filing_meta)
 
+                elif filing.get('continuationIn'):
+                    business, filing_submission, filing_meta = continuation_in.process(
+                        business,
+                        filing_core_submission.json,
+                        filing_submission,
+                        filing_meta)
+
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
@@ -307,30 +357,29 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 name_request.consume_nr(business, filing_submission)
                 business_profile.update_business_profile(business, filing_submission)
                 await publish_mras_email(filing_submission)
+            else:
+                # post filing changes to other services
+                for filing_type in filing_meta.legal_filings:
+                    if filing_type in [
+                        FilingCore.FilingTypes.ALTERATION,
+                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                        FilingCore.FilingTypes.CORRECTION,
+                        FilingCore.FilingTypes.DISSOLUTION,
+                        FilingCore.FilingTypes.PUTBACKON,
+                        FilingCore.FilingTypes.RESTORATION
+                    ]:
+                        business_profile.update_entity(business, filing_type)
 
-            # post filing changes to other services
-            filing_types = [list(x.keys())[0] for x in legal_filings]
-            for filing_type in filing_types:
-                if filing_type in [
-                    FilingCore.FilingTypes.ALTERATION,
-                    FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                    FilingCore.FilingTypes.CORRECTION,
-                    FilingCore.FilingTypes.DISSOLUTION,
-                    FilingCore.FilingTypes.PUTBACKON,
-                    FilingCore.FilingTypes.RESTORATION
-                ]:
-                    business_profile.update_entity(business, filing_type)
-
-                if filing_type in [
-                    FilingCore.FilingTypes.ALTERATION,
-                    FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                    FilingCore.FilingTypes.CHANGEOFNAME,
-                    FilingCore.FilingTypes.CORRECTION,
-                    FilingCore.FilingTypes.RESTORATION,
-                ]:
-                    name_request.consume_nr(business, filing_submission, filing_type)
-                    if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
-                        business_profile.update_business_profile(business, filing_submission, filing_type)
+                    if filing_type in [
+                        FilingCore.FilingTypes.ALTERATION,
+                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                        FilingCore.FilingTypes.CHANGEOFNAME,
+                        FilingCore.FilingTypes.CORRECTION,
+                        FilingCore.FilingTypes.RESTORATION,
+                    ]:
+                        name_request.consume_nr(business, filing_submission, filing_type)
+                        if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
+                            business_profile.update_business_profile(business, filing_submission, filing_type)
 
             try:
                 await publish_email_message(
@@ -345,6 +394,17 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             try:
                 await publish_event(business, filing_submission)
+            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                # mark any failure for human review
+                print(err)
+                capture_message(
+                    f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
+                    f'on Queue with error:{err}',
+                    level='error'
+                )
+
+            try:
+                publish_gcp_queue_event(business, filing_submission)
             except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
                 # mark any failure for human review
                 print(err)

@@ -36,6 +36,8 @@ from registry_schemas.example_data import (
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
+    CONTINUATION_IN,
+    CONTINUATION_OUT,
     CORRECTION_AR,
     CORRECTION_CP_SPECIAL_RESOLUTION,
     CORRECTION_INCORPORATION,
@@ -49,9 +51,8 @@ from registry_schemas.example_data import (
     RESTORATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
-    CONTINUATION_OUT,
 )
-from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION
+from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION, CONTINUATION_IN
 
 from legal_api.core import Filing, FilingMeta, FILINGS
 from legal_api.models import Business, Comment, Filing as FilingStorage, RegistrationBootstrap, UserRoles
@@ -887,7 +888,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION,
      None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'letterOfAgmExtension': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
+         'letterOfAgmExtension': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }
      },
@@ -906,7 +907,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE,
      None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'letterOfAgmLocationChange': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
+         'letterOfAgmLocationChange': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }
      },
@@ -1152,9 +1153,101 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      }
      },
      HTTPStatus.OK, '2017-10-1'
+     ),
+    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
+     ),
+    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/receipt',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2024-06-06'
+     ),
+    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificate',
+                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, None
      )
 ])
-def test_document_list_for_various_filing_states(session, client, jwt,
+def test_document_list_for_various_filing_states(session, mocker, client, jwt,
                                                  test_name,
                                                  identifier,
                                                  entity_type,
@@ -1191,6 +1284,22 @@ def test_document_list_for_various_filing_states(session, client, jwt,
         filing._meta_data = filer_action(filing_name_1, filing_json, meta_data, business)
         filing.save()
 
+        if filing_name_1 == 'continuationIn':
+            affidavit_file_key = meta_data['continuationIn']['affidavitFileKey']
+            expected_msg['documents']['staticDocuments'] = [
+                {
+                    'name': 'Director Affidavit',
+                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{affidavit_file_key}'
+                }
+            ]
+            for file in meta_data['continuationIn']['authorizationFiles']:
+                file_key = file.get('fileKey')
+                expected_msg['documents']['staticDocuments'].append({
+                    'name': file.get('fileName'),
+                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
+                })
+
+    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], business.identifier))
 
@@ -1209,6 +1318,12 @@ def filer_action(filing_name, filing_json, meta_data, business):
         meta_data['alteration'] = {}
         meta_data['alteration']['fromLegalName'] = business.legal_name
         meta_data['alteration']['toLegalName'] = legal_name
+
+    if filing_name == 'continuationIn':
+        continuation_in = filing_json['filing']['continuationIn']
+        meta_data['continuationIn'] = {}
+        meta_data['continuationIn']['affidavitFileKey'] = continuation_in['foreignJurisdiction']['affidavitFileKey']
+        meta_data['continuationIn']['authorizationFiles'] = continuation_in['authorization']['files']
 
     if filing_name == 'correction' and business.legal_type == 'CP':
         meta_data['correction'] = {}
@@ -1243,7 +1358,7 @@ def filer_action(filing_name, filing_json, meta_data, business):
      ),
     ('ben_ia_completed', 'Tb31yQIuBw', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED,
-     {}, HTTPStatus.NOT_FOUND
+     {'documents': {}}, HTTPStatus.OK
      ),
     ('ben_amalgamation_paid', 'Tb31yQIuBw', None,
      Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.PAID,
@@ -1257,7 +1372,19 @@ def filer_action(filing_name, filing_json, meta_data, business):
      ),
     ('ben_amalgamation_completed', 'Tb31yQIuBw', 'BC7654321',
      Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.COMPLETED,
-     {}, HTTPStatus.NOT_FOUND
+     {'documents': {}}, HTTPStatus.OK
+     ),
+    ('cben_ci_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
+                    ]}},
+     HTTPStatus.OK
+     ),
+    ('cben_ci_completed', 'Tb31yQIuBw', 'BC7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED,
+     {'documents': {}}, HTTPStatus.OK
      ),
     ('sp_registration_paid', 'Tb31yQIuBw', None, Business.LegalTypes.SOLE_PROP.value,
      'registration', REGISTRATION, Filing.Status.PAID,
@@ -1270,10 +1397,10 @@ def filer_action(filing_name, filing_json, meta_data, business):
      ),
     ('sp_registration_completed', 'Tb31yQIuBw', 'FM7654321', Business.LegalTypes.SOLE_PROP.value,
      'registration', REGISTRATION, Filing.Status.COMPLETED,
-     {}, HTTPStatus.NOT_FOUND
+     {'documents': {}}, HTTPStatus.OK
      ),
 ])
-def test_temp_document_list_for_various_filing_states(session, client, jwt,
+def test_temp_document_list_for_various_filing_states(mocker, session, client, jwt,
                                                       test_name,
                                                       temp_identifier,
                                                       identifier,
@@ -1305,6 +1432,7 @@ def test_temp_document_list_for_various_filing_states(session, client, jwt,
     filing.temp_reg = temp_identifier
     filing.save()
 
+    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
     rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
 

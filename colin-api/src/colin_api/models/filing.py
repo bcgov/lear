@@ -49,6 +49,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         COLIN = 'COLIN'
         LEAR = 'LEAR'
 
+    class FilingSource(Enum):
+        """Enum that holds the sources of a filing."""
+        BAR = 'BAR'
+        LEAR = 'LEAR'
+
     FILING_TYPES = {
         'annualReport': {
             'type_code_list': ['OTANN', 'ANNBC'],
@@ -921,6 +926,56 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             raise err
 
     @classmethod
+    def get_future_effective_filings(cls, business: Business) -> List:
+        """Get the list of all future effective filings for a business."""
+        try:
+            future_effective_filings = []
+            current_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+            cursor = DB.connection.cursor()
+            cursor.execute(
+                """
+                select event.event_id, event_timestmp, filing_typ_cd, effective_dt, period_end_dt, agm_date
+                from event join filing on event.event_id = filing.event_id
+                where corp_num=:identifier
+                and filing.effective_dt > TO_DATE(:current_date, 'YYYY-mm-dd')
+                order by event_timestmp
+                """,
+                identifier=business.corp_num,
+                current_date=current_date
+            )
+            filings_info_list = []
+
+            for filing_info in cursor:
+                filings_info_list.append(dict(zip([x[0].lower() for x in cursor.description], filing_info)))
+            for filing_info in filings_info_list:
+                filing_info['filing_type'] = cls._get_filing_type(filing_info['filing_typ_cd'])
+                date = convert_to_json_date(filing_info['event_timestmp'])
+                filing = Filing()
+                filing.business = business
+                filing.header = {
+                    'date': date,
+                    'name': filing_info['filing_type'],
+                    'effectiveDate': convert_to_json_date(filing_info['effective_dt']),
+                    'availableOnPaperOnly': True,
+                    'colinIds': [filing_info['event_id']]
+                }
+                filing.body = {
+                        filing_info['filing_type']: {
+                        }
+                }
+                future_effective_filings.append(filing.as_dict())
+            return future_effective_filings
+
+        except InvalidFilingTypeException as err:
+            current_app.logger.error('Unknown filing type found when getting future effective filings for '
+                                     f'{business.get_corp_num()}.')
+            raise err
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
     def add_administrative_dissolution_event(cls, con, corp_num) -> int:
         """Add administrative dissolution event."""
         cursor = con.cursor()
@@ -957,6 +1012,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # create new filing user
             cls._insert_filing_user(cursor=cursor, filing=filing)
 
+            filing_source = filing.header.get('source')
             # annualReportDate and annualGeneralMeetingDate will be available in annualReport
             ar_date = filing.body.get('annualReportDate', None)
             agm_date = filing.body.get('annualGeneralMeetingDate', None)
@@ -966,7 +1022,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             if filing.filing_type == 'correction':
                 cls._process_correction(cursor, business, filing, corp_num)
             else:
-                ar_text = cls._process_ar(cursor, filing, corp_num, ar_date, agm_date)
+                ar_text = cls._process_ar(cursor, filing, corp_num, ar_date, agm_date, filing_source)
                 dir_text = cls._process_directors(cursor, filing, business, corp_num)
                 office_text = cls._process_office(cursor=cursor, filing=filing)
 
@@ -1027,8 +1083,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
                 # update corporation record
                 is_annual_report = filing.filing_type == 'annualReport'
+                last_ar_filed_dt = Filing._get_last_ar_filed_date(filing.header, business, filing_source)
                 Business.update_corporation(
-                    cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report)
+                    cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report,
+                    last_ar_filed_dt=last_ar_filed_dt)
 
                 # Freeze entity for Alteration
                 if filing.filing_type == 'alteration' or (
@@ -1042,6 +1100,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
             raise err
+
+    @classmethod
+    def _get_last_ar_filed_date(cls, header: dict, business: dict, filing_source: str):
+        last_ar_filed_dt = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+        if filing_source == cls.FilingSource.BAR.value:
+            filing_year = header.get('filingYear')
+            recognition_dt = datetime.datetime.fromisoformat(business.get('business').get('foundingDate')).date()
+            last_ar_filed_dt = f'{filing_year}-{recognition_dt.month}-{recognition_dt.day}'
+        return last_ar_filed_dt
 
     @classmethod
     def get_filing_sub_type(cls, filing_type: str, filing_body: dict) -> Optional[str]:
@@ -1067,10 +1134,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     # pylint: disable=too-many-arguments;
-    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str) -> str:
+    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str) -> str:
         """Process specific to annual report."""
         text = ''
-        if filing.filing_type == 'annualReport':
+        if filing.filing_type == 'annualReport' and filing_source != cls.FilingSource.BAR.value:
             # update corp_state TO ACT (active) if it is in good standing. From CRUD:
             # - the current corp_state != 'ACT' and,
             # - they just filed the last outstanding ARs

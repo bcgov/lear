@@ -189,30 +189,3 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
         assert lists_are_equal(err.msg, err_msg)
     else:
         assert None is err
-
-
-@ pytest.mark.parametrize('test_name, json1, json2, expected', [
-    ('no effective date',
-     {},
-     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
-     None
-     ),
-    ('same effective date',
-     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
-     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
-     None
-     ),
-    ('changed effective date',
-     {'filing': {'header': {'effectiveDate': '2020-01-01T00:00:00+00:00'}}},
-     {'filing': {'header': {'effectiveDate': '1970-01-01T00:00:00+00:00'}}},
-     {'error': 'The effective date of a filing cannot be changed in a correction.'}
-     ),
-    # invalid dates should be trapped by the JSONSchema validator
-])
-def test_validate_correction_effective_date(test_name, json1, json2, expected):
-    """Assert that a corrected effective date."""
-    from legal_api.services.filings.validations.incorporation_application import validate_correction_effective_date
-
-    err = validate_correction_effective_date(json1, json2)
-
-    assert err == expected

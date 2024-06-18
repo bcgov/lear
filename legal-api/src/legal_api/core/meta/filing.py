@@ -268,7 +268,10 @@ FILINGS: Final = {
             'CBEN': 'CONTI',
             'CUL': 'CONTI',
             'CCC': 'CONTI'
-        }
+        },
+        'additional': [
+            {'types': 'C,CBEN,CUL,CCC', 'outputs': ['noticeOfArticles', 'certificate']},
+        ]
     },
     'continuationOut': {
         'name': 'continuationOut',
@@ -582,13 +585,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def alter_outputs_correction(filing, business, outputs):
         """Handle output file list modification for corrections."""
         if filing.filing_type == 'correction':
-            if filing.meta_data.get('correction', {}).get('toLegalName'):
+            correction = filing.meta_data.get('correction', {})
+            if correction.get('toLegalName'):
                 outputs.add('certificateOfNameCorrection')
-            if filing.meta_data.get('correction', {}).get('uploadNewRules'):
+            if correction.get('uploadNewRules'):
                 outputs.add('certifiedRules')
-            if filing.meta_data.get('correction', {}).get('uploadNewMemorandum'):
+            if correction.get('uploadNewMemorandum'):
                 outputs.add('certifiedMemorandum')
-            if filing.meta_data.get('correction', {}).get('hasResolution'):
+            if correction.get('hasResolution'):
                 outputs.add('specialResolution')
         return outputs
 
@@ -614,6 +618,26 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certificateOfNameChange')
             if not filing.meta_data.get('alteration', {}).get('uploadNewRules'):
                 outputs.remove('certifiedRules')
+        return outputs
+
+    @staticmethod
+    def get_static_documents(filing, url_prefix):
+        """Get static documents."""
+        outputs = []
+        if filing.filing_type == 'continuationIn':
+            continuation_in = filing.meta_data.get('continuationIn', {})
+            if file_key := continuation_in.get('affidavitFileKey'):
+                outputs.append({
+                    'name': 'Director Affidavit',
+                    'url': f'{url_prefix}/{file_key}'
+                })
+            if authorization_files := continuation_in.get('authorizationFiles'):
+                for file in authorization_files:
+                    file_key = file.get('fileKey')
+                    outputs.append({
+                        'name': file.get('fileName'),
+                        'url': f'{url_prefix}/{file_key}'
+                    })
         return outputs
 
     @staticmethod

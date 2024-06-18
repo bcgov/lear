@@ -59,6 +59,67 @@ def test_get_configurations_with_invalid_user(app, session, client, jwt):
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
+def test_get_configurations_with_single_filter_name(app, session, client, jwt):
+    """Assert that get results with a single filter name are returned."""
+    filter_name = 'DISSOLUTIONS_SUMMARY_EMAIL'
+
+    # test
+    rv = client.get(f'/api/v2/admin/configurations?names={filter_name}',
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'configurations' in rv.json
+    results = rv.json['configurations']
+    assert len(results) == 1
+    for res in results:
+        assert res['name'] == filter_name
+
+
+def test_get_configurations_with_multiple_filter_names(app, session, client, jwt):
+    """Assert that get results with multiple filter names are returned."""
+    filter_names = 'DISSOLUTIONS_SUMMARY_EMAIL, NUM_DISSOLUTIONS_ALLOWED, dissolutions_on_hold'
+    expected_names = [name.strip().upper() for name in filter_names.split(',') if name.strip()]
+
+    # test
+    rv = client.get(f'/api/v2/admin/configurations?names={filter_names}',
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'configurations' in rv.json
+    results = rv.json['configurations']
+    assert len(results) == len(expected_names)
+    for res in results:
+        assert res['name'] in expected_names
+
+
+def test_get_configurations_with_empty_filter_names(app, session, client, jwt):
+    """Assert that a bad request is returned when configuration names are invalid."""
+    empty_names = ' '
+
+    # Test
+    rv = client.get(f'/api/v2/admin/configurations?names={empty_names}',
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+
+    # Check
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['message'] == 'Configuration names are invalid'
+
+
+def test_get_configurations_with_filter_names_no_matching_configurations(app, session, client, jwt):
+    """Assert that not found is returned when configuration names have no matches."""
+    filter_names = 'NON_EXISTENT_CONFIGURATION_NAME1, NON_EXISTENT_CONFIGURATION_NAME2'
+
+    # Test
+    rv = client.get(f'/api/v2/admin/configurations?names={filter_names}',
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+
+    # Check
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json['message'] == 'Configurations not found'
+
+
 def test_put_configurations_with_valid_data(app, session, client, jwt):
     """Assert that update values successfully."""
 

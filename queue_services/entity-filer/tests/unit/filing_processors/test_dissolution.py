@@ -32,6 +32,14 @@ from tests.utils import upload_file, assert_pdf_contains_text, has_expected_date
 
 
 @pytest.mark.parametrize('legal_type,identifier,dissolution_type', [
+    ('BC', 'BC1234567', 'involuntary'),
+    ('BEN', 'BC1234567', 'involuntary'),
+    ('CC', 'BC1234567', 'involuntary'),
+    ('ULC', 'BC1234567', 'involuntary'),
+    ('LLC', 'BC1234567', 'involuntary'),
+    ('CP', 'CP1234567', 'involuntary'),
+    ('SP', 'FM1234567', 'involuntary'),
+    ('GP', 'FM1234567', 'involuntary'),
     ('BC', 'BC1234567', 'voluntary'),
     ('BEN', 'BC1234567', 'voluntary'),
     ('CC', 'BC1234567', 'voluntary'),
@@ -226,6 +234,7 @@ def test_administrative_dissolution(app, session, minio_server, legal_type, iden
 
 @pytest.mark.parametrize('dissolution_type', [
     ('administrative'),
+    ('involuntary'),
     ('voluntary'),
 ])
 async def test_amalgamation_administrative_dissolution(app, session, mocker, dissolution_type):
