@@ -58,6 +58,11 @@ class FilingInfo(Resource):
             corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
             business = Business.find_by_identifier(identifier, corp_types)
 
+            # get future effective filings
+            if filing_type == 'future':
+                future_effective_filings_info = Filing.get_future_effective_filings(business=business)
+                return jsonify(future_effective_filings_info)
+
             # get filings history from before bob-date
             if filing_type == 'historic':
                 historic_filings_info = Filing.get_historic_filings(business=business)

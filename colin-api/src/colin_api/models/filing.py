@@ -926,6 +926,56 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             raise err
 
     @classmethod
+    def get_future_effective_filings(cls, business: Business) -> List:
+        """Get the list of all future effective filings for a business."""
+        try:
+            future_effective_filings = []
+            current_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+            cursor = DB.connection.cursor()
+            cursor.execute(
+                """
+                select event.event_id, event_timestmp, filing_typ_cd, effective_dt, period_end_dt, agm_date
+                from event join filing on event.event_id = filing.event_id
+                where corp_num=:identifier
+                and filing.effective_dt > TO_DATE(:current_date, 'YYYY-mm-dd')
+                order by event_timestmp
+                """,
+                identifier=business.corp_num,
+                current_date=current_date
+            )
+            filings_info_list = []
+
+            for filing_info in cursor:
+                filings_info_list.append(dict(zip([x[0].lower() for x in cursor.description], filing_info)))
+            for filing_info in filings_info_list:
+                filing_info['filing_type'] = cls._get_filing_type(filing_info['filing_typ_cd'])
+                date = convert_to_json_date(filing_info['event_timestmp'])
+                filing = Filing()
+                filing.business = business
+                filing.header = {
+                    'date': date,
+                    'name': filing_info['filing_type'],
+                    'effectiveDate': convert_to_json_date(filing_info['effective_dt']),
+                    'availableOnPaperOnly': True,
+                    'colinIds': [filing_info['event_id']]
+                }
+                filing.body = {
+                        filing_info['filing_type']: {
+                        }
+                }
+                future_effective_filings.append(filing.as_dict())
+            return future_effective_filings
+
+        except InvalidFilingTypeException as err:
+            current_app.logger.error('Unknown filing type found when getting future effective filings for '
+                                     f'{business.get_corp_num()}.')
+            raise err
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+
+    @classmethod
     def add_administrative_dissolution_event(cls, con, corp_num) -> int:
         """Add administrative dissolution event."""
         cursor = con.cursor()
