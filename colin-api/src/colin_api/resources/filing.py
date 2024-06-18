@@ -138,7 +138,7 @@ class FilingInfo(Resource):
                 }
 
             # Filter out null-values in the filing_list dictionary
-            filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}
+            filing_list = {k: v for k, v in filing_list.items() if v}
             try:
                 # get db connection and start a session, in case we need to roll back
                 con = DB.connection
@@ -148,7 +148,7 @@ class FilingInfo(Resource):
                 if ('dissolution' in filing_list and
                         Filing.get_filing_sub_type('dissolution', filing_list['dissolution']) == 'administrative'):
                     if legal_type == Business.TypeCodes.COOP.value:
-                        raise Exception('Not implemented!')
+                        raise Exception('Not implemented!')  # pylint: disable=broad-exception-raised
                     event_id = Filing.add_administrative_dissolution_event(con, identifier)
                     con.commit()
                     return jsonify({

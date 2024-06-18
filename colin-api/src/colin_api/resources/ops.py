@@ -40,8 +40,8 @@ class Healthz(Resource):
         except cx_Oracle.DatabaseError as err:  # pylint:disable=c-extension-no-member
             try:
                 return {'message': 'api is down', 'details': str(err)}, 500
-            except Exception as err:  # pylint: disable=broad-except; want to catch any outstanding errors
-                current_app.logger.error(err.with_traceback(None))
+            except Exception as er:  # pylint: disable=broad-except; want to catch any outstanding errors
+                current_app.logger.error(er.with_traceback(None))
                 return {'message': 'api is down'}, 500
 
         # made it here, so all checks passed

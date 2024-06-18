@@ -23,7 +23,7 @@ class GenericException(Exception):
 
     def __init__(self, error, status_code, *args, **kwargs):
         """Return a valid GenericException."""
-        super(GenericException, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.error = error
         self.status_code = status_code
 
@@ -33,7 +33,7 @@ class BusinessNotFoundException(GenericException):
 
     def __init__(self, *args, identifier=None, **kwargs):
         """Return a valid BusinessNotFoundException."""
-        super(BusinessNotFoundException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'{identifier} not found'
         else:
@@ -46,7 +46,7 @@ class FilingNotFoundException(GenericException):
 
     def __init__(self, *args, identifier: str, filing_type: str, **kwargs):
         """Return a valid FilingNotFoundException."""
-        super(FilingNotFoundException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         self.error = f'{filing_type} not found for {identifier}'
         self.status_code = 404
 
@@ -56,7 +56,7 @@ class OfficeNotFoundException(GenericException):
 
     def __init__(self, *args, identifier: str = None, **kwargs):
         """Return a valid AddressNotFoundException."""
-        super(OfficeNotFoundException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'Office not found for {identifier}'
         else:
@@ -69,7 +69,7 @@ class AddressNotFoundException(GenericException):
 
     def __init__(self, *args, address_id, **kwargs):
         """Return a valid AddressNotFoundException."""
-        super(AddressNotFoundException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         if address_id:
             self.error = f'Address not found with id: {address_id}'
         else:
@@ -82,7 +82,7 @@ class PartiesNotFoundException(GenericException):
 
     def __init__(self, *args, identifier: str = None, **kwargs):
         """Return a valid PartiesNotFoundException."""
-        super(PartiesNotFoundException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'Parties not found for {identifier}'
         else:
@@ -95,7 +95,7 @@ class NamesNotFoundException(GenericException):
 
     def __init__(self, *args, identifier: str = None, **kwargs):
         """Return a valid PartiesNotFoundException."""
-        super(NamesNotFoundException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'Corp names not found for {identifier}'
         else:
@@ -108,7 +108,7 @@ class InvalidFilingTypeException(GenericException):
 
     def __init__(self, *args, filing_type=None, **kwargs):
         """Return a valid InvalidFilingTypeException."""
-        super(InvalidFilingTypeException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         if filing_type:
             self.error = f'{filing_type} is an invalid filing type'
         else:
@@ -121,7 +121,7 @@ class UnableToDetermineCorpTypeException(GenericException):
 
     def __init__(self, *args, filing_type=None, **kwargs):
         """Return a valid InvalidFilingTypeException."""
-        super(UnableToDetermineCorpTypeException, self).__init__(None, None, *args, **kwargs)
+        super().__init__(None, None, *args, **kwargs)
         if filing_type:
             self.error = f'Unable to determine corp type for {filing_type} filing type'
         else:

@@ -47,7 +47,7 @@ class OfficeInfo(Resource):
             offices = {}
             office_obj_list = Office.get_current(cursor=cursor, identifier=identifier)
             for office_obj in office_obj_list:
-                if office_obj.office_type not in offices.keys():
+                if office_obj.office_type not in offices.keys():  # pylint: disable=consider-iterating-dictionary
                     offices.update(office_obj.as_dict())
             if not offices.keys():
                 return jsonify(

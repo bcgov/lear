@@ -49,7 +49,7 @@ class PartiesInfo(Resource):
             if not directors:
                 return jsonify({'message': f'directors for {identifier} not found'}), HTTPStatus.NOT_FOUND
             if len(directors) < 3 and legal_type in [Business.TypeCodes.COOP.value, Business.TypeCodes.CCC_COMP.value]:
-                current_app.logger.error('Less than 3 directors for {}'.format(identifier))
+                current_app.logger.error(f'Less than 3 directors for {identifier}')
             return jsonify({'directors': [x.as_dict() for x in directors]}), HTTPStatus.OK
 
         except GenericException as err:  # pylint: disable=duplicate-code

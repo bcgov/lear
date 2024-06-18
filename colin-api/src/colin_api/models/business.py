@@ -30,7 +30,7 @@ from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, stringify_list
 
 
-class Business:  # pylint: disable=too-many-instance-attributes
+class Business:  # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """Class to contain all model-like functions for the corporation and related tables."""
 
     class TypeCodes(Enum):
@@ -224,7 +224,10 @@ class Business:  # pylint: disable=too-many-instance-attributes
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str, corp_types: List = None, con=None) -> Business:
+    def find_by_identifier(cls,  # pylint: disable=too-many-statements
+                           identifier: str,
+                           corp_types: List = None,
+                           con=None) -> Business:
         """Return a Business by identifier."""
         business = None
         try:
@@ -271,7 +274,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             for name_obj in corp_names:
                 if name_obj.type_code == CorpName.TypeCodes.ASSUMED.value:
                     assumed_name = name_obj.corp_name
-                    break
+                    break  # pylint: disable=no-else-break
                 elif name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
                     corp_name = name_obj.corp_name
 
@@ -559,7 +562,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         try:
             if corp_type not in [x.value for x in Business.TypeCodes.__members__.values()]:
                 current_app.logger.error(f'Tried to update {corp_num} with invalid corp type code {corp_type}')
-                raise Exception
+                raise Exception  # pylint: disable=broad-exception-raised
 
             cursor.execute(
                 """
@@ -640,7 +643,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
                     corp_type=corp_type
                 )
 
-            return '%07d' % corp_num
+            return '%07d' % corp_num  # pylint: disable=consider-using-f-string
         except Exception as err:
             current_app.logger.error('Error looking up corp_num')
             raise err

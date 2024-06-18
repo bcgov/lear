@@ -362,7 +362,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     def _get_filing_type(cls, filing_type_code: str) -> Optional[str]:
-        for filing_type in cls.FILING_TYPES:
+        for filing_type in cls.FILING_TYPES.keys():
             if filing_type_code in cls.FILING_TYPES[filing_type]['type_code_list']:
                 return filing_type
         return None
@@ -525,14 +525,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def _get_filing_event_info(cls, cursor, filing: Filing, year: int = None) -> Dict:
         """Get the basic filing info that we care about for all filings."""
         # build base querystring
-        querystring = ("""
+        querystring = """
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
             agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd, arrangement_ind, court_order_num
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
             where
-            """)
+            """
         if filing.event_id:
             querystring += ' event.event_id=:event_id'
         else:
@@ -610,7 +610,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _get_notation(cls, cursor, corp_num: str, filing_event_info: Dict) -> Dict:
         """Get notation for the corresponding event id."""
-        querystring = ('select notation from ledger_text where event_id=:event_id')
+        querystring = 'select notation from ledger_text where event_id=:event_id'
         try:
             cursor.execute(querystring, event_id=filing_event_info['event_id'])
             notation = cursor.fetchone()
