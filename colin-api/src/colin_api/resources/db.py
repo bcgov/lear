@@ -58,8 +58,8 @@ class OracleDB:
             cursor = conn.cursor()
             cursor.execute("alter session set TIME_ZONE = 'America/Vancouver'")
 
-        return cx_Oracle.SessionPool(
-            user=current_app.config.get('ORACLE_USER'),  # pylint:disable=c-extension-no-member
+        return cx_Oracle.SessionPool(  # pylint:disable=c-extension-no-member
+            user=current_app.config.get('ORACLE_USER'),
             password=current_app.config.get('ORACLE_PASSWORD'),
             dsn='{0}:{1}/{2}'.format(  # pylint:disable=consider-using-f-string
                 current_app.config.get('ORACLE_HOST'),

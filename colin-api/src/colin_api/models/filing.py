@@ -362,7 +362,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     def _get_filing_type(cls, filing_type_code: str) -> Optional[str]:
-        for filing_type in cls.FILING_TYPES.keys():
+        for filing_type in cls.FILING_TYPES:  # pylint: disable=consider-using-dict-items
             if filing_type_code in cls.FILING_TYPES[filing_type]['type_code_list']:
                 return filing_type
         return None

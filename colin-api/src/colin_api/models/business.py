@@ -272,9 +272,9 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             assumed_name = None
             corp_name = None
             for name_obj in corp_names:
-                if name_obj.type_code == CorpName.TypeCodes.ASSUMED.value:
+                if name_obj.type_code == CorpName.TypeCodes.ASSUMED.value:  # pylint: disable=no-else-break
                     assumed_name = name_obj.corp_name
-                    break  # pylint: disable=no-else-break
+                    break
                 elif name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
                     corp_name = name_obj.corp_name
 
