@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
     CONSENT_CONTINUATION_OUT,
+    CONTINUATION_IN_FILING_TEMPLATE,
     CONTINUATION_OUT,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_CP_SPECIAL_RESOLUTION,
@@ -641,6 +642,33 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
             if role['roleType'] == 'Completing Party':
                 party['officer']['email'] = 'comp_party@email.com'
     filing_template['filing']['amalgamationApplication']['contactPoint']['email'] = 'test@test.com'
+
+    temp_identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = temp_identifier
+    temp_reg.save()
+    filing = create_filing(token=payment_id, filing_json=filing_template,
+                           business_id=business.id, bootstrap_id=temp_identifier)
+    filing.payment_completion_date = filing.filing_date
+    filing.save()
+    if option == Filing.Status.COMPLETED.value:
+        uow = versioning_manager.unit_of_work(session)
+        transaction = uow.create_transaction(session)
+        filing.transaction_id = transaction.id
+        filing.save()
+    return filing
+
+def prep_continuation_in_filing(session, identifier, payment_id, option):
+    """Return a new incorp filing prepped for email notification."""
+    business = create_business(identifier, legal_type=Business.LegalTypes.BCOMP_CONTINUE_IN.value)
+    filing_template = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    if business.legal_type:
+        filing_template['filing']['continuationIn']['nameRequest']['legalType'] = business.legal_type
+    for party in filing_template['filing']['continuationIn']['parties']:
+        for role in party['roles']:
+            if role['roleType'] == 'Completing Party':
+                party['officer']['email'] = 'comp_party@email.com'
+    filing_template['filing']['continuationIn']['contactPoint']['email'] = 'test@test.com'
 
     temp_identifier = 'Tb31yQIuBw'
     temp_reg = RegistrationBootstrap()
