@@ -261,8 +261,11 @@ def test_good_standing(session, last_ar_date, legal_type, state, limited_restora
 
     assert business.good_standing is expected
 
+
 RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
 RESTORATION_FILING['filing']['restoration'] = RESTORATION
+
+
 @pytest.mark.parametrize('test_name, has_no_transition_filed, good_standing', [
     ('NO_NEED_TRANSITION_NEW_ACT', False, True),
     ('NO_NEED_TRANSITION_BUT_IN_LIMITED_RESTORATION', False, False),
@@ -288,7 +291,6 @@ def test_good_standing_check_transition_filing(session, test_name, has_no_transi
     assert check_result == has_no_transition_filed
     with patch.object(flags, 'is_on', return_value=True):
         assert business.good_standing == good_standing
-
 
 
 def test_business_json(session):

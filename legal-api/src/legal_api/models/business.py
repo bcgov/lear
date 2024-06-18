@@ -402,12 +402,12 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         # A firm is always in good standing
         if self.is_firm:
             return True
-        # Date of last AR or founding date if they haven't yet filed one
-        last_ar_date = self.last_ar_date or self.founding_date
         # When involuntary dissolution feature flag is on, check transition filing
         if flags.is_on('enable_involuntary_dissolution'):
             if self._has_no_transition_filed_after_restoration():
                 return False
+        # Date of last AR or founding date if they haven't yet filed one
+        last_ar_date = self.last_ar_date or self.founding_date
         # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
         if self.state == Business.State.ACTIVE:
             if self.restoration_expiry_date:
