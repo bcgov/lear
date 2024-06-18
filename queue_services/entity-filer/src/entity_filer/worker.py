@@ -127,6 +127,7 @@ async def publish_event(business: Business, filing: Filing):
         }
         if filing.temp_reg:
             payload['tempidentifier'] = filing.temp_reg
+
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
@@ -145,7 +146,8 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
                                },
                     'business': {'identifier': business.identifier},
                     'legalFilings': get_filing_types(filing.filing_json)
-                }
+                },
+                'identifier': business.identifier
             }
         if filing.temp_reg:
             data['tempidentifier'] = filing.temp_reg

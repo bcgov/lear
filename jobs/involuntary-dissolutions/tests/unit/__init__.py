@@ -14,6 +14,7 @@
 """The Test-Suite used to ensure that the Involuntary Dissolutions Job is working correctly."""
 
 import datetime
+from datedelta import datedelta
 
 from legal_api.models import Batch, BatchProcessing, Business
 
@@ -66,6 +67,7 @@ def factory_batch_processing(batch_id,
                              step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                              status=BatchProcessing.BatchProcessingStatus.PROCESSING,
                              created_date=datetime.datetime.utcnow(),
+                             trigger_date=datetime.datetime.utcnow()+datedelta(days=42),
                              last_modified=datetime.datetime.utcnow(),
                              notes=''):
     """Create a batch processing entry."""
@@ -76,6 +78,7 @@ def factory_batch_processing(batch_id,
         step=step,
         status=status,
         created_date=created_date,
+        trigger_date=trigger_date,
         last_modified=last_modified,
         notes=notes
     )
