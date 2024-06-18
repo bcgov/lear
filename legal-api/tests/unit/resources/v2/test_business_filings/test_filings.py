@@ -749,6 +749,7 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
             except S3Error as ex:
                 assert ex.code == 'NoSuchKey'
 
+
 def test_delete_continuation_in_filing_with_authorization_files_in_draft(session, client, jwt, minio_server):
     """Assert that a draft continuationIn filing can be deleted and authorization files are removed from Minio."""
     identifier = 'CP1234568'
@@ -1108,6 +1109,9 @@ AGM_LOCATION_CHANGE_FILING['filing']['agmLocationChange'] = {}
 AGM_EXTENSION_FILING = copy.deepcopy(FILING_HEADER)
 AGM_EXTENSION_FILING['filing']['agmExtension'] = {}
 
+SPECIAL_RESOLUTION_NO_CON_FILING = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
+del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
+
 
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
@@ -1146,7 +1150,7 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, False, [], False),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, False, [], False),
         ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, False,
-            ['AFDVT', 'SPRLN'], False),
+            ['AFDVT', 'SPRLN', 'DIS_VOL'], False),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value,
             False, [], False),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value,
@@ -1188,13 +1192,17 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BCOMP.value, False, [], True),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COMP.value, False, [], True),
         ('CP1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.COOP.value, False,
-            ['AFDVT', 'SPRLN'], True),
+            ['AFDVT', 'SPRLN', 'DIS_VOL'], True),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_ULC_COMPANY.value,
             False, [], True),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.BC_CCC.value,
             False, [], True),
         ('BC1234567', DISSOLUTION_VOLUNTARY_FILING, 'dissolution', Business.LegalTypes.LIMITED_CO.value,
             False, [], True),
+        ('CP1234567', SPECIAL_RESOLUTION_NO_CON_FILING, 'specialResolution', Business.LegalTypes.COOP.value,
+         False, [], False),
+        ('CP1234567', CP_SPECIAL_RESOLUTION_TEMPLATE, 'specialResolution', Business.LegalTypes.COOP.value,
+         False, ['SPRLN', 'OTCON'], False),
     ]
 )
 def test_get_correct_fee_codes(
@@ -1238,7 +1246,6 @@ def test_get_correct_fee_codes(
     future_effective = filing_type.get('futureEffective')
 
     # verify fee code and future effective date
-    assert fee_code == expected_fee_code
     if has_fed:
         assert future_effective is True
     else:
@@ -1247,9 +1254,14 @@ def test_get_correct_fee_codes(
         else:
             assert future_effective is None
 
-    assert all(elem in
-               map(lambda x: x['filingTypeCode'], ListFilingResource.get_filing_types(business, filing))
-               for elem in additional_fee_codes)
+    fee_codes = ListFilingResource.get_filing_types(business, filing)
+    assert fee_codes
+    if len(fee_codes) == 1:
+        fee_code = fee_codes[0]['filingTypeCode']
+        assert fee_code == expected_fee_code
+    else:
+        assert len(additional_fee_codes) == len(fee_codes)
+    assert all(elem in map(lambda x: x['filingTypeCode'], fee_codes) for elem in additional_fee_codes)
 
 
 @integration_payment
