@@ -94,7 +94,7 @@ class NamesNotFoundException(GenericException):
     """Exception with defined error code and messaging."""
 
     def __init__(self, *args, identifier: str = None, **kwargs):
-        """Return a valid PartiesNotFoundException."""
+        """Return a valid NamesNotFoundException."""
         super().__init__(None, None, *args, **kwargs)
         if identifier:
             self.error = f'Corp names not found for {identifier}'
@@ -120,7 +120,7 @@ class UnableToDetermineCorpTypeException(GenericException):
     """Exception with defined error code and messaging."""
 
     def __init__(self, *args, filing_type=None, **kwargs):
-        """Return a valid InvalidFilingTypeException."""
+        """Return a valid UnableToDetermineCorpTypeException."""
         super().__init__(None, None, *args, **kwargs)
         if filing_type:
             self.error = f'Unable to determine corp type for {filing_type} filing type'
