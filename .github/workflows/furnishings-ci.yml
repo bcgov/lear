@@ -82,6 +82,14 @@ jobs:
         id: test
         run: |
           make test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./jobs/furnishings/coverage.xml
+          flags: furnishings
+          name: codecov-furnishings
+          token: ${{ secrets.CODECOV_TOKEN}}
+          fail_ci_if_error: true
 
   build-check:
     needs: setup-job
