@@ -18,7 +18,10 @@ coverage:
           - entityemailer
           - entityfiler
           - entitypay
-          - datareset
+          - entitybn
+          - entity-digital-credentials
+          - furnishings
+          - involuntary-dissolutions
 
 ignore:
   - "^/tests/**/*" # ignore test harness code
@@ -57,7 +60,19 @@ flags:
     paths:
       - queue_services/entity-pay/src/entity_pay
     carryforward: true
-  datareset:
+  entitybn:
     paths:
-      - data-reset-tool/src/data_reset_tool
+      - queue_services/entity-bn/src/entity_bn
+    carryforward: true
+  entity-digital-credentials:
+    paths:
+      - queue_services/entity-digital-credentials/src/entity_digital_credentials
+    carryforward: true
+  furnishings:
+    paths:
+      - jobs/furnishings
+    carryforward: true
+  involuntary-dissolutions:
+    paths:
+      - jobs/involuntary-dissolutions
     carryforward: true
