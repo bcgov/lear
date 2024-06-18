@@ -32,8 +32,7 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
 
     MAILING = 'mailing'
     DELIVERY = 'delivery'
-    FURNISHING = 'furnishing'
-    ADDRESS_TYPES = [MAILING, DELIVERY, FURNISHING]
+    ADDRESS_TYPES = [MAILING, DELIVERY]
     JSON_MAILING = 'mailingAddress'
     JSON_DELIVERY = 'deliveryAddress'
     JSON_ADDRESS_TYPES = [JSON_MAILING, JSON_DELIVERY]
