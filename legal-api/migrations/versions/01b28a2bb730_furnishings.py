@@ -55,9 +55,12 @@ def upgrade():
         sa.PrimaryKeyConstraint('id')
     )
 
+    op.execute("CREATE SEQUENCE grouping_identifier START 1;")
+
 
 def downgrade():
     op.drop_table('furnishings')
     op.execute("DROP TYPE furnishing_type;")
     op.execute("DROP TYPE furnishing_name;")
     op.execute("DROP TYPE furnishing_status;")
+    op.execute("DROP SEQUENCE grouping_identifier;")
