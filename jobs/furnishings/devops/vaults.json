@@ -9,16 +9,11 @@
         "vault": "entity",
         "application": [
             "postgres-legal",
+            "sentry",
             "launchdarkly",
             "nats-filer",
             "nats-emailer",
             "entity-service-account"
-        ]
-    },
-    {
-        "vault": "sentry",
-        "application": [
-          "entity"
         ]
     }
 ]
