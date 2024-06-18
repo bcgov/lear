@@ -658,6 +658,7 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
         filing.save()
     return filing
 
+
 def prep_continuation_in_filing(session, identifier, payment_id, option):
     """Return a new incorp filing prepped for email notification."""
     business = create_business(identifier, legal_type=Business.LegalTypes.BCOMP_CONTINUE_IN.value)

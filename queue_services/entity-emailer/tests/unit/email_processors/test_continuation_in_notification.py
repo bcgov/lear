@@ -28,7 +28,7 @@ from tests.unit import prep_continuation_in_filing
 def test_continuation_in_notification(app, session, mocker, status):
     """Assert Continuation notification is created."""
     # setup filing + business for email
-    filing = prep_continuation_in_filing(session, 'C1234567', '1' , status)
+    filing = prep_continuation_in_filing(session, 'C1234567', '1', status)
     token = 'token'
     # test processor
     mocker.patch(
@@ -40,7 +40,8 @@ def test_continuation_in_notification(app, session, mocker, status):
 
         assert 'test@test.com' in email['recipients']
         if status == Filing.Status.PAID.value:
-            assert email['content']['subject'] == 'HAULER MEDIA INC. - Confirmation of Filing from the Business Registry'
+            assert email['content']['subject'] == \
+                'HAULER MEDIA INC. - Confirmation of Filing from the Business Registry'
             assert 'comp_party@email.com' in email['recipients']
         else:
             assert mock_get_pdfs.call_args[0][2]['identifier'] == 'C1234567'
