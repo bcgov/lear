@@ -424,7 +424,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     effective_dt=filing.effective_date,
                     filing_date=filing.filing_date
                 )
-            elif filing_type_code in ['NOCAD', 'BEINC', 'CRBIN', 'TRANS']:
+            elif filing_type_code in ['NOCAD', 'BEINC', 'ICORP', 'ICORU', 'ICORC', 'CRBIN', 'TRANS']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
@@ -960,8 +960,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     'colinIds': [filing_info['event_id']]
                 }
                 filing.body = {
-                        filing_info['filing_type']: {
-                        }
+                    filing_info['filing_type']: {
+                    }
                 }
                 future_effective_filings.append(filing.as_dict())
             return future_effective_filings
@@ -1091,7 +1091,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 # Freeze entity for Alteration
                 if filing.filing_type == 'alteration' or (
                         filing.filing_type == 'incorporationApplication' and
-                        business['business']['legalType'] == Business.LearBusinessTypes.BCOMP.value):
+                        business['business']['legalType'] == Business.TypeCodes.BCOMP.value):
                     Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
 
             return filing.event_id
@@ -1252,13 +1252,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # create corp state
             Business.create_corp_state(cursor=cursor, corp_num=corp_num, event_id=filing.event_id)
         elif filing.filing_type == 'alteration':
-            if alter_corp_type := filing.body.get('business', {}).get('legalType'):
-                Business.update_corp_type(
-                    cursor=cursor,
-                    corp_num=corp_num,
-                    corp_type=alter_corp_type
-                )
-
             # end old
             CorpName.end_current(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
 
@@ -1272,7 +1265,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             corp_name_obj.corp_name = name
             corp_name_obj.type_code = CorpName.TypeCodes.CORP.value
         else:
-            corp_name_obj.corp_name = f'{corp_num} B.C. LTD.'
+            corp_name_prefix = corp_num
+            if filing.business.corp_type in (Business.TypeCodes.BCOMP_CONTINUE_IN.value,
+                                             Business.TypeCodes.ULC_CONTINUE_IN.value,
+                                             Business.TypeCodes.CCC_CONTINUE_IN.value,
+                                             Business.TypeCodes.CONTINUE_IN.value):
+                corp_name_prefix = corp_num[1:]
+            corp_name_suffix = Business.NUMBERED_CORP_NAME_SUFFIX[filing.business.corp_type]
+            corp_name_obj.corp_name = f'{corp_name_prefix} {corp_name_suffix}'
             corp_name_obj.type_code = CorpName.TypeCodes.NUMBERED_CORP.value
         CorpName.create_corp_name(cursor=cursor, corp_name_obj=corp_name_obj)
 
@@ -1329,13 +1329,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         if name_request := filing.body.get('nameRequest'):
             new_legal_name = name_request.get('legalName')
 
-            corp_names = CorpName.get_current(cursor=cursor, corp_num=corp_num)
-            old_corp_name = None
-            for name_obj in corp_names:
-                if name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
-                    old_corp_name = name_obj
-                    break
-
+            old_corp_name = CorpName.get_current_name_or_numbered(cursor=cursor, corp_num=corp_num)
             if old_corp_name.corp_name != new_legal_name:
                 # end old corp name
                 CorpName.end_name(
@@ -1346,9 +1340,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     type_code=old_corp_name.type_code
                 )
                 # create new corp name from NR
-                # If numbered set name to None, _create_corp_name will populate it.
-                name = None if new_legal_name.startswith(corp_num) else new_legal_name
-                cls._create_corp_name(cursor, filing, corp_num, name)
+                # If numbered, _create_corp_name will populate it.
+                cls._create_corp_name(cursor, filing, corp_num, new_legal_name)
 
         cls._process_name_translations(cursor, filing, corp_num)
         cls._process_office(cursor, filing)

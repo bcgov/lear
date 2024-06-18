@@ -42,8 +42,7 @@ class PartiesInfo(Resource):
             return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
         try:
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
             party_type = request.args.get('partyType', 'Director')
             cursor = DB.connection.cursor()
             directors = Party.get_current(cursor=cursor, corp_num=identifier, role_type=party_type)
@@ -75,8 +74,7 @@ class Parties(Resource):
     def get(legal_type: str, identifier: str):
         """Return all the parties for a business."""
         try:
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
 
             cursor = DB.connection.cursor()
             parties = Party.get_all_parties(cursor=cursor, corp_num=identifier)
