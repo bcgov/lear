@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for batch."""
+from __future__ import annotations
+
 from enum import auto
+from typing import List
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
@@ -63,7 +66,7 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def find_by(cls,  # pylint: disable=too-many-arguments
                 batch_type: BatchType = None,
-                status: BatchStatus = None) -> dict:
+                status: BatchStatus = None) -> List[Batch]:
         """Return the batch matching."""
         query = db.session.query(Batch)
         batches = []
