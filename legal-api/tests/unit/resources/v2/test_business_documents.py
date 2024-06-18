@@ -28,6 +28,7 @@ from tests import integration_reports
 from tests.unit.models import factory_business, factory_completed_filing, factory_incorporation_filing
 from tests.unit.services.utils import create_header
 from registry_schemas.example_data import ALTERATION, FILING_HEADER, INCORPORATION_FILING_TEMPLATE
+from unittest.mock import patch, PropertyMock
 
 
 @integration_reports
@@ -160,3 +161,72 @@ def test_get_coop_business_documents(session, client, jwt):
     assert docs_json['documentsInfo']['certifiedMemorandum']['key']
     assert docs_json['documentsInfo']['certifiedRules']['name']
     assert docs_json['documentsInfo']['certifiedMemorandum']['name']
+
+
+def test_get_business_summary_involuntary_dissolution(requests_mock, session, client, jwt):
+    """Assert that business summary returns correct information for Involuntary Dissolution."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier, entity_type='BEN', state='HISTORICAL')
+
+    # create a dissolution filing with involuntary dissolution
+    INVOLUNTARY_DISSOLUTION = {
+        'filing': {
+            'header': {
+                'name': 'dissolution',
+                'date': '2023-01-19T19:08:53.733202+00:00',
+                'certifiedBy': 'full name',
+                'filingId': 1,
+                'effectiveDate': '2023-01-19T19:08:53.733202+00:00'
+            },
+            'business': {
+                'identifier': 'CP7654321',
+                'legalName': 'CP7654321 B.C. LTD.',
+                'legalType': 'BEN'
+            },
+            'dissolution': {
+                'dissolutionDate': '2023-01-19',
+                'dissolutionType': 'involuntary',
+            }
+        }
+    }
+
+    # create and save the filing
+    factory_completed_filing(business, INVOLUNTARY_DISSOLUTION, filing_type='dissolution',
+                                      filing_sub_type='involuntary')
+    # mock the meta_data property
+    with patch('legal_api.models.Filing.meta_data', new_callable=PropertyMock) as mock_meta_data:
+        mock_meta_data.return_value = {
+            'dissolution': {
+                'dissolutionType': 'involuntary',
+                'dissolutionDate': '2023-01-19'
+            },
+            "legalFilings": [
+                "dissolution"
+            ],
+        }
+
+        # mock the external report service
+        requests_mock.post(current_app.config.get('REPORT_SVC_URL'), json={'foo': 'bar'})
+        headers = create_header(jwt, [STAFF_ROLE], identifier, **{'accept': 'application/json'})
+
+        # test
+        rv = client.get(f'/api/v2/businesses/{identifier}/documents/summary', headers=headers)
+
+        # check
+        assert rv.status_code == HTTPStatus.OK
+        response_json = rv.json
+
+        # check response content
+        assert 'business' in response_json
+        assert response_json['business']['identifier'] == identifier
+        assert response_json['business']['state'] == 'HISTORICAL'
+        assert response_json['reportType'] == 'summary'
+
+        # ensure the dissolution filing is included in stateFilings
+        assert 'stateFilings' in response_json
+        assert len(response_json['stateFilings']) > 0
+        state_filing = response_json['stateFilings'][0]
+        assert state_filing['filingType'] == 'dissolution'
+        assert state_filing['filingName'] == 'Involuntary Dissolution'
+
