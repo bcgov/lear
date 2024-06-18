@@ -88,6 +88,14 @@ jobs:
         id: test
         run: |
           make test
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./jobs/involuntary-dissolutions/coverage.xml
+          flags: involuntary-dissolutions
+          name: codecov-involuntary-dissolutions
+          token: ${{ secrets.CODECOV_TOKEN}}
+          fail_ci_if_error: true
 
   build-check:
     needs: setup-job
