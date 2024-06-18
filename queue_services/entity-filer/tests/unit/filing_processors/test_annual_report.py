@@ -39,7 +39,7 @@ from tests.unit import (
     ('Withdrawn from the dissolution process', True, True, False, 'BC'),
     ('AR successfully when flag is off', False, True, False, 'CP')
 ])
-def test_process_ar_filing_involuntary_dissolution(app, session, test_name, in_dissolution, eligibility, legal_type, flag_on):
+def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag_on, in_dissolution, eligibility, legal_type):
     """Assert that an AR filling can be applied to the model correctly."""
     from entity_filer.filing_processors import annual_report
     # vars
