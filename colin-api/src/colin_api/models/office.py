@@ -98,10 +98,10 @@ class Office:
 
         offices_dict = {}
         for office_obj in office_obj_list:
-            if office_obj.office_type not in offices_dict.keys():
+            if office_obj.office_type not in offices_dict.keys():  # pylint: disable=consider-iterating-dictionary
                 offices_dict.update(office_obj.as_dict())
             else:
-                current_app.logger.error('Received more than 1 office for {}'.format(office_obj.office_type))
+                current_app.logger.error(f'Received more than 1 office for {office_obj.office_type}')
         return offices_dict
 
     @classmethod
@@ -131,17 +131,17 @@ class Office:
         if not identifier:
             return None
 
-        querystring = ("""
+        querystring = """
             select start_event_id, end_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
             from office
             where corp_num=:identifier and end_event_id is null
-            """)
+            """
 
         try:
             offices = cls._build_offices_list(cursor, querystring=querystring, event_id=None, identifier=identifier)
             return offices
         except Exception as err:
-            current_app.logger.error('error getting office for corp: {}'.format(identifier))
+            current_app.logger.error(f'error getting office for corp: {identifier}')
             raise err
 
     @classmethod
@@ -150,18 +150,18 @@ class Office:
         if not event_id:
             return None
 
-        querystring = ("""
+        querystring = """
             select start_event_id, end_event_id, mailing_addr_id, delivery_addr_id, office_typ_cd
             from office
             where start_event_id=:event_id
-            """)
+            """
 
         try:
             offices = cls._build_offices_list(cursor, querystring=querystring, identifier=None, event_id=event_id)
             return offices
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
-            current_app.logger.error('error getting office from event : {}'.format(event_id))
+            current_app.logger.error(f'error getting office from event : {event_id}')
 
             raise err
 

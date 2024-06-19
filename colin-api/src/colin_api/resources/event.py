@@ -31,13 +31,13 @@ class EventInfo(Resource):
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(corp_type, event_id):
         """Return all event_ids of the corp_type that are greater than the given event_id."""
-        querystring = ("""
+        querystring = """
             select event.event_id, corporation.corp_num, corporation.corp_typ_cd, filing.filing_typ_cd
             from event
             join filing on event.event_id = filing.event_id
             join corporation on EVENT.corp_num = corporation.corp_num
             where corporation.corp_typ_cd = :corp_type
-            """)
+            """
         try:
             cursor = DB.connection.cursor()
             if event_id != 'earliest':
@@ -69,13 +69,13 @@ class CorpEventInfo(Resource):
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(corp_num):
         """Return all event_ids of the corp_type that are greater than the given event_id."""
-        querystring = ("""
+        querystring = """
             select e.event_id, e.corp_num, f.filing_typ_cd
             from event e
             join filing f on e.event_id = f.event_id
             where e.corp_num = :corp_num
             order by e.event_id asc
-            """)
+            """
         try:
             cursor = DB.connection.cursor()
             cursor.execute(querystring, corp_num=corp_num)

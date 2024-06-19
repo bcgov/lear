@@ -716,19 +716,20 @@ class ListFilingResource():
                 if k in ['changeOfDirectors', 'changeOfAddress']:
                     priority = False if filing_type == 'annualReport' else priority_flag
 
-                if k in ['incorporationApplication', 'amalgamationApplication', 'continuationIn', 'alteration']:
-                    filing_types.append({
-                        'filingTypeCode': filing_type_code,
-                        'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
-                        'priority': priority,
-                        'waiveFees': waive_fees_flag
-                    })
-                elif filing_type_code:
-                    filing_types.append({
-                        'filingTypeCode': filing_type_code,
-                        'priority': priority,
-                        'waiveFees': waive_fees_flag
-                    })
+                if filing_type_code:
+                    if k in ['incorporationApplication', 'amalgamationApplication', 'continuationIn', 'alteration']:
+                        filing_types.append({
+                            'filingTypeCode': filing_type_code,
+                            'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
+                            'priority': priority,
+                            'waiveFees': waive_fees_flag
+                        })
+                    else:
+                        filing_types.append({
+                            'filingTypeCode': filing_type_code,
+                            'priority': priority,
+                            'waiveFees': waive_fees_flag
+                        })
         return filing_types
 
     @staticmethod

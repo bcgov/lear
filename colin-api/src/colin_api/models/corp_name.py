@@ -232,3 +232,16 @@ class CorpName:
         except Exception as err:
             current_app.logger.error(f'error getting current corp names by type {type_code} for {corp_num}')
             raise err
+
+    @classmethod
+    def get_current_name_or_numbered(cls, cursor, corp_num: str) -> List:
+        """Get current entity name by type code name/numbered."""
+        try:
+            querystring = cls.NAME_QUERY + " and corp_name_typ_cd in ('CO','NB') and end_event_id is null"
+            cursor.execute(querystring, corp_num=corp_num)
+            names = cls._create_name_objs(cursor=cursor)
+            return names[0] if names else None
+
+        except Exception as err:
+            current_app.logger.error(f'error getting current corp name by type name/numbered for {corp_num}')
+            raise err

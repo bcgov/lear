@@ -42,13 +42,12 @@ class OfficeInfo(Resource):
             return jsonify({'message': 'Identifier required'}), HTTPStatus.NOT_FOUND
 
         try:
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
             cursor = DB.connection.cursor()
             offices = {}
             office_obj_list = Office.get_current(cursor=cursor, identifier=identifier)
             for office_obj in office_obj_list:
-                if office_obj.office_type not in offices.keys():
+                if office_obj.office_type not in offices.keys():  # pylint: disable=consider-iterating-dictionary
                     offices.update(office_obj.as_dict())
             if not offices.keys():
                 return jsonify(
