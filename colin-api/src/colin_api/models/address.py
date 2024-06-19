@@ -128,7 +128,7 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
 
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
-            raise AddressNotFoundException(address_id=address_id)
+            raise AddressNotFoundException(address_id=address_id)  # pylint: disable=raise-missing-from
 
     @classmethod
     def create_new_address(cls, cursor, address_info: dict = None, corp_num: str = None):
@@ -153,7 +153,7 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                         UPDATE system_id
                         SET id_num = :new_num
                         WHERE id_typ_cd = 'ADD'
-                    """, new_num=addr_id+1)
+                    """, new_num=addr_id + 1)
 
             country_typ_cd = pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2
         except Exception as err:
@@ -225,7 +225,7 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
 
             if cursor.rowcount < 1:
                 current_app.logger.error('Database not updated.')
-                raise Exception
+                raise Exception  # pylint: disable=broad-exception-raised
             return
         except Exception as err:
             current_app.logger.error(f'Failed to delete addresses {address_ids}')

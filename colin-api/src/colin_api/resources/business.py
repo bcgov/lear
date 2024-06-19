@@ -61,6 +61,7 @@ class BusinessPublicInfo(Resource):
                 {'message': 'Error when trying to retrieve business record from COLIN'}
             ), HTTPStatus.INTERNAL_SERVER_ERROR
 
+
 @cors_preflight('GET, POST')
 @API.route('/<string:legal_type>/<string:identifier>', methods=['GET'])
 @API.route('/<string:legal_type>', methods=['POST'])
@@ -74,12 +75,10 @@ class BusinessInfo(Resource):
         """Return the complete business info."""
         try:
             # convert identifier if BC legal_type
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
 
             # get business
-            corp_types = Business.CORP_TYPE_CONVERSION.get(legal_type, [legal_type])
-            business = Business.find_by_identifier(identifier, corp_types)
+            business = Business.find_by_identifier(identifier)
             if not business:
                 return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
             return jsonify(business.as_dict()), HTTPStatus.OK
@@ -99,7 +98,9 @@ class BusinessInfo(Resource):
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(legal_type: str):
         """Create and return a new corp number for the given legal type."""
-        if legal_type not in [x.value for x in Business.LearBusinessTypes]:
+        # BC: BEN, BC, ULC, CC
+        # C: CBEN, C, CUL, CCC
+        if legal_type not in ['BC', 'C']:  # corp_type (id_typ_cd in system_id table)
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         try:
@@ -128,7 +129,7 @@ class BusinessNamesInfo(Resource):
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def get(legal_type, identifier, name_type):
         """Get active names by type code for a business."""
-        if legal_type not in [x.value for x in Business.LearBusinessTypes]:
+        if legal_type not in [x.value for x in Business.TypeCodes]:
             return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
         if name_type not in [x.value for x in CorpName.TypeCodes.__members__.values()]:
@@ -136,8 +137,7 @@ class BusinessNamesInfo(Resource):
 
         try:
             # convert identifier if BC legal_type
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
 
             con = DB.connection
             con.begin()
@@ -180,7 +180,7 @@ class InternalBusinessInfo(Resource):
                 return jsonify(bn_15s), HTTPStatus.OK
 
             if info_type == 'resolutions':
-                if not legal_type or legal_type not in [x.value for x in Business.LearBusinessTypes]:
+                if not legal_type or legal_type not in [x.value for x in Business.TypeCodes]:
                     return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
                 if not identifier:
@@ -189,8 +189,7 @@ class InternalBusinessInfo(Resource):
                     ), HTTPStatus.BAD_REQUEST
 
                 # convert identifier if BC legal_type
-                if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                    identifier = identifier[-7:]
+                identifier = Business.get_colin_identifier(identifier, legal_type)
 
                 return jsonify(
                     {'resolutionDates': Business.get_resolutions(cursor=cursor, corp_num=identifier)}

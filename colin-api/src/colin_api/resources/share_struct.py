@@ -44,8 +44,7 @@ class ShareStruct(Resource):
         try:
 
             cursor = DB.connection.cursor()
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
             shares = ShareObject.get_all(cursor=cursor, corp_num=identifier)
             if not shares:
                 return jsonify({'message': f'No share structures found for {identifier}'}), HTTPStatus.NOT_FOUND

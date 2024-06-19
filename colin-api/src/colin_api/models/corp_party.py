@@ -163,8 +163,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         role_dict = {v: k for k, v in cls.role_types.items()}  # Used as a lookup for role names
 
         grouped_list = []
-        role_func = (lambda x: x.officer['firstName'] + x.officer['middleInitial'] + x.officer['lastName']
-                     + x.officer['orgName'])  # noqa: E731;
+        role_func = (lambda x:  # pylint: disable=unnecessary-lambda-assignment; # noqa: E731;
+                     x.officer['firstName'] + x.officer['middleInitial'] + x.officer['lastName'] + x.officer['orgName'])
 
         # CORP_PARTIES are stored as a separate row per Role, and need to be grouped to return a list of
         # Role(s) within each Party object. First the rows are grouped in-memory by party/organization name
@@ -239,7 +239,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     party.appointment_date = party.get_start_event_date(cursor)
 
             # only return the top level parent records
-            for party_id in party_id_map:
+            for party_id in party_id_map:  # pylint: disable=consider-using-dict-items
                 if party_id not in child_party_ids:
                     party = party_id_map[party_id]
                     if party.appointment_date == 'unknown':
@@ -480,7 +480,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         UPDATE system_id
                         SET id_num = :new_num
                         WHERE id_typ_cd = 'CP'
-                    """, new_num=corp_party_id+1)
+                    """, new_num=corp_party_id + 1)
 
         except Exception as err:
             current_app.logger.error('Error in corp_party: Failed to get next corp_party_id.')

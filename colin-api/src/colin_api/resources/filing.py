@@ -41,7 +41,7 @@ class FilingInfo(Resource):
     def get(legal_type, identifier, filing_type, filing_sub_type=None):
         """Return the complete filing info or historic (pre-bob-date=2019-03-08) filings."""
         try:
-            if legal_type not in [x.value for x in Business.LearBusinessTypes]:
+            if legal_type not in [x.value for x in Business.TypeCodes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
             # get optional parameters (event_id / year)
@@ -51,12 +51,10 @@ class FilingInfo(Resource):
                 year = int(year)
 
             # convert identifier if BC legal_type
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
 
             # get business
-            corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
-            business = Business.find_by_identifier(identifier, corp_types)
+            business = Business.find_by_identifier(identifier)
 
             # get future effective filings
             if filing_type == 'future':
@@ -96,7 +94,7 @@ class FilingInfo(Resource):
         """Create a new filing."""
         # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
         try:
-            if legal_type not in [x.value for x in Business.LearBusinessTypes]:
+            if legal_type not in [x.value for x in Business.TypeCodes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
 
             json_data = request.get_json()
@@ -120,10 +118,8 @@ class FilingInfo(Resource):
                 ), HTTPStatus.BAD_REQUEST
 
             # convert identifier if BC legal_type
-            if legal_type in Business.CORP_TYPE_CONVERSION[Business.LearBusinessTypes.BCOMP.value]:
-                identifier = identifier[-7:]
+            identifier = Business.get_colin_identifier(identifier, legal_type)
 
-            corp_types = Business.CORP_TYPE_CONVERSION[legal_type]
             if json_data.get('correction', None):
                 filing_list = {'correction': json_data['correction']}
             else:
@@ -142,7 +138,7 @@ class FilingInfo(Resource):
                 }
 
             # Filter out null-values in the filing_list dictionary
-            filing_list = {k: v for k, v in filing_list.items() if filing_list[k]}
+            filing_list = {k: v for k, v in filing_list.items() if v}
             try:
                 # get db connection and start a session, in case we need to roll back
                 con = DB.connection
@@ -151,22 +147,22 @@ class FilingInfo(Resource):
                 # No filing will be created for administrative dissolution. Create an event and update corp state.
                 if ('dissolution' in filing_list and
                         Filing.get_filing_sub_type('dissolution', filing_list['dissolution']) == 'administrative'):
-                    if legal_type == Business.LearBusinessTypes.COOP.value:
-                        raise Exception('Not implemented!')
+                    if legal_type == Business.TypeCodes.COOP.value:
+                        raise Exception('Not implemented!')  # pylint: disable=broad-exception-raised
                     event_id = Filing.add_administrative_dissolution_event(con, identifier)
                     con.commit()
                     return jsonify({
                         'filing': {
-                            'header': { 'colinIds' : [event_id]}
+                            'header': {'colinIds': [event_id]}
                         }
                     }), HTTPStatus.CREATED
 
-                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier, corp_types)
+                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier)
 
                 # return the completed filing data
                 completed_filing = Filing()
                 # get business info again - could have changed since filings were applied
-                completed_filing.business = Business.find_by_identifier(identifier, corp_types, con)
+                completed_filing.business = Business.find_by_identifier(identifier, con=con)
                 completed_filing.body = {}
                 for filing_info in filings_added:
                     sub_filing = Filing()
@@ -203,7 +199,7 @@ class FilingInfo(Resource):
             ), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
-    def _add_filings(con, json_data: dict, filing_list: list, identifier: str, corp_types: list) -> list:
+    def _add_filings(con, json_data: dict, filing_list: list, identifier: str) -> list:
         """Process all parts of the filing."""
         filings_added = []
         for filing_type in filing_list:
@@ -218,7 +214,7 @@ class FilingInfo(Resource):
             filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
 
             if filing_type != 'incorporationApplication':
-                filing.business = Business.find_by_identifier(identifier, corp_types, con)
+                filing.business = Business.find_by_identifier(identifier, con=con)
             else:
                 filing.business = Business.create_corporation(con, json_data)
             # add the new filing
