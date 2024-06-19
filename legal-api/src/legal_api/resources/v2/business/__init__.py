@@ -29,8 +29,8 @@ from .business_share_classes import get_share_class
 from .business_tasks import get_tasks
 from .colin_sync import (
     get_all_identifiers_without_tax_id,
-    get_completed_filings_for_colin,
     get_colin_event_id,
+    get_completed_filings_for_colin,
     set_tax_ids,
     update_colin_event_id,
     update_colin_id,

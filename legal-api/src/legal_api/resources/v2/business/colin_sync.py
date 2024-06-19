@@ -26,7 +26,6 @@ from legal_api.models.colin_event_id import ColinEventId
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 
-
 from .bp import bp
 
 
