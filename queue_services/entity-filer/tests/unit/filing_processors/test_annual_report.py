@@ -31,22 +31,24 @@ from tests.unit import (
     create_business,
     create_filing,
 )
+from tests import EPOCH_DATETIME
 
 
 @pytest.mark.parametrize('test_name,flag_on,in_dissolution,eligibility,legal_type,', [
     ('AR successfully', True, False, False, 'CP'),
-    ('Not withdrawn from the dissolution process', True, True, True, 'CP'),
-    ('Withdrawn from the dissolution process', True, True, False, 'BC'),
+    ('Not withdrawn from the dissolution process', True, True, True, 'BC'),
+    ('Withdrawn from the dissolution process', True, True, False, 'CP'),
     ('AR successfully when flag is off', False, True, False, 'CP')
 ])
 def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag_on, in_dissolution, eligibility, legal_type):
     """Assert that an AR filling can be applied to the model correctly."""
     from entity_filer.filing_processors import annual_report
     # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
     identifier = 'CP1234567'
 
     business = create_business(identifier, legal_type)
+    business.founding_date = EPOCH_DATETIME
+    business.save()
     # create the batch and batch_processing.
     batch_status = 'PROCESSING'
     if not in_dissolution:
@@ -54,12 +56,15 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
     batch = create_batch(status=batch_status)
     batch_processing = create_batch_processing(business=business, batch_id=batch.id, status=batch_status)
 
-    business.no_dissolution = False if eligibility else True
-    business.save()
+    now = datetime.datetime.utcnow()
+    if eligibility:
+        # setup ar_date to """INTERVAL '26 MONTHS'"" to make the businees is eligibility
+        ar_date = datetime.date(year=now.year-3, month=now.month-1, day=now.day)
+        agm_date = datetime.date(year=now.year-3, month=now.month-2, day=now.day)
+    else:
+        ar_date = datetime.date(year=now.year, month=now.month-1, day=now.day)
+        agm_date = datetime.date(year=now.year, month=now.month-2, day=now.day)
 
-    now = datetime.date(2020, 9, 17)
-    ar_date = datetime.date(2020, 8, 5)
-    agm_date = datetime.date(2020, 7, 1)
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['business']['identifier'] = identifier
     ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
@@ -69,7 +74,7 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
 
     # TEST
     with freeze_time(now):
-        filing = create_filing(payment_id, ar, business.id)
+        filing = create_filing(json_filing=ar, business_id=business.id)
         annual_report.process(business, filing.filing_json['filing'], filing_meta=filing_meta, flag_on=flag_on)
 
     # check it out
@@ -77,8 +82,17 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
         assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
         assert batch_processing.notes == 'Moved back to good standing'
     else:
-        assert str(business.last_agm_date) == str(agm_date)
-        assert str(business.last_ar_date) == str(agm_date)
+        if in_dissolution:
+            assert batch_processing.status == BatchProcessing.BatchProcessingStatus.PROCESSING.value
+        else:
+            assert batch_processing.status == BatchProcessing.BatchProcessingStatus.COMPLETED.value
+        assert batch_processing.notes == ''
+        if legal_type == 'CP':
+            # require the agm for [Business.LegalTypes.COOP.value, Business.LegalTypes.XPRO_LIM_PARTNR.value]
+            assert str(business.last_agm_date) == str(agm_date)
+            assert str(business.last_ar_date) == str(agm_date)
+        else:
+            assert str(business.last_ar_date) == str(ar_date)
 
 
 async def test_process_ar_filing_no_agm(app, session):

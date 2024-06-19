@@ -89,6 +89,7 @@ gcp_queue.init_app(FLASK_APP)
 if FLASK_APP.config.get('LD_SDK_KEY', None):
     flags.init_app(FLASK_APP)
 
+
 def get_filing_types(legal_filings: dict):
     """Get the filing type fee codes for the filing.
 
@@ -143,7 +144,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
-        data= {
+        data = {
                 'filing': {
                     'header': {'filingId': filing.id,
                                'effectiveDate': filing.effective_date.isoformat()
