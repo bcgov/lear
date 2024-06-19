@@ -74,7 +74,7 @@ class ResetByEventId(Resource):
 
     @staticmethod
     @cors.crossdomain(origin='*')
-    # @jwt.requires_roles([COLIN_SVC_ROLE])
+    @jwt.requires_roles([COLIN_SVC_ROLE])
     @API.expect(eventResetParser)
     def post():
         """Reset filing(s) based on the provided event_id, or array of event_ids.
@@ -88,7 +88,7 @@ class ResetByEventId(Resource):
                   event_ids=event_ids
                 )
             
-            return jsonify({'message': json.dumps(event_ids)}), 200
+            return jsonify({'message':"Reset for event ids "+json.dumps(event_ids)}), 200
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
