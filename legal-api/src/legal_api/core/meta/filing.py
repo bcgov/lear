@@ -270,7 +270,7 @@ FILINGS: Final = {
             'CCC': 'CONTI'
         },
         'additional': [
-            {'types': 'C,CBEN,CUL,CCC', 'outputs': ['noticeOfArticles', 'certificate']},
+            {'types': 'C,CBEN,CUL,CCC', 'outputs': ['noticeOfArticles', 'certificateOfContinuation']},
         ]
     },
     'continuationOut': {
