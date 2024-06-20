@@ -242,7 +242,7 @@ class Reset:
 
     @classmethod
     def reset_filings_by_event(cls, event_ids: list = []):
-        """Reset changes made by COOPER for given event ids."""
+        """Reset changes made for given event ids."""
         # initialize reset object
         reset_obj = Reset()
 
