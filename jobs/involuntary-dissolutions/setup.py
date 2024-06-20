@@ -15,6 +15,7 @@
 
 from setuptools import find_packages, setup
 
+
 setup(
     name='involuntary-dissolutions',
     packages=find_packages()
