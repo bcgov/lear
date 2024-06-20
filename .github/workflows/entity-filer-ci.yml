@@ -28,7 +28,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.9.19]
 
     steps:
       - uses: actions/checkout@v3
@@ -72,9 +72,14 @@ jobs:
       ACCOUNT_SVC_AUTH_URL: https://mock_account_svc_auth_url
       ACCOUNT_SVC_CLIENT_ID: account_svc_client_id
       ACCOUNT_SVC_CLIENT_SECRET: account_svc_client_secret
+      BUSINESS_EVENTS_TOPIC: projects/project-id/topics/test
 
 
     runs-on: ubuntu-20.04
+
+    strategy:
+      matrix:
+        python-version: [3.9.19]
 
     services:
       postgres:

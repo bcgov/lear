@@ -39,6 +39,7 @@ from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
+from legal_api.services import Flags
 from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
@@ -83,6 +84,10 @@ FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
 gcp_queue.init_app(FLASK_APP)
+flags = Flags()
+
+if FLASK_APP.config.get('LD_SDK_KEY', None):
+    flags.init_app(FLASK_APP)
 
 
 def get_filing_types(legal_filings: dict):
@@ -139,7 +144,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
-        data= {
+        data = {
                 'filing': {
                     'header': {'filingId': filing.id,
                                'effectiveDate': filing.effective_date.isoformat()
@@ -238,7 +243,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     annual_report.process(business, filing, filing_meta)
 
                 elif filing.get('changeOfAddress'):
-                    change_of_address.process(business, filing, filing_meta)
+                    flag_on = flags.is_on('enable-involuntary-dissolution')
+                    change_of_address.process(business, filing, filing_meta, flag_on)
 
                 elif filing.get('changeOfDirectors'):
                     filing['colinIds'] = filing_submission.colin_event_ids
