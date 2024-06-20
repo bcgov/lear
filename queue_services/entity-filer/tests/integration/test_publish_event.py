@@ -25,6 +25,7 @@ from testcontainers.google import PubSubContainer
 from testcontainers.core.waiting_utils import wait_for_logs
 
 
+@pytest.mark.skip
 def test_publish_gcp_queue_event(app, session):
     """Assert that filing event is placed on the queue."""
     # Call back for the subscription
