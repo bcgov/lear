@@ -30,6 +30,7 @@ from legal_api.services.queue import QueueService
 from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sqlalchemy import Date, cast, func
+from sqlalchemy.orm import aliased
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
@@ -81,8 +82,8 @@ def create_invountary_dissolution_filing(business_id: int):
     """Create a filing entry to represent an involuntary dissolution filing."""
     filing = Filing()
     filing.business_id = business_id
-    filing.filing_type = CoreFiling.FilingTypes.DISSOLUTION
-    filing.filing_sub_type = DissolutionTypes.INVOLUNTARY
+    filing._filing_type = CoreFiling.FilingTypes.DISSOLUTION  # pylint: disable=protected-access
+    filing._filing_sub_type = DissolutionTypes.INVOLUNTARY  # pylint: disable=protected-access
     filing.save()
 
     return filing
@@ -104,11 +105,20 @@ async def put_filing_on_queue(filing_id: int, app: Flask, qsm: QueueService):
 
 def mark_eligible_batches_completed():
     """Mark batches completed if all of their associated batch_processings are compeleted."""
-    subquery = db.session.query(BatchProcessing.batch_id).filter(BatchProcessing.status.in_([
-        BatchProcessing.BatchProcessingStatus.COMPLETED,
-        BatchProcessing.BatchProcessingStatus.WITHDRAWN
-    ]))
-    batches = db.session.query(Batch).filter(Batch.id.in_(subquery)).all()
+    AliasBatchProcessing = aliased(BatchProcessing)  # pylint: disable=invalid-name # noqa N806
+    batches = (
+        db.session.query(Batch)
+        .join(BatchProcessing, Batch.id == BatchProcessing.batch_id)
+        .filter(Batch.batch_type == 'INVOLUNTARY_DISSOLUTION')
+        .filter(Batch.status != 'COMPLETED')
+        .filter(
+            ~db.session.query(AliasBatchProcessing)
+            .filter(Batch.id == AliasBatchProcessing.batch_id)
+            .filter(AliasBatchProcessing.status.notin_(['COMPLETED', 'WITHDRAWN']))
+            .exists()
+        )
+        .all()
+    )
 
     for batch in batches:
         batch.status = Batch.BatchStatus.COMPLETED
@@ -116,7 +126,7 @@ def mark_eligible_batches_completed():
         batch.save()
 
 
-def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-many-locals 
+def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-many-locals
     """Initiate dissolution process for new businesses that meet dissolution criteria."""
     try:
         # check if batch has already run today
@@ -248,7 +258,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             batch_processing.notes = 'Moved back into good standing'
         batch_processing.last_modified = datetime.utcnow()
         batch_processing.save()
-    
+
     mark_eligible_batches_completed()
 
 
