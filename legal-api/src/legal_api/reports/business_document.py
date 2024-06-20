@@ -397,6 +397,7 @@ class BusinessDocument:
         filing_info = {}
 
         filing_info['filingType'] = filing.filing_type
+        filing_info['filingSubType'] = filing.filing_sub_type
         filing_info['filingDateTime'] = filing.filing_date.isoformat()
         filing_info['effectiveDateTime'] = filing.effective_date.isoformat()
 
