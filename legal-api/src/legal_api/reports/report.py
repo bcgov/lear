@@ -156,6 +156,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/businessDetails',
             'common/footerMOCS',
             'common/directors',
+            'continuation-in/authorization',
+            'continuation-in/effectiveDate',
+            'continuation-in/exproRegistrationInBc',
+            'continuation-in/foreignJurisdiction',
             'common/completingParty',
             'correction/businessDetails',
             'correction/addresses',
@@ -296,6 +300,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_amalgamation_data(filing)
         elif self._report_key == 'certificateOfAmalgamation':
             self._format_certificate_of_amalgamation_data(filing)
+        elif self._report_key == 'continuationIn':
+            self._format_continuation_in_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -899,6 +905,49 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
+    def _format_continuation_in_data(self, filing):
+        self._format_address(filing['continuationIn']['offices']['registeredOffice']['deliveryAddress'])
+        self._format_address(filing['continuationIn']['offices']['registeredOffice']['mailingAddress'])
+        if 'recordsOffice' in filing['continuationIn']['offices']:
+            self._format_address(filing['continuationIn']['offices']['recordsOffice']['deliveryAddress'])
+            self._format_address(filing['continuationIn']['offices']['recordsOffice']['mailingAddress'])
+        self._format_directors(filing['continuationIn']['parties'])
+        # create helper lists
+        filing['nameRequest'] = filing['continuationIn'].get('nameRequest')
+        filing['listOfTranslations'] = filing['continuationIn'].get('nameTranslations', [])
+        filing['offices'] = filing['continuationIn']['offices']
+        filing['parties'] = filing['continuationIn']['parties']
+        if filing['continuationIn'].get('shareClasses', None):
+            filing['shareClasses'] = filing['continuationIn']['shareClasses']
+        elif 'shareStructure' in filing['continuationIn']:
+            filing['shareClasses'] = filing['continuationIn']['shareStructure']['shareClasses']
+
+        # set expro business
+        filing['mode'] = filing['continuationIn'].get('mode')
+        if filing['continuationIn'].get('business'):
+            filing['exproBusiness'] = filing['continuationIn']['business']
+
+        filing['authorization'] = filing['continuationIn'].get('authorization')
+        filing['foreignJurisdiction'] = filing['continuationIn'].get('foreignJurisdiction')
+
+        # set foreign jurisdiction region and country name
+        foreign_jurisdiction = filing['continuationIn'].get('foreignJurisdiction')
+        region_code = None
+        if filing.get('continuationIn').get('foreignJurisdiction').get('region'):
+            region_code = foreign_jurisdiction['region']
+        country_code = foreign_jurisdiction['country']
+        country = pycountry.countries.get(alpha_2=country_code)
+        region = None
+        if region_code and region_code.upper() != 'FEDERAL':
+            region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+            filing['foreignJurisdiction']['region'] = region.name.upper() if region_code else ''
+        filing['foreignJurisdiction']['country'] = country.name.upper()
+
+        # format incorporation date
+        incorp_date = \
+            LegislationDatetime.as_legislation_timezone_from_date_str(foreign_jurisdiction.get('incorporationDate'))
+        filing['foreignJurisdiction']['incorporationDate'] = incorp_date.strftime(OUTPUT_DATE_FORMAT)
+
     @staticmethod
     def _get_party_name(party_json):
         party_name = ''
@@ -1374,6 +1423,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'letterOfAgmLocationChange': {
             'filingDescription': 'Letter Of AGM Location Change',
             'fileName': 'letterOfAgmLocationChange'
+        },
+        'continuationIn': {
+            'filingDescription': 'Continuation In Application',
+            'fileName': 'continuationApplication'
         }
     }
 
