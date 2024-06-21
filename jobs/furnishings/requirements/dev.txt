@@ -2,6 +2,7 @@
 
 # Testing
 pytest
+pytest-asyncio
 pytest-mock
 requests
 pyhamcrest

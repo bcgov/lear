@@ -49,10 +49,16 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     SENTRY_DSN = os.getenv('SENTRY_DSN', '')
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
+    AUTH_URL = os.getenv('AUTH_URL', None)
+    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
+
     NATS_SERVERS = os.getenv('NATS_SERVERS', None)
     NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)
     NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', None)
     NATS_ENTITY_EVENTS_SUBJECT = os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'entity.events')
+    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
 
     SECRET_KEY = 'a secret'
 
