@@ -84,6 +84,8 @@ def create_invountary_dissolution_filing(business_id: int):
     filing.business_id = business_id
     filing._filing_type = CoreFiling.FilingTypes.DISSOLUTION  # pylint: disable=protected-access
     filing._filing_sub_type = DissolutionTypes.INVOLUNTARY  # pylint: disable=protected-access
+    filing._status = Filing.Status.PAID  # pylint: disable=protected-access
+
     filing.save()
 
     return filing

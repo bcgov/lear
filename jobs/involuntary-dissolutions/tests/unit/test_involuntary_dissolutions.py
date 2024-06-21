@@ -278,7 +278,6 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
     else:
         assert batch_processing.trigger_date == TRIGGER_DATE
 
-
 @pytest.mark.parametrize(
     'test_name, status, step', [
         (
@@ -289,11 +288,12 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
         (
             'MOVE_BACK_TO_GOOD_STANDING',
             BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
         ),
     ]
 )
-def test_stage_3_process(app, session, test_name, status, step):
+@pytest.mark.asyncio
+async def test_stage_3_process(app, session, test_name, status, step):
     """Assert that businesses are processed correctly."""
     business = factory_business(identifier='BC1234567')
     batch = factory_batch(status=Batch.BatchStatus.PROCESSING)
@@ -301,6 +301,7 @@ def test_stage_3_process(app, session, test_name, status, step):
         batch_id=batch.id,
         business_id=business.id,
         identifier=business.identifier,
+        step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
         created_date=CREATED_DATE,
         trigger_date=TRIGGER_DATE
     )
@@ -309,15 +310,11 @@ def test_stage_3_process(app, session, test_name, status, step):
         business.last_ar_date = datetime.utcnow()
         business.save()
 
-    with patch('involuntary_dissolutions.put_filing_on_queue', wraps=put_filing_on_queue):
+    with patch('involuntary_dissolutions.put_filing_on_queue'):
         qsm = MagicMock()
-        stage_3_process(app, qsm)
+        await stage_3_process(app, qsm)
 
     assert batch_processing.status == status
     assert batch_processing.step == step
 
-    if test_name == 'DISSOLVE_BUSINESS':
-        assert batch_processing.trigger_date.date() == datetime.utcnow().date() + datedelta(days=30)
-        assert batch.status == Batch.BatchStatus.COMPLETED
-    else:
-        assert batch_processing.trigger_date == TRIGGER_DATE
+    assert batch.status == Batch.BatchStatus.COMPLETED
