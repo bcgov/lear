@@ -21,8 +21,9 @@ import asyncio
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 from legal_api.models import Configuration, Furnishing
+from legal_api.services.bootstrap import AccountService
 
-from furnish import check_run_schedule, stage_1_process
+from furnish import check_run_schedule, stage_1_process, get_email_address_from_auth
 
 from . import factory_batch, factory_batch_processing, factory_business
 
@@ -45,6 +46,26 @@ def test_check_run_schedule():
             assert cron_valid_1 is True
             assert cron_valid_2 is True
             assert cron_valid_3 is False
+
+
+@pytest.mark.parametrize(
+    'test_name, mock_return', [
+        ('EMAIL', {'contacts':[{'email':'test@no-reply.com'}]}),
+        ('NO_EMAIL', {'contacts': []})
+    ]
+)
+def test_get_email_address_from_auth(session, test_name, mock_return):
+    """Assert that email address is returned."""
+    token = 'token'
+    mock_response = MagicMock()
+    mock_response.json.return_value = mock_return
+    with patch('furnish.AccountService.get_bearer_token', return_value=token):
+        with patch('furnish.requests.get', return_value = mock_response):
+            email = get_email_address_from_auth('BC1234567')
+            if test_name == 'NO_EMAIL':
+                assert email is None
+            else:
+                assert email == 'test@no-reply.com'
 
 
 @pytest.mark.asyncio
