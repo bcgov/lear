@@ -1,0 +1,11 @@
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Continuation Effective Date</div>
+    <div class="section-data mt-4">
+        {% if header.isFutureEffective %}
+            {{effective_date_time}}
+        {% else %}
+            The incorporation is to take effect at the time that this application is filed with the Registrar.
+        {% endif %}
+    </div>
+  </div>
