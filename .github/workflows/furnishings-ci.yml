@@ -55,6 +55,10 @@ jobs:
       DATABASE_PASSWORD: postgres
       DATABASE_HOST: localhost
       DATABASE_NAME: postgres
+      DATABASE_TEST_USERNAME: postgres
+      DATABASE_TEST_PASSWORD: postgres
+      DATABASE_TEST_NAME: postgres
+      DATABASE_TEST_HOST: localhost
       NATS_SERVERS: "nats://nats:4222"
       NATS_CLUSTER_ID: test-cluster
       NATS_CLIENT_NAME: entity.job.tester
