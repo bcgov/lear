@@ -156,10 +156,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/businessDetails',
             'common/footerMOCS',
             'common/directors',
-            'continuation-in/authorization',
-            'continuation-in/effectiveDate',
-            'continuation-in/exproRegistrationInBc',
-            'continuation-in/foreignJurisdiction',
+            'continuation/authorization',
+            'continuation/effectiveDate',
+            'continuation/exproRegistrationInBc',
+            'continuation/foreignJurisdiction',
             'common/completingParty',
             'correction/businessDetails',
             'correction/addresses',
@@ -923,7 +923,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['shareClasses'] = filing['continuationIn']['shareStructure']['shareClasses']
 
         # set expro business
-        filing['mode'] = filing['continuationIn'].get('mode')
         if filing['continuationIn'].get('business'):
             filing['exproBusiness'] = filing['continuationIn']['business']
 
@@ -1425,7 +1424,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'fileName': 'letterOfAgmLocationChange'
         },
         'continuationIn': {
-            'filingDescription': 'Continuation In Application',
+            'filingDescription': 'Continuation Application',
             'fileName': 'continuationApplication'
         }
     }
