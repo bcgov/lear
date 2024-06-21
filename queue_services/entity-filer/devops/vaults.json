@@ -19,13 +19,8 @@
             "postgres-legal",
             "entity-filer",
             "nats-filer",
-            "entity-service-account"
-        ]
-    },
-    {
-        "vault": "sentry",
-        "application": [
-          "entity"
+            "entity-service-account",
+            "sentry"
         ]
     },
     {
