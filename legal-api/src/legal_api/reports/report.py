@@ -302,6 +302,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_amalgamation_data(filing)
         elif self._report_key == 'continuationIn':
             self._format_continuation_in_data(filing)
+        elif self._report_key == 'certificateOfContinuation':
+            self._format_certificate_of_continuation_in_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -361,14 +363,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['entityDescription'] = corp_type.full_desc
 
         act = {
-            Business.LegalTypes.BCOMP.value: 'Business Corporations Act',
-            Business.LegalTypes.COMP.value: 'Business Corporations Act',
-            Business.LegalTypes.BC_CCC.value: 'Business Corporations Act',
-            Business.LegalTypes.BC_ULC_COMPANY.value: 'Business Corporations Act',
             Business.LegalTypes.COOP.value: 'Cooperative Association Act',
             Business.LegalTypes.SOLE_PROP.value: 'Partnership Act',
             Business.LegalTypes.PARTNERSHIP.value: 'Partnership Act'
         }  # This could be the legislation column from CorpType. Yet to discuss.
+        # BEN, BC, CC, ULC, CBEN, C, CCC, CUL: Business Corporations Act
         filing['entityAct'] = act.get(legal_type, 'Business Corporations Act')
 
     def _set_dates(self, filing):
@@ -905,6 +904,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
+    def _format_certificate_of_continuation_in_data(self, filing):
+        continuation_in = self._filing.meta_data.get('continuationIn')
+        country_code = continuation_in['country']
+        region_code = continuation_in['region']
+
+        country = pycountry.countries.get(alpha_2=country_code)
+        region = None
+        if region_code and region_code.upper() != 'FEDERAL':
+            region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+        filing['jurisdiction'] = f'{region.name}, {country.name}' if region else country.name
+
     def _format_continuation_in_data(self, filing):
         self._format_address(filing['continuationIn']['offices']['registeredOffice']['deliveryAddress'])
         self._format_address(filing['continuationIn']['offices']['registeredOffice']['mailingAddress'])
@@ -1037,11 +1047,23 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         name_request_json = filing.get('correction').get('nameRequest', {})
         filing['nameRequest'] = name_request_json
         prev_legal_name = versioned_business.legal_name
-        business = VersionedBusinessDetailsService.\
-            get_business_revision_obj(self._filing.transaction_id, self._business.id)
-        if prev_legal_name != business.legal_name:
+
+        if not (new_legal_name := name_request_json.get('legalName')):
+            legal_type = name_request_json['legalType']
+            numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
+            numbered_legal_name_prefix = ''
+            if legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                              Business.LegalTypes.ULC_CONTINUE_IN.value,
+                              Business.LegalTypes.CCC_CONTINUE_IN.value,
+                              Business.LegalTypes.CONTINUE_IN.value):
+                numbered_legal_name_prefix = versioned_business.identifier[1:]
+            else:
+                numbered_legal_name_prefix = versioned_business.identifier[2:]
+            new_legal_name = f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
+
+        if prev_legal_name != new_legal_name:
             filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = business.legal_name
+            filing['newLegalName'] = new_legal_name
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
@@ -1426,6 +1448,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'continuationIn': {
             'filingDescription': 'Continuation Application',
             'fileName': 'continuationApplication'
+        },
+        'certificateOfContinuation': {
+            'filingDescription': 'Certificate of Continuation',
+            'fileName': 'certificateOfContinuation'
         }
     }
 
