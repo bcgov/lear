@@ -26,19 +26,20 @@ from registry_schemas.example_data import ANNUAL_REPORT
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.worker import process_filing
 from tests.unit import (
-    create_batch,
-    create_batch_processing,
     create_business,
     create_filing,
+    factory_batch,
+    factory_batch_processing
 )
 from tests import EPOCH_DATETIME
 
 
 @pytest.mark.parametrize('test_name,flag_on,in_dissolution,eligibility,legal_type,', [
     ('AR successfully', True, False, False, 'CP'),
+    ('AR successfully', True, False, False, 'BC'),
     ('Not withdrawn from the dissolution process', True, True, True, 'BC'),
-    ('Withdrawn from the dissolution process', True, True, False, 'CP'),
-    ('AR successfully when flag is off', False, True, False, 'CP')
+    ('Withdrawn from the dissolution process', True, True, False, 'BC'),
+    ('AR successfully when flag is off', False, True, False, 'BC')
 ])
 def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag_on, in_dissolution, eligibility, legal_type):
     """Assert that an AR filling can be applied to the model correctly."""
@@ -51,10 +52,9 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
     business.save()
     # create the batch and batch_processing.
     batch_status = 'PROCESSING'
-    if not in_dissolution:
-        batch_status = 'COMPLETED'
-    batch = create_batch(status=batch_status)
-    batch_processing = create_batch_processing(business=business, batch_id=batch.id, status=batch_status)
+    if in_dissolution:
+        batch = factory_batch(status=batch_status)
+        batch_processing = factory_batch_processing(batch_id=batch.id, identifier=identifier, business_id=business.id, status=batch_status)
 
     now = datetime.datetime.utcnow()
     if eligibility:
@@ -84,9 +84,7 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
     else:
         if in_dissolution:
             assert batch_processing.status == BatchProcessing.BatchProcessingStatus.PROCESSING.value
-        else:
-            assert batch_processing.status == BatchProcessing.BatchProcessingStatus.COMPLETED.value
-        assert batch_processing.notes == ''
+            assert batch_processing.notes == ''
         if legal_type == 'CP':
             # require the agm for [Business.LegalTypes.COOP.value, Business.LegalTypes.XPRO_LIM_PARTNR.value]
             assert str(business.last_agm_date) == str(agm_date)
