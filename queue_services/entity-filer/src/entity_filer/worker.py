@@ -85,10 +85,6 @@ FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
 db.init_app(FLASK_APP)
 gcp_queue.init_app(FLASK_APP)
-flags = Flags()
-
-if FLASK_APP.config.get('LD_SDK_KEY', None):
-    flags.init_app(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):
     flags.init_app(FLASK_APP)
