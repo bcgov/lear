@@ -71,6 +71,7 @@ def test_create_invountary_dissolution_filing(app, session):
     assert filing.business_id == business.id
     assert filing.filing_type == CoreFiling.FilingTypes.DISSOLUTION
     assert filing.filing_sub_type == DissolutionTypes.INVOLUNTARY
+    assert filing.filing_json
 
 
 @pytest.mark.parametrize(

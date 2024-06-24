@@ -98,7 +98,7 @@ def create_invountary_dissolution_filing(business_id: int):
                 'legalName': business.legal_name,
                 'legalType': business.legal_type,
                 'identifier': business.identifier,
-                'foundingDate': business.founding_date
+                'foundingDate': business.founding_date.isoformat()
             },
             'dissolution': {
                 'dissolutionDate': datetime.utcnow().date().isoformat(),
