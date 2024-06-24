@@ -22,7 +22,7 @@ import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; confli
 from croniter import croniter
 from flask import Flask
 from legal_api.core.filing import Filing as CoreFiling
-from legal_api.models import Batch, BatchProcessing, Configuration, Filing, db  # noqa: I001
+from legal_api.models import Batch, BatchProcessing, Business, Configuration, Filing, db  # noqa: I001
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
@@ -80,11 +80,32 @@ def register_shellcontext(app):
 
 def create_invountary_dissolution_filing(business_id: int):
     """Create a filing entry to represent an involuntary dissolution filing."""
+    business = Business.find_by_internal_id(business_id)
+
     filing = Filing()
-    filing.business_id = business_id
+    filing.business_id = business.id
     filing._filing_type = CoreFiling.FilingTypes.DISSOLUTION  # pylint: disable=protected-access
     filing._filing_sub_type = DissolutionTypes.INVOLUNTARY  # pylint: disable=protected-access
     filing._status = Filing.Status.PAID  # pylint: disable=protected-access
+    filing.filing_json = {
+        "filing": {
+            "header": {
+                "date": datetime.utcnow().date().isoformat(),
+                "name": "dissolution",
+                "certifiedBy": ""
+            },
+            "business": {
+                "legalName": business.legal_name,
+                "legalType": business.legal_type,
+                "identifier": business.identifier,
+                "foundingDate": business.founding_date
+            },
+            "dissolution": {
+                "dissolutionDate": datetime.utcnow().date().isoformat(),
+                "dissolutionType": "involuntary"
+            }
+        }
+    }
 
     filing.save()
 
