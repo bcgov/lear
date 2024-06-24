@@ -15,8 +15,9 @@
 
 Currently this only resets changes made to COOP data made with user COOPER
 """
+import json
 from flask import current_app, jsonify, request
-from flask_restx import Namespace, Resource, cors
+from flask_restx import Namespace, Resource, cors, fields
 
 from colin_api.models.reset import Reset
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
@@ -55,3 +56,40 @@ class ResetInfo(Resource):
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
             return jsonify({'message': 'Error when trying to reset COLIN'}), 500
+
+
+@cors_preflight('POST')
+@API.route('/by_event_id')
+class ResetByEventId(Resource):
+    """Reset filing(s) based on the provided event_id, or array of event_ids.
+      This is only tested to work on Annual Reports, ymmv"""
+
+    eventResetParser = API.parser()
+    eventResetParser.add_argument(
+        'event_ids',
+        type=list,
+        help='The list of event ids to reset. Can be one id',
+        location='json',
+        required=True)
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    @API.expect(eventResetParser)
+    def post():
+        """Reset filing(s) based on the provided event_id, or array of event_ids.
+        This is only tested to work on Annual Reports, ymmv"""
+        try:
+            
+            event_ids = API.payload.get('event_ids', None)
+
+            Reset.reset_filings_by_event(
+              event_ids=event_ids
+            )
+            
+            return jsonify({'message':"Reset for event ids "+json.dumps(event_ids)}), 200
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify({'message': 'Error when trying to reset COLIN by event ids'}), 500
