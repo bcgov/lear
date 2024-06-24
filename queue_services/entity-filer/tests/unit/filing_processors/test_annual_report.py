@@ -39,7 +39,8 @@ from tests import EPOCH_DATETIME
     ('AR successfully', True, False, False, 'BC'),
     ('Not withdrawn from the dissolution process', True, True, True, 'BC'),
     ('Withdrawn from the dissolution process', True, True, False, 'BC'),
-    ('AR successfully when flag is off', False, True, False, 'BC')
+    ('AR successfully when flag is off', False, True, False, 'BC'),
+    ('AR successfully when flag is off', False, False, False, 'CP')
 ])
 def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag_on, in_dissolution, eligibility, legal_type):
     """Assert that an AR filling can be applied to the model correctly."""
