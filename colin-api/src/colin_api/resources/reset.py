@@ -83,10 +83,9 @@ class ResetByEventId(Resource):
             
             event_ids = API.payload.get('event_ids', None)
 
-            for event in event_ids:
-                Reset.reset_filings_by_event(
-                  event_ids=event_ids
-                )
+            Reset.reset_filings_by_event(
+              event_ids=event_ids
+            )
             
             return jsonify({'message':"Reset for event ids "+json.dumps(event_ids)}), 200
 
