@@ -1157,7 +1157,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificate',
+                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
@@ -1168,7 +1168,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      ),
     ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificate',
+     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
@@ -1180,7 +1180,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificate',
+                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
@@ -1191,7 +1191,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      ),
     ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificate',
+     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
@@ -1203,7 +1203,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificate',
+                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
@@ -1214,7 +1214,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      ),
     ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificate',
+     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
@@ -1226,7 +1226,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
     ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificate',
+                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
@@ -1237,7 +1237,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      ),
     ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificate',
+     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},

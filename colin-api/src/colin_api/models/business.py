@@ -30,27 +30,22 @@ from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, stringify_list
 
 
-class Business:  # pylint: disable=too-many-instance-attributes
+class Business:  # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """Class to contain all model-like functions for the corporation and related tables."""
-
-    class LearBusinessTypes(Enum):
-        """Temp class for lear business types, will be importing these from lear after upgrading python inage to 3.8."""
-
-        COOP = 'CP'
-        BCOMP = 'BEN'
-        BC_COMP = 'BC'
-        EXTRA_PRO_A = 'A'
-        CONTINUE_IN = 'C'
-
 
     class TypeCodes(Enum):
         """Render an Enum of the Corporation Type Codes."""
+
         EXTRA_PRO_A = 'A'
         COOP = 'CP'
         BCOMP = 'BEN'
         BC_COMP = 'BC'
         ULC_COMP = 'ULC'
         CCC_COMP = 'CC'
+        BCOMP_CONTINUE_IN = 'CBEN'
+        CONTINUE_IN = 'C'
+        CCC_CONTINUE_IN = 'CCC'
+        ULC_CONTINUE_IN = 'CUL'
 
     class CorpFrozenTypes(Enum):
         """Render an Enum of the Corporation Frozen Type Codes.
@@ -69,26 +64,18 @@ class Business:  # pylint: disable=too-many-instance-attributes
         VOLUNTARY_DISSOLUTION = 'HDV'
         ADMINISTRATIVE_DISSOLUTION = 'HDA'
 
-    # temp converter because legal doesn't have codes only class (legal_type)
-    CORP_TYPE_CONVERSION = {
-        LearBusinessTypes.COOP.value: [
-            TypeCodes.COOP.value
-        ],
-        LearBusinessTypes.BCOMP.value: [
-            TypeCodes.BCOMP.value,
-            TypeCodes.BC_COMP.value,
-            TypeCodes.ULC_COMP.value
-        ],
-        LearBusinessTypes.BC_COMP.value: [
-            TypeCodes.BCOMP.value,
-            TypeCodes.BC_COMP.value,
-            TypeCodes.ULC_COMP.value,
-            TypeCodes.CCC_COMP.value
-        ],
-        LearBusinessTypes.EXTRA_PRO_A.value: [
-            TypeCodes.EXTRA_PRO_A.value
-        ],
+    NUMBERED_CORP_NAME_SUFFIX = {
+        TypeCodes.BCOMP.value: 'B.C. LTD.',
+        TypeCodes.BC_COMP.value: 'B.C. LTD.',
+        TypeCodes.ULC_COMP.value: 'B.C. UNLIMITED LIABILITY COMPANY',
+        TypeCodes.CCC_COMP.value: 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
     }
+
+    # CORPS Continuation In has the same suffix
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BCOMP_CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BCOMP.value]
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BC_COMP.value]
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.ULC_CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.ULC_COMP.value]
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CCC_CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CCC_COMP.value]
 
     business_number = None
     corp_name = None
@@ -155,6 +142,19 @@ class Business:  # pylint: disable=too-many-instance-attributes
         }
 
     @classmethod
+    def get_colin_identifier(cls, lear_identifier, legal_type):
+        """Convert identifier from lear to colin."""
+        if legal_type in [
+            cls.TypeCodes.BCOMP.value,
+            cls.TypeCodes.BC_COMP.value,
+            cls.TypeCodes.ULC_COMP.value,
+            cls.TypeCodes.CCC_COMP.value
+        ]:
+            return lear_identifier[-7:]
+
+        return lear_identifier
+
+    @classmethod
     def _get_bn_15s(cls, cursor, identifiers: List) -> Dict:
         """Return a dict of idenifiers mapping to their bn_15 numbers."""
         bn_15s = {}
@@ -186,8 +186,8 @@ class Business:  # pylint: disable=too-many-instance-attributes
         events_by_corp_num = {}
         for info in event_info:
             if info['filing_typ_cd'] not in ['OTINC', 'BEINC'] and \
-             (info['corp_num'] not in events_by_corp_num or
-              events_by_corp_num[info['corp_num']] > info['event_id']):
+                (info['corp_num'] not in events_by_corp_num or
+                 events_by_corp_num[info['corp_num']] > info['event_id']):
                 events_by_corp_num[info['corp_num']] = info['event_id']
 
         dates_by_corp_num = []
@@ -225,7 +225,10 @@ class Business:  # pylint: disable=too-many-instance-attributes
         return dates_by_corp_num
 
     @classmethod
-    def find_by_identifier(cls, identifier: str, corp_types: List = None, con=None) -> Business:
+    def find_by_identifier(cls,  # pylint: disable=too-many-statements
+                           identifier: str,
+                           corp_types: List = None,
+                           con=None) -> Business:
         """Return a Business by identifier."""
         business = None
         try:
@@ -270,7 +273,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
             assumed_name = None
             corp_name = None
             for name_obj in corp_names:
-                if name_obj.type_code == CorpName.TypeCodes.ASSUMED.value:
+                if name_obj.type_code == CorpName.TypeCodes.ASSUMED.value:  # pylint: disable=no-else-break
                     assumed_name = name_obj.corp_name
                     break
                 elif name_obj.type_code in [CorpName.TypeCodes.CORP.value, CorpName.TypeCodes.NUMBERED_CORP.value]:
@@ -336,11 +339,8 @@ class Business:  # pylint: disable=too-many-instance-attributes
             business.corp_num = filing_info['business']['identifier']
             business.founding_date = convert_to_pacific_time(filing_info['header']['learEffectiveDate'])
 
-            if filing_info['business']['legalType'] in cls.CORP_TYPE_CONVERSION[cls.LearBusinessTypes.BCOMP.value]:
-                business.corp_num = business.corp_num[-7:]
-                business.corp_type = Business.TypeCodes.BCOMP.value
-            else:
-                business.corp_type = Business.TypeCodes.COOP.value
+            business.corp_type = filing_info['business']['legalType']
+            business.corp_num = cls.get_colin_identifier(business.corp_num, business.corp_type)
 
             cursor = con.cursor()
 
@@ -563,7 +563,7 @@ class Business:  # pylint: disable=too-many-instance-attributes
         try:
             if corp_type not in [x.value for x in Business.TypeCodes.__members__.values()]:
                 current_app.logger.error(f'Tried to update {corp_num} with invalid corp type code {corp_type}')
-                raise Exception
+                raise Exception  # pylint: disable=broad-exception-raised
 
             cursor.execute(
                 """
@@ -640,11 +640,11 @@ class Business:  # pylint: disable=too-many-instance-attributes
                     SET id_num = :new_num
                     WHERE id_typ_cd = :corp_type
                     """,
-                    new_num=corp_num[0]+1,
+                    new_num=corp_num[0] + 1,
                     corp_type=corp_type
                 )
 
-            return '%07d' % corp_num
+            return '%07d' % corp_num  # pylint: disable=consider-using-f-string
         except Exception as err:
             current_app.logger.error('Error looking up corp_num')
             raise err

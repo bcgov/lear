@@ -95,11 +95,12 @@ jobs:
         run: |
           make test
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./queue_services/entity-bn/coverage.xml
           flags: entitybn
           name: codecov-entity-bn
+          token: ${{ secrets.CODECOV_TOKEN}}
           fail_ci_if_error: true
 
   build-check:

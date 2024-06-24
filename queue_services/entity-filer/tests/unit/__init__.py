@@ -15,11 +15,13 @@
 import base64
 import uuid
 
+from datedelta import datedelta
+from datetime import datetime
 from freezegun import freeze_time
 from sqlalchemy_continuum import versioning_manager
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
-from legal_api.models import db, Filing, ShareClass, ShareSeries
+from legal_api.models import db, Batch, BatchProcessing, Filing, ShareClass, ShareSeries
 from legal_api.models.colin_event_id import ColinEventId
 
 AR_FILING = {
@@ -589,37 +591,45 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
     return filing
 
 
-def create_batch(status=None, size=None, start_date=None):
-    """Create a batch"""
-    from legal_api.models import Batch
-    batch = Batch()
-    batch.batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION.value
-    batch.status = status if status else Batch.BatchStatus.PROCESSING.value
-    if size:
-        batch.size = size
-    if start_date:
-        batch.start_date = start_date
-
+def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+                  status=Batch.BatchStatus.HOLD,
+                  size=3,
+                  notes=''):
+    """Create a batch."""
+    batch = Batch(
+        batch_type=batch_type,
+        status=status,
+        size=size,
+        notes=notes
+    )
     batch.save()
     return batch
 
 
-def create_batch_processing(business, batch_id, step=None, status=None, created_date=None, last_modified=None, meta_data=None):
-    """Create a batch processing"""
-    from legal_api.models import BatchProcessing
-    batch_processing = BatchProcessing()
-    batch_processing.business_identifier = business.identifier
-    batch_processing.business_id = business.id
-    batch_processing.step = step if step else BatchProcessing.BatchProcessingStep.DISSOLUTION.value
-    batch_processing.status = status if status else BatchProcessing.BatchProcessingStatus.PROCESSING.value
-    if created_date:
-        batch_processing.created_date = created_date
-    if last_modified:
-        batch_processing.last_modified = last_modified
-    if meta_data:
-        batch_processing.meta_data = meta_data
-
-    batch_processing.batch_id = batch_id
-
+def factory_batch_processing(batch_id,
+                             business_id,
+                             identifier,
+                             step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+                             status=BatchProcessing.BatchProcessingStatus.PROCESSING,
+                             created_date=datetime.utcnow(),
+                             trigger_date=datetime.utcnow()+datedelta(days=42),
+                             last_modified=datetime.utcnow(),
+                             notes=''):
+    """Create a batch processing entry."""
+    batch_processing = BatchProcessing(
+        batch_id=batch_id,
+        business_id=business_id,
+        business_identifier=identifier,
+        step=step,
+        status=status,
+        created_date=created_date,
+        trigger_date=trigger_date,
+        last_modified=last_modified,
+        notes=notes
+    )
+    target_dissolution_date = created_date + datedelta(days=72)
+    batch_processing.meta_data = {
+        'targetDissolutionDate': target_dissolution_date.date().isoformat()
+    }
     batch_processing.save()
     return batch_processing

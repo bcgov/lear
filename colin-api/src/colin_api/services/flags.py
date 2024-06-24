@@ -38,7 +38,7 @@ class FileDataSource(UpdateProcessor):
                                                             force_polling=kwargs.get('force_polling', False))
 
 
-class Flags():
+class Flags():  # pylint: disable=too-few-public-methods
     """Wrapper around the feature flag system.
 
     calls FAIL to FALSE

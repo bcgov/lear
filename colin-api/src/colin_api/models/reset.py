@@ -48,7 +48,7 @@ class Reset:
     def get_filings_for_reset(self):
         """Return event/filing info for all filings getting reset."""
         # build base query string
-        query_string = ("""
+        query_string = """
             select event.event_id, event.corp_num, filing_typ_cd
             from event
             join filing on filing.event_id = event.event_id
@@ -56,7 +56,7 @@ class Reset:
             where filing_user.user_id in ('COOPER', 'BCOMPS')
             AND event.event_timestmp>=TO_DATE(:start_date, 'yyyy-mm-dd')
             AND event.event_timestmp<=TO_DATE(:end_date, 'yyyy-mm-dd')
-        """)
+        """
 
         if self.identifiers:
             query_string += f' AND event.corp_num in ({stringify_list(self.identifiers)})'
@@ -83,7 +83,7 @@ class Reset:
             return reset_list
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
-            current_app.logger.error('error getting filing/event info for reset for: {}'.format(self.as_dict()))
+            current_app.logger.error(f'error getting filing/event info for reset for: {self.as_dict()}')
             raise err
 
     @classmethod
