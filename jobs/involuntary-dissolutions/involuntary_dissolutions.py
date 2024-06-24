@@ -88,21 +88,21 @@ def create_invountary_dissolution_filing(business_id: int):
     filing._filing_sub_type = DissolutionTypes.INVOLUNTARY  # pylint: disable=protected-access
     filing._status = Filing.Status.PAID  # pylint: disable=protected-access
     filing.filing_json = {
-        "filing": {
-            "header": {
-                "date": datetime.utcnow().date().isoformat(),
-                "name": "dissolution",
-                "certifiedBy": ""
+        'filing': {
+            'header': {
+                'date': datetime.utcnow().date().isoformat(),
+                'name': 'dissolution',
+                'certifiedBy': ''
             },
-            "business": {
-                "legalName": business.legal_name,
-                "legalType": business.legal_type,
-                "identifier": business.identifier,
-                "foundingDate": business.founding_date
+            'business': {
+                'legalName': business.legal_name,
+                'legalType': business.legal_type,
+                'identifier': business.identifier,
+                'foundingDate': business.founding_date
             },
-            "dissolution": {
-                "dissolutionDate": datetime.utcnow().date().isoformat(),
-                "dissolutionType": "involuntary"
+            'dissolution': {
+                'dissolutionDate': datetime.utcnow().date().isoformat(),
+                'dissolutionType': 'involuntary'
             }
         }
     }
