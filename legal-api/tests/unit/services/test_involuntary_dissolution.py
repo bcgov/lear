@@ -308,3 +308,37 @@ def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligi
 
     check_eligibility, eligibility_details = InvoluntaryDissolutionService.check_business_eligibility(identifier)
     assert check_eligibility == eligible
+
+
+@pytest.mark.parametrize(
+        'test_name, exclude', [
+            ('TEST_TRANSITION_OVERDUE_ORDER', False),
+        ]
+)
+def test_get_businesses_eligible_query_order_by_transition_overdue(session, test_name, exclude):
+    """Assert businesses are ordered by transition overdue status."""
+    # create business that will not be transition_overdue
+    business_no_overdue = factory_business(identifier='FM1234567', entity_type=Business.LegalTypes.EXTRA_PRO_A.value)
+
+    # create business that will be ar_overdue and transition_overdue
+    business_overdue1 = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
+    factory_completed_filing(business_overdue1, RESTORATION_FILING, filing_type='restoration')
+    business_overdue1.last_ar_date = datetime.utcnow() - datedelta(years=3)
+    business_overdue1.save()
+ 
+    # create business that will be transition_overdue
+    business_overdue2 = factory_business(identifier='BC7654321', entity_type=Business.LegalTypes.COMP.value)
+    restoration_filing = factory_completed_filing(business_overdue2, RESTORATION_FILING, filing_type='restoration')
+    restoration_filing.effective_date = datetime.utcnow() - datedelta(years=2)
+    business_overdue2.save()
+    restoration_filing.save()
+
+    result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
+    if exclude:
+        assert not result
+    else:
+        assert result
+        assert result[0][0] == business_overdue1
+        assert result[1][0] == business_overdue2
+        assert result[2][0] == business_no_overdue
+
