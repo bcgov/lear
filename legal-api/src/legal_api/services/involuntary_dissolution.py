@@ -224,7 +224,6 @@ def _has_future_effective_filing():
     # pylint: disable=protected-access
     return db.session.query(Filing). \
         filter(Filing.business_id == Business.id). \
-        filter(Filing._filing_type.notin_(['changeOfAddress'])). \
         filter(Filing._status.in_([Filing.Status.PENDING.value, Filing.Status.PAID.value])). \
         exists()
 
