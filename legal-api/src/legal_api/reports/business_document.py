@@ -509,45 +509,45 @@ class BusinessDocument:
             continuation_in_filing = continuation_in_filing[0]
             continuation_in_data = continuation_in_filing.filing_json['filing']['continuationIn']
 
-        continuation_in_info['filingDateTime'] = continuation_in_filing.filing_date.isoformat()
-        continuation_in_info['mode'] = continuation_in_data.get('mode', 'N/A')
+            continuation_in_info['filingDateTime'] = continuation_in_filing.filing_date.isoformat()
+            continuation_in_info['mode'] = continuation_in_data.get('mode', 'N/A')
 
-        # Processing offices
-        continuation_in_info['offices'] = continuation_in_data['offices']
-        for office_type, office_data in continuation_in_data['offices'].items():
-            self._format_address(office_data['mailingAddress'])
-            self._format_address(office_data['deliveryAddress'])
+            # Processing offices
+            continuation_in_info['offices'] = continuation_in_data['offices']
+            for office_data in continuation_in_data['offices'].items():
+                self._format_address(office_data['mailingAddress'])
+                self._format_address(office_data['deliveryAddress'])
 
-        # Processing parties
-        continuation_in_info['parties'] = continuation_in_data['parties']
-        for party in continuation_in_data['parties']:
-            self._format_address(party['mailingAddress'])
-            self._format_address(party['deliveryAddress'])
+            # Processing parties
+            continuation_in_info['parties'] = continuation_in_data['parties']
+            for party in continuation_in_data['parties']:
+                self._format_address(party['mailingAddress'])
+                self._format_address(party['deliveryAddress'])
 
-        continuation_in_info['courtOrder'] = continuation_in_data.get('courtOrder', {})
-        continuation_in_info['nameRequest'] = continuation_in_data.get('nameRequest', {})
-        continuation_in_info['contactPoint'] = continuation_in_data.get('contactPoint', {})
-        continuation_in_info['authorization'] = continuation_in_data.get('authorization', {})
-        continuation_in_info['shareStructure'] = continuation_in_data.get('shareStructure', {})
-        continuation_in_info['nameTranslations'] = continuation_in_data.get('nameTranslations', [])
-        continuation_in_info['foreignJurisdiction'] = continuation_in_data.get('foreignJurisdiction', {})
+            continuation_in_info['courtOrder'] = continuation_in_data.get('courtOrder', {})
+            continuation_in_info['nameRequest'] = continuation_in_data.get('nameRequest', {})
+            continuation_in_info['contactPoint'] = continuation_in_data.get('contactPoint', {})
+            continuation_in_info['authorization'] = continuation_in_data.get('authorization', {})
+            continuation_in_info['shareStructure'] = continuation_in_data.get('shareStructure', {})
+            continuation_in_info['nameTranslations'] = continuation_in_data.get('nameTranslations', [])
+            continuation_in_info['foreignJurisdiction'] = continuation_in_data.get('foreignJurisdiction', {})
 
-        # Set foreign jurisdiction region and country name
-        foreign_jurisdiction = continuation_in_info['foreignJurisdiction']
-        region_code = foreign_jurisdiction.get('region')
-        country_code = foreign_jurisdiction.get('country')
-        country = pycountry.countries.get(alpha_2=country_code)
-        if region_code and region_code.upper() != 'FEDERAL':
-            region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-            foreign_jurisdiction['region'] = region.name.upper() if region_code else ''
-        foreign_jurisdiction['country'] = country.name.upper()
+            # Set foreign jurisdiction region and country name
+            foreign_jurisdiction = continuation_in_info['foreignJurisdiction']
+            region_code = foreign_jurisdiction.get('region')
+            country_code = foreign_jurisdiction.get('country')
+            country = pycountry.countries.get(alpha_2=country_code)
+            if region_code and region_code.upper() != 'FEDERAL':
+                region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+                foreign_jurisdiction['region'] = region.name.upper() if region_code else ''
+            foreign_jurisdiction['country'] = country.name.upper()
 
-        # Format incorporation date
-        incorp_date = LegislationDatetime.as_legislation_timezone_from_date_str(
-            foreign_jurisdiction.get('incorporationDate'))
-        foreign_jurisdiction['incorporationDate'] = incorp_date.strftime(OUTPUT_DATE_FORMAT)
+            # Format incorporation date
+            incorp_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                foreign_jurisdiction.get('incorporationDate'))
+            foreign_jurisdiction['incorporationDate'] = incorp_date.strftime(OUTPUT_DATE_FORMAT)
 
-        business['continuationIn'] = continuation_in_info
+            business['continuationIn'] = continuation_in_info
 
     @staticmethod
     def _format_address(address):
