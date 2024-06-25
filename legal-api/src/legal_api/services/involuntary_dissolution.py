@@ -120,6 +120,7 @@ class InvoluntaryDissolutionService():
         )
         specific_filing_overdue = _has_specific_filing_overdue()
         no_transition_filed_after_restoration = _has_no_transition_filed_after_restoration()
+        oldest_restoration_filing_date = _get_oldest_restoration_filing_date_subquery()
 
         query = db.session.query(
             Business,
@@ -150,7 +151,10 @@ class InvoluntaryDissolutionService():
                     _is_xpro_from_nwpta()
                 )
             ).\
-            order_by(no_transition_filed_after_restoration.desc())
+            order_by(
+                no_transition_filed_after_restoration.desc(),
+                oldest_restoration_filing_date.asc(),
+            )
 
         return query
 
@@ -268,3 +272,23 @@ def _is_xpro_from_nwpta():
         Business.foreign_jurisdiction_region.isnot(None),
         Business.foreign_jurisdiction_region.in_(['AB', 'SK', 'MB'])
     )
+
+
+def _get_oldest_restoration_filing_date_subquery():
+    """Return SQLAlchemy subquery for the oldest restoration filing date.
+
+    Construct a subquery to retrieve the minimum effective date of restoration filings
+    associated with the business.
+    """
+    from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
+
+    return db.session.query(
+        func.min(Filing.effective_date)
+    ).filter(
+        Filing.business_id == Business.id,
+        Filing._filing_type.in_([  # pylint: disable=protected-access
+            CoreFiling.FilingTypes.RESTORATION.value,
+            CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
+        ]),
+        Filing._status == Filing.Status.COMPLETED.value  # pylint: disable=protected-access
+    ).scalar_subquery()
