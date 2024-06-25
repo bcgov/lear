@@ -547,7 +547,7 @@ class BusinessDocument:
                 foreign_jurisdiction.get('incorporationDate'))
             foreign_jurisdiction['incorporationDate'] = incorp_date.strftime(OUTPUT_DATE_FORMAT)
 
-            business['continuationIn'] = continuation_in_info
+        business['continuationIn'] = continuation_in_info
 
     @staticmethod
     def _format_address(address):
