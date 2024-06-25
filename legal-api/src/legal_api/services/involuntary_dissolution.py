@@ -149,7 +149,8 @@ class InvoluntaryDissolutionService():
                     _is_limited_restored(),
                     _is_xpro_from_nwpta()
                 )
-            )
+            ).\
+            order_by(no_transition_filed_after_restoration.desc())
 
         return query
 
