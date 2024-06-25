@@ -13,19 +13,24 @@
 # limitations under the License.
 
 """Tests for the Furnishings Job.
+
 Test suite to ensure that the Furnishings Job is working as expected.
 """
-import pytest
-import asyncio
-
+import copy
 from datetime import datetime
 from unittest.mock import MagicMock, patch
-from legal_api.models import Configuration, Furnishing
-from legal_api.services.bootstrap import AccountService
 
-from furnish import check_run_schedule, stage_1_process, get_email_address_from_auth
+import pytest
+from legal_api.models import Business, Configuration, Furnishing
+from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
-from . import factory_batch, factory_batch_processing, factory_business
+from furnish import check_run_schedule, get_email_address_from_auth, stage_1_process
+
+from . import factory_batch, factory_batch_processing, factory_business, factory_completed_filing
+
+
+RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
+RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 
 def test_check_run_schedule():
@@ -50,7 +55,7 @@ def test_check_run_schedule():
 
 @pytest.mark.parametrize(
     'test_name, mock_return', [
-        ('EMAIL', {'contacts':[{'email':'test@no-reply.com'}]}),
+        ('EMAIL', {'contacts': [{'email': 'test@no-reply.com'}]}),
         ('NO_EMAIL', {'contacts': []})
     ]
 )
@@ -60,7 +65,7 @@ def test_get_email_address_from_auth(session, test_name, mock_return):
     mock_response = MagicMock()
     mock_response.json.return_value = mock_return
     with patch('furnish.AccountService.get_bearer_token', return_value=token):
-        with patch('furnish.requests.get', return_value = mock_response):
+        with patch('furnish.requests.get', return_value=mock_response):
             email = get_email_address_from_auth('BC1234567')
             if test_name == 'NO_EMAIL':
                 assert email is None
@@ -69,15 +74,36 @@ def test_get_email_address_from_auth(session, test_name, mock_return):
 
 
 @pytest.mark.asyncio
-async def test_stage_1_process_first_notification_email(app, session):
+@pytest.mark.parametrize(
+    'test_name, entity_type, expected_furnishing_name', [
+        (
+            'BC_AR_OVERDUE',
+            Business.LegalTypes.COMP.value,
+            Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR
+        ),
+        (
+            'BC_TRANSITION_OVERDUE',
+            Business.LegalTypes.COMP.value,
+            Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR
+        ),
+        (
+            'XP_AR_OVERDUE',
+            Business.LegalTypes.EXTRA_PRO_A.value,
+            Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO
+        )
+    ]
+)
+async def test_stage_1_process_first_notification_email(app, session, test_name, entity_type, expected_furnishing_name):
     """Assert that email furnishing entry is created correctly."""
-    business = factory_business(identifier='BC1234567')
+    business = factory_business(identifier='BC1234567', entity_type=entity_type)
     batch = factory_batch()
-    batch_processing = factory_batch_processing(
+    factory_batch_processing(
         batch_id=batch.id,
         business_id=business.id,
         identifier=business.identifier,
     )
+    if 'TRANSITION' in test_name:
+        factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
 
     qsm = MagicMock()
     with patch('furnish.get_email_address_from_auth', return_value='test@no-reply.com'):
@@ -89,5 +115,5 @@ async def test_stage_1_process_first_notification_email(app, session):
     furnishing = furnishings[0]
     assert furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
     assert furnishing.email == 'test@no-reply.com'
-    assert furnishing.furnishing_name == Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR
+    assert furnishing.furnishing_name == expected_furnishing_name
     assert furnishing.status == Furnishing.FurnishingStatus.QUEUED

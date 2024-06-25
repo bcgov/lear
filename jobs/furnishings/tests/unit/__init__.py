@@ -12,14 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Test-Suite used to ensure that the Furnishings Job is working correctly."""
-
+import base64
 import datetime
-from datedelta import datedelta
+import uuid
 
-from legal_api.models import Batch, BatchProcessing, Business
+from datedelta import datedelta
+from freezegun import freeze_time
+from legal_api.models import Batch, BatchProcessing, Business, Filing, db
+from legal_api.models.colin_event_id import ColinEventId
+from sqlalchemy_continuum import versioning_manager
 
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
+FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362).replace(tzinfo=datetime.timezone.utc)
 
 
 def factory_business(identifier,
@@ -84,3 +89,41 @@ def factory_batch_processing(batch_id,
     )
     batch_processing.save()
     return batch_processing
+
+
+def factory_completed_filing(business,
+                             data_dict,
+                             filing_date=FROZEN_DATETIME,
+                             payment_token=None,
+                             colin_id=None,
+                             filing_type=None,
+                             filing_sub_type=None):
+    """Create a completed filing."""
+    if not payment_token:
+        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
+
+    with freeze_time(filing_date):
+
+        filing = Filing()
+        filing.business_id = business.id
+        filing.filing_date = filing_date
+        filing.filing_json = data_dict
+        if filing_type:
+            filing._filing_type = filing_type
+        if filing_sub_type:
+            filing._filing_sub_type = filing_sub_type
+        filing.save()
+
+        uow = versioning_manager.unit_of_work(db.session)
+        transaction = uow.create_transaction(db.session)
+        filing.transaction_id = transaction.id
+        filing.payment_token = payment_token
+        filing.effective_date = filing_date
+        filing.payment_completion_date = filing_date
+        if colin_id:
+            colin_event = ColinEventId()
+            colin_event.colin_event_id = colin_id
+            colin_event.filing_id = filing.id
+            colin_event.save()
+        filing.save()
+    return filing
