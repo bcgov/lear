@@ -118,7 +118,7 @@ def test_change_of_address_delay_dissolution(app, session, test_name, status, st
     utc_now = datetime.utcnow()
     dissolution_date = utc_now + datedelta(days=72)
     trigger_date = batch_processing.trigger_date
-    delay_dissolution_date = utc_now + datedelta(days=134)
+    delay_dissolution_date = utc_now + datedelta(days=92)
     delay_trigger_date = utc_now + datedelta(days=62)
     
     filing_meta = FilingMeta()
