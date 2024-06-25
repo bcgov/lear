@@ -322,7 +322,9 @@ def test_get_businesses_eligible_query_order_by_transition_overdue(session, test
 
     # create business that will be ar_overdue and transition_overdue
     business_overdue1 = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
-    factory_completed_filing(business_overdue1, RESTORATION_FILING, filing_type='restoration')
+    filing1 = factory_completed_filing(business_overdue1, RESTORATION_FILING, filing_type='restoration')
+    filing1.effective_date = datetime.utcnow() - datedelta(years=3)
+    filing1.save()
     business_overdue1.last_ar_date = datetime.utcnow() - datedelta(years=3)
     business_overdue1.save()
  
