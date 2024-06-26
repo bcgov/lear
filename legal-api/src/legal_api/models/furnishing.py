@@ -121,3 +121,8 @@ class Furnishing(db.Model):
             query = query.filter(Furnishing.grouping_identifier == grouping_identifier)
 
         return query.all()
+
+    @classmethod
+    def get_next_grouping_identifier(cls):
+        """Return the next grouping_identifier from the sequence."""
+        return db.session.execute("SELECT nextval('grouping_identifier')").scalar()
