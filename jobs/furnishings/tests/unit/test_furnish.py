@@ -75,25 +75,36 @@ def test_get_email_address_from_auth(session, test_name, mock_return):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    'test_name, entity_type, expected_furnishing_name', [
+    'test_name, entity_type, email, expected_furnishing_name', [
         (
             'BC_AR_OVERDUE',
             Business.LegalTypes.COMP.value,
+            'test@no-reply.com',
             Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR
         ),
         (
             'BC_TRANSITION_OVERDUE',
             Business.LegalTypes.COMP.value,
+            'test@no-reply.com',
             Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR
         ),
         (
             'XP_AR_OVERDUE',
             Business.LegalTypes.EXTRA_PRO_A.value,
+            'test@no-reply.com',
             Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO
+        ),
+        # the following is a temporary test case for business without email,
+        # need modification after paper letter flow is added.
+        (
+            'NO_EMAIL_NO_FURNISHING_ENTRY',
+            Business.LegalTypes.COMP.value,
+            None,
+            None
         )
     ]
 )
-async def test_stage_1_process_first_notification_email(app, session, test_name, entity_type, expected_furnishing_name):
+async def test_stage_1_process_first_notification_email(app, session, test_name, entity_type, email, expected_furnishing_name):
     """Assert that email furnishing entry is created correctly."""
     business = factory_business(identifier='BC1234567', entity_type=entity_type)
     batch = factory_batch()
@@ -106,14 +117,21 @@ async def test_stage_1_process_first_notification_email(app, session, test_name,
         factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
 
     qsm = MagicMock()
-    with patch('furnish.get_email_address_from_auth', return_value='test@no-reply.com'):
-        with patch('furnish.send_email', return_value=None):
+    with patch('furnish.get_email_address_from_auth', return_value=email):
+        with patch('furnish.send_email', return_value=None) as mock_send_email:
             await stage_1_process(app, qsm)
 
-    furnishings = Furnishing.find_by(business_id=business.id)
-    assert len(furnishings) == 1
-    furnishing = furnishings[0]
-    assert furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
-    assert furnishing.email == 'test@no-reply.com'
-    assert furnishing.furnishing_name == expected_furnishing_name
-    assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
+            if email:
+                mock_send_email.assert_called()
+                furnishings = Furnishing.find_by(business_id=business.id)
+                assert len(furnishings) == 1
+                furnishing = furnishings[0]
+                assert furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
+                assert furnishing.email == 'test@no-reply.com'
+                assert furnishing.furnishing_name == expected_furnishing_name
+                assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
+                assert furnishing.grouping_identifier is not None
+            else:
+                mock_send_email.assert_not_called()
+                furnishings = Furnishing.find_by(business_id=business.id)
+                assert len(furnishings) == 0
