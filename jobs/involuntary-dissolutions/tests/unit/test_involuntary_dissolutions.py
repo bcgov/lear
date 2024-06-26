@@ -311,9 +311,11 @@ async def test_stage_3_process(app, session, test_name, status, step):
         business.last_ar_date = datetime.utcnow()
         business.save()
 
-    with patch('involuntary_dissolutions.put_filing_on_queue'):
+    with patch('involuntary_dissolutions.put_filing_on_queue') as mock_put_filing_on_queue:
         qsm = MagicMock()
         await stage_3_process(app, qsm)
+        if test_name == 'DISSOLVE_BUSINESS':
+            mock_put_filing_on_queue.assert_called()
 
     assert batch_processing.status == status
     assert batch_processing.step == step
