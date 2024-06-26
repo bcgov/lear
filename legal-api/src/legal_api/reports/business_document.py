@@ -514,7 +514,7 @@ class BusinessDocument:
 
             # Processing offices
             continuation_in_info['offices'] = continuation_in_data['offices']
-            for office_data in continuation_in_data['offices'].items():
+            for office_data in continuation_in_data['offices'].values():
                 self._format_address(office_data['mailingAddress'])
                 self._format_address(office_data['deliveryAddress'])
 
