@@ -124,6 +124,7 @@ def create_new_furnishing(
         batch_processing: BatchProcessing,
         eligible_details: InvoluntaryDissolutionService.EligibilityDetails,
         furnishing_type: Furnishing.FurnishingType,
+        grouping_identifier: int,
         email: str = None
         ):
     """Create new furnishing entry."""
@@ -151,6 +152,7 @@ def create_new_furnishing(
         created_date=datetime.utcnow(),
         last_modified=datetime.utcnow(),
         status=Furnishing.FurnishingStatus.QUEUED,
+        grouping_identifier=grouping_identifier,
         email=email
     )
     new_furnishing.save()
@@ -160,7 +162,7 @@ def create_new_furnishing(
 
 async def stage_1_process(app: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
     """Run process to manage and track notifications for dissolution stage 1 process."""
-    try:
+    try:  # pylint: disable=too-many-nested-blocks
         batch_processings = (
             db.session.query(BatchProcessing)
             .filter(BatchProcessing.status == BatchProcessing.BatchProcessingStatus.PROCESSING)
@@ -169,7 +171,7 @@ async def stage_1_process(app: Flask, qsm: QueueService):  # pylint: disable=red
             .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
             .filter(Batch.status == Batch.BatchStatus.PROCESSING)
         ).all()
-
+        email_grouping_identifier = None
         for batch_processing in batch_processings:
             furnishings = Furnishing.find_by(
                 batch_id=batch_processing.batch_id,
@@ -184,10 +186,13 @@ async def stage_1_process(app: Flask, qsm: QueueService):  # pylint: disable=red
                         batch_processing.business_identifier, False
                         )
                     if eligible_details:
+                        if not email_grouping_identifier:
+                            email_grouping_identifier = Furnishing.get_next_grouping_identifier()
                         new_furnishing = create_new_furnishing(
                             batch_processing,
                             eligible_details,
                             Furnishing.FurnishingType.EMAIL,
+                            email_grouping_identifier,
                             email
                             )
                         # notify emailer
