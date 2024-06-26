@@ -20,7 +20,7 @@ from legal_api import db as _db
 from sqlalchemy import event, text
 from sqlalchemy.schema import MetaData
 
-from furnish import create_app
+from furnishings.worker import create_app
 
 
 @pytest.fixture(scope='session')
