@@ -30,8 +30,6 @@ from furnishings.stage_processors import stage_one
 from furnishings.utils.logging import setup_logging  # pylint: disable=import-error
 
 
-# noqa: I003
-
 setup_logging(
     os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
 
