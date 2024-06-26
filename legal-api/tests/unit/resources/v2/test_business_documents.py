@@ -326,9 +326,6 @@ def test_set_continuation_in_details(requests_mock, session, client, jwt):
 
         # Test
         rv = client.get(f'/api/v2/businesses/{identifier}/documents/summary', headers=headers)
-        # Print response for debugging purposes
-        if rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR:
-            print(f"500 Internal Server Error: {rv.data}")
 
         assert rv.status_code == HTTPStatus.OK
         response_json = rv.json
