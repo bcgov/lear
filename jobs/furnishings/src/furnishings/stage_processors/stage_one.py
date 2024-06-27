@@ -98,7 +98,6 @@ class StageOneProcessor:
             batch_id=batch_processing.batch_id,
             business_id=batch_processing.business_id,
             business_identifier=batch_processing.business_identifier,
-            processed_date=datetime.utcnow(),
             created_date=datetime.utcnow(),
             last_modified=datetime.utcnow(),
             status=Furnishing.FurnishingStatus.QUEUED,
