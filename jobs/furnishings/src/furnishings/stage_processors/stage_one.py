@@ -24,7 +24,7 @@ from legal_api.services.queue import QueueService
 
 
 class StageOneProcessor:
-    """Process helper for stage one of furnishings job."""
+    """Processor for stage one of furnishings job."""
 
     def __init__(self, app, qsm):
         """Create stage one process helper instance."""
