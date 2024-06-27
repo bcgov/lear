@@ -62,10 +62,10 @@ install-dev: ## Install local application
 ci: lint flake8 test ## CI flow
 
 pylint: ## Linting with pylint
-	. venv/bin/activate && pylint --rcfile=setup.cfg furnish.py
+	. venv/bin/activate && pylint --rcfile=setup.cfg src/$(PROJECT_NAME)
 
 flake8: ## Linting with flake8
-	. venv/bin/activate && flake8 furnish.py
+	. venv/bin/activate && flake8 src/$(PROJECT_NAME)
 
 lint: pylint flake8 ## run all lint type scripts
 

@@ -57,6 +57,9 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
 
+    # relationships
+    business = db.relationship('Business', back_populates='batch_processing')
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
