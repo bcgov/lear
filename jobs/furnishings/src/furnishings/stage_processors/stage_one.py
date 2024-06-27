@@ -23,7 +23,7 @@ from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionSer
 from legal_api.services.queue import QueueService
 
 
-class StageOneProcessHelper:
+class StageOneProcessor:
     """Process helper for stage one of furnishings job."""
 
     def __init__(self, app, qsm):
@@ -178,10 +178,10 @@ async def process(app: Flask, qsm: QueueService):  # pylint: disable=redefined-o
             .filter(Batch.status == Batch.BatchStatus.PROCESSING)
         ).all()
 
-        helper = StageOneProcessHelper(app, qsm)
+        processor = StageOneProcessor(app, qsm)
 
         for batch_processing in batch_processings:
-            await helper.process(batch_processing)
+            await processor.process(batch_processing)
 
     except Exception as err:
         app.logger.error(err)

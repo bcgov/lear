@@ -17,7 +17,6 @@
 Test suite to ensure that the Furnishings Job is working as expected.
 """
 import copy
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -26,7 +25,7 @@ from legal_api.models import Business, Furnishing
 from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
-from furnishings.stage_processors.stage_one import StageOneProcessHelper, process
+from furnishings.stage_processors.stage_one import StageOneProcessor, process
 
 from .. import factory_batch, factory_batch_processing, factory_business, factory_completed_filing
 
@@ -48,7 +47,7 @@ def test_get_email_address_from_auth(session, test_name, mock_return):
     mock_response.json.return_value = mock_return
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(requests, 'get', return_value=mock_response):
-            email = StageOneProcessHelper._get_email_address_from_auth('BC1234567')
+            email = StageOneProcessor._get_email_address_from_auth('BC1234567')
             if test_name == 'NO_EMAIL':
                 assert email is None
             else:
@@ -99,8 +98,8 @@ async def test_stage_1_process_first_notification_email(app, session, test_name,
         factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
 
     qsm = MagicMock()
-    with patch.object(StageOneProcessHelper, '_get_email_address_from_auth', return_value=email):
-        with patch.object(StageOneProcessHelper, '_send_email', return_value=None) as mock_send_email:
+    with patch.object(StageOneProcessor, '_get_email_address_from_auth', return_value=email):
+        with patch.object(StageOneProcessor, '_send_email', return_value=None) as mock_send_email:
             await process(app, qsm)
 
             if email:
