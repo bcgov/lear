@@ -195,7 +195,7 @@ def get_allowable_filings_dict():
                     }
                 },
                 'changeOfAddress': {
-                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC','C', 'CBEN', 'CUL', 'CCC'],
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT]
                     }
@@ -362,7 +362,7 @@ def get_allowable_filings_dict():
                 'amalgamationApplication': {
                     'businessRequirement': BusinessRequirement.NO_RESTRICTION,
                     'regular': {
-                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC','C', 'CBEN', 'CUL', 'CCC'],
+                        'legalTypes': ['BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
@@ -399,13 +399,13 @@ def get_allowable_filings_dict():
                     }
                 },
                 'changeOfAddress': {
-                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC','C', 'CBEN', 'CUL', 'CCC'],
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT],
                     }
                 },
                 'changeOfDirectors': {
-                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC','C', 'CBEN', 'CUL', 'CCC'],
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT]
                     }
