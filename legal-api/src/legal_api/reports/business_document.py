@@ -515,7 +515,7 @@ class BusinessDocument:
             country = pycountry.countries.get(alpha_2=country_code)
             if region_code and region_code.upper() != 'FEDERAL':
                 region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-            region_name = region.name.upper() if region else country.name
+            region_name = region.name.upper() if region else ''
             country_name = country.name.upper()
 
             # Format incorporation date
