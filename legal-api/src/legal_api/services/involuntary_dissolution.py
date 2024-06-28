@@ -16,7 +16,7 @@
 from dataclasses import dataclass
 from typing import Final, Tuple
 
-from sqlalchemy import and_, exists, func, not_, or_, text, select
+from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
 from legal_api.models import Batch, BatchProcessing, Business, Filing, db
