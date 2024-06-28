@@ -38,26 +38,24 @@
     </table>
 </div>
 {% if continuationIn.expro_identifier %}
-    {% if business.status == 'HISTORICAL' %}
-        <div class="no-page-break">
-            <div class="separator mt-4"></div>
-            <div class="section-title mt-4">Previous Extraprovincial Registration in B.C.</div>
-            <table class="section-data nr-name-table mt-4" role="presentation">
-                <tr>
-                    <td class="col-25">
-                        <div class="section-sub-title">Extraprovincial Name in B.C.</div>
-                        <div class="pt-2">
-                            {{continuationIn.foreignJurisdiction.legalName}}
-                        </div>
-                    </td>
-                    <td class="col-25">
-                        <div class="section-sub-title">Registration Number in B.C.</div>
-                        <div class="pt-2">
-                            {{continuationIn.business.identifier}}
-                        </div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    {% endif %}
+    <div class="no-page-break">
+        <div class="separator mt-4"></div>
+        <div class="section-title mt-4">Previous Extraprovincial Registration in B.C.</div>
+        <table class="section-data nr-name-table mt-4" role="presentation">
+            <tr>
+                <td class="col-25">
+                    <div class="section-sub-title">Extraprovincial Name in B.C.</div>
+                    <div class="pt-2">
+                        {{continuationIn.foreignJurisdiction.legalName}}
+                    </div>
+                </td>
+                <td class="col-25">
+                    <div class="section-sub-title">Registration Number in B.C.</div>
+                    <div class="pt-2">
+                        {{continuationIn.business.identifier}}
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
 {% endif %}
