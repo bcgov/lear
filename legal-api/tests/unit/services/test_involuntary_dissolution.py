@@ -311,36 +311,64 @@ def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligi
 
 
 @pytest.mark.parametrize(
-        'test_name, exclude', [
-            ('TEST_TRANSITION_OVERDUE_ORDER', False),
-        ]
+    'test_name, exclude, expected_order', [
+        ('TEST_OVERDUE_ORDER', False, [
+            ('BC1234567', True, True),    # transition_overdue, earliest
+            ('BC3456789', True, True),    # transition_overdue, next earliest
+            ('BC7654321', False, True),   # transition_overdue, latest
+            ('BC9876543', True, False),   # ar_overdue, earliest
+            ('BC2468101', True, False),   # ar_overdue, latest
+        ]),
+    ]
 )
-def test_get_businesses_eligible_query_order_by_transition_overdue(session, test_name, exclude):
-    """Assert businesses are ordered by transition overdue status."""
-    # create business that will not be transition_overdue
-    business_no_overdue = factory_business(identifier='FM1234567', entity_type=Business.LegalTypes.EXTRA_PRO_A.value)
+def test_get_businesses_eligible_query_order(session, test_name, exclude, expected_order):
+    """Assert businesses are ordered by overdue status, prioritizing transition_overdue
+    followed by ar_overdue. Within each category, businesses are sorted from oldest to
+    newest based on relevant cutoff dates."""
 
-    # create business that will be ar_overdue and transition_overdue
+    # create business that will be ar_overdue with latest ar_cutoff
+    business_overdue5 = factory_business(identifier='BC2468101', entity_type=Business.LegalTypes.COMP.value)
+    business_overdue5.last_ar_date = datetime.utcnow() - datedelta(years=2, months=9)
+    business_overdue5.save()
+
+    # create business that will be ar_overdue with earliest ar_cutoff
+    business_overdue4 = factory_business(identifier='BC9876543', entity_type=Business.LegalTypes.COMP.value)
+    business_overdue4.last_ar_date = datetime.utcnow() - datedelta(years=3)
+    business_overdue4.save()
+
+    # create business that will be transition_overdue with latest restoration date
+    business_overdue2 = factory_business(identifier='BC7654321', entity_type=Business.LegalTypes.COMP.value)
+    restoration_filing2 = factory_completed_filing(business_overdue2, RESTORATION_FILING, filing_type='restoration')
+    restoration_filing2.effective_date = datetime.utcnow() - datedelta(years=2)
+    restoration_filing2.save()
+    business_overdue2.save()
+
+    # create business that will be transition_overdue with earliest restoration date
     business_overdue1 = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
-    filing1 = factory_completed_filing(business_overdue1, RESTORATION_FILING, filing_type='restoration')
-    filing1.effective_date = datetime.utcnow() - datedelta(years=3)
-    filing1.save()
+    restoration_filing1 = factory_completed_filing(business_overdue1, RESTORATION_FILING, filing_type='restoration')
+    restoration_filing1.effective_date = datetime.utcnow() - datedelta(years=3)
+    restoration_filing1.save()
     business_overdue1.last_ar_date = datetime.utcnow() - datedelta(years=3)
     business_overdue1.save()
- 
+
     # create business that will be transition_overdue
-    business_overdue2 = factory_business(identifier='BC7654321', entity_type=Business.LegalTypes.COMP.value)
-    restoration_filing = factory_completed_filing(business_overdue2, RESTORATION_FILING, filing_type='restoration')
-    restoration_filing.effective_date = datetime.utcnow() - datedelta(years=2)
-    business_overdue2.save()
-    restoration_filing.save()
+    business_overdue3 = factory_business(identifier='BC3456789', entity_type=Business.LegalTypes.COMP.value)
+    restoration_filing3 = factory_completed_filing(business_overdue3, RESTORATION_FILING, filing_type='restoration')
+    restoration_filing3.effective_date = datetime.utcnow() - datedelta(years=2, months=6)
+    restoration_filing3.save()
+    business_overdue3.save()
+
+    # create business that is neither ar_overdue nor transition_overdue
+    business_no_overdue = factory_business(identifier='BC1122334', entity_type=Business.LegalTypes.COMP.value)
+    factory_completed_filing(business_no_overdue, RESTORATION_FILING, filing_type='restoration')
+    factory_completed_filing(business_no_overdue, TRANSITION_FILING_TEMPLATE, filing_type='transition')
+    business_no_overdue.last_ar_date = datetime.utcnow()
+    business_no_overdue.save()
 
     result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
     if exclude:
         assert not result
     else:
         assert result
-        assert result[0][0] == business_overdue1
-        assert result[1][0] == business_overdue2
-        assert result[2][0] == business_no_overdue
-
+        result_details = [(res[0].identifier, res[1], res[2]) for res in result]
+        assert result_details == expected_order
