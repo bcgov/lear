@@ -20,7 +20,6 @@ import copy
 from flask import current_app
 from http import HTTPStatus
 from legal_api.models.business import Business
-import pycountry
 
 
 from legal_api.services.authz import STAFF_ROLE
