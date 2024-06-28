@@ -53,6 +53,7 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     NATS_SERVERS = os.getenv('NATS_SERVERS', None)
     NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)
     NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', None)
+    NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filer')
     NATS_ENTITY_EVENTS_SUBJECT = os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'entity.events')
 
     SECRET_KEY = 'a secret'
