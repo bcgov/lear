@@ -12,64 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job."""
-import logging
-import os
+import asyncio
 
-import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
-from flask import Flask
-from legal_api.models import db  # noqa: I001
-from legal_api.services.flags import Flags
-from sentry_sdk.integrations.logging import LoggingIntegration
+from legal_api.services.queue import QueueService
 
-import config  # pylint: disable=import-error
-from utils.logging import setup_logging  # pylint: disable=import-error
-# noqa: I003
-
-setup_logging(
-    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
-
-SENTRY_LOGGING = LoggingIntegration(
-    event_level=logging.ERROR  # send errors as events
-)
-
-flags = Flags()
-
-
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
-    """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(config.CONFIGURATION[run_mode])
-    db.init_app(app)
-
-    # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[SENTRY_LOGGING]
-        )
-
-    if app.config.get('LD_SDK_KEY', None):
-        flags.init_app(app)
-
-    register_shellcontext(app)
-
-    return app
-
-
-def register_shellcontext(app):
-    """Register shell context objects."""
-    def shell_context():
-        """Shell context objects."""
-        return {'app': app}
-
-    app.shell_context_processor(shell_context)
+from furnishings.worker import create_app, run
 
 
 if __name__ == '__main__':
     application = create_app()
-    with application.app_context():
-        flag_on = flags.is_on('enable-involuntary-dissolution')
-        application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
-        if flag_on:
-            # TODO: detailed implementation
-            application.logger.debug('Running furnishings job')
+    try:
+        event_loop = asyncio.get_event_loop()
+        queue_service = QueueService(app=application, loop=event_loop)
+        event_loop.run_until_complete(run(application, queue_service))
+    except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
+        application.logger.error(err)  # pylint: disable=no-member
+        raise err
