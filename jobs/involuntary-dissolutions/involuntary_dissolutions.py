@@ -123,6 +123,9 @@ async def put_filing_on_queue(filing_id: int, app: Flask, qsm: QueueService):
             f'Queue Error: Failed to place filing {filing_id} on Queue with error:{err}',
             level='error'
         )
+        app.logger.error(
+            f'Queue Error: Failed to place filing {filing_id} on Queue with error:{err}'
+        )
 
 
 def mark_eligible_batches_completed():
