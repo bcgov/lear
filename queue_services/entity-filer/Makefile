@@ -45,7 +45,7 @@ build-req: clean ## Upgrade requirements
 	pip install pip==24.0 ;\
 	pip install wheel==0.43.0 ;\
 	pip install -Ur requirements/prod.txt ;\
-	pip freeze | sort > requirementsvirtual
+	pip freeze | sort > requirements.txt ;\
 	cat requirements/bcregistry-libraries.txt >> requirements.txt ;\
 	pip install -Ur requirements/bcregistry-libraries.txt
 
