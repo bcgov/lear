@@ -16,7 +16,7 @@
 from dataclasses import dataclass
 from typing import Final, Tuple
 
-from sqlalchemy import and_, exists, func, not_, or_, text
+from sqlalchemy import and_, exists, func, not_, or_, text, select
 from sqlalchemy.orm import aliased
 
 from legal_api.models import Batch, BatchProcessing, Business, Filing, db
@@ -118,9 +118,9 @@ class InvoluntaryDissolutionService():
                 Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION
             )
         )
-        specific_filing_overdue = _has_specific_filing_overdue()
-        no_transition_filed_after_restoration = _has_no_transition_filed_after_restoration()
-        oldest_restoration_filing_date = _get_oldest_restoration_filing_date_subquery()
+        specific_filing_overdue = _has_specific_filing_overdue() < func.timezone('UTC', func.now())
+        no_transition_filed_after_restoration = func.coalesce((_has_no_transition_filed_after_restoration()
+                                                               <= func.timezone('UTC', func.now())), False)
 
         query = db.session.query(
             Business,
@@ -153,7 +153,9 @@ class InvoluntaryDissolutionService():
             ).\
             order_by(
                 no_transition_filed_after_restoration.desc(),
-                oldest_restoration_filing_date.asc(),
+                _has_no_transition_filed_after_restoration().asc(),
+                specific_filing_overdue.desc(),
+                _has_specific_filing_overdue().asc()
             )
 
         return query
@@ -182,7 +184,7 @@ def _has_specific_filing_overdue():
 
     latest_date_cutoff = latest_date + text("""INTERVAL '26 MONTHS'""")
 
-    return latest_date_cutoff < func.timezone('UTC', func.now())
+    return latest_date_cutoff
 
 
 def _has_no_transition_filed_after_restoration():
@@ -199,7 +201,7 @@ def _has_no_transition_filed_after_restoration():
 
     restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
 
-    return exists().where(
+    return select([func.max(func.coalesce(restoration_filing_effective_cutoff, None))]).where(
             and_(
                 Business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 Business.founding_date < new_act_date,
@@ -209,7 +211,6 @@ def _has_no_transition_filed_after_restoration():
                     CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
                 ]),
                 restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
-                restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
                 not_(
                     exists().where(
                         and_(
@@ -226,7 +227,7 @@ def _has_no_transition_filed_after_restoration():
                     )
                 )
             )
-        )
+        ).scalar_subquery()
 
 
 def _has_future_effective_filing():
@@ -272,23 +273,3 @@ def _is_xpro_from_nwpta():
         Business.foreign_jurisdiction_region.isnot(None),
         Business.foreign_jurisdiction_region.in_(['AB', 'SK', 'MB'])
     )
-
-
-def _get_oldest_restoration_filing_date_subquery():
-    """Return SQLAlchemy subquery for the oldest restoration filing date.
-
-    Construct a subquery to retrieve the minimum effective date of restoration filings
-    associated with the business.
-    """
-    from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
-
-    return db.session.query(
-        func.min(Filing.effective_date)
-    ).filter(
-        Filing.business_id == Business.id,
-        Filing._filing_type.in_([  # pylint: disable=protected-access
-            CoreFiling.FilingTypes.RESTORATION.value,
-            CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
-        ]),
-        Filing._status == Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-    ).scalar_subquery()
