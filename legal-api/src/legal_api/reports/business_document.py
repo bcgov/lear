@@ -513,6 +513,7 @@ class BusinessDocument:
             region_code = jurisdiction.region
             country_code = jurisdiction.country
             country = pycountry.countries.get(alpha_2=country_code)
+            region = None
             if region_code and region_code.upper() != 'FEDERAL':
                 region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
             region_name = region.name.upper() if region else ''
