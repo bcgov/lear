@@ -27,11 +27,7 @@
             <td class="col-25">
                 <div class="section-sub-title">Foreign Jurisdiction</div>
                 <div class="pt-2">
-                    {% if continuationIn.foreignJurisdiction.region %}
-                        {{continuationIn.foreignJurisdiction.region}}
-                    {% else %}
-                        {{continuationIn.foreignJurisdiction.country}}
-                    {% endif %}
+                  {{continuationIn.foreignJurisdiction.jurisdiction}}
                 </div>
             </td>
         </tr>

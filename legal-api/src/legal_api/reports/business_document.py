@@ -516,8 +516,7 @@ class BusinessDocument:
             region = None
             if region_code and region_code.upper() != 'FEDERAL':
                 region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-            region_name = region.name.upper() if region else ''
-            country_name = country.name.upper()
+            location_jurisdiction = f'{region.name}, {country.name}' if region else country.name
 
             # Format incorporation date
             incorp_date = LegislationDatetime.as_legislation_timezone(jurisdiction.incorporation_date)
@@ -526,8 +525,7 @@ class BusinessDocument:
             # Format Jurisdiction data
             jurisdiction_info = {
                     'id': jurisdiction.id,
-                    'country': country_name,
-                    'region': region_name,
+                    'jurisdiction': location_jurisdiction,
                     'identifier': jurisdiction.identifier,
                     'legal_name': jurisdiction.legal_name,
                     'tax_id': jurisdiction.tax_id,
