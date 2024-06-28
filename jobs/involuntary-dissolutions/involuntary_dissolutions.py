@@ -27,7 +27,6 @@ from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
-from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sqlalchemy import Date, cast, func
 from sqlalchemy.orm import aliased
@@ -119,9 +118,8 @@ async def put_filing_on_queue(filing_id: int, app: Flask, qsm: QueueService):
         await qsm.publish_json_to_subject(payload, subject)
     except Exception as err:  # pylint: disable=broad-except # noqa F841;
         # mark any failure for human review
-        capture_message(
-            f'Queue Error: Failed to place filing {filing_id} on Queue with error:{err}',
-            level='error'
+        app.logger.error(
+            f'Queue Error: Failed to place filing {filing_id} on Queue with error:{err}'
         )
 
 
