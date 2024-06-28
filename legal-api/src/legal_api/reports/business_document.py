@@ -515,22 +515,22 @@ class BusinessDocument:
             country = pycountry.countries.get(alpha_2=country_code)
             if region_code and region_code.upper() != 'FEDERAL':
                 region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-                jurisdiction.region = region.name.upper() if region_code else ''
-            jurisdiction.country = country.name.upper()
+                region_name = region.name.upper() if region_code else ''
+            country_name = country.name.upper()
 
             # Format incorporation date
             incorp_date = LegislationDatetime.as_legislation_timezone(jurisdiction.incorporation_date)
-            jurisdiction.incorporation_date = incorp_date.strftime(OUTPUT_DATE_FORMAT)
+            formatted_incorporation_date = incorp_date.strftime(OUTPUT_DATE_FORMAT)
 
             # Format Jurisdiction data
             jurisdiction_info = {
                     'id': jurisdiction.id,
-                    'country': jurisdiction.country,
-                    'region': jurisdiction.region,
+                    'country': country_name,
+                    'region': region_name,
                     'identifier': jurisdiction.identifier,
                     'legal_name': jurisdiction.legal_name,
                     'tax_id': jurisdiction.tax_id,
-                    'incorporation_date': jurisdiction.incorporation_date,
+                    'incorporation_date': formatted_incorporation_date,
                     'expro_identifier': jurisdiction.expro_identifier,
                     'expro_legal_name': jurisdiction.expro_legal_name,
                     'business_id': jurisdiction.business_id,
