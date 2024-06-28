@@ -239,3 +239,44 @@ class Reset:
             if con:
                 con.rollback()
             raise err
+
+    @classmethod
+    def reset_filings_by_event(cls, event_ids: list = []):
+        """Reset changes made for given event ids."""
+        # initialize reset object
+        reset_obj = Reset()
+
+        # place into lists that can be reset together
+        annual_report_events = []
+        events_info = []
+
+        for filing_info in reset_obj.get_filings_for_reset():
+            if filing_info['event_id'] in event_ids:
+                events_info.append(filing_info)
+                if filing_info['filing_typ_cd'] in Filing.FILING_TYPES['annualReport']['type_code_list']:
+                    annual_report_events.append(filing_info['event_id'])
+
+        try:
+            if event_ids:
+                # setup db connection
+                con = DB.connection
+                con.begin()
+                cursor = con.cursor()
+
+                # reset data in oracle for events
+                # The commented out events do not seem to happen for AR so they are commented out.
+                new_corps = cls._get_incorporations_by_event(cursor, event_ids)
+                Party.reset_dirs_by_events(cursor=cursor, event_ids=event_ids)
+                Business.reset_corporations(cursor=cursor, event_info=events_info, event_ids=event_ids)
+
+                cls._delete_filing_user(cursor=cursor, event_ids=event_ids)
+                cls._delete_corp_state(cursor=cursor, corp_nums=list(new_corps.keys()))
+                cls._delete_events_and_filings(cursor=cursor, event_ids=event_ids)
+                con.commit()
+                return
+        except Exception as err:
+            current_app.logger.error('Error in reset_filings_by_event: failed to reset filings.'
+                                     ' Rolling back any partial changes.')
+            if con:
+                con.rollback()
+            raise err

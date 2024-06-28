@@ -1,5 +1,7 @@
 import os
+
 import psycopg2
+
 
 def test_connection_failed():
     status = False

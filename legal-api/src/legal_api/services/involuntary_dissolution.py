@@ -221,10 +221,11 @@ def _has_future_effective_filing():
 
     Check if the business has future effective filings.
     """
+    # pylint: disable=protected-access
     return db.session.query(Filing). \
         filter(Filing.business_id == Business.id). \
         filter(Filing._status.in_([Filing.Status.PENDING.value, Filing.Status.PAID.value])). \
-        exists()  # pylint: disable=protected-access
+        exists()
 
 
 def _has_delay_of_dissolution_filing():

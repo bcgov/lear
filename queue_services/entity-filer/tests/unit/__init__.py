@@ -368,11 +368,12 @@ COMBINED_FILING = {
 }
 
 
-def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
+def create_filing(token=None, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     from legal_api.models import Filing
     filing = Filing()
-    filing.payment_token = str(token)
+    if token:
+        filing.payment_token = str(token)
     filing.filing_date = filing_date
 
     if json_filing:

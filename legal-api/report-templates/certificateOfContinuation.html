@@ -3,7 +3,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Certificate of Incorporation</title>
+    <title>Certificate of Continuation</title>
     <meta charset="UTF-8">
     <meta name="author" content="BC Registries and Online Services">
     [[common/certificateStyle.html]]
@@ -21,14 +21,15 @@
 
           <div class="cert-title-container">
             <div class="sub-header-1">Certificate of</div>
-            <div class="certificate-header">INCORPORATION</div>
+            <div class="certificate-header">CONTINUATION</div>
             <div class="sub-header-2">{{ entityAct }}</div>
           </div>
 
           <div class="certify-clause-container">
-            <div>I hereby certify that</div>
+            <div>
+              I hereby certify that {{ business.legalName }} has continued into British Columbia from the
+              Jurisdiction of {{jurisdiction}}, under the {{ entityAct }}, with the name</div>
             <div class="company-name-header">{{ business.legalName }}</div>
-            <div>was incorporated under the {{ entityAct }}</div>
             <div>on {{ business.formatted_founding_date_time }}</div>
             <div class="cert-separator"></div>
             <div class="cert-issued-by">

@@ -124,3 +124,13 @@ def test_find_furnishing_by(session, params):
 
     assert len(res) == 1
     assert res[0].id == furnishing.id
+
+
+def test_get_next_grouping_identifier(session):
+    """Assert that the grouping_identifier value is generated successfully."""
+    first_val = Furnishing.get_next_grouping_identifier()
+    assert first_val
+
+    next_val = Furnishing.get_next_grouping_identifier()
+    assert next_val
+    assert next_val == first_val + 1
