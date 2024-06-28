@@ -48,7 +48,7 @@
                     {% if business.legalType in ['GP', 'SP'] and business.state == 'HISTORICAL' %}
                         <span>Dissolved</span>
                     {% elif business.legalType in ['C', 'CCC', 'CUL', 'CBEN'] and business.state == 'HISTORICAL' %}
-                        <span>Historical - Dissolved for Failure to File on {{stateFilings[0].effectiveDateTime}}</span>
+                        <span>Dissolved for Failure to File on {{stateFilings[0].effectiveDateTime}}</span>
                     {% else %}
                         <span>{{stateFilings[0].filingName}}</span>
                     {% endif %}

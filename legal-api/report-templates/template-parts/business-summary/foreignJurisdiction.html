@@ -6,7 +6,7 @@
             <td class="col-25">
                 <div class="section-sub-title">Name in Foreign Jurisdiction</div>
                 <div class="pt-2">
-                    {{continuationIn.foreignJurisdiction.legalName}}
+                    {{continuationIn.foreignJurisdiction.legal_name}}
                 </div>
             </td>
             <td class="col-25">
@@ -21,7 +21,7 @@
             <td class="col-25">
                 <div class="section-sub-title">Date of Incorporation, Continuation or <br> Amalgamation in Foreign Jurisdiction</div>
                 <div class="pt-2">
-                    {{continuationIn.foreignJurisdiction.incorporationDate}}
+                    {{continuationIn.foreignJurisdiction.incorporation_date}}
                 </div>
             </td>
             <td class="col-25">
@@ -37,9 +37,8 @@
         </tr>
     </table>
 </div>
-
-{% if continuationIn.mode == 'EXPRO' %}
-    {% if continuationIn.status == 'HISTORICAL' %}
+{% if continuationIn.expro_identifier == 'EXPRO' %}
+    {% if business.status == 'HISTORICAL' %}
         <div class="no-page-break">
             <div class="separator mt-4"></div>
             <div class="section-title mt-4">Previous Extraprovincial Registration in B.C.</div>

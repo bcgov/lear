@@ -21,7 +21,7 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing
+from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
@@ -507,46 +507,36 @@ class BusinessDocument:
         continuation_in_filing = Filing.get_filings_by_types(self._business.id, ['continuationIn'])
         if continuation_in_filing:
             continuation_in_filing = continuation_in_filing[0]
-            continuation_in_data = continuation_in_filing.filing_json['filing']['continuationIn']
+            jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(continuation_in_filing.business_id)
 
-            continuation_in_info['filingDateTime'] = continuation_in_filing.filing_date.isoformat()
-            continuation_in_info['mode'] = continuation_in_data.get('mode', 'N/A')
-
-            # Processing offices
-            continuation_in_info['offices'] = continuation_in_data['offices']
-            for office_data in continuation_in_data['offices'].values():
-                self._format_address(office_data['mailingAddress'])
-                self._format_address(office_data['deliveryAddress'])
-
-            # Processing parties
-            continuation_in_info['parties'] = continuation_in_data['parties']
-            for party in continuation_in_data['parties']:
-                self._format_address(party['mailingAddress'])
-                self._format_address(party['deliveryAddress'])
-
-            continuation_in_info['courtOrder'] = continuation_in_data.get('courtOrder', {})
-            continuation_in_info['nameRequest'] = continuation_in_data.get('nameRequest', {})
-            continuation_in_info['contactPoint'] = continuation_in_data.get('contactPoint', {})
-            continuation_in_info['authorization'] = continuation_in_data.get('authorization', {})
-            continuation_in_info['shareStructure'] = continuation_in_data.get('shareStructure', {})
-            continuation_in_info['nameTranslations'] = continuation_in_data.get('nameTranslations', [])
-            continuation_in_info['foreignJurisdiction'] = continuation_in_data.get('foreignJurisdiction', {})
-
-            # Set foreign jurisdiction region and country name
-            foreign_jurisdiction = continuation_in_info['foreignJurisdiction']
-            region_code = foreign_jurisdiction.get('region')
-            country_code = foreign_jurisdiction.get('country')
+            # Format country and region
+            region_code = jurisdiction.region
+            country_code = jurisdiction.country
             country = pycountry.countries.get(alpha_2=country_code)
             if region_code and region_code.upper() != 'FEDERAL':
                 region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-                foreign_jurisdiction['region'] = region.name.upper() if region_code else ''
-            foreign_jurisdiction['country'] = country.name.upper()
+                jurisdiction.region = region.name.upper() if region_code else ''
+            jurisdiction.country = country.name.upper()
 
             # Format incorporation date
-            incorp_date = LegislationDatetime.as_legislation_timezone_from_date_str(
-                foreign_jurisdiction.get('incorporationDate'))
-            foreign_jurisdiction['incorporationDate'] = incorp_date.strftime(OUTPUT_DATE_FORMAT)
+            incorp_date = LegislationDatetime.as_legislation_timezone(jurisdiction.incorporation_date)
+            jurisdiction.incorporation_date = incorp_date.strftime(OUTPUT_DATE_FORMAT)
 
+            # Format Jurisdiction data
+            jurisdiction_info = {
+                    'id': jurisdiction.id,
+                    'country': jurisdiction.country,
+                    'region': jurisdiction.region,
+                    'identifier': jurisdiction.identifier,
+                    'legal_name': jurisdiction.legal_name,
+                    'tax_id': jurisdiction.tax_id,
+                    'incorporation_date': jurisdiction.incorporation_date,
+                    'expro_identifier': jurisdiction.expro_identifier,
+                    'expro_legal_name': jurisdiction.expro_legal_name,
+                    'business_id': jurisdiction.business_id,
+                    'filing_id': jurisdiction.filing_id,
+                    }
+            continuation_in_info['foreignJurisdiction'] = jurisdiction_info
         business['continuationIn'] = continuation_in_info
 
     @staticmethod
