@@ -337,7 +337,11 @@ FILINGS: Final = {
                 'CC': ReportTitles.VOLUNTARY_DISSOLUTION.value,
                 'LLC': ReportTitles.VOLUNTARY_DISSOLUTION.value,
                 'SP': ReportTitles.STATEMENT_DISSOLUTION.value,
-                'GP': ReportTitles.STATEMENT_DISSOLUTION.value
+                'GP': ReportTitles.STATEMENT_DISSOLUTION.value,
+                'C': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'CBEN': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'CUL': ReportTitles.VOLUNTARY_DISSOLUTION.value,
+                'CCC': ReportTitles.VOLUNTARY_DISSOLUTION.value,
             },
             'codes': {
                 'CP': 'DIS_VOL',
@@ -360,7 +364,11 @@ FILINGS: Final = {
                 'CC': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
                 'LLC': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
                 'SP': ReportTitles.STATEMENT_DISSOLUTION.value,
-                'GP': ReportTitles.STATEMENT_DISSOLUTION.value
+                'GP': ReportTitles.STATEMENT_DISSOLUTION.value,
+                'C': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'CBEN': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'CUL': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
+                'CCC': ReportTitles.ADMINISTRATIVE_DISSOLUTION.value,
             },
             'codes': {
                 'CP': 'DIS_VOL',
