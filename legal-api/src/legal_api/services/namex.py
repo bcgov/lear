@@ -29,6 +29,7 @@ class NameXService():
     """Provides services to use the namex-api."""
 
     DATE_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
+    DATE_FORMAT_WITH_MILLISECONDS = '%Y-%m-%dT%H:%M:%S.%f%z'
 
     class State(Enum):
         """Name request states."""
@@ -171,7 +172,10 @@ class NameXService():
     @staticmethod
     def is_date_past_expiration(nr_json, date_time):
         """Return true if the inputted date time is passed the name request expiration."""
-        expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT)
+        try:
+            expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT)
+        except ValueError:
+            expiration_date = datetime.strptime(nr_json['expirationDate'], NameXService.DATE_FORMAT_WITH_MILLISECONDS)
         expiration_date = expiration_date.astimezone(pytz.timezone('GMT'))
         if expiration_date < date_time:
             return True
