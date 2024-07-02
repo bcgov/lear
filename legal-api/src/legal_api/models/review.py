@@ -13,6 +13,7 @@
 # limitations under the License.
 """This module holds the data about review."""
 from __future__ import annotations
+
 from enum import auto
 
 from legal_api.utils.base import BaseEnum

@@ -13,6 +13,7 @@
 # limitations under the License.
 """This module holds the data about review result."""
 from __future__ import annotations
+
 from typing import List
 
 from sqlalchemy.orm import backref
