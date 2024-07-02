@@ -34,7 +34,7 @@ def check_business(business: Business) -> list:
         'warningType': WarningType.NOT_IN_GOOD_STANDING
     }
 
-    eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, True)
+    eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, InvoluntaryDissolutionService.ExcludeDetails(exclude_in_dissolution=True))
     if eligibility:
         if details.transition_overdue:
             result.append(transition_warning)
@@ -42,7 +42,7 @@ def check_business(business: Business) -> list:
             result.append(ar_overdue_warning)
     elif batch_datas := InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id):
         batch_processing, _ = batch_datas
-        _, dis_details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False, True)
+        _, dis_details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, InvoluntaryDissolutionService.ExcludeDetails(exclude_in_dissolution=False, exclude_future_effective_filing=True))
         if dis_details.transition_overdue:
             result.append(transition_warning)
         elif dis_details.ar_overdue:

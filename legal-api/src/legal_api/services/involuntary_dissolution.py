@@ -45,9 +45,16 @@ class InvoluntaryDissolutionService():
         ar_overdue: bool
         transition_overdue: bool
 
+    @dataclass
+    class ExcludeDetails:
+        """Details about the exclude of a business for dissolution"""
+
+        exclude_in_dissolution: bool = True
+        exclude_future_effective_filing: bool = False
+
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, exclude_in_dissolution=True, exclude_future_effective_filing=False
+        cls, identifier: str, excludeDetails: ExcludeDetails
     ) -> Tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -55,7 +62,7 @@ class InvoluntaryDissolutionService():
             eligible (bool): True if the business is eligible for dissolution.
             eligibility_details (EligibilityDetails): Details regarding eligibility.
         """
-        query = cls._get_businesses_eligible_query(exclude_in_dissolution, exclude_future_effective_filing).\
+        query = cls._get_businesses_eligible_query(excludeDetails.exclude_in_dissolution, excludeDetails.exclude_future_effective_filing).\
             filter(Business.identifier == identifier)
         result = query.one_or_none()
 
