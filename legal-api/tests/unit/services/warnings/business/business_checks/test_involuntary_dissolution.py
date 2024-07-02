@@ -90,9 +90,9 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
         warning = result[0]
         if 'TRANSITION_OVERDUE' in test_name:
             assert warning['code'] == 'TRANSITION_NOT_FILED'
-            assert warning['message'] == 'Transition filing not filed.  Eligible for involuntary dissolution.'
+            assert warning['message'] == 'Transition filing not filed. Eligible for involuntary dissolution.'
             assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
         else:
             assert warning['code'] == 'MULTIPLE_ANNUAL_REPORTS_NOT_FILED'
-            assert warning['message'] == 'Multiple annual reports not filed.  Eligible for involuntary dissolution.'
+            assert warning['message'] == 'Multiple annual reports not filed. Eligible for involuntary dissolution.'
             assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
