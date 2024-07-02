@@ -1,0 +1,57 @@
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Previous Foreign Jurisdiction Information</div>
+    <table class="section-data nr-name-table mt-4" role="presentation">
+        <tr>
+            <td class="col-25">
+                <div class="section-sub-title">Name in Foreign Jurisdiction</div>
+                <div class="pt-2">
+                    {{continuationIn.foreignJurisdiction.legal_name}}
+                </div>
+            </td>
+            <td class="col-25">
+                <div class="section-sub-title">Identifying Number in Foreign Jurisdiction</div>
+                <div class="pt-2">
+                    {{continuationIn.foreignJurisdiction.identifier}}
+                </div>
+            </td>
+        </tr>
+        <td colspan="2" style="height: 20px;"></td>
+        <tr>
+            <td class="col-25">
+                <div class="section-sub-title">Date of Incorporation, Continuation or <br> Amalgamation in Foreign Jurisdiction</div>
+                <div class="pt-2">
+                    {{continuationIn.foreignJurisdiction.incorporation_date}}
+                </div>
+            </td>
+            <td class="col-25">
+                <div class="section-sub-title">Foreign Jurisdiction</div>
+                <div class="pt-2">
+                  {{continuationIn.foreignJurisdiction.jurisdiction}}
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+{% if continuationIn.foreignJurisdiction.expro_identifier %}
+    <div class="no-page-break">
+        <div class="separator mt-4"></div>
+        <div class="section-title mt-4">Previous Extraprovincial Registration in B.C.</div>
+        <table class="section-data nr-name-table mt-4" role="presentation">
+            <tr>
+                <td class="col-25">
+                    <div class="section-sub-title">Extraprovincial Name in B.C.</div>
+                    <div class="pt-2">
+                      {{continuationIn.foreignJurisdiction.expro_legal_name}}
+                    </div>
+                </td>
+                <td class="col-25">
+                    <div class="section-sub-title">Registration Number in B.C.</div>
+                    <div class="pt-2">
+                        {{continuationIn.foreignJurisdiction.expro_identifier}}
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
