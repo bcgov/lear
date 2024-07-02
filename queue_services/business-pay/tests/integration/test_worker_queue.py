@@ -95,95 +95,6 @@ async def test_no_message(
     await loop.run_in_executor(None, sync_test)
 
 
-@pytest.mark.asyncio
-async def test_full_worker_process(app, session, client_id, stan_server, mocker):
-    """Assert that payment tokens can be retrieved and decoded from the Queue."""
-    # Call back for the subscription
-    # from entity_queue_common.service import ServiceWorker
-    # from legal_api.models import Filing
-    from business_pay.database import Filing
-    from business_pay import Config
-    from business_pay.services import nats_queue
-
-    msgs = []
-    future = None
-    filing_id = 12
-    filing_type = "annualReport"
-    payment_token = random.SystemRandom().getrandbits(0x58)
-
-    claim = {
-        "email_verified": app.config.get("SUB_SERVICE_ACCOUNT"),
-        "email": app.config.get("SUB_SERVICE_ACCOUNT"),
-    }
-    mocker.patch("google.oauth2.id_token.verify_oauth2_token", return_value=claim)
-
-    ##-# using test_client()
-    def sync_test(loop):
-        nonlocal future
-
-        # loop = asyncio.get_running_loop()
-        print(loop)
-        future = asyncio.Future(loop=loop)
-        with app.app_context():
-            # file handler callback
-            async def cb_file_handler(msg):
-                nonlocal msgs
-                nonlocal future
-                msgs.append(msg)
-                if len(msgs) == 1:
-                    future.set_result(True)
-
-            nats_queue._loop = loop
-            nats_queue.name = datetime.now().isoformat()
-            nats_queue.config = Config
-            nats_queue.stan_connection_options = {"client_id": client_id}
-            nats_queue.cb_handler = cb_file_handler
-            nats_queue.subscription_options = {
-                "subject": "filer",
-                "queue": "filer",
-                "durable_name": "filer",
-            }
-
-            with app.test_client() as client:
-
-                # SETUP ######################
-
-                create_filing(session, filing_id, filing_type, payment_token)
-                ce = create_test_payment_cloud_event(
-                    pay_token=payment_token,
-                    pay_status="COMPLETED",
-                    filing_id=filing_id,
-                )
-                envelope = create_test_envelope(ce)
-                headers = dict(
-                    Authorization=f"Bearer doesn't matter",
-                )
-
-                rv = client.post("/", json=envelope, headers=headers)
-
-                assert rv.status_code == HTTPStatus.OK
-
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(None, sync_test, loop)
-
-    try:
-        await asyncio.wait_for(future, 2, loop=loop)
-    except Exception as err:  # noqa: B902
-        print(err)
-
-    assert len(msgs) == 2
-    found_filing_msg = False
-    found_email_msg = False
-    for msg in msgs:
-        if msg.data == b'{"filing": {"id": 12}}':
-            found_filing_msg = True
-        elif msg.data == b'{"email": {"filingId": 12, "type": "annualReport"}, "option": "PAID"}':
-            found_email_msg = True
-
-    assert found_filing_msg
-    assert found_email_msg
-
-
 def create_test_payment_cloud_event(
     pay_token: str,
     pay_status: str = "COMPLETED",
@@ -218,3 +129,92 @@ def create_test_envelope(ce: SimpleCloudEvent):
         "id": 1,
     }
     return envelope
+
+
+def test_complete_worker(app, session, stan_server, mocker):
+    """Assert that payment tokens can be retrieved and decoded from the Queue."""
+    # SETUP
+    # lots of setup ...
+    from business_pay.services import queue
+
+    msgs = []
+    messages_expected = 2 # 1 - filer & 1 - email == 2 messages
+
+    # Override the app.config for the NATS/STAN configuration
+    test_subject_name = 'test-subject'
+    app.config["NATS_QUEUE"] = test_subject_name
+    app.config["NATS_FILER_SUBJECT"] = test_subject_name
+    app.config["NATS_EMAILER_SUBJECT"] = test_subject_name
+    app.config["FILER_PUBLISH_OPTIONS"] = {'subject': test_subject_name}
+    app.config["EMAIL_PUBLISH_OPTIONS"] = {'subject': test_subject_name}
+
+    # setup loop
+    this_loop = asyncio.get_event_loop()
+    future = asyncio.Future(loop=this_loop)
+    queue.init_app(app, loop=this_loop)
+    this_loop.run_until_complete(queue.connect())
+
+    # Define the Callback to get the posted Queue messages
+    async def cb(msg):
+        nonlocal msgs
+        nonlocal future
+        msgs.append(msg)
+        if len(msgs) == messages_expected:
+            future.set_result(True)
+    
+    # Subscribe to the Queue
+    queue_name = app.config.get("NATS_QUEUE")
+    this_loop.run_until_complete(queue.stan.subscribe(subject=test_subject_name,
+                                                      queue=queue_name,
+                                                      durable_name=test_subject_name,
+                                                      cb=cb))
+
+    filing_id = 12
+    filing_type = "annualReport"
+    payment_token = random.SystemRandom().getrandbits(0x58)
+
+    # Mock the JWT callback for GCP
+    claim = {
+        "email_verified": app.config.get("SUB_SERVICE_ACCOUNT"),
+        "email": app.config.get("SUB_SERVICE_ACCOUNT"),
+    }
+    mocker.patch("google.oauth2.id_token.verify_oauth2_token", return_value=claim)
+
+    #
+    # TEST - Call the Flask endpoint with a GCP type message
+    #
+    with app.test_client() as client:
+        create_filing(session, filing_id, filing_type, payment_token)
+        ce = create_test_payment_cloud_event(
+            pay_token=payment_token,
+            pay_status="COMPLETED",
+            filing_id=filing_id,
+        )
+        envelope = create_test_envelope(ce)
+        headers = {
+            "Authorization": f"Bearer doesn't matter",
+            "Content-Type": "application/json",
+        }
+
+        rv = client.post("/", json=envelope, headers=headers)
+
+        # CHECK the call completed
+        assert rv.status_code == HTTPStatus.OK
+
+    # Get the messages from the Queue, 2s timeout
+    try:
+        this_loop.run_until_complete(asyncio.wait_for(future, 2, loop=this_loop))
+    except Exception as err:
+        print(err)
+        raise err
+
+    # CHECK the NATS message were retrieved from the queue
+    assert len(msgs) == messages_expected
+    for msg in msgs:
+        if msg.data == b'{"filing": {"id": 12}}':
+            found_filing_msg = True
+        elif msg.data == b'{"email": {"filingId": 12, "type": "annualReport"}, "option": "PAID"}':
+            found_email_msg = True
+
+    assert found_filing_msg
+    assert found_email_msg

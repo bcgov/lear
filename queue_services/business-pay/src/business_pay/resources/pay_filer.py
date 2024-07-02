@@ -50,7 +50,7 @@ from business_pay.services import create_filing_msg
 from business_pay.services import create_email_msg
 from business_pay.services import verify_gcp_jwt
 from business_pay.services import gcp_queue
-from business_pay.services import nats_queue
+from business_pay.services import queue
 from business_pay.database import Filing
 from business_pay.database import db
 
@@ -90,10 +90,14 @@ async def worker():
 
     # 1. Get cloud event
     # ##
-    if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)):
+    raw_data = request.data
+    if not (ce := gcp_queue.get_simple_cloud_event(request,
+                                                   wrapped=True)) \
+    and not isinstance(ce, SimpleCloudEvent):
         #
         # Decision here is to return a 200,
         # so the event is removed from the Queue
+        logger.debug(f"ignoring message, raw payload: {str(ce)}")
         return {}, HTTPStatus.OK
     logger.info(f"received ce: {str(ce)}")
 
@@ -104,13 +108,27 @@ async def worker():
         or payment_token.status_code != "COMPLETED"
     ):
         # no payment info, or not a payment COMPLETED token, take off Q
+        logger.debug(f"Removed From Queue: no payment info in ce: {str(ce)}")
         return {}, HTTPStatus.OK
+    
+    if payment_token.corp_type_code in ['MHR', 'BTR']:
+        logger.debug(f"ignoring message for corp_type_code:{payment_token.corp_type_code},  {str(ce)}")
+        return {}, HTTPStatus.OK
+    
+    logger.debug(f"Payment Token: {payment_token} for : {str(ce)}")
+
 
     # 3. Update model
     # ##
     if not (
         filing := Filing.get_filing_by_payment_token(pay_token=str(payment_token.id))
     ):
+        if payment_token.filing_identifier == None and \
+           payment_token.corp_type_code == 'BC':
+            logger.debug(f"Take Off Queue - BOGUS Filing Not Found: {payment_token} for : {str(ce)}")
+            return {}, HTTPStatus.OK
+            
+        logger.debug(f"Put Back on Queue - Filing Not Found: {payment_token} for : {str(ce)}")
         # The payment token might not be there yet, put back on Q
         return {}, HTTPStatus.NOT_FOUND
 
@@ -127,25 +145,33 @@ async def worker():
     filing.status = Filing.Status.PAID
     filing.save()
 
+    # 4. Publish to filer Q, if the filing is not a FED (Effective date > now())
+    # ##
+    with suppress(Exception):
+        logger.debug(f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
+        if filing.effective_date <= filing.payment_completion_date:
+            filer_topic = current_app.config['FILER_PUBLISH_OPTIONS']['subject']
+            queue_message = create_filing_msg(filing.id)
+            logger.debug(f"filer queue_message: {queue_message}")
+ 
+            try:
+                # await queue.publish(subject=filer_topic, msg=queue_message)
+                queue.publish_json(subject=filer_topic, payload=queue_message)
+            except Exception as err:
+                logger.debug(f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
+
+            logger.info(f"publish to filer for pay-id: {payment_token.id}")
+    
     # None of these should bail as the filing has been marked PAID
-    # 4. Publish to email Q
+    # 5. Publish to email Q
     # ##
     with suppress(Exception):
         mail_topic = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
         email_msg = create_email_msg(filing.id, filing.filing_type)
-        await nats_queue.connect()
-        await nats_queue.publish(subject=mail_topic, msg=email_msg)
-        logger.info(f"publish to emailer for pay-id: {payment_token.id}")
+        # await queue.publish(subject=mail_topic, msg=email_msg)
+        queue.publish_json(subject=mail_topic, payload=email_msg)
+        logger.info(f"published to emailer for pay-id: {payment_token.id}")
 
-    # 5. Publish to filer Q, if the filing is not a FED (Effective date > now())
-    # ##
-    with suppress(Exception):
-        if filing.effective_date <= filing.payment_completion_date:
-            filer_topic = current_app.config['FILER_PUBLISH_OPTIONS']['subject']
-            queue_message = create_filing_msg(filing.id)
-            await nats_queue.connect()
-            await nats_queue.publish(subject=filer_topic, msg=queue_message)
-            logger.info(f"publish to filer for pay-id: {payment_token.id}")
 
     logger.info(f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
