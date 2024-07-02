@@ -42,6 +42,8 @@ from .party_role import Party, PartyRole
 from .registration_bootstrap import RegistrationBootstrap
 from .request_tracker import RequestTracker
 from .resolution import Resolution
+from .review import Review, ReviewStatus
+from .review_result import ReviewResult
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User, UserRoles
@@ -80,6 +82,9 @@ __all__ = (
     'RegistrationBootstrap',
     'RequestTracker',
     'Resolution',
+    'Review',
+    'ReviewResult',
+    'ReviewStatus',
     'ShareClass',
     'ShareSeries',
     'User',
