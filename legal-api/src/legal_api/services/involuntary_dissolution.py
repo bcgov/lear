@@ -47,7 +47,7 @@ class InvoluntaryDissolutionService():
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, exclude_in_dissolution=True
+        cls, identifier: str, exclude_in_dissolution=True, exclude_future_effective_filing=False
     ) -> Tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -55,7 +55,7 @@ class InvoluntaryDissolutionService():
             eligible (bool): True if the business is eligible for dissolution.
             eligibility_details (EligibilityDetails): Details regarding eligibility.
         """
-        query = cls._get_businesses_eligible_query(exclude_in_dissolution).\
+        query = cls._get_businesses_eligible_query(exclude_in_dissolution, exclude_future_effective_filing).\
             filter(Business.identifier == identifier)
         result = query.one_or_none()
 
@@ -94,7 +94,7 @@ class InvoluntaryDissolutionService():
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(exclude_in_dissolution=True):
+    def _get_businesses_eligible_query(exclude_in_dissolution=True, exclude_future_effective_filing=False):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
@@ -125,6 +125,7 @@ class InvoluntaryDissolutionService():
             filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False))
 
+        future_effective_filing = False if exclude_future_effective_filing else _has_future_effective_filing()
         if exclude_in_dissolution:
             query = query.filter(not_(in_dissolution))
 
@@ -136,7 +137,7 @@ class InvoluntaryDissolutionService():
             ).\
             filter(
                 ~or_(
-                    _has_future_effective_filing(),
+                    future_effective_filing,
                     _has_delay_of_dissolution_filing(),
                     _is_limited_restored(),
                     _is_xpro_from_nwpta()
