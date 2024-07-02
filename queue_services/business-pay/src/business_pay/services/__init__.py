@@ -35,11 +35,9 @@
 from gcp_queue import GcpQueue
 
 from .gcp_auth import verify_gcp_jwt
-from .nats_queue import NatsQueue
 from .queue import QueueService
 
 gcp_queue = GcpQueue()
-# nats_queue = NatsQueue()
 queue = QueueService()
 
 
