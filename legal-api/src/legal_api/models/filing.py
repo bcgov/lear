@@ -51,6 +51,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         PENDING = 'PENDING'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
 
+        # filings with staff review
+        APPROVED = 'APPROVED'
+        AWAITING_REVIEW = 'AWAITING_REVIEW'
+        CHANGE_REQUESTED = 'CHANGE_REQUESTED'
+        REJECTED = 'REJECTED'
+
     class Source(Enum):
         """Render an Enum of the Filing Sources."""
 
@@ -201,6 +207,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'name': 'continuationIn',
             'title': 'Continuation In',
             'temporaryCorpTypeCode': 'CTMP',
+            'staffApprovalRequired': True,
             'codes': {
                 'C': 'CONTI',
                 'CBEN': 'CONTI',
@@ -438,6 +445,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     approval_type = db.Column('approval_type', db.String(15))
     application_date = db.Column('application_date', db.DateTime(timezone=True))
     notice_date = db.Column('notice_date', db.DateTime(timezone=True))
+    resubmission_date = db.Column('resubmission_date', db.DateTime(timezone=True))
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -458,6 +466,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     comments = db.relationship('Comment', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
     filing_party_roles = db.relationship('PartyRole', lazy='dynamic')
+    review = db.relationship('Review', lazy='dynamic')
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
     parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
