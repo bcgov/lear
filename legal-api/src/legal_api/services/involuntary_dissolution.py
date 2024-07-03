@@ -46,7 +46,7 @@ class InvoluntaryDissolutionService():
         transition_overdue: bool
 
     @dataclass
-    class ExclusionSettings:
+    class EligibilityFilters:
         """Details about the exclude of a business for dissolution."""
 
         exclude_in_dissolution: bool = True
@@ -54,7 +54,7 @@ class InvoluntaryDissolutionService():
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, exclude_settings: ExclusionSettings = ExclusionSettings()
+        cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters()
     ) -> Tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -62,9 +62,7 @@ class InvoluntaryDissolutionService():
             eligible (bool): True if the business is eligible for dissolution.
             eligibility_details (EligibilityDetails): Details regarding eligibility.
         """
-        query = cls._get_businesses_eligible_query(
-            exclude_settings.exclude_in_dissolution, exclude_settings.exclude_future_effective_filing
-        ).filter(Business.identifier == identifier)
+        query = cls._get_businesses_eligible_query(eligibility_filters).filter(Business.identifier == identifier)
         result = query.one_or_none()
 
         if result is None:
@@ -102,7 +100,7 @@ class InvoluntaryDissolutionService():
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(exclude_in_dissolution=True, exclude_future_effective_filing=False):
+    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters()):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
@@ -133,8 +131,9 @@ class InvoluntaryDissolutionService():
             filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False))
 
-        future_effective_filing = False if exclude_future_effective_filing else _has_future_effective_filing()
-        if exclude_in_dissolution:
+        future_effective_filing = False if eligibility_filters.exclude_future_effective_filing \
+            else _has_future_effective_filing()
+        if eligibility_filters.exclude_in_dissolution:
             query = query.filter(not_(in_dissolution))
 
         query = query.filter(

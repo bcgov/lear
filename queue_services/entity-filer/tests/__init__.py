@@ -71,6 +71,3 @@ def strip_keys_from_dict(orig_dict: Dict, keys: List) -> Dict:
 
     key_set = set(keys)
     return del_key_in_dict(orig_dict, key_set)
-
-
-# PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python pytest tests/unit/filing_processors/test_annual_report.py -x
