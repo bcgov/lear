@@ -53,7 +53,8 @@ class StageOneProcessor:
         if email:
             # send email letter
             _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
-                batch_processing.business_identifier, False
+                batch_processing.business_identifier,
+                InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
                 )
             if eligible_details:
                 new_furnishing = self._create_new_furnishing(

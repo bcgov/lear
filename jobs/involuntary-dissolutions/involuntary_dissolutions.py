@@ -235,7 +235,8 @@ def stage_2_process(app: Flask):
 
     for batch_processing in batch_processings:
         eligible, _ = InvoluntaryDissolutionService.check_business_eligibility(
-            batch_processing.business_identifier, exclude_in_dissolution=False
+            batch_processing.business_identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
         )
         if eligible:
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
@@ -270,7 +271,8 @@ async def stage_3_process(app: Flask, qsm: QueueService):
 
     for batch_processing in batch_processings:
         eligible, _ = InvoluntaryDissolutionService.check_business_eligibility(
-            batch_processing.business_identifier, exclude_in_dissolution=False
+            batch_processing.business_identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
         )
         if eligible:
             filing = create_invountary_dissolution_filing(batch_processing.business_id)
