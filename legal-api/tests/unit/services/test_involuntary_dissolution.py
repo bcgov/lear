@@ -311,8 +311,8 @@ def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligi
 
 
 @pytest.mark.parametrize(
-    'test_name, exclude, expected_order', [
-        ('TEST_OVERDUE_ORDER', False, [
+    'test_name, expected_order', [
+        ('TEST_OVERDUE_ORDER', [
             ('BC1234567', True, True),    # transition_overdue, earliest
             ('BC3456789', True, True),    # transition_overdue, next earliest
             ('BC7654321', False, True),   # transition_overdue, latest
@@ -321,7 +321,7 @@ def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligi
         ]),
     ]
 )
-def test_get_businesses_eligible_query_order(session, test_name, exclude, expected_order):
+def test_get_businesses_eligible_query_order(session, test_name, expected_order):
     """Assert businesses are ordered by overdue status, prioritizing transition_overdue
     followed by ar_overdue. Within each category, businesses are sorted from oldest to
     newest based on relevant cutoff dates."""
@@ -366,9 +366,6 @@ def test_get_businesses_eligible_query_order(session, test_name, exclude, expect
     business_no_overdue.save()
 
     result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
-    if exclude:
-        assert not result
-    else:
-        assert result
-        result_details = [(res[0].identifier, res[1], res[2]) for res in result]
-        assert result_details == expected_order
+    assert result
+    result_details = [(res[0].identifier, res[1], res[2]) for res in result]
+    assert result_details == expected_order
