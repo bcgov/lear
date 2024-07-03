@@ -317,7 +317,6 @@ def test_business_json(session):
     # slim json
     d_slim = {
         'adminFreeze': False,
-        'alternateNames': [],
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
         'inDissolution': False,
@@ -357,7 +356,8 @@ def test_business_json(session):
         'startDate': '2021-08-05',
         'hasCourtOrders': False,
         'allowedActions': {},
-        'noDissolution': False
+        'noDissolution': False,
+        'alternateNames': []
     }
 
     with patch.object(flags, 'is_on', return_value=True):

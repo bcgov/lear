@@ -164,7 +164,13 @@ def search_businesses():
         draft_query = db.session.query(Filing).filter(
             and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
 
-        bus_results = [x.json(slim=True) for x in bus_query.all()]
+        bus_results = []
+        for business in bus_query.all():
+            business_json = business.json(slim=True)
+            # add alternateNames array to slim json only to firms
+            if business.legal_type in (Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP):
+                business_json['alternateNames'] = business.get_alternate_names()
+            bus_results.append(business_json)
 
         draft_results = []
         for draft_dao in draft_query.all():
