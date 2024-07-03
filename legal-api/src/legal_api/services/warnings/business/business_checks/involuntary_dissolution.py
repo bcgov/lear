@@ -34,7 +34,9 @@ def check_business(business: Business) -> list:
         'warningType': WarningType.NOT_IN_GOOD_STANDING
     }
 
-    eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier)
+    exclusion_settings = InvoluntaryDissolutionService.ExclusionSettings(exclude_future_effective_filing=True)
+    eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(business.identifier,
+                                                                                    exclusion_settings)
     if eligibility:
         if details.transition_overdue:
             result.append(transition_warning)
