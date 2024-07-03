@@ -45,9 +45,16 @@ class InvoluntaryDissolutionService():
         ar_overdue: bool
         transition_overdue: bool
 
+    @dataclass
+    class EligibilityFilters:
+        """Details about the exclude of a business for dissolution."""
+
+        exclude_in_dissolution: bool = True
+        exclude_future_effective_filing: bool = False
+
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, exclude_in_dissolution=True
+        cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters()
     ) -> Tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -55,8 +62,7 @@ class InvoluntaryDissolutionService():
             eligible (bool): True if the business is eligible for dissolution.
             eligibility_details (EligibilityDetails): Details regarding eligibility.
         """
-        query = cls._get_businesses_eligible_query(exclude_in_dissolution).\
-            filter(Business.identifier == identifier)
+        query = cls._get_businesses_eligible_query(eligibility_filters).filter(Business.identifier == identifier)
         result = query.one_or_none()
 
         if result is None:
@@ -94,7 +100,7 @@ class InvoluntaryDissolutionService():
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(exclude_in_dissolution=True):
+    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters()):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
@@ -125,7 +131,9 @@ class InvoluntaryDissolutionService():
             filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False))
 
-        if exclude_in_dissolution:
+        future_effective_filing = False if eligibility_filters.exclude_future_effective_filing \
+            else _has_future_effective_filing()
+        if eligibility_filters.exclude_in_dissolution:
             query = query.filter(not_(in_dissolution))
 
         query = query.filter(
@@ -136,7 +144,7 @@ class InvoluntaryDissolutionService():
             ).\
             filter(
                 ~or_(
-                    _has_future_effective_filing(),
+                    future_effective_filing,
                     _has_delay_of_dissolution_filing(),
                     _is_limited_restored(),
                     _is_xpro_from_nwpta()
