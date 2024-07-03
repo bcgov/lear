@@ -17,19 +17,22 @@
 Test-Suite to ensure that mras endpoints are working as expected.
 """
 from http import HTTPStatus
+from unittest.mock import patch
 
 from legal_api.models import UserRoles
+from legal_api.services import MrasService
 from tests.unit.services.utils import create_header
 
 
 def test_get_jurisdictions(session, client, jwt):
     """Assert that the endpoint returns foreign jurisdiction information."""
-    rv = client.get('/api/v2/mras/BC1234567',
-                    headers=create_header(jwt, [UserRoles.system]))
+    with patch.object(MrasService, 'get_jurisdictions', return_value=[]):
+        rv = client.get('/api/v2/mras/BC1234567',
+                        headers=create_header(jwt, [UserRoles.system]))
 
-    assert rv.status_code == HTTPStatus.OK
-    assert 'jurisdictions' in rv.json
-    assert rv.json['jurisdictions'] == []
+        assert rv.status_code == HTTPStatus.OK
+        assert 'jurisdictions' in rv.json
+        assert rv.json['jurisdictions'] == []
 
 
 def test_get_jurisdictions_invalid_role(session, client, jwt):
