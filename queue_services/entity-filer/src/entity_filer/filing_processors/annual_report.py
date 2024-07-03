@@ -47,7 +47,10 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
 
     # remove dissolution flag if business can be withdrawn
     if flag_on and business.in_dissolution:
-        eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(business.identifier, False)
+        eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(
+            business.identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
+            )
         if not eligibility:
             batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
