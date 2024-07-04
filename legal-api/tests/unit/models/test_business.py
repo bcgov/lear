@@ -760,17 +760,13 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         assert not 'amalgamatedInto' in business_json
 
 
-@pytest.mark.parametrize('test_name, legal_type, flag_on', [
-    ('GP_FLAG_ON', 'GP', True),
-    ('GP_FLAG_ON_MORE_PARTNERS', 'GP', True),
-    ('SP_FLAG_ON', 'SP', True),
-    ('GP_FLAG_OFF', 'GP', False),
-    ('GP_FLAG_OFF_MORE_PARTNERS', 'GP', False),
-    ('SP_FLAG_OFF', 'SP', False),
-    ('NON_FIRM_FLAG_ON', 'BC', True),
-    ('NON_FIRM_FLAG_OFF', 'BC', False),
+@pytest.mark.parametrize('test_name, legal_type', [
+    ('GP', 'GP'),
+    ('GP_MORE_PARTNERS', 'GP'),
+    ('SP', 'SP'),
+    ('NON_FIRM', 'BC'),
 ])
-def test_firm_business_json(session, test_name, legal_type, flag_on):
+def test_firm_business_json(session, test_name, legal_type):
     """Assert that correct legal name is in json (legal name easy fix)."""
     business = Business(
         legal_name='TEST ABC',
@@ -823,21 +819,20 @@ def test_firm_business_json(session, test_name, legal_type, flag_on):
 
     business.save()
 
-    with patch.object(flags, 'is_on', return_value=flag_on):
-        business_json = business.json()
-        if flag_on and legal_type in [
-            Business.LegalTypes.SOLE_PROP.value,
-            Business.LegalTypes.PARTNERSHIP.value
-        ]:
-            if legal_type == Business.LegalTypes.SOLE_PROP.value:
-                assert business_json['legalName'] == 'JANE A DOE'
-            else:
-                if 'MORE_PARTNERS' in test_name:
-                    assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE, et al'
-                else:
-                    assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
+    business_json = business.json()
+    if legal_type in [
+        Business.LegalTypes.SOLE_PROP.value,
+        Business.LegalTypes.PARTNERSHIP.value
+    ]:
+        if legal_type == Business.LegalTypes.SOLE_PROP.value:
+            assert business_json['legalName'] == 'JANE A DOE'
         else:
-            assert business_json['legalName'] == 'TEST ABC'
+            if 'MORE_PARTNERS' in test_name:
+                assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE, et al'
+            else:
+                assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
+    else:
+        assert business_json['legalName'] == 'TEST ABC'
 
 
 @pytest.mark.parametrize(
