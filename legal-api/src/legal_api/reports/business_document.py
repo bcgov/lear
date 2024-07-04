@@ -536,7 +536,7 @@ class BusinessDocument:
                     'filing_id': jurisdiction.filing_id,
                     }
             continuation_in_info['foreignJurisdiction'] = jurisdiction_info
-        business['continuationIn'] = continuation_in_info
+            business['continuationIn'] = continuation_in_info
 
     @staticmethod
     def _format_address(address):
