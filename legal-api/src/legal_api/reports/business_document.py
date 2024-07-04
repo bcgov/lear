@@ -25,7 +25,7 @@ from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService, flags
+from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -125,8 +125,7 @@ class BusinessDocument:
             business_json['business'] = self._business.json()
 
             # legal name easy fix
-            flag_on = flags.is_on('enable-legal-name-fix')
-            if flag_on and not get_json:
+            if not get_json:
                 business_json['business']['legalName'] = self._business.legal_name
 
             business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}

@@ -298,10 +298,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         Legal Name Easy Fix
         """
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
-        flag_on = flags.is_on('enable-legal-name-fix')
-        if self.is_firm and flag_on:
+        if self.is_firm:
             sort_name = func.trim(
                 func.coalesce(Party.organization_name, '') +
                 func.coalesce(Party.last_name + ' ', '') +
@@ -524,11 +521,9 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             ).astimezone(timezone.utc).isoformat(),
             'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
-            'allowedActions': self.allowable_actions
+            'allowedActions': self.allowable_actions,
+            'alternateNames': self.get_alternate_names()
         }
-
-        if flags.is_on('enable-legal-name-fix'):
-            d['alternateNames'] = self.get_alternate_names()
 
         self._extend_json(d)
 
