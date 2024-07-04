@@ -522,7 +522,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'allowedActions': self.allowable_actions,
             'alternateNames': self.get_alternate_names()
         }
-
         self._extend_json(d)
 
         return d
