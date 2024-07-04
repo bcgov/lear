@@ -79,7 +79,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BC': 'AGMDT',
                 'BEN': 'AGMDT',
                 'ULC': 'AGMDT',
-                'CC': 'AGMDT'
+                'CC': 'AGMDT',
+                'C': 'AGMDT',
+                'CBEN': 'AGMDT',
+                'CUL': 'AGMDT',
+                'CCC': 'AGMDT'
             }
         },
         'agmLocationChange': {
@@ -89,7 +93,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BC': 'AGMLC',
                 'BEN': 'AGMLC',
                 'ULC': 'AGMLC',
-                'CC': 'AGMLC'
+                'CC': 'AGMLC',
+                'C': 'AGMLC',
+                'CBEN': 'AGMLC',
+                'CUL': 'AGMLC',
+                'CCC': 'AGMLC'
             }
         },
         'alteration': {
@@ -99,7 +107,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BC': 'ALTER',
                 'BEN': 'ALTER',
                 'ULC': 'ALTER',
-                'CC': 'ALTER'
+                'CC': 'ALTER',
+                'C': 'ALTER',
+                'CBEN': 'ALTER',
+                'CUL': 'ALTER',
+                'CCC': 'ALTER'
             }
         },
         'amalgamationApplication': {
@@ -144,7 +156,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'BCANN',
                 'BC': 'BCANN',
                 'ULC': 'BCANN',
-                'CC': 'BCANN'
+                'CC': 'BCANN',
+                'CBEN': 'BCANN',
+                'C': 'BCANN',
+                'CUL': 'BCANN',
+                'CCC': 'BCANN'
             }
         },
         'changeOfAddress': {
@@ -155,7 +171,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'BCADD',
                 'BC': 'BCADD',
                 'ULC': 'BCADD',
-                'CC': 'BCADD'
+                'CC': 'BCADD',
+                'CBEN': 'BCADD',
+                'C': 'BCADD',
+                'CUL': 'BCADD',
+                'CCC': 'BCADD'
             }
         },
         'changeOfDirectors': {
@@ -166,7 +186,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BEN': 'BCCDR',
                 'BC': 'BCCDR',
                 'ULC': 'BCCDR',
-                'CC': 'BCCDR'
+                'CC': 'BCCDR',
+                'CBEN': 'BCCDR',
+                'C': 'BCCDR',
+                'CUL': 'BCCDR',
+                'CCC': 'BCCDR'
             },
             'free': {
                 'codes': {
@@ -200,7 +224,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BC': 'CONTO',
                 'BEN': 'CONTO',
                 'ULC': 'CONTO',
-                'CC': 'CONTO'
+                'CC': 'CONTO',
+                'C': 'CONTO',
+                'CBEN': 'CONTO',
+                'CUL': 'CONTO',
+                'CCC': 'CONTO'
             }
         },
         'continuationIn': {
@@ -222,7 +250,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BC': 'COUTI',
                 'BEN': 'COUTI',
                 'ULC': 'COUTI',
-                'CC': 'COUTI'
+                'CC': 'COUTI',
+                'C': 'COUTI',
+                'CBEN': 'COUTI',
+                'CUL': 'COUTI',
+                'CCC': 'COUTI'
             }
         },
         'conversion': {
@@ -243,7 +275,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CC': 'CRCTN',
                 'CP': 'CRCTN',
                 'SP': 'FMCORR',
-                'GP': 'FMCORR'
+                'GP': 'FMCORR',
+                'CBEN': 'CRCTN',
+                'C': 'CRCTN',
+                'CUL': 'CRCTN',
+                'CCC': 'CRCTN',
             }
         },
         'dissolution': {
@@ -259,7 +295,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'CC': 'DIS_VOL',
                     'LLC': 'DIS_VOL',
                     'SP': 'DIS_VOL',
-                    'GP': 'DIS_VOL'
+                    'GP': 'DIS_VOL',
+                    'C': 'DIS_VOL',
+                    'CBEN': 'DIS_VOL',
+                    'CUL': 'DIS_VOL',
+                    'CCC': 'DIS_VOL',
                 }
             },
             'administrative': {
@@ -273,7 +313,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'CC': 'DIS_ADM',
                     'LLC': 'DIS_ADM',
                     'SP': 'DIS_ADM',
-                    'GP': 'DIS_ADM'
+                    'GP': 'DIS_ADM',
+                    'C': 'DIS_ADM',
+                    'CBEN': 'DIS_ADM',
+                    'CUL': 'DIS_ADM',
+                    'CCC': 'DIS_ADM',
                 }
             }
         },
@@ -307,7 +351,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BC': 'RESTF',
                     'BEN': 'RESTF',
                     'ULC': 'RESTF',
-                    'CC': 'RESTF'
+                    'CC': 'RESTF',
+                    'C': 'RESTF',
+                    'CBEN': 'RESTF',
+                    'CUL': 'RESTF',
+                    'CCC': 'RESTF'
                 }
             },
             'limitedRestoration': {
@@ -317,7 +365,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BC': 'RESTL',
                     'BEN': 'RESTL',
                     'ULC': 'RESTL',
-                    'CC': 'RESTL'
+                    'CC': 'RESTL',
+                    'C': 'RESTL',
+                    'CBEN': 'RESTL',
+                    'CUL': 'RESTL',
+                    'CCC': 'RESTL'
                 }
             },
             'limitedRestorationExtension': {
@@ -327,7 +379,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BC': 'RESXL',
                     'BEN': 'RESXL',
                     'ULC': 'RESXL',
-                    'CC': 'RESXL'
+                    'CC': 'RESXL',
+                    'C': 'RESXL',
+                    'CBEN': 'RESXL',
+                    'CUL': 'RESXL',
+                    'CCC': 'RESXL'
                 }
             },
             'limitedRestorationToFull': {
@@ -337,7 +393,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BC': 'RESXF',
                     'BEN': 'RESXF',
                     'ULC': 'RESXF',
-                    'CC': 'RESXF'
+                    'CC': 'RESXF',
+                    'C': 'RESXF',
+                    'CBEN': 'RESXF',
+                    'CUL': 'RESXF',
+                    'CCC': 'RESXF'
                 }
             }
         },
@@ -351,7 +411,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'BC': 'TRANS',
                 'BEN': 'TRANS',
                 'ULC': 'TRANS',
-                'CC': 'TRANS'
+                'CC': 'TRANS',
+                'C': 'TRANS',
+                'CBEN': 'TRANS',
+                'CUL': 'TRANS',
+                'CCC': 'TRANS'
             }
         },
 
