@@ -61,6 +61,7 @@ from entity_emailer.email_processors import (
     registration_notification,
     restoration_notification,
     special_resolution_notification,
+    involuntary_dissolution_notification,
 )
 
 from .message_tracker import tracker as tracker_util
@@ -141,6 +142,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             send_email(email, token)
         elif etype and etype == 'bc.registry.bnmove':
             email = bn_notification.process_bn_move(email_msg, token)
+            send_email(email, token)
+        elif etype and etype == 'bc.registry.dissolution':
+            email = involuntary_dissolution_notification.process(email_msg, token)
             send_email(email, token)
         else:
             etype = email_msg['email']['type']

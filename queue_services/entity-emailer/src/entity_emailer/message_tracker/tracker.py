@@ -61,6 +61,14 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             identifier = email_msg.get('identifier', None)
             message_id = f'{etype}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
+        if etype == 'bc.registry.dissolution' \
+            and (filing_id := email_msg.get('data', {})
+                 .get('filing', {})
+                 .get('header', {})
+                 .get('filingId', None)):
+            identifier = email_msg.get('identifier', None)
+            message_id = f'{etype}_{filing_id}'
+            return create_message_context_properties(etype, message_id, None, identifier, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)
