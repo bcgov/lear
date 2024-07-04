@@ -169,8 +169,8 @@ def search_businesses():
 
         bus_results = []
 
-        # SBC-AUTH only uses alternativeNames for SP and GP at the moment
-        # we are not returning alternate_names for non-firms due to performance issues
+        # SBC-AUTH only uses alternateNames for SP and GP at the moment
+        # we are not returning alternateNames for non-firms due to performance issues
         for business in bus_query.all():
             business_json = business.json(slim=True)
             # add alternateNames array to slim json only to firms
