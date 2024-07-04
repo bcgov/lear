@@ -59,8 +59,11 @@ def get_businesses(identifier: str):
 
     # getting all business info is expensive so returning the slim version is desirable for some flows
     # - (i.e. business search update)
+    # need to add the alternateNames array here because it is not a part of slim JSON
     if str(request.args.get('slim', None)).lower() == 'true':
-        return jsonify(business=business.json(slim=True))
+        business_json = business.json(slim=True)
+        business_json['alternateNames'] = business.get_alternate_names()
+        return business_json
 
     warnings = check_warnings(business)
     # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
@@ -165,6 +168,9 @@ def search_businesses():
             and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
 
         bus_results = []
+
+        # SBC-AUTH only uses alternativeNames for SP and GP at the moment
+        # we are not returning alternate_names for non-firms due to performance issues
         for business in bus_query.all():
             business_json = business.json(slim=True)
             # add alternateNames array to slim json only to firms
