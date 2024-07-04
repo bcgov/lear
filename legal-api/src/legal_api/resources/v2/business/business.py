@@ -51,17 +51,17 @@ def get_businesses(identifier: str):
 
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-    # check authorization -- need to implement workaround for business search users before using this
+    # check authorization -- need to implement workaround for business search users before using this #22143
     # if not authorized(identifier, jwt, action=['view']):
     #     return jsonify({'message':
     #                     f'You are not authorized to view business {identifier}.'}), \
     #         HTTPStatus.UNAUTHORIZED
 
     # getting all business info is expensive so returning the slim version is desirable for some flows
-    # - (i.e. business search update)
-    # need to add the alternateNames array here because it is not a part of slim JSON
+    # - (i.e. business/person search updates)
     if str(request.args.get('slim', None)).lower() == 'true':
         business_json = business.json(slim=True)
+        # need to add the alternateNames array here because it is not a part of slim JSON
         business_json['alternateNames'] = business.get_alternate_names()
         return business_json
 

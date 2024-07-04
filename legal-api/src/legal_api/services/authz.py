@@ -19,7 +19,7 @@ from typing import List
 from urllib.parse import urljoin
 
 import jwt as pyjwt
-from flask import current_app
+from flask import Response, current_app, request
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
@@ -59,6 +59,36 @@ class BusinessRequirement(str, Enum):
     NO_RESTRICTION = 'NO_RESTRICTION'
 
 
+def _call_auth_api(path: str, token: str) -> Response:
+    """Return the auth api response for the given endpoint path."""
+    if not token:
+        return None
+
+    current_app.logger.debug(f'Auth get {path}...')
+    template_url = current_app.config.get('AUTH_SVC_URL')
+    auth_url = template_url + '/' if template_url[-1] != '/' else template_url
+    auth_url += path
+
+    headers = {'Authorization': 'Bearer ' + token}
+    try:
+        http = Session()
+        retries = Retry(total=5,
+                        backoff_factor=0.1,
+                        status_forcelist=[500, 502, 503, 504])
+        http.mount('http://', HTTPAdapter(max_retries=retries))
+        resp = http.get(url=auth_url, headers=headers)
+        current_app.logger.debug(f'Auth get {path} response status: {str(resp.status_code)}')
+        return resp
+
+    except (exceptions.ConnectionError,  # pylint: disable=broad-except
+            exceptions.Timeout,
+            ValueError,
+            Exception) as err:
+        current_app.logger.debug(err.with_traceback(None))
+        current_app.logger.error(f'Auth connection failure, url: {auth_url}')
+        return None
+
+
 def authorized(  # pylint: disable=too-many-return-statements
         identifier: str, jwt: JwtManager, action: List[str]) -> bool:
     """Assert that the user is authorized to create filings against the business identifier."""
@@ -71,9 +101,10 @@ def authorized(  # pylint: disable=too-many-return-statements
             or jwt.validate_roles([COLIN_SVC_ROLE]):
         return True
 
-    # allow IDIM view access on everything
-    if len(action) == 1 and action[0] == 'view' and jwt.validate_roles([ACCOUNT_IDENTITY]):
-        return True
+    # allow IDIM and Competent Authorities view access on everything
+    if len(action) == 1 and action[0] == 'view':
+        if jwt.validate_roles([ACCOUNT_IDENTITY]) or has_product('CA_SEARCH', jwt.get_token_auth_header()):
+            return True
 
     if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
 
@@ -82,33 +113,9 @@ def authorized(  # pylint: disable=too-many-return-statements
         if any(elem in action for elem in staff_only_actions):
             return False
 
-        template_url = current_app.config.get('AUTH_SVC_URL')
-        auth_url = f'{template_url}/entities/{identifier}/authorizations'
-
-        token = jwt.get_token_auth_header()
-        headers = {'Authorization': 'Bearer ' + token}
-        try:
-            http = Session()
-            retries = Retry(total=5,
-                            backoff_factor=0.1,
-                            status_forcelist=[500, 502, 503, 504])
-            http.mount('http://', HTTPAdapter(max_retries=retries))
-            rv = http.get(url=auth_url, headers=headers)
-
-            if rv.status_code != HTTPStatus.OK \
-                    or not rv.json().get('roles'):
-                return False
-
-            if all(elem.lower() in rv.json().get('roles') for elem in action):
-                return True
-
-        except (exceptions.ConnectionError,  # pylint: disable=broad-except
-                exceptions.Timeout,
-                ValueError,
-                Exception) as err:
-            current_app.logger.error(f'template_url {template_url}, svc:{auth_url}')
-            current_app.logger.error(f'Authorization connection failure for {identifier}, using svc:{auth_url}', err)
-            return False
+        rv = _call_auth_api(f'entities/{identifier}/authorizations', jwt.get_token_auth_header())
+        if rv and rv.status_code == HTTPStatus.OK and (roles := rv.json().get('roles')):
+            return all(elem.lower() in roles for elem in action)
 
     return False
 
@@ -497,15 +504,22 @@ def is_allowed(business: Business,
 
 def get_allowable_actions(jwt: JwtManager, business: Business):
     """Get allowable actions."""
+    is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
+    if is_competent_authority:
+        allowed_filings = []
+    else:
+        allowed_filings = get_allowed_filings(business, business.state, business.legal_type, jwt)
+
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
-    allowed_filings = get_allowed_filings(business, business.state, business.legal_type, jwt)
     filing_submission_url = urljoin(base_url, f'{business.identifier}/filings')
+
     result = {
         'filing': {
             'filingSubmissionLink': filing_submission_url,
             'filingTypes': allowed_filings
         },
-        'digitalBusinessCard': are_digital_credentials_allowed(business, jwt)
+        'digitalBusinessCard': are_digital_credentials_allowed(business, jwt),
+        'viewAll': is_competent_authority
     }
     return result
 
@@ -867,3 +881,24 @@ def get_registration_filing(business):
         return None
 
     return registration_filings[0]
+
+
+def get_account_products(token: str, account_id: str = None) -> list:
+    """Return the account products of the org identified by the account id."""
+    account_id = account_id or request.headers.get('Account-Id', None)
+    if not account_id:
+        return None
+
+    resp = _call_auth_api(f'orgs/{account_id}/products?include_hidden=true', token)
+    if not resp or resp.status_code != HTTPStatus.OK or not isinstance(resp.json(), list):
+        return None
+    return resp.json()
+
+
+def has_product(code: str, token: str) -> bool:
+    """Return if the user has the active product subscription for the given code."""
+    user_products = get_account_products(token)
+    if not user_products or not isinstance(user_products, list):
+        return False
+
+    return any(p['code'] == code and p['subscriptionStatus'] == 'ACTIVE' for p in user_products)
