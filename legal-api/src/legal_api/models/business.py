@@ -490,8 +490,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         None fields are not included.
         """
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
         slim_json = self._slim_json()
         if slim:
             return slim_json
