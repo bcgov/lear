@@ -118,11 +118,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BEN': 'AMALR',
                     'BC': 'AMALR',
                     'ULC': 'AMALR',
-                    'CC': 'AMALR',
-                    'CBEN': 'AMALR',
-                    'C': 'AMALR',
-                    'CUL': 'AMALR',
-                    'CCC': 'AMALR'
+                    'CC': 'AMALR'
                 },
             },
             'vertical': {
@@ -132,11 +128,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BEN': 'AMALV',
                     'BC': 'AMALV',
                     'ULC': 'AMALV',
-                    'CC': 'AMALV',
-                    'CBEN': 'AMALV',
-                    'C': 'AMALV',
-                    'CUL': 'AMALV',
-                    'CCC': 'AMALV'
+                    'CC': 'AMALV'
                 },
             },
             'horizontal': {
@@ -146,11 +138,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BEN': 'AMALH',
                     'BC': 'AMALH',
                     'ULC': 'AMALH',
-                    'CC': 'AMALH',
-                    'CBEN': 'AMALH',
-                    'C': 'AMALH',
-                    'CUL': 'AMALH',
-                    'CCC': 'AMALH'
+                    'CC': 'AMALH'
                 },
             }
         },

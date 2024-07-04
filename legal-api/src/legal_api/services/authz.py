@@ -480,6 +480,11 @@ def is_allowed(business: Business,
         if filing and filing.status == Filing.Status.DRAFT.value:
             is_ignore_draft_blockers = True
 
+    # Special case: handiling authorization for amalgamation application
+    # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
+    if filing_type == 'amalgamationApplication' and legal_type in ['C', 'CBEN', 'CUL', 'CCC']:
+        return False
+
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:
