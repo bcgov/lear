@@ -18,7 +18,7 @@ import uuid
 
 from datedelta import datedelta
 from freezegun import freeze_time
-from legal_api.models import Batch, BatchProcessing, Business, Filing, db
+from legal_api.models import Batch, BatchProcessing, Business, Filing, Furnishing, db
 from legal_api.models.colin_event_id import ColinEventId
 from sqlalchemy_continuum import versioning_manager
 
@@ -127,3 +127,27 @@ def factory_completed_filing(business,
             colin_event.save()
         filing.save()
     return filing
+
+
+def factory_furnishing(batch_id,
+                       business_id,
+                       identifier,
+                       furnishing_name=Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+                       furnishing_type=Furnishing.FurnishingType.EMAIL,
+                       status=Furnishing.FurnishingStatus.QUEUED,
+                       created_date=datetime.datetime.utcnow(),
+                       last_modified=datetime.datetime.utcnow()
+                       ):
+    """Create a furnishing entry."""
+    furnishing = Furnishing(
+        batch_id=batch_id,
+        business_id=business_id,
+        business_identifier=identifier,
+        furnishing_name=furnishing_name,
+        furnishing_type=furnishing_type,
+        status=status,
+        created_date=created_date,
+        last_modified=last_modified,
+    )
+    furnishing.save()
+    return furnishing
