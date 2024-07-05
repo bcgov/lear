@@ -16,11 +16,11 @@ from __future__ import annotations
 
 from http import HTTPStatus
 from pathlib import Path
-
+import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing, UserRoles
+from legal_api.models import Business
 
 from entity_emailer.email_processors import (
     get_recipient_from_auth,
@@ -28,22 +28,26 @@ from entity_emailer.email_processors import (
     get_entity_dashboard_url,
 )
 
+
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Involuntary dissolution notification."""
     logger.debug('involuntary_dissolution_notification: %s', email_info)
     # get business
-    business = Business.find_by_identifier(email_info['identifier'])
-
+    identifier = email_info['identifier']
+    business = Business.find_by_identifier(identifier)
+    
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/INVOLUNTARY-DIS.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-
+    # get state_names from mras response
+    state_names_str = get_state_names(identifier, token)
     html_out = jnja_template.render(
         business=business.json(),
-        entity_dashboard_url=get_entity_dashboard_url(business.get('identifier'), token)
+        entity_dashboard_url=get_entity_dashboard_url(business.get('identifier'), token),
+        state_names_str = state_names_str
     )
 
     # get recipients
@@ -70,3 +74,26 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
             'body': f'{html_out}'
         }
     }
+
+def get_state_names(identifier: str, token: str) -> str:
+    """Get the state names from mra api response."""
+    state_names = [] 
+    #get mras_response
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+
+    mras_response = requests.get(
+        f'{current_app.config.get("AUTH_URL")}/mras/{identifier}',
+        headers=headers
+    )
+    # Extract only names from the list of mras_response
+    if mras_response:
+        jurisdictions = mras_response.get("jurisdictions", [])
+        for jurisdiction in jurisdictions:
+            name = jurisdiction.get("name")
+            if name:
+                state_names.append(name)
+    
+    return state_names

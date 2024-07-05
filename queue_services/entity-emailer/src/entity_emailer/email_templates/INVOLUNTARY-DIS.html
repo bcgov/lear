@@ -39,13 +39,14 @@
 
             [[whitespace-16px.html]]
 
+            {% if state_names_str %}
             <p>
-              Our records indicate your company is registered in Alberta, Manitoba 
-              and Saskatchewan as an extraprovincial company. Therefore, if your 
+              Our records indicate your company is registered in {{state_names_str}} as an extraprovincial company. Therefore, if your 
               company is dissolved, its registration as an extraprovincial company 
-              in Alberta, Manitoba and Saskatchewan will automatically be 
+              in {{state_names_str}} will automatically be 
               cancelled as well.
             </p>
+            {% endif %}
 
             [[whitespace-16px.html]]
             [[divider.html]]
