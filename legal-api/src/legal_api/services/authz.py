@@ -20,6 +20,7 @@ from urllib.parse import urljoin
 
 import jwt as pyjwt
 from flask import Response, current_app, request
+from flask_caching import Cache
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
@@ -28,6 +29,7 @@ from urllib3.util.retry import Retry
 from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.services.warnings.business.business_checks import WarningType
 
+cache = Cache()
 
 SYSTEM_ROLE = 'system'
 STAFF_ROLE = 'staff'
@@ -883,12 +885,15 @@ def get_registration_filing(business):
     return registration_filings[0]
 
 
+def get_account_id(_, account_id: str = None) -> str:
+    """Return the account id."""
+    return account_id or request.headers.get('Account-Id', None)
+
+
+@cache.cached(timeout=300, make_cache_key=get_account_id)
 def get_account_products(token: str, account_id: str = None) -> list:
     """Return the account products of the org identified by the account id."""
     account_id = account_id or request.headers.get('Account-Id', None)
-    if not account_id:
-        return None
-
     resp = _call_auth_api(f'orgs/{account_id}/products?include_hidden=true', token)
     if not resp or resp.status_code != HTTPStatus.OK or not isinstance(resp.json(), list):
         return None
