@@ -298,10 +298,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         Legal Name Easy Fix
         """
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
-        flag_on = flags.is_on('enable-legal-name-fix')
-        if self.is_firm and flag_on:
+        if self.is_firm:
             sort_name = func.trim(
                 func.coalesce(Party.organization_name, '') +
                 func.coalesce(Party.last_name + ' ', '') +
@@ -522,7 +519,8 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             ).astimezone(timezone.utc).isoformat(),
             'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
-            'allowedActions': self.allowable_actions
+            'allowedActions': self.allowable_actions,
+            'alternateNames': self.get_alternate_names()
         }
         self._extend_json(d)
 
@@ -530,8 +528,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
     def _slim_json(self):
         """Return a smaller/faster version of the business json."""
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
         d = {
             'adminFreeze': self.admin_freeze or False,
             'goodStanding': self.good_standing,
@@ -541,9 +537,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             'legalType': self.legal_type,
             'state': self.state.name if self.state else Business.State.ACTIVE.name
         }
-
-        if flags.is_on('enable-legal-name-fix'):
-            d['alternateNames'] = self.get_alternate_names()
 
         if self.tax_id:
             d['taxId'] = self.tax_id
@@ -694,65 +687,68 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         """
         alternate_names = []
 
-        # Get start date value for aliases from filing.effective_date that's tied to
-        # the transaction that created the alias
+        # Fetch aliases and related filings in a single query
         alias_version = version_class(Alias)
-        aliases = db.session.query(alias_version). \
-            filter(alias_version.id.in_([a.id for a in self.aliases]),
-                   alias_version.end_transaction_id == None  # noqa: E711; pylint: disable=singleton-comparison
-                   ).all()
-        for alias in aliases:
-            filing = db.session.query(Filing). \
-                filter(Filing.transaction_id == alias.transaction_id
-                       ).one_or_none()
+        filing_alias = aliased(Filing)
+        aliases_query = db.session.query(
+            alias_version.alias,
+            alias_version.type,
+            filing_alias.effective_date
+        ).outerjoin(
+            filing_alias, filing_alias.transaction_id == alias_version.transaction_id
+        ).filter(
+            alias_version.id.in_([a.id for a in self.aliases]),
+            alias_version.end_transaction_id is None  # noqa: E711
+        )
+
+        for alias, alias_type, effective_date in aliases_query:
             alternate_names.append({
-                'name': alias.alias,
-                'startDate': LegislationDatetime.format_as_legislation_date(filing.effective_date),
-                'type': alias.type
+                'name': alias,
+                'startDate': LegislationDatetime.format_as_legislation_date(effective_date),
+                'type': alias_type
             })
 
         # Get SP DBA entries if not SP
         if self.legal_type != Business.LegalTypes.SOLE_PROP:
-            parties = db.session.query(Party). \
-                filter(Party.party_type == Party.PartyTypes.ORGANIZATION.value,
-                       Party.identifier == self._identifier,
-                       ).all()
-            if parties:
-                proprietors = db.session.query(PartyRole). \
-                    filter(PartyRole.role == PartyRole.RoleTypes.PROPRIETOR.value,
-                           PartyRole.party_id.in_([p.id for p in parties])
-                           ).all()
-                for proprietor in proprietors:
-                    sole_prop = Business.find_by_internal_id(proprietor.business_id)
-                    if not sole_prop:
-                        continue
-                    if start_date := sole_prop.start_date:
-                        start_date = LegislationDatetime.format_as_legislation_date(sole_prop.start_date)
+            proprietors_query = db.session.query(
+                Business.legal_type,
+                Business.identifier,
+                Business.legal_name,
+                Business.founding_date,
+                Business.start_date
+            ).join(
+                PartyRole, PartyRole.business_id == Business.id
+            ).join(
+                Party, and_(
+                    Party.id == PartyRole.party_id,
+                    Party.identifier == self._identifier
+                )
+            ).filter(
+                Party.party_type == Party.PartyTypes.ORGANIZATION.value,
+                PartyRole.role == PartyRole.RoleTypes.PROPRIETOR.value
+            )
 
-                    alternate_names.append(
-                        {
-                            'entityType': sole_prop.legal_type,
-                            'identifier': sole_prop.identifier,
-                            'name': sole_prop.legal_name,
-                            'registeredDate': sole_prop.founding_date.isoformat(),
-                            'startDate': start_date,
-                            'type': 'DBA'
-                        }
-                    )
+            for legal_type, identifier, legal_name, founding_date, start_date in proprietors_query:
+                alternate_names.append({
+                    'entityType': legal_type,
+                    'identifier': identifier,
+                    'name': legal_name,
+                    'registeredDate': founding_date.isoformat(),
+                    'startDate': LegislationDatetime.format_as_legislation_date(start_date) if start_date else None,
+                    'type': 'DBA'
+                })
 
         # For firms also get existing business record
         if self.is_firm:
-            start_date = LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None
-            alternate_names.append(
-                {
-                    'entityType': self.legal_type,
-                    'identifier': self.identifier,
-                    'name': self.legal_name,
-                    'registeredDate': self.founding_date.isoformat(),
-                    'startDate': start_date,
-                    'type': 'DBA'
-                }
-            )
+            alternate_names.append({
+                'entityType': self.legal_type,
+                'identifier': self.identifier,
+                'name': self.legal_name,
+                'registeredDate': self.founding_date.isoformat(),
+                'startDate':
+                    LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None,
+                'type': 'DBA'
+            })
 
         return alternate_names
 
