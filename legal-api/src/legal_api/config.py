@@ -159,10 +159,13 @@ class _Config():  # pylint: disable=too-few-public-methods
     BUSINESS_SCHEMA_VERSION = os.getenv('BUSINESS_SCHEMA_VERSION')
     BUSINESS_SCHEMA_ID = os.getenv('BUSINESS_SCHEMA_ID')
     BUSINESS_CRED_DEF_ID = os.getenv('BUSINESS_CRED_DEF_ID')
-    
+
     # Cache stuff
     CACHE_TYPE = os.getenv('CACHE_TYPE', 'SimpleCache')
-    CACHE_DEFAULT_TIMEOUT = os.getenv('CACHE_DEFAULT_TIMEOUT', 300)
+    try:
+        CACHE_DEFAULT_TIMEOUT = int(os.getenv('CACHE_DEFAULT_TIMEOUT', '300'))
+    except (TypeError, ValueError):
+        CACHE_DEFAULT_TIMEOUT = 300
 
     # MRAS
     MRAS_SVC_URL = os.getenv('MRAS_SVC_URL')

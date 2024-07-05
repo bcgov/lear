@@ -29,6 +29,7 @@ from urllib3.util.retry import Retry
 from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.services.warnings.business.business_checks import WarningType
 
+
 cache = Cache()
 
 SYSTEM_ROLE = 'system'
@@ -890,7 +891,7 @@ def get_account_id(_, account_id: str = None) -> str:
     return account_id or request.headers.get('Account-Id', None)
 
 
-@cache.cached(timeout=300, make_cache_key=get_account_id)
+@cache.cached(timeout=600, make_cache_key=get_account_id, cache_none=True)
 def get_account_products(token: str, account_id: str = None) -> list:
     """Return the account products of the org identified by the account id."""
     account_id = account_id or request.headers.get('Account-Id', None)
