@@ -100,6 +100,13 @@ class Config:  # pylint: disable=too-few-public-methods
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
+    NATS_SERVERS = os.getenv("NATS_SERVERS", "nats://127.0.0.1:4222,").split(",")
+    NATS_CLIENT_NAME = os.getenv("NATS_CLIENT_NAME", "entity.filing.worker")
+    NATS_CLUSTER_ID = os.getenv("NATS_CLUSTER_ID", "test-cluster")
+    NATS_QUEUE = os.getenv("NATS_QUEUE", "filing-worker")
+    NATS_FILER_SUBJECT = os.getenv("NATS_FILER_SUBJECT", "entity.filing.filer")
+    NATS_EMAILER_SUBJECT = os.getenv("NATS_EMAILER_SUBJECT", "entity.email")
+
     NATS_CONNECTION_OPTIONS = {
         "servers": os.getenv("NATS_SERVERS", "nats://127.0.0.1:4222").split(","),
         "name": os.getenv("NATS_CLIENT_NAME", "entity.filing.worker"),
@@ -135,7 +142,10 @@ class Config:  # pylint: disable=too-few-public-methods
     )
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
+    
+    SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
 
+    NATS_CONNECT_ERROR_COUNT_MAX =  os.getenv("NATS_CONNECT_ERROR_COUNT_MAX", 10)
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""

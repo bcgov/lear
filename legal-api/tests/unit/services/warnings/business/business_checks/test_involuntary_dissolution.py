@@ -20,24 +20,30 @@ from tests.unit.models import (
     factory_batch,
     factory_batch_processing,
     factory_business,
-    factory_completed_filing
+    factory_completed_filing,
+    factory_pending_filing
 )
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.warnings.business.business_checks.involuntary_dissolution import check_business
 from legal_api.utils.datetime import datetime
 
 from datedelta import datedelta
-from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
+from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER, RESTORATION
 
 RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
 RESTORATION_FILING['filing']['restoration'] = RESTORATION
+
+CHANGE_OF_ADDRESS_FILING = copy.deepcopy(FILING_HEADER)
+CHANGE_OF_ADDRESS_FILING['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
 
 @pytest.mark.parametrize('test_name, no_dissolution, batch_status, batch_processing_status', [
     ('NOT_ELIGIBLE', True, None, None),
     ('ELIGIBLE_AR_OVERDUE', False, 'PROCESSING', 'COMPLETED'),
     ('ELIGIBLE_TRANSITION_OVERDUE', False, 'PROCESSING', 'COMPLETED'),
+    ('ELIGIBLE_AR_OVERDUE_FUTURE_EFFECTIVE_FILING_HAS_WARNINGS', False, 'PROCESSING', 'COMPLETED'),
     ('IN_DISSOLUTION_AR_OVERDUE', False, 'PROCESSING', 'PROCESSING'),
-    ('IN_DISSOLUTION_TRANSITION_OVERDUE', False, 'PROCESSING', 'PROCESSING')
+    ('IN_DISSOLUTION_TRANSITION_OVERDUE', False, 'PROCESSING', 'PROCESSING'),
+    ('IN_DISSOLUTION_AR_OVERDUE_FUTURE_EFFECTIVE_FILING_HAS_WARNINGS', False, 'PROCESSING', 'PROCESSING'),
 ])
 def test_check_business(session, test_name, no_dissolution, batch_status, batch_processing_status):
     """Test the check_business function."""
@@ -68,6 +74,9 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
         batch_processing.meta_data = json.dumps(meta_data)
         batch_processing.save()
 
+    if 'FUTURE_EFFECTIVE_FILING' in test_name:
+        factory_pending_filing(business, CHANGE_OF_ADDRESS_FILING)
+
     result = check_business(business)
 
     if test_name == 'NOT_ELIGIBLE':
@@ -78,8 +87,10 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
             assert result[1]['code'] == 'DISSOLUTION_IN_PROGRESS'
             assert result[1]['message'] == 'Business is in the process of involuntary dissolution.'
             assert result[1]['warningType'] == WarningType.INVOLUNTARY_DISSOLUTION
+
             res_meta_data = json.loads(result[1]['data'])
             assert res_meta_data == meta_data
+
             if 'TRANSITION_OVERDUE' in test_name:
                 assert res_meta_data['overdueTransition'] == True
             else:
@@ -90,9 +101,9 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
         warning = result[0]
         if 'TRANSITION_OVERDUE' in test_name:
             assert warning['code'] == 'TRANSITION_NOT_FILED'
-            assert warning['message'] == 'Transition filing not filed.  Eligible for involuntary dissolution.'
+            assert warning['message'] == 'Transition filing not filed. Eligible for involuntary dissolution.'
             assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
         else:
             assert warning['code'] == 'MULTIPLE_ANNUAL_REPORTS_NOT_FILED'
-            assert warning['message'] == 'Multiple annual reports not filed.  Eligible for involuntary dissolution.'
+            assert warning['message'] == 'Multiple annual reports not filed. Eligible for involuntary dissolution.'
             assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING

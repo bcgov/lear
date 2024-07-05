@@ -27,7 +27,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('errorhandlers')
 
 
 def init_app(app):

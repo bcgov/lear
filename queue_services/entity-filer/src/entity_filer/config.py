@@ -70,6 +70,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
 
+    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
+
     # POSTGRESQL
     DB_USER = os.getenv('DATABASE_USERNAME', '')
     DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')

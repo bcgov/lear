@@ -11,6 +11,8 @@
                  <div class="bold pt-2">Business Number:</div>
                 {% if business.legalType in ['GP', 'SP'] %}
                  <div class="bold pt-2">Registration Date and Time:</div>
+                {% elif business.legalType in ['C', 'CCC', 'CUL', 'CBEN'] %}
+                 <div class="bold pt-2">Recognition Date and Time:</div>
                 {% else %}
                  <div class="bold pt-2">Incorporation Date and Time:</div>
                 {% endif %}
@@ -29,6 +31,8 @@
                  <div class="pt-2">
                     {% if business.legalType in ['GP', 'SP'] %}
                         <span>{{formatted_registration_date}}</span>
+                    {% elif business.legalType in ['C', 'CCC', 'CUL', 'CBEN'] %}
+                        <span>Continued into B.C. on {{formatted_founding_date_time}}</span>
                     {% else %}
                         <span>{{formatted_founding_date_time}}</span>
                     {% endif %}
@@ -102,7 +106,7 @@
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{report_date_time}}</div>
             </td>
-         {% elif header.name in ['incorporationApplication', 'restoration'] %}
+         {% elif header.name in ['continuationIn', 'incorporationApplication', 'restoration'] %}
             <td class="col-33">
                {% if header.status == 'COMPLETED' %}
                <div class="bold">Incorporation Number:</div>

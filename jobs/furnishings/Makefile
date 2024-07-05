@@ -45,7 +45,7 @@ build-req: clean ## Upgrade requirements
 	cat requirements/bcregistry-libraries.txt >> requirements.txt ;\
 	pip install -Ur requirements/bcregistry-libraries.txt
 
-install: clean ## Install python virtrual environment
+install: clean ## Install python virtual environment
 	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install pip==20.1.1 ;\
@@ -62,10 +62,10 @@ install-dev: ## Install local application
 ci: lint flake8 test ## CI flow
 
 pylint: ## Linting with pylint
-	. venv/bin/activate && pylint --rcfile=setup.cfg furnish.py
+	. venv/bin/activate && pylint --rcfile=setup.cfg src/$(PROJECT_NAME)
 
 flake8: ## Linting with flake8
-	. venv/bin/activate && flake8 furnish.py
+	. venv/bin/activate && flake8 src/$(PROJECT_NAME)
 
 lint: pylint flake8 ## run all lint type scripts
 

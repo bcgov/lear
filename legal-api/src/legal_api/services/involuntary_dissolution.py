@@ -16,7 +16,7 @@
 from dataclasses import dataclass
 from typing import Final, Tuple
 
-from sqlalchemy import and_, exists, func, not_, or_, text
+from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
 from legal_api.models import Batch, BatchProcessing, Business, Filing, db
@@ -45,9 +45,16 @@ class InvoluntaryDissolutionService():
         ar_overdue: bool
         transition_overdue: bool
 
+    @dataclass
+    class EligibilityFilters:
+        """Details about the exclude of a business for dissolution."""
+
+        exclude_in_dissolution: bool = True
+        exclude_future_effective_filing: bool = False
+
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, exclude_in_dissolution=True
+        cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters()
     ) -> Tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -55,8 +62,7 @@ class InvoluntaryDissolutionService():
             eligible (bool): True if the business is eligible for dissolution.
             eligibility_details (EligibilityDetails): Details regarding eligibility.
         """
-        query = cls._get_businesses_eligible_query(exclude_in_dissolution).\
-            filter(Business.identifier == identifier)
+        query = cls._get_businesses_eligible_query(eligibility_filters).filter(Business.identifier == identifier)
         result = query.one_or_none()
 
         if result is None:
@@ -94,7 +100,7 @@ class InvoluntaryDissolutionService():
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(exclude_in_dissolution=True):
+    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters()):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
@@ -112,8 +118,9 @@ class InvoluntaryDissolutionService():
                 Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION
             )
         )
-        specific_filing_overdue = _has_specific_filing_overdue()
-        no_transition_filed_after_restoration = _has_no_transition_filed_after_restoration()
+        specific_filing_overdue = _has_specific_filing_overdue() < func.timezone('UTC', func.now())
+        no_transition_filed_after_restoration = func.coalesce((_has_no_transition_filed_after_restoration()
+                                                               <= func.timezone('UTC', func.now())), False)
 
         query = db.session.query(
             Business,
@@ -125,7 +132,9 @@ class InvoluntaryDissolutionService():
             filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
             filter(Business.no_dissolution.is_(False))
 
-        if exclude_in_dissolution:
+        future_effective_filing = False if eligibility_filters.exclude_future_effective_filing \
+            else _has_future_effective_filing()
+        if eligibility_filters.exclude_in_dissolution:
             query = query.filter(not_(in_dissolution))
 
         query = query.filter(
@@ -136,11 +145,17 @@ class InvoluntaryDissolutionService():
             ).\
             filter(
                 ~or_(
-                    _has_future_effective_filing(),
+                    future_effective_filing,
                     _has_delay_of_dissolution_filing(),
                     _is_limited_restored(),
                     _is_xpro_from_nwpta()
                 )
+            ).\
+            order_by(
+                no_transition_filed_after_restoration.desc(),
+                _has_no_transition_filed_after_restoration().asc(),
+                specific_filing_overdue.desc(),
+                _has_specific_filing_overdue().asc()
             )
 
         return query
@@ -169,7 +184,7 @@ def _has_specific_filing_overdue():
 
     latest_date_cutoff = latest_date + text("""INTERVAL '26 MONTHS'""")
 
-    return latest_date_cutoff < func.timezone('UTC', func.now())
+    return latest_date_cutoff
 
 
 def _has_no_transition_filed_after_restoration():
@@ -186,7 +201,7 @@ def _has_no_transition_filed_after_restoration():
 
     restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
 
-    return exists().where(
+    return select([func.max(func.coalesce(restoration_filing_effective_cutoff, None))]).where(
             and_(
                 Business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 Business.founding_date < new_act_date,
@@ -196,7 +211,6 @@ def _has_no_transition_filed_after_restoration():
                     CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
                 ]),
                 restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
-                restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
                 not_(
                     exists().where(
                         and_(
@@ -213,7 +227,7 @@ def _has_no_transition_filed_after_restoration():
                     )
                 )
             )
-        )
+        ).scalar_subquery()
 
 
 def _has_future_effective_filing():
@@ -221,10 +235,11 @@ def _has_future_effective_filing():
 
     Check if the business has future effective filings.
     """
+    # pylint: disable=protected-access
     return db.session.query(Filing). \
         filter(Filing.business_id == Business.id). \
         filter(Filing._status.in_([Filing.Status.PENDING.value, Filing.Status.PAID.value])). \
-        exists()  # pylint: disable=protected-access
+        exists()
 
 
 def _has_delay_of_dissolution_filing():

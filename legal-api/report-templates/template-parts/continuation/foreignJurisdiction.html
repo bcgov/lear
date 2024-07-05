@@ -1,0 +1,35 @@
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Previous Foreign Jurisdiction Information</div>
+    <table class="section-data nr-name-table mt-4" role="presentation">
+        <tr>
+            <td class="bold">Identifying Number in Foreign Jurisdiction:</td>
+            <td>
+                {{foreignJurisdiction.identifier}}
+            </td>
+        </tr>
+        <tr>
+            <td class="bold pt-2">Name in Foreign Jurisdiction:</td>
+            <td class="pt-2">
+                {{foreignJurisdiction.legalName}}
+            </td>
+        </tr>
+        <tr>
+            <td class="bold pt-2">Foreign Jurisdiction:</td>
+            <td class="pt-2">
+                {% if foreignJurisdiction.region %}
+                {{foreignJurisdiction.region}}
+                {% else %}
+                {{foreignJurisdiction.country}}
+                {% endif %}
+                
+            </td>
+        </tr>
+        <tr>
+            <td class="bold pt-2">Date of Incorporation, Continuation, or Amalgamation in Foreign Jurisdiction:</td>
+            <td class="pt-2">
+                {{foreignJurisdiction.incorporationDate}}
+            </td>
+        </tr>
+    </table>
+</div>

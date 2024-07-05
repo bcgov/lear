@@ -19,7 +19,8 @@
             "postgres-legal",
             "entity-filer",
             "nats-filer",
-            "entity-service-account"
+            "entity-service-account",
+            "launchdarkly"
         ]
     },
     {

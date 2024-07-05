@@ -15,11 +15,13 @@
 import base64
 import uuid
 
+from datedelta import datedelta
+from datetime import datetime
 from freezegun import freeze_time
 from sqlalchemy_continuum import versioning_manager
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
-from legal_api.models import db, Filing, ShareClass, ShareSeries
+from legal_api.models import db, Batch, BatchProcessing, Filing, ShareClass, ShareSeries
 from legal_api.models.colin_event_id import ColinEventId
 
 AR_FILING = {
@@ -366,11 +368,12 @@ COMBINED_FILING = {
 }
 
 
-def create_filing(token, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
+def create_filing(token=None, json_filing=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     from legal_api.models import Filing
     filing = Filing()
-    filing.payment_token = str(token)
+    if token:
+        filing.payment_token = str(token)
     filing.filing_date = filing_date
 
     if json_filing:
@@ -586,3 +589,47 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
             colin_event.save()
         filing.save()
     return filing
+
+
+def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+                  status=Batch.BatchStatus.HOLD,
+                  size=3,
+                  notes=''):
+    """Create a batch."""
+    batch = Batch(
+        batch_type=batch_type,
+        status=status,
+        size=size,
+        notes=notes
+    )
+    batch.save()
+    return batch
+
+
+def factory_batch_processing(batch_id,
+                             business_id,
+                             identifier,
+                             step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+                             status=BatchProcessing.BatchProcessingStatus.PROCESSING,
+                             created_date=datetime.utcnow(),
+                             trigger_date=datetime.utcnow()+datedelta(days=42),
+                             last_modified=datetime.utcnow(),
+                             notes=''):
+    """Create a batch processing entry."""
+    batch_processing = BatchProcessing(
+        batch_id=batch_id,
+        business_id=business_id,
+        business_identifier=identifier,
+        step=step,
+        status=status,
+        created_date=created_date,
+        trigger_date=trigger_date,
+        last_modified=last_modified,
+        notes=notes
+    )
+    target_dissolution_date = created_date + datedelta(days=72)
+    batch_processing.meta_data = {
+        'targetDissolutionDate': target_dissolution_date.date().isoformat()
+    }
+    batch_processing.save()
+    return batch_processing

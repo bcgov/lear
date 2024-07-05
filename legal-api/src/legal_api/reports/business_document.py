@@ -21,11 +21,11 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing
+from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService, flags
+from legal_api.services import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -87,6 +87,7 @@ class BusinessDocument:
             'business-summary/alterations',
             'business-summary/amalgamations',
             'business-summary/businessDetails',
+            'business-summary/foreignJurisdiction',
             'business-summary/liquidation',
             'business-summary/nameChanges',
             'business-summary/stateTransition',
@@ -124,8 +125,7 @@ class BusinessDocument:
             business_json['business'] = self._business.json()
 
             # legal name easy fix
-            flag_on = flags.is_on('enable-legal-name-fix')
-            if flag_on and not get_json:
+            if not get_json:
                 business_json['business']['legalName'] = self._business.legal_name
 
             business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
@@ -143,6 +143,7 @@ class BusinessDocument:
                 self._set_amalgamation_details(business_json)
                 self._set_amalgamating_details(business_json)
                 self._set_liquidation_details(business_json)
+                self._set_continuation_in_details(business_json)
 
             if self._business.legal_type in ['SP', 'GP']:
                 registration_filing = Filing.get_filings_by_types(self._business.id, ['registration'])
@@ -397,6 +398,7 @@ class BusinessDocument:
         filing_info = {}
 
         filing_info['filingType'] = filing.filing_type
+        filing_info['filingSubType'] = filing.filing_sub_type
         filing_info['filingDateTime'] = filing.filing_date.isoformat()
         filing_info['effectiveDateTime'] = filing.effective_date.isoformat()
 
@@ -497,6 +499,43 @@ class BusinessDocument:
                 records_office_info['mailingAddress'] = 'Not Available'
                 liquidation_info['recordsOffice'] = records_office_info
         business['liquidation'] = liquidation_info
+
+    def _set_continuation_in_details(self, business: dict):
+        """Set continuation in filing data."""
+        continuation_in_info = {}
+        continuation_in_filing = Filing.get_filings_by_types(self._business.id, ['continuationIn'])
+        if continuation_in_filing:
+            continuation_in_filing = continuation_in_filing[0]
+            jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(continuation_in_filing.business_id)
+
+            # Format country and region
+            region_code = jurisdiction.region
+            country_code = jurisdiction.country
+            country = pycountry.countries.get(alpha_2=country_code)
+            region = None
+            if region_code and region_code.upper() != 'FEDERAL':
+                region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+            location_jurisdiction = f'{region.name}, {country.name}' if region else country.name
+
+            # Format incorporation date
+            incorp_date = LegislationDatetime.as_legislation_timezone(jurisdiction.incorporation_date)
+            formatted_incorporation_date = incorp_date.strftime(OUTPUT_DATE_FORMAT)
+
+            # Format Jurisdiction data
+            jurisdiction_info = {
+                    'id': jurisdiction.id,
+                    'jurisdiction': location_jurisdiction,
+                    'identifier': jurisdiction.identifier,
+                    'legal_name': jurisdiction.legal_name,
+                    'tax_id': jurisdiction.tax_id,
+                    'incorporation_date': formatted_incorporation_date,
+                    'expro_identifier': jurisdiction.expro_identifier,
+                    'expro_legal_name': jurisdiction.expro_legal_name,
+                    'business_id': jurisdiction.business_id,
+                    'filing_id': jurisdiction.filing_id,
+                    }
+            continuation_in_info['foreignJurisdiction'] = jurisdiction_info
+            business['continuationIn'] = continuation_in_info
 
     @staticmethod
     def _format_address(address):

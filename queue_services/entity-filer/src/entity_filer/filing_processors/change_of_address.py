@@ -14,13 +14,15 @@
 """File processing rules and actions for the change of address."""
 from typing import Dict
 
-from legal_api.models import Business
+from datedelta import datedelta
+from legal_api.models import BatchProcessing, Business
+from legal_api.utils.datetime import date, datetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_address, update_address
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
+def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on: bool):
     """Render the change_of_address onto the business model objects."""
     # offices_array = json.dumps(filing['changeOfAddress']['offices'])
     # Only retrieve the offices component from the filing json
@@ -39,3 +41,22 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
             else:
                 address = create_address(new_address, k)
                 office.addresses.append(address)
+
+    if flag_on:
+        if business.in_dissolution:
+            batch_processings = BatchProcessing.find_by(business_id=business.id)
+            for batch_processing in batch_processings:
+                if batch_processing.status not in [
+                    BatchProcessing.BatchProcessingStatus.COMPLETED,
+                    BatchProcessing.BatchProcessingStatus.WITHDRAWN
+                ] and datetime.utcnow() + datedelta(days=60) > batch_processing.trigger_date:
+                    old_trigger_date = batch_processing.trigger_date
+                    batch_processing.trigger_date = datetime.utcnow() + datedelta(days=62)
+                    batch_processing.meta_data = {
+                        **batch_processing.meta_data,
+                        'changeOfAddressDelay': True
+                    }
+                    target_dissolution_date = date.fromisoformat(batch_processing.meta_data['targetDissolutionDate'])
+                    target_dissolution_date += batch_processing.trigger_date - old_trigger_date
+                    batch_processing.meta_data['targetDissolutionDate'] = target_dissolution_date.isoformat()
+                    batch_processing.last_modified = datetime.utcnow()

@@ -17,13 +17,14 @@ from contextlib import suppress
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
-from legal_api.models import Business
+from legal_api.models import BatchProcessing, Business
 from legal_api.services.filings import validations
+from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 
 from entity_filer.filing_meta import FilingMeta
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
+def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
     """Render the annual_report onto the business model objects."""
     legal_filing_name = 'annualReport'
     agm_date = filing[legal_filing_name].get('annualGeneralMeetingDate')
@@ -43,6 +44,18 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):
             business.last_ar_date = agm_date
 
     business.last_ar_year = business.last_ar_year + 1 if business.last_ar_year else business.founding_date.year + 1
+
+    # remove dissolution flag if business can be withdrawn
+    if flag_on and business.in_dissolution:
+        eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(
+            business.identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
+            )
+        if not eligibility:
+            batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
+            batch_processing.notes = 'Moved back to good standing'
+            batch_processing.last_modified = datetime.datetime.utcnow()
 
     # save the annual report date to the filing meta info
     filing_meta.application_date = ar_date

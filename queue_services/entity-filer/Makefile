@@ -9,6 +9,9 @@ CURRENT_ABS_DIR:=$(patsubst %/,%,$(dir $(MKFILE_PATH)))
 PROJECT_NAME:=entity_filer
 DOCKER_NAME:=entity-filer
 
+# TODO remove this when the conversion to the new queue is completed
+export PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+
 #################################################################################
 # COMMANDS -- Setup                                                             #
 #################################################################################
@@ -39,7 +42,8 @@ clean-test: ## clean test files
 build-req: clean ## Upgrade requirements
 	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
-	pip install pip==20.1.1 ;\
+	pip install pip==24.0 ;\
+	pip install wheel==0.43.0 ;\
 	pip install -Ur requirements/prod.txt ;\
 	pip freeze | sort > requirements.txt ;\
 	cat requirements/bcregistry-libraries.txt >> requirements.txt ;\
@@ -48,7 +52,8 @@ build-req: clean ## Upgrade requirements
 install: clean ## Install python virtrual environment
 	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
-	pip install pip==20.1.1 ;\
+	pip install pip==24.0 ;\
+	pip install wheel==0.43.0 ;\
 	pip install -Ur requirements.txt
 
 install-dev: ## Install local application

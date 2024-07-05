@@ -1,0 +1,20 @@
+{% if exproBusiness %}
+<div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Extraprovincial Registration in British Columbia</div>
+    <table class="section-data nr-name-table mt-4" role="presentation">
+        <tr>
+            <td class="bold col-33">Registration Number:</td>
+            <td class="pt-2">
+                {{exproBusiness.identifier}}
+            </td>
+        </tr>
+        <tr>
+            <td class="bold col-33">Business Name in B.C.:</td>
+            <td class="pt-2">
+                {{exproBusiness.legalName}}
+            </td>
+        </tr>
+    </table>
+</div>
+{% endif %}

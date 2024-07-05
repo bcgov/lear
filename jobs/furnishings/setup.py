@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Installer and setup for this module."""
-
+from glob import glob
+from os.path import basename, splitext
 from setuptools import find_packages, setup
 
 setup(
     name='furnishings',
-    packages=find_packages()
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
+    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')]
 )

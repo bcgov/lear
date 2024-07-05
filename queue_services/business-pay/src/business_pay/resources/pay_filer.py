@@ -40,7 +40,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from datetime import timezone
 from http import HTTPStatus
-from typing import Optional
+from typing import List, Optional
 
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
@@ -50,8 +50,8 @@ from business_pay.services import create_filing_msg
 from business_pay.services import create_email_msg
 from business_pay.services import verify_gcp_jwt
 from business_pay.services import gcp_queue
-from business_pay.services import nats_queue
-from business_pay.database import Filing
+from business_pay.services import queue
+from business_pay.database import Filing, Review, ReviewStatus
 from business_pay.database import db
 
 bp = Blueprint("worker", __name__)
@@ -68,8 +68,10 @@ async def worker():
     1. Get cloud event
     2. Get filing and payment information
     3. Update model
-    4. Publish to email Q
-    5. Publish to filer Q, if the filing is not a FED (Effective date > now())
+    4. a or b
+        a. Create a staff review if required else execute b.
+        b. Publish to filer Q, if the filing is not a FED (Effective date > now())
+    5. Publish to email Q
 
     Decisions on returning a 2xx or failing value to
     the Queue should be noted here:
@@ -90,10 +92,14 @@ async def worker():
 
     # 1. Get cloud event
     # ##
-    if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)):
+    raw_data = request.data
+    if not (ce := gcp_queue.get_simple_cloud_event(request,
+                                                   wrapped=True)) \
+            and not isinstance(ce, SimpleCloudEvent):
         #
         # Decision here is to return a 200,
         # so the event is removed from the Queue
+        logger.debug(f"ignoring message, raw payload: {str(ce)}")
         return {}, HTTPStatus.OK
     logger.info(f"received ce: {str(ce)}")
 
@@ -104,17 +110,33 @@ async def worker():
         or payment_token.status_code != "COMPLETED"
     ):
         # no payment info, or not a payment COMPLETED token, take off Q
+        logger.debug(f"Removed From Queue: no payment info in ce: {str(ce)}")
         return {}, HTTPStatus.OK
+
+    if payment_token.corp_type_code in ["MHR", "BTR"]:
+        logger.debug(
+            f"ignoring message for corp_type_code:{payment_token.corp_type_code},  {str(ce)}")
+        return {}, HTTPStatus.OK
+
+    logger.debug(f"Payment Token: {payment_token} for : {str(ce)}")
 
     # 3. Update model
     # ##
     if not (
         filing := Filing.get_filing_by_payment_token(pay_token=str(payment_token.id))
     ):
+        if payment_token.filing_identifier == None and \
+           payment_token.corp_type_code == "BC":
+            logger.debug(
+                f"Take Off Queue - BOGUS Filing Not Found: {payment_token} for : {str(ce)}")
+            return {}, HTTPStatus.OK
+
+        logger.debug(
+            f"Put Back on Queue - Filing Not Found: {payment_token} for : {str(ce)}")
         # The payment token might not be there yet, put back on Q
         return {}, HTTPStatus.NOT_FOUND
 
-    if filing.status == Filing.Status.COMPLETED.value:
+    if filing.payment_completion_date:
         # Already processed, so don't do anything but remove from Q
         logger.debug(f"already processed, duplicate ce: {str(ce)}")
         return {}, HTTPStatus.OK
@@ -127,28 +149,55 @@ async def worker():
     filing.status = Filing.Status.PAID
     filing.save()
 
-    # None of these should bail as the filing has been marked PAID
-    # 4. Publish to email Q
-    # ##
-    with suppress(Exception):
-        mail_topic = current_app.config['EMAIL_PUBLISH_OPTIONS']['subject']
-        email_msg = create_email_msg(filing.id, filing.filing_type)
-        await nats_queue.connect()
-        await nats_queue.publish(subject=mail_topic, msg=email_msg)
-        logger.info(f"publish to emailer for pay-id: {payment_token.id}")
+    staff_review_required = ["continuationIn"]
+    if filing.filing_type in staff_review_required:
+        # 4.a. Create staff review for the filing
+        create_staff_review(filing)
+    else:
+        # 4.b. Publish to filer Q, if the filing is not a FED (Effective date > now())
+        # ##
+        publish_to_filer(filing, payment_token)
 
-    # 5. Publish to filer Q, if the filing is not a FED (Effective date > now())
+    # None of these should bail as the filing has been marked PAID
+    # 5. Publish to email Q
     # ##
-    with suppress(Exception):
-        if filing.effective_date <= filing.payment_completion_date:
-            filer_topic = current_app.config['FILER_PUBLISH_OPTIONS']['subject']
-            queue_message = create_filing_msg(filing.id)
-            await nats_queue.connect()
-            await nats_queue.publish(subject=filer_topic, msg=queue_message)
-            logger.info(f"publish to filer for pay-id: {payment_token.id}")
+    publish_to_emailer(filing)
 
     logger.info(f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
+
+
+def create_staff_review(filing: Filing):
+    """Create staff review for the filing."""
+    filing_data = filing.filing_json["filing"][filing.filing_type]
+
+    review = Review()
+    review.filing_id = filing.id
+    review.nr_number = filing_data.get("nameRequest", {}).get("nrNumber")
+    review.identifier = filing_data.get(
+        "foreignJurisdiction", {}).get("identifier")
+    review.status = ReviewStatus.AWAITING_REVIEW
+    review.completing_party = get_completing_party(filing_data["parties"])
+    review.save()
+
+    filing.status = Filing.Status.AWAITING_REVIEW.value
+    filing.save()
+
+
+def get_completing_party(parties: List):
+    """Return the full name of the party."""
+    for party in parties:
+        for role in party.get("roles", []):
+            if role["roleType"] == "Completing Party":
+                names = []
+                names.append(party["officer"]["firstName"])
+
+                if middle_name := party["officer"].get("middleName"):
+                    names.append(middle_name)
+
+                names.append(party["officer"]["lastName"])
+                return " ".join(names).strip()
+    return None
 
 
 @dataclass
@@ -159,6 +208,37 @@ class PaymentToken:
     status_code: Optional[str] = None
     filing_identifier: Optional[str] = None
     corp_type_code: Optional[str] = None
+
+
+def publish_to_filer(filing: Filing, payment_token: PaymentToken):
+    """Publish a queue message to entity-filer once the filing has been marked as PAID."""
+    with suppress(Exception):
+        logger.debug(
+            f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
+        if filing.effective_date <= filing.payment_completion_date:
+            filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
+            queue_message = create_filing_msg(filing.id)
+            logger.debug(f"filer queue_message: {queue_message}")
+
+            try:
+                # await queue.publish(subject=filer_topic, msg=queue_message)
+                queue.publish_json(subject=filer_topic, payload=queue_message)
+            except Exception as err:
+                logger.debug(
+                    f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
+
+            logger.info(f"publish to filer for pay-id: {payment_token.id}")
+
+
+def publish_to_emailer(filing: Filing):
+    """Publish a queue message to entity-emailer once the filing has been marked as PAID."""
+    with suppress(Exception):
+        mail_topic = current_app.config["EMAIL_PUBLISH_OPTIONS"]["subject"]
+        email_msg = create_email_msg(filing.id, filing.filing_type)
+        # await queue.publish(subject=mail_topic, msg=email_msg)
+        queue.publish_json(subject=mail_topic, payload=email_msg)
+        logger.info(
+            f"published to emailer for filing-id: {filing.id}")
 
 
 def get_payment_token(ce: SimpleCloudEvent):

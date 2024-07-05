@@ -65,17 +65,17 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
         ADMINISTRATIVE_DISSOLUTION = 'HDA'
 
     NUMBERED_CORP_NAME_SUFFIX = {
-        TypeCodes.BCOMP: 'B.C. LTD.',
-        TypeCodes.BC_COMP: 'B.C. LTD.',
-        TypeCodes.ULC_COMP: 'B.C. UNLIMITED LIABILITY COMPANY',
-        TypeCodes.CCC_COMP: 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
+        TypeCodes.BCOMP.value: 'B.C. LTD.',
+        TypeCodes.BC_COMP.value: 'B.C. LTD.',
+        TypeCodes.ULC_COMP.value: 'B.C. UNLIMITED LIABILITY COMPANY',
+        TypeCodes.CCC_COMP.value: 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
     }
 
     # CORPS Continuation In has the same suffix
-    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BCOMP_CONTINUE_IN] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BCOMP]
-    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CONTINUE_IN] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BC_COMP]
-    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.ULC_CONTINUE_IN] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.ULC_COMP]
-    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CCC_CONTINUE_IN] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CCC_COMP]
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BCOMP_CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BCOMP.value]
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.BC_COMP.value]
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.ULC_CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.ULC_COMP.value]
+    NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CCC_CONTINUE_IN.value] = NUMBERED_CORP_NAME_SUFFIX[TypeCodes.CCC_COMP.value]
 
     business_number = None
     corp_name = None

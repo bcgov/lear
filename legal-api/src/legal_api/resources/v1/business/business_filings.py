@@ -81,7 +81,7 @@ class ListFilingResource(Resource):
             if not rv.storage:
                 return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
             if str(request.accept_mimetypes) == 'application/pdf' and filing_id:
-                if rv.filing_type in ['amalgamationApplication', 'incorporationApplication']:
+                if rv.filing_type in ['amalgamationApplication', 'incorporationApplication', 'continuationIn']:
                     return legal_api.reports.get_pdf(rv.storage, None)
 
             if original_filing:

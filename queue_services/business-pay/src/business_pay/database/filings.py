@@ -37,13 +37,14 @@ Just enough filings to mark as paid.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import timezone
 from enum import Enum
-from typing import Optional
+from typing import Dict, Optional
 
 from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import JSONB
 
 from business_pay.database.db import db
 
@@ -64,13 +65,21 @@ class Filing(db.Model):
         PENDING = "PENDING"
         PENDING_CORRECTION = "PENDING_CORRECTION"
 
+        # filings with staff review
+        APPROVED = "APPROVED"
+        AWAITING_REVIEW = "AWAITING_REVIEW"
+        CHANGE_REQUESTED = "CHANGE_REQUESTED"
+        REJECTED = "REJECTED"
+
     __tablename__ = "filings"
     __mapper_args__ = {
         "include_properties": [
             "id",
             "effective_date",
             "filing_type",
-            "filing_sub_type" "payment_completion_date",
+            "filing_sub_type",
+            "filing_json",
+            "payment_completion_date",
             "payment_status_code",
             "payment_token",
             "status",
@@ -81,6 +90,7 @@ class Filing(db.Model):
     effective_date: Optional[datetime]
     filing_type: str
     filing_sub_type: Optional[str]
+    filing_json: Dict
     payment_completion_date: Optional[datetime]
     payment_status_code: Optional[str]
     payment_token: Optional[str]
@@ -93,6 +103,7 @@ class Filing(db.Model):
     )
     filing_type = db.Column("filing_type", db.String(30))
     filing_sub_type = db.Column("filing_sub_type", db.String(30))
+    filing_json = db.Column("filing_json", JSONB)
     payment_completion_date = db.Column(
         "payment_completion_date", db.DateTime(timezone=True)
     )
@@ -107,7 +118,7 @@ class Filing(db.Model):
         try:
             stmt = text(
                 """SELECT f.id, f.effective_date,
-                        f.filing_type, f.filing_sub_type,
+                        f.filing_type, f.filing_sub_type, f.filing_json,
                         f.payment_completion_date, f.payment_status_code,
                         f.payment_id, f.status, f.payment_account
                         FROM filings f 

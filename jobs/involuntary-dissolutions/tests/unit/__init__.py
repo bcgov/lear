@@ -14,8 +14,8 @@
 """The Test-Suite used to ensure that the Involuntary Dissolutions Job is working correctly."""
 
 import datetime
-from datedelta import datedelta
 
+from datedelta import datedelta
 from legal_api.models import Batch, BatchProcessing, Business
 
 
