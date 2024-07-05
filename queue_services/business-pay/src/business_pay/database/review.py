@@ -17,7 +17,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from enum import auto
 
-from .base import BaseEnum
+from business_pay.utils.base import BaseEnum
+
 from .db import db
 
 

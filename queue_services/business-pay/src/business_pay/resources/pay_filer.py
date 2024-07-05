@@ -68,8 +68,8 @@ async def worker():
     1. Get cloud event
     2. Get filing and payment information
     3. Update model
-    4. 
-        a. Create a staff review
+    4. a or b
+        a. Create a staff review if required else execute b.
         b. Publish to filer Q, if the filing is not a FED (Effective date > now())
     5. Publish to email Q
 
