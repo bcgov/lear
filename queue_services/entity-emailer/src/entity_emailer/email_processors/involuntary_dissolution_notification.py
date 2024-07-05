@@ -14,19 +14,18 @@
 """Email processing rules and actions for Dissolution Application notifications."""
 from __future__ import annotations
 
-from http import HTTPStatus
 from pathlib import Path
-import requests
+
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.models import Business
 
 from entity_emailer.email_processors import (
+    get_entity_dashboard_url,
+    get_jurisdictions,
     get_recipient_from_auth,
     substitute_template_parts,
-    get_entity_dashboard_url,
-    get_extra_provincials,
 )
 
 
@@ -36,21 +35,21 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get business
     identifier = email_info['identifier']
     business = Business.find_by_identifier(identifier)
-    
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/INVOLUNTARY-DIS.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    # get state_names from mras response
-    extra_provincials = get_extra_provincials(identifier, token)
+    # get response from get jurisdictions
+    jurisdictions_response = get_jurisdictions(identifier, token)
+    # get extra provincials array
+    extra_provincials = get_extra_provincials(jurisdictions_response)
     html_out = jnja_template.render(
         business=business.json(),
         entity_dashboard_url=get_entity_dashboard_url(business.get('identifier'), token),
-        extra_provincials = extra_provincials
+        extra_provincials=extra_provincials
     )
-
     # get recipients
     recipients = []
     recipients.append(get_recipient_from_auth(business.identifier, token))  # business email
@@ -60,7 +59,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # assign subject
     subject = 'Involuntary Dissolution Documents from the Business Registry'
-        
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'
 
@@ -75,3 +73,16 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
             'body': f'{html_out}'
         }
     }
+
+
+def get_extra_provincials(response: dict):
+    """Get extra provincials name."""
+    extra_provincials = []
+    if response:
+        jurisdictions = response.get('jurisdictions', [])
+        for jurisdiction in jurisdictions:
+            name = jurisdiction.get('name')
+            if name:
+                extra_provincials.append(name)
+
+    return extra_provincials

@@ -55,13 +55,13 @@ from entity_emailer.email_processors import (
     correction_notification,
     dissolution_notification,
     filing_notification,
+    involuntary_dissolution_notification,
     mras_notification,
     name_request,
     nr_notification,
     registration_notification,
     restoration_notification,
     special_resolution_notification,
-    involuntary_dissolution_notification,
 )
 
 from .message_tracker import tracker as tracker_util
