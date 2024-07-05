@@ -26,6 +26,7 @@ from entity_emailer.email_processors import (
     get_recipient_from_auth,
     substitute_template_parts,
     get_entity_dashboard_url,
+    get_extra_provincials,
 )
 
 
@@ -43,11 +44,11 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     # get state_names from mras response
-    state_names_str = get_state_names(identifier, token)
+    extra_provincials = get_extra_provincials(identifier, token)
     html_out = jnja_template.render(
         business=business.json(),
         entity_dashboard_url=get_entity_dashboard_url(business.get('identifier'), token),
-        state_names_str = state_names_str
+        extra_provincials = extra_provincials
     )
 
     # get recipients
@@ -74,26 +75,3 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
             'body': f'{html_out}'
         }
     }
-
-def get_state_names(identifier: str, token: str) -> str:
-    """Get the state names from mra api response."""
-    state_names = [] 
-    #get mras_response
-    headers = {
-        'Accept': 'application/json',
-        'Authorization': f'Bearer {token}'
-    }
-
-    mras_response = requests.get(
-        f'{current_app.config.get("AUTH_URL")}/mras/{identifier}',
-        headers=headers
-    )
-    # Extract only names from the list of mras_response
-    if mras_response:
-        jurisdictions = mras_response.get("jurisdictions", [])
-        for jurisdiction in jurisdictions:
-            name = jurisdiction.get("name")
-            if name:
-                state_names.append(name)
-    
-    return state_names

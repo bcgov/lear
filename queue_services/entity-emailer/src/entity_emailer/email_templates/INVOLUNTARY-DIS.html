@@ -39,12 +39,13 @@
 
             [[whitespace-16px.html]]
 
-            {% if state_names_str %}
+            {% if extra_provincials %}
             <p>
-              Our records indicate your company is registered in {{state_names_str}} as an extraprovincial company. Therefore, if your 
-              company is dissolved, its registration as an extraprovincial company 
-              in {{state_names_str}} will automatically be 
-              cancelled as well.
+              Our records indicate your company is registered in 
+              {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              as an extraprovincial company. Therefore, if your company is dissolved, its registration as an extraprovincial company 
+              in {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              will automatically be cancelled as well.
             </p>
             {% endif %}
 

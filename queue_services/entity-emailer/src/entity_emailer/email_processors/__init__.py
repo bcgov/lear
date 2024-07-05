@@ -194,3 +194,26 @@ def substitute_template_parts(template_code: str) -> str:
         template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
 
     return template_code
+
+def get_extra_provincials(identifier: str, token: str) -> str:
+    """Get the extra provincials from mra api response."""
+    extra_provincials = [] 
+    #get mras_response
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+
+    mras_response = requests.get(
+        f'{current_app.config.get("AUTH_URL")}/mras/{identifier}',
+        headers=headers
+    )
+    # Extract only names of extra provincials from the list of mras_response
+    if mras_response:
+        jurisdictions = mras_response.get("jurisdictions", [])
+        for jurisdiction in jurisdictions:
+            name = jurisdiction.get("name")
+            if name:
+                extra_provincials.append(name)
+    
+    return extra_provincials
