@@ -267,11 +267,16 @@ class Reset:
                 # The commented out events do not seem to happen for AR so they are commented out.
                 new_corps = cls._get_incorporations_by_event(cursor, event_ids)
                 Party.reset_dirs_by_events(cursor=cursor, event_ids=event_ids)
+                Office.reset_offices_by_events(cursor=cursor, event_ids=event_ids)
+                Business.reset_corp_states(cursor=cursor, event_ids=event_ids)
                 Business.reset_corporations(cursor=cursor, event_info=events_info, event_ids=event_ids)
-
+                ShareObject.delete_shares(cursor, event_ids)
                 cls._delete_filing_user(cursor=cursor, event_ids=event_ids)
+                cls._delete_ledger_text(cursor=cursor, event_ids=event_ids)
+                cls._delete_corp_name(cursor=cursor, event_ids=list(new_corps.values()))
                 cls._delete_corp_state(cursor=cursor, corp_nums=list(new_corps.keys()))
                 cls._delete_events_and_filings(cursor=cursor, event_ids=event_ids)
+                cls._delete_new_corps(cursor=cursor, corp_nums=list(new_corps.keys()))
                 con.commit()
                 return
         except Exception as err:
