@@ -2,6 +2,7 @@ sqlalchemy
 # sqlalchemy < 1.4.0
 Flask
 Flask-Babel
+Flask-Caching
 Flask-Cors
 Flask-Migrate
 Flask-Moment
