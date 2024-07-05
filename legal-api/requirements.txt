@@ -56,4 +56,5 @@ minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.12
 html-sanitizer==2.4.1
+lxml==5.2.2
 git+https://github.com/bcgov/business-schemas.git@2.18.27#egg=registry_schemas

@@ -33,3 +33,4 @@ minio
 PyPDF2
 reportlab
 html-sanitizer
+lxml

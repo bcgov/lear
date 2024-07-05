@@ -22,6 +22,7 @@ from .business.business_digital_credentials import bp_dc as digital_credentials_
 from .document import bp as document_bp
 from .internal_services import bp as internal_bp
 from .meta import bp as meta_bp
+from .mras import bp as mras_bp
 from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
 from .request_tracker import bp as request_tracker_bp
@@ -50,6 +51,7 @@ class V2Endpoint:
         self.app.register_blueprint(naics_bp)
         self.app.register_blueprint(request_tracker_bp)
         self.app.register_blueprint(internal_bp)
+        self.app.register_blueprint(mras_bp)
 
 
 v2_endpoint = V2Endpoint()

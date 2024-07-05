@@ -160,6 +160,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     BUSINESS_SCHEMA_ID = os.getenv('BUSINESS_SCHEMA_ID')
     BUSINESS_CRED_DEF_ID = os.getenv('BUSINESS_CRED_DEF_ID')
 
+    # MRAS
+    MRAS_SVC_URL = os.getenv('MRAS_SVC_URL')
+    MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
+
     TESTING = False
     DEBUG = False
 

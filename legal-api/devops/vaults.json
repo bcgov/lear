@@ -31,9 +31,15 @@
         ]
     },
     {
-      "vault": "sentry",
-      "application": [
-        "entity"
-      ]
+        "vault": "sentry",
+        "application": [
+            "entity"
+        ]
+    },
+    {
+        "vault": "api",
+        "application": [
+            "mras-api"
+        ]
     }
 ]

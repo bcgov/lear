@@ -36,6 +36,7 @@ from .document_meta import DocumentMetaService
 from .flags import Flags
 from .involuntary_dissolution import InvoluntaryDissolutionService
 from .minio import MinioService
+from .mras_service import MrasService
 from .naics import NaicsService
 from .namex import NameXService
 from .pdf_service import PdfService
