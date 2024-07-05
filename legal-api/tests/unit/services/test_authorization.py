@@ -1048,7 +1048,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
     """Assert that get_allowed_actions returns the expected allowable filing info."""
     is_comp_auth = username == 'comp-auth'
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    account_id = '1'
+    # NOTE: it is important for the account id to be different for comp_auth due to the caching of account product subscriptions
+    account_id = '1' if not is_comp_auth else '2'
     headers = {'Authorization': 'Bearer ' + token, 'Account-Id': account_id}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
