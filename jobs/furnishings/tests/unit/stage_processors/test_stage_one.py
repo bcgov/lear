@@ -14,7 +14,7 @@
 
 """Tests for the Furnishings Job.
 
-Test suite to ensure that the Furnishings Job is working as expected.
+Test suite to ensure that the Furnishings Job stage one is working as expected.
 """
 import copy
 from unittest.mock import MagicMock, patch
