@@ -1,7 +1,7 @@
 """add_furnishings_id_to_address
 
 Revision ID: ac0065d92893
-Revises: 01b28a2bb730
+Revises: ec9652171563
 Create Date: 2024-07-08 07:49:30.435973
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'ac0065d92893'
-down_revision = '01b28a2bb730'
+down_revision = 'ec9652171563'
 branch_labels = None
 depends_on = None
 
