@@ -84,6 +84,8 @@ class _Config:  # pylint: disable=too-few-public-methods
     TESTING = False
     DEBUG = False
 
+    SECOND_NOTICE_DELAY = os.getenv('SECOND_NOTICE_DELAY', None)
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Development environment configuration."""

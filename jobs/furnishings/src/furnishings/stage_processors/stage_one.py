@@ -13,7 +13,7 @@
 # limitations under the License.
 """Furnishings job procssing rules for stage one of involuntary dissolution."""
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from flask import Flask, current_app
@@ -31,6 +31,7 @@ class StageOneProcessor:
         self._app = app
         self._qsm = qsm
 
+        self._second_notice_delay = timedelta(days=app.config.get('SECOND_NOTICE_DELAY'))
         self._email_grouping_identifier = None
         self._mail_grouping_identifier = None
 
@@ -43,31 +44,76 @@ class StageOneProcessor:
         if not furnishings:
             await self._send_first_round_notification(batch_processing)
         else:
-            # send paper letter if business is still not in good standing after 5 days of email letter sent out
-            pass
+            has_elapsed_email_entry = any(
+                furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
+                and furnishing.created_date + self._second_notice_delay < datetime.now()
+                and furnishing.name in (
+                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
+                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO
+                ) for furnishing in furnishings
+            )
+            has_mail_entry = any(
+                furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
+                and furnishing.name in (
+                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
+                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO
+                ) for furnishing in furnishings
+            )
+
+            if has_elapsed_email_entry and not has_mail_entry:
+                await self._send_second_round_notification(batch_processing)
 
     async def _send_first_round_notification(self, batch_processing: BatchProcessing):
         """Process first round of notification(email/letter)."""
+        _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
+            batch_processing.business_identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
+        )
+
+        if not eligible_details:
+            return
+        
         # send email/letter notification for the first time
         email = self._get_email_address_from_auth(batch_processing.business_identifier)
         if email:
             # send email letter
-            _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
-                batch_processing.business_identifier,
-                InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
-                )
-            if eligible_details:
-                new_furnishing = self._create_new_furnishing(
-                    batch_processing,
-                    eligible_details,
-                    Furnishing.FurnishingType.EMAIL,
-                    email
-                    )
-                # notify emailer
-                await self._send_email(new_furnishing)
+            new_furnishing = self._create_new_furnishing(
+                batch_processing,
+                eligible_details,
+                Furnishing.FurnishingType.EMAIL,
+                email
+            )
+            # notify emailer
+            await self._send_email(new_furnishing)
         else:
             # send paper letter if business doesn't have email address
-            pass
+            new_furnishing = self._create_new_furnishing(
+                batch_processing,
+                eligible_details,
+                Furnishing.FurnishingType.MAIL
+            )
+            # TODO: create and add letter to either AR or transition pdf
+            # TODO: send AR and transition pdf to BCMail+
+            new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
+
+    # TODO: consider how to refactor this bit of code since it is entirely copied from above
+    async def _send_second_round_notification(self, batch_processing: BatchProcessing):
+        """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
+        _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
+            batch_processing.business_identifier, False
+        )
+
+        if not eligible_details:
+            return
+
+        new_furnishing = self._create_new_furnishing(
+            batch_processing,
+            eligible_details,
+            Furnishing.FurnishingType.MAIL
+        )
+        # TODO: create and add letter to either AR or transition pdf
+        # TODO: send AR and transition pdf to BCMail+
+        new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
 
     def _create_new_furnishing(
             self,
