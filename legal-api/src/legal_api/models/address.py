@@ -52,6 +52,7 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    furnishings_id = db.Column('furnishings_id', db.Integer, db.ForeignKey('furnishings.id'), nullable=True)
     office_id = db.Column('office_id', db.Integer, db.ForeignKey('offices.id', ondelete='CASCADE'), nullable=True)
     # Relationships - Users
     # business_mailing_address = db.relationship('Business',

@@ -75,7 +75,6 @@ class Furnishing(db.Model):
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
-    address_id = db.Column('address_id', db.Integer, db.ForeignKey('addresses.id'), index=True, nullable=True)
 
     def save(self):
         """Save the object to the database immediately."""
