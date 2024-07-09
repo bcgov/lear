@@ -169,6 +169,18 @@ class Reset:
                 raise err
 
     @classmethod
+    def _delete_messages(cls, cursor, event_ids: list):
+        """Delete rows mars_message_outbound table with the given event ids."""
+        try:
+            cursor.execute(f"""
+                    DELETE FROM MRAS_MESSAGE_OUTBOUND
+                    WHERE stg_id in ({stringify_list(event_ids)})
+                """)
+        except Exception as err:
+            current_app.logger.error('Error in Reset: failed to delete from mras message outbound table.')
+            raise err
+
+    @classmethod
     def _get_incorporations_by_event(cls, cursor, event_ids: list):
         """Find all corporation entries associated with an incorporation."""
         new_corps = {}
@@ -271,6 +283,7 @@ class Reset:
                 Business.reset_corp_states(cursor=cursor, event_ids=event_ids)
                 Business.reset_corporations(cursor=cursor, event_info=events_info, event_ids=event_ids)
                 ShareObject.delete_shares(cursor, event_ids)
+                cls._delete_messages(cursor=cursor, event_ids=event_ids)
                 cls._delete_filing_user(cursor=cursor, event_ids=event_ids)
                 cls._delete_ledger_text(cursor=cursor, event_ids=event_ids)
                 cls._delete_corp_name(cursor=cursor, event_ids=list(new_corps.values()))
