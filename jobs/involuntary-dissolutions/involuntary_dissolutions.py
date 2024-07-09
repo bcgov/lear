@@ -288,7 +288,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
             batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
             app.logger.debug(
-                f'Batch Processing with business identifier: {batch_processing.business_identifier} has been marked as complete.'
+                f'Batch Processing with identifier: {batch_processing.business_identifier} has been marked as complete.'
             )
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
