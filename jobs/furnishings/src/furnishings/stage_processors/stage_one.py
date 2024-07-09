@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job procssing rules for stage one of involuntary dissolution."""
+import pytz
 import uuid
 from datetime import datetime, timedelta
 
@@ -21,6 +22,7 @@ from legal_api.models import Batch, BatchProcessing, Business, Furnishing, db  #
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
+from legal_api.utils.datetime import datetime as datetime_util
 
 
 class StageOneProcessor:
@@ -31,7 +33,7 @@ class StageOneProcessor:
         self._app = app
         self._qsm = qsm
 
-        self._second_notice_delay = timedelta(days=app.config.get('SECOND_NOTICE_DELAY'))
+        self._second_notice_delay = int(app.config.get('SECOND_NOTICE_DELAY'))
         self._email_grouping_identifier = None
         self._mail_grouping_identifier = None
 
@@ -42,22 +44,29 @@ class StageOneProcessor:
                 business_id=batch_processing.business_id
                 )
         if not furnishings:
+            # send first notification if no furnishing entry exists
             await self._send_first_round_notification(batch_processing)
         else:
+            # send second notification if an email has been sent and no mail has been sent
+            valid_furnishing_names = [
+                Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+                Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR,
+                Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
+                Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO
+            ]
+            tz = pytz.timezone('US/Pacific')
+            today_date = tz.localize(datetime.today())
+
             has_elapsed_email_entry = any(
                 furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
-                and furnishing.created_date + self._second_notice_delay < datetime.now()
-                and furnishing.name in (
-                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
-                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO
-                ) for furnishing in furnishings
+                and datetime_util.add_business_days(furnishing.created_date, self._second_notice_delay) < today_date
+                and furnishing.furnishing_name in valid_furnishing_names
+                for furnishing in furnishings
             )
             has_mail_entry = any(
                 furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
-                and furnishing.name in (
-                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
-                    Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO
-                ) for furnishing in furnishings
+                and furnishing.furnishing_name in valid_furnishing_names
+                for furnishing in furnishings
             )
 
             if has_elapsed_email_entry and not has_mail_entry:
@@ -72,7 +81,7 @@ class StageOneProcessor:
 
         if not eligible_details:
             return
-        
+
         # send email/letter notification for the first time
         email = self._get_email_address_from_auth(batch_processing.business_identifier)
         if email:
@@ -96,11 +105,11 @@ class StageOneProcessor:
             # TODO: send AR and transition pdf to BCMail+
             new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
 
-    # TODO: consider how to refactor this bit of code since it is entirely copied from above
     async def _send_second_round_notification(self, batch_processing: BatchProcessing):
         """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
         _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
-            batch_processing.business_identifier, False
+            batch_processing.business_identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
         )
 
         if not eligible_details:
