@@ -18,7 +18,7 @@ import uuid
 
 from datedelta import datedelta
 from freezegun import freeze_time
-from legal_api.models import Batch, BatchProcessing, Business, Filing, Furnishing, db
+from legal_api.models import Address, Batch, BatchProcessing, Business, Filing, Furnishing, db
 from legal_api.models.colin_event_id import ColinEventId
 from sqlalchemy_continuum import versioning_manager
 
@@ -151,3 +151,24 @@ def factory_furnishing(batch_id,
     )
     furnishing.save()
     return furnishing
+
+def factory_address(address_type: str,
+                    street='some street',
+                    city='victoria',
+                    country='CA',
+                    postal_code='v512a9',
+                    region='akjsdf',
+                    business_id=None,
+                    furnishings_id=None):
+    """Create an address entry."""
+    address = Address(
+        address_type=address_type,
+        street=street,
+        city=city,
+        country=country,
+        postal_code=postal_code,
+        region=region,
+        business_id=business_id,
+        furnishings_id=furnishings_id)
+    address.save()
+    return address

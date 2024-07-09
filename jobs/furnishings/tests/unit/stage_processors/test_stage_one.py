@@ -22,14 +22,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from legal_api.models import Business, Furnishing
+from legal_api.models import Address, Business, Furnishing
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.datetime import datetime as datetime_util
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
 from furnishings.stage_processors.stage_one import StageOneProcessor, process
 
-from .. import factory_batch, factory_batch_processing, factory_business, factory_completed_filing, factory_furnishing
+from .. import factory_address, factory_batch, factory_batch_processing, factory_business, factory_completed_filing, factory_furnishing
 
 
 RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
@@ -88,6 +88,7 @@ def test_get_email_address_from_auth(session, test_name, mock_return):
 async def test_process_first_notification(app, session, test_name, entity_type, email, expected_furnishing_name):
     """Assert that the first notification furnishing entry is created correctly."""
     business = factory_business(identifier='BC1234567', entity_type=entity_type)
+    factory_address(address_type=Address.MAILING, business_id=business.id)
     batch = factory_batch()
     factory_batch_processing(
         batch_id=batch.id,
@@ -122,6 +123,15 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                 assert furnishing.status == Furnishing.FurnishingStatus.PROCESSED
                 assert furnishing.grouping_identifier is not None
 
+                furnishing_addresses = Address.find_by(furnishings_id=furnishing.id)
+                assert len(furnishing_addresses) == 1
+                furnishing_address = furnishing_addresses[0]
+                assert furnishing_address
+                assert furnishing_address.address_type == Address.FURNISHING
+                assert furnishing_address.furnishings_id == furnishing.id
+                assert furnishing_address.business_id == None
+                assert furnishing_address.office_id == None
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     'test_name, has_email_furnishing, has_mail_furnishing, is_email_elapsed', [
@@ -154,6 +164,7 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
 async def test_process_second_notification(app, session, test_name, has_email_furnishing, has_mail_furnishing, is_email_elapsed):
     """Assert that the second notification furnishing entry is created correctly."""
     business = factory_business(identifier='BC1234567')
+    factory_address(address_type=Address.MAILING, business_id=business.id)
     batch = factory_batch()
     factory_batch_processing(
         batch_id=batch.id,
@@ -198,6 +209,15 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
         assert mail_furnishing
         assert mail_furnishing.status == Furnishing.FurnishingStatus.PROCESSED
         assert mail_furnishing.grouping_identifier is not None
+
+        furnishing_addresses = Address.find_by(furnishings_id=mail_furnishing.id)
+        assert len(furnishing_addresses) == 1
+        furnishing_address = furnishing_addresses[0]
+        assert furnishing_address
+        assert furnishing_address.address_type == Address.FURNISHING
+        assert furnishing_address.furnishings_id == mail_furnishing.id
+        assert furnishing_address.business_id == None
+        assert furnishing_address.office_id == None
 
     else:
         # any other case should not create additional furnishings

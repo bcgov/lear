@@ -103,7 +103,10 @@ class StageOneProcessor:
                 eligible_details,
                 Furnishing.FurnishingType.MAIL
             )
-            self._create_furnishing_address(business.mailing_address, new_furnishing.id)
+
+            mailing_address = business.mailing_address.one_or_none()
+            if mailing_address:
+                self._create_furnishing_address(mailing_address, new_furnishing.id)
 
             # TODO: create and add letter to either AR or transition pdf
             # TODO: send AR and transition pdf to BCMail+
@@ -120,11 +123,17 @@ class StageOneProcessor:
         if not eligible_details:
             return
 
+        business = Business.find_by_identifier(batch_processing.business_identifier)
         new_furnishing = self._create_new_furnishing(
             batch_processing,
             eligible_details,
             Furnishing.FurnishingType.MAIL
         )
+
+        mailing_address = business.mailing_address.one_or_none()
+        if mailing_address:
+            self._create_furnishing_address(mailing_address, new_furnishing.id)
+
         # TODO: create and add letter to either AR or transition pdf
         # TODO: send AR and transition pdf to BCMail+
         new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
