@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job procssing rules for stage one of involuntary dissolution."""
-import pytz
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
+import pytz
 import requests
 from flask import Flask, current_app
 from legal_api.models import Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
@@ -47,7 +47,7 @@ class StageOneProcessor:
             # send first notification if no furnishing entry exists
             await self._send_first_round_notification(batch_processing)
         else:
-            # send second notification if an email has been sent and no mail has been sent
+            # send paper letter if business is still not in good standing after 5 days of email letter sent out
             valid_furnishing_names = [
                 Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
                 Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR,
