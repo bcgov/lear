@@ -13,12 +13,13 @@
 # limitations under the License.
 """Furnishings job procssing rules for stage one of involuntary dissolution."""
 import uuid
+from copy import deepcopy
 from datetime import datetime
 
 import pytz
 import requests
 from flask import Flask, current_app
-from legal_api.models import Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
+from legal_api.models import Address, Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
@@ -84,6 +85,7 @@ class StageOneProcessor:
 
         # send email/letter notification for the first time
         email = self._get_email_address_from_auth(batch_processing.business_identifier)
+        business = Business.find_by_identifier(batch_processing.business_identifier)
         if email:
             # send email letter
             new_furnishing = self._create_new_furnishing(
@@ -101,9 +103,12 @@ class StageOneProcessor:
                 eligible_details,
                 Furnishing.FurnishingType.MAIL
             )
+            self._create_furnishing_address(business.mailing_address, new_furnishing.id)
+
             # TODO: create and add letter to either AR or transition pdf
             # TODO: send AR and transition pdf to BCMail+
             new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
+            new_furnishing.processed_date = datetime.utcnow()
 
     async def _send_second_round_notification(self, batch_processing: BatchProcessing):
         """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
@@ -123,6 +128,7 @@ class StageOneProcessor:
         # TODO: create and add letter to either AR or transition pdf
         # TODO: send AR and transition pdf to BCMail+
         new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
+        new_furnishing.processed_date = datetime.utcnow()
 
     def _create_new_furnishing(
             self,
@@ -163,6 +169,23 @@ class StageOneProcessor:
         new_furnishing.save()
 
         return new_furnishing
+    
+    def _create_furnishing_address(self, mailing_address: Address, furnishings_id: int) -> Address:
+        """Clone business mailing address to be used by mail furnishings."""
+        furnishing_address = Address(
+            address_type = Address.FURNISHING,
+            street = mailing_address.street,
+            street_additional = mailing_address.street_additional,
+            city = mailing_address.city,
+            region = mailing_address.region,
+            country = mailing_address.country,
+            postal_code = mailing_address.postal_code,
+            delivery_instructions = mailing_address.delivery_instructions,
+            furnishings_id = furnishings_id
+        )
+        furnishing_address.save()
+
+        return furnishing_address
 
     async def _send_email(self, furnishing: Furnishing):
         """Put email message on the queue for all email furnishing entries."""
