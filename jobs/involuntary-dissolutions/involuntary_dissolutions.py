@@ -116,7 +116,9 @@ async def put_filing_on_queue(filing_id: int, app: Flask, qsm: QueueService):
     try:
         subject = app.config['NATS_FILER_SUBJECT']
         payload = {'filing': {'id': filing_id}}
+        app.logger.debug(f'Attempting to place filing on Filer Queue with id {filing_id}')
         await qsm.publish_json_to_subject(payload, subject)
+        app.logger.debug(f'Successfully placed filing on Filer Queue with id {filing_id}')
     except Exception as err:  # pylint: disable=broad-except # noqa F841;
         # mark any failure for human review
         capture_message(
@@ -129,7 +131,7 @@ async def put_filing_on_queue(filing_id: int, app: Flask, qsm: QueueService):
 
 
 def mark_eligible_batches_completed():
-    """Mark batches completed if all of their associated batch_processings are compeleted."""
+    """Mark batches completed if all of their associated batch_processings are completed."""
     AliasBatchProcessing = aliased(BatchProcessing)  # pylint: disable=invalid-name # noqa N806
     batches = (
         db.session.query(Batch)
@@ -185,6 +187,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
                       size=len(businesses_eligible),
                       start_date=datetime.utcnow())
         batch.save()
+        app.logger.debug(f'New batch has been created with ID: {batch.id}')
 
         # create batch processing entries for each business being dissolved
         for business_elgible in businesses_eligible:
@@ -205,6 +208,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
                 'targetDissolutionDate': target_dissolution_date.date().isoformat()
             }
             batch_processing.save()
+            app.logger.debug(f'New batch processing has been created with ID: {batch_processing.id}')
 
     except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
         app.logger.error(err)
@@ -241,9 +245,11 @@ def stage_2_process(app: Flask):
         if eligible:
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
             batch_processing.trigger_date = datetime.utcnow() + stage_2_delay
+            app.logger.debug(f'Changed Batch Processing with id: {batch_processing.id} step to level 2.')
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
+            app.logger.debug(f'Changed Batch Processing with id: {batch_processing.id} status to Withdrawn.')
         batch_processing.last_modified = datetime.utcnow()
         batch_processing.save()
 
@@ -276,10 +282,14 @@ async def stage_3_process(app: Flask, qsm: QueueService):
         )
         if eligible:
             filing = create_invountary_dissolution_filing(batch_processing.business_id)
+            app.logger.debug(f'Created Involuntary Dissolution Filing with ID: {filing.id}')
             await put_filing_on_queue(filing.id, app, qsm)
 
             batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
             batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
+            app.logger.debug(
+                f'Batch Processing with business identifier: {batch_processing.business_identifier} has been marked as complete.'
+            )
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
@@ -287,6 +297,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
         batch_processing.save()
 
     mark_eligible_batches_completed()
+    app.logger.debug('Marked batches complete when all of their associated batch_processings are completed.')
 
 
 def can_run_today(cron_value: str):
@@ -337,11 +348,17 @@ async def run(application: Flask, qsm: QueueService):  # pylint: disable=redefin
                 return
 
             if stage_1_valid:
+                application.logger.debug('Entering stage 1 of involuntary dissolution job.')
                 stage_1_process(application)
+                application.logger.debug('Exiting stage 1 of involuntary dissolution job.')
             if stage_2_valid:
+                application.logger.debug('Entering stage 2 of involuntary dissolution job.')
                 stage_2_process(application)
+                application.logger.debug('Exiting stage 2 of involuntary dissolution job.')
             if stage_3_valid:
+                application.logger.debug('Entering stage 3 of involuntary dissolution job.')
                 await stage_3_process(application, qsm)
+                application.logger.debug('Exiting stage 3 of involuntary dissolution job.')
 
 
 if __name__ == '__main__':
