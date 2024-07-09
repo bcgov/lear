@@ -27,6 +27,7 @@ from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from sentry_sdk import capture_message
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sqlalchemy import Date, cast, func
@@ -291,8 +292,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
 
 def can_run_today(cron_value: str):
     """Check if cron string is valid for today."""
-    tz = pytz.timezone('US/Pacific')
-    today = tz.localize(datetime.today())
+    today = LegislationDatetime.now()
     result = croniter.match(cron_value, datetime(today.year, today.month, today.day))
     return result
 
