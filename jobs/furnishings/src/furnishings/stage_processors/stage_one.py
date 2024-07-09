@@ -54,7 +54,7 @@ class StageOneProcessor:
                 Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
                 Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO
             ]
-            tz = pytz.timezone('US/Pacific')
+            tz = pytz.timezone('UTC')
             today_date = tz.localize(datetime.today())
 
             has_elapsed_email_entry = any(

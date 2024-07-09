@@ -63,6 +63,7 @@ jobs:
       NATS_CLUSTER_ID: test-cluster
       NATS_CLIENT_NAME: entity.job.tester
       NATS_ENTITY_EVENTS_SUBJECT: entity.events
+      SECOND_NOTICE_DELAY: 5
     services:
       postgres:
         image: postgres:12
