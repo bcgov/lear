@@ -13,7 +13,6 @@
 # limitations under the License.
 """Furnishings job procssing rules for stage one of involuntary dissolution."""
 import uuid
-from copy import deepcopy
 from datetime import datetime
 
 import pytz
@@ -178,19 +177,19 @@ class StageOneProcessor:
         new_furnishing.save()
 
         return new_furnishing
-    
+
     def _create_furnishing_address(self, mailing_address: Address, furnishings_id: int) -> Address:
         """Clone business mailing address to be used by mail furnishings."""
         furnishing_address = Address(
-            address_type = Address.FURNISHING,
-            street = mailing_address.street,
-            street_additional = mailing_address.street_additional,
-            city = mailing_address.city,
-            region = mailing_address.region,
-            country = mailing_address.country,
-            postal_code = mailing_address.postal_code,
-            delivery_instructions = mailing_address.delivery_instructions,
-            furnishings_id = furnishings_id
+            address_type=Address.FURNISHING,
+            street=mailing_address.street,
+            street_additional=mailing_address.street_additional,
+            city=mailing_address.city,
+            region=mailing_address.region,
+            country=mailing_address.country,
+            postal_code=mailing_address.postal_code,
+            delivery_instructions=mailing_address.delivery_instructions,
+            furnishings_id=furnishings_id
         )
         furnishing_address.save()
 
