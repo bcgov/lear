@@ -74,7 +74,8 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
             furnishing_name=Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
             furnishing_type=Furnishing.FurnishingType.GAZETTE,
             created_date=datetime.utcnow()+datedelta(years=1),
-            last_modified=datetime.utcnow()+datedelta(years=1)
+            last_modified=datetime.utcnow()+datedelta(years=1),
+            business_name=business.legal_name
         )
 
     process(app)
@@ -84,6 +85,7 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
         assert len(furnishings) == 1
         furnishing = furnishings[0]
         assert furnishing.furnishing_type == Furnishing.FurnishingType.GAZETTE
+        assert furnishing.business_name == business.legal_name
         if entity_type == Business.LegalTypes.EXTRA_PRO_A.value:
             assert furnishing.furnishing_name == Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO
         else:

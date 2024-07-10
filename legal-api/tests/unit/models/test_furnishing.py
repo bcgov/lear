@@ -31,7 +31,9 @@ def test_valid_furnishing_save(session):
         batch_id = batch.id,
         business_id = business.id,
         business_identifier = business.identifier,
-        status = Furnishing.FurnishingStatus.QUEUED
+        status = Furnishing.FurnishingStatus.QUEUED,
+        last_ar_date=business.last_ar_date,
+        business_name=business.legal_name
     )
 
     furnishing.save()
