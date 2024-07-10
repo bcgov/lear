@@ -27,7 +27,7 @@ from .db import db
 
 
 class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
-    """This class manages the amalgamation."""
+    """This class manages the amalgamations."""
 
     # pylint: disable=invalid-name
     class AmalgamationTypes(BaseEnum):
