@@ -117,7 +117,7 @@ jobs:
           flags: entityemailer
           name: codecov-entity-emailer
           token: ${{ secrets.CODECOV_TOKEN}}
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   build-check:
     needs: setup-job
