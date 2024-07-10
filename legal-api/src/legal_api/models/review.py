@@ -75,3 +75,18 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
                       filter(Review.filing_id == filing_id).
                       one_or_none())
         return review
+
+    @property
+    def json(self) -> dict:
+        """Return Review as a JSON object."""
+        return {
+            'id': self.id,
+            'nrNumber': self.nr_number,
+            'identifier': self.identifier,
+            'completingParty': self.completing_party,
+            'status': self.status.name,
+            'submissionDate': self.submission_date.isoformat() if self.submission_date else None,
+            'creationDate': self.creation_date.isoformat() if self.creation_date else None,
+            'filingId': self.filing_id,
+            'results': [result.json for result in self.review_results]
+        }

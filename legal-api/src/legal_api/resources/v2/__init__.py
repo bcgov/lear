@@ -26,6 +26,7 @@ from .mras import bp as mras_bp
 from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
 from .request_tracker import bp as request_tracker_bp
+from .review import bp as review_bp
 
 
 class V2Endpoint:
@@ -52,6 +53,7 @@ class V2Endpoint:
         self.app.register_blueprint(request_tracker_bp)
         self.app.register_blueprint(internal_bp)
         self.app.register_blueprint(mras_bp)
+        self.app.register_blueprint(review_bp)
 
 
 v2_endpoint = V2Endpoint()
