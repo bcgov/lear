@@ -21,7 +21,7 @@ from sqlalchemy.exc import OperationalError
 from entity_emailer import worker
 from tracker.models import MessageProcessing
 
-from . import create_mock_message, create_business, create_furnishing  # noqa: I003
+from . import create_business, create_furnishing, create_mock_message  # noqa: I003
 
 
 @pytest.mark.parametrize(
@@ -529,7 +529,8 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
     ('When email is completed', None, 'BC', 'PROCESSED'),
     ('If legal_type is not in BC', None, 'CCC', 'QUEUED')
 ])
-async def test_should_update_furnishing_status_with_message_status(tracker_app, tracker_db, session, test_name, exception, legal_type, expected_status):
+async def test_should_update_furnishing_status_with_message_status(tracker_app, tracker_db, session,
+                                                                   test_name, exception, legal_type, expected_status):
     """Assert that furnishing is marked with message status."""
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
     business_identifier = 'BC1234567'

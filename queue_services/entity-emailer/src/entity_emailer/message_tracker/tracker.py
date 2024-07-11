@@ -17,7 +17,6 @@ import json
 
 import nats
 from flask import current_app
-
 from legal_api.models import Business, Furnishing
 
 from entity_emailer.email_processors import ar_overdue_stage_1_notification, filing_notification

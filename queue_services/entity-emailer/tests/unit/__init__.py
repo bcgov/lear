@@ -18,7 +18,7 @@ from datetime import datetime
 from random import randrange
 from unittest.mock import Mock
 
-from legal_api.models import Business, Filing, RegistrationBootstrap, User, Furnishing, Batch
+from legal_api.models import Batch, Business, Filing, Furnishing, RegistrationBootstrap, User
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,

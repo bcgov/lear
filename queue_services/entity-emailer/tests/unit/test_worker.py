@@ -24,10 +24,10 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer import worker
 from entity_emailer.email_processors import (
+    ar_overdue_stage_1_notification,
     ar_reminder_notification,
     correction_notification,
     filing_notification,
-    ar_overdue_stage_1_notification,
     name_request,
     nr_notification,
     special_resolution_notification,
