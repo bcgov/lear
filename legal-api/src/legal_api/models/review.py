@@ -85,8 +85,8 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             'identifier': self.identifier,
             'completingParty': self.completing_party,
             'status': self.status.name,
-            'submissionDate': self.submission_date.isoformat() if self.submission_date else None,
-            'creationDate': self.creation_date.isoformat() if self.creation_date else None,
+            'submissionDate': self.submission_date.isoformat(),
+            'creationDate': self.creation_date.isoformat(),
             'filingId': self.filing_id,
             'results': [result.json for result in self.review_results]
         }

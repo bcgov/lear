@@ -69,3 +69,14 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
                              order_by(ReviewResult.creation_date.desc()).
                              first())
         return review_result
+
+    @property
+    def json(self) -> dict:
+        """Return ReviewResult as a JSON object."""
+        return {
+            'status': self.status.name,
+            'comments': self.comments,
+            'reviewer': self.reviewer,
+            'submissionDate': self.submission_date,
+            'creationDate': self.creation_date
+        }
