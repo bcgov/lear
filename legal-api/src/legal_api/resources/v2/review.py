@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import Filing, Review, ReviewResult
+from legal_api.models import Filing, Review, ReviewResult, UserRoles
 from legal_api.utils.auth import jwt
 
 
@@ -26,7 +26,7 @@ bp = Blueprint('Review', __name__, url_prefix='/api/v2/review')
 
 @bp.route('/<int:review_id>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
-@jwt.requires_auth
+@jwt.has_one_of_roles([UserRoles.staff])
 def get_review(review_id: int):
     """Return specific review."""
     review = Review.find_by_id(review_id)
