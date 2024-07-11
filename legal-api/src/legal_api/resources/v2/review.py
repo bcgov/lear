@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import Filing, Review
+from legal_api.models import Filing, Review, ReviewResult
 from legal_api.utils.auth import jwt
 
 
@@ -30,10 +30,12 @@ bp = Blueprint('Review', __name__, url_prefix='/api/v2/review')
 def get_review(review_id: int):
     """Return specific review."""
     review = Review.find_by_id(review_id)
+    review_results = ReviewResult.get_review_results(review_id)
 
     if not review:
         return jsonify({'message': 'Review not found.'}), HTTPStatus.NOT_FOUND
     result = review.json
+    result['results'] = review_results
 
     # Update the submission date if the status is RESUBMITTED
     if review.status == 'RESUBMITTED' and review.results:
