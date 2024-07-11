@@ -63,7 +63,7 @@ def get_businesses(identifier: str):
         business_json = business.json(slim=True)
         # need to add the alternateNames array here because it is not a part of slim JSON
         business_json['alternateNames'] = business.get_alternate_names()
-        return business_json
+        return jsonify(business=business_json)
 
     warnings = check_warnings(business)
     # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
