@@ -21,7 +21,7 @@ from sqlalchemy.exc import OperationalError
 from entity_emailer import worker
 from tracker.models import MessageProcessing
 
-from . import create_mock_message  # noqa: I003
+from . import create_mock_message, create_business, create_furnishing  # noqa: I003
 
 
 @pytest.mark.parametrize(
@@ -521,3 +521,43 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
     # check email retries not exceed the max retry limit
     assert result.message_seen_count == 6
     assert expected_last_error in result.last_error
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(['test_name', 'exception', 'legal_type', 'expected_status'], [
+    ('When email is failed', EmailException, 'BC', 'FAILED'),
+    ('When email is completed', None, 'BC', 'PROCESSED'),
+    ('If legal_type is not in BC', None, 'CCC', 'QUEUED')
+])
+async def test_should_update_furnishing_status_with_message_status(tracker_app, tracker_db, session, test_name, exception, legal_type, expected_status):
+    """Assert that furnishing is marked with message status."""
+    message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
+    business_identifier = 'BC1234567'
+    business = create_business(business_identifier, legal_type, 'Test Business')
+    furnishing = create_furnishing(business)
+    message_payload = {
+        'specversion': '1.x-wip',
+        'type': 'bc.registry.dissolution',
+        'source': 'furnishingsJob',
+        'id': message_id,
+        'time': '',
+        'datacontenttype': 'application/json',
+        'identifier': business_identifier,
+        'data': {
+            'furnishing': {
+                'type': 'PROCESSING',
+                'furnishingId': furnishing.id,
+                'furnishingName': furnishing.furnishing_name
+            }
+        }
+    }
+    mock_msg = create_mock_message(message_payload)
+
+    with patch.object(worker, 'process_email', return_value=True, side_effect=exception):
+        if exception:
+            with pytest.raises(exception):
+                await worker.cb_subscription_handler(mock_msg)
+        else:
+            await worker.cb_subscription_handler(mock_msg)
+
+        assert furnishing.status.name == expected_status

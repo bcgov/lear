@@ -46,6 +46,7 @@ from entity_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_notification,
+    ar_overdue_stage_1_notification,
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
@@ -55,7 +56,6 @@ from entity_emailer.email_processors import (
     correction_notification,
     dissolution_notification,
     filing_notification,
-    involuntary_dissolution_notification,
     mras_notification,
     name_request,
     nr_notification,
@@ -144,7 +144,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             email = bn_notification.process_bn_move(email_msg, token)
             send_email(email, token)
         elif etype and etype == 'bc.registry.dissolution':
-            email = involuntary_dissolution_notification.process(email_msg, token)
+            email = ar_overdue_stage_1_notification.process(email_msg, token)
             send_email(email, token)
         else:
             etype = email_msg['email']['type']
@@ -222,7 +222,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
             if process_message:
                 tracker_msg = tracker_util.start_tracking_message(message_context_properties, email_msg, tracker_msg)
                 process_email(email_msg, FLASK_APP)
-                tracker_util.complete_tracking_message(tracker_msg)
+                tracker_util.complete_tracking_message(tracker_msg, email_msg)
             else:
                 # Skip processing of message due to message state - previously processed or currently being
                 # processed

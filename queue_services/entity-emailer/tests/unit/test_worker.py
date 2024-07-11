@@ -27,12 +27,14 @@ from entity_emailer.email_processors import (
     ar_reminder_notification,
     correction_notification,
     filing_notification,
+    ar_overdue_stage_1_notification,
     name_request,
     nr_notification,
     special_resolution_notification,
 )
 from tests import MockResponse
 from tests.unit import (
+    create_business,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,
     prep_incorp_filing,
@@ -466,3 +468,40 @@ def test_send_email_with_incomplete_payload(app, session, email_msg):
         worker.send_email(email_msg, None)
 
     assert 'Unsuccessful sending email' in str(excinfo)
+
+
+def test_ar_overdue_stage_1_notification(app, session, mocker):
+    """Assert that the stage 1 overdue ARs notification can be processed."""
+    token = 'token'
+    business_identifier = 'BC2321232'
+    create_business(business_identifier, 'BC', 'Test Business')
+    mocker.patch(
+        'entity_emailer.email_processors.ar_overdue_stage_1_notification.get_jurisdictions',
+        return_value=[])
+
+    # run worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+            with patch.object(ar_overdue_stage_1_notification, 'get_recipient_from_auth', return_value='test@test.com'):
+                worker.process_email({
+                    'specversion': '1.x-wip',
+                    'type': 'bc.registry.dissolution',
+                    'source': 'furnishingsJob',
+                    'id': 'f36e3af7-90c3-4859-a6f6-2feefbdc1e37',
+                    'time': '',
+                    'datacontenttype': 'application/json',
+                    'identifier': business_identifier,
+                    'data': {
+                        'furnishing': {
+                            'type': 'PROCESSING',
+                            'furnishingId': 1,
+                            'furnishingName': 'DISSOLUTION_COMMENCEMENT_NO_AR'
+                        }
+                    }
+                }, app)
+
+                call_args = mock_send_email.call_args
+                assert call_args[0][0]['content']['subject'] == f'Attention {business_identifier} - Test Business'
+                assert call_args[0][0]['recipients'] == 'test@test.com'
+                assert call_args[0][0]['content']['body']
+                assert call_args[0][1] == token

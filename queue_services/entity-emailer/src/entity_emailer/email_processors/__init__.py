@@ -204,8 +204,7 @@ def get_jurisdictions(identifier: str, token: str) -> str:
     }
 
     response = requests.get(
-        f'{current_app.config.get("AUTH_URL")}/mras/{identifier}',
-        headers=headers
+        f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
     )
 
     return response
