@@ -33,7 +33,7 @@ class StageOneProcessor:
         self._app = app
         self._qsm = qsm
 
-        self._second_notice_delay = int(app.config.get('SECOND_NOTICE_DELAY'))
+        self._second_notice_delay = app.config.get('SECOND_NOTICE_DELAY')
         self._email_grouping_identifier = None
         self._mail_grouping_identifier = None
 
