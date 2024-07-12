@@ -14,11 +14,10 @@
 """API endpoints for retrieving review data."""
 from http import HTTPStatus
 
-from flask import jsonify
+from flask import current_app, jsonify
 from flask_cors import cross_origin
 
-from legal_api.core import Filing as CoreFiling
-from legal_api.models import Review, UserRoles
+from legal_api.models import Filing, Review, UserRoles
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
@@ -35,16 +34,12 @@ def get_review(review_id: int):
         return jsonify({'message': 'Review not found.'}), HTTPStatus.NOT_FOUND
     result = review.json
 
-    # Update the submission date if the status is RESUBMITTED
-    if review.status == 'RESUBMITTED' and review.results:
-        review.submission_date = review.results[0].submission_date
-
-    filing = CoreFiling.find_by_id(review.filing_id)
+    filing = Filing.find_by_id(review.filing_id)
+    filing_link = ''
     if filing:
-        legder = filing.common_ledger_items(review.identifier, filing.storage)
-        filing_link = legder['filingLink']
-    else:
-        filing_link = {}
+        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        filing_link = f'{base_url}/{filing.temp_reg}/filings/{filing.id}'
+
     result['filingLink'] = filing_link
 
     return jsonify(result), HTTPStatus.OK
