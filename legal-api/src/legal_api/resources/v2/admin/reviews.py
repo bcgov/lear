@@ -35,10 +35,8 @@ def get_review(review_id: int):
     result = review.json
 
     filing = Filing.find_by_id(review.filing_id)
-    filing_link = ''
-    if filing:
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
-        filing_link = f'{base_url}/{filing.temp_reg}/filings/{filing.id}'
+    base_url = current_app.config.get('LEGAL_API_BASE_URL')
+    filing_link = f'{base_url}/{filing.temp_reg}/filings/{filing.id}'
 
     result['filingLink'] = filing_link
 
