@@ -12,7 +12,8 @@
             "launchdarkly",
             "nats-filer",
             "nats-emailer",
-            "entity-service-account"
+            "entity-service-account",
+            "furnishings"
         ]
     },
     {
