@@ -40,14 +40,14 @@ def get_reviews():
         review.json for review in results
     ]
 
-    review_result = {
+    reviews = {
         'reviews': reviews_list,
         'page': page,
         'limit': limit,
         'total': total_count
     }
 
-    return review_result, HTTPStatus.OK
+    return reviews, HTTPStatus.OK
 
 
 @bp_admin.route('/reviews/<int:review_id>', methods=['GET', 'OPTIONS'])

@@ -19,7 +19,7 @@ from .administrative_bn import create_bn_request
 from .bp import bp_admin
 from .configuration import get_configurations, update_configurations
 from .dissolution import get_statistics
-from .reviews import get_reviews, get_review
+from .reviews import get_review
 
 
 __all__ = ('bp_admin',)
