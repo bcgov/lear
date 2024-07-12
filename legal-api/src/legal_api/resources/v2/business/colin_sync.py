@@ -21,7 +21,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Amalgamation, AmalgamatingBusiness, Business, Filing, PartyRole, UserRoles, db
+from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole, UserRoles, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
@@ -50,7 +50,7 @@ def get_completed_filings_for_colin(status=None):
                 filing_json['filingId'] = filing.id
                 filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
                 if not filing_json['filing'].get('business'):
-                    # ideally filing should always have transaction_id once completed.
+                    # ideally filing should have transaction_id once completed.
                     # found some filing in DEV (with missing transaction_id), adding this check to avoid exception
                     if filing.transaction_id:
                         business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
@@ -76,7 +76,7 @@ def get_completed_filings_for_colin(status=None):
                         set_from_primary_or_holding_business_data(filing_json, filing)
                     except Exception as ex:  # noqa: B902
                         current_app.logger.info(ex)
-                        continue  # do not break the function because of one filing
+                        continue  # do not break this function because of one filing
 
                 filings.append(filing_json)
         return jsonify(filings), HTTPStatus.OK
