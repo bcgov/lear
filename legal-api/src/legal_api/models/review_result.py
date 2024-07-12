@@ -22,6 +22,7 @@ from legal_api.utils.datetime import datetime
 
 from .db import db
 from .review import ReviewStatus
+from .user import User
 
 
 class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -76,7 +77,7 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
         return {
             'status': self.status.name,
             'comments': self.comments,
-            'reviewer': self.reviewer,
+            'reviewer': (User.find_by_id(self.review_id)).display_name,
             'submissionDate': self.submission_date.isoformat() if self.submission_date else None,
             'creationDate': self.creation_date
         }

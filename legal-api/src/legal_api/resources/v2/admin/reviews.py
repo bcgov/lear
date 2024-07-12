@@ -17,33 +17,36 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import Filing, Review, ReviewResult, UserRoles
+from legal_api.core import Filing
+from legal_api.models import Review, UserRoles
 from legal_api.utils.auth import jwt
 
 
-bp = Blueprint('Review', __name__, url_prefix='/api/v2/review')
+from .bp import bp_admin
 
 
-@bp.route('/<int:review_id>', methods=['GET', 'OPTIONS'])
+@bp_admin.route('/reviews/<int:review_id>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.staff])
+#@jwt.has_one_of_roles([UserRoles.staff])
+@jwt.requires_auth
 def get_review(review_id: int):
     """Return specific review."""
     review = Review.find_by_id(review_id)
-    review_results = ReviewResult.get_review_results(review_id)
 
     if not review:
         return jsonify({'message': 'Review not found.'}), HTTPStatus.NOT_FOUND
     result = review.json
-    result['results'] = review_results
 
     # Update the submission date if the status is RESUBMITTED
     if review.status == 'RESUBMITTED' and review.results:
         review.submission_date = review.results[0].submission_date
 
-    # Get filing_json data in endpoint for UI to use
     filing = Filing.find_by_id(review.filing_id)
-    filing_json = filing.json if filing else {}
-    result['filing'] = filing_json
+    if filing:
+        legder = filing.common_ledger_items(review.identifier, filing.storage)
+        filing_link = legder['filingLink']
+    else:
+        filing_link = {}
+    result['filingLink'] = filing_link
 
     return jsonify(result), HTTPStatus.OK
