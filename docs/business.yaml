@@ -45,6 +45,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Business'
+              examples:
+                example-firm:
+                  $ref: '#/components/examples/response-business-firm'
+                example-coop:
+                  $ref: '#/components/examples/response-business-coop'
+                example-corp:
+                  $ref: '#/components/examples/response-business-corp'
             application/xml:
               schema:
                 $ref: '#/components/schemas/Business'
@@ -113,6 +120,13 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Filing'
+            examples:
+              example-registration:
+                $ref: '#/components/examples/request-submit-registration'
+              example-admin-dissolution:
+                $ref: '#/components/examples/request-submit-admin-dissolution'
+              example-voluntary-dissolution:
+                $ref: '#/components/examples/request-submit-voluntary-dissolution'
       parameters:
         - schema:
             type: boolean
@@ -4163,6 +4177,455 @@ components:
               type: string
               title: Display name of the filing.
       description: '***Item not used*** '
+  examples:
+    request-submit-registration:
+      summary: Submit Registration Filing
+      value:
+        filing:
+          header:
+            date: 2024-07-04
+            name: registration
+            filingId: 149747
+            certifiedBy: BCREGTEST DALIA ONE
+            folioNumber:
+            isFutureEffective: false
+          business:
+            legalType: SP
+            identifier: FM1082499
+            foundingDate: 2024-07-04T20:24:46.465481+00:00
+          registration:
+            business:
+              lastLedgerTimestamp: '2020-11-24T18:24:27.179623+00:00'
+              fiscalYearEndDate: '2020-11-24'
+              dissolutionDate: '2020-11-24T18:23:53.498863+00:00'
+              foundingDate: '2020-11-24T18:23:53.498863+00:00'
+              identifier: 'BC1234567 is an identifier for a corporation '
+              legalName: '1234567 B.C. Ltd. is a legal name for a corporation '
+              state: ACTIVE
+              legalType: 'GP: General Partnership'
+              taxId: BN123456789
+              goodStanding: true
+              adminFreeze: true
+              naics:
+                naicsCode: 32621 is the code for 'Tires Manufacturing' description
+                naicsDescription: 32621 is the code for 'Tires Manufacturing' description
+              natureOfBusiness: string
+              complianceWarnings:
+                - code: INVALID_LEGAL_STRUCTURE_DIRECTORS
+                  message: INVALID_LEGAL_STRUCTURE_DIRECTORS
+                  filing: '''https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'''
+            offices:
+              businessOffice:
+                officeType: 'Head office '
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+            businessType: SP
+            contactPoint:
+              email: abc.def@gov.bc.ca
+              phone: (555) 555-5555
+              extension: 1234
+            startDate: '2019-08-24'
+            nameRequest:
+              nrNumber: string
+              legalType: string
+              legalName: string
+              requestType: Benefit Company Inc.
+              status: 'Expired '
+              expires: '2019-08-24T14:15:22Z'
+              consent: string
+              submittedBy: string
+              address:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: string
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our apartment is located at the back of the building."'
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Completing Party
+                  officer:
+                    givenName: string
+                    familyName: string
+                    additionalName: string
+                    middleInitial: string
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: string
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our apartment is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: string
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our apartment is located at the back of the building."'
+                  title: Chief Executive Officer
+            courtOrder:
+              courtOrder:
+                fileNumber: string
+                orderDate: '2019-08-24T14:15:22Z'
+                effectOfOrder: string
+                orderDetails: string
+    request-submit-admin-dissolution:
+      summary: Submit Administrative Dissolution Filing
+      value:
+        filing:
+          header:
+            date: 2024-07-04
+            name: dissolution
+            filingId: 149747
+            certifiedBy: BCREGTEST DALIA ONE
+            folioNumber:
+            isFutureEffective: false
+          business:
+            legalType: SP
+            identifier: FM1082499
+            foundingDate: 2024-07-04T20:24:46.465481+00:00
+          dissolution:
+            dissolutionDate: '2019-08-24'
+            dissolutionType: administrative
+            dissolutionStatementType: The company has made adequate provision for the payment of each of its liabilities
+            hasLiabilities: true
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Director
+                  officer:
+                    givenName: John
+                    familyName: Smith
+                    additionalName: Adam
+                    middleInitial: A
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: Building A
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 2-111 Fort Street
+                    streetAddressAdditional: Building ABC
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the front of the building."'
+                  title: Chief Executive Officer
+            courtOrder:
+              courtOrder:
+                fileNumber: L041638
+                orderDate: '2019-08-24T14:15:22Z'
+                effectOfOrder: The Company will cease operations
+                orderDetails: The Company is ordered to dissolve
+            custodialOffice:
+              officeType: 'Head office '
+              mailingAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building C
+                addressCity: Victoria
+                addressRegion: BC for British Columbia
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building C
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+            affidavitFileKey: 011e332d-1b8e-4218-8710-ad8ac1fbc592.pdf
+            affidavitFileName: Field not used
+    request-submit-voluntary-dissolution:
+      summary: Submit Voluntary Dissolution Filing
+      value:
+        filing:
+          header:
+            date: 2024-07-04
+            name: dissolution
+            filingId: 149747
+            certifiedBy: BCREGTEST DALIA ONE
+            folioNumber:
+            isFutureEffective: false
+          business:
+            legalType: SP
+            identifier: FM1082499
+            foundingDate: 2024-07-04T20:24:46.465481+00:00
+          dissolution:
+            dissolutionDate: '2019-08-24'
+            dissolutionType: voluntary
+            dissolutionStatementType: The company has made adequate provision for the payment of each of its liabilities
+            hasLiabilities: true
+            parties:
+              - party:
+                  taxId: BN123456789
+                  roles:
+                    - appointmentDate: '2019-08-24'
+                      cessationDate: '2019-08-24'
+                      roleType: Director
+                  officer:
+                    givenName: John
+                    familyName: Smith
+                    additionalName: Adam
+                    middleInitial: A
+                    taxId: BN123456789
+                    email: abc.def@gov.bc.ca
+                  deliveryAddress:
+                    streetAddress: 5-4761 Bay Street
+                    streetAddressAdditional: Building A
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the back of the building."'
+                  mailingAddress:
+                    streetAddress: 2-111 Fort Street
+                    streetAddressAdditional: Building ABC
+                    addressCity: Victoria
+                    addressRegion: 'BC for British Columbia '
+                    addressCountry: Canada
+                    postalCode: V8R 2P1
+                    deliveryInstructions: '"Our unit is located at the front of the building."'
+                  title: Chief Executive Officer
+            courtOrder:
+              courtOrder:
+                fileNumber: L041638
+                orderDate: '2019-08-24T14:15:22Z'
+                effectOfOrder: The Company will cease operations
+                orderDetails: The Company is ordered to dissolve
+            custodialOffice:
+              officeType: 'Head office '
+              mailingAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building C
+                addressCity: Victoria
+                addressRegion: BC for British Columbia
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                streetAddressAdditional: Building C
+                addressCity: Victoria
+                addressRegion: 'BC for British Columbia '
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: '"Our unit is located at the back of the building."'
+            affidavitFileKey: 011e332d-1b8e-4218-8710-ad8ac1fbc592.pdf
+            affidavitFileName: Field not used
+    response-business-firm:
+        summary: Firm Business Response (legal type = SP or GP)
+        value:
+          business:
+            adminFreeze: true
+            allowedActions:
+              digitalBusinessCard: false
+              filing:
+                filingSubmissionLink: https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/FM0385546/filings
+                filingTypes:
+                  - displayName: Admin Freeze
+                    feeCode: NOFEE
+                    name: adminFreeze
+                  - displayName: Record Conversion
+                    feeCode: FMCONV
+                    name: conversion
+                  - displayName: Court Order
+                    feeCode: NOFEE
+                    name: courtOrder
+                  - displayName: Statement of Dissolution
+                    feeCode: DIS_ADM
+                    name: dissolution
+                    type: administrative
+                  - displayName: Registrar's Notation
+                    feeCode: NOFEE
+                    name: registrarsNotation
+                  - displayName: Registrar's Order
+                    feeCode: NOFEE
+                    name: registrarsOrder
+              viewAll: false
+            alternateNames:
+              - entityType: SP
+                identifier: FM0111111
+                name: XYZ TRANSPORTATION - IMPORT_TEST
+                registeredDate: '2004-11-30T08:00:00+00:00'
+                startDate: '2004-10-01'
+                type: DBA
+            arMaxDate: '2005-12-31'
+            arMinDate: '2005-01-01'
+            associationType: null
+            complianceWarnings: []
+            fiscalYearEndDate: '2022-10-11'
+            foundingDate: '2004-11-30T08:00:00+00:00'
+            goodStanding: true
+            hasCorrections: false
+            hasCourtOrders: false
+            hasRestrictions: false
+            identifier: FM0111111
+            inDissolution: false
+            lastAddressChangeDate: '2004-11-30'
+            lastAnnualGeneralMeetingDate: ''
+            lastAnnualReportDate: ''
+            lastDirectorChangeDate: '2004-11-30'
+            lastLedgerTimestamp: '2022-10-11T14:09:17.459733+00:00'
+            lastModified: '2018-11-30T18:35:11+00:00'
+            legalName: XYZ TECHNICAL CORPORATION
+            legalType: SP
+            naicsCode: null
+            naicsDescription: TOUR BUS CHARTERS
+            naicsKey: null
+            nextAnnualReport: '2005-11-30T08:00:00+00:00'
+            noDissolution: false
+            startDate: '2004-10-01'
+            state: ACTIVE
+            submitter: kdirkie
+            warnings: []
+    response-business-coop:
+      summary: Cooperative Business Response (legal type = CP)
+      value:
+        business:
+          adminFreeze: false
+          allowedActions:
+            digitalBusinessCard: false
+            filing:
+              filingSubmissionLink: https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/CP0000848/filings
+              filingTypes:
+                - displayName: Admin Freeze
+                  feeCode: NOFEE
+                  name: adminFreeze
+                - displayName: Court Order
+                  feeCode: NOFEE
+                  name: courtOrder
+                - displayName: Registrar's Notation
+                  feeCode: NOFEE
+                  name: registrarsNotation
+                - displayName: Registrar's Order
+                  feeCode: NOFEE
+                  name: registrarsOrder
+            viewAll: false
+          alternateNames: []
+          arMaxDate: '2023-04-30'
+          arMinDate: '2022-01-01'
+          associationType: null
+          complianceWarnings: []
+          fiscalYearEndDate: '2020-09-01'
+          foundingDate: '1971-05-12T00:00:00+00:00'
+          goodStanding: false
+          hasCorrections: false
+          hasCourtOrders: false
+          hasRestrictions: false
+          identifier: CP0000848
+          inDissolution: false
+          lastAddressChangeDate: '2002-08-21'
+          lastAnnualGeneralMeetingDate: '2021-07-16'
+          lastAnnualReportDate: '2021-07-16'
+          lastDirectorChangeDate: '2018-12-23'
+          lastLedgerTimestamp: '2018-12-24T00:00:00+00:00'
+          lastModified: '2021-07-16T15:35:16.391224+00:00'
+          legalName: SOME CO-OPERATIVE ASSOCIATION
+          legalType: CP
+          naicsCode: null
+          naicsDescription: null
+          naicsKey: null
+          nextAnnualReport: '2022-07-16T07:00:00+00:00'
+          noDissolution: false
+          state: ACTIVE
+          submitter: test@idir
+          warnings: []
+    response-business-corp:
+      summary: Corp Business Response (legal type = BEN)
+      value:
+        business:
+          adminFreeze: false
+          allowedActions:
+            digitalBusinessCard: false
+            filing:
+              filingSubmissionLink: https://legal-api-dev.apps.silver.devops.gov.bc.ca/api/v2/BC1230084/filings
+              filingTypes:
+                - displayName: Admin Freeze
+                  feeCode: NOFEE
+                  name: adminFreeze
+                - displayName: Court Order
+                  feeCode: NOFEE
+                  name: courtOrder
+                - displayName: Registrar's Notation
+                  feeCode: NOFEE
+                  name: registrarsNotation
+                - displayName: Registrar's Order
+                  feeCode: NOFEE
+                  name: registrarsOrder
+                - displayName: Transition Application
+                  feeCode: TRANS
+                  name: transition
+            viewAll: false
+          alternateNames: []
+          arMaxDate: '2022-04-11'
+          arMinDate: '2022-02-10'
+          associationType: null
+          complianceWarnings:
+            - code: MULTIPLE_ANNUAL_REPORTS_NOT_FILED
+              message: Multiple annual reports not filed. Eligible for involuntary dissolution.
+              warningType: NOT_IN_GOOD_STANDING
+          fiscalYearEndDate: '2021-02-10'
+          foundingDate: '2021-02-10T19:51:18.758421+00:00'
+          goodStanding: false
+          hasCorrections: false
+          hasCourtOrders: true
+          hasRestrictions: false
+          identifier: BC1230084
+          inDissolution: false
+          lastAddressChangeDate: '2021-02-10'
+          lastAnnualGeneralMeetingDate: ''
+          lastAnnualReportDate: ''
+          lastDirectorChangeDate: '2021-03-02'
+          lastLedgerTimestamp: '2021-02-10T20:48:35.288282+00:00'
+          lastModified: '2021-06-01T17:19:58.649595+00:00'
+          legalName: 1230084 B.C. LTD.
+          legalType: BEN
+          naicsCode: null
+          naicsDescription: null
+          naicsKey: null
+          nextAnnualReport: '2022-02-10T08:00:00+00:00'
+          noDissolution: false
+          state: ACTIVE
+          submitter: test@idir
+          warnings:
+            - code: MULTIPLE_ANNUAL_REPORTS_NOT_FILED
+              message: Multiple annual reports not filed. Eligible for involuntary dissolution.
+              warningType: NOT_IN_GOOD_STANDING
   securitySchemes:
     api_key:
       type: apiKey
