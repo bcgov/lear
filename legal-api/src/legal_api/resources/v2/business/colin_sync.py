@@ -21,10 +21,11 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing, UserRoles, db
+from legal_api.models import Amalgamation, AmalgamatingBusiness, Business, Filing, PartyRole, UserRoles, db
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 
@@ -43,23 +44,40 @@ def get_completed_filings_for_colin(status=None):
         for filing in pending_filings:
             filing_json = filing.filing_json
             business = Business.find_by_internal_id(filing.business_id)
-            business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing.transaction_id,
-                                                                                          business.id)
+
             if filing_json and filing.filing_type != 'lear_epoch' and \
                     (filing.filing_type != 'correction' or business.legal_type != Business.LegalTypes.COOP.value):
                 filing_json['filingId'] = filing.id
                 filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
                 if not filing_json['filing'].get('business'):
-                    filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
-                        business_revision, business.json())
+                    # ideally filing should always have transaction_id once completed.
+                    # found some filing in DEV (with missing transaction_id), adding this check to avoid exception
+                    if filing.transaction_id:
+                        business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
+                            filing.transaction_id, business.id)
+                        filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
+                            business_revision, business.json())
+                    else:
+                        filing_json['filing']['business'] = business.json()
                 elif not filing_json['filing']['business'].get('legalName'):
                     filing_json['filing']['business']['legalName'] = business.legal_name
+
                 if filing.filing_type == 'correction':
                     colin_ids = \
                         ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])
                     if not colin_ids:
                         continue
                     filing_json['filing']['correction']['correctedFilingColinId'] = colin_ids[0]  # should only be 1
+                elif (filing.filing_type == 'amalgamationApplication' and
+                      filing_json['filing']['amalgamationApplication']['type'] in [
+                          Amalgamation.AmalgamationTypes.horizontal.name,
+                          Amalgamation.AmalgamationTypes.vertical.name]):
+                    try:
+                        set_from_primary_or_holding_business_data(filing_json, filing)
+                    except Exception as ex:  # noqa: B902
+                        current_app.logger.info(ex)
+                        continue  # do not break the function because of one filing
+
                 filings.append(filing_json)
         return jsonify(filings), HTTPStatus.OK
 
@@ -67,6 +85,60 @@ def get_completed_filings_for_colin(status=None):
     for filing in pending_filings:
         filings.append(filing.json)
     return jsonify(filings), HTTPStatus.OK
+
+
+def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
+    """Set legal_name, director, office and shares from holding/primary business."""
+    amalgamation_filing = filing_json['filing']['amalgamationApplication']
+    primary_or_holding = next(x for x in amalgamation_filing['amalgamatingBusinesses']
+                              if x['role'] in [AmalgamatingBusiness.Role.holding.name,
+                                               AmalgamatingBusiness.Role.primary.name])
+
+    ting_business = Business.find_by_identifier(primary_or_holding['identifier'])
+    primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing.transaction_id,
+                                                                                            ting_business.id)
+
+    amalgamation_filing['nameRequest']['legalName'] = primary_or_holding_business.legal_name
+
+    _set_parties(primary_or_holding_business, filing, amalgamation_filing)
+    _set_offices(primary_or_holding_business, amalgamation_filing, filing.transaction_id)
+    _set_shares(primary_or_holding_business, amalgamation_filing, filing.transaction_id)
+
+
+def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
+    parties = []
+    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                              primary_or_holding_business.id,
+                                                                              role=PartyRole.RoleTypes.DIRECTOR.value)
+    # copy director
+    for director_json in parties_version:
+        director_json['roles'] = [{
+            'roleType': 'Director',
+            'appointmentDate': LegislationDatetime.format_as_legislation_date(filing.effective_date)
+        }]
+        parties.append(director_json)
+
+    # copy completing party from filing json
+    for party_info in amalgamation_filing.get('parties'):
+        if comp_party_role := next((x for x in party_info.get('roles')
+                                    if x['roleType'].lower() == 'completing party'), None):
+            party_info['roles'] = [comp_party_role]  # override roles to have only completing party
+            parties.append(party_info)
+            break
+    amalgamation_filing['parties'] = parties
+
+
+def _set_offices(primary_or_holding_business, amalgamation_filing, transaction_id):
+    # copy offices
+    amalgamation_filing['offices'] = VersionedBusinessDetailsService.get_office_revision(transaction_id,
+                                                                                         primary_or_holding_business.id)
+
+
+def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id):
+    # copy shares
+    share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
+                                                                             primary_or_holding_business.id)
+    amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
 
 
 @bp.route('/internal/filings/<int:filing_id>', methods=['PATCH'])
