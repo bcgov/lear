@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify
 from flask_cors import cross_origin
 
-from legal_api.core import Filing
+from legal_api.core import Filing as CoreFiling
 from legal_api.models import Review, UserRoles
 from legal_api.utils.auth import jwt
 
@@ -27,8 +27,7 @@ from .bp import bp_admin
 
 @bp_admin.route('/reviews/<int:review_id>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
-#@jwt.has_one_of_roles([UserRoles.staff])
-@jwt.requires_auth
+@jwt.has_one_of_roles([UserRoles.staff])
 def get_review(review_id: int):
     """Return specific review."""
     review = Review.find_by_id(review_id)
@@ -41,7 +40,7 @@ def get_review(review_id: int):
     if review.status == 'RESUBMITTED' and review.results:
         review.submission_date = review.results[0].submission_date
 
-    filing = Filing.find_by_id(review.filing_id)
+    filing = CoreFiling.find_by_id(review.filing_id)
     if filing:
         legder = filing.common_ledger_items(review.identifier, filing.storage)
         filing_link = legder['filingLink']
