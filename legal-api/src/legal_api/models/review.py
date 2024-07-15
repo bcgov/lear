@@ -75,9 +75,10 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
                       filter(Review.filing_id == filing_id).
                       one_or_none())
         return review
-    
+
     @classmethod
     def get_paginated_reviews(cls, page, limit):
+        """Return paginated reviews."""
         query = db.session.query(Review).order_by(Review.creation_date.asc())
 
         pagination = query.paginate(per_page=limit, page=page)

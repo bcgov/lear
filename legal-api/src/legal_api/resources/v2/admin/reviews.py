@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Filing, Review, UserRoles, db
+from legal_api.models import Filing, Review, UserRoles
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
