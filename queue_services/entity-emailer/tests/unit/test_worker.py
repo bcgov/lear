@@ -35,6 +35,7 @@ from entity_emailer.email_processors import (
 from tests import MockResponse
 from tests.unit import (
     create_business,
+    create_furnishing,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,
     prep_incorp_filing,
@@ -473,8 +474,10 @@ def test_send_email_with_incomplete_payload(app, session, email_msg):
 def test_ar_overdue_stage_1_notification(app, session, mocker):
     """Assert that the stage 1 overdue ARs notification can be processed."""
     token = 'token'
-    business_identifier = 'BC2321232'
-    create_business(business_identifier, 'BC', 'Test Business')
+    business_identifier = 'BC1234567'
+    business = create_business(business_identifier, 'BC', 'Test Business')
+    furnishing = create_furnishing(business)
+    
     mocker.patch(
         'entity_emailer.email_processors.ar_overdue_stage_1_notification.get_jurisdictions',
         return_value=[])
@@ -494,8 +497,8 @@ def test_ar_overdue_stage_1_notification(app, session, mocker):
                     'data': {
                         'furnishing': {
                             'type': 'PROCESSING',
-                            'furnishingId': 1,
-                            'furnishingName': 'DISSOLUTION_COMMENCEMENT_NO_AR'
+                            'furnishingId': furnishing.id,
+                            'furnishingName': furnishing.furnishing_name
                         }
                     }
                 }, app)
