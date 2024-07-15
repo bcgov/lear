@@ -44,8 +44,7 @@ class StageOneProcessor:
                 business_id=batch_processing.business_id
                 )
         if not furnishings:
-            # send first notification if no furnishing entry exists
-            await self._send_first_round_notification(batch_processing)
+            await self._send_first_round_notification(batch_processing, batch_processing.business)
         else:
             # send paper letter if business is still not in good standing after 5 days of email letter sent out
             valid_furnishing_names = [
@@ -72,7 +71,7 @@ class StageOneProcessor:
             if has_elapsed_email_entry and not has_mail_entry:
                 await self._send_second_round_notification(batch_processing)
 
-    async def _send_first_round_notification(self, batch_processing: BatchProcessing):
+    async def _send_first_round_notification(self, batch_processing: BatchProcessing, business: Business):
         """Process first round of notification(email/letter)."""
         _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
             batch_processing.business_identifier,
@@ -91,8 +90,10 @@ class StageOneProcessor:
                 batch_processing,
                 eligible_details,
                 Furnishing.FurnishingType.EMAIL,
+                business.last_ar_date if business.last_ar_date else business.founding_date,
+                business.legal_name,
                 email
-            )
+                )
             # notify emailer
             await self._send_email(new_furnishing)
         else:
@@ -100,7 +101,9 @@ class StageOneProcessor:
             new_furnishing = self._create_new_furnishing(
                 batch_processing,
                 eligible_details,
-                Furnishing.FurnishingType.MAIL
+                Furnishing.FurnishingType.MAIL,
+                business.last_ar_date if business.last_ar_date else business.founding_date,
+                business.legal_name
             )
 
             mailing_address = business.mailing_address.one_or_none()
@@ -126,7 +129,9 @@ class StageOneProcessor:
         new_furnishing = self._create_new_furnishing(
             batch_processing,
             eligible_details,
-            Furnishing.FurnishingType.MAIL
+            Furnishing.FurnishingType.MAIL,
+            business.last_ar_date if business.last_ar_date else business.founding_date,
+            business.legal_name
         )
 
         mailing_address = business.mailing_address.one_or_none()
@@ -138,11 +143,13 @@ class StageOneProcessor:
         new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
         new_furnishing.processed_date = datetime.utcnow()
 
-    def _create_new_furnishing(
+    def _create_new_furnishing(  # pylint: disable=too-many-arguments
             self,
             batch_processing: BatchProcessing,
             eligible_details: InvoluntaryDissolutionService.EligibilityDetails,
             furnishing_type: Furnishing.FurnishingType,
+            last_ar_date: datetime,
+            business_name: str,
             email: str = None
             ) -> Furnishing:
         """Create new furnishing entry."""
@@ -172,6 +179,8 @@ class StageOneProcessor:
             last_modified=datetime.utcnow(),
             status=Furnishing.FurnishingStatus.QUEUED,
             grouping_identifier=grouping_identifier,
+            last_ar_date=last_ar_date,
+            business_name=business_name,
             email=email
         )
         new_furnishing.save()

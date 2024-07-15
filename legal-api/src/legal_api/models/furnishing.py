@@ -71,6 +71,8 @@ class Furnishing(db.Model):
     last_name = db.Column('last_name', db.String(30), default='', nullable=True)
     first_name = db.Column('first_name', db.String(30), default='', nullable=True)
     middle_name = db.Column('middle_name', db.String(30), default='', nullable=True)
+    last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True), nullable=True)
+    business_name = db.Column('business_name', db.String(1000), nullable=True)
 
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)

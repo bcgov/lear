@@ -136,7 +136,9 @@ def factory_furnishing(batch_id,
                        furnishing_type=Furnishing.FurnishingType.EMAIL,
                        status=Furnishing.FurnishingStatus.QUEUED,
                        created_date=datetime.datetime.utcnow(),
-                       last_modified=datetime.datetime.utcnow()
+                       last_modified=datetime.datetime.utcnow(),
+                       last_ar_date=None,
+                       business_name=None
                        ):
     """Create a furnishing entry."""
     furnishing = Furnishing(
@@ -148,6 +150,8 @@ def factory_furnishing(batch_id,
         status=status,
         created_date=created_date,
         last_modified=last_modified,
+        last_ar_date=last_ar_date,
+        business_name=business_name
     )
     furnishing.save()
     return furnishing

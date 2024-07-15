@@ -113,6 +113,8 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                 assert furnishing.furnishing_name == expected_furnishing_name
                 assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
                 assert furnishing.grouping_identifier is not None
+                assert furnishing.last_ar_date == business.founding_date
+                assert furnishing.business_name == business.legal_name
             else:
                 mock_send_email.assert_not_called()
                 furnishings = Furnishing.find_by(business_id=business.id)
