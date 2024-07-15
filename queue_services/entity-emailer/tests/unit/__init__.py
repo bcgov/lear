@@ -719,7 +719,7 @@ def create_batch():
     return batch
 
 
-def create_furnishing(business=None, batch_id=None):
+def create_furnishing(session, business=None, batch_id=None):
     """Return a test furnishing."""
     furnishing = Furnishing()
     furnishing.furnishing_type = 'EMAIL'

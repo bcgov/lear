@@ -64,7 +64,8 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             return create_message_context_properties(etype, message_id, None, identifier, False)
         if etype == 'bc.registry.dissolution':
             identifier = email_msg.get('identifier', None)
-            business = Business.find_by_identifier(identifier)
+            furnishing_id = email_msg['data']['furnishing']['furnishingId']
+            business = ar_overdue_stage_1_notification.get_business_by_furnishing_id(furnishing_id)
             if business.legal_type in ['BC', 'ULC', 'CC', 'BEN']:
                 source = email_msg.get('source', None)
                 return create_message_context_properties(etype, message_id, source, identifier, False)

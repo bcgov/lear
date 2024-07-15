@@ -33,8 +33,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     """Build the email for Involuntary dissolution notification."""
     logger.debug('ar_overdue_stage_1_notification: %s', email_info)
     # get business
-    business_identifier = email_info['identifier']
-    business = Business.find_by_identifier(business_identifier)
+    furnishing_id = email_info['data']['furnishing']['furnishingId']
+    furnishing = Furnishing.find_by_id(furnishing_id)
+    business = get_business_by_furnishing_id(furnishing_id)
+    business_identifier = business.identifier
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/AR_OVERDUE_STAGE_1.html'
     ).read_text()
@@ -52,7 +54,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     )
     # get recipients
     recipients = []
-    recipients.append(get_recipient_from_auth(business_identifier, token))  # business email
+    recipients.append(furnishing.email)  # furnishing email
 
     recipients = list(set(recipients))
     recipients = ', '.join(filter(None, recipients)).strip()
@@ -88,3 +90,11 @@ def update_furnishing_status(furnishing_id: int, status: str):
     furnishing = Furnishing.find_by_id(furnishing_id)
     furnishing.status = status
     furnishing.save()
+
+
+def get_business_by_furnishing_id(furnishing_id: int):
+    """Return the business from furnishing."""
+    furnishing = Furnishing.find_by_id(furnishing_id)
+    business_identifier = furnishing.business_identifier
+    business = Business.find_by_identifier(business_identifier)
+    return business
