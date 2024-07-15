@@ -10,8 +10,7 @@
         "application": [
             "postgres-legal",
             "launchdarkly",
-            "nats-filer",
-            "nats-emailer",
+            "nats-furnishings",
             "entity-service-account",
             "furnishings"
         ]
