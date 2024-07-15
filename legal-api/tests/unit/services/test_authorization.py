@@ -475,10 +475,10 @@ def test_authorized_bad_url(monkeypatch, app, jwt):
     username = 'username'
     roles = [BASIC_USER]
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': '1'}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers['Authorization']
+        return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
@@ -500,10 +500,10 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
     username = 'username'
     roles = ['NONE']
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': '1'}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers['Authorization']
+        return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
@@ -573,7 +573,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': '1'}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
@@ -1040,19 +1040,32 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
          'general', [BASIC_USER], []),
         ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('comp_auth_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'comp-auth', [BASIC_USER], [])
     ]
 )
-def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username,
-                             roles, expected):
+def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
+                             test_name, business_exists, state, legal_types, username, roles, expected):
     """Assert that get_allowed_actions returns the expected allowable filing info."""
+    is_comp_auth = username == 'comp-auth'
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    # NOTE: it is important for the account id to be different for comp_auth due to the caching of account product subscriptions
+    account_id = '1' if not is_comp_auth else '2'
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': account_id}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        account_products_mock = []
+        if is_comp_auth:
+            # add CA_SEARCH to account products mock
+            account_products_mock.append({'code': 'CA_SEARCH', 'subscriptionStatus': 'ACTIVE'})
+
+        requests_mock.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
+                            json=account_products_mock,
+                            status_code=HTTPStatus.OK)
 
         for legal_type in legal_types:
             business = None
@@ -1062,6 +1075,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, test_name, business
             assert result
             assert result['filing']['filingSubmissionLink']
             assert result['filing']['filingTypes'] == expected
+            assert result['viewAll'] == is_comp_auth
 
 
 @pytest.mark.parametrize(

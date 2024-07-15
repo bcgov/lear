@@ -13,8 +13,9 @@
 # limitations under the License.
 
 """Tests to ensure the datetime wrappers are working as expected."""
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
+import pytest
 from freezegun import freeze_time
 
 
@@ -38,3 +39,39 @@ def test_datetime_isoformat():
         iso = d.isoformat()
         tz = iso[iso.find('+'):]
         assert tz == '+00:00'
+
+
+@pytest.mark.parametrize(
+    'test_name, from_date_str, num_days, expected_date_str', [
+        (
+            'ADD_WITHIN_WEEKDAYS',
+            '2024-06-19',
+            2,
+            '2024-06-21'
+        ),
+        (
+            'ADD_OVER_WEEKEND',
+            '2024-06-19',
+            5,
+            '2024-06-26'
+        ),
+        (
+            'SUB_WITHIN_WEEKDAYS',
+            '2024-06-19',
+            -2,
+            '2024-06-17'
+        ),
+        (
+            'SUB_OVER_WEEKEND',
+            '2024-06-19',
+            -5,
+            '2024-06-12'
+        ),
+    ]
+)
+def test_datetime_add_business_days(test_name, from_date_str, num_days, expected_date_str):
+    """Assert that business days are added to a date correctly."""
+    import legal_api.utils.datetime as _datetime
+    from_date = date.fromisoformat(from_date_str)
+    new_date = _datetime.datetime.add_business_days(from_date, num_days)
+    assert new_date == date.fromisoformat(expected_date_str)

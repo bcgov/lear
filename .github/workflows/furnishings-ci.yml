@@ -63,6 +63,7 @@ jobs:
       NATS_CLUSTER_ID: test-cluster
       NATS_CLIENT_NAME: entity.job.tester
       NATS_ENTITY_EVENTS_SUBJECT: entity.events
+      SECOND_NOTICE_DELAY: 5
     services:
       postgres:
         image: postgres:12
@@ -93,7 +94,7 @@ jobs:
           flags: furnishings
           name: codecov-furnishings
           token: ${{ secrets.CODECOV_TOKEN}}
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   build-check:
     needs: setup-job

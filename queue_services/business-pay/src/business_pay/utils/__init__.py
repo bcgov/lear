@@ -31,6 +31,4 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Database and Filings used by Business-Pay."""
-from .filings import Filing
-from .review import Review, ReviewStatus
+"""This module holds general utility functions and helpers for the package."""

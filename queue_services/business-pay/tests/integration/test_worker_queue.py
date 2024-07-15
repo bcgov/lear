@@ -138,7 +138,7 @@ def test_complete_worker(app, session, stan_server, mocker):
     from business_pay.services import queue
 
     msgs = []
-    messages_expected = 2 # 1 - filer & 1 - email == 2 messages
+    messages_expected = 2  # 1 - filer & 1 - email == 2 messages
 
     # Override the app.config for the NATS/STAN configuration
     test_subject_name = 'test-subject'
@@ -161,7 +161,7 @@ def test_complete_worker(app, session, stan_server, mocker):
         msgs.append(msg)
         if len(msgs) == messages_expected:
             future.set_result(True)
-    
+
     # Subscribe to the Queue
     queue_name = app.config.get("NATS_QUEUE")
     this_loop.run_until_complete(queue.stan.subscribe(subject=test_subject_name,
@@ -213,7 +213,7 @@ def test_complete_worker(app, session, stan_server, mocker):
     for msg in msgs:
         if msg.data == b'{"filing": {"id": 12}}':
             found_filing_msg = True
-        elif msg.data == b'{"email": {"filingId": 12, "type": "annualReport"}, "option": "PAID"}':
+        elif msg.data == b'{"email": {"filingId": 12, "type": "annualReport", "option": "PAID"}}':
             found_email_msg = True
 
     assert found_filing_msg

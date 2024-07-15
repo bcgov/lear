@@ -32,7 +32,8 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
 
     MAILING = 'mailing'
     DELIVERY = 'delivery'
-    ADDRESS_TYPES = [MAILING, DELIVERY]
+    FURNISHING = 'furnishing'
+    ADDRESS_TYPES = [MAILING, DELIVERY, FURNISHING]
     JSON_MAILING = 'mailingAddress'
     JSON_DELIVERY = 'deliveryAddress'
     JSON_ADDRESS_TYPES = [JSON_MAILING, JSON_DELIVERY]
@@ -52,6 +53,7 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    furnishings_id = db.Column('furnishings_id', db.Integer, db.ForeignKey('furnishings.id'), nullable=True)
     office_id = db.Column('office_id', db.Integer, db.ForeignKey('offices.id', ondelete='CASCADE'), nullable=True)
     # Relationships - Users
     # business_mailing_address = db.relationship('Business',
@@ -100,3 +102,24 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
         if internal_id:
             address = cls.query.filter_by(id=internal_id).one_or_none()
         return address
+
+    @classmethod
+    def find_by(cls,
+                business_id: int = None,
+                furnishings_id: int = None,
+                office_id: int = None) -> dict:
+        """Return the address matching."""
+        query = db.session.query(Address)
+        addresses = []
+
+        if business_id:
+            query = query.filter(Address.business_id == business_id)
+
+        if furnishings_id:
+            query = query.filter(Address.furnishings_id == furnishings_id)
+
+        if office_id:
+            query = query.filter(Address.office_id == office_id)
+
+        addresses = query.order_by(Address.id).all()
+        return addresses

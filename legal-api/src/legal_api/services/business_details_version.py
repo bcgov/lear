@@ -475,7 +475,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 }
             }
         if party_revision.email:
-            member['email'] = party_revision.email
+            member['officer']['email'] = party_revision.email
         return member
 
     @staticmethod
