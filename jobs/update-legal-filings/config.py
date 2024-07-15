@@ -47,12 +47,13 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     COLIN_URL = os.getenv('COLIN_URL', '')
-    LEGAL_URL = os.getenv('LEGAL_URL', '')
+    LEGAL_API_URL = os.getenv('LEGAL_API_URL', '')
     SENTRY_DSN = os.getenv('SENTRY_DSN', '')
 
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
+    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT', 20)
 
     NATS_SERVERS = os.getenv('NATS_SERVERS', None)
     NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)
@@ -84,7 +85,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     TESTING = True
 
     COLIN_URL = os.getenv('COLIN_URL_TEST', '')
-    LEGAL_URL = os.getenv('LEGAL_URL_TEST', '')
+    LEGAL_API_URL = os.getenv('LEGAL_API_URL_TEST', '')
 
     # POSTGRESQL
     DB_USER = os.getenv('DATABASE_TEST_USERNAME', '')

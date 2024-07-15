@@ -52,10 +52,10 @@ objects:
                       secretKeyRef:
                         key: SENTRY_DSN
                         name: ${NAME}-${TAG}-secret
-                  - name: LEGAL_URL
+                  - name: LEGAL_API_URL
                     valueFrom:
                       secretKeyRef:
-                        key: LEGAL_URL
+                        key: LEGAL_API_URL
                         name: ${NAME}-${TAG}-secret
                   - name: ACCOUNT_SVC_AUTH_URL
                     valueFrom:
