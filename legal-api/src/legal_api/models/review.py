@@ -75,6 +75,26 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
                       filter(Review.filing_id == filing_id).
                       one_or_none())
         return review
+    
+    @classmethod
+    def get_paginated_reviews(cls, page, limit):
+        query = db.session.query(Review).order_by(Review.creation_date.asc())
+
+        pagination = query.paginate(per_page=limit, page=page)
+        results = pagination.items
+        total_count = pagination.total
+
+        reviews_list = [
+            review.json for review in results
+        ]
+
+        reviews = {
+            'reviews': reviews_list,
+            'page': page,
+            'limit': limit,
+            'total': total_count
+        }
+        return reviews
 
     @property
     def json(self) -> dict:

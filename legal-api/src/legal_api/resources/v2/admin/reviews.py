@@ -30,22 +30,7 @@ def get_reviews():
     """Return a list of reviews."""
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 10))
-    query = db.session.query(Review).order_by(Review.submission_date.asc())
-
-    pagination = query.paginate(per_page=limit, page=page)
-    results = pagination.items
-    total_count = pagination.total
-
-    reviews_list = [
-        review.json for review in results
-    ]
-
-    reviews = {
-        'reviews': reviews_list,
-        'page': page,
-        'limit': limit,
-        'total': total_count
-    }
+    reviews = Review.get_paginated_reviews(page, limit)
 
     return reviews, HTTPStatus.OK
 
