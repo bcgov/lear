@@ -101,7 +101,9 @@ class StageOneProcessor:
             new_furnishing = self._create_new_furnishing(
                 batch_processing,
                 eligible_details,
-                Furnishing.FurnishingType.MAIL
+                Furnishing.FurnishingType.MAIL,
+                business.last_ar_date if business.last_ar_date else business.founding_date,
+                business.legal_name
             )
 
             mailing_address = business.mailing_address.one_or_none()
@@ -127,7 +129,9 @@ class StageOneProcessor:
         new_furnishing = self._create_new_furnishing(
             batch_processing,
             eligible_details,
-            Furnishing.FurnishingType.MAIL
+            Furnishing.FurnishingType.MAIL,
+            business.last_ar_date if business.last_ar_date else business.founding_date,
+            business.legal_name
         )
 
         mailing_address = business.mailing_address.one_or_none()
