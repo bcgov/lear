@@ -24,7 +24,6 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer import worker
 from entity_emailer.email_processors import (
-    involuntary_dissolution_stage_1_notification,
     ar_reminder_notification,
     correction_notification,
     filing_notification,
@@ -479,16 +478,17 @@ def test_send_email_with_incomplete_payload(app, session, email_msg):
     ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_TR_XPRO', 'PROCESSED'),
     ('When email is failed', EmailException, 'DISSOLUTION_COMMENCEMENT_NO_AR', 'FAILED')
 ])
-def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, test_name, exception, furnishing_name, expected_furnishing_status):
+def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, test_name,
+                                                      exception, furnishing_name, expected_furnishing_status):
     """Assert that the stage 1 overdue ARs notification can be processed."""
     business_identifier = 'BC1234567'
     business = create_business(business_identifier, 'BC', 'Test Business')
-    furnishing = create_furnishing(business=business)
-    
+    furnishing = create_furnishing(session, business=business)
+
     mocker.patch(
         'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification.get_jurisdictions',
         return_value=[])
-    
+
     message_payload = {
         'specversion': '1.x-wip',
         'type': 'bc.registry.dissolution',
@@ -505,7 +505,7 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
             }
         }
     }
-    
+
     # run worker
     with patch.object(worker, 'send_email', return_value='success', side_effect=exception) as mock_send_email:
         if exception:

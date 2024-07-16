@@ -46,7 +46,6 @@ from entity_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_notification,
-    involuntary_dissolution_stage_1_notification,
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
@@ -56,6 +55,7 @@ from entity_emailer.email_processors import (
     correction_notification,
     dissolution_notification,
     filing_notification,
+    involuntary_dissolution_stage_1_notification,
     mras_notification,
     name_request,
     nr_notification,
@@ -153,7 +153,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
                 # Update corresponding furnishings entry as PROCESSED
                 involuntary_dissolution_stage_1_notification.post_process(email_msg, 'PROCESSED')
-            except:
+            except Exception as _:  # noqa B902; pylint: disable=W0703
                 # Update corresponding furnishings entry as FAILED
                 involuntary_dissolution_stage_1_notification.post_process(email_msg, 'FAILED')
                 raise
