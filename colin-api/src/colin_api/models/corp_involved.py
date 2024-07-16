@@ -81,7 +81,7 @@ class CorpInvolved:
                 """
                 insert into CORP_INVOLVED (EVENT_ID, CORP_INVOLVE_ID, CORP_NUM, CAN_JUR_TYP_CD, ADOPTED_CORP_IND,
                     HOME_JURI_NUM, OTHR_JURI_DESC, FOREIGN_NME)
-                values (:event_id, :corp_involve_id, :corp_num, :can_jur_typ_cd, :adopted_corp_ind, 
+                values (:event_id, :corp_involve_id, :corp_num, :can_jur_typ_cd, :adopted_corp_ind,
                     :home_juri_num, :othr_juri_desc, :foreign_nme)
                 """,
                 event_id=corp_involved_obj.event_id,
@@ -103,7 +103,7 @@ class CorpInvolved:
         """Get the corps involved with the given event id."""
         querystring = (
             """
-            select event_id, corp_involve_id, corp_num, can_jur_typ_cd, adopted_corp_ind, home_juri_num, 
+            select event_id, corp_involve_id, corp_num, can_jur_typ_cd, adopted_corp_ind, home_juri_num,
             othr_juri_desc, foreign_nme, dd_event_id
             from corp_involved
             where event_id=:event_id

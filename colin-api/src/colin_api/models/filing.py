@@ -1144,7 +1144,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     def _process_amalgamating_businesses(cls, cursor, filing):
-        """"Process amalgamating businesses."""
+        """Process amalgamating businesses."""
         for index, amalgamating_business in enumerate(filing.body.get('amalgamatingBusinesses', [])):
             corp_involved = CorpInvolved()
             corp_involved.event_id = filing.event_id
