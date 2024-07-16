@@ -22,7 +22,7 @@ def test_involuntary_dissolution_stage_1_notification(app, session, mocker):
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
     business_identifier = 'BC1234567'
     business = create_business(business_identifier, 'BC', 'Test Business')
-    furnishing = create_furnishing(business=business)
+    furnishing = create_furnishing(session, business=business)
     message_payload = {
         'specversion': '1.x-wip',
         'type': 'bc.registry.dissolution',

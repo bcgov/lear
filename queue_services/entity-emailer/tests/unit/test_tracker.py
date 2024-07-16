@@ -536,7 +536,7 @@ async def test_should_update_furnishing_status_with_message_status(tracker_app, 
     """Assert that furnishing is marked with message status."""
     business_identifier = 'BC1234567'
     business = create_business(business_identifier, legal_type, 'Test Business')
-    furnishing = create_furnishing(business=business)
+    furnishing = create_furnishing(session, business=business)
     message_payload = {
         'specversion': '1.x-wip',
         'type': 'bc.registry.dissolution',
