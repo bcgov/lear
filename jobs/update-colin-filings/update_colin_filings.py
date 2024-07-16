@@ -21,7 +21,6 @@ import os
 import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from flask import Flask
-from legal_api.models import Business
 from legal_api.services.bootstrap import AccountService
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
@@ -47,6 +46,10 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             integrations=[SENTRY_LOGGING]
         )
 
+    # Static class load the variables while importing the class for the first time,
+    # By then config is not loaded, so it never get the config value
+    AccountService.timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
+
     register_shellcontext(app)
 
     return app
@@ -61,9 +64,10 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def get_filings(app: Flask = None):
+def get_filings(app: Flask, token):
     """Get a filing with filing_id."""
-    req = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings',
+    req = requests.get(f'{app.config["LEGAL_API_URL"]}/internal/filings',
+                       headers={'Authorization': AccountService.BEARER + token},
                        timeout=AccountService.timeout)
     if not req or req.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}')
@@ -78,10 +82,7 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 
     filing_type = filing['filing']['header'].get('name', None)
     identifier = filing['filing']['business'].get('identifier', None)
-    if identifier[:2] == Business.LegalTypes.COOP.value:
-        legal_type = Business.LegalTypes.COOP.value
-    else:
-        legal_type = filing['filing']['business'].get('legalType', Business.LegalTypes.BCOMP.value)
+    legal_type = filing['filing']['business'].get('legalType', None)
 
     req = None
     if legal_type and identifier and filing_type:
@@ -102,8 +103,8 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: dict = None):
     """Update the colin_id in the filings table."""
     req = requests.patch(
-        f'{app.config["LEGAL_URL"]}/internal/filings/{filing_id}',
-        headers={'Authorization': f'Bearer {token}'},
+        f'{app.config["LEGAL_API_URL"]}/internal/filings/{filing_id}',
+        headers={'Authorization': AccountService.BEARER + token},
         json={'colinIds': colin_ids},
         timeout=AccountService.timeout
     )
@@ -132,7 +133,7 @@ def run():
             # get updater-job token
             token = AccountService.get_bearer_token()
 
-            filings = get_filings(app=application)
+            filings = get_filings(application, token)
             if not filings:
                 # pylint: disable=no-member; false positive
                 application.logger.debug('No completed filings to send to colin.')
