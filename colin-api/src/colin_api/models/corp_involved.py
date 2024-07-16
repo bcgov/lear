@@ -17,7 +17,7 @@ Currently this only provides API versioning information
 """
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 from flask import current_app
 
@@ -114,7 +114,7 @@ class CorpInvolved:
             if not cursor:
                 cursor = DB.connection.cursor()
             cursor.execute(querystring, event_id=event_id)
-            return cls._create_name_objs(cursor=cursor)
+            return cls._create_corp_involved_objs(cursor=cursor)
 
         except Exception as err:
             current_app.logger.error(f'error getting corp involved for event {event_id}')

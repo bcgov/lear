@@ -451,10 +451,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'BEINC', 'ICORP', 'ICORU', 'ICORC',
                                       'AMALR', 'AMALH', 'AMALV',
                                       'NOALA', 'NOALB', 'NOALC', 'NOALE', 'NOALR', 'NOALU',
-                                      'REGSN', 'REGSO', 'COURT'
-                                      ]:
-                arrangement_ind = 'Y' if filing.body.get('effectOfOrder', '') == 'planOfArrangement' else 'N'
-                court_order_num = filing.body.get('fileNumber', None)
+                                      'REGSN', 'REGSO', 'COURT']:
+                arrangement_ind = 'N'
+                court_order_num = None
+                if filing_type_code in ['REGSN', 'REGSO', 'COURT']:
+                    arrangement_ind = 'Y' if filing.body.get('effectOfOrder', '') == 'planOfArrangement' else 'N'
+                    court_order_num = filing.body.get('fileNumber', None)
+                elif court_order := filing.body.get('courtOrder', None):
+                    arrangement_ind = 'Y' if court_order.get('effectOfOrder', None) else 'N'
+                    court_order_num = court_order.get('fileNumber', None)
 
                 insert_stmnt = insert_stmnt + ', arrangement_ind, court_order_num, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", :arrangement_ind, :court_order_num, 'F')"

@@ -80,14 +80,14 @@ class ResetByEventId(Resource):
         """Reset filing(s) based on the provided event_id, or array of event_ids.
         This is only tested to work on Annual Reports, ymmv"""
         try:
-            
+
             event_ids = API.payload.get('event_ids', None)
 
             Reset.reset_filings_by_event(
-              event_ids=event_ids
+                event_ids=event_ids
             )
-            
-            return jsonify({'message':"Reset for event ids "+json.dumps(event_ids)}), 200
+
+            return jsonify({'message': "Reset for event ids " + json.dumps(event_ids)}), 200
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
