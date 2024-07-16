@@ -719,11 +719,11 @@ def create_batch():
     return batch
 
 
-def create_furnishing(business=None, batch_id=None, email='test@test.com'):
+def create_furnishing(business=None, batch_id=None, email='test@test.com', furnishing_name='DISSOLUTION_COMMENCEMENT_NO_AR'):
     """Return a test furnishing."""
     furnishing = Furnishing()
     furnishing.furnishing_type = 'EMAIL'
-    furnishing.furnishing_name = 'DISSOLUTION_COMMENCEMENT_NO_AR'
+    furnishing.furnishing_name = furnishing_name
     furnishing.status = Furnishing.FurnishingStatus.QUEUED
     furnishing.email = email
     if business:

@@ -11,15 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Unit Tests for the stage 1 overdue ARs email processor."""
+"""The Unit Tests for the involuntary_dissolution_stage_1_notification processor."""
 from unittest.mock import patch
 
-from entity_emailer.email_processors import ar_overdue_stage_1_notification
+from entity_emailer.email_processors import involuntary_dissolution_stage_1_notification
 from tests.unit import create_business, create_furnishing  # noqa: I003
 
 
-def test_ar_overdue_stage_1_notification(app, session, mocker):
-    """Assert that the stage 1 overdue ARs notification can be processed."""
+def test_involuntary_dissolution_stage_1_notification(app, session, mocker):
+    """Assert that the test_involuntary_dissolution_stage_1_notification can be processed."""
     token = 'token'
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
     business_identifier = 'BC1234567'
@@ -44,10 +44,9 @@ def test_ar_overdue_stage_1_notification(app, session, mocker):
 
     # test processor
     mocker.patch(
-        'entity_emailer.email_processors.ar_overdue_stage_1_notification.get_jurisdictions',
+        'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification.get_jurisdictions',
         return_value=[])
-    with patch.object(ar_overdue_stage_1_notification, 'get_recipient_from_auth', return_value='test@test.com'):
-        email = ar_overdue_stage_1_notification.process(message_payload, token)
+    email = involuntary_dissolution_stage_1_notification.process(message_payload, token)
 
     assert email['content']['subject'] == f'Attention {business_identifier} - Test Business'
     assert email['recipients'] == 'test@test.com'

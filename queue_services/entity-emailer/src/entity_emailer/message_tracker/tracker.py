@@ -19,7 +19,7 @@ import nats
 from flask import current_app
 from legal_api.models import Business, Furnishing
 
-from entity_emailer.email_processors import ar_overdue_stage_1_notification, filing_notification
+from entity_emailer.email_processors import involuntary_dissolution_stage_1_notification, filing_notification
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
@@ -62,14 +62,13 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             identifier = email_msg.get('identifier', None)
             message_id = f'{etype}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
+
         if etype == 'bc.registry.dissolution':
+            message_id = email_msg.get('id', None)
             identifier = email_msg.get('identifier', None)
-            furnishing_id = email_msg['data']['furnishing']['furnishingId']
-            business = ar_overdue_stage_1_notification.get_business_by_furnishing_id(furnishing_id)
-            if business.legal_type in ['BC', 'ULC', 'CC', 'BEN']:
+            if involuntary_dissolution_stage_1_notification.is_processable(email_msg):
                 source = email_msg.get('source', None)
                 return create_message_context_properties(etype, message_id, source, identifier, False)
-            return create_message_context_properties(etype, None, None, None, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)
@@ -184,26 +183,12 @@ def complete_tracking_message(tracker_msg: MessageProcessing, email_msg):
     """Update existing message state to COMPLETED."""
     update_message_status_to_complete(tracker_msg)
 
-    # Update corresponding furnishings entry as PROCESSED
-    etype = email_msg.get('type', None)
-    if etype and etype == 'bc.registry.dissolution':
-        furnishing_id = email_msg['data']['furnishing']['furnishingId']
-        ar_overdue_stage_1_notification.update_furnishing_status(furnishing_id,
-                                                                 Furnishing.FurnishingStatus.PROCESSED)
-
 
 def mark_tracking_message_as_failed(message_context_properties: dict,
                                     email_msg: dict,
                                     existing_tracker_msg: MessageProcessing,
                                     error_details: str):
     """Create a new message with FAILED status or update an existing message to FAILED status."""
-    # Update corresponding furnishings entry as FAILED
-    etype = email_msg.get('type', None)
-    if etype and etype == 'bc.registry.dissolution':
-        furnishing_id = email_msg['data']['furnishing']['furnishingId']
-        ar_overdue_stage_1_notification.update_furnishing_status(furnishing_id,
-                                                                 Furnishing.FurnishingStatus.FAILED)
-
     if error_details and len(error_details) > 1000:
         error_details = error_details[:1000]
 

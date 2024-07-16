@@ -524,18 +524,19 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(['test_name', 'exception', 'legal_type', 'expected_status'], [
-    ('When email is failed', EmailException, 'BC', 'FAILED'),
-    ('When email is completed', None, 'BC', 'PROCESSED'),
-    ('If legal_type is not in BC', None, 'CCC', 'QUEUED')
+@pytest.mark.parametrize(['test_name', 'message_id', 'legal_type', 'is_processable'], [
+    ('Will process the notification', 'BC-16fd2111-8baf-433b-82eb',  'BC', True),
+    ('Will process the notification', 'ULC-16fd2111-8baf-433b-82eb', 'ULC', True),
+    ('Will process the notification', 'CC-16fd2111-8baf-433b-82eb', 'CC', True),
+    ('Will process the notification', 'BEN-16fd2111-8baf-433b-82eb', 'BEN', True),
+    ('Will not process the notification', 'SP-16fd2111-8baf-433b-82eb', 'SP', False)
 ])
 async def test_should_update_furnishing_status_with_message_status(tracker_app, tracker_db, session,
-                                                                   test_name, exception, legal_type, expected_status):
+                                                                   test_name, message_id, legal_type, is_processable):
     """Assert that furnishing is marked with message status."""
-    message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
     business_identifier = 'BC1234567'
     business = create_business(business_identifier, legal_type, 'Test Business')
-    furnishing = create_furnishing(session, business)
+    furnishing = create_furnishing(business=business)
     message_payload = {
         'specversion': '1.x-wip',
         'type': 'bc.registry.dissolution',
@@ -554,11 +555,13 @@ async def test_should_update_furnishing_status_with_message_status(tracker_app, 
     }
     mock_msg = create_mock_message(message_payload)
 
-    with patch.object(worker, 'process_email', return_value=True, side_effect=exception):
-        if exception:
-            with pytest.raises(exception):
-                await worker.cb_subscription_handler(mock_msg)
-        else:
-            await worker.cb_subscription_handler(mock_msg)
+    with patch.object(worker, 'process_email', return_value=True):
+        await worker.cb_subscription_handler(mock_msg)
 
-        assert furnishing.status.name == expected_status
+        result = MessageProcessing.find_message_by_message_id(message_id)
+        if is_processable:
+            assert result
+            assert result.message_id == message_id
+            assert result.status == 'COMPLETE'
+        else:
+            assert result is None

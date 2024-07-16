@@ -46,7 +46,7 @@ from entity_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_notification,
-    ar_overdue_stage_1_notification,
+    involuntary_dissolution_stage_1_notification,
     ar_reminder_notification,
     bn_notification,
     change_of_registration_notification,
@@ -144,8 +144,19 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             email = bn_notification.process_bn_move(email_msg, token)
             send_email(email, token)
         elif etype and etype == 'bc.registry.dissolution':
-            email = ar_overdue_stage_1_notification.process(email_msg, token)
-            send_email(email, token)
+            email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
+            # Confirm the data.furnishingName
+            furnishing_name = email_msg['data']['furnishing']['furnishingName']
+            if furnishing_name not in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
+                raise QueueException('Furnishing name is not valid.')
+            try:
+                send_email(email, token)
+                # Update corresponding furnishings entry as PROCESSED
+                involuntary_dissolution_stage_1_notification.post_process(email_msg, 'PROCESSED')
+            except:
+                # Update corresponding furnishings entry as FAILED
+                involuntary_dissolution_stage_1_notification.post_process(email_msg, 'FAILED')
+                raise
         else:
             etype = email_msg['email']['type']
             option = email_msg['email']['option']
