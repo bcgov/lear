@@ -17,7 +17,7 @@ Currently this only resets changes made to COOP data made with user COOPER
 """
 import json
 from flask import current_app, jsonify, request
-from flask_restx import Namespace, Resource, cors, fields
+from flask_restx import Namespace, Resource, cors
 
 from colin_api.models.reset import Reset
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt

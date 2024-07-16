@@ -328,6 +328,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
         if business_identifiers['identifiers']:
             start = 0
             end = 100
+            # make a colin-api call with 100 identifiers at a time
             while identifiers := business_identifiers['identifiers'][start:end]:
                 start = end
                 end += 100
