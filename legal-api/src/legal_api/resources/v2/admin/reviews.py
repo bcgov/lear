@@ -14,13 +14,25 @@
 """API endpoints for retrieving review data."""
 from http import HTTPStatus
 
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Filing, Review, UserRoles
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
+
+
+@bp_admin.route('/reviews', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.staff])
+def get_reviews():
+    """Return a list of reviews."""
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 10))
+    reviews = Review.get_paginated_reviews(page, limit)
+
+    return reviews, HTTPStatus.OK
 
 
 @bp_admin.route('/reviews/<int:review_id>', methods=['GET', 'OPTIONS'])
