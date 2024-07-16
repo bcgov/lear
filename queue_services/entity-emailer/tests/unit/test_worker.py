@@ -16,7 +16,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from entity_queue_common.service_utils import QueueException
+from entity_queue_common.service_utils import EmailException, QueueException
 from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
@@ -24,6 +24,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer import worker
 from entity_emailer.email_processors import (
+    involuntary_dissolution_stage_1_notification,
     ar_reminder_notification,
     correction_notification,
     filing_notification,
@@ -33,6 +34,8 @@ from entity_emailer.email_processors import (
 )
 from tests import MockResponse
 from tests.unit import (
+    create_business,
+    create_furnishing,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,
     prep_incorp_filing,
@@ -466,3 +469,55 @@ def test_send_email_with_incomplete_payload(app, session, email_msg):
         worker.send_email(email_msg, None)
 
     assert 'Unsuccessful sending email' in str(excinfo)
+
+
+@pytest.mark.parametrize(['test_name', 'exception', 'furnishing_name', 'expected_furnishing_status'], [
+    ('Will be failed with invalid furnishing_name', QueueException, 'INVALID_NAME', 'QUEUED'),
+    ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_AR', 'PROCESSED'),
+    ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_TR', 'PROCESSED'),
+    ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_AR_XPRO', 'PROCESSED'),
+    ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_TR_XPRO', 'PROCESSED'),
+    ('When email is failed', EmailException, 'DISSOLUTION_COMMENCEMENT_NO_AR', 'FAILED')
+])
+def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, test_name, exception, furnishing_name, expected_furnishing_status):
+    """Assert that the stage 1 overdue ARs notification can be processed."""
+    business_identifier = 'BC1234567'
+    business = create_business(business_identifier, 'BC', 'Test Business')
+    furnishing = create_furnishing(business=business)
+    
+    mocker.patch(
+        'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification.get_jurisdictions',
+        return_value=[])
+    
+    message_payload = {
+        'specversion': '1.x-wip',
+        'type': 'bc.registry.dissolution',
+        'source': 'furnishingsJob',
+        'id': '16fd2111-8baf-433b-82eb-8c7fada84ccc',
+        'time': '',
+        'datacontenttype': 'application/json',
+        'identifier': business_identifier,
+        'data': {
+            'furnishing': {
+                'type': 'PROCESSING',
+                'furnishingId': furnishing.id,
+                'furnishingName': furnishing_name
+            }
+        }
+    }
+    
+    # run worker
+    with patch.object(worker, 'send_email', return_value='success', side_effect=exception) as mock_send_email:
+        if exception:
+            with pytest.raises(exception):
+                worker.process_email(message_payload, app)
+        else:
+            worker.process_email(message_payload, app)
+
+        if furnishing_name != 'INVALID_NAME':
+            call_args = mock_send_email.call_args
+            assert call_args[0][0]['content']['subject'] == f'Attention {business_identifier} - Test Business'
+            assert call_args[0][0]['recipients'] == 'test@test.com'
+            assert call_args[0][0]['content']['body']
+
+        assert furnishing.status.name == expected_furnishing_status

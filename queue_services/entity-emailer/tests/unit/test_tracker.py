@@ -21,7 +21,7 @@ from sqlalchemy.exc import OperationalError
 from entity_emailer import worker
 from tracker.models import MessageProcessing
 
-from . import create_mock_message  # noqa: I003
+from . import create_business, create_furnishing, create_mock_message  # noqa: I003
 
 
 @pytest.mark.parametrize(
@@ -521,3 +521,47 @@ async def test_should_correctly_track_retries_for_failed_processing(tracker_app,
     # check email retries not exceed the max retry limit
     assert result.message_seen_count == 6
     assert expected_last_error in result.last_error
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(['test_name', 'message_id', 'legal_type', 'is_processable'], [
+    ('Will process the notification', 'BC-16fd2111-8baf-433b-82eb',  'BC', True),
+    ('Will process the notification', 'ULC-16fd2111-8baf-433b-82eb', 'ULC', True),
+    ('Will process the notification', 'CC-16fd2111-8baf-433b-82eb', 'CC', True),
+    ('Will process the notification', 'BEN-16fd2111-8baf-433b-82eb', 'BEN', True),
+    ('Will not process the notification', 'SP-16fd2111-8baf-433b-82eb', 'SP', False)
+])
+async def test_should_update_furnishing_status_with_message_status(tracker_app, tracker_db, session,
+                                                                   test_name, message_id, legal_type, is_processable):
+    """Assert that furnishing is marked with message status."""
+    business_identifier = 'BC1234567'
+    business = create_business(business_identifier, legal_type, 'Test Business')
+    furnishing = create_furnishing(business=business)
+    message_payload = {
+        'specversion': '1.x-wip',
+        'type': 'bc.registry.dissolution',
+        'source': 'furnishingsJob',
+        'id': message_id,
+        'time': '',
+        'datacontenttype': 'application/json',
+        'identifier': business_identifier,
+        'data': {
+            'furnishing': {
+                'type': 'PROCESSING',
+                'furnishingId': furnishing.id,
+                'furnishingName': furnishing.furnishing_name
+            }
+        }
+    }
+    mock_msg = create_mock_message(message_payload)
+
+    with patch.object(worker, 'process_email', return_value=True):
+        await worker.cb_subscription_handler(mock_msg)
+
+        result = MessageProcessing.find_message_by_message_id(message_id)
+        if is_processable:
+            assert result
+            assert result.message_id == message_id
+            assert result.status == 'COMPLETE'
+        else:
+            assert result is None

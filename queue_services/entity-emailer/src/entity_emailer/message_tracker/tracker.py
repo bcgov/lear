@@ -17,8 +17,9 @@ import json
 
 import nats
 from flask import current_app
+from legal_api.models import Business, Furnishing
 
-from entity_emailer.email_processors import filing_notification
+from entity_emailer.email_processors import involuntary_dissolution_stage_1_notification, filing_notification
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
@@ -61,6 +62,13 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             identifier = email_msg.get('identifier', None)
             message_id = f'{etype}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
+
+        if etype == 'bc.registry.dissolution':
+            message_id = email_msg.get('id', None)
+            identifier = email_msg.get('identifier', None)
+            if involuntary_dissolution_stage_1_notification.is_processable(email_msg):
+                source = email_msg.get('source', None)
+                return create_message_context_properties(etype, message_id, source, identifier, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)
@@ -171,7 +179,7 @@ def start_tracking_message(message_context_properties: dict, email_msg: dict, ex
     return create_processing_message(message_context_properties, email_msg)
 
 
-def complete_tracking_message(tracker_msg: MessageProcessing):
+def complete_tracking_message(tracker_msg: MessageProcessing, email_msg):
     """Update existing message state to COMPLETED."""
     update_message_status_to_complete(tracker_msg)
 

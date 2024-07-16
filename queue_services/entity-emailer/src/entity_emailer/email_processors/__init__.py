@@ -194,3 +194,17 @@ def substitute_template_parts(template_code: str) -> str:
         template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
 
     return template_code
+
+
+def get_jurisdictions(identifier: str, token: str) -> str:
+    """Get jurisdictions call."""
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+
+    response = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
+    )
+
+    return response

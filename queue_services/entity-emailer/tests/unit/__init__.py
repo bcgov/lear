@@ -18,7 +18,7 @@ from datetime import datetime
 from random import randrange
 from unittest.mock import Mock
 
-from legal_api.models import Business, Filing, RegistrationBootstrap, User
+from legal_api.models import Batch, Business, Filing, Furnishing, RegistrationBootstrap, User
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
@@ -708,3 +708,35 @@ def create_mock_message(message_payload: dict):
     json_msg_payload = json.dumps(message_payload)
     mock_msg.data.decode = Mock(return_value=json_msg_payload)
     return mock_msg
+
+
+def create_batch():
+    """Return a test batch."""
+    batch = Batch()
+    batch.batch_type = Batch.BatchType.INVOLUNTARY_DISSOLUTION
+    batch.status = Batch.BatchStatus.PROCESSING
+    batch.save()
+    return batch
+
+
+def create_furnishing(business=None, batch_id=None, email='test@test.com', furnishing_name='DISSOLUTION_COMMENCEMENT_NO_AR'):
+    """Return a test furnishing."""
+    furnishing = Furnishing()
+    furnishing.furnishing_type = 'EMAIL'
+    furnishing.furnishing_name = furnishing_name
+    furnishing.status = Furnishing.FurnishingStatus.QUEUED
+    furnishing.email = email
+    if business:
+        furnishing.business_id = business.id
+        furnishing.business_identifier = business.identifier
+    else:
+        business = create_business(identifier='BC123232', legal_type='BC', legal_name='Test Business')
+        furnishing.business_id = business.id
+        furnishing.business_identifier = business.identifier
+    if not batch_id:
+        batch = create_batch()
+        furnishing.batch_id = batch.id
+    else:
+        furnishing.batch_id = batch_id
+    furnishing.save()
+    return furnishing
