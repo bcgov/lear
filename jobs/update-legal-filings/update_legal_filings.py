@@ -323,39 +323,44 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
         if response.status_code != 200:
             application.logger.error('legal-updater failed to get identifiers from legal-api.')
             raise Exception  # pylint: disable=broad-exception-raised
-        identifiers = response.json()
+        business_identifiers = response.json()
 
-        if identifiers['identifiers']:
-            # get tax ids that exist for above entities
-            application.logger.debug(f'Getting tax ids for {identifiers["identifiers"]} from colin api...')
-            response = requests.get(
-                application.config['COLIN_URL'] + '/internal/tax_ids',
-                json=identifiers,
-                headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
-                timeout=AccountService.timeout
-            )
-            if response.status_code != 200:
-                application.logger.error('legal-updater failed to get tax_ids from colin-api.')
-                raise Exception  # pylint: disable=broad-exception-raised
-            tax_ids = response.json()
-            if tax_ids.keys():
-                # update lear with new tax ids from colin
-                application.logger.debug(f'Updating tax ids for {tax_ids.keys()} in lear...')
-                response = requests.post(
-                    application.config['LEGAL_API_URL'] + '/internal/tax_ids',
-                    json=tax_ids,
+        if business_identifiers['identifiers']:
+            start = 0
+            end = 100
+            while identifiers := business_identifiers['identifiers'][start:end]:
+                start = end
+                end += 100
+                # get tax ids that exist for above entities
+                application.logger.debug(f'Getting tax ids for {identifiers} from colin api...')
+                response = requests.get(
+                    application.config['COLIN_URL'] + '/internal/tax_ids',
+                    json={'identifiers': identifiers},
                     headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
                     timeout=AccountService.timeout
                 )
-                if response.status_code != 201:
-                    application.logger.error('legal-updater failed to update tax_ids in lear.')
+                if response.status_code != 200:
+                    application.logger.error('legal-updater failed to get tax_ids from colin-api.')
                     raise Exception  # pylint: disable=broad-exception-raised
+                tax_ids = response.json()
+                if tax_ids.keys():
+                    # update lear with new tax ids from colin
+                    application.logger.debug(f'Updating tax ids for {tax_ids.keys()} in lear...')
+                    response = requests.post(
+                        application.config['LEGAL_API_URL'] + '/internal/tax_ids',
+                        json=tax_ids,
+                        headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
+                        timeout=AccountService.timeout
+                    )
+                    if response.status_code != 201:
+                        application.logger.error('legal-updater failed to update tax_ids in lear.')
+                        raise Exception  # pylint: disable=broad-exception-raised
 
-                await publish_queue_events(tax_ids, application)
+                    await publish_queue_events(tax_ids, application)
 
-                application.logger.debug('Successfully updated tax ids in lear.')
-            else:
-                application.logger.debug('No tax ids in colin to update in lear.')
+                    application.logger.debug('Successfully updated tax ids in lear.')
+                else:
+                    application.logger.debug('No tax ids in colin to update in lear.')
         else:
             application.logger.debug('No businesses in lear with outstanding tax ids.')
 

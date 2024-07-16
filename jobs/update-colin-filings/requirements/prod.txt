@@ -8,3 +8,6 @@ python-dotenv
 requests
 sentry-sdk[flask]
 werkzeug<1.0
+asyncio-nats-client==0.11.4
+asyncio-nats-streaming==0.4.0
+nest_asyncio

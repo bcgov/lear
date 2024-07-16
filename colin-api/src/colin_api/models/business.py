@@ -63,6 +63,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
 
         VOLUNTARY_DISSOLUTION = 'HDV'
         ADMINISTRATIVE_DISSOLUTION = 'HDA'
+        AMALGAMATED = 'HAM'
 
     NUMBERED_CORP_NAME_SUFFIX = {
         TypeCodes.BCOMP.value: 'B.C. LTD.',
@@ -173,7 +174,10 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             for row in cursor.fetchall():
                 row = dict(zip([x[0].lower() for x in cursor.description], row))
                 if row['bn_15']:
-                    bn_15s[f'BC{row["corp_num"]}'] = row['bn_15']
+                    if row["corp_num"].isdecimal():  # valid only for BC
+                        bn_15s[f'BC{row["corp_num"]}'] = row['bn_15']
+                    else:
+                        bn_15s[row["corp_num"]] = row['bn_15']
             return bn_15s
 
         except Exception as err:
