@@ -233,7 +233,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
             if process_message:
                 tracker_msg = tracker_util.start_tracking_message(message_context_properties, email_msg, tracker_msg)
                 process_email(email_msg, FLASK_APP)
-                tracker_util.complete_tracking_message(tracker_msg, email_msg)
+                tracker_util.complete_tracking_message(tracker_msg)
             else:
                 # Skip processing of message due to message state - previously processed or currently being
                 # processed

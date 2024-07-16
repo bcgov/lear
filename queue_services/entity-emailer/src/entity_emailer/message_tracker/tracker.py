@@ -17,7 +17,6 @@ import json
 
 import nats
 from flask import current_app
-from legal_api.models import Business, Furnishing
 
 from entity_emailer.email_processors import involuntary_dissolution_stage_1_notification, filing_notification
 from tracker.models import MessageProcessing
@@ -179,7 +178,7 @@ def start_tracking_message(message_context_properties: dict, email_msg: dict, ex
     return create_processing_message(message_context_properties, email_msg)
 
 
-def complete_tracking_message(tracker_msg: MessageProcessing, email_msg):
+def complete_tracking_message(tracker_msg: MessageProcessing):
     """Update existing message state to COMPLETED."""
     update_message_status_to_complete(tracker_msg)
 

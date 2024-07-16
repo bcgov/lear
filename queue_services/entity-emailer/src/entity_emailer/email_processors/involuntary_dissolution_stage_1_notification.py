@@ -111,4 +111,4 @@ def is_processable(email_msg):
     furnishing_id = email_msg['data']['furnishing']['furnishingId']
     furnishing = Furnishing.find_by_id(furnishing_id)
     business = furnishing.business
-    return True if business.legal_type in PROCESSABLE_LEGAL_TYPES else False
+    return business.legal_type in PROCESSABLE_LEGAL_TYPES
