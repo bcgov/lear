@@ -32,7 +32,7 @@ from legal_api.models import Review, ReviewStatus
 from tests.unit.models import factory_filing
 
 
-def basic_test_review():
+def create_test_review(no_of_reviews=1):
     filing_dict = {
         'filing': {
             'header': {
@@ -44,52 +44,49 @@ def basic_test_review():
         }
     }
     filing_dict['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
-    filing = factory_filing(None, filing_dict)
 
-    review = Review()
-    review.filing_id = filing.id
-    review.nr_number = filing_dict['filing']['continuationIn']['nameRequest']['nrNumber']
-    review.identifier = filing_dict['filing']['continuationIn']['foreignJurisdiction']['identifier']
-    review.completing_party = 'completing party'
-    review.status = ReviewStatus.AWAITING_REVIEW
+    reviews = []
+    for _ in range(no_of_reviews):
+        filing = factory_filing(None, filing_dict)
 
-    return review
+        review = Review()
+        review.filing_id = filing.id
+        review.nr_number = filing_dict['filing']['continuationIn']['nameRequest']['nrNumber']
+        review.identifier = filing_dict['filing']['continuationIn']['foreignJurisdiction']['identifier']
+        review.completing_party = 'completing party'
+        review.status = ReviewStatus.AWAITING_REVIEW
+        review.save()
+        reviews.append(review)
+
+    return reviews
 
 
 def test_get_reviews_with_invalid_user(app, session, client, jwt):
     """Assert unauthorized for BASIC_USER role."""
-
     rv = client.get(f'/api/v2/admin/reviews',
                     headers=create_header(jwt, [BASIC_USER], 'user'))
-
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
 
 def test_get_reviews_with_valid_user(app, session, client, jwt):
     """Assert review object returned for STAFF role."""
-
-    review_one = basic_test_review()
-    review_one.save()
-
-    review_two = basic_test_review()
-    review_two.save()
-
-    review_three = basic_test_review()
-    review_three.save()
+    no_of_reviews = 11
+    create_test_review(no_of_reviews)
 
     rv = client.get(f'/api/v2/admin/reviews',
                     headers=create_header(jwt, [STAFF_ROLE], 'user'))
 
     assert rv.status_code == HTTPStatus.OK
-    assert 'reviews' in rv.json
+    assert len(rv.json.get('reviews')) == 10
     assert 1 == rv.json.get('page')
     assert 10 == rv.json.get('limit')
-    assert 3 == rv.json.get('total')
+    assert no_of_reviews == rv.json.get('total')
+
 
 def test_get_specific_review_with_valid_user(app, session, client, jwt, mocker):
     """Assert specific review object returned for STAFF role."""
-    review = basic_test_review()
-    review.save()
-    
+    review = create_test_review(1)[0]
+
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
     mock_filing = mocker.Mock()
@@ -102,21 +99,21 @@ def test_get_specific_review_with_valid_user(app, session, client, jwt, mocker):
     rv = client.get(f'/api/v2/admin/reviews/{review.id}',
                     headers=create_header(jwt, [STAFF_ROLE], 'user'))
 
-
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['id'] == review.id
     assert 'filingLink' in rv.json
     assert rv.json['filingLink'] == f'{base_url}/{mock_filing.temp_reg}/filings/{mock_filing.id}'
 
+
 def test_get_specific_review_with_invalid_user(app, session, client, jwt):
     """Assert unauthorized for BASIC_USER role when getting a specific review."""
-    review = basic_test_review()
-    review.save()
+    review = create_test_review(1)[0]
 
     rv = client.get(f'/api/v2/admin/reviews/{review.id}',
                     headers=create_header(jwt, [BASIC_USER], 'user'))
 
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
 
 def test_get_nonexistent_review(app, session, client, jwt):
     """Assert not found for non-existent review ID."""
