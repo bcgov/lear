@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import pytest
 from entity_queue_common.service_utils import EmailException, QueueException
-from legal_api.models import Business
+from legal_api.models import Business, Furnishing
 from legal_api.services import NameXService
 from legal_api.services.bootstrap import AccountService
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -508,6 +508,7 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
 
     # run worker
     with patch.object(worker, 'send_email', return_value='success', side_effect=exception) as mock_send_email:
+        session.expunge_all()
         if exception:
             with pytest.raises(exception):
                 worker.process_email(message_payload, app)
@@ -520,4 +521,5 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
             assert call_args[0][0]['recipients'] == 'test@test.com'
             assert call_args[0][0]['content']['body']
 
-        assert furnishing.status.name == expected_furnishing_status
+        updated_furnishing = Furnishing.find_by_id(furnishing.id)
+        assert updated_furnishing.status.name == expected_furnishing_status
