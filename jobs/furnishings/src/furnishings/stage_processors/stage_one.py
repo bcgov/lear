@@ -251,12 +251,22 @@ class StageOneProcessor:
             'Authorization': f'Bearer {token}'
         }
 
-        contact_info = requests.get(
-            f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
-            headers=headers
-        )
+        url = f'{current_app.config.get("AUTH_URL")}/entities/{identifier}'
+        try:
+            contact_info = requests.get(url, headers=headers)
+            contact_info.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                current_app.logger.info(f"No entity found for identifier: {identifier}")
+            else:
+                current_app.logger.error(f"HTTP error occurred: {e}, URL: {url}, Status code: {e.response.status_code}")
+            return None
+        except requests.exceptions.RequestException as e:
+            current_app.logger.error(f"Request failed: {e}, URL: {url}")
+            return None
+
         contacts = contact_info.json().get('contacts', [])
-        if not contacts or not contacts[0]['email']:
+        if not contacts or not contacts[0].get('email'):
             return None
         return contacts[0]['email']
 
