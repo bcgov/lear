@@ -32,7 +32,7 @@ def get_reviews():
     limit = int(request.args.get('limit', 10))
     reviews = Review.get_paginated_reviews(page, limit)
 
-    return reviews, HTTPStatus.OK
+    return jsonify(reviews), HTTPStatus.OK
 
 
 @bp_admin.route('/reviews/<int:review_id>', methods=['GET', 'OPTIONS'])

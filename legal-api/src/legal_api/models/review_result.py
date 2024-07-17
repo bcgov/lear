@@ -78,5 +78,5 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
             'comments': self.comments,
             'reviewer': self.reviewer.display_name,
             'submissionDate': self.submission_date.isoformat() if self.submission_date else None,
-            'creationDate': self.creation_date
+            'creationDate': self.creation_date.isoformat()
         }
