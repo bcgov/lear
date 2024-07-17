@@ -33,7 +33,7 @@ from colin_api.exceptions import (  # noqa: I001
     PartiesNotFoundException,  # noqa: I001
     UnableToDetermineCorpTypeException,  # noqa: I001
 )  # noqa: I001
-from colin_api.models import Business, CorpName, FilingType, Office, Party, ShareObject
+from colin_api.models import Business, CorpInvolved, CorpName, FilingType, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
 
@@ -111,8 +111,30 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.COOP.value: 'OTSPE',
         },
         'amalgamationApplication': {
-            'type_code_list': ['OTAMA'],
-            Business.TypeCodes.COOP.value: 'OTAMA',
+            'sub_type_property': 'type',
+            'sub_type_list': ['regular', 'horizontal', 'vertical'],
+            'type_code_list': ['OTAMA', 'AMALR', 'AMLRU', 'AMALH', 'AMLHU', 'AMALV', 'AMLVU'],
+            'regular': {
+                Business.TypeCodes.COOP.value: 'OTAMA',
+                Business.TypeCodes.BCOMP.value: 'AMALR',
+                Business.TypeCodes.BC_COMP.value: 'AMALR',
+                Business.TypeCodes.ULC_COMP.value: 'AMLRU',
+                Business.TypeCodes.CCC_COMP.value: 'AMALR'
+            },
+            'horizontal': {
+                Business.TypeCodes.COOP.value: 'OTAMA',
+                Business.TypeCodes.BCOMP.value: 'AMALH',
+                Business.TypeCodes.BC_COMP.value: 'AMALH',
+                Business.TypeCodes.ULC_COMP.value: 'AMLHU',
+                Business.TypeCodes.CCC_COMP.value: 'AMALH'
+            },
+            'vertical': {
+                Business.TypeCodes.COOP.value: 'OTAMA',
+                Business.TypeCodes.BCOMP.value: 'AMALV',
+                Business.TypeCodes.BC_COMP.value: 'AMALV',
+                Business.TypeCodes.ULC_COMP.value: 'AMLVU',
+                Business.TypeCodes.CCC_COMP.value: 'AMALV'
+            }
         },
         'dissolved': {
             'type_code_list': ['OTDIS'],
@@ -425,35 +447,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     effective_dt=filing.effective_date,
                     filing_date=filing.filing_date
                 )
-            elif filing_type_code in ['NOCAD', 'BEINC', 'ICORP', 'ICORU', 'ICORC', 'CRBIN', 'TRANS']:
-                insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
-                values_stmnt = values_stmnt + ", 'N', 'F')"
-                cursor.execute(
-                    insert_stmnt + values_stmnt,
-                    event_id=filing.event_id,
-                    filing_type_code=filing_type_code,
-                    effective_dt=filing.effective_date
-                )
-            elif filing_type_code in ['NOALA', 'NOALB', 'NOALC', 'NOALE', 'NOALR', 'NOALU']:
-                arragement_ind = 'N'
+            elif filing_type_code in ['NOCAD', 'CRBIN', 'TRANS',
+                                      'BEINC', 'ICORP', 'ICORU', 'ICORC',
+                                      'AMALR', 'AMALH', 'AMALV',
+                                      'NOALA', 'NOALB', 'NOALC', 'NOALE', 'NOALR', 'NOALU',
+                                      'REGSN', 'REGSO', 'COURT']:
+                arrangement_ind = 'N'
                 court_order_num = None
-                if court_order := filing.body.get('courtOrder', None):
-                    arragement_ind = 'Y' if court_order.get('effectOfOrder', None) else 'N'
-                    court_order_num = court_order['fileNumber']
-
-                insert_stmnt = insert_stmnt + ', arrangement_ind, court_order_num, ods_typ_cd) '
-                values_stmnt = values_stmnt + ", :arragement_ind, :court_order_num, 'F')"
-                cursor.execute(
-                    insert_stmnt + values_stmnt,
-                    event_id=filing.event_id,
-                    filing_type_code=filing_type_code,
-                    effective_dt=filing.effective_date,
-                    arragement_ind=arragement_ind,
-                    court_order_num=court_order_num
-                )
-            elif filing_type_code in ['REGSN', 'REGSO', 'COURT']:
-                arrangement_ind = 'Y' if filing.body.get('effectOfOrder', '') == 'planOfArrangement' else 'N'
-                court_order_num = filing.body.get('fileNumber', None)
+                if filing_type_code in ['REGSN', 'REGSO', 'COURT']:
+                    arrangement_ind = 'Y' if filing.body.get('effectOfOrder', '') == 'planOfArrangement' else 'N'
+                    court_order_num = filing.body.get('fileNumber', None)
+                elif court_order := filing.body.get('courtOrder', None):
+                    arrangement_ind = 'Y' if court_order.get('effectOfOrder', None) else 'N'
+                    court_order_num = court_order.get('fileNumber', None)
 
                 insert_stmnt = insert_stmnt + ', arrangement_ind, court_order_num, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", :arrangement_ind, :court_order_num, 'F')"
@@ -990,10 +996,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def add_filing(cls, con, filing: Filing) -> int:
         """Add new filing to COLIN tables."""
         try:
-            if filing.filing_type not in ['annualReport', 'changeOfAddress', 'changeOfDirectors',
-                                          'incorporationApplication', 'alteration', 'transition', 'correction',
-                                          'registrarsNotation', 'registrarsOrder', 'courtOrder', 'dissolution',
-                                          'specialResolution']:
+            if filing.filing_type not in ['alteration', 'amalgamationApplication', 'annualReport', 'changeOfAddress',
+                                          'changeOfDirectors', 'correction', 'courtOrder', 'dissolution',
+                                          'incorporationApplication', 'registrarsNotation', 'registrarsOrder',
+                                          'specialResolution', 'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             if filing.filing_sub_type \
@@ -1019,6 +1025,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             agm_date = filing.body.get('annualGeneralMeetingDate', None)
             # create new filing
             cls._insert_filing(cursor=cursor, filing=filing, ar_date=ar_date, agm_date=agm_date)
+
+            if filing.filing_type == 'amalgamationApplication':
+                cls._process_amalgamating_businesses(cursor, filing)
 
             if filing.filing_type == 'correction':
                 cls._process_correction(cursor, business, filing, corp_num)
@@ -1134,6 +1143,50 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return filing.filing_type == filing_type and filing.filing_sub_type == filing_sub_type
 
     @classmethod
+    def _process_amalgamating_businesses(cls, cursor, filing):
+        """Process amalgamating businesses."""
+        for index, amalgamating_business in enumerate(filing.body.get('amalgamatingBusinesses', [])):
+            corp_involved = CorpInvolved()
+            corp_involved.event_id = filing.event_id
+            corp_involved.corp_involve_id = index
+
+            identifier = amalgamating_business.get('identifier')
+
+            if ((foreign_jurisdiction := amalgamating_business.get('foreignJurisdiction', {})) and
+                not (identifier.startswith('A') and  # is expro
+                     foreign_jurisdiction.get('country') == 'CA' and
+                     foreign_jurisdiction.get('region') == 'BC')):
+                corp_involved.home_juri_num = identifier
+                corp_involved.foreign_nme = amalgamating_business.get('legalName')
+
+                country_code = foreign_jurisdiction.get('country').upper()
+                region_code = (foreign_jurisdiction.get('region') or '').upper()
+                if country_code == 'CA':
+                    if region_code == 'FEDERAL':
+                        corp_involved.can_jur_typ_cd = 'FD'
+                    else:
+                        corp_involved.can_jur_typ_cd = region_code
+                else:
+                    corp_involved.can_jur_typ_cd = 'OT'
+                    corp_involved.othr_juri_desc = \
+                        f'{country_code}, {region_code}' if region_code else country_code
+            else:
+                # strip prefix BC
+                if identifier.startswith('BC'):
+                    identifier = identifier[-7:]
+                corp_involved.corp_num = identifier
+
+                if amalgamating_business['role'] in ['holding', 'primary']:
+                    corp_involved.adopted_corp_ind = 'Y'
+
+                Business.update_corp_state(cursor,
+                                           filing.event_id,
+                                           identifier,
+                                           Business.CorpStateTypes.AMALGAMATED.value)
+
+            CorpInvolved.create_corp_involved(cursor, corp_involved)
+
+    @classmethod
     # pylint: disable=too-many-arguments;
     def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str) -> str:
         """Process specific to annual report."""
@@ -1185,7 +1238,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 office_type=office_type
             )
             # create new ledger text for address change
-            if filing.filing_type != 'incorporationApplication':
+            if filing.filing_type not in ['amalgamationApplication', 'incorporationApplication']:
                 office_desc = (office_type.replace('O', ' O')).title()
                 if text:
                     text = f'{text} Change to the {office_desc}.'
@@ -1249,7 +1302,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _create_corp_name(cls, cursor, filing: Filing, corp_num: str, name: str = None):
         """Create name."""
-        if filing.filing_type == 'incorporationApplication':
+        if filing.filing_type in ['amalgamationApplication', 'incorporationApplication']:
             # create corp state
             Business.create_corp_state(cursor=cursor, corp_num=corp_num, event_id=filing.event_id)
         elif filing.filing_type == 'alteration':
