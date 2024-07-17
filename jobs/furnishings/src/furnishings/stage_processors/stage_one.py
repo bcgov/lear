@@ -255,7 +255,7 @@ class StageOneProcessor:
             f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
             headers=headers
         )
-        contacts = contact_info.json()['contacts']
+        contacts = contact_info.json().get('contacts', [])
         if not contacts or not contacts[0]['email']:
             return None
         return contacts[0]['email']
