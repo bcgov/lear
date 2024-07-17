@@ -18,6 +18,7 @@ from datetime import datetime
 import pytz
 import requests
 from flask import Flask, current_app
+
 from legal_api.models import Address, Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
@@ -257,12 +258,12 @@ class StageOneProcessor:
             contact_info.raise_for_status()
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
-                current_app.logger.info(f"No entity found for identifier: {identifier}")
+                current_app.logger.info(f'No entity found for identifier: {identifier}')
             else:
-                current_app.logger.error(f"HTTP error occurred: {e}, URL: {url}, Status code: {e.response.status_code}")
+                current_app.logger.error(f'HTTP error occurred: {e}, URL: {url}, Status code: {e.response.status_code}')
             return None
         except requests.exceptions.RequestException as e:
-            current_app.logger.error(f"Request failed: {e}, URL: {url}")
+            current_app.logger.error(f'Request failed: {e}, URL: {url}')
             return None
 
         contacts = contact_info.json().get('contacts', [])
