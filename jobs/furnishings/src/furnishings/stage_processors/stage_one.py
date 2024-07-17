@@ -18,7 +18,6 @@ from datetime import datetime
 import pytz
 import requests
 from flask import Flask, current_app
-
 from legal_api.models import Address, Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
