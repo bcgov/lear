@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="origin-when-cross-origin"/>
     <meta name="author" content="BC Registries and Online Services">
-    <title>Attention [Incorporation number + Business Name]</title>
+    <title>Attention {{ business.identifier }} {{ business.legalName }}</title>
     [[style.html]]
   </head>
 
@@ -18,7 +18,7 @@
 
           <div class="container">
             <p class="title-message bold">
-              <span>Attention [Incorporation number + Business Name]<span>
+              <span>Attention {{ business.identifier }} {{ business.legalName }}<span>
             </p>
 
             [[20px.html]]
