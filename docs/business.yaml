@@ -1243,7 +1243,7 @@ components:
           addressCountry: Canada
           postalCode: V8R 2P1
           deliveryInstructions: '"Our apartment is located at the back of the building."'
-    AGM_location_change:
+    Agm_location_change:
       type: object
       title: AGM Location Change Information Schema
       description: 'Notice of AGM(Annual General Meeting) location change allows changing of the company''s AGM location. Requires the information of the AGM year, reason of change and the new location.'
@@ -2845,19 +2845,28 @@ components:
             - oneOf:
                 - $ref: '#/components/schemas/Incorporation_application'
                 - $ref: '#/components/schemas/Registration'
+                # - $ref: '#/components/schemas/ContinuationIn'
+                # - $ref: '#/components/schemas/AmalgamationApplication'
             - anyOf:
-                - $ref: '#/components/schemas/Alteration'
+                # - $ref: '#/components/schemas/Admin_freeze'
+                # - $ref: '#/components/schemas/Agm_extension'
+                - $ref: '#/components/schemas/Agm_location_change'
+                # - $ref: '#/components/schemas/Amalgamation_application'
                 - $ref: '#/components/schemas/Alteration'
                 - $ref: '#/components/schemas/Annual_report'
                 - $ref: '#/components/schemas/Change_of_address'
                 - $ref: '#/components/schemas/Change_of_directors'
                 - $ref: '#/components/schemas/Change_of_name'
                 - $ref: '#/components/schemas/Change_of_registration'
+                # - $ref: '#/components/schemas/Consent_continuation_out'
+                # - $ref: '#/components/schemas/Continuation_in'
+                # - $ref: '#/components/schemas/Continuation_out'
                 - $ref: '#/components/schemas/Conversion'
                 - $ref: '#/components/schemas/Court_order'
                 - $ref: '#/components/schemas/Correction'
                 - $ref: '#/components/schemas/Dissolution'
                 - $ref: '#/components/schemas/Incorporation_application'
+                # - $ref: '#/components/schemas/Put_back_on'
                 - $ref: '#/components/schemas/Registrars_notation'
                 - $ref: '#/components/schemas/Registrars_order'
                 - $ref: '#/components/schemas/Registration'
