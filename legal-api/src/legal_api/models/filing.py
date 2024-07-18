@@ -974,7 +974,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing.first()
 
     @staticmethod
-    def get_completed_filings_for_colin():
+    def get_completed_filings_for_colin(page=1, limit=20):
         """Return the filings with statuses in the status array input."""
         from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
         excluded_filings = ['adminFreeze', 'courtOrder', 'registrarsNotation', 'registrarsOrder']
@@ -986,8 +986,15 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
-            ).order_by(Filing.filing_date).all()
-        return filings
+            ).order_by(Filing.filing_date).paginate(per_page=limit, page=page)
+
+        return {
+            'page': page,
+            'limit': limit,
+            'filings': filings.items,
+            'pages': filings.pages,
+            'total': filings.total
+        }
 
     @staticmethod
     def get_all_filings_by_status(status):

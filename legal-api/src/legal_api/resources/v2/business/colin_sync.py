@@ -40,8 +40,10 @@ def get_completed_filings_for_colin(status=None):
     filings = []
 
     if status is None:
-        pending_filings = Filing.get_completed_filings_for_colin()
-        for filing in pending_filings:
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 20))
+        pending_filings = Filing.get_completed_filings_for_colin(page, limit)
+        for filing in pending_filings.get('filings'):
             filing_json = filing.filing_json
             business = Business.find_by_internal_id(filing.business_id)
 
@@ -79,7 +81,13 @@ def get_completed_filings_for_colin(status=None):
                         continue  # do not break this function because of one filing
 
                 filings.append(filing_json)
-        return jsonify(filings), HTTPStatus.OK
+        return jsonify({
+            'filings': filings,
+            'page': page,
+            'limit': limit,
+            'pages': pending_filings.get('pages'),
+            'total': pending_filings.get('total')
+        }), HTTPStatus.OK
 
     pending_filings = Filing.get_all_filings_by_status(status)
     for filing in pending_filings:
