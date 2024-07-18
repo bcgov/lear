@@ -63,10 +63,10 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             return create_message_context_properties(etype, message_id, None, identifier, False)
 
         if etype == 'bc.registry.dissolution' \
-                and (furnishing_name := email_msg.get('data', {})
-                                                 .get('furnishing', {})
-                                                 .get('furnishingName', None)) \
-                and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
+            and (furnishing_name := email_msg.get('data', {})
+                 .get('furnishing', {})
+                 .get('furnishingName', None)) \
+                    and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
             source = email_msg.get('source', None)
             identifier = email_msg.get('identifier', None)
             return create_message_context_properties(etype, message_id, source, identifier, False)

@@ -515,8 +515,10 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
         else:
             worker.process_email(message_payload, app)
 
-        if furnishing_name != 'INVALID_NAME':
-            call_args = mock_send_email.call_args
+        call_args = mock_send_email.call_args
+        if furnishing_name == 'INVALID_NAME':
+            assert call_args is None
+        else:
             assert call_args[0][0]['content']['subject'] == f'Attention {business_identifier} - Test Business'
             assert call_args[0][0]['recipients'] == 'test@test.com'
             assert call_args[0][0]['content']['body']
