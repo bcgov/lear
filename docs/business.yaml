@@ -2487,14 +2487,24 @@ components:
               type: string
               title: The type of the main filing.
               enum:
+                - adminFreeze
                 - alteration
+                - agmExtension
+                - agmLocationChange
                 - annualReport
                 - amalgamationApplication
+                - amendedAGM
+                - amendedAnnualReport
+                - amendedChangeOfDirectors
+                - annualReport
                 - appointReceiver
                 - changeOfDirectors
                 - changeOfAddress
                 - changeOfName
                 - changeOfRegistration
+                - consentContinuationOut
+                - continuationIn
+                - continuationOut
                 - continuedOut
                 - conversion
                 - correction
@@ -2502,6 +2512,7 @@ components:
                 - dissolution
                 - dissolved
                 - incorporationApplication
+                - putBackOn
                 - registration
                 - restoration
                 - specialResolution
@@ -2613,6 +2624,7 @@ components:
               type: integer
               title: authorization system account number.
               description: 'SBC_AUTH account number. '
+              example: '416'
             paymentAccount:
               type: string
               title: payment org account identifier.
