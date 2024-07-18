@@ -41,7 +41,7 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
 
     if etype:
         message_id = email_msg.get('id', None)
-        if etype == 'bc.registry.names.request':
+        if etype == 'bc.registry.names.request' or etype == 'bc.registry.dissolution':
             source = email_msg.get('source', None)
             identifier = email_msg.get('identifier', None)
             return create_message_context_properties(etype, message_id, source, identifier, True)
@@ -61,13 +61,6 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             identifier = email_msg.get('identifier', None)
             message_id = f'{etype}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
-
-        if etype == 'bc.registry.dissolution':
-            message_id = email_msg.get('id', None)
-            identifier = email_msg.get('identifier', None)
-            if involuntary_dissolution_stage_1_notification.is_processable(email_msg):
-                source = email_msg.get('source', None)
-                return create_message_context_properties(etype, message_id, source, identifier, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)

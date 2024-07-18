@@ -19,7 +19,7 @@ from pathlib import Path
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Furnishing
+from legal_api.models import Furnishing
 
 from entity_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
 
@@ -29,13 +29,6 @@ PROCESSABLE_FURNISHING_NAMES = [
     Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR.name,
     Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO.name,
     Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO.name
-]
-
-PROCESSABLE_LEGAL_TYPES = [
-    Business.LegalTypes.COMP,
-    Business.LegalTypes.BC_ULC_COMPANY,
-    Business.LegalTypes.BC_CCC,
-    Business.LegalTypes.BCOMP
 ]
 
 
@@ -101,11 +94,3 @@ def post_process(email_msg: dict, status: str):
     furnishing = Furnishing.find_by_id(furnishing_id)
     furnishing.status = Furnishing.FurnishingStatus[status]
     furnishing.save()
-
-
-def is_processable(email_msg):
-    """Determine if furnishing needs to be processed."""
-    furnishing_id = email_msg['data']['furnishing']['furnishingId']
-    furnishing = Furnishing.find_by_id(furnishing_id)
-    business = furnishing.business
-    return business.legal_type in PROCESSABLE_LEGAL_TYPES
