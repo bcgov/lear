@@ -58,7 +58,8 @@ def process(app: Flask):
                 created_date=datetime.utcnow(),
                 last_modified=datetime.utcnow(),
                 status=Furnishing.FurnishingStatus.QUEUED,
-                grouping_identifier=grouping_identifier
+                grouping_identifier=grouping_identifier,
+                business_name=business.legal_name
             )
             new_furnishing.save()
         # TODO: create data files and SFTPing to BC Laws
