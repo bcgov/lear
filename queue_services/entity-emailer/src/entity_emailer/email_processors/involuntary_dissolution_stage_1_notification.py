@@ -92,5 +92,5 @@ def post_process(email_msg: dict, status: str):
     """Update corresponding furnishings entry as PROCESSED or FAILED depending on notification status."""
     furnishing_id = email_msg['data']['furnishing']['furnishingId']
     furnishing = Furnishing.find_by_id(furnishing_id)
-    furnishing.status = Furnishing.FurnishingStatus[status]
+    furnishing.status = status
     furnishing.save()

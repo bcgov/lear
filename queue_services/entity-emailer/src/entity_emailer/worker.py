@@ -35,7 +35,7 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
 from legal_api import db
-from legal_api.models import Filing
+from legal_api.models import Filing, Furnishing
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.flags import Flags
 from sqlalchemy.exc import OperationalError
@@ -144,18 +144,20 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             email = bn_notification.process_bn_move(email_msg, token)
             send_email(email, token)
         elif etype and etype == 'bc.registry.dissolution':
-            email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
             # Confirm the data.furnishingName
             furnishing_name = email_msg['data']['furnishing']['furnishingName']
             if furnishing_name not in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
                 raise QueueException('Furnishing name is not valid.')
+            email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
             try:
                 send_email(email, token)
                 # Update corresponding furnishings entry as PROCESSED
-                involuntary_dissolution_stage_1_notification.post_process(email_msg, 'PROCESSED')
+                involuntary_dissolution_stage_1_notification.post_process(email_msg,
+                                                                          Furnishing.FurnishingStatus.PROCESSED)
             except Exception as _:  # noqa B902; pylint: disable=W0703
                 # Update corresponding furnishings entry as FAILED
-                involuntary_dissolution_stage_1_notification.post_process(email_msg, 'FAILED')
+                involuntary_dissolution_stage_1_notification.post_process(email_msg,
+                                                                          Furnishing.FurnishingStatus.FAILED)
                 raise
         else:
             etype = email_msg['email']['type']
