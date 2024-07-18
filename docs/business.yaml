@@ -113,6 +113,24 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Filing'
+            examples:
+              example-agm-location-change:
+                summary: Create a Notice of AGM Location Change Request
+                value:
+                  filing:
+                    header:
+                      date: 2024-07-18
+                      name: agmLocationChange
+                      certifiedBy: Sample Cerfitied Person
+                    busineess:
+                      foundingDate: 2023-07-12T17:31:58.000+00:00
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    agmLocationChange:
+                      year: 2024
+                      reason: API Specs Tests
+                      agmLocation: Victoria, BC, Canada
       parameters:
         - schema:
             type: boolean
