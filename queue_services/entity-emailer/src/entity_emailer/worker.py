@@ -145,20 +145,21 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             send_email(email, token)
         elif etype and etype == 'bc.registry.dissolution':
             # Confirm the data.furnishingName
-            furnishing_name = email_msg['data']['furnishing']['furnishingName']
-            if furnishing_name not in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
-                raise QueueException('Furnishing name is not valid.')
-            email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
-            try:
-                send_email(email, token)
-                # Update corresponding furnishings entry as PROCESSED
-                involuntary_dissolution_stage_1_notification.post_process(email_msg,
-                                                                          Furnishing.FurnishingStatus.PROCESSED)
-            except Exception as _:  # noqa B902; pylint: disable=W0703
-                # Update corresponding furnishings entry as FAILED
-                involuntary_dissolution_stage_1_notification.post_process(email_msg,
-                                                                          Furnishing.FurnishingStatus.FAILED)
-                raise
+            if (furnishing_name := email_msg.get('data', {}).get('furnishing', {}).get('furnishingName', None)) \
+                    and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
+                email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
+                try:
+                    send_email(email, token)
+                    # Update corresponding furnishings entry as PROCESSED
+                    involuntary_dissolution_stage_1_notification.post_process(email_msg,
+                                                                              Furnishing.FurnishingStatus.PROCESSED)
+                except Exception as _:  # noqa B902; pylint: disable=W0703
+                    # Update corresponding furnishings entry as FAILED
+                    involuntary_dissolution_stage_1_notification.post_process(email_msg,
+                                                                              Furnishing.FurnishingStatus.FAILED)
+                    raise
+            else:
+                logger.debug('Furnishing name is not valid. Skipping processing of email_msg: %s', email_msg)
         else:
             etype = email_msg['email']['type']
             option = email_msg['email']['option']

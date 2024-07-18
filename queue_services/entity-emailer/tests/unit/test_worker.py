@@ -471,7 +471,7 @@ def test_send_email_with_incomplete_payload(app, session, email_msg):
 
 
 @pytest.mark.parametrize(['test_name', 'exception', 'furnishing_name', 'expected_furnishing_status'], [
-    ('Will be failed with invalid furnishing_name', QueueException, 'INVALID_NAME', 'QUEUED'),
+    ('Will be failed with invalid furnishing_name', None, 'INVALID_NAME', 'QUEUED'),
     ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_AR', 'PROCESSED'),
     ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_TR', 'PROCESSED'),
     ('Will be processed with valid furnishing_name', None, 'DISSOLUTION_COMMENCEMENT_NO_AR_XPRO', 'PROCESSED'),
