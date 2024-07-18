@@ -34,6 +34,7 @@ from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
 from .filing import Filing
 from .furnishing import Furnishing
+from .furnishing_group import FurnishingGroup
 from .jurisdiction import Jurisdiction
 from .naics_element import NaicsElement
 from .naics_structure import NaicsStructure
@@ -47,6 +48,7 @@ from .review_result import ReviewResult
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User, UserRoles
+from .xml_payload import XmlPayload
 
 
 __all__ = (
@@ -72,6 +74,7 @@ __all__ = (
     'DocumentType',
     'Filing',
     'Furnishing',
+    'FurnishingGroup',
     'Jurisdiction',
     'NaicsElement',
     'NaicsStructure',
@@ -89,4 +92,5 @@ __all__ = (
     'ShareSeries',
     'User',
     'UserRoles',
+    'XmlPayload'
 )
