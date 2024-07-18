@@ -1243,6 +1243,27 @@ components:
           addressCountry: Canada
           postalCode: V8R 2P1
           deliveryInstructions: '"Our apartment is located at the back of the building."'
+    AGM_location_change:
+      type: object
+      title: AGM Location Change Information Schema
+      description: 'Notice of AGM(Annual General Meeting) location change allows changing of the company''s AGM location. Requires the information of the AGM year, reason of change and the new location.'
+      properties:
+        agmLocationChange:
+          type: object
+          required:
+            - year
+            - reason
+            - agmLocation
+          properties:
+            year:
+              type: string
+              description: Year of the AGM, Must be on or after incorporation year and cannot be future year.
+            reason:
+              type: string
+              maxLength: 2000
+            agmLocation:
+              type: string
+              maxLength: 400
     Agreement_type:
       type: object
       title: Incorporation Agreement Type
