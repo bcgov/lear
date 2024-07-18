@@ -106,7 +106,7 @@ paths:
                 type: object
                 properties: {}
               examples:
-                /business/api/v2/businesses/BC0882365/filings?draft=true:
+                File-agm-location-change-response:
                   summary: Notice of AGM Location Change response
                   value:
                     errors: [
@@ -116,9 +116,9 @@ paths:
                       agmLocationChange:
                         agmLocation: Victoria, BC, Canada
                         reason: API Specs Tests
-                        year: 2024
+                        year: '2024'
                       business:
-                        foundingDate: 2023-07-12T17:31:58.000+00:00
+                        foundingDate: '2023-07-12T17:31:58.000+00:00'
                         identifier: BC0882365
                         legalName: 882365 B.C. LTD.
                         legalType: BC
@@ -128,7 +128,7 @@ paths:
                         certifiedBy: Sample Cerfitied Person
                         colinIds: []
                         comments: []
-                        date: 2024-07-18T15:36:26.345331+00:00
+                        date: '2024-07-18T15:36:26.345331+00:00'
                         filingId: 150147
                         inColinOnly: false
                         isCorrected: false
@@ -150,16 +150,16 @@ paths:
                 value:
                   filing:
                     header:
-                      date: 2024-07-18
+                      date: '2024-07-18'
                       name: agmLocationChange
                       certifiedBy: Sample Cerfitied Person
-                    busineess:
-                      foundingDate: 2023-07-12T17:31:58.000+00:00
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
                       identifier: BC0882365
                       legalName: 882365 B.C. LTD.
                       legalType: BC
                     agmLocationChange:
-                      year: 2024
+                      year: '2024'
                       reason: API Specs Tests
                       agmLocation: Victoria, BC, Canada
       parameters:
