@@ -28,7 +28,7 @@ class FurnishingGroup(db.Model):
 
     # parent keys
     xml_payload_id = db.Column('xml_payload_id', db.Integer, db.ForeignKey('xml_payloads.id'),
-                               index=True, nullable=False)
+                               index=True, nullable=True)
 
     # relationships
     xml_payload = db.relationship('XmlPayload', backref=db.backref('furnishing_groups', lazy=True))

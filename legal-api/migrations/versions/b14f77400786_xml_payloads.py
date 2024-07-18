@@ -26,7 +26,7 @@ def upgrade():
 
     op.create_table('furnishing_groups',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('xml_payload_id', sa.Integer(), nullable=False),
+    sa.Column('xml_payload_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['xml_payload_id'], ['xml_payloads.id']),
     sa.PrimaryKeyConstraint('id')
     )
