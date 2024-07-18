@@ -1620,11 +1620,53 @@ components:
         legalType:
           type: string
           enum:
+            - A
+            - B
+            - BC   
             - BEN
+            - CBEN
+            - C
+            - CC
+            - CCC
+            - CEM
             - CP
-            - SP
+            - CS
+            - CUL
+            - EPR
+            - FI
+            - FOR
             - GP
-            - BC
+            - LIC
+            - LIB
+            - LL
+            - LLC
+            - LP
+            - MF
+            - PA
+            - PAR
+            - PFS
+            - QA
+            - QB
+            - QC
+            - QD
+            - QE
+            - REG
+            - RLY
+            - S
+            - SB
+            - SP
+            - T
+            - TMY
+            - ULC
+            - UQA
+            - UQB
+            - UQC
+            - UQD
+            - UQE
+            - XCP
+            - XL
+            - XP
+            - XS
           example: 'GP: General Partnership'
           description: 'Type of business eg: individual(SP), partnership(GP).'
         taxId:
@@ -1710,6 +1752,26 @@ components:
                 enum:
                   - DBA
                   - TRANSLATION
+        warnings:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+                title: Warning code
+                example: 'INVALID_LEGAL_STRUCTURE_DIRECTORS' 
+              message:
+                type: string
+                title: Warning message
+                example: 'A minimum of 3 directors is required'
+              warningType:
+                type: string
+                title: Warning message
+                example: 'MISSING_REQUIRED_BUSINESS_INFO'
+              filing: 
+                type: string
+                title: The link to the filing that resulted in the non-compliance.
       required:
         - identifier
     Change_of_address:
