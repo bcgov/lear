@@ -73,8 +73,9 @@ def test_get_internal_filings(session, client, jwt):
     rv = client.get('/api/v2/businesses/internal/filings',
                     headers=create_header(jwt, [COLIN_SVC_ROLE]))
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json) == 1
-    assert rv.json[0]['filingId'] == filing1.id
+    filings = rv.json.get('filings')
+    assert len(filings) == 1
+    assert filings[0]['filingId'] == filing1.id
 
 
 @pytest.mark.parametrize('identifier, base_filing, corrected_filing, colin_id', [
@@ -96,11 +97,12 @@ def test_get_bcomp_corrections(session, client, jwt, identifier, base_filing, co
     rv = client.get('/api/v2/businesses/internal/filings',
                     headers=create_header(jwt, [COLIN_SVC_ROLE]))
     assert rv.status_code == HTTPStatus.OK
-    assert len(rv.json) == 1
+    filings = rv.json.get('filings')
+    assert len(filings) == 1
     if colin_id:
-        assert rv.json[0]['filingId'] == filing.id
+        assert filings[0]['filingId'] == filing.id
     else:
-        assert rv.json[0]['filingId'] == incorp_filing.id
+        assert filings[0]['filingId'] == incorp_filing.id
 
 
 def test_patch_internal_filings(session, client, jwt):
