@@ -114,6 +114,7 @@ class StageOneProcessor:
             # TODO: send AR and transition pdf to BCMail+
             new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
             new_furnishing.processed_date = datetime.utcnow()
+            new_furnishing.save()
 
     async def _send_second_round_notification(self, batch_processing: BatchProcessing):
         """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
@@ -142,6 +143,7 @@ class StageOneProcessor:
         # TODO: send AR and transition pdf to BCMail+
         new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
         new_furnishing.processed_date = datetime.utcnow()
+        new_furnishing.save()
 
     def _create_new_furnishing(  # pylint: disable=too-many-arguments
             self,

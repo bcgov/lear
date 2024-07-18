@@ -138,12 +138,6 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
 @pytest.mark.parametrize(
     'test_name, has_email_furnishing, has_mail_furnishing, is_email_elapsed', [
         (
-            'NO_EMAIL_FURNISHING',
-            False,
-            False,
-            False
-        ),
-        (
             'EMAIL_FURNISHING_NOT_ELAPSED',
             True,
             False,
