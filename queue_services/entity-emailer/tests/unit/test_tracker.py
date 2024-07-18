@@ -21,7 +21,7 @@ from sqlalchemy.exc import OperationalError
 from entity_emailer import worker
 from tracker.models import MessageProcessing
 
-from . import create_business, create_furnishing, create_mock_message  # noqa: I003
+from . import create_mock_message  # noqa: I003
 
 
 @pytest.mark.parametrize(
@@ -125,18 +125,18 @@ from . import create_business, create_furnishing, create_mock_message  # noqa: I
          }),
         ('f36e3af7-90c3-4859-a6f6-2feefbdc1e30',
          {
-            "specversion": "1.x-wip",
-            "type": "bc.registry.dissolution",
-            "source": "furnishingsJob",
-            "id": "f36e3af7-90c3-4859-a6f6-2feefbdc1e30",
-            "time": "",
-            "datacontenttype": "application/json",
-            "identifier": "BC123223",
-            "data": {
-                "furnishing": {
-                    "type": "EMAIL",
-                    "furnishingId": 1,
-                    "furnishingName": "DISSOLUTION_COMMENCEMENT_NO_AR"
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.dissolution',
+            'source': 'furnishingsJob',
+            'id': 'f36e3af7-90c3-4859-a6f6-2feefbdc1e30',
+            'time': '',
+            'datacontenttype': 'application/json',
+            'identifier': 'BC123223',
+            'data': {
+                'furnishing': {
+                    'type': 'EMAIL',
+                    'furnishingId': 1,
+                    'furnishingName': 'DISSOLUTION_COMMENCEMENT_NO_AR'
                 }
             }
          }),

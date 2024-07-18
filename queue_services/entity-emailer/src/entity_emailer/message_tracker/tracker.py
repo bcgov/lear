@@ -18,7 +18,7 @@ import json
 import nats
 from flask import current_app
 
-from entity_emailer.email_processors import filing_notification, involuntary_dissolution_stage_1_notification
+from entity_emailer.email_processors import filing_notification
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
