@@ -134,7 +134,7 @@ from . import create_mock_message  # noqa: I003
             'identifier': 'BC123223',
             'data': {
                 'furnishing': {
-                    'type': 'EMAIL',
+                    'type': 'INVOLUNTARY_DISSOLUTION',
                     'furnishingId': 1,
                     'furnishingName': 'DISSOLUTION_COMMENCEMENT_NO_AR'
                 }

@@ -499,7 +499,7 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
         'identifier': business_identifier,
         'data': {
             'furnishing': {
-                'type': 'PROCESSING',
+                'type': 'INVOLUNTARY_DISSOLUTION',
                 'furnishingId': furnishing.id,
                 'furnishingName': furnishing_name
             }
