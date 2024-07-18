@@ -41,7 +41,7 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
 
     if etype:
         message_id = email_msg.get('id', None)
-        if etype == 'bc.registry.names.request' or etype == 'bc.registry.dissolution':
+        if etype in ('bc.registry.names.request', 'bc.registry.dissolution'):
             source = email_msg.get('source', None)
             identifier = email_msg.get('identifier', None)
             return create_message_context_properties(etype, message_id, source, identifier, True)
