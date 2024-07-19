@@ -35,7 +35,7 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
 from legal_api import db
-from legal_api.models import Filing
+from legal_api.models import Filing, Furnishing
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.flags import Flags
 from sqlalchemy.exc import OperationalError
@@ -55,6 +55,7 @@ from entity_emailer.email_processors import (
     correction_notification,
     dissolution_notification,
     filing_notification,
+    involuntary_dissolution_stage_1_notification,
     mras_notification,
     name_request,
     nr_notification,
@@ -142,6 +143,24 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
         elif etype and etype == 'bc.registry.bnmove':
             email = bn_notification.process_bn_move(email_msg, token)
             send_email(email, token)
+        elif etype and etype == 'bc.registry.dissolution':
+            # Confirm the data.furnishingName
+            furnishing_name = email_msg.get('data', {}).get('furnishing', {}).get('furnishingName', None)
+            if furnishing_name \
+                    and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
+                email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
+                try:
+                    send_email(email, token)
+                    # Update corresponding furnishings entry as PROCESSED
+                    involuntary_dissolution_stage_1_notification.post_process(email_msg,
+                                                                              Furnishing.FurnishingStatus.PROCESSED)
+                except Exception as _:  # noqa B902; pylint: disable=W0703
+                    # Update corresponding furnishings entry as FAILED
+                    involuntary_dissolution_stage_1_notification.post_process(email_msg,
+                                                                              Furnishing.FurnishingStatus.FAILED)
+                    raise
+            else:
+                logger.debug('Furnishing name is not valid. Skipping processing of email_msg: %s', email_msg)
         else:
             etype = email_msg['email']['type']
             option = email_msg['email']['option']
