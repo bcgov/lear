@@ -100,7 +100,7 @@ class StageOneProcessor:
             await self._send_email(new_furnishing)
         else:
             # send paper letter if business doesn't have email address
-            new_furnishing.furnishing_type=Furnishing.FurnishingType.MAIL
+            new_furnishing.furnishing_type = Furnishing.FurnishingType.MAIL
             new_furnishing.save()
 
             # TODO: create and add letter to either AR or transition pdf
