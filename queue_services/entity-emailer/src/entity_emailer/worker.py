@@ -145,8 +145,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             send_email(email, token)
         elif etype and etype == 'bc.registry.dissolution':
             # Confirm the data.furnishingName
-            if (furnishing_name := email_msg.get('data', {}).get('furnishing', {}).get('furnishingName', None)) \
-                    and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
+            furnishing_name = email_msg.get('data', {}).get('furnishing', {}).get('furnishingName', None)
+            if furnishing_name \
+                and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
                 email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
                 try:
                     send_email(email, token)
