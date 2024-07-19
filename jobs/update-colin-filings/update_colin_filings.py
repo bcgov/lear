@@ -64,9 +64,9 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def get_filings(app: Flask, token):
+def get_filings(app: Flask, token, page, limit):
     """Get a filing with filing_id."""
-    req = requests.get(f'{app.config["LEGAL_API_URL"]}/internal/filings',
+    req = requests.get(f'{app.config["LEGAL_API_URL"]}/internal/filings?page={page}&limit={limit}',
                        headers={'Authorization': AccountService.BEARER + token},
                        timeout=AccountService.timeout)
     if not req or req.status_code != 200:
@@ -133,29 +133,35 @@ def run():
             # get updater-job token
             token = AccountService.get_bearer_token()
 
-            filings = get_filings(application, token)
-            if not filings:
-                # pylint: disable=no-member; false positive
-                application.logger.debug('No completed filings to send to colin.')
-            for filing in filings:
-                filing_id = filing['filingId']
-                identifier = filing['filing']['business']['identifier']
-                if identifier in corps_with_failed_filing:
+            page = 1
+            total_pages = None
+            while ((total_pages is None or page <= total_pages) and
+                   (results := get_filings(application, token, page, 50))):
+                page += 1
+                total_pages = results.get('pages')
+                if not (filings := results.get('filings')):
                     # pylint: disable=no-member; false positive
-                    application.logger.debug(f'Skipping filing {filing_id} for'
-                                             f' {filing["filing"]["business"]["identifier"]}.')
-                else:
-                    colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
-                    update = None
-                    if colin_ids:
-                        update = update_colin_id(app=application, filing_id=filing_id, colin_ids=colin_ids, token=token)
-                    if update:
+                    application.logger.debug('No completed filings to send to colin.')
+                for filing in filings:
+                    filing_id = filing['filingId']
+                    identifier = filing['filing']['business']['identifier']
+                    if identifier in corps_with_failed_filing:
                         # pylint: disable=no-member; false positive
-                        application.logger.debug(f'Successfully updated filing {filing_id}')
+                        application.logger.debug(f'Skipping filing {filing_id} for'
+                                                 f' {filing["filing"]["business"]["identifier"]}.')
                     else:
-                        corps_with_failed_filing.append(filing['filing']['business']['identifier'])
-                        # pylint: disable=no-member; false positive
-                        application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
+                        colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
+                        update = None
+                        if colin_ids:
+                            update = update_colin_id(app=application, filing_id=filing_id,
+                                                     colin_ids=colin_ids, token=token)
+                        if update:
+                            # pylint: disable=no-member; false positive
+                            application.logger.debug(f'Successfully updated filing {filing_id}')
+                        else:
+                            corps_with_failed_filing.append(filing['filing']['business']['identifier'])
+                            # pylint: disable=no-member; false positive
+                            application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
 
         except Exception as err:  # noqa: B902
             # pylint: disable=no-member; false positive
