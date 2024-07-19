@@ -19,4 +19,5 @@ ERROR_MESSAGES: dict = {
    ErrorCode.MISSING_BUSINESS: 'Business not found for identifier: {identifier}',
    ErrorCode.FILING_NOT_FOUND: 'Filing: {filing_id} not found for: {identifier}',
    ErrorCode.NOT_AUTHORIZED: 'Not authorized to access business: {identifier}',
+   ErrorCode.FURNISHING_NOT_FOUND: 'Furnishing: {furnishing_id} not found for identifier: {identifier}'
 }

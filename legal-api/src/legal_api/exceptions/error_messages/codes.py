@@ -32,3 +32,4 @@ class ErrorCode(AutoName):
     FILING_NOT_FOUND = auto()
     MISSING_BUSINESS = auto()
     NOT_AUTHORIZED = auto()
+    FURNISHING_NOT_FOUND = auto()

@@ -30,6 +30,7 @@ ecdsa==0.14.1
 expiringdict==1.1.4
 flask-jwt-oidc==0.3.0
 flask-restx==0.3.0
+google-auth==2.16.2
 gunicorn==20.1.0
 idna==2.10
 itsdangerous==1.1.0
