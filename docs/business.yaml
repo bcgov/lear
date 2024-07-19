@@ -107,7 +107,7 @@ paths:
                 properties: {}
               examples:
                 File-agm-location-change-response:
-                  summary: (Draft) Notice of AGM Location Change response
+                  summary: (Draft) Notice of AGM Location Change Response
                   value:
                     errors: [
                       null
@@ -136,6 +136,26 @@ paths:
                         name: agmLocationChange
                         status: DRAFT
                         submitter: api-key-account-3445-sandbox
+        '422':
+          description: UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)
+          content:
+            application/json:
+              examples:
+                Missing-agm-location-response:
+                  summary: 'AGM Location Change - Missing AGM Location Response'
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'agmLocation' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Cerfitied Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'year': '2024', 'reason': 'API Specs Tests' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:reason:API Specs Tests,year:2024,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Cerfitied Person,date:2024-07-18,name:agmLocationChange"
+                Missing-agm-location-change-reason-response:
+                  summary: AGM Location Change - Missing Reason Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'reason' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Cerfitied Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'year': '2024', 'agmLocation': 'Victoria, BC, Canada' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:agmLocation:Victoria, BC, Canada,year:2024,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Cerfitied Person,date:2024-07-18,name:agmLocationChange "
+                Missing-agm-location-change-year-response:
+                  summary: AGM Location Change - Missing Year Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'year' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Cerfitied Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'reason': 'API Specs Tests', 'agmLocation': 'Victoria, BC, Canada' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:agmLocation:Victoria, BC, Canada,reason:API Specs Tests,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Cerfitied Person,date:2024-07-18,name:agmLocationChange "
       description: Submit a filing to alter the state and data of a business.
       tags:
         - business
@@ -146,7 +166,7 @@ paths:
               $ref: '#/components/schemas/Filing'
             examples:
               File-agm-location-change-request:
-                summary: File a Notice of AGM Location Change Request
+                summary: '[Success] Submit a Notice of AGM Location Change Filing'
                 value:
                   filing:
                     header:
@@ -160,6 +180,54 @@ paths:
                       legalType: BC
                     agmLocationChange:
                       year: '2024'
+                      reason: API Specs Tests
+                      agmLocation: Victoria, BC, Canada
+              Failed-agm-location-change-missing-location-request:
+                summary: '[Failed] AGM Location Change - Missing AGM Location'
+                value:
+                  filing:
+                    header:
+                      date: '2024-07-18'
+                      name: agmLocationChange
+                      certifiedBy: Sample Cerfitied Person
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    agmLocationChange:
+                      year: '2024'
+                      reason: API Specs Tests
+              Failed-agm-location-change-missing-reason-request:
+                summary: '[Failed] AGM Location Change - Missing Reason'
+                value:
+                  filing:
+                    header:
+                      date: '2024-07-18'
+                      name: agmLocationChange
+                      certifiedBy: Sample Cerfitied Person
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    agmLocationChange:
+                      year: '2024'
+                      agmLocation: Victoria, BC, Canada
+              Failed-agm-location-change-missing-year-request:
+                summary: '[Failed] AGM Location Change - Missing Year'
+                value:
+                  filing:
+                    header:
+                      date: '2024-07-18'
+                      name: agmLocationChange
+                      certifiedBy: Sample Cerfitied Person
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    agmLocationChange:
                       reason: API Specs Tests
                       agmLocation: Victoria, BC, Canada
       parameters:
