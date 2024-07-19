@@ -136,6 +136,44 @@ paths:
                         name: agmLocationChange
                         status: DRAFT
                         submitter: api-key-account-3445-sandbox
+                response-consent-continuation-out:
+                  summary: Consent continuation out filing response
+                  value:
+                    filing:
+                      business:
+                        legalName: 0882848 B.C. LTD.
+                        legalType: BEN
+                        identifier: BC0882848
+                        foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                      consentContinuationOut:
+                        foreignJurisdiction:
+                          country: CA
+                          region: SK
+                        courtOrder:
+                          fileNumber: '12345'
+                          effectOfOrder: planOfArrangement
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: "string"
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-18'
+                        deletionLocked: false
+                        documentOptionalEmail: "user@example.com"
+                        effectiveDate: '2024-07-18T07:00:42.552434+00:00'
+                        email: "user@example.com"
+                        filingId: 150056
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: consentContinuationOut
+                        paymentAccount: '3445'
+                        paymentStatusCode: 'CREATED'
+                        paymentToken: '38416'
+                        status: 'PENDING'
+                        submitter: 'api-key-account-3445-sandbox'
         '422':
           description: UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)
           content:
@@ -182,6 +220,28 @@ paths:
                       year: '2024'
                       reason: API Specs Tests
                       agmLocation: Victoria, BC, Canada
+              request-submit-consent-continuation-out:
+                summary: Consent continuation out filing request
+                value:
+                  filing:
+                    header:
+                      name: consentContinuationOut
+                      date: '2024-07-18'
+                      certifiedBy: "string"
+                      email: "user@example.com"
+                      documentOptionalEmail: "user@example.com"
+                    business:
+                      legalName: 0882848 B.C. LTD.
+                      legalType: BEN
+                      identifier: BC0882848
+                      foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                    consentContinuationOut:
+                      foreignJurisdiction:
+                        country: CA
+                        region: SK
+                      courtOrder:
+                        fileNumber: '12345'
+                        effectOfOrder: planOfArrangement
       parameters:
         - schema:
             type: boolean
@@ -2132,6 +2192,26 @@ components:
           timestamp: '2022-04-19 15:59:55'
           reference:
             businessId: C1234567
+    Consent_continuation_out:
+      type: object
+      title: Consent Continuation Out Filing
+      description: Represents the filing for a company's consent to continue out of British Columbia to another jurisdiction. This filing is required when a BC company wants to move its registration to a different province or country. This consent is valid for six months from the date of authorization. If the continuation is not completed within this period, a new consent may be required.
+      required:
+            - foreignJurisdiction
+      properties:
+            foreignJurisdiction:
+              $ref: '#/components/schemas/Foreign_jurisdiction'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
+      x-examples:
+        Example 1:
+          consentContinuationOut:
+            foreignJurisdiction:
+              country: "CA"
+              region: "ON"
+            courtOrder:
+              fileNumber: "A1234"
+              effectOfOrder: "planOfArrangement"
     Contact_point:
       type: object
       title: Business Contact Point Schema
@@ -2984,6 +3064,7 @@ components:
                 - $ref: '#/components/schemas/Change_of_directors'
                 - $ref: '#/components/schemas/Change_of_name'
                 - $ref: '#/components/schemas/Change_of_registration'
+                - $ref: '#/components/schemas/Consent_continuation_out'
                 - $ref: '#/components/schemas/Conversion'
                 - $ref: '#/components/schemas/Court_order'
                 - $ref: '#/components/schemas/Correction'
@@ -2999,6 +3080,106 @@ components:
           description: Submitting updates related to a business or incorporating/registering a new business.
       required:
         - header
+    Foreign_jurisdiction:
+      type: object
+      title: Foreign Jurisdiction Schema
+      description: Represents the foreign jurisdiction for business operations.
+      required:
+        - country
+      properties:
+        country:
+          type: string
+          description: The country code of the foreign jurisdiction (ISO 3166-1 alpha-2 code).
+          minLength: 2
+          maxLength: 2
+          example: "CA"
+        region:
+          description: The specific region (province/state) within Canada or USA. For other countries, this field can be null.
+          oneOf:
+            - type: string
+              description: Canadian provinces and territories.
+              enum:
+                - "AB"
+                - "BC"
+                - "MB"
+                - "NB"
+                - "NL"
+                - "NS"
+                - "NT"
+                - "NU"
+                - "ON"
+                - "PE"
+                - "QC"
+                - "SK"
+                - "YT"
+                - "FEDERAL"
+              example: "ON"
+            - type: string
+              description: US states and territories.
+              enum:
+                - "AK"
+                - "AL"
+                - "AR"
+                - "AS"
+                - "AZ"
+                - "CA"
+                - "CO"
+                - "CT"
+                - "DC"
+                - "DE"
+                - "FL"
+                - "GA"
+                - "GU"
+                - "HI"
+                - "IA"
+                - "ID"
+                - "IL"
+                - "IN"
+                - "KS"
+                - "KY"
+                - "LA"
+                - "MA"
+                - "MD"
+                - "ME"
+                - "MI"
+                - "MN"
+                - "MO"
+                - "MP"
+                - "MS"
+                - "MT"
+                - "NC"
+                - "ND"
+                - "NE"
+                - "NH"
+                - "NJ"
+                - "NM"
+                - "NV"
+                - "NY"
+                - "OH"
+                - "OK"
+                - "OR"
+                - "PA"
+                - "PR"
+                - "RI"
+                - "SC"
+                - "SD"
+                - "TN"
+                - "TX"
+                - "UM"
+                - "UT"
+                - "VA"
+                - "VI"
+                - "VT"
+                - "WA"
+                - "WI"
+                - "WV"
+                - "WY"
+              example: "WA"
+      x-examples:
+        Example 1:
+          foreignJurisdiction:
+            country: "CA"
+            region: "QC"
     Incorporation_application:
       title: Incorporation Application Filing
       type: object
