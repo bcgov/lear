@@ -14,6 +14,7 @@
 """Email processing rules and actions for involuntary_dissolution stage 1 overdue ARs notifications."""
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 from entity_queue_common.service_utils import logger
@@ -93,4 +94,8 @@ def post_process(email_msg: dict, status: str):
     furnishing_id = email_msg['data']['furnishing']['furnishingId']
     furnishing = Furnishing.find_by_id(furnishing_id)
     furnishing.status = status
+    furnishing.processed_date = datetime.utcnow()
+    furnishing.last_modified = datetime.utcnow()
+    if status == Furnishing.FurnishingStatus.FAILED:
+        furnishing.notes = 'Failure to send email'
     furnishing.save()
