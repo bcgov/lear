@@ -507,21 +507,22 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
     }
 
     # run worker
-    with patch.object(worker, 'send_email', return_value='success', side_effect=exception) as mock_send_email:
-        session.expunge_all()
-        if exception:
-            with pytest.raises(exception):
+    with patch.object(AccountService, 'get_bearer_token', return_value=1):
+        with patch.object(worker, 'send_email', return_value='success', side_effect=exception) as mock_send_email:
+            session.expunge_all()
+            if exception:
+                with pytest.raises(exception):
+                    worker.process_email(message_payload, app)
+            else:
                 worker.process_email(message_payload, app)
-        else:
-            worker.process_email(message_payload, app)
 
-        call_args = mock_send_email.call_args
-        if furnishing_name == 'INVALID_NAME':
-            assert call_args is None
-        else:
-            assert call_args[0][0]['content']['subject'] == f'Attention {business_identifier} - Test Business'
-            assert call_args[0][0]['recipients'] == 'test@test.com'
-            assert call_args[0][0]['content']['body']
+            call_args = mock_send_email.call_args
+            if furnishing_name == 'INVALID_NAME':
+                assert call_args is None
+            else:
+                assert call_args[0][0]['content']['subject'] == f'Attention {business_identifier} - Test Business'
+                assert call_args[0][0]['recipients'] == 'test@test.com'
+                assert call_args[0][0]['content']['body']
 
-        updated_furnishing = Furnishing.find_by_id(furnishing.id)
-        assert updated_furnishing.status.name == expected_furnishing_status
+            updated_furnishing = Furnishing.find_by_id(furnishing.id)
+            assert updated_furnishing.status.name == expected_furnishing_status
