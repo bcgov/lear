@@ -147,7 +147,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             # Confirm the data.furnishingName
             furnishing_name = email_msg.get('data', {}).get('furnishing', {}).get('furnishingName', None)
             if furnishing_name \
-                and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
+                    and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
                 email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
                 try:
                     send_email(email, token)
