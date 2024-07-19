@@ -526,3 +526,5 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
 
             updated_furnishing = Furnishing.find_by_id(furnishing.id)
             assert updated_furnishing.status.name == expected_furnishing_status
+            if expected_furnishing_status == 'FAILED':
+                assert updated_furnishing.notes == 'Failure to send email'
