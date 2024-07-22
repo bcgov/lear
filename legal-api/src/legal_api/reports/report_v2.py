@@ -133,8 +133,13 @@ class ReportV2:
             'businessName': self._furnishing.business_name,
             'businessIdentifier': self._furnishing.business_identifier
         }
-        last_ar_date = LegislationDatetime.as_legislation_timezone(self._furnishing.last_ar_date)
+
+        if self._furnishing.last_ar_date:
+            last_ar_date = LegislationDatetime.as_legislation_timezone(self._furnishing.last_ar_date)
+        else:
+            last_ar_date = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
         self._report_data['furnishing']['lastARDate'] = last_ar_date.strftime(OUTPUT_DATE_FORMAT)
+
         if self._furnishing.processed_date:
             processed_date = LegislationDatetime.as_legislation_timezone(self._furnishing.processed_date)
         else:

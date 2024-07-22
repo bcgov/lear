@@ -12,22 +12,24 @@
   </head>
   <body>
     <div class="letter-copy">
+      {% if furnishing.mailingAddress %}
         <div class="container address-container ml-3">
         {% if furnishing.mailingAddress.streetAddressAdditional %}
           <div class="address-container-additional-info">
         {% else %}
           <div class="address-container-no-additional-info">
         {% endif %}
-          <div>{{ furnishing.businessName }}</div>
-          <div>{{ furnishing.mailingAddress.streetAddress }}</div>
-          <div>{{ furnishing.mailingAddress.streetAddressAdditional }}</div>
-          <div>
-            {{ furnishing.mailingAddress.addressCity }}
-            {{ furnishing.mailingAddress.addressRegion }}
-            &nbsp;{{ furnishing.mailingAddress.postalCode }}
+            <div>{{ furnishing.businessName }}</div>
+            <div>{{ furnishing.mailingAddress.streetAddress }}</div>
+            <div>{{ furnishing.mailingAddress.streetAddressAdditional }}</div>
+            <div>
+              {{ furnishing.mailingAddress.addressCity }}
+              {{ furnishing.mailingAddress.addressRegion }}
+              &nbsp;{{ furnishing.mailingAddress.postalCode }}
+            </div>
           </div>
         </div>
-      </div>
+      {% endif %}
       <div class="container letter-container ml-3">
         <div class="mt-5"><span class="bold">No Annual Reports Filed Since {{ furnishing.lastARDate }} for {{ furnishing.businessIdentifier }}</span></div>
         <div class="mt-5">To file an annual report online, log in to your Business Page at <a href="https://www.business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}" class="break-url">business.bcregistry.gov.bc.ca/<wbr>{{ furnishing.businessIdentifier }}</a> to file any outstanding annual reports listed.</div>
