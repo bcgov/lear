@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     op.create_table('xml_payloads',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('payload', sa.TEXT, nullable=False),    
+    sa.Column('payload', sa.TEXT, nullable=False),
     sa.Column('created_date', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
@@ -33,10 +33,12 @@ def upgrade():
 
     op.add_column('furnishings', sa.Column('furnishing_group_id', sa.Integer(), nullable=True))
     op.create_foreign_key(None, 'furnishings', 'furnishing_groups', ['furnishing_group_id'], ['id'])
+    op.create_index(op.f('ix_furnishings_furnishing_group_id'), 'furnishings', ['furnishing_group_id'], unique=False)
     pass
 
 
 def downgrade():
+    op.drop_index(op.f('ix_furnishings_furnishing_group_id'), table_name='furnishings')
     op.drop_column('furnishings', 'furnishing_group_id')
     op.drop_table('furnishing_groups')
     op.drop_table('xml_payloads')
