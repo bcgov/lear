@@ -86,7 +86,7 @@ def save_review(review_id: int):
 
     # emailer notification
     queue.publish_json(
-        {"email": {"filingId": filing.id, "type": filing.filing_type, "option": filing.status}},
+        {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
         current_app.config.get('NATS_EMAILER_SUBJECT')
     )
 
