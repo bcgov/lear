@@ -136,8 +136,8 @@ paths:
                         name: agmLocationChange
                         status: DRAFT
                         submitter: api-key-account-3445-sandbox
-                response-consent-continuation-out:
-                  summary: Consent Continuation Out Filing Response
+                consent-continuation-out-success-response:
+                  summary: Consent Continuation Out Response
                   value:
                     filing:
                       business:
@@ -179,28 +179,28 @@ paths:
           content:
             application/json:
               examples:
-                consent-continuation-out-invalid-jurisdiction-response:
-                  summary: Consent Continuation Out - Same Unexpired Foreign Jurisdiction Exist
+                consent-continuation-out-failed-invalid-jurisdiction-response:
+                  summary: Consent Continuation Out - Same Unexpired Foreign Jurisdiction Exist Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Can't have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
-                consent-continuation-out-invalid-country-response:
-                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Country
+                consent-continuation-out-failed-invalid-foreign-jurisdiction-country-response:
+                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Country Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Invalid country.,path:/filing/consentContinuationOut/foreignJurisdiction/country],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
-                consent-continuation-out-invalid-foreign-jurisdiction-region-response:
-                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Region
+                consent-continuation-out-failed-invalid-foreign-jurisdiction-region-response:
+                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Region Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Invalid region.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,state:HISTORICAL,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
-                consent-continuation-out-missing-required-field-response:
-                  summary: Consent Continuation Out - Missing Required Field
+                consent-continuation-out-failed-missing-required-field-response:
+                  summary: Consent Continuation Out - Missing Required Field Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[message:A valid business is required.]
-                consent-continuation-out-bc-as-foreign-jurisdiction:
-                  summary: Consent Continuation Out - BC Specified as Foreign Jurisdiction
+                consent-continuation-out-failed-bc-as-foreign-jurisdiction-region-response:
+                  summary: Consent Continuation Out - BC Specified as Foreign Jurisdiction Region Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut ""
@@ -209,8 +209,8 @@ paths:
           content:
             application/json:
               examples:
-                consent-continuation-out-business-not-in-good-standing-response:
-                  summary: Consent Continuation Out - Unauthorized to Submit Filing When Busineess is Not in Good Standing
+                consent-continuation-out-unauthorized-response:
+                  summary: Consent Continuation Out - Unauthorized Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for BC1218840. 
@@ -234,8 +234,8 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'year' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Certified Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'reason': 'API Specs Tests', 'agmLocation': 'Victoria, BC, Canada' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:agmLocation:Victoria, BC, Canada,reason:API Specs Tests,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Certified Person,date:2024-07-18,name:agmLocationChange "
-                consent-continuation-out-invalid-court-order-response:
-                  summary: Consent Continuation Out - Invalid Court Order
+                consent-continuation-out-failed-invalid-court-order-response:
+                  summary: Consent Continuation Out - Invalid Court Order Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
@@ -265,8 +265,8 @@ paths:
                       year: '2024'
                       reason: API Specs Tests
                       agmLocation: Victoria, BC, Canada
-              request-submit-consent-continuation-out:
-                summary: Consent Continuation Out Filing Request
+              consent-continuation-out-request:
+                summary: Consent Continuation Out Request
                 value:
                   filing:
                     header:
