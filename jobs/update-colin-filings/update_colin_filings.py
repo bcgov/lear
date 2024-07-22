@@ -16,6 +16,7 @@
 This module is the API for the Legal Entity system.
 """
 import logging
+import math
 import os
 
 import requests
@@ -134,11 +135,12 @@ def run():
             token = AccountService.get_bearer_token()
 
             page = 1
-            total_pages = None
-            while ((total_pages is None or page <= total_pages) and
-                   (results := get_filings(application, token, page, 50))):
+            limit = 50
+            pending_filings = None
+            while ((pending_filings is None or page <= math.ceil(pending_filings/limit)) and
+                   (results := get_filings(application, token, page, limit))):
                 page += 1
-                total_pages = results.get('pages')
+                pending_filings = results.get('total')
                 if not (filings := results.get('filings')):
                     # pylint: disable=no-member; false positive
                     application.logger.debug('No completed filings to send to colin.')
@@ -158,6 +160,7 @@ def run():
                         if update:
                             # pylint: disable=no-member; false positive
                             application.logger.debug(f'Successfully updated filing {filing_id}')
+                            pending_filings -= 1
                         else:
                             corps_with_failed_filing.append(filing['filing']['business']['identifier'])
                             # pylint: disable=no-member; false positive
