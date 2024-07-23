@@ -185,7 +185,7 @@ class StageOneProcessor:
     def _create_furnishing_address(self, mailing_address: Address, furnishings_id: int) -> Address:
         """Clone business mailing address to be used by mail furnishings."""
         furnishing_address = Address(
-            address_type=Address.FURNISHING,
+            address_type=mailing_address.address_type,
             street=mailing_address.street,
             street_additional=mailing_address.street_additional,
             city=mailing_address.city,
