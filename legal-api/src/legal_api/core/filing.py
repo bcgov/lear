@@ -53,6 +53,12 @@ class Filing:
         PAPER_ONLY = 'PAPER_ONLY'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
 
+        # filings with staff review
+        APPROVED = 'APPROVED'
+        AWAITING_REVIEW = 'AWAITING_REVIEW'
+        CHANGE_REQUESTED = 'CHANGE_REQUESTED'
+        REJECTED = 'REJECTED'
+
     class FilingTypes(str, Enum):
         """Render an Enum of all Filing Types."""
 
@@ -189,6 +195,7 @@ class Filing:
     def get_json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
         if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
+                                                                                Filing.Status.APPROVED.value,
                                                                                 Filing.Status.PAID.value,
                                                                                 Filing.Status.PENDING.value,
                                                                                 ]):

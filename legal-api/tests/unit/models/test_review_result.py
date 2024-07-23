@@ -87,5 +87,5 @@ def test_review_result_save(session):
     review_results = ReviewResult.get_review_results(review.id)
     assert len(review_results) == 2
 
-    last_review_result = ReviewResult.get_last_review_result(review.id)
+    last_review_result = ReviewResult.get_last_review_result(review.filing_id)
     assert last_review_result.id == approved.id
