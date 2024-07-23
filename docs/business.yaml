@@ -136,6 +136,84 @@ paths:
                         name: agmLocationChange
                         status: DRAFT
                         submitter: api-key-account-3445-sandbox
+                consent-continuation-out-success-response:
+                  summary: Consent Continuation Out Response
+                  value:
+                    filing:
+                      business:
+                        legalName: 0882848 B.C. LTD.
+                        legalType: BEN
+                        identifier: BC0882848
+                        foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                      consentContinuationOut:
+                        foreignJurisdiction:
+                          country: CA
+                          region: SK
+                        courtOrder:
+                          fileNumber: '12345'
+                          effectOfOrder: planOfArrangement
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: "string"
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-18'
+                        deletionLocked: false
+                        documentOptionalEmail: "user@example.com"
+                        effectiveDate: '2024-07-18T07:00:42.552434+00:00'
+                        email: "user@example.com"
+                        filingId: 150056
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: consentContinuationOut
+                        paymentAccount: '3445'
+                        paymentStatusCode: 'CREATED'
+                        paymentToken: '38416'
+                        status: 'PENDING'
+                        submitter: 'mocked submitter'
+        '400':
+          description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
+          content:
+            application/json:
+              examples:
+                consent-continuation-out-failed-invalid-jurisdiction-response:
+                  summary: Consent Continuation Out - Same Unexpired Foreign Jurisdiction Exist Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Can't have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                consent-continuation-out-failed-invalid-foreign-jurisdiction-country-response:
+                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Country Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Invalid country.,path:/filing/consentContinuationOut/foreignJurisdiction/country],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
+                consent-continuation-out-failed-invalid-foreign-jurisdiction-region-response:
+                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Region Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Invalid region.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,state:HISTORICAL,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
+                consent-continuation-out-failed-missing-required-field-response:
+                  summary: Consent Continuation Out - Missing Required Field Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[message:A valid business is required.]
+                consent-continuation-out-failed-bc-as-foreign-jurisdiction-region-response:
+                  summary: Consent Continuation Out - BC Specified as Foreign Jurisdiction Region Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
+        '401':
+          description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
+          content:
+            application/json:
+              examples:
+                consent-continuation-out-unauthorized-response:
+                  summary: Consent Continuation Out - Unauthorized Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: message:You are not authorized to submit a filing for BC1218840. 
         '422':
           description: UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)
           content:
@@ -156,6 +234,11 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'year' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Certified Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'reason': 'API Specs Tests', 'agmLocation': 'Victoria, BC, Canada' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:agmLocation:Victoria, BC, Canada,reason:API Specs Tests,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Certified Person,date:2024-07-18,name:agmLocationChange "
+                consent-continuation-out-failed-invalid-court-order-response:
+                  summary: Consent Continuation Out - Invalid Court Order Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
       description: Submit a filing to alter the state and data of a business.
       tags:
         - business
@@ -182,6 +265,28 @@ paths:
                       year: '2024'
                       reason: API Specs Tests
                       agmLocation: Victoria, BC, Canada
+              consent-continuation-out-request:
+                summary: Consent Continuation Out Request
+                value:
+                  filing:
+                    header:
+                      name: consentContinuationOut
+                      date: '2024-07-18'
+                      certifiedBy: "string"
+                      email: "user@example.com"
+                      documentOptionalEmail: "user@example.com"
+                    business:
+                      legalName: 0882848 B.C. LTD.
+                      legalType: BEN
+                      identifier: BC0882848
+                      foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                    consentContinuationOut:
+                      foreignJurisdiction:
+                        country: CA
+                        region: SK
+                      courtOrder:
+                        fileNumber: '12345'
+                        effectOfOrder: planOfArrangement
       parameters:
         - schema:
             type: boolean
@@ -2132,6 +2237,26 @@ components:
           timestamp: '2022-04-19 15:59:55'
           reference:
             businessId: C1234567
+    Consent_continuation_out:
+      type: object
+      title: Consent Continuation Out Filing
+      description: Represents the filing for a company's consent to continue out of British Columbia to another jurisdiction. This filing is required when a BC company wants to move its registration to a different province or country. This consent is valid for six months from the date of authorization. If the continuation is not completed within this period, a new consent may be required.
+      required:
+            - foreignJurisdiction
+      properties:
+            foreignJurisdiction:
+              $ref: '#/components/schemas/Foreign_jurisdiction'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
+      x-examples:
+        Example 1:
+          consentContinuationOut:
+            foreignJurisdiction:
+              country: "CA"
+              region: "ON"
+            courtOrder:
+              fileNumber: "A1234"
+              effectOfOrder: "planOfArrangement"
     Contact_point:
       type: object
       title: Business Contact Point Schema
@@ -2984,6 +3109,7 @@ components:
                 - $ref: '#/components/schemas/Change_of_directors'
                 - $ref: '#/components/schemas/Change_of_name'
                 - $ref: '#/components/schemas/Change_of_registration'
+                - $ref: '#/components/schemas/Consent_continuation_out'
                 - $ref: '#/components/schemas/Conversion'
                 - $ref: '#/components/schemas/Court_order'
                 - $ref: '#/components/schemas/Correction'
@@ -2999,6 +3125,106 @@ components:
           description: Submitting updates related to a business or incorporating/registering a new business.
       required:
         - header
+    Foreign_jurisdiction:
+      type: object
+      title: Foreign Jurisdiction Schema
+      description: Represents the foreign jurisdiction for business operations.
+      required:
+        - country
+      properties:
+        country:
+          type: string
+          description: The country code of the foreign jurisdiction (ISO 3166-1 alpha-2 code).
+          minLength: 2
+          maxLength: 2
+          example: "CA"
+        region:
+          description: The specific region (province/state) within Canada or USA. For other countries, this field can be null.
+          oneOf:
+            - type: string
+              description: Canadian provinces and territories.
+              enum:
+                - "AB"
+                - "BC"
+                - "MB"
+                - "NB"
+                - "NL"
+                - "NS"
+                - "NT"
+                - "NU"
+                - "ON"
+                - "PE"
+                - "QC"
+                - "SK"
+                - "YT"
+                - "FEDERAL"
+              example: "ON"
+            - type: string
+              description: US states and territories.
+              enum:
+                - "AK"
+                - "AL"
+                - "AR"
+                - "AS"
+                - "AZ"
+                - "CA"
+                - "CO"
+                - "CT"
+                - "DC"
+                - "DE"
+                - "FL"
+                - "GA"
+                - "GU"
+                - "HI"
+                - "IA"
+                - "ID"
+                - "IL"
+                - "IN"
+                - "KS"
+                - "KY"
+                - "LA"
+                - "MA"
+                - "MD"
+                - "ME"
+                - "MI"
+                - "MN"
+                - "MO"
+                - "MP"
+                - "MS"
+                - "MT"
+                - "NC"
+                - "ND"
+                - "NE"
+                - "NH"
+                - "NJ"
+                - "NM"
+                - "NV"
+                - "NY"
+                - "OH"
+                - "OK"
+                - "OR"
+                - "PA"
+                - "PR"
+                - "RI"
+                - "SC"
+                - "SD"
+                - "TN"
+                - "TX"
+                - "UM"
+                - "UT"
+                - "VA"
+                - "VI"
+                - "VT"
+                - "WA"
+                - "WI"
+                - "WV"
+                - "WY"
+              example: "WA"
+      x-examples:
+        Example 1:
+          foreignJurisdiction:
+            country: "CA"
+            region: "QC"
     Incorporation_application:
       title: Incorporation Application Filing
       type: object
