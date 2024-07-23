@@ -135,7 +135,7 @@ paths:
                         isCorrectionPending: false
                         name: agmLocationChange
                         status: DRAFT
-                        submitter: api-key-account-3445-sandbox
+                        submitter: mocked submitter
                 consent-continuation-out-success-response:
                   summary: Consent Continuation Out Response
                   value:
@@ -169,9 +169,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: consentContinuationOut
-                        paymentAccount: '3445'
+                        paymentAccount: '1234'
                         paymentStatusCode: 'CREATED'
-                        paymentToken: '38416'
+                        paymentToken: '12345'
                         status: 'PENDING'
                         submitter: 'mocked submitter'
         '400':
@@ -1368,7 +1368,7 @@ components:
     Address:
       type: object
       title: Address Schema
-      description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country,   postal code and instructions for delivery.'
+      description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country, postal code and instructions for delivery.'
       properties:
         streetAddress:
           type: string
@@ -1378,7 +1378,7 @@ components:
         streetAddressAdditional:
           type: string
           maxLength: 50
-          description: 'Address line 2: extra address details added to line 1. '
+          description: 'Address line 2: extra address details added to line 1.'
         addressCity:
           type: string
           maxLength: 40
@@ -1387,7 +1387,7 @@ components:
         addressRegion:
           type: string
           maxLength: 2
-          example: 'BC for British Columbia '
+          example: 'BC for British Columbia'
           description: '2 char code for province, state, territory or district.'
         addressCountry:
           type: string
@@ -1397,15 +1397,15 @@ components:
           type: string
           maxLength: 15
           example: V8R 2P1
-          description: 'Postal, Pin, Zip, or letters/digits representing po stcode. '
+          description: 'Postal, Pin, Zip, or letters/digits representing po stcode.'
         deliveryInstructions:
           type: string
+          maxLength: 80
           example: '"Our apartment is located at the back of the building."'
-          description: 'Specific instructions for the freight forwarder or carrier '
+          description: 'Specific instructions for the freight forwarder or carrier'
       required:
         - streetAddress
         - addressCity
-        - addressRegion
         - addressCountry
         - postalCode
       x-examples:
@@ -1413,10 +1413,10 @@ components:
           streetAddress: 5-4761 Bay Street
           streetAddressAdditional: Student Residence
           addressCity: Victoria
-          addressRegion: 'BC for British Columbia '
+          addressRegion: 'BC for British Columbia'
           addressCountry: Canada
           postalCode: V8R 2P1
-          deliveryInstructions: '"Our apartment is located at the back of the building."'
+          deliveryInstructions: 'Our apartment is located at the back of the building.'
     Agm_location_change:
       type: object
       title: AGM Location Change Information Schema
@@ -2531,6 +2531,7 @@ components:
               type: string
               description: The date and time that the court order has been issued.
               format: date-time
+              example: '1970-01-01T00:00:00+00:00'
             effectOfOrder:
               type: string
               minLength: 0
@@ -3683,12 +3684,15 @@ components:
     Office:
       title: Office Schema
       type: object
-      description: 'Addresses related to the business.   '
+      description: 'Addresses related to the business.'
+      required:
+        - mailingAddress
+        - deliveryAddress
       properties:
         officeType:
           type: string
           example: 'Head office '
-          description: 'Type of office eg: registered office. '
+          description: 'Type of office eg: registered office.'
         mailingAddress:
           $ref: '#/components/schemas/Address'
         deliveryAddress:
@@ -3700,7 +3704,7 @@ components:
             streetAddress: 5-4761 Bay Street
             streetAddressAdditional: Building A
             addressCity: Victoria
-            addressRegion: 'BC for British Columbia '
+            addressRegion: 'BC for British Columbia'
             addressCountry: Canada
             postalCode: V8R 2P1
             deliveryInstructions: '"Our apartment is located at the back of the building."'
@@ -3708,23 +3712,19 @@ components:
             streetAddress: 5-4761 Bay Street
             streetAddressAdditional: Building A
             addressCity: Victoria
-            addressRegion: 'BC for British Columbia '
+            addressRegion: 'BC for British Columbia'
             addressCountry: Canada
             postalCode: V8R 2P1
             deliveryInstructions: '"Our apartment is located at the back of the building."'
     party:
       type: object
       title: party
-      description: 'Represent a person and its role in relation to a business. '
+      description: 'Represent a person and its role in relation to a business.'
       properties:
         party:
           type: object
-          description: 'Represent a person and its role in relation to a business. '
+          description: 'Represent a person and its role in relation to a business.'
           properties:
-            taxId:
-              type: string
-              description: 'Company unique business number assigned by CRA: BN9 or BN15 eg: BN123456789.'
-              example: BN123456789
             roles:
               type: array
               description: 'Role of the person in relation to the business eg: director'
@@ -3734,7 +3734,6 @@ components:
               oneOf:
                 - $ref: '#/components/schemas/Person'
                 - $ref: '#/components/schemas/Business'
-                - $ref: '#/components/schemas/Business'
               description: Officer is a key management executive of the business
             deliveryAddress:
               $ref: '#/components/schemas/Address'
@@ -3743,7 +3742,7 @@ components:
             title:
               type: string
               example: Chief Executive Officer
-              description: 'Title of the party in relation to the business eg: Chief Executive Officer '
+              description: 'Title of the party in relation to the business eg: Chief Executive Officer'
           required:
             - roles
             - officer
@@ -3767,18 +3766,18 @@ components:
               streetAddress: 5-4761 Bay Street
               streetAddressAdditional: Building A
               addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
+              addressRegion: 'BC for British Columbia'
               addressCountry: Canada
               postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
+              deliveryInstructions: 'Our apartment is located at the back of the building.'
             mailingAddress:
               streetAddress: 5-4761 Bay Street
               streetAddressAdditional: Building A
               addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
+              addressRegion: 'BC for British Columbia'
               addressCountry: Canada
               postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
+              deliveryInstructions: 'Our apartment is located at the back of the building.'
             title: Chief Executive Officer
     party - copy:
       type: object
@@ -3872,16 +3871,20 @@ components:
             - Incorporator
             - Proprietor
             - Partner
+            - Applicant
           description: 'The role a person occupies in the business eg: officer.'
       x-examples:
         Example 1:
           appointmentDate: '2019-08-24'
           cessationDate: '2019-08-24'
           roleType: Director
+      required:
+        - roleType
+        - appointmentDate
     Person:
       type: object
       title: Person Schema
-      description: 'An individual that is currently or had previously occupied a role in relation to a business. '
+      description: 'An individual that is currently or had previously occupied a role in relation to a business.'
       properties:
         givenName:
           type: string
@@ -3895,17 +3898,11 @@ components:
           type: string
           title: 'An additional name for a Person, can be used for a middle name.'
           maxLength: 30
-          description: 'Other name used by the individual. '
+          description: 'Other name used by the individual.'
         middleInitial:
           type: string
           maxLength: 30
           description: Initial of the individual's middle name.
-        taxId:
-          type: string
-          title: The CRA business number
-          pattern: '^[0-9]{9}$'
-          description: 'Company unique business number assigned by CRA: BN9 or BN15 '
-          example: BN123456789
         email:
           type: string
           format: email
