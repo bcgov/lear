@@ -39,17 +39,16 @@ def test_get_furnishing_document(session, client, jwt):
         assert rv.status_code == HTTPStatus.OK
 
 
-def test_get_furnishing_document_not_authorized(session, client, jwt):
-    """Assert the call fails for unauthorized access."""
+def test_get_furnishing_document_invalid_role(session, client, jwt):
+    """Assert the call fails for invalid user role."""
     business, furnishing = factory_business_with_stage_one_furnishing()
     rv = client.get(f'/api/v2/businesses/{business.identifier}/furnishings/{furnishing.id}/document',
                     headers=create_header(jwt, [UserRoles.basic, ], business.identifier, **{'accept': 'application/pdf'}))
     
     assert rv
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
-    message = rv.json.get('message')
-    assert message
-    assert business.identifier in message
+    code = rv.json.get('code')
+    assert code == 'missing_a_valid_role'
 
 
 def test_get_furnishing_document_missing_business(session, client, jwt):

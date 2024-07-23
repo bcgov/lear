@@ -19,7 +19,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Furnishing
+from legal_api.models import Business, Furnishing, UserRoles
 from legal_api.reports.report_v2 import ReportTypes, ReportV2
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
@@ -32,7 +32,7 @@ FURNISHING_DOC_BASE_ROUTE: Final = '/<string:identifier>/furnishings/<string:fur
 
 @bp.route(FURNISHING_DOC_BASE_ROUTE, methods=['GET', 'OPTIONS'])
 @cross_origin(origins='*')
-@jwt.requires_auth
+@jwt.has_one_of_roles([UserRoles.system, UserRoles.staff])
 def get_furnishing_document(identifier: str, furnishing_id: int):
     """Return a JSON object with meta information about the Service."""
     # basic checks
