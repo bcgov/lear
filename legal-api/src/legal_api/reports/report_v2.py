@@ -157,8 +157,6 @@ class ReportV2:
         if (furnishing_address := Address.find_by(furnishings_id=self._furnishing.id)):
             furnishing_address = furnishing_address[0]
             self._report_data['furnishing']['mailingAddress'] = furnishing_address.json
-        elif (mailing_address := self._business.mailing_address.one_or_none()):
-            self._report_data['furnishing']['mailingAddress'] = mailing_address.json
 
     def _set_registrar_info(self):
         if self._furnishing.processed_date:
