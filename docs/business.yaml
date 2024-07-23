@@ -203,7 +203,7 @@ paths:
                   summary: Consent Continuation Out - BC Specified as Foreign Jurisdiction Region Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut ""
+                    rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
