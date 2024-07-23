@@ -107,7 +107,7 @@ paths:
                 properties: {}
               examples:
                 agm-location-change-success-response:
-                  summary: AGM Location Change Response
+                  summary: Agm Location Change Response
                   value:
                     errors: [
                       null
