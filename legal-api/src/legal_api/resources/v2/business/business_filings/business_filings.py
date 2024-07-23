@@ -45,7 +45,7 @@ from legal_api.models import (
     ReviewResult,
     User,
     UserRoles,
-    db
+    db,
 )
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas

@@ -60,7 +60,7 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
         return review_results
 
     @ classmethod
-    def get_last_review_result(cls, filing_id=None) -> ReviewResult:
+    def get_last_review_result(cls, filing_id) -> ReviewResult:
         """Return the last review result by the filing id."""
         review_result = None
         if filing_id:
