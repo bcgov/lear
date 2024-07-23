@@ -39,7 +39,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from datetime import timezone
 from enum import Enum
 from typing import Dict, Optional
 
@@ -98,9 +97,7 @@ class Filing(db.Model):
     payment_account: Optional[str]
 
     id = db.Column(db.Integer, primary_key=True)
-    effective_date = db.Column(
-        "effective_date", db.DateTime(timezone=True), default=datetime.now(timezone.utc)
-    )
+    effective_date = db.Column("effective_date", db.DateTime(timezone=True))
     filing_type = db.Column("filing_type", db.String(30))
     filing_sub_type = db.Column("filing_sub_type", db.String(30))
     filing_json = db.Column("filing_json", JSONB)

@@ -178,6 +178,8 @@ def create_staff_review(filing: Filing):
         "foreignJurisdiction", {}).get("identifier")
     review.status = ReviewStatus.AWAITING_REVIEW
     review.completing_party = get_completing_party(filing_data["parties"])
+    review.submission_date = datetime.now(timezone.utc)
+    review.creation_date = datetime.now(timezone.utc)
     review.save()
 
     filing.status = Filing.Status.AWAITING_REVIEW.value

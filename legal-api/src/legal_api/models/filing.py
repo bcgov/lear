@@ -1076,6 +1076,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         self._payment_token = None
         self.save()
 
+    def set_review_status(self, filing_status):
+        """Set review status."""
+        if filing_status not in [Filing.Status.CHANGE_REQUESTED.value,
+                                 Filing.Status.APPROVED.value,
+                                 Filing.Status.REJECTED.value]:
+            raise BusinessException(
+                error=f'Cannot set this filing status {filing_status}.',
+                status_code=HTTPStatus.FORBIDDEN
+            )
+        setattr(self, 'skip_status_listener', True)
+        self._status = filing_status
+        self.save()
+        setattr(self, 'skip_status_listener', False)
+
     def legal_filings(self) -> List:
         """Return a list of the filings extracted from this filing submission.
 
