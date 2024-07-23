@@ -56,23 +56,27 @@ def save_review(review_id: int):
         return jsonify({'message': 'Review not found.'}), HTTPStatus.NOT_FOUND
 
     json_input = request.get_json()
-    status = json_input.get('status')
-    comment = json_input.get('comment')
-    if not status or not comment:
-        return jsonify({'message': 'Status and Comment are required.'}), HTTPStatus.BAD_REQUEST
+    if status := json_input.get('status'):
+        if not ((status := ReviewStatus[status]) and
+                (status in [ReviewStatus.CHANGE_REQUESTED,
+                            ReviewStatus.APPROVED,
+                            ReviewStatus.REJECTED])):
+            return jsonify({'message': 'Invalid Status.'}), HTTPStatus.BAD_REQUEST
 
-    if not ((status := ReviewStatus[status]) and
-            (status in [ReviewStatus.CHANGE_REQUESTED,
-                        ReviewStatus.APPROVED,
-                        ReviewStatus.REJECTED])):
-        return jsonify({'message': 'Invalid Status.'}), HTTPStatus.BAD_REQUEST
+    else:
+        return jsonify({'message': 'Status is required.'}), HTTPStatus.BAD_REQUEST
+
+    comment = json_input.get('comment')
+    if (status in [ReviewStatus.CHANGE_REQUESTED, ReviewStatus.REJECTED]
+            and not comment):
+        return jsonify({'message': 'Comment is required.'}), HTTPStatus.BAD_REQUEST
 
     filing = Filing.find_by_id(review.filing_id)
 
     review_result = ReviewResult()
     review_result.reviewer_id = user.id
     review_result.status = status
-    review_result.comments = Sanitizer().sanitize(comment)
+    review_result.comments = Sanitizer().sanitize(comment) if comment else None
     review.review_results.append(review_result)
     review.status = status
     review.save()

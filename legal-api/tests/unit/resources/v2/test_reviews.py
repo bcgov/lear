@@ -128,18 +128,18 @@ def test_get_nonexistent_review(app, session, client, jwt):
     assert rv.json['message'] == 'Review not found.'
 
 
-@pytest.mark.parametrize('status', [
-    ReviewStatus.CHANGE_REQUESTED,
-    ReviewStatus.APPROVED,
-    ReviewStatus.REJECTED,
+@pytest.mark.parametrize('status, comment', [
+    (ReviewStatus.CHANGE_REQUESTED, 'Upload all documents'),
+    (ReviewStatus.APPROVED, None),
+    (ReviewStatus.REJECTED, 'Upload all documents'),
 ])
-def test_save_review(app, session, client, jwt, mocker, status):
+def test_save_review(app, session, client, jwt, mocker, status, comment):
     """Assert that a review can be saved."""
     review = create_review('T1z3a567')
 
     data = {
         'status': status.name,
-        'comment': 'Upload all documents'
+        'comment': comment
     }
 
     subjects_in_queue = {}
@@ -158,7 +158,7 @@ def test_save_review(app, session, client, jwt, mocker, status):
     result = review.review_results.all()[0]
     assert result
     assert result.status == status
-    assert result.comments == data['comment']
+    assert result.comments == comment
 
     status_mapping = {
         ReviewStatus.CHANGE_REQUESTED: Filing.Status.CHANGE_REQUESTED.value,
@@ -176,7 +176,9 @@ def test_save_review(app, session, client, jwt, mocker, status):
 
 
 @pytest.mark.parametrize('data, message, response_code', [
-    ({'status': ReviewStatus.APPROVED.name}, 'Status and Comment are required.', HTTPStatus.BAD_REQUEST),
+    ({'comment': 'all docs'}, 'Status is required.', HTTPStatus.BAD_REQUEST),
+    ({'status': ReviewStatus.CHANGE_REQUESTED.name}, 'Comment is required.', HTTPStatus.BAD_REQUEST),
+    ({'status': ReviewStatus.REJECTED.name}, 'Comment is required.', HTTPStatus.BAD_REQUEST),
     ({'status': ReviewStatus.RESUBMITTED.name, 'comment': 'all docs'}, 'Invalid Status.', HTTPStatus.BAD_REQUEST),
 ])
 def test_save_review_validation(app, session, client, jwt, mocker, data, message, response_code):
