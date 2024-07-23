@@ -584,7 +584,7 @@ paths:
         description: The unique identifier for the business or organization.
         schema:
           type: string
-          example: BC1234567
+          example: BC0882365
       - schema:
           type: string
           enum:
@@ -602,7 +602,7 @@ paths:
         - business
       responses:
         '200':
-          description: Created
+          description: OK
           headers:
             Access-Control-Allow-Origin:
               $ref: '#/components/headers/AccessControlAllowOrigin'
