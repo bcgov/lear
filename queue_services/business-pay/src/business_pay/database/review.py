@@ -14,7 +14,6 @@
 """This module holds the data about review."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from enum import auto
 
 from business_pay.utils.base import BaseEnum
@@ -42,10 +41,8 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     identifier = db.Column("identifier", db.String(50))
     completing_party = db.Column("completing_party", db.String(150))
     status = db.Column("status", db.Enum(ReviewStatus), nullable=False)
-    submission_date = db.Column("submission_date", db.DateTime(
-        timezone=True), default=datetime.now(timezone.utc))  # last submission date
-    creation_date = db.Column("creation_date", db.DateTime(
-        timezone=True), default=datetime.now(timezone.utc))
+    submission_date = db.Column("submission_date", db.DateTime(timezone=True))
+    creation_date = db.Column("creation_date", db.DateTime(timezone=True))
 
     # parent keys
     filing_id = db.Column("filing_id", db.Integer,
