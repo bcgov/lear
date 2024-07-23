@@ -172,8 +172,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
 
     # GCP Gotenberg report service
-    GOTENBERG_REPORT_API_AUDIENCE = os.getenv('GOTENBERG_REPORT_API_AUDIENCE', '')
-    GOTENBERG_REPORT_SVC_URL = os.getenv('GOTENBERG_REPORT_SVC_URL', 'http://')
+    REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
+    REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
 
     TESTING = False
     DEBUG = False

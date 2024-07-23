@@ -67,7 +67,7 @@ class ReportV2:
         token = ReportV2.get_report_api_token()
         if token:
             headers['Authorization'] = 'Bearer {}'.format(token)
-        url = current_app.config.get('GOTENBERG_REPORT_SVC_URL') + SINGLE_URI
+        url = current_app.config.get('REPORT_API_GOTENBERG_URL') + SINGLE_URI
         data = {
             'reportName': self._get_report_filename(),
             'template': self._get_template(),
@@ -215,7 +215,7 @@ class ReportV2:
     @staticmethod
     def get_report_api_token():
         """Generate access token for Gotenberg Report API."""
-        audience = current_app.config.get('GOTENBERG_REPORT_API_AUDIENCE')
+        audience = current_app.config.get('REPORT_API_GOTENBERG_AUDIENCE')
         if not audience:
             return None
         auth_req = google.auth.transport.requests.Request()
