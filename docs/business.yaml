@@ -189,9 +189,6 @@ paths:
                         offices:
                           recordsOffice:
                             deliveryAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -201,9 +198,6 @@ paths:
                               streetAddress: TEST D 2
                               streetAddressAdditional: 
                             mailingAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -214,9 +208,6 @@ paths:
                               streetAddressAdditional:
                           registeredOffice: 
                             deliveryAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -226,9 +217,6 @@ paths:
                               streetAddress: TEST D 1
                               streetAddressAdditional:
                             mailingAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -396,9 +384,6 @@ paths:
                         offices:
                           recordsOffice:
                             deliveryAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -408,9 +393,6 @@ paths:
                               streetAddress: TEST D 2
                               streetAddressAdditional: 
                             mailingAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -421,9 +403,6 @@ paths:
                               streetAddressAdditional:
                           registeredOffice: 
                             deliveryAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -433,9 +412,6 @@ paths:
                               streetAddress: TEST D 1
                               streetAddressAdditional:
                             mailingAddress: 
-                              actions: [
-                                  addressChanged
-                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
