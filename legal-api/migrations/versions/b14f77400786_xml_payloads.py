@@ -8,6 +8,7 @@ Create Date: 2024-07-17 23:46:20.873233
 from alembic import op
 import sqlalchemy as sa
 
+from legal_api.utils.custom_db_types import PostgreSQLXML
 
 # revision identifiers, used by Alembic.
 revision = 'b14f77400786'
@@ -19,7 +20,7 @@ depends_on = None
 def upgrade():
     op.create_table('xml_payloads',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('payload', sa.TEXT, nullable=False),
+    sa.Column('payload', PostgreSQLXML(), nullable=False),
     sa.Column('created_date', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )

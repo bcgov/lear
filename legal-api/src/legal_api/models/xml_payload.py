@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from legal_api.utils.custom_db_types import PostgreSQLXML
+
 from .db import db
 
 
@@ -25,7 +27,7 @@ class XmlPayload(db.Model):
     __tablename__ = 'xml_payloads'
 
     id = db.Column(db.Integer, primary_key=True)
-    payload = db.Column('payload', db.Text, default='', nullable=True)
+    payload = db.Column('payload', PostgreSQLXML(), default='', nullable=True)
     created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
 
     def save(self):
