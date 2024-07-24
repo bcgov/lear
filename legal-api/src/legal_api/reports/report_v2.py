@@ -160,7 +160,8 @@ class ReportV2:
             furnishing_address = furnishing_address[0]
             self._report_data['furnishing']['mailingAddress'] = self._format_address(furnishing_address.json)
 
-    def _format_address(self, address):
+    @staticmethod
+    def _format_address(address):
         postal_code = address['postalCode']
         if re.match(POSTAL_CODE_REGEX, postal_code):
             address['postalCode'] = postal_code[:3] + ' ' + postal_code[3:]
