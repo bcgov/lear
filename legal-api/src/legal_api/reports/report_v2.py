@@ -160,11 +160,11 @@ class ReportV2:
             furnishing_address = furnishing_address[0]
             self._report_data['furnishing']['mailingAddress'] = self._format_address(furnishing_address.json)
 
-    def _format_address(self, furnishing_address):
-        postal_code = furnishing_address['postalCode']
+    def _format_address(self, address):
+        postal_code = address['postalCode']
         if re.match(POSTAL_CODE_REGEX, postal_code):
-            furnishing_address['postalCode'] = postal_code[:3] + ' ' + postal_code[3:]
-        return furnishing_address
+            address['postalCode'] = postal_code[:3] + ' ' + postal_code[3:]
+        return address
 
     def _set_registrar_info(self):
         if self._furnishing.processed_date:
