@@ -4308,70 +4308,6 @@ components:
               postalCode: V8R 2P1
               deliveryInstructions: 'Our apartment is located at the back of the building.'
             title: Chief Executive Officer
-    party - copy:
-      type: object
-      x-stoplight:
-        id: ee4nvid30gu0u
-      title: party
-      description: 'Represent a person and its role in relation to a business. '
-      properties:
-        party:
-          type: object
-          description: 'Represent a person and its role in relation to a business. '
-          properties:
-            roles:
-              type: array
-              description: 'Role of the person in relation to the business eg: director.'
-              items:
-                $ref: '#/components/schemas/partyRole'
-            officer:
-              oneOf:
-                - $ref: '#/components/schemas/Person'
-                - $ref: '#/components/schemas/Business'
-                - $ref: '#/components/schemas/Business'
-              description: Officer is a key management executive of the business
-            deliveryAddress:
-              $ref: '#/components/schemas/Address'
-            mailingAddress:
-              $ref: '#/components/schemas/Address'
-            title:
-              type: string
-              example: Chief Executive Officer
-              description: 'Title of the party in relation to the business eg: Chief Executive Officer.'
-          required:
-            - roles
-            - officer
-            - mailingAddress
-      x-examples:
-        Example 1:
-          party:
-            roles:
-              - appointmentDate: '2019-08-24'
-                cessationDate: '2019-08-24'
-                roleType: Completing Party
-            officer:
-              givenName: John
-              familyName: smith
-              additionalName: Adam
-              middleInitial: A
-              email: abc.def@gov.bc.ca
-            deliveryAddress:
-              streetAddress: 5-4761 Bay Street
-              streetAddressAdditional: Building A
-              addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
-              addressCountry: Canada
-              postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
-            mailingAddress:
-              streetAddress: 5-4761 Bay Street
-              streetAddressAdditional: Building A
-              addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
-              addressCountry: Canada
-              postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
-            title: Chief Executive Officer
     partyRole:
       type: object
       description: 'Role of the person in relation to the business eg: director.'
@@ -4901,25 +4837,6 @@ components:
           BN: '123456789'
           target: string
           weight: 0
-    Suggestion_item - copy:
-      type: object
-      x-stoplight:
-        id: 21kymuins8gxo
-      description: A suggestion from an auto-search
-      properties:
-        name:
-          type: string
-          description: Matching term
-        identifier:
-          type: string
-        BN:
-          type: string
-        target:
-          type: string
-        weight:
-          type: integer
-          description: The weight of the search term is scored by the matching algorithm against the search term provided.
-      title: ''
     Transition:
       type: object
       title: Transition Filing
