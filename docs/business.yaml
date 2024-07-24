@@ -174,6 +174,90 @@ paths:
                         paymentToken: '38416'
                         status: 'PENDING'
                         submitter: 'mocked submitter'
+                Change-of-address-response:
+                  summary: Change of address response
+                  value:
+                    filing:
+                      business: 
+                        fiscalYearEndDate: '2024-06-09'
+                        foundingDate: '2024-06-09T00:00:00+00:00'
+                        identifier: BC0880343
+                        lastModified: '2024-06-09 19:00:08.470883+00'
+                        legalName: KD TEST BAKING BC LIMITED
+                      changeOfAddress:
+                        legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 2
+                              streetAddressAdditional: 
+                            mailingAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 2
+                              streetAddressAdditional:
+                          registeredOffice: 
+                            deliveryAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 1
+                              streetAddressAdditional:
+                            mailingAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 1
+                              streetAddressAdditional:
+                      header: 
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: "full name"
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-17T23:14:58.831553+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-18T07:00:00+00:00'
+                        email: no_one@never.get
+                        filingId: 150166
+                        futureEffectiveDate: '2024-07-18T07:00:00+00:00'
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: changeOfAddress
+                        paymentStatusCode: CREATED
+                        paymentToken: 38568
+                        status: 'PENDING'
+                        submitter: 'mocked submitter'
         '400':
           description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
           content:
@@ -239,6 +323,11 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                change-of-address-missing-records-office-response:
+                  summary: Change of address - Missing records office address response
+                  value:
+                    errorMessage: "API backend third party service error."
+                    rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing,message:'agmLocationChange' is a required property,validator:required,validatorValue:[agmLocationChange],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing.changeOfAddress.offices,message:'recordsOffice' is a required property,validator:required,validatorValue:[registeredOffice,recordsOffice],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'changeOfAddress', 'certifiedBy': 'full name', 'email': 'no_one@never.get', 'date': '2024-07-23', 'business': 'foundingDate': '2024-07-16T21:20:55.000+00:00', 'identifier': 'BC0883110', 'legalName': '0883110 B.C. LTD.', 'legalType': 'BC', 'changeOfAddress': 'legalType': 'BC', 'offices': 'registeredOffice': 'deliveryAddress': 'actions': ['addressChanged'], 'addressCity': 'RICHMOND', 'addressCountry': 'CA', 'addressRegion': 'BC', 'addressType': 'delivery', 'deliveryInstructions': '', 'postalCode': 'V8N 4R7', 'streetAddress': 'TEST D 1', 'streetAddressAdditional': '', 'mailingAddress': 'actions': ['addressChanged'], 'addressCity': 'RICHMOND', 'addressCountry': 'CA', 'addressRegion': 'BC', 'addressType': 'mailing', 'deliveryInstructions': '', 'postalCode': 'V8N 4R7', 'streetAddress': 'TEST M 1', 'streetAddressAdditional': '' is not valid under any of the given schemas,path:filing],filing:business:foundingDate:2024-07-16T21:20:55.000+00:00,identifier:BC0883110,legalName:0883110 B.C. LTD.,legalType:BC,changeOfAddress:legalType:BC,offices:registeredOffice:deliveryAddress:actions:[addressChanged],addressCity:RICHMOND,addressCountry:CA,addressRegion:BC,addressType:delivery,deliveryInstructions:,postalCode:V8N 4R7,streetAddress:TEST D 1,streetAddressAdditional:,mailingAddress:actions:[addressChanged],addressCity:RICHMOND,addressCountry:CA,addressRegion:BC,addressType:mailing,deliveryInstructions:,postalCode:V8N 4R7,streetAddress:TEST M 1,streetAddressAdditional:,header:certifiedBy:full name,date:2024-07-23,email:no_one@never.get,name:changeOfAddress "
       description: Submit a filing to alter the state and data of a business.
       tags:
         - business
@@ -287,6 +376,74 @@ paths:
                       courtOrder:
                         fileNumber: '12345'
                         effectOfOrder: planOfArrangement
+              Change-of-address-request:
+                summary: Change of address
+                value:
+                    filing:
+                      header:
+                        name: changeOfAddress
+                        certifiedBy: "full name"
+                        email: "no_one@never.get"
+                        date: '2024-07-23'
+                      business: 
+                        fiscalYearEndDate: '2024-06-09'
+                        foundingDate: '2024-06-09T00:00:00+00:00'
+                        identifier: BC0880343
+                        lastModified: '2024-06-09 19:00:08.470883+00'
+                        legalName: KD TEST BAKING BC LIMITED
+                      changeOfAddress:
+                        legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 2
+                              streetAddressAdditional: 
+                            mailingAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 2
+                              streetAddressAdditional:
+                          registeredOffice: 
+                            deliveryAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 1
+                              streetAddressAdditional:
+                            mailingAddress: 
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 1
+                              streetAddressAdditional:
       parameters:
         - schema:
             type: boolean
