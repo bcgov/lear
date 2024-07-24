@@ -77,9 +77,12 @@ class Furnishing(db.Model):
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
+    furnishing_group_id = db.Column('furnishing_group_id', db.Integer, db.ForeignKey('furnishing_groups.id'),
+                                    index=True, nullable=False)
 
     # relationships
     business = db.relationship('Business', backref=db.backref('furnishings', lazy=True))
+    furnishing_group = db.relationship('FurnishingGroup', backref=db.backref('furnishings', lazy=True))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -101,7 +104,8 @@ class Furnishing(db.Model):
                 furnishing_name: str = None,
                 furnishing_type: str = None,
                 status: str = None,
-                grouping_identifier: int = None
+                grouping_identifier: int = None,
+                furnishing_group_id: int = None
                 ) -> List[Furnishing]:
         """Return the Furnishing entries matching the filter."""
         query = db.session.query(Furnishing)
@@ -123,6 +127,9 @@ class Furnishing(db.Model):
 
         if grouping_identifier:
             query = query.filter(Furnishing.grouping_identifier == grouping_identifier)
+
+        if furnishing_group_id:
+            query = query.filter(Furnishing.furnishing_group_id == furnishing_group_id)
 
         return query.all()
 
