@@ -2190,7 +2190,6 @@ components:
         Example 1:
           changeOfDirectors:
             - party:
-                taxId: BN123456789
                 roles:
                   - appointmentDate: '2019-08-24'
                     cessationDate: '2019-08-24'
@@ -2200,7 +2199,6 @@ components:
                   familyName: Smith
                   additionalName: Adam
                   middleInitial: A
-                  taxId: BN123456789
                   email: abc.def@gov.bc.ca
                 deliveryAddress:
                   streetAddress: 5-4761 Bay Street
@@ -2343,7 +2341,6 @@ components:
                 deliveryInstructions: '"Our unit is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -2353,7 +2350,6 @@ components:
                     familyName: Smith
                     additionalName: Adam
                     middleInitial: A
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -2499,7 +2495,6 @@ components:
                 deliveryInstructions: '"Our unit is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -2509,7 +2504,6 @@ components:
                     familyName: Lane
                     additionalName: Adam
                     middleInitial: A
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -2763,7 +2757,6 @@ components:
             hasLiabilities: true
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -2773,7 +2766,6 @@ components:
                     familyName: Smith
                     additionalName: Adam
                     middleInitial: A
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -3217,7 +3209,6 @@ components:
                     deliveryInstructions: string
               parties:
                 - party:
-                    taxId: string
                     roles:
                       - appointmentDate: '2019-08-24'
                         cessationDate: '2019-08-24'
@@ -3227,7 +3218,6 @@ components:
                       familyName: string
                       additionalName: string
                       middleInitial: string
-                      taxId: string
                       email: user@example.com
                     deliveryAddress:
                       streetAddress: string
@@ -3477,7 +3467,6 @@ components:
                   deliveryInstructions: '"Our apartment is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -3487,7 +3476,6 @@ components:
                     familyName: string
                     additionalName: string
                     middleInitial: string
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -3923,7 +3911,6 @@ components:
       x-examples:
         Example 1:
           party:
-            taxId: BN123456789
             roles:
               - appointmentDate: '2019-08-24'
                 cessationDate: '2019-08-24'
@@ -3933,7 +3920,6 @@ components:
               familyName: Smith
               additionalName: Adam
               middleInitial: A
-              taxId: BN123456789
               email: abc.def@gov.bc.ca
             deliveryAddress:
               streetAddress: 5-4761 Bay Street
@@ -3963,10 +3949,6 @@ components:
           type: object
           description: 'Represent a person and its role in relation to a business. '
           properties:
-            taxId:
-              type: string
-              example: BN123456789
-              description: 'Company unique business number assigned by CRA: BN9 or BN15 eg: BN123456789.'
             roles:
               type: array
               description: 'Role of the person in relation to the business eg: director.'
@@ -3993,7 +3975,6 @@ components:
       x-examples:
         Example 1:
           party:
-            taxId: BN123456789
             roles:
               - appointmentDate: '2019-08-24'
                 cessationDate: '2019-08-24'
@@ -4003,7 +3984,6 @@ components:
               familyName: smith
               additionalName: Adam
               middleInitial: A
-              taxId: BN123456789
               email: abc.def@gov.bc.ca
             deliveryAddress:
               streetAddress: 5-4761 Bay Street
@@ -4087,7 +4067,6 @@ components:
           familyName: Smith
           additionalName: Adam
           middleInitial: A
-          taxId: BN123456789
           email: abc.def@gov.bc.ca
     Registrars_notation:
       title: Registrars Notation Information Schema
@@ -4316,7 +4295,6 @@ components:
                 deliveryInstructions: '"Our apartment is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -4326,7 +4304,6 @@ components:
                     familyName: string
                     additionalName: string
                     middleInitial: string
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -4657,7 +4634,6 @@ components:
                   deliveryInstructions: '"Receptopn is on 2nd floor."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2021-06-14'
@@ -4667,7 +4643,6 @@ components:
                     familyName: Williams
                     additionalName: Lucy
                     middleInitial: L
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-111 Bay Street
