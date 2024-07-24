@@ -8,7 +8,7 @@ Create Date: 2024-07-17 23:46:20.873233
 from alembic import op
 import sqlalchemy as sa
 
-from legal_api.utils.custom_db_types import PostgreSQLXML
+from legal_api.models.custom_db_types import PostgreSQLXML
 
 # revision identifiers, used by Alembic.
 revision = 'b14f77400786'

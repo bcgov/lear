@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from legal_api.utils.custom_db_types import PostgreSQLXML
+from legal_api.models.custom_db_types import PostgreSQLXML
 
 from .db import db
 
