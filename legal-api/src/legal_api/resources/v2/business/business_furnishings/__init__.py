@@ -1,4 +1,4 @@
-# Copyright © 2021 Province of British Columbia
+# Copyright © 2024 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Application Common Error Messages."""
-from .codes import ErrorCode
+"""Business Furnishings.
+
+Provides all furnishing entries externalized services.
+"""
+from .furnishing_documents import get_furnishing_document
 
 
-ERROR_MESSAGES: dict = {
-   ErrorCode.MISSING_BUSINESS: 'Business not found for identifier: {identifier}',
-   ErrorCode.FILING_NOT_FOUND: 'Filing: {filing_id} not found for: {identifier}',
-   ErrorCode.NOT_AUTHORIZED: 'Not authorized to access business: {identifier}',
-   ErrorCode.FURNISHING_NOT_FOUND: 'Furnishing: {furnishing_id} not found for identifier: {identifier}'
-}
+__all__ = ('get_furnishing_document',)

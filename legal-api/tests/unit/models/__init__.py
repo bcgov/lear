@@ -32,6 +32,7 @@ from legal_api.models import (
     Business,
     Comment,
     Filing,
+    Furnishing,
     Office,
     Party,
     PartyRole,
@@ -421,3 +422,47 @@ def factory_batch_processing(batch_id,
     )
     batch_processing.save()
     return batch_processing
+
+
+def factory_furnishing(business_id,
+                       business_identifier,
+                       batch_id,
+                       furnishing_type=Furnishing.FurnishingType.EMAIL,
+                       furnishing_name=Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+                       status=Furnishing.FurnishingStatus.QUEUED,
+                       created_date=datetime.utcnow(),
+                       last_modified=datetime.utcnow(),
+                       processed_date=datetime.utcnow(),
+                       last_ar_date=None,
+                       business_name=None
+                       ):
+    """Create a furnishing."""
+    furnishing = Furnishing(
+        business_id=business_id,
+        business_identifier=business_identifier,
+        batch_id=batch_id,
+        furnishing_type=furnishing_type,
+        furnishing_name=furnishing_name,
+        status=status,
+        created_date=created_date,
+        last_modified=last_modified,
+        processed_date=processed_date,
+        last_ar_date=last_ar_date,
+        business_name=business_name
+    )
+
+    furnishing.save()
+    return furnishing
+
+
+def factory_business_with_stage_one_furnishing():
+    """Create a business with a stage one furnishing entry."""
+    business = factory_business('BC1234567')
+    factory_business_mailing_address(business)
+    batch = factory_batch()
+    furnishing = factory_furnishing(business_id=business.id,
+                                    business_identifier=business.identifier,
+                                    batch_id=batch.id,
+                                    last_ar_date=EPOCH_DATETIME,
+                                    business_name='TEST-BUSINESS')
+    return business, furnishing

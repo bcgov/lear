@@ -84,9 +84,7 @@ class StageOneProcessor:
         # send email/letter notification for the first time
         email = self._get_email_address_from_auth(batch_processing.business_identifier)
         business = Business.find_by_identifier(batch_processing.business_identifier)
-        if email:
-            # send email letter
-            new_furnishing = self._create_new_furnishing(
+        new_furnishing = self._create_new_furnishing(
                 batch_processing,
                 eligible_details,
                 Furnishing.FurnishingType.EMAIL,
@@ -94,21 +92,16 @@ class StageOneProcessor:
                 business.legal_name,
                 email
                 )
-            # notify emailer
+        mailing_address = business.mailing_address.one_or_none()
+        if mailing_address:
+            self._create_furnishing_address(mailing_address, new_furnishing.id)
+        if email:
+            # send email letter
             await self._send_email(new_furnishing)
         else:
             # send paper letter if business doesn't have email address
-            new_furnishing = self._create_new_furnishing(
-                batch_processing,
-                eligible_details,
-                Furnishing.FurnishingType.MAIL,
-                business.last_ar_date if business.last_ar_date else business.founding_date,
-                business.legal_name
-            )
-
-            mailing_address = business.mailing_address.one_or_none()
-            if mailing_address:
-                self._create_furnishing_address(mailing_address, new_furnishing.id)
+            new_furnishing.furnishing_type = Furnishing.FurnishingType.MAIL
+            new_furnishing.save()
 
             # TODO: create and add letter to either AR or transition pdf
             # TODO: send AR and transition pdf to BCMail+
@@ -192,7 +185,7 @@ class StageOneProcessor:
     def _create_furnishing_address(self, mailing_address: Address, furnishings_id: int) -> Address:
         """Clone business mailing address to be used by mail furnishings."""
         furnishing_address = Address(
-            address_type=Address.FURNISHING,
+            address_type=mailing_address.address_type,
             street=mailing_address.street,
             street_additional=mailing_address.street_additional,
             city=mailing_address.city,

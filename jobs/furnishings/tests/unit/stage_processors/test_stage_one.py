@@ -88,7 +88,7 @@ def test_get_email_address_from_auth(session, test_name, mock_return):
 async def test_process_first_notification(app, session, test_name, entity_type, email, expected_furnishing_name):
     """Assert that the first notification furnishing entry is created correctly."""
     business = factory_business(identifier='BC1234567', entity_type=entity_type)
-    factory_address(address_type=Address.MAILING, business_id=business.id)
+    mailing_address = factory_address(address_type=Address.MAILING, business_id=business.id)
     batch = factory_batch()
     factory_batch_processing(
         batch_id=batch.id,
@@ -129,7 +129,7 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                 assert len(furnishing_addresses) == 1
                 furnishing_address = furnishing_addresses[0]
                 assert furnishing_address
-                assert furnishing_address.address_type == Address.FURNISHING
+                assert furnishing_address.address_type == mailing_address.address_type
                 assert furnishing_address.furnishings_id == furnishing.id
                 assert furnishing_address.business_id == None
                 assert furnishing_address.office_id == None
@@ -160,7 +160,7 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
 async def test_process_second_notification(app, session, test_name, has_email_furnishing, has_mail_furnishing, is_email_elapsed):
     """Assert that the second notification furnishing entry is created correctly."""
     business = factory_business(identifier='BC1234567')
-    factory_address(address_type=Address.MAILING, business_id=business.id)
+    mailing_address = factory_address(address_type=Address.MAILING, business_id=business.id)
     batch = factory_batch()
     factory_batch_processing(
         batch_id=batch.id,
@@ -210,7 +210,7 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
         assert len(furnishing_addresses) == 1
         furnishing_address = furnishing_addresses[0]
         assert furnishing_address
-        assert furnishing_address.address_type == Address.FURNISHING
+        assert furnishing_address.address_type == mailing_address.address_type
         assert furnishing_address.furnishings_id == mail_furnishing.id
         assert furnishing_address.business_id == None
         assert furnishing_address.office_id == None

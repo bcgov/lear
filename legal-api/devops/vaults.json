@@ -39,7 +39,8 @@
     {
         "vault": "api",
         "application": [
-            "mras-api"
+            "mras-api",
+            "report-api-gotenberg"
         ]
     }
 ]
