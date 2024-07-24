@@ -10,6 +10,7 @@
 # specific language governing permissions and limitations under the License.
 """Produces a PDF output for Furnishing based on templates and JSON messages."""
 import copy
+import re
 from enum import auto
 from http import HTTPStatus
 from pathlib import Path
@@ -28,6 +29,7 @@ from legal_api.utils.base import BaseEnum
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
+POSTAL_CODE_REGEX: Final = r'^[A-Z]\d[A-Z]\d[A-Z]\d$'
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 SINGLE_URI: Final = '/forms/chromium/convert/html'
 HEADER_PATH: Final = '/template-parts/common/v2/header.html'
@@ -156,7 +158,14 @@ class ReportV2:
     def _set_address(self):
         if (furnishing_address := Address.find_by(furnishings_id=self._furnishing.id)):
             furnishing_address = furnishing_address[0]
-            self._report_data['furnishing']['mailingAddress'] = furnishing_address.json
+            self._report_data['furnishing']['mailingAddress'] = self._format_address(furnishing_address.json)
+
+    @staticmethod
+    def _format_address(address):
+        postal_code = address['postalCode']
+        if re.match(POSTAL_CODE_REGEX, postal_code):
+            address['postalCode'] = postal_code[:3] + ' ' + postal_code[3:]
+        return address
 
     def _set_registrar_info(self):
         if self._furnishing.processed_date:
