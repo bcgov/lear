@@ -188,7 +188,10 @@ paths:
                         legalType: BC
                         offices:
                           recordsOffice:
-                            deliveryAddress: 
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -197,7 +200,10 @@ paths:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 2
                               streetAddressAdditional: 
-                            mailingAddress: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -207,7 +213,10 @@ paths:
                               streetAddress: TEST M 2
                               streetAddressAdditional:
                           registeredOffice: 
-                            deliveryAddress: 
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -216,7 +225,10 @@ paths:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 1
                               streetAddressAdditional:
-                            mailingAddress: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -383,7 +395,10 @@ paths:
                         legalType: BC
                         offices:
                           recordsOffice:
-                            deliveryAddress: 
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -392,7 +407,10 @@ paths:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 2
                               streetAddressAdditional: 
-                            mailingAddress: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -402,7 +420,10 @@ paths:
                               streetAddress: TEST M 2
                               streetAddressAdditional:
                           registeredOffice: 
-                            deliveryAddress: 
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
@@ -411,7 +432,10 @@ paths:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 1
                               streetAddressAdditional:
-                            mailingAddress: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
