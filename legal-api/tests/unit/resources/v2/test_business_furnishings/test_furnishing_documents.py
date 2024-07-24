@@ -78,17 +78,17 @@ def test_get_furnishing_document_missing_furnishing(session, client, jwt):
     assert invalid_furnishing_id in message
 
 @pytest.mark.parametrize(
-    'test_name, output_type, valid', [
-        ('TEST_EMAIL', 'email', True),
-        ('TEST_MAIL', 'mail', True),
-        ('TEST_VALID_CASE_INSENSITIVE', 'eMAIL', True),
+    'test_name, variant, valid', [
+        ('TEST_DEFAULT', 'default', True),
+        ('TEST_GREYSCALE', 'greyscale', True),
+        ('TEST_VALID_CASE_INSENSITIVE', 'dEFAULT', True),
         ('TEST_INVALID', 'paper', False)
     ]
 )
-def test_get_furnishing_document_output_type(session, client, jwt, test_name, output_type, valid):
+def test_get_furnishing_document_variant(session, client, jwt, test_name, variant, valid):
     business, furnishing = factory_business_with_stage_one_furnishing()
     with patch.object(ReportV2, 'get_pdf', return_value=('', HTTPStatus.OK)):
-        rv = client.get(f'/api/v2/businesses/{business.identifier}/furnishings/{furnishing.id}/document?output_type={output_type}',
+        rv = client.get(f'/api/v2/businesses/{business.identifier}/furnishings/{furnishing.id}/document?variant={variant}',
                         headers=create_header(jwt, [UserRoles.system, ], business.identifier, **{'accept': 'application/pdf'}))
         
         assert rv
@@ -98,4 +98,4 @@ def test_get_furnishing_document_output_type(session, client, jwt, test_name, ou
             assert rv.status_code == HTTPStatus.BAD_REQUEST
             message = rv.json.get('message')
             assert message
-            assert output_type in message
+            assert variant in message

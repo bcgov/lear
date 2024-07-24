@@ -21,16 +21,16 @@ from tests.unit.models import factory_business_with_stage_one_furnishing
 
 
 @pytest.mark.parametrize(
-    'test_name, output_type', [
-        ('COMMENCEMENT_EMAIL', 'email'),
-        ('COMMENCEMENT_MAIL', 'mail'),
+    'test_name, variant', [
+        ('COMMENCEMENT_DEFAULT', 'default'),
+        ('COMMENCEMENT_GREYSCALE', 'greyscale'),
     ]
 )
-def test_get_pdf(session, test_name, output_type):
+def test_get_pdf(session, test_name, variant):
     """Assert that furnishing can be returned as a Gotenberg PDF."""
     business, furnishing = factory_business_with_stage_one_furnishing()
     with patch.object(MrasService, 'get_jurisdictions', return_value=[]):
-        report = ReportV2(business, furnishing, ReportTypes.DISSOLUTION, output_type)
+        report = ReportV2(business, furnishing, ReportTypes.DISSOLUTION, variant)
         filename = report._get_report_filename()
         assert filename
         template = report._get_template()
@@ -38,7 +38,7 @@ def test_get_pdf(session, test_name, output_type):
         template_data = report._get_template_data()
         assert template_data
         assert template_data['furnishing']
-        assert template_data['outputType'] == output_type
+        assert template_data['variant'] == variant
         assert template_data['registrarInfo']
         assert template_data['title'] == 'NOTICE OF COMMENCEMENT OF DISSOLUTION'
         report_files = report._get_report_files(template_data)

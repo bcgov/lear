@@ -52,13 +52,13 @@ def get_furnishing_document(identifier: str, furnishing_id: int):
                                       **{'furnishing_id': furnishing_id, 'identifier': identifier})
         ), HTTPStatus.NOT_FOUND
 
-    output_type = request.args.get('output_type', 'email').lower()
-    if output_type not in ['email', 'mail']:
-        return jsonify({'message': f'{output_type} not a valid output type'}), HTTPStatus.BAD_REQUEST
+    variant = request.args.get('variant', 'default').lower()
+    if variant not in ['default', 'greyscale']:
+        return jsonify({'message': f'{variant} not a valid variant'}), HTTPStatus.BAD_REQUEST
 
     if 'application/pdf' in request.accept_mimetypes:
         try:
-            return ReportV2(business, furnishing, ReportTypes.DISSOLUTION, output_type).get_pdf()
+            return ReportV2(business, furnishing, ReportTypes.DISSOLUTION, variant).get_pdf()
         except Exception:
             return jsonify({'message': 'Unable to get furnishing document.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 

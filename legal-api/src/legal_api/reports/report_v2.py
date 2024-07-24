@@ -52,14 +52,14 @@ REPORT_FILES = {
 class ReportV2:
     """Service to create Gotenberg document outputs."""
 
-    def __init__(self, business, furnishing, document_key, output_type=None):
+    def __init__(self, business, furnishing, document_key, variant=None):
         """Create ReportV2 instance."""
         self._furnishing = furnishing
         self._business = business
         self._document_key = document_key
         self._report_data = None
         self._report_date_time = LegislationDatetime.now()
-        self._output_type = output_type
+        self._variant = variant
 
     def get_pdf(self):
         """Render the furnishing document pdf response."""
@@ -147,10 +147,10 @@ class ReportV2:
         self._report_data['furnishing']['processedDate'] = processed_date.strftime(OUTPUT_DATE_FORMAT)
 
     def _set_meta_info(self):
-        if self._output_type:
-            self._report_data['outputType'] = self._output_type
+        if self._variant:
+            self._report_data['variant'] = self._variant
         else:
-            self._report_data['outputType'] = 'email'
+            self._report_data['variant'] = 'default'
         self._report_data['title'] = ReportMeta.reports[self._document_key]['reportDescription'].upper()
 
     def _set_address(self):
@@ -178,7 +178,7 @@ class ReportV2:
         title = self._report_data['title']
         files = copy.deepcopy(REPORT_FILES)
         files['index.html'] = self._get_html_from_data(data)
-        if self._output_type == 'email':
+        if self._variant == 'default':
             files['header.html'] = self._get_html_from_path(HEADER_PATH, title)
             files['footer.html'] = self._get_html_from_path(FOOTER_PATH)
         else:
