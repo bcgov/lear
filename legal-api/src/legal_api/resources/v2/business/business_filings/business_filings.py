@@ -36,7 +36,17 @@ import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
 from legal_api.exceptions import BusinessException
-from legal_api.models import Address, Business, Filing, OfficeType, RegistrationBootstrap, User, UserRoles, db
+from legal_api.models import (
+    Address,
+    Business,
+    Filing,
+    OfficeType,
+    RegistrationBootstrap,
+    ReviewResult,
+    User,
+    UserRoles,
+    db,
+)
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
@@ -270,8 +280,13 @@ class ListFilingResource():
         if documents := DocumentMetaService().get_documents(filing_json):
             filing_json['filing']['documents'] = documents
 
-        if filing_json.get('filing', {}).get('header', {}).get('status') == Filing.Status.PENDING.value:
+        if rv.status == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
+        elif (rv.status in [Filing.Status.CHANGE_REQUESTED.value,
+                            Filing.Status.APPROVED.value,
+                            Filing.Status.REJECTED.value] and
+              (review_result := ReviewResult.get_last_review_result(rv.id))):
+            filing_json['filing']['header']['latestReviewComment'] = review_result.comments
 
         filing_json = {**filing_json, **CoreFiling.common_ledger_items(identifier, rv.storage)}
 
