@@ -342,7 +342,7 @@ paths:
                         status: 'PENDING'
                         submitter: 'mocked submitter'
                 agm-extension-success-response:
-                  summary: Agm Extension Response
+                  summary: AGM Extension Response
                   value:
                     errors: [
                       null
@@ -423,7 +423,7 @@ paths:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[message:filing/header/name is a required property]
                 agm-extension-failed-invalid-total-approved-extension-response:
-                  summary: Agm Extension - Invalid Total Approved Extension Response
+                  summary: AGM Extension - Invalid Total Approved Extension Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension
@@ -472,17 +472,17 @@ paths:
                   value:
                     errorMessage: "API backend third party service error."
                 agm-extension-failed-missing-agm-year-response:
-                   summary: Agm Extension - Missing agmYear Response
+                   summary: AGM Extension - Missing agmYear Response
                    value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 agm-extension-failed-missing-is-first-agm-response:
-                   summary: Agm Extension - Missing isFirstAgm Response
+                   summary: AGM Extension - Missing isFirstAgm Response
                    value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 agm-extension-failed-missing-ext-req-for-agm-year-response:
-                   summary: Agm Extension - Missing extReqForAgmYear Response
+                   summary: AGM Extension - Missing extReqForAgmYear Response
                    value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
@@ -681,7 +681,7 @@ paths:
                               streetAddress: TEST M 1
                               streetAddressAdditional:
               agm-extension-request:
-                summary: Agm Extension Request
+                summary: AGM Extension Request
                 value:
                   filing:
                     header:
