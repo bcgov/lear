@@ -1888,15 +1888,6 @@ components:
               format: date
               description: Expiration date for approved extension.
               example: '2024-07-10'
-          x-examples:
-            Example 1:
-              agmExtension:
-                year: '2024'
-                isFirstAgm: true
-                extReqForAgmYear: false
-                expireDateApprovedExt: '2026-06-20'
-                totalApprovedExt: 6
-                extensionDuration: 6
     Agm_location_change:
       type: object
       title: AGM Location Change Information Schema
