@@ -258,6 +258,89 @@ paths:
                         priority: false
                         status: PENDING
                         submitter: mocked submitter
+                change-of-address-success-response:
+                  summary: Change Of Address Response
+                  value:
+                    filing:
+                      business:
+                        legalType: BC
+                        foundingDate: '2024-06-09T00:00:00+00:00'
+                        identifier: BC0880343
+                        legalName: KD TEST BAKING BC LIMITED
+                      changeOfAddress:
+                        legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 2
+                              streetAddressAdditional: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 2
+                              streetAddressAdditional:
+                          registeredOffice: 
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 1
+                              streetAddressAdditional:
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 1
+                              streetAddressAdditional:
+                      header: 
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: "full name"
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-17T23:14:58.831553+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-18T07:00:00+00:00'
+                        email: no_one@never.get
+                        filingId: 150166
+                        futureEffectiveDate: '2024-07-18T07:00:00+00:00'
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: changeOfAddress
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        status: 'PENDING'
+                        submitter: 'mocked submitter'
         '400':
           description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
           content:
@@ -332,6 +415,11 @@ paths:
                   summary: Voluntary Dissolution - Missing Dissolution Date Response
                   value:
                     errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                change-of-address-failed-missing-records-office-response:
+                  summary: Change Of Address - Missing Records Office Address Response
+                  value:
+                    errorMessage: "API backend third party service error."
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
         '500':
           description: INTERNAL SERVER ERROR
@@ -460,6 +548,73 @@ paths:
                         fileNumber: '12345'
                         effectOfOrder: ''
                         hasPlanOfArrangement: false
+              change-of-address-request:
+                summary: Change Of Address
+                value:
+                    filing:
+                      header:
+                        name: changeOfAddress
+                        certifiedBy: "full name"
+                        email: "no_one@never.get"
+                        date: '2024-07-23'
+                      business:
+                        legalType: BC
+                        foundingDate: '2024-06-09T00:00:00+00:00'
+                        identifier: BC0880343
+                        legalName: KD TEST BAKING BC LIMITED
+                      changeOfAddress:
+                        legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 2
+                              streetAddressAdditional: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 2
+                              streetAddressAdditional:
+                          registeredOffice: 
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 1
+                              streetAddressAdditional:
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 1
+                              streetAddressAdditional:
       parameters:
         - schema:
             type: boolean
