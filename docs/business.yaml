@@ -174,15 +174,14 @@ paths:
                         paymentToken: '38416'
                         status: 'PENDING'
                         submitter: 'mocked submitter'
-                Change-of-address-response:
-                  summary: Change of address response
+                change-of-address-response:
+                  summary: Change Of Address Response
                   value:
                     filing:
-                      business: 
-                        fiscalYearEndDate: '2024-06-09'
+                      business:
+                        legalType: BC
                         foundingDate: '2024-06-09T00:00:00+00:00'
                         identifier: BC0880343
-                        lastModified: '2024-06-09 19:00:08.470883+00'
                         legalName: KD TEST BAKING BC LIMITED
                       changeOfAddress:
                         legalType: BC
@@ -255,7 +254,7 @@ paths:
                         isPaymentActionRequired: true
                         name: changeOfAddress
                         paymentStatusCode: CREATED
-                        paymentToken: 38568
+                        paymentToken: 12345
                         status: 'PENDING'
                         submitter: 'mocked submitter'
         '400':
@@ -376,8 +375,8 @@ paths:
                       courtOrder:
                         fileNumber: '12345'
                         effectOfOrder: planOfArrangement
-              Change-of-address-request:
-                summary: Change of address
+              change-of-address-request:
+                summary: Change Of Address
                 value:
                     filing:
                       header:
@@ -385,11 +384,10 @@ paths:
                         certifiedBy: "full name"
                         email: "no_one@never.get"
                         date: '2024-07-23'
-                      business: 
-                        fiscalYearEndDate: '2024-06-09'
+                      business:
+                        legalType: BC
                         foundingDate: '2024-06-09T00:00:00+00:00'
                         identifier: BC0880343
-                        lastModified: '2024-06-09 19:00:08.470883+00'
                         legalName: KD TEST BAKING BC LIMITED
                       changeOfAddress:
                         legalType: BC
