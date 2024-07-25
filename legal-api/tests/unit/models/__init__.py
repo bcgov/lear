@@ -33,6 +33,7 @@ from legal_api.models import (
     Comment,
     Filing,
     Furnishing,
+    FurnishingGroup,
     Office,
     Party,
     PartyRole,
@@ -466,3 +467,10 @@ def factory_business_with_stage_one_furnishing():
                                     last_ar_date=EPOCH_DATETIME,
                                     business_name='TEST-BUSINESS')
     return business, furnishing
+
+
+def factory_furnishing_group():
+    """Create a furnishing group."""
+    furnishing_group = FurnishingGroup()
+    furnishing_group.save()
+    return furnishing_group

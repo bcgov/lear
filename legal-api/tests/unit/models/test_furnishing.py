@@ -18,7 +18,7 @@ Test-Suite to ensure that the Furnishing Model is working as expected.
 """
 import pytest
 from legal_api.models import Furnishing
-from tests.unit.models import factory_business, factory_batch
+from tests.unit.models import factory_business, factory_batch, factory_furnishing_group
 
 def test_valid_furnishing_save(session):
     """Assert that a valid furnishing can be saved."""
@@ -69,7 +69,7 @@ def test_find_furnishing_by_id(session):
             'furnishing_name': None,
             'furnishing_type': None,
             'status': None,
-            'grouping_identifier': None
+            'furnishing_group_id': None
         },
         {
             'batch_id': None,
@@ -77,7 +77,7 @@ def test_find_furnishing_by_id(session):
             'furnishing_name': Furnishing.FurnishingType.EMAIL,
             'furnishing_type': None,
             'status': None,
-            'grouping_identifier': None
+            'furnishing_group_id': None
         },
         {
             'batch_id': None,
@@ -85,7 +85,7 @@ def test_find_furnishing_by_id(session):
             'furnishing_name': Furnishing.FurnishingType.EMAIL,
             'furnishing_type': Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
             'status': None,
-            'grouping_identifier': None
+            'furnishing_group_id': None
         },
         {
             'batch_id': None,
@@ -93,7 +93,7 @@ def test_find_furnishing_by_id(session):
             'furnishing_name': Furnishing.FurnishingType.EMAIL,
             'furnishing_type': Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
             'status': Furnishing.FurnishingStatus.QUEUED,
-            'grouping_identifier': None
+            'furnishing_group_id': None
         },
         {
             'batch_id': None,
@@ -101,7 +101,7 @@ def test_find_furnishing_by_id(session):
             'furnishing_name': Furnishing.FurnishingType.EMAIL,
             'furnishing_type': Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
             'status': Furnishing.FurnishingStatus.QUEUED,
-            'grouping_identifier': 2
+            'furnishing_group_id': None
         },
     ]
 )
@@ -110,6 +110,7 @@ def test_find_furnishing_by(session, params):
     identifier = 'BC1234567'
     business = factory_business(identifier)
     batch = factory_batch()
+    furnishing_group = factory_furnishing_group()
     furnishing = Furnishing(
         furnishing_type = Furnishing.FurnishingType.EMAIL,
         furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
@@ -117,7 +118,7 @@ def test_find_furnishing_by(session, params):
         business_id = business.id,
         business_identifier = business.identifier,
         status = Furnishing.FurnishingStatus.QUEUED,
-        grouping_identifier = 2
+        furnishing_group_id = furnishing_group.id
     )
 
     furnishing.save()
@@ -126,13 +127,3 @@ def test_find_furnishing_by(session, params):
 
     assert len(res) == 1
     assert res[0].id == furnishing.id
-
-
-def test_get_next_grouping_identifier(session):
-    """Assert that the grouping_identifier value is generated successfully."""
-    first_val = Furnishing.get_next_grouping_identifier()
-    assert first_val
-
-    next_val = Furnishing.get_next_grouping_identifier()
-    assert next_val
-    assert next_val == first_val + 1
