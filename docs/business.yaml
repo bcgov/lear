@@ -1888,77 +1888,15 @@ components:
               format: date
               description: Expiration date for approved extension.
               example: '2024-07-10'
-            currentDate:
-              type: string
-              format: date
-              description: The current date at the time of the AGM extension request.
-              example: '2023-07-21'
-            alreadyExtended:
-              type: boolean
-              description: Indicates if the AGM has already been extended.
-              example: false
-            requestExpired:
-              type: boolean
-              description: Indicates if the request for extension has expired.
-              example: false
-            isGoodStanding:
-              type: boolean
-              description: Indicates if the company is in good standing.
-              example: true
-            incorporationDate:
-              type: string
-              format: date-time
-              description: The date and time when the company was incorporated.
-              example: '2024-06-20T17:31:58.000Z'
-            agmYear:
-              type: string
-              description: The year of the AGM for which the extension is being requested. Usually same as 'year'.
-              example: '2024'
-            prevAgmDate:
-              type: string
-              format: date
-              nullable: true
-              description: The date of the previous AGM, if applicable.
-              example: null
-            isPrevExtension:
-              type: boolean
-              description: Indicates if there was a previous extension for this AGM.
-              example: false
-            prevExpiryDate:
-              type: string
-              format: date
-              nullable: true
-              description: The expiry date of the previous extension, if applicable.
-              example: null
-            agmDueDate:
-              type: string
-              format: date
-              description: The due date for the AGM after the extension is applied.
-              example: '2026-06-20'
-            isEligible:
-              type: boolean
-              description: Indicates if the company is eligible for an AGM extension.
-              example: true
           x-examples:
             Example 1:
               agmExtension:
                 year: '2024'
                 isFirstAgm: true
                 extReqForAgmYear: false
-                currentDate: '2024-07-10'
                 expireDateApprovedExt: '2026-06-20'
-                incorporationDate: '2024-01-15T00:00:00.000Z'
                 totalApprovedExt: 6
                 extensionDuration: 6
-                agmYear: '2024'
-                agmDueDate: '2026-06-20'
-                alreadyExtended: false
-                isGoodStanding: true
-                isPrevExtension: false
-                prevAgmDate: null
-                prevExpiryDate: null
-                requestExpired: false
-                isEligible: true
     Agm_location_change:
       type: object
       title: AGM Location Change Information Schema
