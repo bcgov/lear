@@ -258,7 +258,7 @@ paths:
                         priority: false
                         status: PENDING
                         submitter: mocked submitter
-                change-of-address-response:
+                change-of-address-success-response:
                   summary: Change Of Address Response
                   value:
                     filing:
