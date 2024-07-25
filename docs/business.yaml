@@ -309,7 +309,7 @@ paths:
             application/json:
               examples:
                 agm-location-change-failed-missing-agm-location-response:
-                  summary: 'AGM Location Change - Missing Agm Location Response'
+                  summary: 'AGM Location Change - Missing AGM Location Response'
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
