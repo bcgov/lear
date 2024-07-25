@@ -106,6 +106,109 @@ paths:
                 type: object
                 properties: {}
               examples:
+                Incorporation-application-response:
+                  summary: Incorporation application response  
+                  value:
+                    errors:
+                      - null
+                    filing:
+                      business:
+                        identifier: TqcTmFjD9X  
+                      header:
+                        accountId: 3445
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: API Specs
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-25T16:17:57.191108+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-25T16:17:57.191129+00:00'
+                        email: no_one@never.get
+                        filingId: 150333
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: incorporationApplication
+                        status: DRAFT
+                        submitter: api-key-account-3445-sandbox
+                      incorporationApplication:
+                        contactPoint:
+                          email: no_one@never.get
+                          phone: 123-456-7890
+                        nameRequest:
+                          legalType: BEN
+                          nrNumber: 'NR 1345876'
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC 
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0 
+                              streetAddress: mailing_address - address line one
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
+                        parties:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                              streetAddressAdditional: ''
+                            officer:
+                              email: severin@example.com
+                              firstName: BCREGTEST Lucille
+                              id: e111684b-162f-49af-9c6d-8404d51fb25c
+                              lastName: TWENTY
+                              middleName: ''
+                              organizationName: '' 
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                          - deliveryAddress:
+                              addressCity: Burnaby
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V5E 1R9
+                              streetAddress: 6767 Burford St
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Burnaby
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V5E 1R9
+                              streetAddress: 6767 Burford St
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: Director
+                              id: fa4f9923-2acc-40a3-9dd7-7e476c3a3b50
+                              lastName: Test
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Director
                 agm-location-change-success-response:
                   summary: AGM Location Change Response
                   value:
@@ -548,6 +651,93 @@ paths:
                         fileNumber: '12345'
                         effectOfOrder: ''
                         hasPlanOfArrangement: false
+              Incorporation-application-request:
+                summary: Incorporation Application Request
+                value:
+                  filing:
+                    header:
+                      certifiedBy: API Specs
+                      email: no_one@never.get
+                      name: incorporationApplication
+                      date: '{{today}}'
+                      accountId: 3445
+                    incorporationApplication:
+                      nameRequest:
+                        legalType: BEN
+                        nrNumber: '{{nr_num}}'
+                      offices:
+                        registeredOffice:
+                          deliveryAddress:
+                            streetAddress: delivery_address - address line one
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          mailingAddress:
+                            streetAddress: mailing_address - address line one
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                        recordsOffice:
+                          deliveryAddress:
+                            streetAddress: delivery_address - address line one
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          mailingAddress:
+                            streetAddress: mailing_address - address line one
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                      contactPoint:
+                        email: no_one@never.get
+                        phone: 123-456-7890
+                      parties:
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                          officer:
+                            email: severin@example.com
+                            firstName: BCREGTEST Lucille
+                            id: e111684b-162f-49af-9c6d-8404d51fb25c
+                            lastName: TWENTY
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Completing Party
+                        - deliveryAddress:
+                            addressCity: Burnaby
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V5E 1R9
+                            streetAddress: 6767 Burford St
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Burnaby
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V5E 1R9
+                            streetAddress: 6767 Burford St
+                            streetAddressAdditional: ''
+                          officer:
+                            firstName: Director
+                            id: fa4f9923-2acc-40a3-9dd7-7e476c3a3b50
+                            lastName: Test
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Director
               change-of-address-request:
                 summary: Change Of Address
                 value:
