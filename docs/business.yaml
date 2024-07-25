@@ -107,7 +107,7 @@ paths:
                 properties: {}
               examples:
                 agm-location-change-success-response:
-                  summary: Agm Location Change Response
+                  summary: AGM Location Change Response
                   value:
                     errors: [
                       null
@@ -309,17 +309,17 @@ paths:
             application/json:
               examples:
                 agm-location-change-failed-missing-agm-location-response:
-                  summary: 'Agm Location Change - Missing Agm Location Response'
+                  summary: 'AGM Location Change - Missing Agm Location Response'
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 agm-location-change-failed-missing-reason-response:
-                  summary: Agm Location Change - Missing Reason Response
+                  summary: AGM Location Change - Missing Reason Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 agm-location-change-failed-missing-year-response:
-                  summary: Agm Location Change - Missing Year Response
+                  summary: AGM Location Change - Missing Year Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
@@ -353,7 +353,7 @@ paths:
               $ref: '#/components/schemas/Filing'
             examples:
               agm-location-change-request:
-                summary: Agm Location Change Request
+                summary: AGM Location Change Request
                 value:
                   filing:
                     header:
