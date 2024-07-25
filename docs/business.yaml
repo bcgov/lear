@@ -106,8 +106,8 @@ paths:
                 type: object
                 properties: {}
               examples:
-                File-agm-location-change-response:
-                  summary: (Draft) Notice of AGM Location Change Response
+                agm-location-change-success-response:
+                  summary: AGM Location Change Response
                   value:
                     errors: [
                       null
@@ -135,7 +135,7 @@ paths:
                         isCorrectionPending: false
                         name: agmLocationChange
                         status: DRAFT
-                        submitter: api-key-account-3445-sandbox
+                        submitter: mocked submitter
                 consent-continuation-out-success-response:
                   summary: Consent Continuation Out Response
                   value:
@@ -169,11 +169,95 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: consentContinuationOut
-                        paymentAccount: '3445'
+                        paymentAccount: '1234'
                         paymentStatusCode: 'CREATED'
-                        paymentToken: '38416'
+                        paymentToken: '12345'
                         status: 'PENDING'
                         submitter: 'mocked submitter'
+                voluntary-dissolution-success-response:
+                  summary: Voluntary Dissolution Response
+                  value:
+                    filing:
+                      business:
+                        foundingDate: '2023-07-12T17:31:58.000+00:00'
+                        identifier: BC0882365
+                        legalName: 882365 B.C. LTD.
+                        legalType: BC
+                      dissolution:
+                        affidavitConfirmed: true
+                        courtOrder:
+                          effectOfOrder: ''
+                          fileNumber: '12345'
+                          hasPlanOfArrangement: false
+                        custodialOffice:
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                        dissolutionDate: '2024-07-18'
+                        dissolutionType: voluntary
+                        parties:
+                          - party:
+                              deliveryAddress:
+                                addressCity: Victoria
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: ''
+                                postalCode: V8W 3E6
+                                streetAddress: 200-940 Blanshard St
+                              inheritMailingAddress: true
+                              mailingAddress:
+                                addressCity: Victoria
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: ''
+                                postalCode: V8W 3E6
+                                streetAddress: 200-940 Blanshard St
+                              officer:
+                                email: api.specs@example.com
+                                firstName: Firstname
+                                lastName: Lastname
+                                middleName: ''
+                                organizationName: ''
+                                partyType: person
+                              roles:
+                                - appointmentDate: '2024-07-18'
+                                  roleType: Custodian
+                        resolution:
+                          resolutionConfirmed: true
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: Sample Certified Person
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-18T15:36:26.345331+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2027-07-21T07:00:00.000+00:00'
+                        filingId: 149994
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: dissolution
+                        paymentAccount: 1234
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        priority: false
+                        status: PENDING
+                        submitter: mocked submitter
         '400':
           description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
           content:
@@ -204,6 +288,11 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
+                voluntary-dissolution-failed-missing-filing-name-response:
+                  summary: Voluntary Dissolution - Missing Filing Name Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[message:filing/header/name is a required property]
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
@@ -219,26 +308,41 @@ paths:
           content:
             application/json:
               examples:
-                Missing-agm-location-response:
+                agm-location-change-failed-missing-agm-location-response:
                   summary: 'AGM Location Change - Missing AGM Location Response'
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'agmLocation' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Certified Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'year': '2024', 'reason': 'API Specs Tests' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:reason:API Specs Tests,year:2024,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Certified Person,date:2024-07-18,name:agmLocationChange"
-                Missing-agm-location-change-reason-response:
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                agm-location-change-failed-missing-reason-response:
                   summary: AGM Location Change - Missing Reason Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'reason' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Certified Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'year': '2024', 'agmLocation': 'Victoria, BC, Canada' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:agmLocation:Victoria, BC, Canada,year:2024,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Certified Person,date:2024-07-18,name:agmLocationChange "
-                Missing-agm-location-change-year-response:
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                agm-location-change-failed-missing-year-response:
                   summary: AGM Location Change - Missing Year Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:[context:[jsonPath:$.filing,message:'adminFreeze' is a required property,validator:required,validatorValue:[adminFreeze],jsonPath:$.filing,message:'agmExtension' is a required property,validator:required,validatorValue:[agmExtension],jsonPath:$.filing.agmLocationChange,message:'year' is a required property,validator:required,validatorValue:[year,reason,agmLocation],jsonPath:$.filing,message:'amalgamationApplication' is a required property,validator:required,validatorValue:[amalgamationApplication],jsonPath:$.filing,message:'alteration' is a required property,validator:required,validatorValue:[alteration],jsonPath:$.filing,message:'annualReport' is a required property,validator:required,validatorValue:[annualReport],jsonPath:$.filing,message:'changeOfAddress' is a required property,validator:required,validatorValue:[changeOfAddress],jsonPath:$.filing,message:'changeOfDirectors' is a required property,validator:required,validatorValue:[changeOfDirectors],jsonPath:$.filing,message:'changeOfName' is a required property,validator:required,validatorValue:[changeOfName],jsonPath:$.filing,message:'changeOfRegistration' is a required property,validator:required,validatorValue:[changeOfRegistration],jsonPath:$.filing,message:'consentContinuationOut' is a required property,validator:required,validatorValue:[consentContinuationOut],jsonPath:$.filing,message:'continuationIn' is a required property,validator:required,validatorValue:[continuationIn],jsonPath:$.filing,message:'continuationOut' is a required property,validator:required,validatorValue:[continuationOut],jsonPath:$.filing,message:'conversion' is a required property,validator:required,validatorValue:[conversion],jsonPath:$.filing,message:'correction' is a required property,validator:required,validatorValue:[correction],jsonPath:$.filing,message:'courtOrder' is a required property,validator:required,validatorValue:[courtOrder],jsonPath:$.filing,message:'dissolution' is a required property,validator:required,validatorValue:[dissolution],jsonPath:$.filing,message:'incorporationApplication' is a required property,validator:required,validatorValue:[incorporationApplication],jsonPath:$.filing,message:'putBackOn' is a required property,validator:required,validatorValue:[putBackOn],jsonPath:$.filing,message:'registrarsNotation' is a required property,validator:required,validatorValue:[registrarsNotation],jsonPath:$.filing,message:'registrarsOrder' is a required property,validator:required,validatorValue:[registrarsOrder],jsonPath:$.filing,message:'registration' is a required property,validator:required,validatorValue:[registration],jsonPath:$.filing,message:'restoration' is a required property,validator:required,validatorValue:[restoration],jsonPath:$.filing,message:'specialResolution' is a required property,validator:required,validatorValue:[specialResolution],jsonPath:$.filing,message:'transition' is a required property,validator:required,validatorValue:[transition],jsonPath:$.filing,message:'unmanaged' is a required property,validator:required,validatorValue:[unmanaged]],error:'header': 'name': 'agmLocationChange', 'certifiedBy': 'Sample Certified Person', 'date': '2024-07-18', 'business': 'foundingDate': '2023-07-12T17:31:58.000+00:00', 'identifier': 'BC0882365', 'legalName': '882365 B.C. LTD.', 'legalType': 'BC', 'agmLocationChange': 'reason': 'API Specs Tests', 'agmLocation': 'Victoria, BC, Canada' is not valid under any of the given schemas,path:filing],filing:agmLocationChange:agmLocation:Victoria, BC, Canada,reason:API Specs Tests,business:foundingDate:2023-07-12T17:31:58.000+00:00,identifier:BC0882365,legalName:882365 B.C. LTD.,legalType:BC,header:certifiedBy:Sample Certified Person,date:2024-07-18,name:agmLocationChange "
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 consent-continuation-out-failed-invalid-court-order-response:
                   summary: Consent Continuation Out - Invalid Court Order Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                voluntary-dissolution-failed-missing-dissolution-date-response:
+                  summary: Voluntary Dissolution - Missing Dissolution Date Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              examples:
+                voluntary-dissolution-failed-missing-disslution-type-response:
+                  summary: Voluntary Dissolution - Missing Dissolution Type Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: message:Internal server error
       description: Submit a filing to alter the state and data of a business.
       tags:
         - business
@@ -248,8 +352,8 @@ paths:
             schema:
               $ref: '#/components/schemas/Filing'
             examples:
-              File-agm-location-change-request:
-                summary: Submit a Notice of AGM Location Change Filing
+              agm-location-change-request:
+                summary: AGM Location Change Request
                 value:
                   filing:
                     header:
@@ -287,6 +391,75 @@ paths:
                       courtOrder:
                         fileNumber: '12345'
                         effectOfOrder: planOfArrangement
+              voluntary-dissolution-request:
+                summary: Voluntary Dissolution Request
+                value:
+                  filing:
+                    header:
+                      date: '2024-07-18'
+                      effectiveDate: '2027-07-21T07:00:00.000+00:00'
+                      name: dissolution
+                      certifiedBy: Sample Certified Person
+                      priority: false
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    dissolution:
+                      dissolutionDate: '2024-07-18'
+                      affidavitConfirmed: true
+                      custodialOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          postalCode: V8W 3E6
+                          streetAddress: 200-940 Blanshard St
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          postalCode: V8W 3E6
+                          streetAddress: 200-940 Blanshard St
+                          streetAddressAdditional: ''
+                      dissolutionType: voluntary
+                      parties: 
+                        - party:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                            inheritMailingAddress: true
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                            officer:
+                              email: api.specs@example.com
+                              firstName: Firstname
+                              lastName: Lastname
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-18'
+                                roleType: Custodian
+                      resolution:
+                        resolutionConfirmed: true
+                      courtOrder:
+                        fileNumber: '12345'
+                        effectOfOrder: ''
+                        hasPlanOfArrangement: false
       parameters:
         - schema:
             type: boolean
@@ -411,7 +584,7 @@ paths:
         description: The unique identifier for the business or organization.
         schema:
           type: string
-          example: BC1234567
+          example: BC0882365
       - schema:
           type: string
           enum:
@@ -429,7 +602,7 @@ paths:
         - business
       responses:
         '200':
-          description: Created
+          description: OK
           headers:
             Access-Control-Allow-Origin:
               $ref: '#/components/headers/AccessControlAllowOrigin'
@@ -1368,7 +1541,7 @@ components:
     Address:
       type: object
       title: Address Schema
-      description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country,   postal code and instructions for delivery.'
+      description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country, postal code and instructions for delivery.'
       properties:
         streetAddress:
           type: string
@@ -1378,7 +1551,7 @@ components:
         streetAddressAdditional:
           type: string
           maxLength: 50
-          description: 'Address line 2: extra address details added to line 1. '
+          description: 'Address line 2: extra address details added to line 1.'
         addressCity:
           type: string
           maxLength: 40
@@ -1387,7 +1560,7 @@ components:
         addressRegion:
           type: string
           maxLength: 2
-          example: 'BC for British Columbia '
+          example: 'BC for British Columbia'
           description: '2 char code for province, state, territory or district.'
         addressCountry:
           type: string
@@ -1397,15 +1570,15 @@ components:
           type: string
           maxLength: 15
           example: V8R 2P1
-          description: 'Postal, Pin, Zip, or letters/digits representing po stcode. '
+          description: 'Postal, Pin, Zip, or letters/digits representing po stcode.'
         deliveryInstructions:
           type: string
+          maxLength: 80
           example: '"Our apartment is located at the back of the building."'
-          description: 'Specific instructions for the freight forwarder or carrier '
+          description: 'Specific instructions for the freight forwarder or carrier'
       required:
         - streetAddress
         - addressCity
-        - addressRegion
         - addressCountry
         - postalCode
       x-examples:
@@ -1413,10 +1586,10 @@ components:
           streetAddress: 5-4761 Bay Street
           streetAddressAdditional: Student Residence
           addressCity: Victoria
-          addressRegion: 'BC for British Columbia '
+          addressRegion: 'BC for British Columbia'
           addressCountry: Canada
           postalCode: V8R 2P1
-          deliveryInstructions: '"Our apartment is located at the back of the building."'
+          deliveryInstructions: 'Our apartment is located at the back of the building.'
     Agm_location_change:
       type: object
       title: AGM Location Change Information Schema
@@ -2017,7 +2190,6 @@ components:
         Example 1:
           changeOfDirectors:
             - party:
-                taxId: BN123456789
                 roles:
                   - appointmentDate: '2019-08-24'
                     cessationDate: '2019-08-24'
@@ -2027,7 +2199,6 @@ components:
                   familyName: Smith
                   additionalName: Adam
                   middleInitial: A
-                  taxId: BN123456789
                   email: abc.def@gov.bc.ca
                 deliveryAddress:
                   streetAddress: 5-4761 Bay Street
@@ -2170,7 +2341,6 @@ components:
                 deliveryInstructions: '"Our unit is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -2180,7 +2350,6 @@ components:
                     familyName: Smith
                     additionalName: Adam
                     middleInitial: A
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -2326,7 +2495,6 @@ components:
                 deliveryInstructions: '"Our unit is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -2336,7 +2504,6 @@ components:
                     familyName: Lane
                     additionalName: Adam
                     middleInitial: A
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -2531,6 +2698,7 @@ components:
               type: string
               description: The date and time that the court order has been issued.
               format: date-time
+              example: '1970-01-01T00:00:00+00:00'
             effectOfOrder:
               type: string
               minLength: 0
@@ -2589,7 +2757,6 @@ components:
             hasLiabilities: true
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -2599,7 +2766,6 @@ components:
                     familyName: Smith
                     additionalName: Adam
                     middleInitial: A
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -3043,7 +3209,6 @@ components:
                     deliveryInstructions: string
               parties:
                 - party:
-                    taxId: string
                     roles:
                       - appointmentDate: '2019-08-24'
                         cessationDate: '2019-08-24'
@@ -3053,7 +3218,6 @@ components:
                       familyName: string
                       additionalName: string
                       middleInitial: string
-                      taxId: string
                       email: user@example.com
                     deliveryAddress:
                       streetAddress: string
@@ -3303,7 +3467,6 @@ components:
                   deliveryInstructions: '"Our apartment is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -3313,7 +3476,6 @@ components:
                     familyName: string
                     additionalName: string
                     middleInitial: string
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -3683,12 +3845,15 @@ components:
     Office:
       title: Office Schema
       type: object
-      description: 'Addresses related to the business.   '
+      description: 'Addresses related to the business.'
+      required:
+        - mailingAddress
+        - deliveryAddress
       properties:
         officeType:
           type: string
           example: 'Head office '
-          description: 'Type of office eg: registered office. '
+          description: 'Type of office eg: registered office.'
         mailingAddress:
           $ref: '#/components/schemas/Address'
         deliveryAddress:
@@ -3700,7 +3865,7 @@ components:
             streetAddress: 5-4761 Bay Street
             streetAddressAdditional: Building A
             addressCity: Victoria
-            addressRegion: 'BC for British Columbia '
+            addressRegion: 'BC for British Columbia'
             addressCountry: Canada
             postalCode: V8R 2P1
             deliveryInstructions: '"Our apartment is located at the back of the building."'
@@ -3708,23 +3873,19 @@ components:
             streetAddress: 5-4761 Bay Street
             streetAddressAdditional: Building A
             addressCity: Victoria
-            addressRegion: 'BC for British Columbia '
+            addressRegion: 'BC for British Columbia'
             addressCountry: Canada
             postalCode: V8R 2P1
             deliveryInstructions: '"Our apartment is located at the back of the building."'
     party:
       type: object
       title: party
-      description: 'Represent a person and its role in relation to a business. '
+      description: 'Represent a person and its role in relation to a business.'
       properties:
         party:
           type: object
-          description: 'Represent a person and its role in relation to a business. '
+          description: 'Represent a person and its role in relation to a business.'
           properties:
-            taxId:
-              type: string
-              description: 'Company unique business number assigned by CRA: BN9 or BN15 eg: BN123456789.'
-              example: BN123456789
             roles:
               type: array
               description: 'Role of the person in relation to the business eg: director'
@@ -3734,7 +3895,6 @@ components:
               oneOf:
                 - $ref: '#/components/schemas/Person'
                 - $ref: '#/components/schemas/Business'
-                - $ref: '#/components/schemas/Business'
               description: Officer is a key management executive of the business
             deliveryAddress:
               $ref: '#/components/schemas/Address'
@@ -3743,7 +3903,7 @@ components:
             title:
               type: string
               example: Chief Executive Officer
-              description: 'Title of the party in relation to the business eg: Chief Executive Officer '
+              description: 'Title of the party in relation to the business eg: Chief Executive Officer'
           required:
             - roles
             - officer
@@ -3751,7 +3911,6 @@ components:
       x-examples:
         Example 1:
           party:
-            taxId: BN123456789
             roles:
               - appointmentDate: '2019-08-24'
                 cessationDate: '2019-08-24'
@@ -3761,24 +3920,23 @@ components:
               familyName: Smith
               additionalName: Adam
               middleInitial: A
-              taxId: BN123456789
               email: abc.def@gov.bc.ca
             deliveryAddress:
               streetAddress: 5-4761 Bay Street
               streetAddressAdditional: Building A
               addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
+              addressRegion: 'BC for British Columbia'
               addressCountry: Canada
               postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
+              deliveryInstructions: 'Our apartment is located at the back of the building.'
             mailingAddress:
               streetAddress: 5-4761 Bay Street
               streetAddressAdditional: Building A
               addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
+              addressRegion: 'BC for British Columbia'
               addressCountry: Canada
               postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
+              deliveryInstructions: 'Our apartment is located at the back of the building.'
             title: Chief Executive Officer
     party - copy:
       type: object
@@ -3791,10 +3949,6 @@ components:
           type: object
           description: 'Represent a person and its role in relation to a business. '
           properties:
-            taxId:
-              type: string
-              example: BN123456789
-              description: 'Company unique business number assigned by CRA: BN9 or BN15 eg: BN123456789.'
             roles:
               type: array
               description: 'Role of the person in relation to the business eg: director.'
@@ -3821,7 +3975,6 @@ components:
       x-examples:
         Example 1:
           party:
-            taxId: BN123456789
             roles:
               - appointmentDate: '2019-08-24'
                 cessationDate: '2019-08-24'
@@ -3831,7 +3984,6 @@ components:
               familyName: smith
               additionalName: Adam
               middleInitial: A
-              taxId: BN123456789
               email: abc.def@gov.bc.ca
             deliveryAddress:
               streetAddress: 5-4761 Bay Street
@@ -3872,16 +4024,20 @@ components:
             - Incorporator
             - Proprietor
             - Partner
+            - Applicant
           description: 'The role a person occupies in the business eg: officer.'
       x-examples:
         Example 1:
           appointmentDate: '2019-08-24'
           cessationDate: '2019-08-24'
           roleType: Director
+      required:
+        - roleType
+        - appointmentDate
     Person:
       type: object
       title: Person Schema
-      description: 'An individual that is currently or had previously occupied a role in relation to a business. '
+      description: 'An individual that is currently or had previously occupied a role in relation to a business.'
       properties:
         givenName:
           type: string
@@ -3895,17 +4051,11 @@ components:
           type: string
           title: 'An additional name for a Person, can be used for a middle name.'
           maxLength: 30
-          description: 'Other name used by the individual. '
+          description: 'Other name used by the individual.'
         middleInitial:
           type: string
           maxLength: 30
           description: Initial of the individual's middle name.
-        taxId:
-          type: string
-          title: The CRA business number
-          pattern: '^[0-9]{9}$'
-          description: 'Company unique business number assigned by CRA: BN9 or BN15 '
-          example: BN123456789
         email:
           type: string
           format: email
@@ -3917,7 +4067,6 @@ components:
           familyName: Smith
           additionalName: Adam
           middleInitial: A
-          taxId: BN123456789
           email: abc.def@gov.bc.ca
     Registrars_notation:
       title: Registrars Notation Information Schema
@@ -4146,7 +4295,6 @@ components:
                 deliveryInstructions: '"Our apartment is located at the back of the building."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2019-08-24'
@@ -4156,7 +4304,6 @@ components:
                     familyName: string
                     additionalName: string
                     middleInitial: string
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-4761 Bay Street
@@ -4487,7 +4634,6 @@ components:
                   deliveryInstructions: '"Receptopn is on 2nd floor."'
             parties:
               - party:
-                  taxId: BN123456789
                   roles:
                     - appointmentDate: '2019-08-24'
                       cessationDate: '2021-06-14'
@@ -4497,7 +4643,6 @@ components:
                     familyName: Williams
                     additionalName: Lucy
                     middleInitial: L
-                    taxId: BN123456789
                     email: abc.def@gov.bc.ca
                   deliveryAddress:
                     streetAddress: 5-111 Bay Street
