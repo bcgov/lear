@@ -387,6 +387,122 @@ paths:
                         name: agmExtension
                         status: DRAFT
                         submitter: mocked submitter
+                annual-report-success-response:
+                  summary: Annual Report Response
+                  value:
+                    filing:
+                      annualReport:
+                        annualReportDate: '2024-07-24'
+                        directors:
+                          - actions: []
+                            appointmentDate: '2024-07-23'
+                            cessationDate: null
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 1W4
+                              streetAddress: 1-940 Blanshard
+                              streetAddressAdditional: ''
+                            id: 1
+                            isDirectorActionable: true
+                            isFeeApplied: false
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 1W4
+                              streetAddress: 1-940 Blanshard
+                              streetAddressAdditional: ''
+                            officer:
+                              email: api.specs@api.specs
+                              firstName: firstName
+                              id: 584282
+                              lastName: lastName
+                              partyType: person
+                              middleInitial: ''
+                              prevFirstName: firstName
+                              prevLastName: lastName
+                              prevMiddleInitial: ''
+                            role: director
+                        nextARDate: '2024-07-24'
+                        offices:
+                          recordsOffice:
+                            deliveryAddress: 
+                              actions: []
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: ''
+                              id: 2908346
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              actions: []
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: ''
+                              id: 2908345
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress: 
+                              actions: []
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: ''
+                              id: 2908348
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              actions: [] 
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: ''
+                              id: 2908347
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                              streetAddressAdditional: ''
+                      business:
+                        foundingDate: '2023-07-21T23:13:48.000+00:00'
+                        identifier: BC0883312
+                        legalName: 0883312 B.C. LTD.
+                        legalType: BC
+                      header:
+                        ARFilingYear: 2024
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: Sample Certified Person
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-24T16:22:13.256843+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-24T07:00:00+00:00'
+                        email: api.specs@api.specs
+                        filingId: 150312
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: annualReport
+                        paymentAccount: 1234
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        status: PENDING
+                        submitter: mocked submitter
+                        waiveFees: false
         '400':
           description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
           content:
@@ -484,6 +600,21 @@ paths:
                 agm-extension-failed-missing-ext-req-for-agm-year-response:
                    summary: AGM Extension - Missing extReqForAgmYear Response
                    value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                annual-report-failed-missing-annual-report-date-response:
+                  summary: Annual Report - Missing Annual Report Date Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                annual-report-failed-missing-missing-directors-response:
+                  summary: Annual Report - Missing Directors Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                annual-report-failed-missing-offices-response:
+                  summary: Annual Report - Missing Offices Response
+                  value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
         '500':
@@ -711,6 +842,107 @@ paths:
                       extensionDuration: 6
                       agmDueDate: '2026-06-20'
                       isEligible: true
+              annual-report-request:
+                summary: Annual Report Request
+                value:
+                  filing:
+                    header:
+                      name: annualReport
+                      certifiedBy: Sample Certified Person
+                      email: api.specs@api.specs
+                      date: '2024-07-24'
+                      ARFilingYear: 2024
+                      effectiveDate: '2024-07-24T07:00:00.000+00:00'
+                      waiveFees: false
+                    business:
+                      foundingDate: '2023-07-21T23:13:48.000+00:00'
+                      identifier: BC0883312
+                      legalName: 0883312 B.C. LTD.
+                      legalType: BC
+                    annualReport:
+                      annualReportDate: '2024-07-24'
+                      nextARDate: '2024-07-24'
+                      offices:
+                        registeredOffice:
+                          deliveryAddress: 
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            addressType: delivery
+                            deliveryInstructions: ''
+                            id: 2908348
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                            actions: []
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            addressType: mailing
+                            deliveryInstructions: ''
+                            id: 2908347
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                            actions: []
+                        recordsOffice:
+                          deliveryAddress: 
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            addressType: delivery
+                            deliveryInstructions: ''
+                            id: 2908346
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                            actions: []
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            addressType: mailing
+                            deliveryInstructions: ''
+                            id: 2908345
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                            actions: []
+                      directors:
+                        - officer:
+                            email: api.specs@api.specs
+                            firstName: firstName
+                            id: 584282
+                            lastName: lastName
+                            partyType: person
+                            middleInitial: ''
+                            prevFirstName: firstName
+                            prevLastName: lastName
+                            prevMiddleInitial: ''
+                          appointmentDate: '2024-07-23'
+                          cessationDate: null
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 1W4
+                            streetAddress: 1-940 Blanshard
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 1W4
+                            streetAddress: 1-940 Blanshard
+                            streetAddressAdditional: ''
+                          role: director
+                          id: 1
+                          isFeeApplied: false
+                          isDirectorActionable: true
+                          actions: []
       parameters:
         - schema:
             type: boolean
@@ -2061,11 +2293,11 @@ components:
             annualGeneralMeetingDate:
               type: string
               format: date
-              description: 'Date the AGM (annual general meeting) took place. '
+              description: 'Date the AGM (annual general meeting) took place.'
             annualReportDate:
               type: string
               format: date
-              description: 'Fiscal Year covered in the annual report. '
+              description: 'Fiscal Year covered in the annual report.'
             directors:
               type: array
               description: Individual who is a member of the board of directors of the company as a result of having been elected or appointed to that position
@@ -4151,7 +4383,7 @@ components:
       properties:
         officeType:
           type: string
-          example: 'Head office '
+          example: 'Head office'
           description: 'Type of office eg: registered office.'
         mailingAddress:
           $ref: '#/components/schemas/Address'
@@ -4167,7 +4399,7 @@ components:
             addressRegion: 'BC for British Columbia'
             addressCountry: Canada
             postalCode: V8R 2P1
-            deliveryInstructions: '"Our apartment is located at the back of the building."'
+            deliveryInstructions: 'Our apartment is located at the back of the building.'
           deliveryAddress:
             streetAddress: 5-4761 Bay Street
             streetAddressAdditional: Building A
@@ -4175,7 +4407,7 @@ components:
             addressRegion: 'BC for British Columbia'
             addressCountry: Canada
             postalCode: V8R 2P1
-            deliveryInstructions: '"Our apartment is located at the back of the building."'
+            deliveryInstructions: 'Our apartment is located at the back of the building.'
     party:
       type: object
       title: party
