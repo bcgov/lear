@@ -40,7 +40,7 @@ def process(app: Flask):
             .filter(not_(furnishing_subquery))
         ).all()
 
-        grouping_identifier = Furnishing.get_next_grouping_identifier()
+        furnishing_group_id = Furnishing.get_next_furnishing_group_id()
 
         for batch_processing in batch_processings:
             business = batch_processing.business
@@ -58,7 +58,7 @@ def process(app: Flask):
                 created_date=datetime.utcnow(),
                 last_modified=datetime.utcnow(),
                 status=Furnishing.FurnishingStatus.QUEUED,
-                grouping_identifier=grouping_identifier,
+                furnishing_group_id=furnishing_group_id,
                 business_name=business.legal_name
             )
             new_furnishing.save()

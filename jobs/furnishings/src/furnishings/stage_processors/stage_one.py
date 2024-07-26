@@ -34,8 +34,8 @@ class StageOneProcessor:
         self._qsm = qsm
 
         self._second_notice_delay = app.config.get('SECOND_NOTICE_DELAY')
-        self._email_grouping_identifier = None
-        self._mail_grouping_identifier = None
+        self._email_furnishing_group_id = None
+        self._mail_furnishing_group_id = None
 
     async def process(self, batch_processing: BatchProcessing):
         """Process batch_processing entry."""
@@ -162,7 +162,7 @@ class StageOneProcessor:
                 else Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR
             )
 
-        grouping_identifier = self._get_grouping_identifier(furnishing_type)
+        furnishing_group_id = self._get_furnishing_group_id(furnishing_type)
 
         new_furnishing = Furnishing(
             furnishing_type=furnishing_type,
@@ -173,7 +173,7 @@ class StageOneProcessor:
             created_date=datetime.utcnow(),
             last_modified=datetime.utcnow(),
             status=Furnishing.FurnishingStatus.QUEUED,
-            grouping_identifier=grouping_identifier,
+            furnishing_group_id=furnishing_group_id,
             last_ar_date=last_ar_date,
             business_name=business_name,
             email=email
@@ -224,16 +224,16 @@ class StageOneProcessor:
         except Exception as err:
             self._app.logger.error('Queue Error: furnishing.id=%s, %s', furnishing.id, err, exc_info=True)
 
-    def _get_grouping_identifier(self, furnishing_type: Furnishing.FurnishingType) -> int:
-        """Return grouping identifier based on furnishing type."""
+    def _get_furnishing_group_id(self, furnishing_type: Furnishing.FurnishingType) -> int:
+        """Return furnishing group id based on furnishing type."""
         if furnishing_type == Furnishing.FurnishingType.EMAIL:
-            if not self._email_grouping_identifier:
-                self._email_grouping_identifier = Furnishing.get_next_grouping_identifier()
-            return self._email_grouping_identifier
+            if not self._email_furnishing_group_id:
+                self._email_furnishing_group_id = Furnishing.get_next_furnishing_group_id()
+            return self._email_furnishing_group_id
         elif furnishing_type == Furnishing.FurnishingType.MAIL:
-            if not self._mail_grouping_identifier:
-                self._mail_grouping_identifier = Furnishing.get_next_grouping_identifier()
-            return self._mail_grouping_identifier
+            if not self._mail_furnishing_group_id:
+                self._mail_furnishing_group_id = Furnishing.get_next_furnishing_group_id()
+            return self._mail_furnishing_group_id
         else:
             return None
 
