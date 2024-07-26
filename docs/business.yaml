@@ -341,6 +341,52 @@ paths:
                         paymentToken: 12345
                         status: 'PENDING'
                         submitter: 'mocked submitter'
+                agm-extension-success-response:
+                  summary: AGM Extension Response
+                  value:
+                    errors: [
+                      null
+                    ]
+                    filing:
+                      agmExtension:
+                        agmDueDate: '2026-06-20'
+                        agmYear: '2024'
+                        alreadyExtended: false
+                        currentDate: '2024-07-10'
+                        expireDateApprovedExt: '2026-06-20'
+                        extReqForAgmYear: false
+                        extensionDuration: 6
+                        incorporationDate: '2024-06-20T17:31:58.000Z'
+                        isEligible: true
+                        isFirstAgm: true
+                        isGoodStanding: true
+                        isPrevExtension: false
+                        prevAgmDate: null
+                        prevExpiryDate: null
+                        requestExpired: false
+                        totalApprovedExt: 6
+                        year: '2024'
+                      business:
+                        foundingDate: '2024-06-20T17:31:58.000+00:00'
+                        identifier: BC0882365
+                        legalName: 882365 B.C. LTD.
+                        legalType: BC
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: Sample Certified Person
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-10T17:56:10.782107+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-10T17:56:10.782138+00:00'
+                        filingId: 149981
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: agmExtension
+                        status: DRAFT
+                        submitter: mocked submitter
         '400':
           description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
           content:
@@ -376,6 +422,11 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[message:filing/header/name is a required property]
+                agm-extension-failed-invalid-total-approved-extension-response:
+                  summary: AGM Extension - Invalid Total Approved Extension Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
@@ -420,6 +471,20 @@ paths:
                   summary: Change Of Address - Missing Records Office Address Response
                   value:
                     errorMessage: "API backend third party service error."
+                agm-extension-failed-missing-agm-year-response:
+                   summary: AGM Extension - Missing agmYear Response
+                   value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                agm-extension-failed-missing-is-first-agm-response:
+                   summary: AGM Extension - Missing isFirstAgm Response
+                   value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                agm-extension-failed-missing-ext-req-for-agm-year-response:
+                   summary: AGM Extension - Missing extReqForAgmYear Response
+                   value:
+                    errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
         '500':
           description: INTERNAL SERVER ERROR
@@ -615,6 +680,37 @@ paths:
                               postalCode: V8N 4R7
                               streetAddress: TEST M 1
                               streetAddressAdditional:
+              agm-extension-request:
+                summary: AGM Extension Request
+                value:
+                  filing:
+                    header:
+                      name: agmExtension
+                      certifiedBy: Sample Certified Person
+                      date: '2024-07-21'
+                    business:
+                      foundingDate: '2024-06-20T17:31:58.000+00:00'
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    agmLocationChange:
+                      year: '2024'
+                      isFirstAgm: true
+                      extReqForAgmYear: false
+                      totalApprovedExt: 6
+                      expireDateApprovedExt: '2026-06-20'
+                      currentDate: '2024-07-21'
+                      alreadyExtended: false
+                      requestExpired: false
+                      isGoodStanding: true
+                      incorporationDate: '2024-06-20T17:31:58.000Z'
+                      agmYear: '2024'
+                      prevAgmDate: null
+                      isPrevExtension: false
+                      prevExpiryDate: null
+                      extensionDuration: 6
+                      agmDueDate: '2026-06-20'
+                      isEligible: true
       parameters:
         - schema:
             type: boolean
@@ -1745,6 +1841,53 @@ components:
           addressCountry: Canada
           postalCode: V8R 2P1
           deliveryInstructions: 'Our apartment is located at the back of the building.'
+    Agm_extension:
+      type: object
+      title: AGM Extension Information Schema
+      description: Notice of AGM(Annual General Meeting) date extension allows companies to request an extension to the deadline for holding an Annual General Meeting (AGM). The longest extension granted at one time is six months.
+      properties:
+        agmExtension:
+          type: object
+          required:
+            - year
+            - isFirstAgm
+            - extReqForAgmYear
+          properties:
+            year:
+              type: string
+              description: The year for which the AGM extension is being requested. This year cannot be before the company's incorporation date or in the future.
+              example: '2024'
+            isFirstAgm:
+              type: boolean
+              description: Indicates if this is the company''s very first AGM since incorporation.
+              example: true
+            extReqForAgmYear:
+              type: boolean
+              description: Indicates if an extension has already been requested for this AGM year. False for the first extension request of the year, true for subsequent requests within the same AGM year.
+              example: false
+            prevAgmRefDate:
+              type: string
+              format: date
+              description: Point of reference from which companies have 15 months to either file an AGM or request an extension. For the first AGM (when isFirstAgm is true), this is not required. Required when isFirstAgm is false.
+              example: '2023-06-01'
+            expireDateCurrExt:
+              type: string
+              format: date
+              description: Date of expiration for current extension, if applicable. Required when requesting an additional extension (when extReqForAgmYear is true).
+              example: '2024-04-10'
+            totalApprovedExt:
+              type: integer
+              description: Total duration of extension approved, measured in months.
+              example: 6
+            extensionDuration:
+              type: integer
+              description: Duration of the current extension request in months. Maximum is 6 months per request.
+              example: 6
+            expireDateApprovedExt:
+              type: string
+              format: date
+              description: Expiration date for approved extension.
+              example: '2024-07-10'
     Agm_location_change:
       type: object
       title: AGM Location Change Information Schema
@@ -3421,6 +3564,7 @@ components:
                 - $ref: '#/components/schemas/Incorporation_application'
                 - $ref: '#/components/schemas/Registration'
             - anyOf:
+                - $ref: '#/components/schemas/Agm_extension'
                 - $ref: '#/components/schemas/Agm_location_change'
                 - $ref: '#/components/schemas/Alteration'
                 - $ref: '#/components/schemas/Annual_report'
@@ -4093,70 +4237,6 @@ components:
               postalCode: V8R 2P1
               deliveryInstructions: 'Our apartment is located at the back of the building.'
             title: Chief Executive Officer
-    party - copy:
-      type: object
-      x-stoplight:
-        id: ee4nvid30gu0u
-      title: party
-      description: 'Represent a person and its role in relation to a business. '
-      properties:
-        party:
-          type: object
-          description: 'Represent a person and its role in relation to a business. '
-          properties:
-            roles:
-              type: array
-              description: 'Role of the person in relation to the business eg: director.'
-              items:
-                $ref: '#/components/schemas/partyRole'
-            officer:
-              oneOf:
-                - $ref: '#/components/schemas/Person'
-                - $ref: '#/components/schemas/Business'
-                - $ref: '#/components/schemas/Business'
-              description: Officer is a key management executive of the business
-            deliveryAddress:
-              $ref: '#/components/schemas/Address'
-            mailingAddress:
-              $ref: '#/components/schemas/Address'
-            title:
-              type: string
-              example: Chief Executive Officer
-              description: 'Title of the party in relation to the business eg: Chief Executive Officer.'
-          required:
-            - roles
-            - officer
-            - mailingAddress
-      x-examples:
-        Example 1:
-          party:
-            roles:
-              - appointmentDate: '2019-08-24'
-                cessationDate: '2019-08-24'
-                roleType: Completing Party
-            officer:
-              givenName: John
-              familyName: smith
-              additionalName: Adam
-              middleInitial: A
-              email: abc.def@gov.bc.ca
-            deliveryAddress:
-              streetAddress: 5-4761 Bay Street
-              streetAddressAdditional: Building A
-              addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
-              addressCountry: Canada
-              postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
-            mailingAddress:
-              streetAddress: 5-4761 Bay Street
-              streetAddressAdditional: Building A
-              addressCity: Victoria
-              addressRegion: 'BC for British Columbia '
-              addressCountry: Canada
-              postalCode: V8R 2P1
-              deliveryInstructions: '"Our apartment is located at the back of the building."'
-            title: Chief Executive Officer
     partyRole:
       type: object
       description: 'Role of the person in relation to the business eg: director.'
@@ -4686,25 +4766,6 @@ components:
           BN: '123456789'
           target: string
           weight: 0
-    Suggestion_item - copy:
-      type: object
-      x-stoplight:
-        id: 21kymuins8gxo
-      description: A suggestion from an auto-search
-      properties:
-        name:
-          type: string
-          description: Matching term
-        identifier:
-          type: string
-        BN:
-          type: string
-        target:
-          type: string
-        weight:
-          type: integer
-          description: The weight of the search term is scored by the matching algorithm against the search term provided.
-      title: ''
     Transition:
       type: object
       title: Transition Filing
