@@ -1570,7 +1570,7 @@ paths:
                 type: object
                 properties: {}
               examples:
-                amalgamation-regular-response:
+                amalgamation-regular-sucess-response:
                   summary: Amalgamation Regular Response
                   value:
                     filing: 
@@ -1696,7 +1696,7 @@ paths:
                         name: amalgamationApplication
                         status: DRAFT
                         submitter: mocked submitter
-                amalgamation-short-form-horizontal-response:
+                amalgamation-short-form-horizontal-sucess-response:
                   summary: Amalgamation Short Form Horizontal Response
                   value:
                     filing: 
@@ -1752,7 +1752,7 @@ paths:
                         name: amalgamationApplication
                         status: DRAFT
                         submitter: mocked submitter
-                amalgamation-short-form-vertical-response:
+                amalgamation-short-form-vertical-sucess-response:
                   summary: Amalgamation Short Form Vertical Response
                   value:
                     filing:
@@ -1808,7 +1808,7 @@ paths:
                         name: amalgamationApplication
                         status: DRAFT
                         submitter: mocked submitter
-                registration-response:
+                registration-sucess-response:
                   summary: Registartion Response
                   value:
                     filing:
