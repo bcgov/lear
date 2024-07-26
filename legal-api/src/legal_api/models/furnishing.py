@@ -130,7 +130,7 @@ class Furnishing(db.Model):
         return query.all()
 
     @classmethod
-    def get_furnishing_group_id(cls):
+    def get_next_furnishing_group_id(cls):
         """Return thefurnishing_group_id."""
         furnishing_group = FurnishingGroup()
         furnishing_group.save()
