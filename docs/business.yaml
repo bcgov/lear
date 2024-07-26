@@ -479,7 +479,7 @@ paths:
                         foundingDate: '2023-07-21T23:13:48.000+00:00'
                         identifier: BC0883312
                         legalName: 0883312 B.C. LTD.
-                        legalType: BC
+                        legalType: BEN
                       header:
                         ARFilingYear: 2024
                         affectedFilings: []
@@ -858,7 +858,7 @@ paths:
                       foundingDate: '2023-07-21T23:13:48.000+00:00'
                       identifier: BC0883312
                       legalName: 0883312 B.C. LTD.
-                      legalType: BC
+                      legalType: BEN
                     annualReport:
                       annualReportDate: '2024-07-24'
                       nextARDate: '2024-07-24'
