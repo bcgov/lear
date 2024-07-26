@@ -228,11 +228,11 @@ class StageOneProcessor:
         """Return furnishing group id based on furnishing type."""
         if furnishing_type == Furnishing.FurnishingType.EMAIL:
             if not self._email_furnishing_group_id:
-                self._email_furnishing_group_id = Furnishing.get_furnishing_group_id()
+                self._email_furnishing_group_id = Furnishing.get_next_furnishing_group_id()
             return self._email_furnishing_group_id
         elif furnishing_type == Furnishing.FurnishingType.MAIL:
             if not self._mail_furnishing_group_id:
-                self._mail_furnishing_group_id = Furnishing.get_furnishing_group_id()
+                self._mail_furnishing_group_id = Furnishing.get_next_furnishing_group_id()
             return self._mail_furnishing_group_id
         else:
             return None

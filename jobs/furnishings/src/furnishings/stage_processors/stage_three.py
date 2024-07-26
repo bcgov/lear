@@ -40,7 +40,7 @@ def process(app: Flask):
             .filter(not_(furnishing_subquery))
         ).all()
 
-        furnishing_group_id = Furnishing.get_furnishing_group_id()
+        furnishing_group_id = Furnishing.get_next_furnishing_group_id()
 
         for batch_processing in batch_processings:
             business = batch_processing.business
