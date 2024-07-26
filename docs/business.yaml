@@ -1564,15 +1564,604 @@ paths:
               $ref: '#/components/headers/AccessControlAllowHeaders'
             Access-Control-Max-Age:
               $ref: '#/components/headers/AccessControlMaxAge'
-      operationId: post-businesses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                amalgamation-regular-response:
+                  summary: Amalgamation Regular Response
+                  value:
+                    filing: 
+                      amalgamationApplication:
+                        amalgamatingBusinesses:
+                          - identifier: BC0883189
+                            role: amalgamating
+                            type: lear
+                          - identifier: BC0883230
+                            role: amalgamating
+                            type: lear
+                        contactPoint: 
+                          email: "contact@example.com"
+                          phone: (555) 555-5555
+                        courtApproval: null
+                        nameRequest: 
+                            legalType: BC
+                        offices: 
+                          recordsOffice:
+                            deliveryAddress: 
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: 
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: 
+                            mailingAddress: 
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: 
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional:
+                          registeredOffice: 
+                            deliveryAddress: 
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: 
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: 
+                            mailingAddress: 
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: 
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional:
+                        parties:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: Canada
+                              addressCountryDescription: Canada
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              email: null
+                              firstName: Completing
+                              lastName: Party
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: Canada
+                              addressCountryDescription: Canada
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              email: null
+                              firstName: Director
+                              lastName: Tester
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Director
+                        shareStructure: 
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 0
+                              maxNumberOfShares: 0
+                              parValue: 0
+                              currency: string
+                              hasMaximumShares: true
+                              hasParValue: true
+                              hasRightsOrRestrictions: true
+                              series:
+                                - name: string
+                                  priority: 0
+                                  hasMaximumShares: true
+                                  hasRightsOrRestrictions: true
+                        type: regular
+                      business: 
+                        identifier: TO12345678
+                      header: 
+                        accountId: 3445
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: full name
+                        colinIds: []
+                        comments: []
+                        date: 2024-07-25T19:54:02.949741+00:00
+                        deletionLocked: false
+                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        email: no_one@never.get
+                        filingId: 150338
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: amalgamationApplication
+                        status: DRAFT
+                        submitter: mocked submitter
+                amalgamation-short-form-horizontal-response:
+                  summary: Amalgamation Short Form Horizontal Response
+                  value:
+                    filing: 
+                      amalgamationApplication:
+                        amalgamatingBusinesses:
+                          - identifier: BC0883189
+                            role: primary
+                            type: lear
+                          - identifier: BC0883230
+                            role: amalgamating
+                            type: lear
+                        contactPoint: 
+                          email: "contact@example.com"
+                          phone: (555) 555-5555
+                        nameRequest: 
+                            legalType: BC
+                        parties:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: Canada
+                              addressCountryDescription: Canada
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              email: null
+                              firstName: Completing
+                              lastName: Party
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                        type: horizontal
+                      business: 
+                        identifier: TO12345678
+                      header: 
+                        accountId: 3445
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: full name
+                        colinIds: []
+                        comments: []
+                        date: 2024-07-25T19:54:02.949741+00:00
+                        deletionLocked: false
+                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        email: no_one@never.get
+                        filingId: 150338
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: amalgamationApplication
+                        status: DRAFT
+                        submitter: mocked submitter
+                amalgamation-short-form-vertical-response:
+                  summary: Amalgamation Short Form Vertical Response
+                  value:
+                    filing:
+                      amalgamationApplication:
+                        amalgamatingBusinesses:
+                          - identifier: BC0883189
+                            role: holding
+                            type: lear
+                          - identifier: BC0883230
+                            role: amalgamating
+                            type: lear
+                        contactPoint: 
+                          email: "contact@example.com"
+                          phone: (555) 555-5555
+                        nameRequest: 
+                            legalType: BC
+                        parties:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: Canada
+                              addressCountryDescription: Canada
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              email: null
+                              firstName: Completing
+                              lastName: Party
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                        type: vertical
+                      business: 
+                        identifier: TO12345678
+                      header: 
+                        accountId: 3445
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: full name
+                        colinIds: []
+                        comments: []
+                        date: 2024-07-25T19:54:02.949741+00:00
+                        deletionLocked: false
+                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        email: no_one@never.get
+                        filingId: 150338
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: amalgamationApplication
+                        status: DRAFT
+                        submitter: mocked submitter
+                registration-response:
+                  summary: Registartion Response
+                  value:
+                    filing:
+                      business:
+                        identifier: T12345678
+                      header:
+                        accountId: 3445
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: full name
+                        colinIds: []
+                        comments: []
+                        date: 2024-07-25T19:54:02.949741+00:00
+                        deletionLocked: false
+                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        email: no_one@never.get
+                        filingId: 150338
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: amalgamationApplication
+                        status: DRAFT
+                        submitter: mocked submitter
+                      registration: 
+                        business: 
+                          natureOfBusiness: sample business
+                        businessType: SP
+                        offices: 
+                          businessOffice: 
+                            deliveryAddress: 
+                              streetAddress: delivery_address - address line one
+                              addressCity: delivery_address city
+                              addressCountry: Canada
+                              postalCode: H0H0H0
+                              addressRegion: BC
+                            mailingAddress: 
+                              streetAddress: mailing_address - address line one
+                              addressCity: mailing_address city
+                              addressCountry: Canada
+                              postalCode: H0H0H0
+                              addressRegion: BC
+                        contactPoint: 
+                          email: no_one@never.get
+                        startDate: '2024-07-26'
+                        nameRequest: 
+                          nrNumber: NR 8332083
+                          legalName: KD API SPEC SP
+                          legalType: SP
+                        parties:
+                          - mailingAddress: 
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: 
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              postalCode: H0H0H0
+                              addressRegion: BC
+                            deliveryAddress: 
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              postalCode: H0H0H0
+                              addressRegion: BC
+                            officer: 
+                              firstName: Joe
+                              lastName: Swanson
+                              middleName: P
+                              email: joe@email.com
+                              organizationName: 
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-26'
+                                roleType: Completing Party
+                              - appointmentDate: '2024-07-26'
+                                roleType: Proprietor
+        '401':
+          description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
+          content:
+            application/json:
+              examples:
+                registration-unauthorized-response:
+                  summary: Registration - Unauthorized Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                amalgamation-unauthorized-response:
+                  summary: Amalgamation - Unauthorized Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
       description: Submitting a creation filing for a business will create that type of business if it is a fully valid filing and payment has been completed.
       requestBody:
         content:
           application/json:
             schema:
-              oneOf:
-                - $ref: '#/components/schemas/Incorporation_application'
-                - $ref: '#/components/schemas/Registration'
+                $ref: '#/components/schemas/Filing'
+            examples:
+              amalgamation-regular-request:
+                summary: Amalgamation Regular Request
+                value:
+                  filing:
+                    header:
+                      accountId: 3445
+                      certifiedBy: full name
+                      email: "no_one@never.get"
+                      date: '2024-07-26'
+                      name: amalgamationApplication
+                    amalgamationApplication:
+                      amalgamatingBusinesses:
+                        - identifier: BC0883189
+                          role: amalgamating
+                          type: lear
+                        - identifier: BC0883230
+                          role: amalgamating
+                          type: lear
+                      contactPoint: 
+                        email: "contact@example.com"
+                        phone: (555) 555-5555
+                      courtApproval: null
+                      nameRequest: 
+                          legalType: BC
+                      offices: 
+                        recordsOffice: 
+                          deliveryAddress: 
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: 
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional:
+                          mailingAddress: 
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: 
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional:
+                        registeredOffice: 
+                          deliveryAddress: 
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: 
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: 
+                          mailingAddress: 
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: 
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional:
+                      parties:
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: Canada
+                            addressCountryDescription: Canada
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          officer:
+                            email: null
+                            firstName: Completing
+                            lastName: Party
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Completing Party
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: Canada
+                            addressCountryDescription: Canada
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          officer:
+                            email: null
+                            firstName: Director
+                            lastName: Tester
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Director
+                      shareStructure: 
+                        shareClasses:
+                          - name: Classic 1 Shares
+                            priority: 0
+                            maxNumberOfShares: 0
+                            parValue: 0
+                            currency: string
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            series:
+                              - name: string
+                                priority: 0
+                                hasMaximumShares: true
+                                hasRightsOrRestrictions: true
+                      type: regular
+              amalgamation-short-form-horizontal-request:
+                  summary: Amalgamation Short Form Horizontal Request
+                  value:
+                    filing:
+                        header:
+                          accountId: 3041
+                          certifiedBy: full name
+                          email: "no_one@never.get"
+                          date: '2024-07-26'
+                          name: amalgamationApplication
+                          amalgamationApplication:
+                        amalgamatingBusinesses:
+                          - identifier: BC0883189
+                            role: holding
+                            type: lear
+                          - identifier: BC0883230
+                            role: amalgamating
+                            type: lear
+                        contactPoint: 
+                          email: "contact@example.com"
+                          phone: (555) 555-5555
+                        nameRequest: 
+                            legalType: BC
+                        parties:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: Canada
+                              addressCountryDescription: Canada
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              email: null
+                              firstName: Completing
+                              lastName: Party
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                        type: horizontal
+              amalgamation-short-form-vertical-request:
+                summary: Amalgamation Short Form Vertical Request
+                value:
+                  filing:
+                    header:
+                      accountId: 3041
+                      certifiedBy: full name
+                      email: "no_one@never.get"
+                      date: '2024-07-26'
+                      name: amalgamationApplication
+                    amalgamationApplication:
+                      amalgamatingBusinesses:
+                        - identifier: BC0883189
+                          role: primary
+                          type: lear
+                        - identifier: BC0883230
+                          role: amalgamating
+                          type: lear
+                      contactPoint: 
+                        email: "contact@example.com"
+                        phone: (555) 555-5555
+                      nameRequest: 
+                          legalType: BC
+                      parties:
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: Canada
+                            addressCountryDescription: Canada
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          officer:
+                            email: null
+                            firstName: Completing
+                            lastName: Party
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Completing Party
+                      type: horizontal
+              registration-request:
+                summary: Registration Request
+                value:
+                  filing:
+                    header:
+                      accountId: 3445
+                      certifiedBy: full name
+                      email: "no_one@never.get"
+                      date: '2024-07-26'
+                      name: registration
+                    registration: 
+                      business: 
+                        natureOfBusiness: sample business
+                      businessType: SP
+                      offices: 
+                        businessOffice: 
+                          deliveryAddress: 
+                            streetAddress: delivery_address - address line one
+                            addressCity: delivery_address city
+                            addressCountry: Canada
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            addressCity: mailing_address city
+                            addressCountry: Canada
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                      contactPoint: 
+                        email: no_one@never.get
+                      startDate: '2024-07-26'
+                      nameRequest: 
+                        nrNumber: NR 8332083
+                        legalName: KD API SPEC SP
+                        legalType: SP
+                      parties:
+                        - mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          deliveryAddress: 
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          officer: 
+                            firstName: Joe
+                            lastName: Swanson
+                            middleName: P
+                            email: joe@email.com
+                            organizationName: 
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-26'
+                              roleType: Completing Party
+                            - appointmentDate: '2024-07-26'
+                              roleType: Proprietor
       parameters:
         - schema:
             type: boolean
@@ -1902,6 +2491,65 @@ components:
                 orderDate: '2019-08-24T14:15:22Z'
                 effectOfOrder: The Company will cease operations
                 orderDetails: The Company is ordered to dissolve
+    Amalgamation_application:
+      type: object
+      title: Amalgamation Application Filing
+      description: 'Amalgamation_application'
+      properties:
+        amalgamationApplication:
+          type: object
+          required:
+            - type
+            - amalgamatingBusinesses
+            - nameRequest
+            - parties
+            - contactPoint
+            - courtApproval
+          properties:
+            type:
+              type: string
+              title: The type of Amalgamation
+              enum:
+              - regular
+              - vertical
+              - horizontal
+            amalgamatingBusinesses:
+              type: array
+              items:
+                required:
+                - role
+                - identifier
+                properties:
+                  role:
+                    type: string
+                    enum:
+                    - amalgamating
+                    - holding
+                    - primary
+                  identifier:
+                    type: string
+                  foreignJurisdiction:
+                    $ref: '#/components/schemas/Foreign_jurisdiction'
+                  legalName:
+                    type: string
+            nameRequest:
+              title: The resulting business name and type
+              $ref: '#/components/schemas/Name_request'
+            nameTranslations:
+              $ref: '#/components/schemas/Name_translations'
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+            parties:
+              type: array
+              items:
+                $ref: '#/components/schemas/party'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
+            courtApproval:
+              title: Amalgamation statement
+              type: boolean
+      required:
+        - amalgamationApplication
     Annual_report:
       type: object
       title: Annual Report Filing
