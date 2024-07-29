@@ -12,11 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the involuntary_dissolution_stage_1_notification processor."""
+from http import HTTPStatus
+from unittest.mock import MagicMock, patch
+
+import requests
+
 from entity_emailer.email_processors import involuntary_dissolution_stage_1_notification
 from tests.unit import create_business, create_furnishing  # noqa: I003
 
 
-def test_involuntary_dissolution_stage_1_notification(app, session, mocker):
+def test_involuntary_dissolution_stage_1_notification(app, session):
     """Assert that the test_involuntary_dissolution_stage_1_notification can be processed."""
     token = 'token'
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
@@ -40,12 +45,19 @@ def test_involuntary_dissolution_stage_1_notification(app, session, mocker):
         }
     }
 
-    # test processor
-    mocker.patch(
-        'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification.get_jurisdictions',
-        return_value=[])
-    email = involuntary_dissolution_stage_1_notification.process(message_payload, token)
+    mock_response = MagicMock()
+    mock_response.status_code = HTTPStatus.OK
+    mock_response.json.return_value = {}
+    with patch.object(
+        involuntary_dissolution_stage_1_notification, '_get_pdfs', return_value=[{'TEST': 'TEST'}]
+    ) as mock_get_pdfs:
+        with patch.object(requests, 'get', return_value=mock_response):
+            email = involuntary_dissolution_stage_1_notification.process(message_payload, token)
 
-    assert email['content']['subject'] == f'Attention {business_identifier} - Test Business'
-    assert email['recipients'] == 'test@test.com'
-    assert email['content']['body']
+            assert email['content']['subject'] == f'Attention {business_identifier} - Test Business'
+            assert email['recipients'] == 'test@test.com'
+            assert email['content']['body']
+            assert email['content']['attachments']
+            assert mock_get_pdfs.call_args[0][0] == token
+            assert mock_get_pdfs.call_args[0][1] == business
+            assert mock_get_pdfs.call_args[0][2] == furnishing
