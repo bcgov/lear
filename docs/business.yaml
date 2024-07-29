@@ -1901,12 +1901,12 @@ paths:
             application/json:
               examples:
                 registration-unauthorized-response:
-                  summary: Registration - Unauthorized Response
+                  summary: Registration - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
                 amalgamation-unauthorized-response:
-                  summary: Amalgamation - Unauthorized Response
+                  summary: Amalgamation - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
