@@ -3094,19 +3094,21 @@ components:
                 deliveryInstructions: '"Our unit is located at the back of the building."'
     Change_of_directors:
       type: object
-      description: 'Add or remove a director, or update information regarding a current director.'
+      title: Change of Directors Filing
+      description: Filing to add, remove, or update information regarding company directors.
       properties:
         changeOfDirectors:
           type: object
-          description: 'This section contains all the changes you want to make to your company''s directors.'
-          allOf:
-            - $ref: '#/components/schemas/Directors'
-            - type: object
-              properties:
-                directors:
-                  type: array
-                  items:
-                    type: object
+          description: This section contains all the changes you want to make to your company''s directors.
+          required:
+            - directors
+          properties:
+            directors:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/Director'
+                  - type: object
                     properties:
                       actions:
                         type: array
@@ -3680,78 +3682,71 @@ components:
                 title: Path of the property in json
       description: '***Item not used*** What will be changed in the correction filing.'
       type: object
-    Directors:
-      title: Directors Schema
+    Director:
+      title: Director Schema
       type: object
-      description: Represents a director of a company, including personal information and appointment details.
-      required:
-        - directors
+      description: Represents a single director of a company, including personal information and appointment details.
       properties:
-        directors:
-          type: array
-          items:
-            type: object
-            properties:
-              officer:
-                type: object
-                description: Personal information about the director.
-                properties:
-                  firstName:
-                    type: string
-                    maxLength: 30
-                    description: First name of the director/officer.
-                    example: "Jane"
-                  lastName:
-                    type: string
-                    maxLength: 30
-                    description: Last name of the director/officer.
-                    example: "Doe"
-                  middleInitial:
-                    type: string
-                    maxLength: 30
-                    description: The middle name initial of the director/officer.
-                    example: "A"
-                  prevFirstName:
-                    type: string
-                    maxLength: 30
-                    description: previous first name, in the case of a legal name change in a filing
-                    example: "Janet"
-                  prevLastName:
-                    type: string
-                    maxLength: 30
-                    description: previous last name, in the case of a legal name change in a filing
-                    example: "Smith"
-                  prevMiddleInitial:
-                    type: string
-                    maxLength: 30
-                    description: previous middle name, in the case of a legal name change in a filing
-                    example: "B"
-                required:
-                  - firstName
-                  - lastName
-              deliveryAddress:
-                $ref: '#/components/schemas/Address'
-              mailingAddress:
-                $ref: '#/components/schemas/Address'
-              title:
-                type: string
-                description: 'Official title or position of the director in the company.'
-                example: "Chief Financial Officer"
-              appointmentDate:
-                type: string
-                format: date
-                description: 'The date when the director started their role. Format: YYYY-MM-DD'
-                example: "2023-06-15"
-              cessationDate:
-                type: string
-                format: date
-                nullable: true
-                description: 'The date when the director ended their role. Format: YYYY-MM-DD'
-            required:
-              - officer
-              - deliveryAddress
-              - appointmentDate
-              - cessationDate
+        officer:
+          type: object
+          description: Personal information about the director.
+          properties:
+            firstName:
+              type: string
+              maxLength: 30
+              description: First name of the director/officer.
+              example: "Jane"
+            lastName:
+              type: string
+              maxLength: 30
+              description: Last name of the director/officer.
+              example: "Doe"
+            middleInitial:
+              type: string
+              maxLength: 30
+              description: The middle name initial of the director/officer.
+              example: "A"
+            prevFirstName:
+              type: string
+              maxLength: 30
+              description: previous first name, in the case of a legal name change in a filing
+              example: "Janet"
+            prevLastName:
+              type: string
+              maxLength: 30
+              description: previous last name, in the case of a legal name change in a filing
+              example: "Smith"
+            prevMiddleInitial:
+              type: string
+              maxLength: 30
+              description: previous middle name, in the case of a legal name change in a filing
+              example: "B"
+          required:
+            - firstName
+            - lastName
+        deliveryAddress:
+          $ref: '#/components/schemas/Address'
+        mailingAddress:
+          $ref: '#/components/schemas/Address'
+        title:
+          type: string
+          description: 'Official title or position of the director in the company.'
+          example: "Chief Financial Officer"
+        appointmentDate:
+          type: string
+          format: date
+          description: 'The date when the director started their role. Format: YYYY-MM-DD'
+          example: "2023-06-15"
+        cessationDate:
+          type: string
+          format: date
+          nullable: true
+          description: 'The date when the director ended their role. Format: YYYY-MM-DD'
+      required:
+        - officer
+        - deliveryAddress
+        - appointmentDate
+        - cessationDate
     Dissolution:
       title: Dissolution Filing
       type: object
