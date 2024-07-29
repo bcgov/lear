@@ -2564,6 +2564,8 @@ components:
               type: boolean
             offices:
               type: object
+              required:
+                - registeredOffice
               description: 'Addresses related to the business.   '
               properties:
                 registeredOffice:
