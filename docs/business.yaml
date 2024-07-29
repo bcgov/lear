@@ -2936,6 +2936,105 @@ components:
           timestamp: '2022-04-19 15:59:55'
           reference:
             businessId: C1234567
+    Continuation_In:
+      type: object
+      title: Continuation In Filing
+      description: Represents the filing for a foreign corporation applying to “continue in” to BC. To do so, authorization must have been received from the foreign jurisdiction. Authorization is typically in the form of a letter. The authorization must be sent to the registry as a precondition to this transaction.
+      required:
+        - continuationIn
+      properties:
+        continuationIn:
+          type: object
+          required:
+          - foreignJurisdiction
+          - authorization
+          - nameRequest
+          - offices
+          - parties
+          properties:
+            business:
+              $ref: '#/components/schemas/Business'
+              title: Provide identifier and/or taxId if already registered as extra provincial business.
+            foreignJurisdiction:
+              type: object
+              required:
+              - country
+              - identifier
+              - legalName
+              - incorporationDate
+              properties:
+                country:
+                  $ref: '#/components/schemas/Foreign_jurisdiction/properties/country'
+                  title: The jurisdiction country code.
+                region:
+                  $ref: '#/components/schemas/Foreign_jurisdiction/properties/region'
+                  title: The jurisdiction region code.
+                identifier:
+                  type: string
+                  title: Identifier of the business in the foreign jurisdiction.
+                legalName:
+                  type: string
+                  title: Legal name of the business in the foreign jurisdiction.
+                incorporationDate:
+                  type: string
+                  format: date
+                  title: Incorporation date of the business in the foreign jurisdiction.
+                taxId:
+                  type: string
+                  title: The BN9 of this business
+                  pattern: "^[0-9]{9}$"
+                affidavitFileKey:
+                  type: string
+                  title: The Identifier for affidavit file in file server
+            authorization:
+              type: object
+              required:
+              - files
+              - date
+              properties:
+                files:
+                  type: array
+                  minItems: 1
+                  items:
+                    required:
+                    - fileKey
+                    - fileName
+                    properties:
+                      fileKey:
+                        type: string
+                        title: The Identifier for authorization file in file server
+                      fileName:
+                        type: string
+                        title: The name of the file in file server
+                date:
+                  type: string
+                  format: date
+                  title: Authorization date
+                expiryDate:
+                  type: string
+                  format: date
+                  title: Authorization expiry date
+            # contactPoint:
+            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/contactPoint
+            # nameRequest:
+            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/name_request
+            # nameTranslations:
+            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/name_translations
+            # offices:
+            #   registeredOffice:
+            #     "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/office
+            #   recordsOffice:
+            #     "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/office
+            #   required:
+            #   - registeredOffice
+            # parties:
+            #   type: array
+            #   items:
+            #     "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/parties#/definitions/party
+            # shareStructure:
+            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/share_structure
+            # courtOrder:
+            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/court_order#/properties/courtOrder
     Consent_continuation_out:
       type: object
       title: Consent Continuation Out Filing
