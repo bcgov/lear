@@ -3037,6 +3037,7 @@ components:
       required:
         - identifier
     Change_of_address:
+      title: Change of Address Filing
       type: object
       description: 'Change of an address used by the business, could be different types of address eg: delivery address.  '
       properties:
