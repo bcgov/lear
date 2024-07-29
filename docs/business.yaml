@@ -3014,27 +3014,31 @@ components:
                   type: string
                   format: date
                   title: Authorization expiry date
-            # contactPoint:
-            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/contactPoint
-            # nameRequest:
-            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/name_request
-            # nameTranslations:
-            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/name_translations
-            # offices:
-            #   registeredOffice:
-            #     "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/office
-            #   recordsOffice:
-            #     "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/office
-            #   required:
-            #   - registeredOffice
-            # parties:
-            #   type: array
-            #   items:
-            #     "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/parties#/definitions/party
-            # shareStructure:
-            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/share_structure
-            # courtOrder:
-            #   "$ref": https://bcrs.gov.bc.ca/.well_known/schemas/court_order#/properties/courtOrder
+            contactPoint:
+              $ref: '#/components/schemas/Contact_point'
+            nameRequest:
+              $ref: '#/components/schemas/Name_request'
+            nameTranslations:
+              $ref: '#/components/schemas/Name_translations'
+            offices:
+              type: object
+              description: 'Addresses related to the business.   '
+              properties:
+                registeredOffice:
+                  $ref: '#/components/schemas/Office'
+                recordsOffice:
+                  $ref: '#/components/schemas/Office'
+              required:
+              - registeredOffice
+            parties:
+              type: array
+              description: 'Persons having a role in the corporation eg: company officer.'
+              items:
+                $ref: '#/components/schemas/party'
+            shareStructure:
+              $ref: '#/components/schemas/Share_structure'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
     Consent_continuation_out:
       type: object
       title: Consent Continuation Out Filing
