@@ -1640,6 +1640,8 @@ paths:
                               firstName: Completing
                               lastName: Party
                               partyType: person
+                              middleName: ''
+                              organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
