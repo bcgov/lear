@@ -928,8 +928,8 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                alteration-failed-invalid-court-order-structure-missing-court-order-file-number-response:
-                  summary: Alteration - Invalid Court Order Structure Missing Court Order File Number Response
+                alteration-failed-missing-court-order-file-number-response:
+                  summary: Alteration - Missing Court Order File Number Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
