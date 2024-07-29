@@ -38,6 +38,7 @@ from entity_queue_common.service_utils import error_cb, logger, signal_handler
 
 
 affiliation_type: Final = 'bc.registry.affiliation'
+dissolution_type: Final = 'bc.registry.dissolution'
 
 
 async def run(loop, email_info):  # pylint: disable=too-many-locals
@@ -88,7 +89,7 @@ async def run(loop, email_info):  # pylint: disable=too-many-locals
                                     functools.partial(signal_handler, sig_loop=loop, sig_nc=nc, task=close)
                                     )
 
-        if email_info['type'] == affiliation_type:
+        if email_info['type'] in [affiliation_type, dissolution_type]:
             payload = email_info
         else:
             payload = {'email': email_info}
@@ -104,11 +105,11 @@ async def run(loop, email_info):  # pylint: disable=too-many-locals
 
 if __name__ == '__main__':
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'f:t:o:i:', ['fid=', 'etype=', 'option=', 'identifier='])
+        opts, args = getopt.getopt(sys.argv[1:], 'f:t:o:i:n:', ['fid=', 'etype=', 'option=', 'identifier=', 'name='])
     except getopt.GetoptError:
-        print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier>')
+        print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier> -n <name>')
         sys.exit(2)
-    fid, etype, option, identifier = None, None, None, None
+    fid, etype, option, identifier, name = None, None, None, None, None
     for opt, arg in opts:
         if opt in ('-f', '--fid'):
             fid = arg
@@ -118,12 +119,16 @@ if __name__ == '__main__':
             option = arg
         elif opt in ('-i', '--identifier'):
             identifier = arg
-    if not etype or (etype not in [affiliation_type] and not all([fid, etype, option])):
+        elif opt in ('-n', '--name'):
+            name = arg
+    if not etype or (etype not in [affiliation_type, dissolution_type] and not all([fid, etype, option])):
         print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier>')
         sys.exit()
     elif etype and etype in [affiliation_type] and not all([fid, etype]):
         print('q_cli.py -f <filing_id> -t <email_type>')
         sys.exit()
+    elif etype and etype in [dissolution_type] and not all([fid, etype, identifier, name]):
+        print('q_cli.py -f <furnishing_id> -t <email_type> -i <identifier> -n <furnishing_name>')
 
     if etype in [affiliation_type]:
         msg_id = str(uuid.uuid4())
@@ -138,6 +143,19 @@ if __name__ == '__main__':
                         'datacontenttype': 'application/json',
                         'identifier': identifier,
                         'data': {'filing': {'header': {'filingId': fid}}},
+                     }
+    elif etype in [dissolution_type]:
+        msg_id = str(uuid.uuid4())
+        time = datetime.utcfromtimestamp(time.time()).replace(tzinfo=timezone.utc).isoformat()
+        email_info = {
+                        'specversion': '1.x-wip',
+                        'type': etype,
+                        'source': 'furnishingJob',
+                        'id': msg_id,
+                        'time': time,
+                        'datacontenttype': 'application/json',
+                        'identifier': identifier,
+                        'data': {'furnishing': {'type':'INVOLUNTARY_DISSOLUTION', 'furnishingId': fid, 'furnishingName': name}},
                      }
     else:
         email_info = {'filingId': fid, 'type': etype, 'option': option, 'identifier': identifier}
