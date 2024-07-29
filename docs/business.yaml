@@ -1570,7 +1570,7 @@ paths:
                 type: object
                 properties: {}
               examples:
-                amalgamation-regular-sucess-response:
+                amalgamation-regular-success-response:
                   summary: Amalgamation Regular Response
                   value:
                     filing: 
@@ -1643,7 +1643,16 @@ paths:
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
-                          - mailingAddress:
+                          - deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: Canada
+                              addressCountryDescription: Canada
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
                               addressCity: Victoria
                               addressCountry: Canada
                               addressCountryDescription: Canada
@@ -1679,7 +1688,7 @@ paths:
                       business: 
                         identifier: TO12345678
                       header: 
-                        accountId: 3445
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: full name
@@ -1696,7 +1705,7 @@ paths:
                         name: amalgamationApplication
                         status: DRAFT
                         submitter: mocked submitter
-                amalgamation-short-form-horizontal-sucess-response:
+                amalgamation-short-form-horizontal-success-response:
                   summary: Amalgamation Short Form Horizontal Response
                   value:
                     filing: 
@@ -1735,7 +1744,7 @@ paths:
                       business: 
                         identifier: TO12345678
                       header: 
-                        accountId: 3445
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: full name
@@ -1752,7 +1761,7 @@ paths:
                         name: amalgamationApplication
                         status: DRAFT
                         submitter: mocked submitter
-                amalgamation-short-form-vertical-sucess-response:
+                amalgamation-short-form-vertical-success-response:
                   summary: Amalgamation Short Form Vertical Response
                   value:
                     filing:
@@ -1791,7 +1800,7 @@ paths:
                       business: 
                         identifier: TO12345678
                       header: 
-                        accountId: 3445
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: full name
@@ -1815,7 +1824,7 @@ paths:
                       business:
                         identifier: T12345678
                       header:
-                        accountId: 3445
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: full name
@@ -1911,7 +1920,7 @@ paths:
                 value:
                   filing:
                     header:
-                      accountId: 3445
+                      accountId: 1234
                       certifiedBy: full name
                       email: "no_one@never.get"
                       date: '2024-07-26'
@@ -2020,13 +2029,13 @@ paths:
                   summary: Amalgamation Short Form Horizontal Request
                   value:
                     filing:
-                        header:
-                          accountId: 3041
-                          certifiedBy: full name
-                          email: "no_one@never.get"
-                          date: '2024-07-26'
-                          name: amalgamationApplication
-                          amalgamationApplication:
+                      header:
+                        accountId: 3041
+                        certifiedBy: full name
+                        email: "no_one@never.get"
+                        date: '2024-07-26'
+                        name: amalgamationApplication
+                      amalgamationApplication:
                         amalgamatingBusinesses:
                           - identifier: BC0883189
                             role: holding
@@ -2079,6 +2088,7 @@ paths:
                       contactPoint: 
                         email: "contact@example.com"
                         phone: (555) 555-5555
+                      courtApproval: null,
                       nameRequest: 
                           legalType: BC
                       parties:
@@ -2099,13 +2109,13 @@ paths:
                           roles:
                             - appointmentDate: '2024-07-24'
                               roleType: Completing Party
-                      type: horizontal
+                      type: vertical
               registration-request:
                 summary: Registration Request
                 value:
                   filing:
                     header:
-                      accountId: 3445
+                      accountId: 1234
                       certifiedBy: full name
                       email: "no_one@never.get"
                       date: '2024-07-26'
