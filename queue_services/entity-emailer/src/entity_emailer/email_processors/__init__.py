@@ -18,6 +18,7 @@ Processors hold the business logic for how an email is interpreted and sent.
 from __future__ import annotations
 
 from datetime import datetime
+from http import HTTPStatus
 from pathlib import Path
 from typing import Tuple
 
@@ -196,7 +197,7 @@ def substitute_template_parts(template_code: str) -> str:
     return template_code
 
 
-def get_jurisdictions(identifier: str, token: str) -> str:
+def get_jurisdictions(identifier: str, token: str) -> dict:
     """Get jurisdictions call."""
     headers = {
         'Accept': 'application/json',
@@ -206,5 +207,10 @@ def get_jurisdictions(identifier: str, token: str) -> str:
     response = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
     )
-
-    return response
+    if response.status_code != HTTPStatus.OK:
+        return None
+    try:
+        return response.json()
+    except Exception:  # noqa B902; pylint: disable=W0703;
+        current_app.logger.error('Failed to get MRAS response')
+        return None

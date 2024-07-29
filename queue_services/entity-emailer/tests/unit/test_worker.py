@@ -488,6 +488,10 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
     mocker.patch(
         'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification.get_jurisdictions',
         return_value=[])
+    mocker.patch(
+        'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification._get_pdfs',
+        return_value=[]
+    )
 
     message_payload = {
         'specversion': '1.x-wip',

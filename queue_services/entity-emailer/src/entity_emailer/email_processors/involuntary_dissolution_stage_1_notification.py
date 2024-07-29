@@ -14,13 +14,16 @@
 """Email processing rules and actions for involuntary_dissolution stage 1 overdue ARs notifications."""
 from __future__ import annotations
 
+import base64
 from datetime import datetime
+from http import HTTPStatus
 from pathlib import Path
 
+import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Furnishing
+from legal_api.models import Business, Furnishing
 
 from entity_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
 
@@ -63,6 +66,9 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients = list(set(recipients))
     recipients = ', '.join(filter(None, recipients)).strip()
 
+    # get attachments
+    pdfs = _get_pdfs(token, business, furnishing)
+
     legal_name = business.legal_name
     subject = f'Attention {business_identifier} - {legal_name}'
 
@@ -71,7 +77,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         'requestBy': 'BCRegistries@gov.bc.ca',
         'content': {
             'subject': subject,
-            'body': f'{html_out}'
+            'body': f'{html_out}',
+            'attachments': pdfs
         }
     }
 
@@ -85,7 +92,7 @@ def get_extra_provincials(response: dict):
             name = jurisdiction.get('name')
             if name:
                 extra_provincials.append(name)
-
+        extra_provincials.sort()
     return extra_provincials
 
 
@@ -99,3 +106,38 @@ def post_process(email_msg: dict, status: str):
     if status == Furnishing.FurnishingStatus.FAILED:
         furnishing.notes = 'Failure to send email'
     furnishing.save()
+
+
+def _get_pdfs(
+        token: str,
+        business: Business,
+        furnishing: Furnishing
+) -> list:
+    """Get the pdf for the involuntary dissolution stage 1."""
+    # get pdf for overdue ARs
+    if furnishing.furnishing_name not in \
+        [Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+         Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO]:
+        return []
+    headers = {
+        'Accept': 'application/pdf',
+        'Authorization': f'Bearer {token}'
+    }
+
+    furnishing_pdf = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/businesses/'
+        f'{business.identifier}/furnishings/{furnishing.id}/document',
+        headers=headers
+    )
+
+    if furnishing_pdf.status_code != HTTPStatus.OK:
+        logger.error('Failed to get pdf for furnishing: %s', furnishing.id)
+        return []
+
+    furnishing_pdf_encoded = base64.b64encode(furnishing_pdf.content)
+    return [{
+        'fileName': 'Notice of Commencement of Dissolution.pdf',
+        'fileBytes': furnishing_pdf_encoded.decode('utf-8'),
+        'fileUrl': '',
+        'attachOrder': '1'
+    }]
