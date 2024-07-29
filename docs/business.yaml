@@ -1988,6 +1988,8 @@ paths:
                             email: null
                             firstName: Completing
                             lastName: Party
+                            middleName: ''
+                            organizationName: ''
                             partyType: person
                           roles:
                             - appointmentDate: '2024-07-24'
