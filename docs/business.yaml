@@ -503,6 +503,7 @@ paths:
                         status: PENDING
                         submitter: mocked submitter
                         waiveFees: false
+<<<<<<< HEAD
                 change-of-directors-success-response:
                   summary: Change Of Directors Response
                   value:
@@ -683,11 +684,73 @@ paths:
                         effectiveDate: '2024-07-09T07:00:00+00:00'
                         email: "no_one@never.get"
                         filingId: 150373
+=======
+                alteration-success-response:
+                  summary: Alteration Response
+                  value:
+                    filing:
+                      alteration:
+                        business:
+                          identifier: BC0883028
+                          legalType: BEN
+                        contactPoint:
+                          email: APISpecs@gov.bc.ca
+                          phone: (111) 111-1111
+                        courtOrder:
+                          effectOfOrder: planOfArrangement
+                          fileNumber: '12345'
+                          hasPlanOfArrangement: true
+                        nameRequest:
+                          expirationDate: '2024-09-10T06:59:00+00:00'
+                          legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
+                          legalType: BEN
+                          nrNumber: NR 9684750
+                          submittedDate: '2024-07-15T21:57:31+00:00'
+                          submitter_userid: ''
+                          userId: user@example
+                        nameTranslations:
+                          - name: API Specs Trans
+                        provisionsRemoved: false
+                        shareStructure:
+                        resolutionDates: [
+                          '2024-07-12'
+                        ]
+                        shareClasses: 
+                          - currency: CAD
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            maxNumberOfShares: 600
+                            name: Class1 Shares
+                            parValue: 10
+                            priority: 1
+                            series: []
+                            type: Class
+                      business:
+                        foundingDate: '2024-07-12T20:19:33.556441+00:00'
+                        identifier: BC0883028
+                        legalName: 0883028 B.C. LTD.
+                        legalType: BC
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: API Specs
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-16T19:55:40.497561+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-16T19:55:40.497583+00:00'
+                        filingId: 150107
+>>>>>>> 177a95b9 (add request and response examples for alterations)
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
+<<<<<<< HEAD
                         name: changeOfDirectors
+=======
+                        name: alteration
+>>>>>>> 177a95b9 (add request and response examples for alterations)
                         paymentAccount: 1234
                         paymentStatusCode: CREATED
                         paymentToken: 12345
@@ -733,6 +796,7 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension
+<<<<<<< HEAD
                 change-of-directors-failed-missing-business-response:
                   summary: Change Of Directors - Missing Business Response
                   value:
@@ -753,6 +817,43 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Address Country must resolve to a valid ISO-2 country.]
+=======
+                alteration-failed-missing-business-response:
+                  summary: Alteration - Missing Business Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[message:A valid business is required.] 
+                alteration-failed-name-request-does-not-have-the-same-legal-type-response:
+                  summary: Alteration - Name Request Does Not Have the Same Legal Type Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Name Request legal type is not same as the business legal type.,path:/filing/alteration/nameRequest/legalType]
+                alteration-failed-name-request-does-not-have-the-same-legal-name-response:
+                  summary: Alteration - Name Request Does Not Have the Same Legal Name Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                alteration-failed-name-request-is-not-approved-response:
+                  summary: Alteration - Name Request Is Not Approved Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration of Name Request is not approved.,path:/filing/alteration/nameRequest/nrNumber,error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                alteration-failed-invalid-legal-type-change-response:
+                  summary: Alteration - Invalid Legal Type Change Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Your business type has not been updated to a BC Benefit Company, BC Unlimited Liability Company, BC Community Contribution Company, BC Limited Company or BC Cooperative Association.,path:/filing/alteration/business/legalType]
+                alteration-failed-invalid-share-classes-structure-missing-max-number-of-share-response:
+                  summary: Alteration - Invalid Share Classes Structure Missing Max Number of Shares Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Share class Common Shares must provide value for maximum number of shares,path:/filing/alteration/shareClasses/0/maxNumberOfShares/]
+                alteration-failed-missing-business-legal-name-response:
+                  summary: Alteration - Missing Business Legal Name Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration to Numbered Company can only be done for a Named Company.,path:/filing/business/legalName]
+>>>>>>> 177a95b9 (add request and response examples for alterations)
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
@@ -824,6 +925,11 @@ paths:
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 annual-report-failed-missing-offices-response:
                   summary: Annual Report - Missing Offices Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                alteration-failed-invalid-court-order-structure-missing-court-order-file-number-response:
+                  summary: Alteration - Invalid Court Order Structure Missing Court Order File Number Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
@@ -1153,6 +1259,7 @@ paths:
                           isFeeApplied: false
                           isDirectorActionable: true
                           actions: []
+<<<<<<< HEAD
               change-of-directors-request:
                 summary: Change Of Directors Request
                 value:
@@ -1328,6 +1435,58 @@ paths:
                           cessationDate: null
                           actions:
                             - nameChanged
+=======
+              alteration-request:
+                summary: Alteration Request
+                value:
+                  filing:
+                    header:
+                      name: alteration
+                      certifiedBy: Sample Certified Person
+                      date: '2024-07-25'
+                    business:
+                      foundingDate: '2024-07-12T20:19:33.556441+00:00'
+                      identifier: BC0883028
+                      legalName: 0883028 B.C. LTD.
+                      legalType: BC
+                    alteration:
+                      business:
+                        identifier: BC0883028
+                        legalType: BEN
+                      nameRequest:
+                        legalType: BEN
+                        expirationDate: '2024-09-10T06:59:00+00:00'
+                        submittedDate: '2024-07-15T21:57:31+00:00'
+                        submitter_userid: ''
+                        userId: user@example
+                        legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
+                        nrNumber: NR 9684750
+                      nameTranslations:
+                        - name: API Specs Trans
+                      provisionsRemoved: false
+                      contactPoint:
+                        email: APISpecs@gov.bc.ca
+                        phone: '(111) 111-1111'
+                      shareStructure:
+                        resolutionDates: [
+                          '2024-07-12'
+                        ]
+                        shareClasses: 
+                          - currency: CAD
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            maxNumberOfShares: 600
+                            name: Class1 Shares
+                            parValue: 10
+                            priority: 1
+                            series: []
+                            type: Class
+                      courtOrder:
+                        fileNumber: '12345'
+                        effectOfOrder: planOfArrangement
+                        hasPlanOfArrangement: true
+>>>>>>> 177a95b9 (add request and response examples for alterations)
       parameters:
         - schema:
             type: boolean
