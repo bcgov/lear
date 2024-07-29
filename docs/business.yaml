@@ -843,8 +843,8 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Your business type has not been updated to a BC Benefit Company, BC Unlimited Liability Company, BC Community Contribution Company, BC Limited Company or BC Cooperative Association.,path:/filing/alteration/business/legalType]
-                alteration-failed-invalid-share-classes-structure-missing-max-number-of-share-response:
-                  summary: Alteration - Invalid Share Classes Structure Missing Max Number of Shares Response
+                alteration-failed-missing-max-number-of-share-response:
+                  summary: Alteration - Missing Max Number of Shares Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Share class Common Shares must provide value for maximum number of shares,path:/filing/alteration/shareClasses/0/maxNumberOfShares/]
