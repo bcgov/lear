@@ -4310,6 +4310,9 @@ components:
               minLength: 0
               maxLength: 2000
               description: A brief note to explain the purpose of the Court Order.
+            fileKey:
+              type: string
+              title: The Identifier for court order file in file server
       required:
         - courtOrder
       x-examples:
@@ -5438,6 +5441,7 @@ components:
         nrNumber:
           type: string
           maxLength: 10
+          example: NR 1234567
           description: 'Unique number identifying the request. '
         legalType:
           type: string
@@ -5457,6 +5461,7 @@ components:
         expires:
           type: string
           format: date-time
+          example: '1970-01-01T00:00:00+00:00'
           description: Date and time the request will be in 'expired' status.
         consent:
           type: string
@@ -5489,7 +5494,7 @@ components:
     Name_translations:
       type: array
       title: Name Translations Schema
-      description: 'Used when business name is to be translated. '
+      description: 'Used when business name is to be translated.'
       x-examples:
         Example 1:
           - id: '1234'
@@ -5499,14 +5504,20 @@ components:
         properties:
           id:
             type: string
-            description: 'Name unique identifyer eg: 1234. '
+            description: 'Name unique identifyer eg: 1234.'
             example: '1234'
           name:
             type: string
             maxLength: 50
             title: Name Translation
             pattern: '^[ A-Za-zÀ-ÿ_@./#’&+-]*$'
-            description: 'Text indicating name translation to be used. '
+            description: 'Text indicating name translation to be used.'
+          type:
+            type: string
+            title: The type of translation
+            enum:
+              - TRANSLATION
+              - DBA
         required:
           - name
     Office:
