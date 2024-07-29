@@ -2562,6 +2562,16 @@ components:
             courtApproval:
               title: Amalgamation statement
               type: boolean
+            offices:
+              type: object
+              description: 'Addresses related to the business.   '
+              properties:
+                registeredOffice:
+                  $ref: '#/components/schemas/Office'
+                recordsOffice:
+                  $ref: '#/components/schemas/Office'
+            shareStructure:
+              $ref: '#/components/schemas/Share_structure'
       required:
         - amalgamationApplication
     Annual_report:
