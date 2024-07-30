@@ -967,11 +967,11 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         """Resubmit filing for review."""
         review = Review.get_review(filing.id)
         review.status = ReviewStatus.RESUBMITTED
-        review.nr_number = filing.filing_json['filing'][filing.filing_type].get("nameRequest", {}).get("nrNumber")
+        review.nr_number = filing.filing_json['filing'][filing.filing_type].get('nameRequest', {}).get('nrNumber')
         review.identifier = filing.filing_json['filing'][filing.filing_type].get(
-            "foreignJurisdiction", {}).get("identifier")
+            'foreignJurisdiction', {}).get('identifier')
         review.completing_party = ListFilingResource.get_completing_party(
-            filing.filing_json['filing'][filing.filing_type].get("parties", []))
+            filing.filing_json['filing'][filing.filing_type].get('parties', []))
         review.submission_date = datetime.datetime.utcnow()
 
         review_result = ReviewResult.get_last_review_result(filing.id)
@@ -985,14 +985,14 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     def get_completing_party(parties: list):
         """Get full name of the completing party."""
         for party in parties:
-            for role in party.get("roles", []):
-                if role["roleType"] == "Completing Party":
+            for role in party.get('roles', []):
+                if role['roleType'] == 'Completing Party':
                     names = []
-                    names.append(party["officer"]["firstName"])
+                    names.append(party['officer']['firstName'])
 
-                    if middle_name := party["officer"].get("middleName"):
+                    if middle_name := party['officer'].get('middleName'):
                         names.append(middle_name)
 
-                    names.append(party["officer"]["lastName"])
-                    return " ".join(names).strip()
+                    names.append(party['officer']['lastName'])
+                    return ' '.join(names).strip()
         return None
