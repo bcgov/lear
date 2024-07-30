@@ -41,12 +41,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     furnishing = Furnishing.find_by_id(furnishing_id)
     business = furnishing.business
     business_identifier = business.identifier
-
     # get template
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-STAGE-1.html'
     ).read_text()
-
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
