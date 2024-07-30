@@ -2159,7 +2159,7 @@ paths:
                             legalName: Test business
                             region: AL
                         nameRequest: 
-                            legalName: KD TEST CONT IN LTD.
+                            legalName: TEST CONT IN LTD.
                             legalType: C
                             nrNumber: NR 1234567
                         nameTranslations: []
