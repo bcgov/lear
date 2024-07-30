@@ -503,7 +503,6 @@ paths:
                         status: PENDING
                         submitter: mocked submitter
                         waiveFees: false
-<<<<<<< HEAD
                 change-of-directors-success-response:
                   summary: Change Of Directors Response
                   value:
@@ -684,7 +683,16 @@ paths:
                         effectiveDate: '2024-07-09T07:00:00+00:00'
                         email: "no_one@never.get"
                         filingId: 150373
-=======
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: changeOfDirectors
+                        paymentAccount: 1234
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        status: PENDING
+                        submitter: mocked submitter
                 alteration-success-response:
                   summary: Alteration Response
                   value:
@@ -741,16 +749,11 @@ paths:
                         deletionLocked: false
                         effectiveDate: '2024-07-16T19:55:40.497583+00:00'
                         filingId: 150107
->>>>>>> 177a95b9 (add request and response examples for alterations)
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
-<<<<<<< HEAD
-                        name: changeOfDirectors
-=======
                         name: alteration
->>>>>>> 177a95b9 (add request and response examples for alterations)
                         paymentAccount: 1234
                         paymentStatusCode: CREATED
                         paymentToken: 12345
@@ -796,7 +799,6 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension
-<<<<<<< HEAD
                 change-of-directors-failed-missing-business-response:
                   summary: Change Of Directors - Missing Business Response
                   value:
@@ -817,7 +819,6 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Address Country must resolve to a valid ISO-2 country.]
-=======
                 alteration-failed-missing-business-response:
                   summary: Alteration - Missing Business Response
                   value:
@@ -853,7 +854,6 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Alteration to Numbered Company can only be done for a Named Company.,path:/filing/business/legalName]
->>>>>>> 177a95b9 (add request and response examples for alterations)
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
@@ -1259,7 +1259,6 @@ paths:
                           isFeeApplied: false
                           isDirectorActionable: true
                           actions: []
-<<<<<<< HEAD
               change-of-directors-request:
                 summary: Change Of Directors Request
                 value:
@@ -1435,7 +1434,6 @@ paths:
                           cessationDate: null
                           actions:
                             - nameChanged
-=======
               alteration-request:
                 summary: Alteration Request
                 value:
@@ -1486,7 +1484,6 @@ paths:
                         fileNumber: '12345'
                         effectOfOrder: planOfArrangement
                         hasPlanOfArrangement: true
->>>>>>> 177a95b9 (add request and response examples for alterations)
       parameters:
         - schema:
             type: boolean
