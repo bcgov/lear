@@ -693,6 +693,72 @@ paths:
                         paymentToken: 12345
                         status: PENDING
                         submitter: mocked submitter
+                alteration-success-response:
+                  summary: Alteration Response
+                  value:
+                    filing:
+                      alteration:
+                        business:
+                          identifier: BC0883028
+                          legalType: BEN
+                        contactPoint:
+                          email: APISpecs@gov.bc.ca
+                          phone: (111) 111-1111
+                        courtOrder:
+                          effectOfOrder: planOfArrangement
+                          fileNumber: '12345'
+                          hasPlanOfArrangement: true
+                        nameRequest:
+                          expirationDate: '2024-09-10T06:59:00+00:00'
+                          legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
+                          legalType: BEN
+                          nrNumber: NR 9684750
+                          submittedDate: '2024-07-15T21:57:31+00:00'
+                          submitter_userid: ''
+                          userId: user@example
+                        nameTranslations:
+                          - name: API Specs Trans
+                        provisionsRemoved: false
+                        shareStructure:
+                        resolutionDates: [
+                          '2024-07-12'
+                        ]
+                        shareClasses: 
+                          - currency: CAD
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            maxNumberOfShares: 600
+                            name: Class1 Shares
+                            parValue: 10
+                            priority: 1
+                            series: []
+                            type: Class
+                      business:
+                        foundingDate: '2024-07-12T20:19:33.556441+00:00'
+                        identifier: BC0883028
+                        legalName: 0883028 B.C. LTD.
+                        legalType: BC
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: API Specs
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-16T19:55:40.497561+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-16T19:55:40.497583+00:00'
+                        filingId: 150107
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: alteration
+                        paymentAccount: 1234
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        status: PENDING
+                        submitter: mocked submitter
         '400':
           description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
           content:
@@ -753,6 +819,41 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Address Country must resolve to a valid ISO-2 country.]
+                alteration-failed-missing-business-response:
+                  summary: Alteration - Missing Business Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[message:A valid business is required.] 
+                alteration-failed-name-request-does-not-have-the-same-legal-type-response:
+                  summary: Alteration - Name Request Does Not Have the Same Legal Type Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Name Request legal type is not same as the business legal type.,path:/filing/alteration/nameRequest/legalType]
+                alteration-failed-name-request-does-not-have-the-same-legal-name-response:
+                  summary: Alteration - Name Request Does Not Have the Same Legal Name Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                alteration-failed-name-request-is-not-approved-response:
+                  summary: Alteration - Name Request Is Not Approved Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration of Name Request is not approved.,path:/filing/alteration/nameRequest/nrNumber,error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                alteration-failed-invalid-legal-type-change-response:
+                  summary: Alteration - Invalid Legal Type Change Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Your business type has not been updated to a BC Benefit Company, BC Unlimited Liability Company, BC Community Contribution Company, BC Limited Company or BC Cooperative Association.,path:/filing/alteration/business/legalType]
+                alteration-failed-missing-max-number-of-share-response:
+                  summary: Alteration - Missing Max Number of Shares Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Share class Common Shares must provide value for maximum number of shares,path:/filing/alteration/shareClasses/0/maxNumberOfShares/]
+                alteration-failed-missing-business-legal-name-response:
+                  summary: Alteration - Missing Business Legal Name Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration to Numbered Company can only be done for a Named Company.,path:/filing/business/legalName]
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
@@ -824,6 +925,11 @@ paths:
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 annual-report-failed-missing-offices-response:
                   summary: Annual Report - Missing Offices Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                alteration-failed-missing-court-order-file-number-response:
+                  summary: Alteration - Missing Court Order File Number Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
@@ -1328,6 +1434,56 @@ paths:
                           cessationDate: null
                           actions:
                             - nameChanged
+              alteration-request:
+                summary: Alteration Request
+                value:
+                  filing:
+                    header:
+                      name: alteration
+                      certifiedBy: Sample Certified Person
+                      date: '2024-07-25'
+                    business:
+                      foundingDate: '2024-07-12T20:19:33.556441+00:00'
+                      identifier: BC0883028
+                      legalName: 0883028 B.C. LTD.
+                      legalType: BC
+                    alteration:
+                      business:
+                        identifier: BC0883028
+                        legalType: BEN
+                      nameRequest:
+                        legalType: BEN
+                        expirationDate: '2024-09-10T06:59:00+00:00'
+                        submittedDate: '2024-07-15T21:57:31+00:00'
+                        submitter_userid: ''
+                        userId: user@example
+                        legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
+                        nrNumber: NR 9684750
+                      nameTranslations:
+                        - name: API Specs Trans
+                      provisionsRemoved: false
+                      contactPoint:
+                        email: APISpecs@gov.bc.ca
+                        phone: '(111) 111-1111'
+                      shareStructure:
+                        resolutionDates: [
+                          '2024-07-12'
+                        ]
+                        shareClasses: 
+                          - currency: CAD
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            maxNumberOfShares: 600
+                            name: Class1 Shares
+                            parValue: 10
+                            priority: 1
+                            series: []
+                            type: Class
+                      courtOrder:
+                        fileNumber: '12345'
+                        effectOfOrder: planOfArrangement
+                        hasPlanOfArrangement: true
       parameters:
         - schema:
             type: boolean
@@ -4310,6 +4466,9 @@ components:
               minLength: 0
               maxLength: 2000
               description: A brief note to explain the purpose of the Court Order.
+            fileKey:
+              type: string
+              title: The Identifier for court order file in file server
       required:
         - courtOrder
       x-examples:
@@ -5438,6 +5597,7 @@ components:
         nrNumber:
           type: string
           maxLength: 10
+          example: NR 1234567
           description: 'Unique number identifying the request. '
         legalType:
           type: string
@@ -5457,6 +5617,7 @@ components:
         expires:
           type: string
           format: date-time
+          example: '1970-01-01T00:00:00+00:00'
           description: Date and time the request will be in 'expired' status.
         consent:
           type: string
@@ -5489,7 +5650,7 @@ components:
     Name_translations:
       type: array
       title: Name Translations Schema
-      description: 'Used when business name is to be translated. '
+      description: 'Used when business name is to be translated.'
       x-examples:
         Example 1:
           - id: '1234'
@@ -5499,14 +5660,20 @@ components:
         properties:
           id:
             type: string
-            description: 'Name unique identifyer eg: 1234. '
+            description: 'Name unique identifyer eg: 1234.'
             example: '1234'
           name:
             type: string
             maxLength: 50
             title: Name Translation
             pattern: '^[ A-Za-zÀ-ÿ_@./#’&+-]*$'
-            description: 'Text indicating name translation to be used. '
+            description: 'Text indicating name translation to be used.'
+          type:
+            type: string
+            title: The type of translation
+            enum:
+              - TRANSLATION
+              - DBA
         required:
           - name
     Office:
