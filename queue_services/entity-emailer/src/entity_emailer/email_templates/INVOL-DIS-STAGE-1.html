@@ -23,19 +23,36 @@
 
             [[20px.html]]
 
+            {% if 'NO_AR' in furnishing_name %}
             <p>Your business is in the process of being dissolved because it hasn't 
               filed its required annual reports. Please file your overdue annual 
               reports as soon as possible by <a href="{{ entity_dashboard_url }}">logging into your Business Page</a>.
             </p>
+            {% else %}
+            <p>Your business is in the process of being dissolved because it hasn't 
+              filed its required Post Restoration Transition Application (PRTA).
+              Please file your overdue PRTA as soon as possible by <a href="{{ entity_dashboard_url }}">logging into 
+              your Business Page</a>.
+            </p>
+            {% endif %}
 
             [[whitespace-16px.html]]
 
+            {% if 'NO_AR' in furnishing_name %}
             <p>
               Under the Business Corporations Act, if you don't file these reports 
               within one month from today, the Registrar will post a public notice 
               on <a href="https://www.bclaws.gov.bc.ca/">www.bclaws.ca</a>. This notice will state that your company may be 
               dissolved if the annual reports aren't filed after one month.
             </p>
+            {% else %}
+            <p>
+              Under the Business Corporations Act, if you don't file your PRTA 
+              within one month from today, the Registrar will post a public notice 
+              on <a href="https://www.bclaws.gov.bc.ca/">www.bclaws.ca</a>. This notice will state that your company may be 
+              dissolved if the PRTA aren't filed after one month.
+            </p>
+            {% endif %}
 
             [[whitespace-16px.html]]
 

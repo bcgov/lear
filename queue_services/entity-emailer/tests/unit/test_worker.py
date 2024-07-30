@@ -480,7 +480,7 @@ def test_send_email_with_incomplete_payload(app, session, email_msg):
 ])
 def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, test_name,
                                                       exception, furnishing_name, expected_furnishing_status):
-    """Assert that the stage 1 overdue ARs notification can be processed."""
+    """Assert that the stage 1 notifications can be processed."""
     business_identifier = 'BC1234567'
     business = create_business(business_identifier, 'BC', 'Test Business')
     furnishing = create_furnishing(session, business=business)

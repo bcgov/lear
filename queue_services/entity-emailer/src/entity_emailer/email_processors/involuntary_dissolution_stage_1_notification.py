@@ -43,22 +43,9 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     business_identifier = business.identifier
 
     # get template
-    if furnishing.furnishing_name in [
-        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR.name,
-        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO.name
-    ]:
-        template = Path(
-            f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-NO-AR-STAGE-1.html'
-        ).read_text()
-    elif furnishing.furnishing_name in [
-        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR.name,
-        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO.name
-    ]:
-        template = Path(
-            f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-NO-TR-STAGE-1.html'
-        ).read_text()
-    else:
-        pass
+    template = Path(
+        f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-STAGE-1.html'
+    ).read_text()
 
     filled_template = substitute_template_parts(template)
     # render template with vars
@@ -70,7 +57,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     html_out = jnja_template.render(
         business=business.json(),
         entity_dashboard_url=get_entity_dashboard_url(business_identifier, token),
-        extra_provincials=extra_provincials
+        extra_provincials=extra_provincials,
+        furnishing_name=furnishing.furnishing_name
     )
     # get recipients
     recipients = []
