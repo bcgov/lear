@@ -2938,7 +2938,6 @@ paths:
                           officer:
                             email: severin@example.com
                             firstName: BCREGTEST Lucille
-                            id: '2xy-bpc33'
                             lastName: TWENTY
                             middleName: ''
                             organizationName: ''
@@ -2962,7 +2961,6 @@ paths:
                             streetAddressAdditional: ''
                           officer:
                             firstName: Director
-                            id: '2xy-bpc33'
                             lastName: Test
                             middleName: ''
                             organizationName: ''
