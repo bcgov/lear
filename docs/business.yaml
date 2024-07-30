@@ -2141,6 +2141,140 @@ paths:
                         name: amalgamationApplication
                         status: DRAFT
                         submitter: mocked submitter
+                continuation-in-success-response:
+                  summary: Continuation In Response
+                  value:
+                    filing:
+                      continuationIn: 
+                        authorization: 
+                            date: '2024-07-01'
+                            files: []
+                        contactPoint: 
+                            email: test@test.com
+                            phone: 1234567890
+                        foreignJurisdiction: 
+                            country: US
+                            identifier: TEST1234
+                            incorporationDate: '2024-06-01'
+                            legalName: Test business
+                            region: AL
+                        nameRequest: 
+                            legalName: KD TEST CONT IN LTD.
+                            legalType: C
+                            nrNumber: NR 1234567
+                        nameTranslations: []
+                        offices: 
+                          recordsOffice: 
+                            deliveryAddress: 
+                                addressCity: Surrey
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: 
+                                postalCode: V3S 7N3
+                                streetAddress: 5656 187 St
+                                streetAddressAdditional: 
+                            mailingAddress: 
+                                addressCity: Surrey
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: 
+                                postalCode: V3S 7N3
+                                streetAddress: 5656 187 St
+                                streetAddressAdditional: 
+                          registeredOffice: 
+                            deliveryAddress: 
+                                addressCity: Surrey
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: 
+                                postalCode: V3S 7N3
+                                streetAddress: 5656 187 St
+                                streetAddressAdditional: 
+                            mailingAddress: 
+                                addressCity: Surrey
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: 
+                                postalCode: V3S 7N3
+                                streetAddress: 5656 187 St
+                                streetAddressAdditional:
+                        parties:
+                        - mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          officer: 
+                            firstName: Joe
+                            lastName: Swanson
+                            middleName: P
+                            email: joe@email.com
+                            organizationName: 
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-26'
+                              roleType: Completing Party
+                        - mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          deliveryAddress: 
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          officer: 
+                            firstName: Director
+                            lastName: Swanson
+                            middleName: P
+                            email: joe@email.com
+                            organizationName: 
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-26'
+                              roleType: Director
+                        shareStructure: 
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 0
+                              maxNumberOfShares: 0
+                              parValue: 0
+                              currency: string
+                              hasMaximumShares: true
+                              hasParValue: true
+                              hasRightsOrRestrictions: true
+                              series:
+                                - name: string
+                                  priority: 0
+                                  hasMaximumShares: true
+                                  hasRightsOrRestrictions: true
+                      business: 
+                        identifier: TO12345678
+                      header:
+                        accountId: 1234
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: full name
+                        colinIds: []
+                        comments: []
+                        date: 2024-07-25T19:54:02.949741+00:00
+                        deletionLocked: false
+                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        email: no_one@never.get
+                        filingId: 150338
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: continuationIn
+                        status: DRAFT
+                        submitter: mocked submitter
                 registration-sucess-response:
                   summary: Registartion Response
                   value:
@@ -2222,13 +2356,18 @@ paths:
           content:
             application/json:
               examples:
-                registration-unauthorized-response:
-                  summary: Registration - Not Authorized To Submit Response
+                amalgamation-unauthorized-response:
+                  summary: Amalgamation - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
-                amalgamation-unauthorized-response:
-                  summary: Amalgamation - Not Authorized To Submit Response
+                continuation-in-unauthorized-response:
+                  summary: Continuation In - Not Authorized To Submit Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                registration-unauthorized-response:
+                  summary: Registration - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
@@ -2354,7 +2493,7 @@ paths:
                   value:
                     filing:
                       header:
-                        accountId: 3041
+                        accountId: 1234
                         certifiedBy: full name
                         email: "no_one@never.get"
                         date: '2024-07-26'
@@ -2394,7 +2533,7 @@ paths:
                 value:
                   filing:
                     header:
-                      accountId: 3041
+                      accountId: 1234
                       certifiedBy: full name
                       email: "no_one@never.get"
                       date: '2024-07-26'
@@ -2430,6 +2569,118 @@ paths:
                             - appointmentDate: '2024-07-24'
                               roleType: Completing Party
                       type: vertical
+              continuation-in-request:
+                summary: Continuation In Request
+                value:
+                  filing:
+                    header: 
+                      accountId: 1234
+                      certifiedBy: full name
+                      email: 'no_one@never.get'
+                      date: '2024-07-26'
+                      name: continuationIn
+                    continuationIn:
+                      authorization: 
+                          date: '2024-07-01'
+                          files: []
+                      contactPoint: 
+                          email: test@test.com
+                          phone: 1234567890
+                      foreignJurisdiction: 
+                          country: US
+                          identifier: TEST1234
+                          incorporationDate: '2024-06-01'
+                          legalName: Test business
+                          region: AL
+                      nameRequest: 
+                          nrNumber: NR 1234567
+                          legalName: TEST CONT IN LTD.
+                          legalType: C
+                      nameTranslations: []
+                      offices: 
+                        recordsOffice: 
+                          deliveryAddress: 
+                            streetAddress: delivery_address - address line one
+                            addressCity: delivery_address city
+                            addressCountry: Canada
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            addressCity: mailing_address city
+                            addressCountry: Canada
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                        registeredOffice: 
+                          deliveryAddress: 
+                            streetAddress: delivery_address - address line one
+                            addressCity: delivery_address city
+                            addressCountry: Canada
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            addressCity: mailing_address city
+                            addressCountry: Canada
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                      parties:
+                        - mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          officer: 
+                            firstName: Joe
+                            lastName: Swanson
+                            middleName: P
+                            email: joe@email.com
+                            organizationName: 
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-26'
+                              roleType: Completing Party
+                        - mailingAddress: 
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          deliveryAddress: 
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          officer: 
+                            firstName: Director
+                            lastName: Swanson
+                            middleName: P
+                            email: joe@email.com
+                            organizationName: 
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-26'
+                              roleType: Director
+                      shareStructure: 
+                        shareClasses:
+                          - name: Classic 1 Shares
+                            priority: 0
+                            maxNumberOfShares: 0
+                            parValue: 0
+                            currency: string
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            series:
+                              - name: string
+                                priority: 0
+                                hasMaximumShares: true
+                                hasRightsOrRestrictions: true
               registration-request:
                 summary: Registration Request
                 value:
