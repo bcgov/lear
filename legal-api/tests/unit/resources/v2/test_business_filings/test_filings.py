@@ -17,7 +17,7 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Final
 from unittest.mock import patch
@@ -36,6 +36,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CONTINUATION_IN,
+    CONTINUATION_IN_FILING_TEMPLATE,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     CP_SPECIAL_RESOLUTION_TEMPLATE,
@@ -48,7 +49,16 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE
 )
 
-from legal_api.models import Business, Filing, RegistrationBootstrap, UserRoles
+from legal_api.models import (
+    Business,
+    Filing,
+    RegistrationBootstrap,
+    Review,
+    ReviewResult,
+    ReviewStatus,
+    User,
+    UserRoles,
+)
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
@@ -1434,3 +1444,106 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
     assert rv.json.get('errors')
     error = 'Cannot provide both file upload and memorandum change in SR'
     assert rv.json.get('errors')[0].get('error') == error
+
+
+def test_resubmit_filing(session, client, jwt, mocker):
+    """Assert that the a filing can be resubmitted."""
+    # filing with awaiting review
+    identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+    json_data = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    filing = factory_pending_filing(None, json_data)
+    filing.temp_reg = identifier
+    filing.payment_completion_date = datetime.now(timezone.utc)
+    filing._status = Filing.Status.AWAITING_REVIEW.value
+    filing.save()
+
+    review = Review()
+    review.filing_id = filing.id
+    review.nr_number = json_data['filing']['continuationIn']['nameRequest']['nrNumber']
+    review.identifier = json_data['filing']['continuationIn']['foreignJurisdiction']['identifier']
+    review.completing_party = 'completing party'
+    review.status = ReviewStatus.AWAITING_REVIEW
+    review.save()
+
+    # filing with change requested
+    staff = User(username='staff_username',
+                 firstname='staff firstname',
+                 middlename='staff middlename',
+                 lastname='staff lastname',
+                 sub='sub',
+                 iss='iss',
+                 idp_userid='123',
+                 login_source='IDIR')
+    staff.save()
+
+    change_requested = ReviewResult()
+    change_requested.review_id = review.id
+    change_requested.comments = 'do the change'
+    change_requested.status = ReviewStatus.CHANGE_REQUESTED
+    change_requested.reviewer_id = staff.id
+    change_requested.submission_date = review.submission_date
+    review.review_results.append(change_requested)
+    review.status = ReviewStatus.CHANGE_REQUESTED
+    review.save()
+
+    filing.set_review_decision(Filing.Status.CHANGE_REQUESTED.value)
+
+    # test resubmit
+    mocker.patch(
+        'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.check_and_update_nr',
+        return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
+                 return_value=[])
+
+    json_data['filing']['header']['effectiveDate'] = (
+        datetime.now(timezone.utc) + datedelta.datedelta(days=1)).isoformat()
+    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filing.id}',
+                    json=json_data,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    # validate
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert rv.json['filing']['header']['isPaymentActionRequired'] == False
+    assert rv.json['filing']['header']['status'] == Filing.Status.AWAITING_REVIEW.value
+
+    review = Review.get_review(rv.json['filing']['header']['filingId'])
+    assert review.status == ReviewStatus.RESUBMITTED
+    review_results = ReviewResult.get_review_results(review.id)
+    assert len(review_results) == 1
+
+    resubmitted = review_results[0]
+    assert resubmitted.submission_date == review.submission_date
+
+
+def test_resubmit_filing_failed(session, client, jwt):
+    """Assert that the a filing can be resubmitted when in awaiting review."""
+    # filing with awaiting review
+    identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+    json_data = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    filing = factory_pending_filing(None, json_data)
+    filing.temp_reg = identifier
+    filing.payment_completion_date = datetime.now(timezone.utc)
+    filing._status = Filing.Status.AWAITING_REVIEW.value
+    filing.save()
+
+    review = Review()
+    review.filing_id = filing.id
+    review.nr_number = json_data['filing']['continuationIn']['nameRequest']['nrNumber']
+    review.identifier = json_data['filing']['continuationIn']['foreignJurisdiction']['identifier']
+    review.completing_party = 'completing party'
+    review.status = ReviewStatus.AWAITING_REVIEW
+    review.save()
+
+    # test resubmit
+    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filing.id}',
+                    json=json_data,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
