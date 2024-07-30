@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base href="/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin-when-cross-origin"/>
+    <meta name="author" content="BC Registries and Online Services">
+    <title>Attention {{ business.identifier }} {{ business.legalName }}</title>
+    [[style.html]]
+  </head>
+
+  <body>
+    <table class="body-table" role="presentation">
+      <tr>
+        <td>
+          [[header.html]]
+
+          <div class="container">
+            <p class="title-message bold">
+              <span>Attention {{ business.identifier }} {{ business.legalName }}<span>
+            </p>
+
+            [[20px.html]]
+
+            <p>Your business is in the process of being dissolved because it hasn't 
+              filed its required Post Restoration Transition Application (PRTA). 
+              Please file your overdue PRTA as soon as possible by <a href="{{ entity_dashboard_url }}">logging into 
+              your Business Page</a>.
+            </p>
+
+            [[whitespace-16px.html]]
+
+            <p>
+              Under the Business Corporations Act, if you don't file your PRTA 
+              within one month from today, the Registrar will post a public notice 
+              on <a href="https://www.bclaws.gov.bc.ca/">www.bclaws.ca</a>. This notice will state that your company may be 
+              dissolved if the PRTA aren't filed after one month.
+            </p>
+
+            [[whitespace-16px.html]]
+
+            {% if extra_provincials %}
+            <p>
+              Our records indicate your company is registered in 
+              {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              as an extraprovincial company. Therefore, if your company is dissolved, its registration as an extraprovincial company 
+              in {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              will automatically be cancelled as well.
+            </p>
+            {% endif %}
+
+            [[whitespace-16px.html]]
+            [[divider.html]]
+            [[whitespace-16px.html]]
+
+            <p>
+              You can ask for more time by requesting a delay of the dissolution or 
+              cancellation process. Go to your <a href="{{ entity_dashboard_url }}">business Page</a> and click on “Request 
+              Delay of Dissolution or Cancellation" under the “More Actions” menu.
+            </p>
+            [[whitespace-16px.html]]
+            [[divider.html]]
+            [[whitespace-16px.html]]
+
+            <p>
+              The following document is attached to this email:
+            </p>
+            
+            <ul class="outputs">
+              <li>Notice of Commencement of Dissolution
+              </li>
+            </ul>
+
+            [[whitespace-16px.html]]
+            [[business-dashboard-link.html]]
+            
+            [[20px.html]]
+            [[footer.html]]
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
