@@ -41,9 +41,25 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     furnishing = Furnishing.find_by_id(furnishing_id)
     business = furnishing.business
     business_identifier = business.identifier
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-STAGE-1.html'
-    ).read_text()
+
+    # get template
+    if furnishing.furnishing_name in [
+        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR.name,
+        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO.name
+    ]:
+        template = Path(
+            f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-NO-AR-STAGE-1.html'
+        ).read_text()
+    elif furnishing.furnishing_name in [
+        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR.name,
+        Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO.name
+    ]:
+        template = Path(
+            f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-NO-TR-STAGE-1.html'
+        ).read_text()
+    else:
+        pass
+
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
