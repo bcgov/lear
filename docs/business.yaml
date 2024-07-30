@@ -503,6 +503,196 @@ paths:
                         status: PENDING
                         submitter: mocked submitter
                         waiveFees: false
+                change-of-directors-success-response:
+                  summary: Change Of Directors Response
+                  value:
+                    filing:
+                      business:
+                        foundingDate: '2024-07-08T07:00:00.000+00:00'
+                        identifier: BC0871442
+                        legalName: JIA TEST BC TO ULC
+                        legalType: ULC
+                      changeOfDirectors:
+                        directors:
+                          - actions:
+                            - appointed
+                            appointmentDate: '2024-07-09'
+                            cessationDate: null
+                            deliveryAddress:
+                              addressCity: Richmond
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V7E 1V2
+                              streetAddress: 10300 4th Ave
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Richmond
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V7E 1V2
+                              streetAddress: 10300 4th Ave
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: Doe
+                              lastName: Smith
+                              middleInitial: ''
+                              prevFirstName: ''
+                              prevLastName: ''
+                              prevMiddleInitial: ''
+                          - actions:
+                            - appointed
+                            appointmentDate: '2024-07-09'
+                            cessationDate: null
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 1W4
+                              streetAddress: 1-940 Blanshard
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 1W4
+                              streetAddress: 1-940 Blanshard
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: Bob
+                              lastName: Smith
+                              middleInitial: ''
+                              prevFirstName: ''
+                              prevLastName: ''
+                              prevMiddleInitial: ''
+                          - actions:
+                            - appointed
+                            appointmentDate: '2024-07-09'
+                            cessationDate: null
+                            deliveryAddress:
+                              addressCity: Richmond
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V7E 1V2
+                              streetAddress: 10300 4th Ave
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Richmond
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V7E 1V2
+                              streetAddress: 10300 4th Ave
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: Jane
+                              lastName: Smith
+                              middleInitial: ''
+                              prevFirstName: ''
+                              prevLastName: ''
+                              prevMiddleInitial: ''
+                          - actions:
+                            - ceased
+                            appointmentDate: '2024-07-09'
+                            cessationDate: '2024-07-21'
+                            deliveryAddress:
+                              addressCity: Richmond
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V7E 1V2
+                              streetAddress: 10300 4th Ave
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Richmond
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V7E 1V2
+                              streetAddress: 10300 4th Ave
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: Doe
+                              lastName: Smith
+                              middleInitial: ''
+                              prevFirstName: ''
+                              prevLastName: ''
+                              prevMiddleInitial: ''
+                          - actions:
+                            - addressChanged
+                            appointmentDate: '2024-07-09'
+                            cessationDate: null
+                            deliveryAddress:
+                              addressCity: Burnaby
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V5C 3V8
+                              streetAddress: 3765 1st Ave
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Burnaby
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V5C 3V8
+                              streetAddress: 3765 1st Ave
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: Jane
+                              lastName: Smith
+                              middleInitial: ''
+                              prevFirstName: ''
+                              prevLastName: ''
+                              prevMiddleInitial: ''
+                          - actions:
+                            - nameChanged
+                            appointmentDate: '2024-07-09'
+                            cessationDate: null
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 1W4
+                              streetAddress: 1-940 Blanshard
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 1W4
+                              streetAddress: 1-940 Blanshard
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: API
+                              lastName: Specs
+                              middleInitial: ''
+                              prevFirstName: Bob
+                              prevLastName: Smith
+                              prevMiddleInitial: ''
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: Sample Certified Person
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-09T21:39:11.950027+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-09T07:00:00+00:00'
+                        email: "no_one@never.get"
+                        filingId: 150373
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: changeOfDirectors
+                        paymentAccount: 1234
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        status: PENDING
+                        submitter: mocked submitter
         '400':
           description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
           content:
@@ -543,6 +733,26 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension
+                change-of-directors-failed-missing-business-response:
+                  summary: Change Of Directors - Missing Business Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[message:A valid business is required.]
+                change-of-directors-failed-invalid-effective-date-prior-to-most-recent-filing-response:
+                  summary: Change Of Directors - Invalid Effective Date (Earlier Than Previous Change of Director Filing)
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Effective date cannot be before another Change of Director filing.]
+                change-of-directors-failed-invalid-future-effective-date:
+                  summary: Change Of Directors - Invalid Future Effective Date
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Filing cannot have a future effective date.]
+                change-of-directors-invalid-address-country:
+                  summary: Change Of Directors - Invalid Address Country
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Address Country must resolve to a valid ISO-2 country.]
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
@@ -943,6 +1153,181 @@ paths:
                           isFeeApplied: false
                           isDirectorActionable: true
                           actions: []
+              change-of-directors-request:
+                summary: Change Of Directors Request
+                value:
+                  filing:
+                    header:
+                      name: changeOfDirectors
+                      certifiedBy: Sample Certified Person
+                      email: no_one@never.get
+                      date: '2024-07-09'
+                      effectiveDate: '2024-07-09T07:00:00+00:00'
+                    business:
+                      foundingDate: '2024-07-08T07:00:00.000+00:00'
+                      identifier: BC0871442
+                      legalName: JIA TEST BC TO ULC
+                      legalType: ULC
+                    changeOfDirectors:
+                      directors:
+                        - officer:
+                            firstName: Doe
+                            lastName: Smith
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            streetAddress: 10300 4th Ave
+                            streetAddressAdditional: ''
+                            addressCity: Richmond
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V7E 1V2
+                            addressCountry: CA
+                          mailingAddress:
+                            streetAddress: 10300 4th Ave
+                            streetAddressAdditional: ''
+                            addressCity: Richmond
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V7E 1V2
+                            addressCountry: CA
+                          appointmentDate: '2024-07-09'
+                          cessationDate: null
+                          actions:
+                            - appointed
+                        - officer:
+                            firstName: Bob
+                            lastName: Smith
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 1W4
+                            streetAddress: 1-940 Blanshard
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 1W4
+                            streetAddress: 1-940 Blanshard
+                            streetAddressAdditional: ''
+                          appointmentDate: '2024-07-09'
+                          cessationDate: null
+                          actions:
+                            - appointed
+                        - officer:
+                            firstName: Jane
+                            lastName: Smith
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            streetAddress: 10300 4th Ave
+                            streetAddressAdditional: ''
+                            addressCity: Richmond
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V7E 1V2
+                            addressCountry: CA
+                          mailingAddress:
+                            streetAddress: 10300 4th Ave
+                            streetAddressAdditional: ''
+                            addressCity: Richmond
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V7E 1V2
+                            addressCountry: CA
+                          appointmentDate: '2024-07-09'
+                          cessationDate: null
+                          actions:
+                            - appointed
+                        - officer:
+                            firstName: Doe
+                            lastName: Smith
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            streetAddress: 10300 4th Ave
+                            streetAddressAdditional: ''
+                            addressCity: Richmond
+                            addressRegion: BC
+                            postalCode: V7E 1V2
+                            addressCountry: CA
+                          mailingAddress:
+                            streetAddress: 10300 4th Ave
+                            streetAddressAdditional: ''
+                            addressCity: Richmond
+                            addressRegion: BC
+                            postalCode: V7E 1V2
+                            addressCountry: CA
+                          appointmentDate: '2024-07-09'
+                          cessationDate: '2024-07-21'
+                          actions:
+                            - ceased
+                        - officer:
+                            firstName: Jane
+                            lastName: Smith
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            streetAddress: 3765 1st Ave
+                            streetAddressAdditional: ''
+                            addressCity: Burnaby
+                            addressRegion: BC
+                            postalCode: V5C 3V8
+                            addressCountry: CA
+                          mailingAddress:
+                            streetAddress: 3765 1st Ave
+                            streetAddressAdditional: ''
+                            addressCity: Burnaby
+                            addressRegion: BC
+                            postalCode: V5C 3V8
+                            addressCountry: CA
+                          appointmentDate: '2024-07-09'
+                          cessationDate: null
+                          actions:
+                            - addressChanged
+                        - officer:
+                            firstName: API
+                            lastName: Specs
+                            middleInitial: ''
+                            prevFirstName: Bob
+                            prevLastName: Smith
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 1W4
+                            streetAddress: 1-940 Blanshard
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 1W4
+                            streetAddress: 1-940 Blanshard
+                            streetAddressAdditional: ''
+                          appointmentDate: '2024-07-09'
+                          cessationDate: null
+                          actions:
+                            - nameChanged
       parameters:
         - schema:
             type: boolean
@@ -3314,6 +3699,7 @@ components:
       required:
         - identifier
     Change_of_address:
+      title: Change of Address Filing
       type: object
       description: 'Change of an address used by the business, could be different types of address eg: delivery address.  '
       properties:
@@ -3371,44 +3757,67 @@ components:
                 deliveryInstructions: '"Our unit is located at the back of the building."'
     Change_of_directors:
       type: object
-      description: 'Add or remove a director, or update information regarding a current director.'
+      title: Change of Directors Filing
+      description: Filing to add, remove, or update information regarding company directors.
       properties:
         changeOfDirectors:
-          type: array
-          description: 'Add or remove a director, or update information regarding a current director.'
-          items:
-            $ref: '#/components/schemas/party'
+          type: object
+          description: This section contains all the changes you want to make to your company''s directors.
+          required:
+            - directors
+          properties:
+            directors:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/Director'
+                  - type: object
+                    properties:
+                      actions:
+                        type: array
+                        title: List of actions taken on a director
+                        description: Select one or more actions that apply to this director
+                        items:
+                          type: string
+                          enum:
+                            - appointed
+                            - ceased
+                            - nameChanged
+                            - addressChanged
+                        example: ["appointed"]
+                    required:
+                      - actions
+      required:
+        - changeOfDirectors
       x-examples:
         Example 1:
           changeOfDirectors:
-            - party:
-                roles:
-                  - appointmentDate: '2019-08-24'
-                    cessationDate: '2019-08-24'
-                    roleType: Completing Party
-                officer:
-                  givenName: John
-                  familyName: Smith
-                  additionalName: Adam
+            directors:
+              - officer:
+                  firstName: John
+                  lastName: Smith
                   middleInitial: A
-                  email: abc.def@gov.bc.ca
                 deliveryAddress:
                   streetAddress: 5-4761 Bay Street
                   streetAddressAdditional: Building A
                   addressCity: Victoria
-                  addressRegion: BC for British Columbia
+                  addressRegion: BC
                   addressCountry: Canada
                   postalCode: V8R 2P1
-                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                  deliveryInstructions: "Our unit is located at the back of the building."
                 mailingAddress:
                   streetAddress: 5-4761 Bay Street
                   streetAddressAdditional: string
                   addressCity: Victoria
-                  addressRegion: BC for British Columbia
+                  addressRegion: BC
                   addressCountry: Canada
                   postalCode: V8R 2P1
-                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                  deliveryInstructions: "Our unit is located at the back of the building."
                 title: Chief Executive Officer
+                appointmentDate: '2019-08-24'
+                cessationDate: null
+                actions:
+                  - appointed
     Change_of_name:
       type: object
       title: Change of Entity Name
@@ -3936,6 +4345,71 @@ components:
                 title: Path of the property in json
       description: '***Item not used*** What will be changed in the correction filing.'
       type: object
+    Director:
+      title: Director Schema
+      type: object
+      description: Represents a single director of a company, including personal information and appointment details.
+      properties:
+        officer:
+          type: object
+          description: Personal information about the director.
+          properties:
+            firstName:
+              type: string
+              maxLength: 30
+              description: First name of the director/officer.
+              example: "Jane"
+            lastName:
+              type: string
+              maxLength: 30
+              description: Last name of the director/officer.
+              example: "Doe"
+            middleInitial:
+              type: string
+              maxLength: 30
+              description: The middle name initial of the director/officer.
+              example: "A"
+            prevFirstName:
+              type: string
+              maxLength: 30
+              description: previous first name, in the case of a legal name change in a filing
+              example: "Janet"
+            prevLastName:
+              type: string
+              maxLength: 30
+              description: previous last name, in the case of a legal name change in a filing
+              example: "Smith"
+            prevMiddleInitial:
+              type: string
+              maxLength: 30
+              description: previous middle name, in the case of a legal name change in a filing
+              example: "B"
+          required:
+            - firstName
+            - lastName
+        deliveryAddress:
+          $ref: '#/components/schemas/Address'
+        mailingAddress:
+          $ref: '#/components/schemas/Address'
+        title:
+          type: string
+          description: 'Official title or position of the director in the company.'
+          example: "Chief Financial Officer"
+        appointmentDate:
+          type: string
+          format: date
+          description: 'The date when the director started their role. Format: YYYY-MM-DD'
+          example: "2023-06-15"
+        cessationDate:
+          type: string
+          format: date
+          nullable: true
+          description: 'The date when the director ended their role. Format: YYYY-MM-DD'
+      required:
+        - officer
+        - deliveryAddress
+        - appointmentDate
+        - cessationDate
     Dissolution:
       title: Dissolution Filing
       type: object
