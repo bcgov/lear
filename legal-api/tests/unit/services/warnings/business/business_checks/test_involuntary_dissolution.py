@@ -13,28 +13,36 @@
 # limitations under the License.
 """Test suite to ensure Corpse business checks work correctly."""
 import copy
+
 import pytest
-import json
-from legal_api.models import Batch, Business
+from datedelta import datedelta
+from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER, RESTORATION
+
+from legal_api.models import Batch, BatchProcessing, Business
+from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.services.warnings.business.business_checks.involuntary_dissolution import (
+    _get_modified_warning_data,
+    check_business,
+)
+from legal_api.utils.datetime import datetime
 from tests.unit.models import (
     factory_batch,
     factory_batch_processing,
     factory_business,
     factory_completed_filing,
-    factory_pending_filing
+    factory_pending_filing,
 )
-from legal_api.services.warnings.business.business_checks import WarningType
-from legal_api.services.warnings.business.business_checks.involuntary_dissolution import check_business
-from legal_api.utils.datetime import datetime
 
-from datedelta import datedelta
-from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER, RESTORATION
 
 RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
 RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 CHANGE_OF_ADDRESS_FILING = copy.deepcopy(FILING_HEADER)
 CHANGE_OF_ADDRESS_FILING['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+
+FUTURE_TRIGGER_DATE = datetime.utcnow() + datedelta(days=10)
+PAST_TRIGGER_DATE = datetime.utcnow() + datedelta(days=-10)
+
 
 @pytest.mark.parametrize('test_name, no_dissolution, batch_status, batch_processing_status', [
     ('NOT_ELIGIBLE', True, None, None),
@@ -49,11 +57,12 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
     """Test the check_business function."""
     identifier = 'BC7654321'
     business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, no_dissolution=no_dissolution)
+    target_date = datetime.utcnow() + datedelta(days=72)
     meta_data = {
         'overdueARs': True,
         'overdueTransition': False,
         'warningsSent': 2,
-        'dissolutionTargetDate': '2025-02-01'
+        'targetDissolutionDate': target_date.date().isoformat()
     }
     if 'TRANSITION_OVERDUE' in test_name:
         effective_date = datetime.utcnow() - datedelta(years=3)
@@ -71,7 +80,7 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
             identifier = business.identifier,
             status = batch_processing_status,
         )
-        batch_processing.meta_data = json.dumps(meta_data)
+        batch_processing.meta_data = meta_data
         batch_processing.save()
 
     if 'FUTURE_EFFECTIVE_FILING' in test_name:
@@ -88,7 +97,7 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
             assert result[1]['message'] == 'Business is in the process of involuntary dissolution.'
             assert result[1]['warningType'] == WarningType.INVOLUNTARY_DISSOLUTION
 
-            res_meta_data = json.loads(result[1]['data'])
+            res_meta_data = result[1]['data']
             assert res_meta_data == meta_data
 
             if 'TRANSITION_OVERDUE' in test_name:
@@ -107,3 +116,50 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
             assert warning['code'] == 'MULTIPLE_ANNUAL_REPORTS_NOT_FILED'
             assert warning['message'] == 'Multiple annual reports not filed. Eligible for involuntary dissolution.'
             assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
+
+
+@pytest.mark.parametrize('test_name, batch_processing_step, trigger_date, expected_warning_date', [
+    (
+        'LEVEL1',
+        BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        FUTURE_TRIGGER_DATE,
+        FUTURE_TRIGGER_DATE + datedelta(days=30)
+    ),
+    (
+        'LEVEL1_PAST',
+        BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        PAST_TRIGGER_DATE,
+        datetime.utcnow() + datedelta(days=30)
+    ),
+    (
+        'LEVEL2',
+        BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+        FUTURE_TRIGGER_DATE,
+        FUTURE_TRIGGER_DATE
+    ),
+    (
+        'LEVEL2_PAST',
+        BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+        PAST_TRIGGER_DATE,
+        datetime.utcnow()
+    )
+])
+def test_get_modified_warning_data(session, test_name, batch_processing_step, trigger_date, expected_warning_date):
+    """Test _get_modified_warning_data function."""
+    identifier = 'BC7654321'
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP)
+    batch = factory_batch()
+    batch_processing = factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=identifier,
+        step=batch_processing_step,
+        trigger_date=trigger_date
+    )
+    batch_processing.meta_data = {}
+    batch_processing.save()
+
+    data = _get_modified_warning_data(batch_processing)
+
+    assert 'targetDissolutionDate' in data
+    assert data['targetDissolutionDate'] == expected_warning_date.date().isoformat()
