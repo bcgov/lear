@@ -711,8 +711,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
                 self.effective_date is None or (
                     self.payment_completion_date
-                    and self.effective_date < self.payment_completion_date
-                )):  # pylint: disable=W0143; hybrid property
+                    and self.effective_date < self.payment_completion_date  # pylint: disable=comparison-with-callable
+                )):
             self.effective_date = self.payment_completion_date
 
     def effective_date_can_be_before_payment_completion_date(self, business_type):
