@@ -26,16 +26,10 @@
         ]
     },
     {
-        "vault": "sentry",
-        "application": [
-            "entity"
-        ]
-    },
-    {
         "vault": "entity",
         "application": [
-            "entity-service-account"
+            "entity-service-account",
+            "sentry"
         ]
     }
-
 ]
