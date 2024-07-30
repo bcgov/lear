@@ -2891,12 +2891,12 @@ paths:
                       certifiedBy: API Specs
                       email: no_one@never.get
                       name: incorporationApplication
-                      date: '{{today}}'
+                      date: 2024-07-25T19:54:02.949741+00:00
                       accountId: 3445
                     incorporationApplication:
                       nameRequest:
                         legalType: BEN
-                        nrNumber: '{{nr_num}}'
+                        nrNumber: NR 1234567
                       offices:
                         registeredOffice:
                           deliveryAddress:
