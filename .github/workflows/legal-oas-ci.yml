@@ -1,0 +1,19 @@
+name: Business API OAS CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "docs/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: .
+
+jobs:
+  business-oas-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/oas-ci.yaml@main
+    with:
+      working_directory: "."
