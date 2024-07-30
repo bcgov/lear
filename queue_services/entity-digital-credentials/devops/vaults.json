@@ -2,7 +2,8 @@
     {
         "vault": "entity",
         "application": [
-            "launchdarkly"
+            "launchdarkly",
+            "sentry"
         ]
     },
     {
@@ -22,12 +23,6 @@
         "vault": "bbdc",
         "application": [
             "aca-py"
-        ]
-    },
-    {
-        "vault": "sentry",
-        "application": [
-            "entity"
         ]
     }
 ]
