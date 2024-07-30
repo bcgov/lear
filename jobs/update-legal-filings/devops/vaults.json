@@ -10,19 +10,14 @@
         "application": [
             "filings-jobs",
             "nats-emailer",
-            "entity-service-account"
+            "entity-service-account",
+            "sentry"
         ]
     },
     {
         "vault": "nats",
         "application": [
             "entity-events-listener"
-        ]
-    },
-    {
-        "vault": "sentry",
-        "application": [
-          "entity"
         ]
     }
 ]
