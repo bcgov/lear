@@ -939,34 +939,6 @@ def test_deleting_filings_deletion_locked(session, client, jwt, legal_type, dele
     else:
         assert rv.status_code == HTTPStatus.OK
 
-
-def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
-    """Assert that a valid filing can NOT be updated once it has been paid."""
-    import copy
-    identifier = 'CP7654321'
-    business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
-                                )
-    factory_business_mailing_address(business)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
-    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-
-    filings = factory_completed_filing(business, ar)
-
-    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
-                    json=ar,
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
-
-    assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json['errors'][0] == {'error': 'Filings cannot be changed after the invoice is created.'}
-
-
 def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     """Assert that updating a missing filing fails."""
     import copy

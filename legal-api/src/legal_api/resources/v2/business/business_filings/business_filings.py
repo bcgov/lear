@@ -107,7 +107,7 @@ def get_filings(identifier: str, filing_id: Optional[int] = None):
 @cross_origin(origin='*')
 @jwt.requires_auth
 @pydantic_validate()
-def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-statements,too-many-locals
+def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-statements,too-many-locals,too-many-branches
                    query: QueryModel,
                    identifier,
                    filing_id: Optional[int] = None):
@@ -266,7 +266,7 @@ def patch_filings(identifier, filing_id=None):
     return jsonify(filing.json), HTTPStatus.ACCEPTED
 
 
-class ListFilingResource():
+class ListFilingResource():  # pylint: disable=too-many-public-methods
     """Business Filings service."""
 
     @staticmethod
@@ -370,19 +370,21 @@ class ListFilingResource():
     def create_deletion_locked_response(identifier, filing):
         """Create a filing that draft that cannot be deleted."""
         business = Business.find_by_identifier(identifier)
+        err_message = 'This filing cannot be deleted.'
+        err_code = HTTPStatus.FORBIDDEN
         if (filing.status == Filing.Status.DRAFT.value and
                 filing.filing_type == 'alteration' and
                 business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
                                                             Business.UNLIMITED_COMPANIES)]):
-            response = jsonify({
-                'message': _('You must complete this alteration filing to become a BC Benefit Company.')
-            }), HTTPStatus.UNAUTHORIZED
-        else:
-            response = jsonify({
-                'message': _('This filing cannot be deleted at this moment.')
-            }), HTTPStatus.UNAUTHORIZED
+            err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
+            err_code = HTTPStatus.UNAUTHORIZED
+        elif filing.status in [Filing.Status.DRAFT.value, Filing.Status.PENDING.value]:
+            err_message = 'This filing cannot be deleted at this moment.'
+            err_code = HTTPStatus.UNAUTHORIZED
 
-        return response
+        return jsonify({
+            'message': _(err_message)
+        }), err_code
 
     @staticmethod
     def check_and_update_nr(filing):
@@ -627,6 +629,8 @@ class ListFilingResource():
             current_app.logger.error('Business:%s missing filing/header values, unable to save',
                                      business.identifier)
             return {'message': 'missing filing/header values'}, HTTPStatus.BAD_REQUEST
+
+        return None, None
 
     @staticmethod
     def sanitize_html_fields(filing_json):

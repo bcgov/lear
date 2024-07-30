@@ -1100,7 +1100,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Resubmit filing to awaiting review."""
         if self._status != Filing.Status.CHANGE_REQUESTED.value:
             raise BusinessException(
-                error=f'Cannot resubmit this filing to awaiting review status.',
+                error='Cannot resubmit this filing to awaiting review status.',
                 status_code=HTTPStatus.FORBIDDEN
             )
         self._status = Filing.Status.AWAITING_REVIEW.value
@@ -1145,6 +1145,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     """Set the state of the filing, based upon column values."""
     filing = target
 
+    # pylint: disable=protected-access
     if (filing._status in [Filing.Status.AWAITING_REVIEW.value,
                            Filing.Status.CHANGE_REQUESTED.value,
                            Filing.Status.REJECTED.value] or
