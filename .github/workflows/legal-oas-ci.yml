@@ -10,9 +10,6 @@ defaults:
     shell: bash
     working-directory: .
 
-permissions:
-  checks: write
-
 jobs:
   build:
     name: Run Spectral
