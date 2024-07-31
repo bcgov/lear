@@ -2439,6 +2439,109 @@ paths:
                 type: object
                 properties: {}
               examples:
+                incorporation-application-success-response:
+                  summary: Incorporation Application Response  
+                  value:
+                    errors:
+                      - null
+                    filing:
+                      business:
+                        identifier: Tqcbbbc157  
+                      header:
+                        accountId: 6164
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: API Specs
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-25'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-25T16:17:57.191129+00:00'
+                        email: no_one@never.get
+                        filingId: 150333
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: incorporationApplication
+                        status: DRAFT
+                        submitter: mocked submitter
+                      incorporationApplication:
+                        contactPoint:
+                          email: no_one@never.get
+                          phone: 123-456-7890
+                        nameRequest:
+                          legalType: BEN
+                          nrNumber: 'NR 1345876'
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC 
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0 
+                              streetAddress: mailing_address - address line one
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
+                        parties:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                              streetAddressAdditional: ''
+                            officer:
+                              email: severin@example.com
+                              firstName: BCREGTEST Lucille
+                              id: 'p90x2145'
+                              lastName: TWENTY
+                              middleName: ''
+                              organizationName: '' 
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                          - deliveryAddress:
+                              addressCity: Burnaby
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V5E 1R9
+                              streetAddress: 6767 Burford St
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Burnaby
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V5E 1R9
+                              streetAddress: 6767 Burford St
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: Director
+                              id: 'p90x2145'
+                              lastName: Test
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Director
                 amalgamation-regular-success-response:
                   summary: Amalgamation Regular Response
                   value:
@@ -2773,6 +2876,11 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                incorporation-unauthorized-response:
+                  summary: Incorporation - Not Authorized To Submit Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
       description: Submitting a creation filing for a business will create that type of business if it is a fully valid filing and payment has been completed.
       requestBody:
         content:
@@ -2780,6 +2888,91 @@ paths:
             schema:
                 $ref: '#/components/schemas/Filing'
             examples:
+              incorporation-application-request:
+                summary: Incorporation Application Request
+                value:
+                  filing:
+                    header:
+                      certifiedBy: API Specs
+                      email: no_one@never.get
+                      name: incorporationApplication
+                      date: '2024-07-25'
+                      accountId: 6164
+                    incorporationApplication:
+                      nameRequest:
+                        legalType: BEN
+                        nrNumber: NR 1234567
+                      offices:
+                        registeredOffice:
+                          deliveryAddress:
+                            streetAddress: delivery_address - address line one
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          mailingAddress:
+                            streetAddress: mailing_address - address line one
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                        recordsOffice:
+                          deliveryAddress:
+                            streetAddress: delivery_address - address line one
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                          mailingAddress:
+                            streetAddress: mailing_address - address line one
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            postalCode: H0H0H0
+                            addressRegion: BC
+                      contactPoint:
+                        email: no_one@never.get
+                        phone: 123-456-7890
+                      parties:
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                          officer:
+                            email: severin@example.com
+                            firstName: BCREGTEST Lucille
+                            lastName: TWENTY
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Completing Party
+                        - deliveryAddress:
+                            addressCity: Burnaby
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V5E 1R9
+                            streetAddress: 6767 Burford St
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Burnaby
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V5E 1R9
+                            streetAddress: 6767 Burford St
+                            streetAddressAdditional: ''
+                          officer:
+                            firstName: Director
+                            lastName: Test
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Director
               amalgamation-regular-request:
                 summary: Amalgamation Regular Request
                 value:
