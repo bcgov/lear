@@ -22,6 +22,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Tuple
 
+import base64
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
@@ -213,4 +214,27 @@ def get_jurisdictions(identifier: str, token: str) -> dict:
         return response.json()
     except Exception:  # noqa B902; pylint: disable=W0703;
         current_app.logger.error('Failed to get MRAS response')
+        return None
+
+
+def get_filing_document(business_identifier, filing_id, document_type, token):
+    """Get the filing documents."""
+    headers = {
+        'Accept': 'application/pdf',
+        'Authorization': f'Bearer {token}'
+    }
+
+    document = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business_identifier}/filings/{filing_id}'
+        f'/documents/{document_type}', headers=headers
+    )
+
+    if document.status_code != HTTPStatus.OK:
+        current_app.logger.error('Failed to get %s pdf for filing: %s', document_type, filing_id)
+        return None
+    try:
+        filing_pdf_encoded = base64.b64encode(document.content)
+        return filing_pdf_encoded
+    except Exception:  # noqa B902; pylint: disable=W0703;
+        current_app.logger.error('Failed to get document response')
         return None

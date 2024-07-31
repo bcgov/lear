@@ -26,6 +26,7 @@ from jinja2 import Template
 from legal_api.models import Business, Filing, UserRoles
 
 from entity_emailer.email_processors import (
+    get_filing_document,
     get_filing_info,
     get_recipient_from_auth,
     get_user_email_from_auth,
@@ -53,14 +54,9 @@ def _get_pdfs(
     if status == Filing.Status.PAID.value:
         # add filing pdf
         if legal_type not in ['SP', 'GP']:
-            filing_pdf = requests.get(
-                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-                headers=headers
-            )
-            if filing_pdf.status_code != HTTPStatus.OK:
-                logger.error('Failed to get pdf for filing: %s', filing.id)
-            else:
-                filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+            filing_pdf_type = 'voluntaryDissolution'
+            filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+            if filing_pdf_encoded:
                 pdfs.append(
                     {
                         'fileName': 'Voluntary Dissolution Application.pdf',
@@ -99,14 +95,9 @@ def _get_pdfs(
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
         if legal_type in ['SP', 'GP']:
-            filing_pdf = requests.get(
-                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-                headers=headers
-            )
-            if filing_pdf.status_code != HTTPStatus.OK:
-                logger.error('Failed to get pdf for filing: %s', filing.id)
-            else:
-                filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+            filing_pdf_type = 'dissolution'
+            filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+            if filing_pdf_encoded:
                 pdfs.append(
                     {
                         'fileName': 'Statement of Dissolution.pdf',
@@ -119,15 +110,10 @@ def _get_pdfs(
         else:
             if filing.filing_sub_type != 'administrative':
                 # add certificateOfDissolution, suppress certificate of dissolution for admin dissolution
-                certificate = requests.get(
-                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=certificateOfDissolution',
-                    headers=headers
-                )
-                if certificate.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get certificateOfDissolution pdf for filing: %s', filing.id)
-                else:
-                    certificate_encoded = base64.b64encode(certificate.content)
+                certificate_pdf_type = 'certificateOfDissolution'
+                certificate_encoded = get_filing_document(business['identifier'], filing.id,
+                                                          certificate_pdf_type, token)
+                if certificate_encoded:
                     pdfs.append(
                         {
                             'fileName': 'Certificate of Dissolution.pdf',
@@ -140,19 +126,14 @@ def _get_pdfs(
 
             if legal_type == Business.LegalTypes.COOP.value:
                 # certifiedAffidavit
-                certified_affidavit = requests.get(
-                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=affidavit',
-                    headers=headers
-                )
-                if certified_affidavit.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get affidavit pdf for filing: %s', filing.id)
-                else:
-                    certificate_encoded = base64.b64encode(certified_affidavit.content)
+                certified_affidavit_pdf_type = 'affidavit'
+                certified_affidavit_encoded = get_filing_document(business['identifier'], filing.id,
+                                                                  certified_affidavit_pdf_type, token)
+                if certified_affidavit_encoded:
                     pdfs.append(
                         {
                             'fileName': 'Certified Affidavit.pdf',
-                            'fileBytes': certificate_encoded.decode('utf-8'),
+                            'fileBytes': certified_affidavit_encoded.decode('utf-8'),
                             'fileUrl': '',
                             'attachOrder': str(attach_order)
                         }
@@ -160,19 +141,14 @@ def _get_pdfs(
                     attach_order += 1
 
                 # specialResolution
-                special_resolution = requests.get(
-                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=specialResolution',
-                    headers=headers
-                )
-                if special_resolution.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get specialResolution pdf for filing: %s', filing.id)
-                else:
-                    certificate_encoded = base64.b64encode(special_resolution.content)
+                special_resolution_pdf_type = 'specialResolution'
+                special_resolution_encoded = get_filing_document(business['identifier'], filing.id,
+                                                                 special_resolution_pdf_type, token)
+                if special_resolution_encoded:
                     pdfs.append(
                         {
                             'fileName': 'Certified Special Resolution.pdf',
-                            'fileBytes': certificate_encoded.decode('utf-8'),
+                            'fileBytes': special_resolution_encoded.decode('utf-8'),
                             'fileUrl': '',
                             'attachOrder': str(attach_order)
                         }
