@@ -179,7 +179,6 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
 
         # get stage_1 & stage_2 delay configs
         stage_1_delay = timedelta(days=app.config.get('STAGE_1_DELAY'))
-        stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
 
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
@@ -200,12 +199,9 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
                                                batch_id=batch.id,
                                                business_id=business.id)
 
-            target_dissolution_date = batch_processing.created_date + stage_1_delay + stage_2_delay
-
             batch_processing.meta_data = {
                 'overdueARs': ar_overdue,
-                'overdueTransition': transition_overdue,
-                'targetDissolutionDate': target_dissolution_date.date().isoformat()
+                'overdueTransition': transition_overdue
             }
             batch_processing.save()
             app.logger.debug(f'New batch processing has been created with ID: {batch_processing.id}')

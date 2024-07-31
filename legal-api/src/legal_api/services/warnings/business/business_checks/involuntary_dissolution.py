@@ -13,8 +13,12 @@
 # limitations under the License.
 
 """Service to check involuntary dissolution for a business."""
-from legal_api.models import Business
+from datedelta import datedelta
+from flask import current_app
+
+from legal_api.models import BatchProcessing, Business
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
+from legal_api.utils.datetime import datetime
 
 from . import BusinessWarningCodes, WarningType
 
@@ -52,11 +56,35 @@ def check_business(business: Business) -> list:
             result.append(transition_warning)
         elif dis_details.ar_overdue:
             result.append(ar_overdue_warning)
+
+        data = _get_modified_warning_data(batch_processing)
+
         result.append({
             'code': BusinessWarningCodes.DISSOLUTION_IN_PROGRESS,
-            'data': batch_processing.meta_data,
+            'data': data,
             'message': 'Business is in the process of involuntary dissolution.',
             'warningType': WarningType.INVOLUNTARY_DISSOLUTION
         })
 
     return result
+
+
+def _get_modified_warning_data(batch_processing: BatchProcessing) -> dict:
+    """Return involuntary disssolution warning data based on rules."""
+    meta_data = batch_processing.meta_data if batch_processing.meta_data else {}
+
+    trigger_date = batch_processing.trigger_date
+    current_date = datetime.utcnow()
+    modified_target_date = None
+    if batch_processing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1:
+        modified_target_date = max(current_date, trigger_date) + datedelta(days=current_app.config.get('STAGE_2_DELAY'))
+    elif batch_processing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2:
+        modified_target_date = max(current_date, trigger_date)
+
+    if modified_target_date:
+        meta_data = {
+            **meta_data,
+            'targetDissolutionDate': modified_target_date.date().isoformat()
+        }
+
+    return meta_data

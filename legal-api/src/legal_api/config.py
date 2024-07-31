@@ -175,6 +175,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
     REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
 
+    # involuntary dissolution
+    STAGE_1_DELAY = int(os.getenv('STAGE_1_DELAY', '42'))
+    STAGE_2_DELAY = int(os.getenv('STAGE_2_DELAY', '30'))
+
     TESTING = False
     DEBUG = False
 
