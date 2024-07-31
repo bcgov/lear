@@ -889,7 +889,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     def set_effective_date(business: Business, filing: Filing):
         """Set the effective date of the Filing."""
         filing_type = filing.filing_json['filing']['header']['name']
-        if business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
+        if filing_type == 'changeOfAddress' and business.legal_type != Business.LegalTypes.COOP.value:
             effective_date = LegislationDatetime.tomorrow_midnight()
             effective_date_utc = LegislationDatetime.as_utc_timezone(effective_date)
             filing_json_update = copy.deepcopy(filing.filing_json)
