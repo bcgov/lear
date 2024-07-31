@@ -83,7 +83,8 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     AUTH_URL = os.getenv('AUTH_URL', '')
     USERNAME = os.getenv('AUTH_USERNAME', '')
     PASSWORD = os.getenv('AUTH_PASSWORD', '')
-    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
 
     SECRET_KEY = 'a secret'
 
