@@ -28,7 +28,8 @@ def before_breadcrumb(crumb, hint):  # pylint: disable=unused-argument; callback
 
 
 # Configure Sentry
-SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
 
 # Configure default log level to ERROR
 # Override with envirionment variable if needed
