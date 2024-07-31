@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Check out the repository
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
       - name: Install spectral
         run: npm install --location=global @stoplight/spectral-cli
       - name: Run spectral
