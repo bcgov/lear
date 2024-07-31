@@ -16,7 +16,7 @@ from typing import Dict
 
 from datedelta import datedelta
 from legal_api.models import BatchProcessing, Business
-from legal_api.utils.datetime import date, datetime
+from legal_api.utils.datetime import datetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_address, update_address
