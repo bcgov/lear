@@ -204,8 +204,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
 
             batch_processing.meta_data = {
                 'overdueARs': ar_overdue,
-                'overdueTransition': transition_overdue,
-                'targetDissolutionDate': target_dissolution_date.date().isoformat()
+                'overdueTransition': transition_overdue
             }
             batch_processing.save()
             app.logger.debug(f'New batch processing has been created with ID: {batch_processing.id}')
