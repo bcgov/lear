@@ -2690,11 +2690,7 @@ paths:
                         authorization: 
                             date: '2024-07-01'
                             files: 
-                              - file:
-                                  lastModified: 1667594705083
-                                  name: TestPDFfile.pdf
-                                  size: 83186
-                                fileKey: 0d41f3b2-f711-4733-88fd-8169646c7dbe.pdf
+                              - fileKey: 0d41f3b2-f711-4733-88fd-8169646c7dbe.pdf
                                 fileName: TestPDFfile.pdf
                         contactPoint: 
                             email: test@test.com
