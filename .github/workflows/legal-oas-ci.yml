@@ -17,7 +17,14 @@ permissions:
   checks: write
 
 jobs:
-  business-oas-ci:
-    uses: bcgov/bcregistry-sre/.github/workflows/oas-ci.yaml@main
-    with:
-      working_directory: "."
+  build:
+    name: Run Spectral
+    runs-on: ubuntu-latest
+    steps:
+      # Check out the repository
+      - uses: actions/checkout@v3
+
+      # Run Spectral
+      - uses: stoplightio/spectral-action@latest
+        with:
+          file_glob: 'doc/api/*.yaml'
