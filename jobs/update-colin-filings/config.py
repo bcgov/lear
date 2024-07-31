@@ -48,7 +48,8 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     COLIN_URL = os.getenv('COLIN_URL', '')
     LEGAL_API_URL = os.getenv('LEGAL_API_URL', '')
-    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
 
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)

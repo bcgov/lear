@@ -47,7 +47,8 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SEND_OUTSTANDING_BCOMPS = os.getenv('SEND_OUTSTANDING_BCOMPS', None)
-    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
