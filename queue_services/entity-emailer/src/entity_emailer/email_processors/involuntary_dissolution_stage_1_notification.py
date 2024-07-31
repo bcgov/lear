@@ -44,6 +44,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     furnishing = Furnishing.find_by_id(furnishing_id)
     business = furnishing.business
     business_identifier = business.identifier
+    # get template
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-STAGE-1.html'
     ).read_text()
@@ -57,7 +58,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     html_out = jnja_template.render(
         business=business.json(),
         entity_dashboard_url=get_entity_dashboard_url(business_identifier, token),
-        extra_provincials=extra_provincials
+        extra_provincials=extra_provincials,
+        furnishing_name=furnishing.furnishing_name
     )
     # get recipients
     recipients = []
