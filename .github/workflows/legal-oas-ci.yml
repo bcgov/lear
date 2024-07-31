@@ -11,7 +11,12 @@ defaults:
   run:
     shell: bash
     working-directory: .
-
+    
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  
 jobs:
   business-oas-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/oas-ci.yaml@main
