@@ -17,12 +17,12 @@ Processors hold the business logic for how an email is interpreted and sent.
 """
 from __future__ import annotations
 
+import base64
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Tuple
 
-import base64
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app

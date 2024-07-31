@@ -26,7 +26,10 @@ from jinja2 import Template
 from legal_api.models import Business, CorpType, Filing
 
 from entity_emailer.email_processors import (
-    get_entity_dashboard_url, get_filing_document, get_filing_info, substitute_template_parts
+    get_entity_dashboard_url,
+    get_filing_document,
+    get_filing_info,
+    substitute_template_parts,
 )
 
 
