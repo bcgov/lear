@@ -2876,6 +2876,11 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                incorporation-unauthorized-response:
+                  summary: Incorporation - Not Authorized To Submit Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
       description: Submitting a creation filing for a business will create that type of business if it is a fully valid filing and payment has been completed.
       requestBody:
         content:
