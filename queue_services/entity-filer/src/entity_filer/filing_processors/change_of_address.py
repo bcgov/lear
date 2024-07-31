@@ -10,14 +10,13 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.
+# limitations under the License..
 """File processing rules and actions for the change of address."""
 from typing import Dict
 
 from datedelta import datedelta
 from legal_api.models import BatchProcessing, Business
 from legal_api.utils.datetime import datetime
-
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_address, update_address
