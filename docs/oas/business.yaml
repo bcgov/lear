@@ -2454,7 +2454,7 @@ paths:
                         certifiedBy: API Specs
                         colinIds: []
                         comments: []
-                        date: '2024-07-25T16:17:57.191108+00:00'
+                        date: '2024-07-25'
                         deletionLocked: false
                         effectiveDate: '2024-07-25T16:17:57.191129+00:00'
                         email: no_one@never.get
@@ -2896,7 +2896,7 @@ paths:
                       certifiedBy: API Specs
                       email: no_one@never.get
                       name: incorporationApplication
-                      date: 2024-07-25T19:54:02.949741+00:00
+                      date: '2024-07-25'
                       accountId: 6164
                     incorporationApplication:
                       nameRequest:
