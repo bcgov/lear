@@ -23,4 +23,4 @@ jobs:
       - name: Install spectral
         run: npm install --location=global @stoplight/spectral-cli
       - name: Run spectral
-        run: spectral lint docs/business.yaml --ruleset .spectral.yaml --verbose
+        run: spectral lint docs/*.yaml --ruleset .spectral.yaml --verbose
