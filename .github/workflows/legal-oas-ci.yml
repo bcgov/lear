@@ -1,7 +1,7 @@
-name: Business API OAS CI333
+name: Business API OAS CI
 
 on:
-  push:
+  pull_request:
     paths:
       - "docs/**"
 
@@ -21,7 +21,9 @@ jobs:
       # Check out the repository
       - uses: actions/checkout@v3
 
-      # Run Spectral
-      - uses: stoplightio/spectral-action@latest
-        with:
-          file_glob: 'doc/api/*.yaml'
+      - name: Setup Node
+        uses: actions/setup-node@v3
+      - name: Install spectral
+        run: npm install --location=global @stoplight/spectral-cli
+      - name: Run spectral
+        run: spectral lint docs/business.yaml --ruleset .spectral.yml --verbose
