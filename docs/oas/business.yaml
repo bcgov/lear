@@ -4414,7 +4414,7 @@ components:
           timestamp: '2022-04-19 15:59:55'
           reference:
             businessId: C1234567
-    Continuation_In:
+    Continuation_in:
       type: object
       title: Continuation In Filing
       description: Represents the filing for a foreign corporation applying to “continue in” to BC. To do so, authorization must have been received from the foreign jurisdiction. Authorization is typically in the form of a letter. The authorization must be sent to the registry as a precondition to this transaction.
