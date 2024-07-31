@@ -1,11 +1,9 @@
 name: Business API OAS CI
 
 on:
-  pull_request:
-    types: [assigned, opened, synchronize, reopened]
+  push:
     paths:
       - "docs/**"
-  workflow_dispatch:
 
 defaults:
   run:
