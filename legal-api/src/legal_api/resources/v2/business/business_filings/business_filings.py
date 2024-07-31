@@ -416,6 +416,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if not draft:
             # Check if this is an nr and update as needed
             ListFilingResource.check_and_update_nr(filing)
+            ListFilingResource.set_effective_date(business, filing)
 
             filing_types = ListFilingResource.get_filing_types(business, filing.filing_json)
             pay_msg, pay_code = ListFilingResource.create_invoice(business,
@@ -427,7 +428,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 reply = filing.json
                 reply['errors'] = [pay_msg, ]
                 return jsonify(reply), pay_code
-            ListFilingResource.set_effective_date(business, filing)
             return pay_msg, pay_code
 
         return None, None
