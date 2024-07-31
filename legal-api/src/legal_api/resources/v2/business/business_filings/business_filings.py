@@ -42,7 +42,9 @@ from legal_api.models import (
     Filing,
     OfficeType,
     RegistrationBootstrap,
+    Review,
     ReviewResult,
+    ReviewStatus,
     User,
     UserRoles,
     db,
@@ -105,7 +107,7 @@ def get_filings(identifier: str, filing_id: Optional[int] = None):
 @cross_origin(origin='*')
 @jwt.requires_auth
 @pydantic_validate()
-def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-statements,too-many-locals
+def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-statements,too-many-locals,too-many-branches
                    query: QueryModel,
                    identifier,
                    filing_id: Optional[int] = None):
@@ -151,10 +153,16 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
     except Exception as err:
         print(err)
 
-    # complete filing
-    response, response_code = ListFilingResource.complete_filing(business, filing, query.draft, payment_account_id)
-    if response and (response_code != HTTPStatus.CREATED or filing.source == Filing.Source.COLIN.value):
-        return response, response_code
+    if filing.in_change_requested_status:
+        # resubmit filing
+        ListFilingResource.resubmit_filing_for_review(filing)
+        ListFilingResource.check_and_update_nr(filing)
+        response = {'isPaymentActionRequired': False}
+    else:
+        # complete filing
+        response, response_code = ListFilingResource.complete_filing(business, filing, query.draft, payment_account_id)
+        if response and (response_code != HTTPStatus.CREATED or filing.source == Filing.Source.COLIN.value):
+            return response, response_code
 
     # all done
     filing_json = filing.json
@@ -189,7 +197,7 @@ def delete_filings(identifier, filing_id=None):
     if not filing:
         return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
-    if filing.deletion_locked:  # should not be deleted
+    if filing.locked:  # should not be deleted
         return ListFilingResource.create_deletion_locked_response(identifier, filing)
 
     try:
@@ -258,7 +266,7 @@ def patch_filings(identifier, filing_id=None):
     return jsonify(filing.json), HTTPStatus.ACCEPTED
 
 
-class ListFilingResource():
+class ListFilingResource():  # pylint: disable=too-many-public-methods
     """Business Filings service."""
 
     @staticmethod
@@ -362,19 +370,21 @@ class ListFilingResource():
     def create_deletion_locked_response(identifier, filing):
         """Create a filing that draft that cannot be deleted."""
         business = Business.find_by_identifier(identifier)
+        err_message = 'This filing cannot be deleted.'
+        err_code = HTTPStatus.FORBIDDEN
         if (filing.status == Filing.Status.DRAFT.value and
                 filing.filing_type == 'alteration' and
                 business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
                                                             Business.UNLIMITED_COMPANIES)]):
-            response = jsonify({
-                'message': _('You must complete this alteration filing to become a BC Benefit Company.')
-            }), HTTPStatus.UNAUTHORIZED
-        else:
-            response = jsonify({
-                'message': _('This filing cannot be deleted at this moment.')
-            }), HTTPStatus.UNAUTHORIZED
+            err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
+            err_code = HTTPStatus.UNAUTHORIZED
+        elif filing.status in [Filing.Status.DRAFT.value, Filing.Status.PENDING.value]:
+            err_message = 'This filing cannot be deleted at this moment.'
+            err_code = HTTPStatus.UNAUTHORIZED
 
-        return response
+        return jsonify({
+            'message': _(err_message)
+        }), err_code
 
     @staticmethod
     def check_and_update_nr(filing):
@@ -587,20 +597,13 @@ class ListFilingResource():
 
         try:
             filing.submitter_id = user.id
-            filing.filing_json = json_input
+            filing.filing_json = ListFilingResource.sanitize_html_fields(json_input)
             filing.source = filing.filing_json['filing']['header'].get('source', Filing.Source.LEAR.value)
             if filing.source == Filing.Source.COLIN.value:
-                try:
-                    filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
-                    for colin_id in filing.filing_json['filing']['header']['colinIds']:
-                        colin_event_id = ColinEventId()
-                        colin_event_id.colin_event_id = colin_id
-                        filing.colin_event_ids.append(colin_event_id)
-                except KeyError:
-                    current_app.logger.error('Business:%s missing filing/header values, unable to save',
-                                             business.identifier)
-                    return None, None, {'message': 'missing filing/header values'}, HTTPStatus.BAD_REQUEST
-            else:
+                err_msg, err_code = ListFilingResource._save_colin_event_ids(filing, business)
+                if err_code:
+                    return None, None, err_msg, err_code
+            elif not filing.in_change_requested_status:
                 filing.filing_date = datetime.datetime.utcnow()
 
             # for any legal type, set effective date as set in json; otherwise leave as default
@@ -608,12 +611,26 @@ class ListFilingResource():
                 datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
                 if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
-            filing.filing_json = ListFilingResource.sanitize_html_fields(filing.filing_json)
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
 
         return business or bootstrap, filing, None, None
+
+    @staticmethod
+    def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
+        try:
+            filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
+            for colin_id in filing.filing_json['filing']['header']['colinIds']:
+                colin_event_id = ColinEventId()
+                colin_event_id.colin_event_id = colin_id
+                filing.colin_event_ids.append(colin_event_id)
+        except KeyError:
+            current_app.logger.error('Business:%s missing filing/header values, unable to save',
+                                     business.identifier)
+            return {'message': 'missing filing/header values'}, HTTPStatus.BAD_REQUEST
+
+        return None, None
 
     @staticmethod
     def sanitize_html_fields(filing_json):
@@ -872,12 +889,7 @@ class ListFilingResource():
     def set_effective_date(business: Business, filing: Filing):
         """Set the effective date of the Filing."""
         filing_type = filing.filing_json['filing']['header']['name']
-        if filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
-            if fe_date := filing.filing_json['filing']['header'].get('futureEffectiveDate'):
-                filing.effective_date = datetime.datetime.fromisoformat(fe_date)
-                filing.save()
-
-        elif business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
+        if business.legal_type != Business.LegalTypes.COOP.value and filing_type == 'changeOfAddress':
             effective_date = LegislationDatetime.tomorrow_midnight()
             effective_date_utc = LegislationDatetime.as_utc_timezone(effective_date)
             filing_json_update = copy.deepcopy(filing.filing_json)
@@ -949,3 +961,38 @@ class ListFilingResource():
                 'value': f'{business_identifier}'
             }
         ]
+
+    @staticmethod
+    def resubmit_filing_for_review(filing: Filing):
+        """Resubmit filing for review."""
+        review = Review.get_review(filing.id)
+        review.status = ReviewStatus.RESUBMITTED
+        review.nr_number = filing.filing_json['filing'][filing.filing_type].get('nameRequest', {}).get('nrNumber')
+        review.identifier = filing.filing_json['filing'][filing.filing_type].get(
+            'foreignJurisdiction', {}).get('identifier')
+        review.completing_party = ListFilingResource.get_completing_party(
+            filing.filing_json['filing'][filing.filing_type].get('parties', []))
+        review.submission_date = datetime.datetime.utcnow()
+
+        review_result = ReviewResult.get_last_review_result(filing.id)
+        review_result.submission_date = review.submission_date
+        review.review_results.append(review_result)
+        review.save()
+
+        filing.resubmit_filing_to_awaiting_review(review.submission_date)
+
+    @staticmethod
+    def get_completing_party(parties: list):
+        """Get full name of the completing party."""
+        for party in parties:
+            for role in party.get('roles', []):
+                if role['roleType'] == 'Completing Party':
+                    names = []
+                    names.append(party['officer']['firstName'])
+
+                    if middle_name := party['officer'].get('middleName'):
+                        names.append(middle_name)
+
+                    names.append(party['officer']['lastName'])
+                    return ' '.join(names).strip()
+        return None

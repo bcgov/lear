@@ -86,7 +86,7 @@ def save_review(review_id: int):
         ReviewStatus.APPROVED: Filing.Status.APPROVED.value,
         ReviewStatus.REJECTED: Filing.Status.REJECTED.value,
     }
-    filing.set_review_status(status_mapping[status])
+    filing.set_review_decision(status_mapping[status])
 
     # emailer notification
     queue.publish_json(

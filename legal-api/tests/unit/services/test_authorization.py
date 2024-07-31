@@ -358,6 +358,7 @@ def expected_lookup(filing_keys: list):
         results.append(EXPECTED_DATA[filing_key])
     return results
 
+
 def expected_lookup_continue_in_corps(filing_keys: list):
     results = []
     for filing_key in filing_keys:
@@ -699,7 +700,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
          ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'], 'general', [BASIC_USER], True),
         ('user_active', Business.State.ACTIVE, 'alteration', None,
          ['CP', 'LLC'], 'general', [BASIC_USER], False),
-        
+
         ('user_active_allowed', Business.State.ACTIVE, 'amalgamationApplication', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], True),
         ('user_active_allowed', Business.State.ACTIVE, 'amalgamationApplication', None,
@@ -1064,8 +1065,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
             account_products_mock.append({'code': 'CA_SEARCH', 'subscriptionStatus': 'ACTIVE'})
 
         requests_mock.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
-                            json=account_products_mock,
-                            status_code=HTTPStatus.OK)
+                          json=account_products_mock,
+                          status_code=HTTPStatus.OK)
 
         for legal_type in legal_types:
             business = None
@@ -1710,7 +1711,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_continue_in_corps', Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'], 'staff', 
+        ('staff_historical_continue_in_corps', Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'], 'staff',
          [STAFF_ROLE],
          BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.COURT_ORDER,
@@ -2203,7 +2204,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
         ('staff_active_continue_in_corps_valid_state_filing_fail', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'],
-          'staff', [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
+         'staff', [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup_continue_in_corps([FilingKey.ADMN_FRZE,
                                             FilingKey.AGM_EXTENSION,
                                             FilingKey.AGM_LOCATION_CHANGE,
@@ -2351,7 +2352,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_continue_in_corps_invalid_state_filing_fail', Business.State.HISTORICAL, 
+        ('staff_historical_continue_in_corps_invalid_state_filing_fail', Business.State.HISTORICAL,
          ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE], ['continuationIn', 'continuationOut'], [None, None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -2456,6 +2457,43 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                                               filing_type=filing_type)
             filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing.id)
             assert filing_types == expected
+
+
+@pytest.mark.parametrize('filing_status, expected', [
+    (Filing.Status.DRAFT.value, True),
+    (Filing.Status.CHANGE_REQUESTED.value, True),
+    (Filing.Status.PENDING.value, False),
+    (Filing.Status.PAID.value, False),
+    (Filing.Status.AWAITING_REVIEW.value, False),
+    (Filing.Status.APPROVED.value, False),
+    (Filing.Status.REJECTED.value, False),
+    (Filing.Status.COMPLETED.value, False),
+    (Filing.Status.CORRECTED.value, False),
+    (Filing.Status.EPOCH.value, False),
+    (Filing.Status.ERROR.value, False),
+    (Filing.Status.PENDING_CORRECTION.value, False),
+])
+def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, expected):
+    """Assert that a filing can be resubmitted."""
+    token = helper_create_jwt(jwt, roles=[BASIC_USER], username='username')
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        filing_type = 'continuationIn'
+        filing_dict = FILING_DATA.get(filing_type, None)
+        filing = create_incomplete_filing(business=None,
+                                          filing_name=filing_type,
+                                          filing_status=filing_status,
+                                          filing_dict=filing_dict,
+                                          filing_type=filing_type)
+        filing.save()
+
+        filing_types = is_allowed(None, Business.State.ACTIVE, filing_type, 'CBEN', jwt, None, filing.id)
+        assert filing_types == expected
 
 
 @pytest.mark.parametrize(

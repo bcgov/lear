@@ -11,7 +11,7 @@
 """Filings are legal documents that alter the state of a business."""
 # pylint: disable=too-many-lines
 import copy
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
 from typing import Final, List
@@ -637,7 +637,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @filing_json.setter
     def filing_json(self, json_data: dict):
         """Property containing the filings data."""
-        if self.locked:
+        if self.locked and not self.in_change_requested_status:
             self._raise_default_lock_exception()
 
         try:
@@ -652,7 +652,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         self._filing_sub_type = self.get_filings_sub_type(self._filing_type, json_data)
 
-        if self._payment_token:
+        if self._payment_token and not self.in_change_requested_status:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
             if not valid:
                 self._filing_type = None
@@ -711,8 +711,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
                 self.effective_date is None or (
                     self.payment_completion_date
-                    and self.effective_date < self.payment_completion_date
-                )):  # pylint: disable=W0143; hybrid property
+                    and self.effective_date < self.payment_completion_date  # pylint: disable=comparison-with-callable
+                )):
             self.effective_date = self.payment_completion_date
 
     def effective_date_can_be_before_payment_completion_date(self, business_type):
@@ -753,6 +753,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def is_amalgamation_application(self):
         """Is this an amalgamation application filing."""
         return self.filing_type == Filing.FILINGS['amalgamationApplication'].get('name')
+
+    @property
+    def in_change_requested_status(self):
+        """Filing is in change requested status."""
+        return self._status == Filing.Status.CHANGE_REQUESTED.value
 
     @hybrid_property
     def comments_count(self):
@@ -1076,8 +1081,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         self._payment_token = None
         self.save()
 
-    def set_review_status(self, filing_status):
-        """Set review status."""
+    def set_review_decision(self, filing_status):
+        """Set review decision."""
         if filing_status not in [Filing.Status.CHANGE_REQUESTED.value,
                                  Filing.Status.APPROVED.value,
                                  Filing.Status.REJECTED.value]:
@@ -1085,10 +1090,22 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 error=f'Cannot set this filing status {filing_status}.',
                 status_code=HTTPStatus.FORBIDDEN
             )
-        setattr(self, 'skip_status_listener', True)
         self._status = filing_status
+        if (self._status == Filing.Status.APPROVED.value and
+                self.effective_date < datetime.now(timezone.utc)):  # if not future effective
+            self.effective_date = datetime.now(timezone.utc)
         self.save()
-        setattr(self, 'skip_status_listener', False)
+
+    def resubmit_filing_to_awaiting_review(self, submission_date):
+        """Resubmit filing to awaiting review."""
+        if self._status != Filing.Status.CHANGE_REQUESTED.value:
+            raise BusinessException(
+                error='Cannot resubmit this filing to awaiting review status.',
+                status_code=HTTPStatus.FORBIDDEN
+            )
+        self._status = Filing.Status.AWAITING_REVIEW.value
+        self.resubmission_date = submission_date
+        self.save()
 
     def legal_filings(self) -> List:
         """Return a list of the filings extracted from this filing submission.
@@ -1127,6 +1144,13 @@ def block_filing_delete_listener_function(mapper, connection, target):  # pylint
 def receive_before_change(mapper, connection, target):  # pylint: disable=unused-argument; SQLAlchemy callback signature
     """Set the state of the filing, based upon column values."""
     filing = target
+
+    # pylint: disable=protected-access
+    if (filing._status in [Filing.Status.AWAITING_REVIEW.value,
+                           Filing.Status.CHANGE_REQUESTED.value,
+                           Filing.Status.REJECTED.value] or
+            (filing._status == Filing.Status.APPROVED.value and not filing.transaction_id)):
+        return  # should not override status in the review process
 
     # skip this status updater if the flag is set
     # Scenario: if this is a correction filing, and would have been set to COMPLETE by the entity filer, leave it as is
