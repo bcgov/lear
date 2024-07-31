@@ -628,8 +628,5 @@ def factory_batch_processing(batch_id,
         notes=notes
     )
     target_dissolution_date = created_date + datedelta(days=72)
-    batch_processing.meta_data = {
-        'targetDissolutionDate': target_dissolution_date.date().isoformat()
-    }
     batch_processing.save()
     return batch_processing
