@@ -1,7 +1,7 @@
 name: Business API OAS CI
 
 on:
-  pull_request_target:
+  pull_request:
     types: [assigned, opened, synchronize, reopened]
     paths:
       - "docs/**"
@@ -13,8 +13,6 @@ defaults:
     working-directory: .
 
 permissions:
-  contents: write
-  actions: write
   checks: write
 
 jobs:
