@@ -2807,9 +2807,9 @@ paths:
                         certifiedBy: full name
                         colinIds: []
                         comments: []
-                        date: 2024-07-25T19:54:02.949741+00:00
+                        date: '2024-07-25'
                         deletionLocked: false
-                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        effectiveDate: '2024-07-25'
                         email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
