@@ -190,7 +190,7 @@ def search_businesses():
 
             if (draft_dao.status in [Filing.Status.PAID.value, Filing.Status.APPROVED.value] and
                     draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
-                draft['isFutureEffective'] = True
+                draft['effectiveDate'] = draft_dao.effective_date.isoformat()
 
             if draft_dao.json_nr:
                 draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available

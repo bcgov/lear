@@ -470,7 +470,7 @@ def test_post_affiliated_businesses(session, client, jwt):
         assert draft_entity['legalType'] == expected_draft_business[2]
         assert draft_entity['draftType'] == Filing.FILINGS.get(expected_draft_business[1], {}).get('temporaryCorpTypeCode')
         assert draft_entity['draftStatus'] == Filing.Status.PENDING.value
-        assert 'isFutureEffective' not in draft_entity
+        assert 'effectiveDate' not in draft_entity
         if expected_draft_business and expected_draft_business[3]:
             # if NR number is present, assert 'legalName' is also expected to be present
             assert 'legalName' in draft_entity
@@ -513,7 +513,9 @@ def test_filing_is_future_effective(session, client, jwt, is_future_effective):
     filing.save()
 
     # Make a request to retrieve the draft businesses
-    rv = client.post('/api/v2/businesses/search', json={'identifiers': [identifier]}, headers=create_header(jwt, [SYSTEM_ROLE]))
+    rv = client.post('/api/v2/businesses/search',
+                     json={'identifiers': [identifier]},
+                     headers=create_header(jwt, [SYSTEM_ROLE]))
 
     assert rv.status_code == HTTPStatus.OK
 
@@ -523,9 +525,9 @@ def test_filing_is_future_effective(session, client, jwt, is_future_effective):
 
     draft_entity = draft_entities[0]
     if is_future_effective:
-        assert draft_entity.get('isFutureEffective') == True
+        assert draft_entity.get('effectiveDate') == filing.effective_date.isoformat()
     else:
-        assert 'isFutureEffective' not in draft_entity
+        assert 'effectiveDate' not in draft_entity
 
 
 def test_post_affiliated_businesses_unathorized(session, client, jwt):
