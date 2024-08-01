@@ -467,6 +467,10 @@ def test_post_affiliated_businesses(session, client, jwt):
     for draft_entity in rv.json['draftEntities']:
         identifier = draft_entity['identifier']
         expected_draft_business = next((draftb for draftb in draft_businesses if draftb[0] == identifier), None)
+        assert draft_entity['legalType'] == expected_draft_business[2]
+        assert draft_entity['draftType'] == Filing.FILINGS.get(expected_draft_business[1], {}).get('temporaryCorpTypeCode')
+        assert draft_entity['draftStatus'] == Filing.Status.PENDING.value
+        assert 'effectiveDate' not in draft_entity
         if expected_draft_business and expected_draft_business[3]:
             # if NR number is present, assert 'legalName' is also expected to be present
             assert 'legalName' in draft_entity
@@ -474,6 +478,56 @@ def test_post_affiliated_businesses(session, client, jwt):
             # assert 'legalName' is numberedDescription if no NR number is provided
             assert (draft_entity.get('legalName') ==
                     Business.BUSINESSES[expected_draft_business[2]]['numberedDescription'])
+
+
+@pytest.mark.parametrize('is_future_effective', [
+    False,
+    True
+])
+def test_filing_is_future_effective(session, client, jwt, is_future_effective):
+    """Test draft regular amalgamation with various name selection scenarios."""
+    # Setup a temporary registration and draft filing
+    filing_name = 'incorporationApplication'
+    identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header']['name'] = filing_name
+    json_data['filing']['header']['identifier'] = identifier
+    del json_data['filing']['business']
+    json_data['filing'][filing_name] = {
+        'nameRequest': {
+            'legalType': 'BEN'
+        }
+    }
+
+    # Save the draft filing
+    filing = factory_pending_filing(None, json_data)
+    filing.temp_reg = identifier
+    filing.payment_completion_date = datetime.utcnow()
+    filing.effective_date = datetime.utcnow()
+    if is_future_effective:
+        filing.effective_date = datetime.add_business_days(filing.effective_date, 1)
+    filing.save()
+
+    # Make a request to retrieve the draft businesses
+    rv = client.post('/api/v2/businesses/search',
+                     json={'identifiers': [identifier]},
+                     headers=create_header(jwt, [SYSTEM_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+
+    # Extract and assert on the draft entity
+    draft_entities = rv.json.get('draftEntities', [])
+    assert len(draft_entities) == 1
+
+    draft_entity = draft_entities[0]
+    if is_future_effective:
+        assert draft_entity.get('effectiveDate') == filing.effective_date.isoformat()
+    else:
+        assert 'effectiveDate' not in draft_entity
 
 
 def test_post_affiliated_businesses_unathorized(session, client, jwt):

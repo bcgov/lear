@@ -198,7 +198,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BEN': 'BCFDR',
                     'BC': 'BCFDR',
                     'ULC': 'BCFDR',
-                    'CC': 'BCFDR'
+                    'CC': 'BCFDR',
+                    'CBEN': 'BCFDR',
+                    'C': 'BCFDR',
+                    'CUL': 'BCFDR',
+                    'CCC': 'BCFDR'
                 }
             }
         },

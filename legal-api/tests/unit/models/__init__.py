@@ -380,12 +380,12 @@ def factory_share_class(business_identifier: str):
     return share_class
 
 
-def factory_incomplete_statuses(unknown_statuses:list = []):
+def factory_incomplete_statuses(unknown_statuses: list = []):
     result = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
-                       Filing.Status.PENDING_CORRECTION.value,
-                       Filing.Status.ERROR.value,
-                       Filing.Status.PAID.value]
+              Filing.Status.PENDING.value,
+              Filing.Status.PENDING_CORRECTION.value,
+              Filing.Status.ERROR.value,
+              Filing.Status.PAID.value]
 
     if unknown_statuses:
         result.extend(unknown_statuses)
@@ -410,19 +410,19 @@ def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
 def factory_batch_processing(batch_id,
                              business_id,
                              identifier,
-                             step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-                             status = BatchProcessing.BatchProcessingStatus.PROCESSING,
-                             trigger_date=datetime.utcnow()+datedelta(days=42),
-                             notes = ''
-                            ):
+                             step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+                             status=BatchProcessing.BatchProcessingStatus.PROCESSING,
+                             trigger_date=datetime.utcnow() + datedelta(days=42),
+                             notes=''
+                             ):
     batch_processing = BatchProcessing(
-        batch_id = batch_id,
-        business_id = business_id,
-        business_identifier = identifier,
-        step = step,
-        status = status,
-        trigger_date = trigger_date,
-        notes = notes
+        batch_id=batch_id,
+        business_id=business_id,
+        business_identifier=identifier,
+        step=step,
+        status=status,
+        trigger_date=trigger_date,
+        notes=notes
     )
     batch_processing.save()
     return batch_processing
