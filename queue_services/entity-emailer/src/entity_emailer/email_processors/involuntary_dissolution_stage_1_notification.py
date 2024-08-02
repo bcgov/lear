@@ -59,7 +59,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         business=business.json(),
         entity_dashboard_url=get_entity_dashboard_url(business_identifier, token),
         extra_provincials=extra_provincials,
-        furnishing_name=furnishing.furnishing_name
+        furnishing_name=furnishing.furnishing_name.name
     )
     # get recipients
     recipients = []
