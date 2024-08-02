@@ -20,6 +20,8 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from legal_api.models import Business, Filing
 
+from entity_emailer.email_processors import get_filing_document
+
 
 def get_completed_pdfs(
         token: str,
@@ -32,44 +34,29 @@ def get_completed_pdfs(
     """Get the completed pdfs for the special resolution output."""
     pdfs = []
     attach_order = 1
-    headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
-    }
 
     # specialResolution
-    special_resolution = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}'
-        f'/businesses/{business["identifier"]}'
-        f'/filings/{filing.id}'
-        '?type=specialResolution',
-        headers=headers
-    )
-    if special_resolution.status_code == HTTPStatus.OK:
-        certificate_encoded = base64.b64encode(special_resolution.content)
+    special_resolution_pdf_type = 'specialResolution'
+    special_resolution_encoded = get_filing_document(business['identifier'], filing.id,
+                                                     special_resolution_pdf_type, token)
+    if special_resolution_encoded:
         pdfs.append(
             {
                 'fileName': 'Special Resolution.pdf',
-                'fileBytes': certificate_encoded.decode('utf-8'),
+                'fileBytes': special_resolution_encoded.decode('utf-8'),
                 'fileUrl': '',
                 'attachOrder': str(attach_order)
             }
         )
         attach_order += 1
-    else:
-        logger.error('Failed to get specialResolution pdf for filing: %s, status code: %s',
-                     filing.id, special_resolution.status_code)
 
     # Change of Name
     if name_changed:
-        name_change = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certificateOfNameChange',
-            headers=headers
-            )
+        certified_name_change_pdf_type = 'certificateOfNameChange'
+        certified_name_change_encoded = get_filing_document(business['identifier'], filing.id,
+                                                            certified_name_change_pdf_type, token)
 
-        if name_change.status_code == HTTPStatus.OK:
-            certified_name_change_encoded = base64.b64encode(name_change.content)
+        if certified_name_change_encoded:
             pdfs.append(
                 {
                     'fileName': 'Certificate of Name Change.pdf',
@@ -79,19 +66,12 @@ def get_completed_pdfs(
                 }
             )
             attach_order += 1
-        else:
-            logger.error('Failed to get certificateOfNameChange pdf for filing: %s, status code: %s',
-                         filing.id, name_change.status_code)
 
     # Certified Rules
     if rules_changed:
-        rules = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certifiedRules',
-            headers=headers
-        )
-        if rules.status_code == HTTPStatus.OK:
-            certified_rules_encoded = base64.b64encode(rules.content)
+        rules_pdf_type = 'certifiedRules'
+        certified_rules_encoded = get_filing_document(business['identifier'], filing.id, rules_pdf_type, token)
+        if certified_rules_encoded:
             pdfs.append(
                 {
                     'fileName': 'Certified Rules.pdf',
@@ -104,13 +84,10 @@ def get_completed_pdfs(
 
     # Certified Memorandum
     if memorandum_changed:
-        memorandum = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certifiedMemorandum',
-            headers=headers
-        )
-        if memorandum.status_code == HTTPStatus.OK:
-            certified_memorandum_encoded = base64.b64encode(memorandum.content)
+        certified_memorandum_pdf_type = 'certifiedMemorandum'
+        certified_memorandum_encoded = get_filing_document(business['identifier'], filing.id,
+                                                           certified_memorandum_pdf_type, token)
+        if certified_memorandum_encoded:
             pdfs.append(
                 {
                     'fileName': 'Certified Memorandum.pdf',
@@ -140,18 +117,9 @@ def get_paid_pdfs(
     }
 
     # add filing pdf
-    sr_filing_pdf = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}'
-        f'/businesses/{business["identifier"]}'
-        f'/filings/{filing.id}'
-        '?type=specialResolutionApplication',
-        headers=headers
-    )
-
-    if sr_filing_pdf.status_code != HTTPStatus.OK:
-        logger.error('Failed to get pdf for filing: %s', filing.id)
-    else:
-        sr_filing_pdf_encoded = base64.b64encode(sr_filing_pdf.content)
+    sr_filing_pdf_type = 'specialResolutionApplication'
+    sr_filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, sr_filing_pdf_type, token)
+    if sr_filing_pdf_encoded:
         pdfs.append(
             {
                 'fileName': 'Special Resolution Application.pdf',

@@ -35,9 +35,10 @@ def test_complete_full_restoration_notification_includes_notice_of_articles_and_
     status = 'COMPLETED'
     filing = prep_restoration_filing(BUS_ID, '1', 'BC', LEGAL_NAME)
     with requests_mock.Mocker() as m:
-        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{BUS_ID}/filings/{filing.id}?type=noticeOfArticles',
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{BUS_ID}/filings/{filing.id}/documents/noticeOfArticles',
               content=b'pdf_content_1', status_code=200)
-        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{BUS_ID}/filings/{filing.id}?type=certificateOfRestoration',
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{BUS_ID}/filings/{filing.id}'
+              '/documents/certificateOfRestoration',
               content=b'pdf_content_2')
         output = restoration_notification.process({
             'filingId': filing.id,
@@ -61,7 +62,7 @@ def test_paid_restoration_notification_includes_receipt_and_restoration_applicat
     with requests_mock.Mocker() as m:
         m.post(f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
                content=b'pdf_content_1', status_code=201)
-        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{BUS_ID}/filings/{filing.id}',
+        m.get(f'{config.get("LEGAL_API_URL")}/businesses/{BUS_ID}/filings/{filing.id}/documents/restoration',
               content=b'pdf_content_2', status_code=200)
         output = restoration_notification.process({
             'filingId': filing.id,

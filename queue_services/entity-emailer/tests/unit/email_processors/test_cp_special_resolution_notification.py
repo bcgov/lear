@@ -79,19 +79,20 @@ def test_complete_special_resolution_attachments(session, config):
                         f'{config.get("LEGAL_API_URL")}'
                         f'/businesses/{IDENTIFIER}'
                         f'/filings/{filing.id}'
-                        f'?type=specialResolution'
+                        f'/documents/specialResolution'
                     ),
                     content=b'pdf_content_1',
                     status_code=200
                 )
                 m.get(
                     f'{config.get("LEGAL_API_URL")}/businesses/{IDENTIFIER}/filings/{filing.id}'
-                    '?type=certificateOfNameChange',
+                    '/documents/certificateOfNameChange',
                     content=b'pdf_content_2',
                     status_code=200
                 )
                 m.get(
-                    f'{config.get("LEGAL_API_URL")}/businesses/{IDENTIFIER}/filings/{filing.id}?type=certifiedRules',
+                    f'{config.get("LEGAL_API_URL")}/businesses/{IDENTIFIER}/filings/{filing.id}'
+                    '/documents/certifiedRules',
                     content=b'pdf_content_3',
                     status_code=200
                 )
@@ -130,7 +131,7 @@ def test_paid_special_resolution_attachments(session, config):
                         f'{config.get("LEGAL_API_URL")}'
                         f'/businesses/{IDENTIFIER}'
                         f'/filings/{filing.id}'
-                        f'?type=specialResolutionApplication'
+                        f'/documents/specialResolutionApplication'
                     ),
                     content=b'pdf_content_1',
                     status_code=200

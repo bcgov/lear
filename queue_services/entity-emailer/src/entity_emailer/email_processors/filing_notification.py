@@ -27,6 +27,7 @@ from legal_api.models import Business, Filing, UserRoles
 
 from entity_emailer.email_processors import (
     get_entity_dashboard_url,
+    get_filing_document,
     get_filing_info,
     get_recipients,
     get_user_email_from_auth,
@@ -62,14 +63,8 @@ def _get_pdfs(
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
-        filing_pdf = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            headers=headers
-        )
-        if filing_pdf.status_code != HTTPStatus.OK:
-            logger.error('Failed to get pdf for filing: %s', filing.id)
-        else:
-            filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+        filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing.filing_type, token)
+        if filing_pdf_encoded:
             file_name = filing.filing_type[0].upper() + \
                 ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
             if ar_date := filing.filing_json['filing'].get('annualReport', {}).get('annualReportDate'):
@@ -118,15 +113,9 @@ def _get_pdfs(
     if status == Filing.Status.COMPLETED.value:
         if legal_type != Business.LegalTypes.COOP.value:
             # add notice of articles
-            noa = requests.get(
-                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=noticeOfArticles',
-                headers=headers
-            )
-            if noa.status_code != HTTPStatus.OK:
-                logger.error('Failed to get noa pdf for filing: %s', filing.id)
-            else:
-                noa_encoded = base64.b64encode(noa.content)
+            noa_pdf_type = 'noticeOfArticles'
+            noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
+            if noa_encoded:
                 pdfs.append(
                     {
                         'fileName': 'Notice of Articles.pdf',
@@ -139,15 +128,9 @@ def _get_pdfs(
 
         if filing.filing_type == 'incorporationApplication':
             # add certificate
-            certificate = requests.get(
-                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=certificate',
-                headers=headers
-            )
-            if certificate.status_code != HTTPStatus.OK:
-                logger.error('Failed to get certificate pdf for filing: %s', filing.id)
-            else:
-                certificate_encoded = base64.b64encode(certificate.content)
+            certificate_pdf_type = 'certificate'
+            certificate_encoded = get_filing_document(business['identifier'], filing.id, certificate_pdf_type, token)
+            if certificate_encoded:
                 file_name = 'Incorporation Certificate.pdf'
                 pdfs.append(
                     {
@@ -161,15 +144,9 @@ def _get_pdfs(
 
             if legal_type == Business.LegalTypes.COOP.value:
                 # Add rules
-                rules = requests.get(
-                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=certifiedRules',
-                    headers=headers
-                )
-                if rules.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get certifiedRules pdf for filing: %s', filing.id)
-                else:
-                    certified_rules_encoded = base64.b64encode(rules.content)
+                rules_pdf_type = 'certifiedRules'
+                certified_rules_encoded = get_filing_document(business['identifier'], filing.id, rules_pdf_type, token)
+                if certified_rules_encoded:
                     pdfs.append(
                         {
                             'fileName': 'Certified Rules.pdf',
@@ -181,15 +158,10 @@ def _get_pdfs(
                     attach_order += 1
 
                 # Add memorandum
-                memorandum = requests.get(
-                    f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                    '?type=certifiedMemorandum',
-                    headers=headers
-                )
-                if memorandum.status_code != HTTPStatus.OK:
-                    logger.error('Failed to get certifiedMemorandum pdf for filing: %s', filing.id)
-                else:
-                    certified_memorandum_encoded = base64.b64encode(memorandum.content)
+                memorandum_pdf_type = 'memorandum'
+                certified_memorandum_encoded = get_filing_document(business['identifier'], filing.id,
+                                                                   memorandum_pdf_type, token)
+                if certified_memorandum_encoded:
                     pdfs.append(
                         {
                             'fileName': 'Certified Memorandum.pdf',
@@ -202,15 +174,9 @@ def _get_pdfs(
 
         if filing.filing_type == 'alteration' and get_additional_info(filing).get('nameChange', False):
             # add certificate of name change
-            certificate = requests.get(
-                f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-                '?type=certificateOfNameChange',
-                headers=headers
-            )
-            if certificate.status_code != HTTPStatus.OK:
-                logger.error('Failed to get certificateOfNameChange pdf for filing: %s', filing.id)
-            else:
-                certificate_encoded = base64.b64encode(certificate.content)
+            certificate_pdf_type = 'certificateOfNameChange'
+            certificate_encoded = get_filing_document(business['identifier'], filing.id, certificate_pdf_type, token)
+            if certificate_encoded:
                 file_name = 'Certificate of Name Change.pdf'
                 pdfs.append(
                     {

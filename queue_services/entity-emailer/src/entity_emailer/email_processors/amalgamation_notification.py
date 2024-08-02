@@ -27,6 +27,7 @@ from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filin
 
 from entity_emailer.email_processors import (
     get_entity_dashboard_url,
+    get_filing_document,
     get_filing_info,
     get_recipients,
     substitute_template_parts,
@@ -52,14 +53,9 @@ def _get_pdfs(
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
-        filing_pdf = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-            headers=headers
-        )
-        if filing_pdf.status_code != HTTPStatus.OK:
-            logger.error('Failed to get pdf for filing: %s', filing.id)
-        else:
-            filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+        filing_pdf_type = 'amalgamationApplication'
+        filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+        if filing_pdf_encoded:
             pdfs.append(
                 {
                     'fileName': f'{amalgamation_application_name}.pdf',
@@ -97,15 +93,9 @@ def _get_pdfs(
             attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
         # add certificate of amalgamation
-        certificate = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=certificateOfAmalgamation',
-            headers=headers
-        )
-        if certificate.status_code != HTTPStatus.OK:
-            logger.error('Failed to get corrected registration statement pdf for filing: %s', filing.id)
-        else:
-            certificate_encoded = base64.b64encode(certificate.content)
+        certificate_pdf_type = 'certificateOfAmalgamation'
+        certificate_encoded = get_filing_document(business['identifier'], filing.id, certificate_pdf_type, token)
+        if certificate_encoded:
             pdfs.append(
                 {
                     'fileName': 'Certificate Of Amalgamation.pdf',
@@ -116,15 +106,9 @@ def _get_pdfs(
             )
             attach_order += 1
         # add notice of articles
-        noa = requests.get(
-            f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-            '?type=noticeOfArticles',
-            headers=headers
-        )
-        if noa.status_code != HTTPStatus.OK:
-            logger.error('Failed to get noa pdf for filing: %s', filing.id)
-        else:
-            noa_encoded = base64.b64encode(noa.content)
+        noa_pdf_type = 'noticeOfArticles'
+        noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
+        if noa_encoded:
             pdfs.append(
                 {
                     'fileName': 'Notice of Articles.pdf',
