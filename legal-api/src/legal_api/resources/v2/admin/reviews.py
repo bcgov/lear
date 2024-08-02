@@ -17,7 +17,6 @@ from http import HTTPStatus
 
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
-from html_sanitizer import Sanitizer
 
 from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
 from legal_api.services import queue
@@ -76,7 +75,7 @@ def save_review(review_id: int):
     review_result = ReviewResult()
     review_result.reviewer_id = user.id
     review_result.status = status
-    review_result.comments = Sanitizer().sanitize(comment) if comment else None
+    review_result.comments = comment
     review.review_results.append(review_result)
     review.status = status
     review.save()
