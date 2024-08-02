@@ -14,24 +14,25 @@
 
 """Tests to assure the colin sync end-point."""
 import copy
-from datetime import datetime
 from http import HTTPStatus
 
-import datedelta
 import pytest
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
-    CHANGE_OF_ADDRESS,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
-    FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
 )
 
 from legal_api.models import Business, Filing
 from legal_api.services.authz import COLIN_SVC_ROLE
 from tests.unit.services.utils import create_header
-from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing  # noqa:E501,I001
+from tests.unit.models import (
+    factory_business,
+    factory_business_mailing_address,
+    factory_completed_filing,
+    factory_filing,
+)
 
 
 def test_get_internal_filings(session, client, jwt):
@@ -178,37 +179,3 @@ def test_post_colin_last_update(session, client, jwt):
                      )
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json == {'maxId': colin_id}
-
-
-def test_future_filing_coa(session, client, jwt):
-    """Assert that future effective filings are saved and have the correct status changes."""
-    import pytz
-    from tests.unit.models import factory_pending_filing
-    # setup
-    identifier = 'CP7654321'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
-    factory_business_mailing_address(b)
-    coa = copy.deepcopy(FILING_HEADER)
-    coa['filing']['header']['name'] = 'changeOfAddress'
-    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
-    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
-    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
-    coa['filing']['business']['identifier'] = identifier
-
-    filing = factory_pending_filing(b, coa)
-    filing.effective_date = datetime.utcnow() + datedelta.DAY
-    filing.save()
-    assert filing.status == Filing.Status.PENDING.value
-
-    filing.payment_completion_date = pytz.utc.localize(datetime.utcnow())
-    filing.save()
-
-    assert filing.status == Filing.Status.PAID.value
-
-    rv = client.get('/api/v2/businesses/internal/filings/PAID', headers=create_header(jwt, [COLIN_SVC_ROLE]))
-    paid_filings = rv.json
-    assert paid_filings[0]
-    # check values that future effective filings job depends on are there
-    assert paid_filings[0]['filing']['header']['filingId'] == filing.id
-    assert paid_filings[0]['filing']['header']['paymentToken']
-    assert paid_filings[0]['filing']['header']['effectiveDate']

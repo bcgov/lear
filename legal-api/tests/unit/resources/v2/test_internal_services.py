@@ -13,15 +13,64 @@
 # limitations under the License.
 
 """Tests to assure the internal end-point is working as expected."""
-from unittest.mock import patch
+import copy
+import datedelta
+from freezegun import freeze_time
 import pytest
+from datetime import datetime, timezone
 from http import HTTPStatus
+from unittest.mock import patch
+from registry_schemas.example_data import (
+    CHANGE_OF_ADDRESS,
+    FILING_HEADER,
+)
 
-from legal_api.models import Business, UserRoles
+from legal_api.models import Business, Filing, UserRoles
 from legal_api.resources.v2 import internal_services
 from legal_api.resources.v2.internal_services import ListFilingResource
-from tests.unit.models import factory_business
+from tests.unit.models import factory_business, factory_business_mailing_address
 from tests.unit.services.utils import create_header
+
+
+def test_get_future_effective_filing_ids(session, client, jwt):
+    """Assert that future effective filings are saved and have the correct status changes."""
+    import pytz
+    from tests.unit.models import factory_pending_filing
+    # setup
+    identifier = 'CP7654321'
+    b = factory_business(identifier,
+                         (datetime.now(timezone.utc) - datedelta.YEAR),
+                         None,
+                         Business.LegalTypes.BCOMP.value)
+    factory_business_mailing_address(b)
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['business']['identifier'] = identifier
+
+    filing = factory_pending_filing(b, coa)
+    filing.effective_date = datetime.now(timezone.utc)
+    filing.save()
+    assert filing.status == Filing.Status.PENDING.value
+
+    filing.payment_completion_date = datetime.now(timezone.utc)
+    filing.save()
+
+    assert filing.status == Filing.Status.PAID.value
+
+    # check values that future effective filings job depends on are there
+    rv = client.get('/api/v2/internal/filings/future_effective', headers=create_header(jwt, [UserRoles.system]))
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json
+    assert rv.json[0] == filing.id
+
+    # back date and check
+    with freeze_time(filing.effective_date - datedelta.DAY):
+        rv = client.get('/api/v2/internal/filings/future_effective', headers=create_header(jwt, [UserRoles.system]))
+        assert rv.status_code == HTTPStatus.OK
+        assert len(rv.json) == 0
 
 
 def test_update_bn_move(session, client, jwt):

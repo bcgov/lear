@@ -31,68 +31,60 @@ from .bp import bp
 
 
 @bp.route('/internal/filings', methods=['GET'])
-@bp.route('/internal/filings/<string:status>', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.colin])
-def get_completed_filings_for_colin(status=None):
+def get_completed_filings_for_colin():
     """Get filings by status formatted in json."""
-    pending_filings = []
     filings = []
 
-    if status is None:
-        page = int(request.args.get('page', 1))
-        limit = int(request.args.get('limit', 20))
-        pending_filings = Filing.get_completed_filings_for_colin(page, limit)
-        for filing in pending_filings.get('filings'):
-            filing_json = filing.filing_json
-            business = Business.find_by_internal_id(filing.business_id)
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    pending_filings = Filing.get_completed_filings_for_colin(page, limit)
+    for filing in pending_filings.get('filings'):
+        filing_json = filing.filing_json
+        business = Business.find_by_internal_id(filing.business_id)
 
-            if filing_json and filing.filing_type != 'lear_epoch' and \
-                    (filing.filing_type != 'correction' or business.legal_type != Business.LegalTypes.COOP.value):
-                filing_json['filingId'] = filing.id
-                filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
-                if not filing_json['filing'].get('business'):
-                    # ideally filing should have transaction_id once completed.
-                    # found some filing in DEV (with missing transaction_id), adding this check to avoid exception
-                    if filing.transaction_id:
-                        business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
-                            filing.transaction_id, business.id)
-                        filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
-                            business_revision, business.json())
-                    else:
-                        filing_json['filing']['business'] = business.json()
-                elif not filing_json['filing']['business'].get('legalName'):
-                    filing_json['filing']['business']['legalName'] = business.legal_name
+        if filing_json and filing.filing_type != 'lear_epoch' and \
+                (filing.filing_type != 'correction' or business.legal_type != Business.LegalTypes.COOP.value):
+            filing_json['filingId'] = filing.id
+            filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
+            if not filing_json['filing'].get('business'):
+                # ideally filing should have transaction_id once completed.
+                # found some filing in DEV (with missing transaction_id), adding this check to avoid exception
+                if filing.transaction_id:
+                    business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
+                        filing.transaction_id, business.id)
+                    filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
+                        business_revision, business.json())
+                else:
+                    filing_json['filing']['business'] = business.json()
+            elif not filing_json['filing']['business'].get('legalName'):
+                filing_json['filing']['business']['legalName'] = business.legal_name
 
-                if filing.filing_type == 'correction':
-                    colin_ids = \
-                        ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])
-                    if not colin_ids:
-                        continue
-                    filing_json['filing']['correction']['correctedFilingColinId'] = colin_ids[0]  # should only be 1
-                elif (filing.filing_type == 'amalgamationApplication' and
-                      filing_json['filing']['amalgamationApplication']['type'] in [
-                          Amalgamation.AmalgamationTypes.horizontal.name,
-                          Amalgamation.AmalgamationTypes.vertical.name]):
-                    try:
-                        set_from_primary_or_holding_business_data(filing_json, filing)
-                    except Exception as ex:  # noqa: B902
-                        current_app.logger.info(ex)
-                        continue  # do not break this function because of one filing
+            if filing.filing_type == 'correction':
+                colin_ids = \
+                    ColinEventId.get_by_filing_id(filing_json['filing']['correction']['correctedFilingId'])
+                if not colin_ids:
+                    continue
+                filing_json['filing']['correction']['correctedFilingColinId'] = colin_ids[0]  # should only be 1
+            elif (filing.filing_type == 'amalgamationApplication' and
+                    filing_json['filing']['amalgamationApplication']['type'] in [
+                        Amalgamation.AmalgamationTypes.horizontal.name,
+                        Amalgamation.AmalgamationTypes.vertical.name]):
+                try:
+                    set_from_primary_or_holding_business_data(filing_json, filing)
+                except Exception as ex:  # noqa: B902
+                    current_app.logger.info(ex)
+                    continue  # do not break this function because of one filing
 
-                filings.append(filing_json)
-        return jsonify({
-            'filings': filings,
-            'page': page,
-            'limit': limit,
-            'pages': pending_filings.get('pages'),
-            'total': pending_filings.get('total')
-        }), HTTPStatus.OK
-
-    pending_filings = Filing.get_all_filings_by_status(status)
-    for filing in pending_filings:
-        filings.append(filing.json)
-    return jsonify(filings), HTTPStatus.OK
+            filings.append(filing_json)
+    return jsonify({
+        'filings': filings,
+        'page': page,
+        'limit': limit,
+        'pages': pending_filings.get('pages'),
+        'total': pending_filings.get('total')
+    }), HTTPStatus.OK
 
 
 def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
