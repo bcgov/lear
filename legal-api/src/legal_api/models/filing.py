@@ -1006,6 +1006,15 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         }
 
     @staticmethod
+    def get_future_effective_filing_ids() -> List[int]:
+        """Return filing ids which should be effective now."""
+        filings = db.session.query(Filing.id). \
+            filter(Filing._status.in_([Filing.Status.PAID.value,
+                                       Filing.Status.APPROVED.value])). \
+            filter(Filing.effective_date <= datetime.now(timezone.utc)).all()
+        return [filing.id for filing in filings]
+
+    @staticmethod
     def get_all_filings_by_status(status):
         """Return all filings based on status."""
         filings = db.session.query(Filing). \
