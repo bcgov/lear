@@ -231,8 +231,7 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
                     else:
                         # update max_event_id entered
                         successful_filings += 1
-                        if int(event_info['event_id']) > max_event_id:
-                            max_event_id = int(event_info['event_id'])
+                        max_event_id = max(max_event_id, int(event_info['event_id']))
                 else:
                     skipped_filings.append(event_info)
         else:
@@ -276,7 +275,7 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
         application.logger.error('Update-legal-filings: unhandled error %s', err)
 
 
-async def publish_queue_events(tax_ids: dict, application: Flask):  # pylint: disable=redefined-outer-name
+async def publish_queue_events(qsm, tax_ids: dict, application: Flask):  # pylint: disable=redefined-outer-name
     """Publish events for all businesses with new tax ids (for email + entity listeners)."""
     for identifier in tax_ids.keys():
         try:
@@ -307,7 +306,7 @@ async def publish_queue_events(tax_ids: dict, application: Flask):  # pylint: di
             application.logger.error('Update-legal-filings: Failed to publish bn entity event for %s.', identifier)
 
 
-async def update_business_nos(application):  # pylint: disable=redefined-outer-name
+async def update_business_nos(application, qsm):  # pylint: disable=redefined-outer-name
     """Update the tax_ids for corps with new bn_15s."""
     try:
         # get updater-job token
@@ -357,7 +356,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
                         application.logger.error('legal-updater failed to update tax_ids in lear.')
                         raise Exception  # pylint: disable=broad-exception-raised
 
-                    await publish_queue_events(tax_ids, application)
+                    await publish_queue_events(qsm, tax_ids, application)
 
                     application.logger.debug('Successfully updated tax ids in lear.')
                 else:
@@ -375,4 +374,4 @@ if __name__ == '__main__':
         update_filings(application)
         event_loop = asyncio.get_event_loop()
         qsm = QueueService(app=application, loop=event_loop)
-        event_loop.run_until_complete(update_business_nos(application))
+        event_loop.run_until_complete(update_business_nos(application, qsm))

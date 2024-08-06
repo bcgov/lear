@@ -89,7 +89,7 @@ def get_bearer_token(app: Flask, timeout):
 
     try:
         return res.json().get('access_token')
-    except Exception:
+    except Exception:  # pylint: disable=broad-exception-caught;
         return None
 
 
@@ -105,7 +105,7 @@ def get_filing_ids(app: Flask):
     if not response or response.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. \
             {response} {response.json()} {response.status_code}')
-        raise Exception
+        raise Exception  # pylint: disable=broad-exception-raised;
     return response.json()
 
 

@@ -34,8 +34,6 @@ SENTRY_LOGGING = LoggingIntegration(
     event_level=logging.ERROR  # send errors as events
 )
 
-requests_timeout = 20
-
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
@@ -64,6 +62,7 @@ def register_shellcontext(app):
 
 def get_filings(app: Flask, token, page, limit):
     """Get a filing with filing_id."""
+    requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
     req = requests.get(f'{app.config["LEGAL_API_URL"]}/businesses/internal/filings?page={page}&limit={limit}',
                        headers={'Authorization': 'Bearer ' + token},
                        timeout=requests_timeout)
@@ -83,6 +82,7 @@ def send_filing(app: Flask, token: str, filing: dict, filing_id: str):
 
     req = None
     if legal_type and identifier and filing_type:
+        requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
         req = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}',
                             headers={'Content-Type': 'application/json',
                                      'Authorization': 'Bearer ' + token},
@@ -99,6 +99,7 @@ def send_filing(app: Flask, token: str, filing: dict, filing_id: str):
 
 def update_colin_id(app: Flask, token: dict, filing_id: str, colin_ids: list):
     """Update the colin_id in the filings table."""
+    requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
     req = requests.patch(
         f'{app.config["LEGAL_API_URL"]}/businesses/internal/filings/{filing_id}',
         headers={'Authorization': 'Bearer ' + token},
@@ -126,6 +127,7 @@ def get_bearer_token(app):
     token_url = app.config.get('ACCOUNT_SVC_AUTH_URL')
     client_id = app.config.get('ACCOUNT_SVC_CLIENT_ID')
     client_secret = app.config.get('ACCOUNT_SVC_CLIENT_SECRET')
+    requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
 
     data = 'grant_type=client_credentials'
 
@@ -148,7 +150,6 @@ def run():
     corps_with_failed_filing = []
     with application.app_context():
         try:
-            requests_timeout = int(application.config.get('ACCOUNT_SVC_TIMEOUT'))
             # get updater-job token
             token = get_bearer_token(application)
 
