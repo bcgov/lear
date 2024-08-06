@@ -7007,7 +7007,7 @@ components:
   securitySchemes:
     api_key:
       type: apiKey
-      description: API Gateway assigned API key for a consumer with the PPR API privilege. Required for all requests.
+      description: API Gateway assigned API key for a user with the Business Registry API privilege. Required for all requests.
       name: x-apikey
       in: header
     jwt:
