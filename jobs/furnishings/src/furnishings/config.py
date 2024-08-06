@@ -86,6 +86,8 @@ class _Config:  # pylint: disable=too-few-public-methods
     DEBUG = False
 
     SECOND_NOTICE_DELAY = int(os.getenv('SECOND_NOTICE_DELAY', '5'))
+    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
+    TEMPLATE_PATH = os.getenv('TEMPLATE_PATH', 'src/furnishings-templates')
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
