@@ -79,7 +79,7 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
     """Check for colin filings in oracle."""
     id_list = []
     colin_events = None
-    legal_url = application.config['LEGAL_API_URL']
+    legal_url = application.config['LEGAL_API_URL'] + '/businesses'
     colin_url = application.config['COLIN_URL']
     corp_types = [Business.TypeCodes.COOP.value, Business.TypeCodes.BC_COMP.value,
                   Business.TypeCodes.ULC_COMP.value, Business.TypeCodes.CCC_COMP.value]
@@ -217,7 +217,7 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
                     # call legal api with filing
                     application.logger.debug(f'sending filing with event info: {event_info} to legal api.')
                     response = requests.post(
-                        f'{application.config["LEGAL_API_URL"]}/{event_info["corp_num"]}/filings',
+                        f'{application.config["LEGAL_API_URL"]}/businesses/{event_info["corp_num"]}/filings',
                         json=filing,
                         headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
                         timeout=AccountService.timeout
@@ -255,7 +255,7 @@ def update_filings(application):  # pylint: disable=redefined-outer-name, too-ma
             # update max_event_id in legal_db
             application.logger.debug(f'setting last_event_id in legal_db to {max_event_id}')
             response = requests.post(
-                f'{application.config["LEGAL_API_URL"]}/internal/filings/colin_id/{max_event_id}',
+                f'{application.config["LEGAL_API_URL"]}/businesses/internal/filings/colin_id/{max_event_id}',
                 headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
                 timeout=AccountService.timeout
             )
@@ -316,7 +316,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
         # get identifiers with outstanding tax_ids
         application.logger.debug('Getting businesses with outstanding tax ids from legal api...')
         response = requests.get(
-            application.config['LEGAL_API_URL'] + '/internal/tax_ids',
+            application.config['LEGAL_API_URL'] + '/businesses/internal/tax_ids',
             headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
             timeout=AccountService.timeout
         )
@@ -348,7 +348,7 @@ async def update_business_nos(application):  # pylint: disable=redefined-outer-n
                     # update lear with new tax ids from colin
                     application.logger.debug(f'Updating tax ids for {tax_ids.keys()} in lear...')
                     response = requests.post(
-                        application.config['LEGAL_API_URL'] + '/internal/tax_ids',
+                        application.config['LEGAL_API_URL'] + '/businesses/internal/tax_ids',
                         json=tax_ids,
                         headers={'Content-Type': CONTENT_TYPE_JSON, 'Authorization': f'Bearer {token}'},
                         timeout=AccountService.timeout

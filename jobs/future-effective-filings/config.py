@@ -41,7 +41,7 @@ def get_named_config(config_name: str = 'production'):
 
     :raise: KeyError: if an unknown configuration is requested
     """
-    if config_name in['production', 'staging', 'default']:
+    if config_name in ['production', 'staging', 'default']:
         config = ProdConfig()
     elif config_name == 'testing':
         config = TestConfig()
@@ -78,13 +78,15 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    COLIN_URL = os.getenv('COLIN_URL', '')
-    LEGAL_URL = os.getenv('LEGAL_URL', '')
-    AUTH_URL = os.getenv('AUTH_URL', '')
-    USERNAME = os.getenv('AUTH_USERNAME', '')
-    PASSWORD = os.getenv('AUTH_PASSWORD', '')
+    LEGAL_API_URL = os.getenv('LEGAL_API_URL', '')
+
     SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
     SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
+
+    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
+    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT', 20)
 
     SECRET_KEY = 'a secret'
 
@@ -126,11 +128,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
         'subject': os.getenv('NATS_FILER_SUBJECT_TEST', '')
     }
 
-    COLIN_URL = os.getenv('COLIN_URL_TEST', '')
-    LEGAL_URL = os.getenv('LEGAL_URL_TEST', '')
-    AUTH_URL = os.getenv('AUTH_URL_TEST', '')
-    USERNAME = os.getenv('AUTH_USERNAME_TEST', '')
-    PASSWORD = os.getenv('AUTH_PASSWORD_TEST', '')
+    LEGAL_API_URL = os.getenv('LEGAL_API_URL_TEST', '')
     SENTRY_DSN = os.getenv('SENTRY_DSN_TEST', '')
 
 

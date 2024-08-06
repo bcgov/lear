@@ -19,11 +19,9 @@ import asyncio
 import logging
 import os
 import random
-from datetime import datetime, timezone
 
 import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
-from dateutil.parser import parse
 from dotenv import find_dotenv, load_dotenv
 from entity_queue_common.service import ServiceWorker
 from flask import Flask
@@ -39,16 +37,16 @@ from utils.logging import setup_logging  # pylint: disable=import-error
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
 default_nats_options = {
-            'name': 'default_future_filing_job',
-            'servers':  os.getenv('NATS_SERVERS', '').split(','),
+    'name': 'default_future_filing_job',
+            'servers': os.getenv('NATS_SERVERS', '').split(','),
             'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT',  # pylint: disable=invalid-envvar-default
                                          DEFAULT_CONNECT_TIMEOUT)
-        }
+}
 
 default_stan_options = {
-            'cluster_id': os.getenv('NATS_CLUSTER_ID'),
-            'client_id': '_' + str(random.SystemRandom().getrandbits(0x58))
-        }
+    'cluster_id': os.getenv('NATS_CLUSTER_ID'),
+    'client_id': '_' + str(random.SystemRandom().getrandbits(0x58))
+}
 
 subject = os.getenv('NATS_FILER_SUBJECT', '')
 
@@ -74,9 +72,36 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     return app
 
 
-def get_filings(app: Flask = None):
-    """Get a filing with filing_id."""
-    response = requests.get(f'{app.config["LEGAL_URL"]}/internal/filings/PAID')
+def get_bearer_token(app: Flask, timeout):
+    """Get a valid Bearer token for the service to use."""
+    token_url = app.config.get('ACCOUNT_SVC_AUTH_URL')
+    client_id = app.config.get('ACCOUNT_SVC_CLIENT_ID')
+    client_secret = app.config.get('ACCOUNT_SVC_CLIENT_SECRET')
+
+    data = 'grant_type=client_credentials'
+
+    # get service account token
+    res = requests.post(url=token_url,
+                        data=data,
+                        headers={'content-type': 'application/x-www-form-urlencoded'},
+                        auth=(client_id, client_secret),
+                        timeout=timeout)
+
+    try:
+        return res.json().get('access_token')
+    except Exception:
+        return None
+
+
+def get_filing_ids(app: Flask):
+    """Get filing id to process."""
+    timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
+    token = get_bearer_token(app, timeout)
+    response = requests.get(
+        f'{app.config["LEGAL_API_URL"]}/internal/filings/future_effective',
+        headers={'Content-Type': 'application/json',
+                 'Authorization': 'Bearer ' + token},
+        timeout=timeout)
     if not response or response.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. \
             {response} {response.json()} {response.status_code}')
@@ -84,11 +109,8 @@ def get_filings(app: Flask = None):
     return response.json()
 
 
-async def run(loop, application: Flask = None):  # pylint: disable=redefined-outer-name
+async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
     """Run the methods for applying future effective filings."""
-    if application is None:
-        application = create_app()
-
     queue_service = ServiceWorker(
         loop=loop,
         nats_connection_options=default_nats_options,
@@ -100,19 +122,12 @@ async def run(loop, application: Flask = None):  # pylint: disable=redefined-out
 
     with application.app_context():
         try:
-            filings = get_filings(app=application)
-            if not filings:
-                application.logger.debug('No PAID filings found to apply.')
-            for filing in filings:
-                filing_id = filing['filing']['header']['filingId']
-                effective_date = filing['filing']['header']['effectiveDate']
-                # NB: effective_date and now are both UTC
-                now = datetime.utcnow().replace(tzinfo=timezone.utc)
-                valid = effective_date and parse(effective_date) <= now
-                if valid:
-                    msg = {'filing': {'id': filing_id}}
-                    await queue_service.publish(subject, msg)
-                    application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
+            if not (filing_ids := get_filing_ids(application)):
+                application.logger.debug('No filings found to apply.')
+            for filing_id in filing_ids:
+                msg = {'filing': {'id': filing_id}}
+                await queue_service.publish(subject, msg)
+                application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
         except Exception as err:  # pylint: disable=broad-except
             application.logger.error(err)
 
