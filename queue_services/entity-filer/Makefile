@@ -52,7 +52,7 @@ build-req: clean ## Upgrade requirements
 install: clean ## Install python virtrual environment
 	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
-	pip install pip==24.0 ;\
+	pip install --upgrade pip ;\
 	pip install wheel==0.43.0 ;\
 	pip install -Ur requirements.txt
 

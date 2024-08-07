@@ -283,7 +283,7 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
     'test_name, status, step', [
         (
             'DISSOLVE_BUSINESS',
-            BatchProcessing.BatchProcessingStatus.COMPLETED,
+            BatchProcessing.BatchProcessingStatus.QUEUED,
             BatchProcessing.BatchProcessingStep.DISSOLUTION
         ),
         (
