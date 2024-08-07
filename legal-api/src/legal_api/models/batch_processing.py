@@ -56,9 +56,11 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True, nullable=False)
 
     # relationships
     business = db.relationship('Business', back_populates='batch_processing')
+    filing = db.relationship('Filing', back_populates='batch_processing')
 
     def save(self):
         """Save the object to the database immediately."""
@@ -77,6 +79,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     def find_by(cls,  # pylint: disable=too-many-arguments
                 batch_id: int = None,
                 business_id: int = None,
+                filing_id: int = None,
                 step: BatchProcessingStep = None,
                 status: BatchProcessingStatus = None) -> dict:
         """Return the batch matching."""
@@ -88,6 +91,9 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
 
         if business_id:
             query = query.filter(BatchProcessing.business_id == business_id)
+
+        if filing_id:
+            query = query.filter(BatchProcessing.filing_id == filing_id)
 
         if step:
             query = query.filter(BatchProcessing.step == step)
