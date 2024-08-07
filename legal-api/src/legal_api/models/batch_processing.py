@@ -56,7 +56,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True, nullable=False)
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True, nullable=True)
 
     # relationships
     business = db.relationship('Business', back_populates='batch_processing')
