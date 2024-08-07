@@ -316,6 +316,7 @@ async def test_stage_3_process(app, session, test_name, status, step):
         await stage_3_process(app, qsm)
         if test_name == 'DISSOLVE_BUSINESS':
             mock_put_filing_on_queue.assert_called()
+            assert batch_processing.filing_id
 
     assert batch_processing.status == status
     assert batch_processing.step == step

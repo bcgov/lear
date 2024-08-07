@@ -281,6 +281,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             app.logger.debug(f'Created Involuntary Dissolution Filing with ID: {filing.id}')
             await put_filing_on_queue(filing.id, app, qsm)
 
+            batch_processing.filing_id = filing.id
             batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
             batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
             app.logger.debug(
