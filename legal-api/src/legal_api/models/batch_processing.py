@@ -60,7 +60,6 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # relationships
     business = db.relationship('Business', back_populates='batch_processing')
-    filing = db.relationship('Filing', back_populates='batch_processing')
 
     def save(self):
         """Save the object to the database immediately."""
