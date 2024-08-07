@@ -89,7 +89,7 @@ def get_bearer_token(app: Flask, timeout):
 
     try:
         return res.json().get('access_token')
-    except Exception:  # pylint: disable=broad-exception-caught;
+    except Exception:  # pylint: disable=broad-exception-caught; # noqa: B902
         return None
 
 
@@ -128,7 +128,7 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
                 msg = {'filing': {'id': filing_id}}
                 await queue_service.publish(subject, msg)
                 application.logger.debug(f'Successfully put filing {filing_id} on the queue.')
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:  # pylint: disable=broad-except;  # noqa: B902
             application.logger.error(err)
 
 if __name__ == '__main__':
@@ -136,6 +136,6 @@ if __name__ == '__main__':
     try:
         event_loop = asyncio.get_event_loop()
         event_loop.run_until_complete(run(event_loop, application))
-    except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
+    except Exception as err:  # pylint: disable=broad-except;  # noqa: B902; Catching all errors from the frameworks
         application.logger.error(err)  # pylint: disable=no-member
         raise err

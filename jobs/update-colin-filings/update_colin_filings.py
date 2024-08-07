@@ -140,7 +140,7 @@ def get_bearer_token(app):
 
     try:
         return res.json().get('access_token')
-    except Exception:
+    except Exception:  # noqa: B902
         return None
 
 
