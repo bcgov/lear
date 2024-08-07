@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <public_notice>
-    <volume>{{ volume }}</volume>
-    <date>{{ date }}</date>
+    <volume></volume>
+    <date></date>
 
     {% for furnishing in furnishings.values() -%}
-    <filing_desc title="{{ furnishing['title'] }}" id="PENDING ID">
+    <filing_desc title="{{ furnishing['title'] }}" id="">
         <category>{{ furnishing['category'] }}</category>
         <subcategory>{{ furnishing['subcategory'] }}</subcategory>
         <corp_class>{{ furnishing['corp_class'] }}</corp_class>

@@ -37,9 +37,7 @@ class PostProcessor:
 
     def _set_meta_info(self):
         """Set meta information for XML file."""
-        # TODO: populate date & volume with correct values
-        self._xml_data['date'] = 'PENDING DATE'
-        self._xml_data['volume'] = 'PENDING VOLUME'
+        # we leave date and volume in XML blank
         self._xml_data['effective_date'] = self._processed_date.strftime(XML_DATE_FORMAT)
 
     def _format_furnishings(self):
