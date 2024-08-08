@@ -115,7 +115,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             'sub_type_list': ['regular', 'horizontal', 'vertical'],
             'type_code_list': ['OTAMA',
                                'AMLRB', 'AMALR', 'AMLRU', 'AMLRC',
-                               'AMLHB', 'AMALH', 'AMLHU', 'AMLHC'
+                               'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
                                'AMLVB', 'AMALV', 'AMLVU', 'AMLVC'],
             'regular': {
                 Business.TypeCodes.COOP.value: 'OTAMA',
@@ -453,8 +453,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             elif filing_type_code in ['NOCAD', 'CRBIN', 'TRANS',
                                       'BEINC', 'ICORP', 'ICORU', 'ICORC',
                                       'AMLRB', 'AMALR', 'AMLRU', 'AMLRC',
-                                      'AMLHB', 'AMALH', 'AMLHU', 'AMLHC'
-                                      'AMLVB', 'AMALV', 'AMLVU', 'AMLVC'
+                                      'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
+                                      'AMLVB', 'AMALV', 'AMLVU', 'AMLVC',
                                       'NOALA', 'NOALB', 'NOALC', 'NOALE', 'NOALR', 'NOALU',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
