@@ -26,7 +26,7 @@ from legal_api.services.queue import QueueService
 from sentry_sdk.integrations.logging import LoggingIntegration
 
 from furnishings.config import get_named_config  # pylint: disable=import-error
-from furnishings.stage_processors import stage_one, stage_three, stage_two
+from furnishings.stage_processors import post_processor, stage_one, stage_three, stage_two
 from furnishings.utils.logging import setup_logging  # pylint: disable=import-error
 
 
@@ -114,9 +114,13 @@ async def run(application: Flask, qsm: QueueService):  # pylint: disable=redefin
                 )
                 return
 
+            xml_furnishings_dict = {}
+
             if stage_1_valid:
                 await stage_one.process(application, qsm)
             if stage_2_valid:
-                stage_two.process(application)
+                stage_two.process(application, xml_furnishings_dict)
             if stage_3_valid:
                 stage_three.process(application)
+
+            post_processor.process(application, xml_furnishings_dict)

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Furnishings job procssing rules for stage three of involuntary dissolution."""
+"""Furnishings job processing rules for stage three of involuntary dissolution."""
 from datetime import datetime
 
 from flask import Flask

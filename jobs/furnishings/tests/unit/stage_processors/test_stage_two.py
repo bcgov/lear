@@ -78,7 +78,7 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
             business_name=business.legal_name
         )
 
-    process(app)
+    process(app, {})
 
     furnishings = Furnishing.find_by(business_id=business.id)
     if new_entry:
