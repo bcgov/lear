@@ -285,7 +285,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
             batch_processing.status = BatchProcessing.BatchProcessingStatus.QUEUED
             app.logger.debug(
-                f'Batch Processing with identifier: {batch_processing.business_identifier} has been moved to dissolution step.'
+                f'Batch Processing with identifier: {batch_processing.business_identifier} has been moved to the dissolution step.'  # noqa: E501
             )
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
