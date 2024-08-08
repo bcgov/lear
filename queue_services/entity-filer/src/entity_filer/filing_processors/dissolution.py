@@ -32,6 +32,7 @@ from entity_filer.filing_processors.filing_components.parties import update_part
 from entity_filer.utils import replace_file_with_certified_copy
 
 
+# pylint: disable=too-many-locals
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta, flag_on: bool):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
@@ -95,7 +96,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
             'dissolutionType': dissolution_type,
             'dissolutionDate': LegislationDatetime.format_as_legislation_date(business.dissolution_date)
         }
-    
+
     # update batch processing entry, if any is present
     if flag_on:
         batch_processings = BatchProcessing.find_by(business_id=business.id)
