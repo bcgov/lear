@@ -19,10 +19,8 @@ depends_on = None
 def upgrade():
     op.add_column('batch_processing', sa.Column('filing_id', sa.Integer(), nullable=True))
     op.create_foreign_key('batch_processing_filing_id_fkey', 'batch_processing', 'filings', ['filing_id'], ['id'])
-    pass
 
 
 def downgrade():
     op.drop_constraint('batch_processing_filing_id_fkey', 'batch_processing', type_='foreignkey')
     op.drop_column('batch_processing', 'filing_id')
-    pass
