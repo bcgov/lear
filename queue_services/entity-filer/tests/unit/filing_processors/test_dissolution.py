@@ -13,11 +13,12 @@
 # limitations under the License.
 """The Unit Tests for the Voluntary Dissolution filing."""
 import copy
+from datedelta import datedelta
 from datetime import datetime
 
 import pytest
 
-from legal_api.models import Business, Office, OfficeType, Party, PartyRole, Filing
+from legal_api.models import BatchProcessing, Business, Office, OfficeType, Party, PartyRole, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -92,6 +93,19 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     party_role.save()
     curr_roles = len(business.party_roles.all())
 
+    if dissolution_type == 'involuntary':
+        batch_processing = BatchProcessing(
+            batch_id=1,
+            business_id=business.id,
+            business_identifier=business.identifier,
+            step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            status=BatchProcessing.BatchProcessingStatus.QUEUED,
+            created_date=datetime.datetime.utcnow()-datedelta(days=42),
+            trigger_date=datetime.datetime.utcnow(),
+            last_modified=datetime.datetime.utcnow()
+        )
+        batch_processing.save()
+
     business.dissolution_date = None
     business_id = business.id
 
@@ -99,7 +113,7 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     filing = create_filing('123', filing_json)
 
     # test
-    dissolution.process(business, filing_json['filing'], filing, filing_meta)
+    dissolution.process(business, filing_json['filing'], filing, filing_meta, True)
     business.save()
 
     # validate
@@ -127,6 +141,10 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
         assert_pdf_contains_text('Filed on ', affidavit_obj.read())
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
+    if dissolution_type == 'involuntary':
+        assert batch_processing
+        assert batch_processing.step == BatchProcessing.BatchProcessingStep.DISSOLUTION
+        assert batch_processing.status == BatchProcessing.BatchProcessingStatus.COMPLETED
 
     expected_dissolution_date = filing.effective_date
     if dissolution_type == 'voluntary' and business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
