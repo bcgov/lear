@@ -14,12 +14,16 @@
 """This module holds the data about review."""
 from __future__ import annotations
 
+from datetime import timezone
 from enum import auto
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
+
+from .filing import Filing
 
 
 class ReviewStatus(BaseEnum):
@@ -79,18 +83,34 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def get_paginated_reviews(cls, page, limit):
         """Return paginated reviews."""
-        query = db.session.query(Review).order_by(Review.creation_date.asc())
+        query = db.session.query(Review, Filing.effective_date). \
+            join(Filing, Filing.id == Review.filing_id). \
+            order_by(Review.creation_date.asc())
 
         pagination = query.paginate(per_page=limit, page=page)
         results = pagination.items
         total_count = pagination.total
+        result = []
+        nrNumbers = []
 
-        reviews_list = [
-            review.json for review in results
-        ]
+        for review, effective_date in results:
+            futureEffectiveDate = ''
+            if (review.nr_number is not None and
+                (review.status in [ReviewStatus.CHANGE_REQUESTED,
+                            ReviewStatus.AWAITING_REVIEW,
+                            ReviewStatus.RESUBMITTED])):
+                nrNumbers.append(review.nr_number)
+               
+            if (effective_date > datetime.now(timezone.utc)):
+                futureEffectiveDate = LegislationDatetime.format_as_legislation_date(effective_date)
+
+            result.append({
+                'review': review.json,
+                'effectiveDate': futureEffectiveDate
+            })
 
         reviews = {
-            'reviews': reviews_list,
+            'reviews': result,
             'page': page,
             'limit': limit,
             'total': total_count
