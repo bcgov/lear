@@ -37,6 +37,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
 
         HOLD = auto()
         PROCESSING = auto()
+        QUEUED = auto()
         WITHDRAWN = auto()
         COMPLETED = auto()
         ERROR = auto()
