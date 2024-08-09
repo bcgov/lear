@@ -33,7 +33,7 @@ from entity_filer.utils import replace_file_with_certified_copy
 
 
 # pylint: disable=too-many-locals
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta, flag_on: bool):
+def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta, flag_on: bool = False):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
         logger.error('Could not find Dissolution in: %s', filing)
@@ -101,9 +101,11 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     if flag_on:
         batch_processings = BatchProcessing.find_by(business_id=business.id)
         for batch_processing in batch_processings:
-            if batch_processing.status is BatchProcessing.BatchProcessingStatus.QUEUED:
+            if batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED:
+                batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
                 batch_processing.last_modified = datetime.utcnow()
+                batch_processing.save()
 
 
 def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):
