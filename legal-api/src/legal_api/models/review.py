@@ -115,7 +115,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             'limit': limit,
             'total': total_count
         }
-        return reviews
+        return reviews         
 
     @property
     def json(self) -> dict:
