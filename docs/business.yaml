@@ -943,7 +943,7 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:Internal server error
-      description: Submit a filing to alter the state and data of a business.
+      description: This endpoint is used to submit a filing for a business entity. This endpoint uses a standard header applicable to all filing types as well as specific schemas for each filing type.
       tags:
         - business
       requestBody:
@@ -1489,12 +1489,12 @@ paths:
             type: boolean
           in: query
           name: draft
-          description: 'save draft, no validation'
+          description: This parameter is used to save a filing in Draft form which can be retrieved at a later time.
         - schema:
             type: boolean
           in: query
           name: only_validate
-          description: 'only validate, don''t save'
+          description: This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.
         - $ref: '#/components/parameters/accountId'
   '/businesses/{identifier}/filings/{filingId}/documents':
     parameters:
@@ -7051,7 +7051,7 @@ components:
     accountId:
       name: Account-Id
       in: header
-      description: The account that the user is operating on behalf of.
+      description: Identifier for the user that is performing the requested action.
       required: true
       schema:
         type: string
