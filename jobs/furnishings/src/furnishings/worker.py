@@ -117,10 +117,16 @@ async def run(application: Flask, qsm: QueueService):  # pylint: disable=redefin
             xml_furnishings_dict = {}
 
             if stage_1_valid:
+                application.logger.debug('Entering stage 1 of furnishings job.')
                 await stage_one.process(application, qsm)
+                application.logger.debug('Exiting stage 1 of furnishings job.')
             if stage_2_valid:
+                application.logger.debug('Entering stage 2 of furnishings job.')
                 stage_two.process(application, xml_furnishings_dict)
+                application.logger.debug('Exiting stage 2 of furnishings job.')
             if stage_3_valid:
+                application.logger.debug('Entering stage 3 of furnishings job.')
                 stage_three.process(application)
+                application.logger.debug('Exiting stage 3 of furnishings job.')
 
             post_processor.process(application, xml_furnishings_dict)
