@@ -194,8 +194,7 @@
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
-               <!-- temporary override - should be fixed in code instead - see #4444 -->
-               <div class="pt-2">{{effective_date}} at 12:01 AM Pacific Time</div>
+               <div class="pt-2">{{effective_date_time}}</div>
                <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name == 'changeOfDirectors' %}

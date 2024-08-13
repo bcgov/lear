@@ -35,12 +35,17 @@ class LegislationDatetime():
 
     @staticmethod
     def tomorrow_midnight() -> datetime:
-        """Construct a datetime tomorrow midnight using the legislation timezone."""
+        """Construct a datetime tomorrow 12:00 AM using the legislation timezone."""
         _date = datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
         _date += datedelta.datedelta(days=1)
         _date = _date.replace(hour=0, minute=0, second=0, microsecond=0)
 
         return _date
+
+    @staticmethod
+    def tomorrow_one_minute_after_midnight() -> datetime:
+        """Construct a datetime tomorrow 12:01 AM using the legislation timezone."""
+        return LegislationDatetime.tomorrow_midnight() + datetime.timedelta(minutes=1)
 
     @staticmethod
     def as_legislation_timezone(date_time: datetime) -> datetime:
