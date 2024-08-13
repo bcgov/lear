@@ -53,7 +53,7 @@ paths:
         '404':
           description: Not Found
       operationId: get-business
-      description: 'Based on the users role, this returns basic information about a business.'
+      description: '<p>Retrieve a set of information  about a business.</p> <p>Access to a business and its information is dependent on the user being linked to that business, the API will return a 401 response if the user does not have access to that business.</p><p>The API will also return a 404 response if the business cannot be found.</p>'
       parameters:
         - $ref: '#/components/parameters/accountId'
       tags:
@@ -3022,7 +3022,7 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
-      description: Submitting a creation filing for a business will create that type of business if it is a fully valid filing and payment has been completed.
+      description: '<p>Use this endpoint to create a new business. This endpoint supports creation of a new business entity by these filings:<ul><li>Incorporation Application</li><li>Amalgamation (Regular, Horizontal and Vertical)</li><li>Continuation In</li><li>Registration</li></ul></p>'
       requestBody:
         content:
           application/json:
@@ -3490,11 +3490,11 @@ paths:
             type: boolean
           in: query
           name: draft
-          description: Set to save a draft in the ledger. No validations are performed.
+          description: This parameter is used to save a filing in Draft form which can be retrieved at a later time.
         - schema:
             type: boolean
           in: query
-          description: 'Validate the submission, but do not save or process it. Errors and warnings are returned if there are any.'
+          description: 'This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.'
           name: only_validate
         - $ref: '#/components/parameters/accountId'
     parameters: []
@@ -4112,13 +4112,13 @@ components:
               registeredDate: '2022-04-16T21:36:07.009977+00:00'
               startDate: '2022-04-10'
               type: 'DBA'
-      description: 'Organization or enterprising entity engaged in commercial, industrial, or professional activities.'
+      description: 'Object to hold information about a business entity.'
       properties:
         lastLedgerTimestamp:
           type: string
           format: date-time
           example: '2020-11-24T18:24:27.179623+00:00'
-          description: Recorded date/time of a company's financial transactions.
+          description: Recorded date/time of a company's filing.
         fiscalYearEndDate:
           type: string
           format: date
@@ -4133,7 +4133,7 @@ components:
           type: string
           format: date-time
           example: '2020-11-24T18:23:53.498863+00:00'
-          description: 'The date written on the company''s certificate of incorporation. '
+          description: 'The date written on the company''s certificate of incorporation, amalgamation, Continuation In or registration. '
         identifier:
           type: string
           example: 'BC1234567 is an identifier for a corporation '
@@ -4141,7 +4141,7 @@ components:
           description: 'Unique code(letters & numbers) to identify a business, issued by the provincial or federal registry.'
         legalName:
           type: string
-          description: Name that appears on the formation document of the business.
+          description: Registered name of the business.
           example: '1234567 B.C. Ltd. is a legal name for a corporation '
         state:
           type: string
@@ -4200,7 +4200,7 @@ components:
             - XP
             - XS
           example: 'GP: General Partnership'
-          description: 'Type of business eg: individual(SP), partnership(GP).'
+          description: 'Type of business eg: BC corporation (B), Continued in corporation (C), individualSole proprietor(SP), partnership(GP).'
         taxId:
           type: string
           pattern: '^[0-9]{9}$'
@@ -4208,10 +4208,10 @@ components:
           description: 'Company unique business number assigned by CRA: BN9 or BN15. '
         goodStanding:
           type: boolean
-          description: Being in good standing means that the company is not in the process of being dissolved for non-filing of federal and/or provincial tax returns or non-filing of the BC annual report.
+          description: The business is up to date with required filings, e.g. Annual Report.
         adminFreeze:
           type: boolean
-          description: 'Example: If a business is not in good standing or investigated for fraud BC Registry Admin might freeze the business to prevent further filing from them.  '
+          description: 'The business has been placed in a Frozen state by the Registry which will prevent any further filings from being made  '
         naics:
           $ref: '#/components/schemas/Naics'
         natureOfBusiness:
@@ -4240,7 +4240,7 @@ components:
                 example: '''https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'''
         alternateNames:
           type: array
-          description: The alternate name of the business
+          description: The alternate name of the business. Only applicable for Sole Proprietorship(SP) and General Partnership(GP)
           items:
             type: object
             properties:
@@ -6129,7 +6129,7 @@ components:
     Naics:
       type: object
       title: NAICS Schema
-      description: NAICS is an abbreviation for The North American Industry Classification System and is a standard used to classify business activities.
+      description: '<p>NAICS is an abbreviation for The North American Industry Classification System and is a standard used to classify business activities.</p><p>NAICS information is not required or collected for all types of business entities.</p>'
       properties:
         naicsCode:
           type: string
