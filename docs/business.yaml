@@ -3,7 +3,7 @@ info:
   title: businesses
   version: '2.0'
   description: |-
-    The Business Registry is a centralized electronic register of all business in British Columbia, This encompasses all types of businesses authorized to do business by the Registrar. The Business API provides a secure means of integrating your business systems with the Registry.
+    The Business Registry is a centralized electronic register of all business in British Columbia. This encompasses all types of businesses authorized to do business by the Registrar. The Business API provides a secure means of integrating your business systems with the Registry.
     <br/>
     <br/>This API supports the following filings:
     - Incorporation Application
@@ -3552,7 +3552,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/party'
       operationId: get-businesses-identifier-parties
-      description: Get all parties (Incorporatore, Completing Party and Directors) associated with a business.
+      description: Get all parties (Incorporator, Completing Party and Directors) associated with a business.
       parameters:
         - $ref: '#/components/parameters/accountId'
   /businesses/search:
