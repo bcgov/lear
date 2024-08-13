@@ -64,6 +64,8 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
         VOLUNTARY_DISSOLUTION = 'HDV'
         ADMINISTRATIVE_DISSOLUTION = 'HDA'
         AMALGAMATED = 'HAM'
+        INVOLUNTARY_DISSOLUTION_NO_AR = 'HDF'
+        INVOLUNTARY_DISSOLUTION_NO_TR = 'HDT'
 
     NUMBERED_CORP_NAME_SUFFIX = {
         TypeCodes.BCOMP.value: 'B.C. LTD.',
