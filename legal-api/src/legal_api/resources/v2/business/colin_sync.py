@@ -21,7 +21,16 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole, UserRoles, db
+from legal_api.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    BatchProcessing,
+    Business,
+    Filing,
+    PartyRole,
+    UserRoles,
+    db,
+)
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
@@ -76,6 +85,12 @@ def get_completed_filings_for_colin():
                 except Exception as ex:  # noqa: B902
                     current_app.logger.info(ex)
                     continue  # do not break this function because of one filing
+            elif (filing.filing_type == 'dissolution' and
+                  filing.filing_sub_type == 'involuntary'):
+                batch_processings = BatchProcessing.find_by(business_id=filing.business_id)
+                if not batch_processings:
+                    continue  # skip filing for missing batch processing info
+                filing_json['filing']['dissolution']['metaData'] = batch_processings[0].meta_data
 
             filings.append(filing_json)
     return jsonify({

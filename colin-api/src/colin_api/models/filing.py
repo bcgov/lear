@@ -152,7 +152,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         # `voluntaryDissolution filing type in place as unsure if it is being used in other places
         'dissolution': {
             'sub_type_property': 'dissolutionType',
-            'sub_type_list': ['voluntary', 'administrative'],
+            'sub_type_list': ['voluntary', 'administrative', 'involuntary'],
             'type_code_list': ['OTVDS', 'ADVD2'],
             'voluntary': {
                 Business.TypeCodes.COOP.value: 'OTVDS',
@@ -990,6 +990,29 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         Business.update_corp_state(cursor, event_id, corp_num,
                                    Business.CorpStateTypes.ADMINISTRATIVE_DISSOLUTION.value)
         return event_id
+
+    @classmethod
+    def add_involuntary_dissolution_event(cls, con, corp_num, filing_body) -> int:
+        """Add involuntary dissolution event."""
+        if not (filing_meta_data := filing_body.get('metaData')):
+            return None
+
+        event_type = None
+        corp_state = None
+        if filing_meta_data.get('overdueARs'):
+            event_type = 'SYSDF'
+            corp_state = Business.CorpStateTypes.INVOLUNTARY_DISSOLUTION_NO_AR.value
+        elif filing_meta_data.get('overdueTransition'):
+            event_type = 'SYSDT'
+            corp_state = Business.CorpStateTypes.INVOLUNTARY_DISSOLUTION_NO_TR.value
+
+        if event_type:
+            cursor = con.cursor()
+            event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, event_type=event_type)
+            Business.update_corp_state(cursor, event_id, corp_num, corp_state)
+            return event_id
+
+        return None
 
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
