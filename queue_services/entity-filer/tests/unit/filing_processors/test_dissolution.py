@@ -100,9 +100,9 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
             business_identifier=business.identifier,
             step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
             status=BatchProcessing.BatchProcessingStatus.QUEUED,
-            created_date=datetime.datetime.utcnow()-datedelta(days=42),
-            trigger_date=datetime.datetime.utcnow(),
-            last_modified=datetime.datetime.utcnow()
+            created_date=datetime.utcnow()-datedelta(days=42),
+            trigger_date=datetime.utcnow(),
+            last_modified=datetime.utcnow()
         )
         batch_processing.save()
 
