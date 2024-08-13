@@ -80,7 +80,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Ledger'
       operationId: get-businesses-identifier-filings
-      description: Return the current ledger of filings for a business.
+      description: Retrieve the list of filings recorded on a business entities ledger.
       tags:
         - business
       parameters:
@@ -5984,10 +5984,10 @@ components:
           submitter: Registry Staff
       items:
         $ref: '#/components/schemas/Ledger_item'
-      description: 'Business record to summarize revenues and expenses of the business eg: common ledger for asset accounts.'
+      description: 'The ledger is the record of all filings that have been performed on or in association with a business entity.'
     Ledger_item:
       type: object
-      description: 'Ledger items track accounting items eg: assets, liabilities, capital, revenues, and expenses.'
+      description: 'Set of information recorded by the Registry in relation to an individual filing on a business entity''s ledger.'
       x-examples:
         Example 1:
           availableOnPaperOnly: true
@@ -6012,7 +6012,7 @@ components:
       properties:
         availableOnPaperOnly:
           type: boolean
-          description: Yes if information only accessible on paper.
+          description: Yes if information only accessible on paper. This typically relates to very old filings that pre-date online Registry systems.
         businessIdentifier:
           type: string
           minLength: 1
@@ -6035,10 +6035,10 @@ components:
               type: string
               format: date-time
               minLength: 1
-              description: Date the filing application was done.
+              description: Date the filing was performed.
             legalFilings:
               type: array
-              description: Filing that business is legally required to do.
+              description: This field identifies filings that corporations are required to submit under the BC Corporations Act.
               items:
                 type: string
                 enum:
@@ -6067,48 +6067,48 @@ components:
           type: string
           minLength: 1
           format: uri
-          description: 'Link for documents related to ledger. '
+          description: 'Link for documents related to filing.'
         displayName:
           type: string
           minLength: 1
-          description: Name to be displayed for ledger item.
+          description: This field represents the name to be displayed for the ledger item associated with the filing record.
         effectiveDate:
           type: string
           minLength: 1
           format: date-time
-          description: Date ledger item takes effect.
+          description: Date filing was to be effective.
         filingId:
           type: number
-          description: 'Number identifying ledger item filing. '
+          description: 'Unique Identifier of the filing.'
         filingLink:
           type: string
           minLength: 1
           format: uri
-          description: 'Link related to ledger item filing.  '
+          description: 'Link related to filing.'
         name:
           type: string
           minLength: 1
-          description: 'Name related to ledger item. '
+          description: 'Name of the filing to which the record relates.'
         isFutureEffective:
           type: boolean
-          description: Identify if ledger item filing effective date is further than the application date (yes/no).
+          description: Identify if filing was submitted with a future effective date (yes/no).
         paymentStatusCode:
           type: string
           minLength: 1
-          description: 'Code indicating the state of the payment eg: Completed. '
+          description: 'Code indicating the state of the payment for the filing eg: Completed.'
           example: Completed
         status:
           type: string
           minLength: 1
-          description: 'Text describing the state of the ledger item. '
+          description: 'Text describing the state of the filing.'
         submittedDate:
           type: string
           minLength: 1
-          description: 'Date the ledger item was submitted. '
+          description: 'Date the filing was submitted.'
         submitter:
           type: string
           minLength: 1
-          description: 'Name of the person submitting the ledger item. '
+          description: 'Name of the user who performed the filing.'
       required:
         - availableOnPaperOnly
         - businessIdentifier
