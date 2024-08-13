@@ -2405,7 +2405,7 @@ paths:
                     reportType: lseal
                     stateFilings: []
       operationId: get-businesses-identifier-document-documentName
-      description: Return the requested document.
+      description: Retrieves a specific document for the specified business.
       parameters:
         - schema:
             type: string
@@ -4112,7 +4112,7 @@ components:
               registeredDate: '2022-04-16T21:36:07.009977+00:00'
               startDate: '2022-04-10'
               type: 'DBA'
-      description: 'Object to hold information about a business entity.'
+      description: 'Organization or business entity.'
       properties:
         lastLedgerTimestamp:
           type: string
@@ -4133,7 +4133,7 @@ components:
           type: string
           format: date-time
           example: '2020-11-24T18:23:53.498863+00:00'
-          description: 'The date written on the company''s certificate of incorporation, amalgamation, Continuation In or registration. '
+          description: 'The date written on the company''s certificate of Incorporation, Amalgamation, Continuation In or Registration.'
         identifier:
           type: string
           example: 'BC1234567 is an identifier for a corporation '
@@ -4200,6 +4200,7 @@ components:
             - XP
             - XS
           example: 'GP: General Partnership'
+          description: 'Type of business eg: BC corporation (B), Continued in corporation (C), Sole proprietor(SP), General Partnership(GP).'
           description: 'Type of business eg: BC corporation (B), Continued in corporation (C), individualSole proprietor(SP), partnership(GP).'
         taxId:
           type: string
@@ -4208,6 +4209,7 @@ components:
           description: 'Company unique business number assigned by CRA: BN9 or BN15. '
         goodStanding:
           type: boolean
+          description: The business is up to date with required filings, e.g. Annual Report.
           description: The business is up to date with required filings, e.g. Annual Report.
         adminFreeze:
           type: boolean
@@ -4240,7 +4242,7 @@ components:
                 example: '''https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'''
         alternateNames:
           type: array
-          description: The alternate name of the business. Only applicable for Sole Proprietorship(SP) and General Partnership(GP)
+          description: The alternate name of the business. Only applicable for Sole Proprietorship(SP) and General Partnership(GP). Only applicable for Sole Proprietorship(SP) and General Partnership(GP).
           items:
             type: object
             properties:
