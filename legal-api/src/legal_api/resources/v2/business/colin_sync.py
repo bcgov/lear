@@ -87,7 +87,7 @@ def get_completed_filings_for_colin():
                     continue  # do not break this function because of one filing
             elif (filing.filing_type == 'dissolution' and
                   filing.filing_sub_type == 'involuntary'):
-                batch_processings = BatchProcessing.find_by(business_id=filing.business_id)
+                batch_processings = BatchProcessing.find_by(filing_id=filing.id)
                 if not batch_processings:
                     continue  # skip filing for missing batch processing info
                 filing_json['filing']['dissolution']['metaData'] = batch_processings[0].meta_data
