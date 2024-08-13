@@ -101,7 +101,8 @@ class StageOneProcessor:
         if email:
             # send email letter
             await self._send_email(new_furnishing)
-            self._app.logger.debug(f'Successfully put email message on the queue for furnishing entry with ID: {new_furnishing.id}')
+            self._app.logger.debug(
+                f'Successfully put email message on the queue for furnishing entry with ID: {new_furnishing.id}')
         else:
             # send paper letter if business doesn't have email address
             new_furnishing.furnishing_type = Furnishing.FurnishingType.MAIL
