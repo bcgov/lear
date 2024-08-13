@@ -4133,7 +4133,7 @@ components:
           type: string
           format: date-time
           example: '2020-11-24T18:23:53.498863+00:00'
-          description: 'The date written on the company''s certificate of incorporation, amalgamation, Continuation In or registration.'
+          description: 'The date written on the company''s certificate of Incorporation, Amalgamation, Continuation In or Registration.'
         identifier:
           type: string
           example: 'BC1234567 is an identifier for a corporation '
@@ -4200,7 +4200,7 @@ components:
             - XP
             - XS
           example: 'GP: General Partnership'
-          description: 'Type of business eg: BC corporation (B), Continued in corporation (C), Sole proprietor(SP), partnership(GP).'
+          description: 'Type of business eg: BC corporation (B), Continued in corporation (C), Sole proprietor(SP), General Partnership(GP).'
         taxId:
           type: string
           pattern: '^[0-9]{9}$'
