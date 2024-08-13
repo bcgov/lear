@@ -4201,7 +4201,6 @@ components:
             - XS
           example: 'GP: General Partnership'
           description: 'Type of business eg: BC corporation (B), Continued in corporation (C), Sole proprietor(SP), General Partnership(GP).'
-          description: 'Type of business eg: BC corporation (B), Continued in corporation (C), individualSole proprietor(SP), partnership(GP).'
         taxId:
           type: string
           pattern: '^[0-9]{9}$'
@@ -4209,7 +4208,6 @@ components:
           description: 'Company unique business number assigned by CRA: BN9 or BN15. '
         goodStanding:
           type: boolean
-          description: The business is up to date with required filings, e.g. Annual Report.
           description: The business is up to date with required filings, e.g. Annual Report.
         adminFreeze:
           type: boolean
