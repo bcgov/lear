@@ -3,8 +3,33 @@ info:
   title: businesses
   version: '2.0'
   description: |-
-    Businesses provideas all of the services needed to manage legal entities.
-    This encompasses all types of businesses authorized to do business by the Registrar.
+    The Business Registry is a centralized electronic register of all business in British Columbia, This encompasses all types of businesses authorized to do business by the Registrar. The Business API provides a secure means of integrating your business systems with the Registry.
+    <br/>
+    <br/>This API supports the following filings:
+    - Incorporation Application
+    - Amalgamation Regular
+    - Amalgamation Short Form Horizontal 
+    - Amalgamation Short Form Vertical 
+    - Continuation In 
+    - Registration 
+    - AGM Extension Information 
+    - AGM Location Change Information 
+    - Alteration 
+    - Annual Report 
+    - Change of Address
+    - Change of Directors
+    - Change of Entity Name
+    - Change of Registration 
+    - Consent Continuation Out 
+    - Conversion ( to change the business type of an organization eg: convert from a Member Funded Society to a BC Company)
+    - Court Order Information
+    - Correction
+    - Dissolution
+    - Registration (sole proprietorship, general partnership)
+    - Special Resolution
+    - Transition
+
+    All API requests must include a BC Registries issued API key and an Account ID.
   contact:
     name: BC Registry
     email: admin@daxiom.com
@@ -943,7 +968,7 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:Internal server error
-      description: This endpoint is used to submit a filing for a business entity. This endpoint uses a standard header applicable to all filing types as well as specific schemas for each filing type.
+      description: This is used to submit all filing types that are used to maintain or change the state of the Registration of any business entity in the Registry to which the user has access to.
       tags:
         - business
       requestBody:
@@ -1550,7 +1575,7 @@ paths:
         '404':
           description: Not Found
       operationId: get-businesses-identifier-addresses
-      description: Returns the current addresses for the businesses. The number of addresses are based on the legal type.
+      description: Returns the current addresses for the businesses. The number of addresses will depend on the requirements of the legal type of the business entity.
       tags:
         - business
       parameters:
@@ -3022,7 +3047,7 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
-      description: Submitting a creation filing for a business will create that type of business if it is a fully valid filing and payment has been completed.
+      description: Submit an application to create or incorporate a new business. The new business entity will be created in the Registry if it is a fully valid filing and payment has been completed.
       requestBody:
         content:
           application/json:
@@ -3527,7 +3552,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/party'
       operationId: get-businesses-identifier-parties
-      description: Get all associated parties with a business.
+      description: Get all parties (Incorporatore, Completing Party and Directors) associated with a business.
       parameters:
         - $ref: '#/components/parameters/accountId'
   /businesses/search:
