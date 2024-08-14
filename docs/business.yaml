@@ -5303,183 +5303,178 @@ components:
             isPaymentActionRequired: true
           '': string
       properties:
-        header:
-          type: object
-          required:
-            - name
-            - date
-            - certifiedBy
-          properties:
-            name:
-              type: string
-              title: The type of the main filing.
-              enum:
-                - adminFreeze
-                - alteration
-                - agmExtension
-                - agmLocationChange
-                - amalgamationApplication
-                - amendedAGM
-                - amendedAnnualReport
-                - amendedChangeOfDirectors
-                - annualReport
-                - appointReceiver
-                - changeOfDirectors
-                - changeOfAddress
-                - changeOfName
-                - changeOfRegistration
-                - consentContinuationOut
-                - continuationIn
-                - continuationOut
-                - continuedOut
-                - conversion
-                - correction
-                - courtOrder
-                - dissolution
-                - dissolved
-                - incorporationApplication
-                - putBackOn
-                - registration
-                - restoration
-                - specialResolution
-                - transition
-                - registrarsNotation
-                - registrarsOrder
-              description: 'Filing name. '
-            availableOnPaperOnly:
-              type: boolean
-              description: 'If filing results(ouputs) available only on paper: Yes/No. '
-            inColinOnly:
-              type: boolean
-              description: 'Filing information stored in COLIN only: Yes/No.'
-            date:
-              type: string
-              format: date
-              title: The submission date of the final version of the filing.
-              description: 'Date of the filing. '
-            certifiedBy:
-              type: string
-              description: 'Staff certifying filing. '
-            email:
-              type: string
-              format: email
-              description: email contact for the filing.
-            filingId:
-              type: integer
-              title: The id of the filing.
-              default: 0
-              description: 'Filing identifier eg: 1234. '
-              example: 1234
-            effectiveDate:
-              type: string
-              format: date-time
-              title: The date and time a filing should become valid and applied.
-              description: Date and time the filing is taking effect.
-            paymentToken:
-              type: string
-              title: A valid payment token for this filing against this business.
-              description: 'Replaces sensitive payment information with a unique identifier, received back from SBC_PAY'
-            submitter:
-              type: string
-              title: Account name of the person submitting this filing.
-              description: 'Person/applicant submitting the filing. '
-            status:
-              type: string
-              title: The status of this filing.
-              enum:
-                - DRAFT
-                - PENDING
-                - COMPLETED
-                - ERROR
-              description: 'Status of the filing eg: ''draft''. '
-              example: '"DRAFT", "PENDING", "COMPLETED", "ERROR"'
-            affectedFilings:
-              type: array
-              title: List of affected filings (ids) from this filing.
-              description: 'Filings related to the header eg: [1234,4856].'
-              items:
-                type: integer
-                example: '[1234,4856]'
-            isCorrected:
-              type: boolean
-              title: Has this filing been corrected?
-              description: 'If filing has been corrected: Yes/No.'
-            isCorrectionPending:
-              type: boolean
-              title: Is a correction pending for this filing?
-              description: 'If filing correction are in pending status: Yes/No.'
-            comments:
-              type: array
-              title: List of filing comments.
-              description: 'Notes about filing. '
-              items:
-                $ref: '#/components/schemas/Comment'
-            waiveFees:
-              type: boolean
-              description: 'Are fees being waived for the filing: Yes/No.'
-            priority:
-              type: boolean
-              description: 'Is it a priority filing: Yes/No. '
-            routingSlipNumber:
-              type: string
-              title: A valid routing slip number in case of a staff filing.
-              maxLength: 9
-              pattern: '^\d{9}$'
-              description: If filing paid with cash or cheque there will be a routing slip of 9 digits.
-            folioNumber:
-              type: string
-              title: A folio number used for payment tracking purposes.
-              maxLength: 50
-              description: 'Reference number to help keep track of transactions eg: used in BCOL. '
-              example: '1332'
-            datNumber:
-              type: string
-              title: A dat number used for payment tracking purposes.
-              maxLength: 10
-              pattern: '^[A-Z]{1}[0-9]{7,9}$'
-              description: Payment identifyer (9 digits) for FAS payments.
-              example: C234567890
-            bcolAccountNumber:
-              type: string
-              title: BCOL account number.
-              maxLength: 6
-              pattern: ^(.*)$
-              example: '910207'
-              description: 'BCOL account number to be debited if paying with a BCOL account eg: 910207.'
-            sbcAccount:
-              type: integer
-              title: authorization system account number.
-              description: 'SBC_AUTH account number. '
-              example: '416'
-            paymentAccount:
-              type: string
-              title: payment org account identifier.
-              maxLength: 30
-              pattern: ^(.*)$
-              description: 'Payment identifyer from where the payment will be debited. '
-              example: '180670'
-            paymentMethod:
-              type: string
-              title: payment method.
-              enum:
-                - ONLINE_BANKING
-                - CC
-                - DIRECT_PAY
-                - DRAWDOWN
-                - INTERNAL
-              description: 'Method of payment used to pay for filing, possible values are: ONLINE_BANKING,CC,DIRECT_PAY,DRAWDOWN,INTERNAL.'
-              example: credit card CC
-            isPaymentActionRequired:
-              type: boolean
-              title: flag for payment redirect.
-              description: Further action required to finalize the payment.
+        name:
+          type: string
+          title: The type of the main filing.
+          enum:
+            - adminFreeze
+            - alteration
+            - agmExtension
+            - agmLocationChange
+            - amalgamationApplication
+            - amendedAGM
+            - amendedAnnualReport
+            - amendedChangeOfDirectors
+            - annualReport
+            - appointReceiver
+            - changeOfDirectors
+            - changeOfAddress
+            - changeOfName
+            - changeOfRegistration
+            - consentContinuationOut
+            - continuationIn
+            - continuationOut
+            - continuedOut
+            - conversion
+            - correction
+            - courtOrder
+            - dissolution
+            - dissolved
+            - incorporationApplication
+            - putBackOn
+            - registration
+            - restoration
+            - specialResolution
+            - transition
+            - registrarsNotation
+            - registrarsOrder
+          description: 'Filing name. '
+        availableOnPaperOnly:
+          type: boolean
+          description: 'If filing results(ouputs) available only on paper: Yes/No. '
+        inColinOnly:
+          type: boolean
+          description: 'Filing information stored in COLIN only: Yes/No.'
+        date:
+          type: string
+          format: date
+          title: The submission date of the final version of the filing.
+          description: 'Date of the filing. '
+        certifiedBy:
+          type: string
+          description: 'Staff certifying filing. '
+        email:
+          type: string
+          format: email
+          description: email contact for the filing.
+        filingId:
+          type: integer
+          title: The id of the filing.
+          default: 0
+          description: 'Filing identifier eg: 1234. '
+          example: 1234
+        effectiveDate:
+          type: string
+          format: date-time
+          title: The date and time a filing should become valid and applied.
+          description: Date and time the filing is taking effect.
+        paymentToken:
+          type: string
+          title: A valid payment token for this filing against this business.
+          description: 'Replaces sensitive payment information with a unique identifier, received back from SBC_PAY'
+        submitter:
+          type: string
+          title: Account name of the person submitting this filing.
+          description: 'Person/applicant submitting the filing. '
+        status:
+          type: string
+          title: The status of this filing.
+          enum:
+            - DRAFT
+            - PENDING
+            - COMPLETED
+            - ERROR
+          description: 'Status of the filing eg: ''draft''. '
+          example: '"DRAFT", "PENDING", "COMPLETED", "ERROR"'
+        affectedFilings:
+          type: array
+          title: List of affected filings (ids) from this filing.
+          description: 'Filings related to the header eg: [1234,4856].'
+          items:
+            type: integer
+            example: '[1234,4856]'
+        isCorrected:
+          type: boolean
+          title: Has this filing been corrected?
+          description: 'If filing has been corrected: Yes/No.'
+        isCorrectionPending:
+          type: boolean
+          title: Is a correction pending for this filing?
+          description: 'If filing correction are in pending status: Yes/No.'
+        comments:
+          type: array
+          title: List of filing comments.
+          description: 'Notes about filing. '
+          items:
+            $ref: '#/components/schemas/Comment'
+        waiveFees:
+          type: boolean
+          description: 'Are fees being waived for the filing: Yes/No.'
+        priority:
+          type: boolean
+          description: 'Is it a priority filing: Yes/No. '
+        routingSlipNumber:
+          type: string
+          title: A valid routing slip number in case of a staff filing.
+          maxLength: 9
+          pattern: '^\d{9}$'
+          description: If filing paid with cash or cheque there will be a routing slip of 9 digits.
+        folioNumber:
+          type: string
+          title: A folio number used for payment tracking purposes.
+          maxLength: 50
+          description: 'Reference number to help keep track of transactions eg: used in BCOL. '
+          example: '1332'
+        datNumber:
+          type: string
+          title: A dat number used for payment tracking purposes.
+          maxLength: 10
+          pattern: '^[A-Z]{1}[0-9]{7,9}$'
+          description: Payment identifyer (9 digits) for FAS payments.
+          example: C234567890
+        bcolAccountNumber:
+          type: string
+          title: BCOL account number.
+          maxLength: 6
+          pattern: ^(.*)$
+          example: '910207'
+          description: 'BCOL account number to be debited if paying with a BCOL account eg: 910207.'
+        sbcAccount:
+          type: integer
+          title: authorization system account number.
+          description: 'SBC_AUTH account number. '
+          example: '416'
+        paymentAccount:
+          type: string
+          title: payment org account identifier.
+          maxLength: 30
+          pattern: ^(.*)$
+          description: 'Payment identifyer from where the payment will be debited. '
+          example: '180670'
+        paymentMethod:
+          type: string
+          title: payment method.
+          enum:
+            - ONLINE_BANKING
+            - CC
+            - DIRECT_PAY
+            - DRAWDOWN
+            - INTERNAL
+          description: 'Method of payment used to pay for filing, possible values are: ONLINE_BANKING,CC,DIRECT_PAY,DRAWDOWN,INTERNAL.'
+          example: credit card CC
+        isPaymentActionRequired:
+          type: boolean
+          title: flag for payment redirect.
+          description: Further action required to finalize the payment.
         '':
           type: string
           x-stoplight:
             id: 7nl2sc9w8mtqr
           description: Header name.
       required:
-        - header
+        - name
+        - date
+        - certifiedBy
     Filing:
       type: object
       title: Registry Filing Envelope
