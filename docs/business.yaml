@@ -78,7 +78,7 @@ paths:
         '404':
           description: Not Found
       operationId: get-business
-      description: 'Based on the users role, this returns basic information about a business.'
+      description: '<p>Retrieve a set of information  about a business.</p> <p>Access to a business and its information is dependent on the user being linked to that business, the API will return a 401 response if the user does not have access to that business.</p><p>The API will also return a 404 response if the business cannot be found.</p>'
       parameters:
         - $ref: '#/components/parameters/accountId'
       tags:
@@ -3047,7 +3047,7 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
-      description: Submit an application to create or incorporate a new business. The new business entity will be created in the Registry if it is a fully valid filing and payment has been completed.
+      description: '<p>Use this endpoint to create a new business. This endpoint supports creation of a new business entity by these filings:<ul><li>Incorporation Application</li><li>Amalgamation (Regular, Horizontal and Vertical)</li><li>Continuation In</li><li>Registration</li></ul></p>'
       requestBody:
         content:
           application/json:
@@ -3515,11 +3515,11 @@ paths:
             type: boolean
           in: query
           name: draft
-          description: Set to save a draft in the ledger. No validations are performed.
+          description: This parameter is used to save a filing in Draft form which can be retrieved at a later time.
         - schema:
             type: boolean
           in: query
-          description: 'Validate the submission, but do not save or process it. Errors and warnings are returned if there are any.'
+          description: 'This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.'
           name: only_validate
         - $ref: '#/components/parameters/accountId'
     parameters: []
@@ -4236,7 +4236,7 @@ components:
           description: The business is up to date with required filings, e.g. Annual Report.
         adminFreeze:
           type: boolean
-          description: The business has been placed in a Frozen state by the Registry which will prevent any further filings from being made.
+          description: 'The business has been placed in a Frozen state by the Registry which will prevent any further filings from being made  '
         naics:
           $ref: '#/components/schemas/Naics'
         natureOfBusiness:
@@ -4265,7 +4265,7 @@ components:
                 example: '''https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'''
         alternateNames:
           type: array
-          description: The alternate name of the business. Only applicable for Sole Proprietorship(SP) and General Partnership(GP).
+          description: The alternate name of the business. Only applicable for Sole Proprietorship(SP) and General Partnership(GP). Only applicable for Sole Proprietorship(SP) and General Partnership(GP).
           items:
             type: object
             properties:
@@ -6154,7 +6154,7 @@ components:
     Naics:
       type: object
       title: NAICS Schema
-      description: NAICS is an abbreviation for The North American Industry Classification System and is a standard used to classify business activities. NAICS information is not required or collected for all types of business entities.
+      description: '<p>NAICS is an abbreviation for The North American Industry Classification System and is a standard used to classify business activities.</p><p>NAICS information is not required or collected for all types of business entities.</p>'
       properties:
         naicsCode:
           type: string
