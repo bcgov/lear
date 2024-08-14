@@ -829,7 +829,7 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Alteration of Name Request is not approved.,path:/filing/alteration/nameRequest/nrNumber,error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
-                change-of-directors-invalid-address-country:
+                change-of-directors-failed-invalid-address-country:
                   summary: Change Of Directors - Invalid Address Country
                   value:
                     errorMessage: API backend third party service error.
