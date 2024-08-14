@@ -97,7 +97,7 @@ class StageOneProcessor:
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
-            self._app.logger.debug('Created furnishing address (first round)')
+            self._app.logger.debug(f'Created address (first round) with furnishing ID: {new_furnishing.id}')
         if email:
             # send email letter
             await self._send_email(new_furnishing)
@@ -139,7 +139,7 @@ class StageOneProcessor:
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
-            self._app.logger.debug('Created furnishing address (second round)')
+            self._app.logger.debug(f'Created address (second round) with furnishing ID: {new_furnishing.id}')
 
         # TODO: create and add letter to either AR or transition pdf
         # TODO: send AR and transition pdf to BCMail+

@@ -79,13 +79,17 @@ class PostProcessor:
     def process(self):
         """Postprocess to generate and upload file to external resources(BC Laws)."""
         self._format_furnishings()
+        self._app.logger.debug('Formatted furnishing details presented in XML file')
         self._set_meta_info()
         payload = self._build_xml_data(self._xml_data)
         furnishing_group, _ = self._save_xml_payload(payload)
+        self._app.logger.debug('Saved XML payload')
         # TODO: SFTP to BC Laws
 
         # mark furnishing records processed
         self._update_furnishings_status(furnishing_group.id)
+        self._app.logger.debug(
+            f'furnishing records with group id: {furnishing_group.id} marked as processed')
 
 
 class XmlMeta:
