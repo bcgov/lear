@@ -20,6 +20,7 @@ import os
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import redirect, Flask  # noqa: I001
+from flask_migrate import Migrate
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
@@ -55,6 +56,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
         )
 
     db.init_app(app)
+    migrate = Migrate(app, db)
     rsbc_schemas.init_app(app)
     flags.init_app(app)
     queue.init_app(app)
