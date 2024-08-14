@@ -4785,7 +4785,7 @@ components:
           description: 'Phone number to be used to contact the business eg: (250) 234-4433.'
         extension:
           type: number
-          example: (555) 555-5555
+          example: 123
           description: Extension number of the business contact phone number (555) 555-5555.
       required:
         - email
@@ -4936,7 +4936,7 @@ components:
             - CP
             - HC
             - CSC
-          example: '''CP'''
+          example: 'CP'
           description: 'Defines cooperatives by type of membership eg: Financial Cooperatives.'
         rulesFileKey:
           type: string
@@ -5385,14 +5385,14 @@ components:
             - COMPLETED
             - ERROR
           description: 'Status of the filing eg: ''draft''. '
-          example: '"DRAFT", "PENDING", "COMPLETED", "ERROR"'
+          example: 'DRAFT'
         affectedFilings:
           type: array
           title: List of affected filings (ids) from this filing.
           description: 'Filings related to the header eg: [1234,4856].'
           items:
             type: integer
-            example: '[1234,4856]'
+            example: 1234
         isCorrected:
           type: boolean
           title: Has this filing been corrected?
@@ -5443,7 +5443,7 @@ components:
           type: integer
           title: authorization system account number.
           description: 'SBC_AUTH account number. '
-          example: '416'
+          example: 416
         paymentAccount:
           type: string
           title: payment org account identifier.
@@ -5461,7 +5461,7 @@ components:
             - DRAWDOWN
             - INTERNAL
           description: 'Method of payment used to pay for filing, possible values are: ONLINE_BANKING,CC,DIRECT_PAY,DRAWDOWN,INTERNAL.'
-          example: credit card CC
+          example: 'CC'
         isPaymentActionRequired:
           type: boolean
           title: flag for payment redirect.
