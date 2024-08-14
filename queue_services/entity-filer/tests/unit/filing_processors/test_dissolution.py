@@ -93,6 +93,12 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     party_role.save()
     curr_roles = len(business.party_roles.all())
 
+    business.dissolution_date = None
+    business_id = business.id
+
+    filing_meta = FilingMeta()
+    filing = create_filing('123', filing_json)
+
     if dissolution_type == 'involuntary':
         batch = Batch(
             batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
@@ -103,6 +109,7 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
         batch_processing = BatchProcessing(
             batch_id=batch.id,
             business_id=business.id,
+            filing_id=filing.id,
             business_identifier=business.identifier,
             step=BatchProcessing.BatchProcessingStep.DISSOLUTION,
             status=BatchProcessing.BatchProcessingStatus.QUEUED,
@@ -111,12 +118,6 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
             last_modified=datetime.utcnow()
         )
         batch_processing.save()
-
-    business.dissolution_date = None
-    business_id = business.id
-
-    filing_meta = FilingMeta()
-    filing = create_filing('123', filing_json)
 
     # test
     dissolution.process(business, filing_json['filing'], filing, filing_meta, True)
