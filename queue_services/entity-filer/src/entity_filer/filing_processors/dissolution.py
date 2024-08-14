@@ -102,7 +102,6 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         batch_processings = BatchProcessing.find_by(business_id=business.id)
         for batch_processing in batch_processings:
             if batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED:
-                batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
                 batch_processing.last_modified = datetime.utcnow()
                 batch_processing.save()

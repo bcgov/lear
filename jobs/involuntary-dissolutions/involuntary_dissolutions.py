@@ -282,6 +282,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             await put_filing_on_queue(filing.id, app, qsm)
 
             batch_processing.filing_id = filing.id
+            batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
             batch_processing.status = BatchProcessing.BatchProcessingStatus.QUEUED
             app.logger.debug(
                 f'Batch Processing with identifier: {batch_processing.business_identifier} has been marked as queued.'

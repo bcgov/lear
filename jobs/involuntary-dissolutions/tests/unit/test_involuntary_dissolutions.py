@@ -321,4 +321,4 @@ async def test_stage_3_process(app, session, test_name, status, step):
     assert batch_processing.status == status
     assert batch_processing.step == step
 
-    assert batch.status == Batch.BatchStatus.COMPLETED
+    assert batch.status == Batch.BatchStatus.QUEUED
