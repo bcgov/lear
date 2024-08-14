@@ -92,22 +92,29 @@ class StageOneProcessor:
                 business.legal_name,
                 email
                 )
+        self._app.logger.debug(f'New furnishing has been created with ID (first round): {new_furnishing.id}')
+
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
+            self._app.logger.debug(f'Created address (first round) with furnishing ID: {new_furnishing.id}')
         if email:
             # send email letter
             await self._send_email(new_furnishing)
+            self._app.logger.debug(
+                f'Successfully put email message on the queue for furnishing entry with ID: {new_furnishing.id}')
         else:
             # send paper letter if business doesn't have email address
             new_furnishing.furnishing_type = Furnishing.FurnishingType.MAIL
             new_furnishing.save()
+            self._app.logger.debug(f'Changed furnishing type to MAIL for funishing with ID: {new_furnishing.id}')
 
             # TODO: create and add letter to either AR or transition pdf
             # TODO: send AR and transition pdf to BCMail+
             new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
             new_furnishing.processed_date = datetime.utcnow()
             new_furnishing.save()
+            self._app.logger.debug(f'Changed furnishing status to PROCESSED for funishing with ID: {new_furnishing.id}')
 
     async def _send_second_round_notification(self, batch_processing: BatchProcessing):
         """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
@@ -127,10 +134,12 @@ class StageOneProcessor:
             business.last_ar_date if business.last_ar_date else business.founding_date,
             business.legal_name
         )
+        self._app.logger.debug(f'New furnishing has been created with ID (second round): {new_furnishing.id}')
 
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
+            self._app.logger.debug(f'Created address (second round) with furnishing ID: {new_furnishing.id}')
 
         # TODO: create and add letter to either AR or transition pdf
         # TODO: send AR and transition pdf to BCMail+

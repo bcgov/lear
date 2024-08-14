@@ -62,6 +62,7 @@ def process(app: Flask):
                 business_name=business.legal_name
             )
             new_furnishing.save()
+            app.logger.debug(f'Created corp dissolved furnishing entry with ID: {new_furnishing.id}')
         # TODO: create data files and SFTPing to BC Laws
         # TODO: mark furnishings entry processed
 
