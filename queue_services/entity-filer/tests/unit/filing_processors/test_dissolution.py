@@ -18,7 +18,7 @@ from datetime import datetime
 
 import pytest
 
-from legal_api.models import BatchProcessing, Business, Office, OfficeType, Party, PartyRole, Filing
+from legal_api.models import BatchProcessing, Batch, Business, Office, OfficeType, Party, PartyRole, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -94,11 +94,17 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     curr_roles = len(business.party_roles.all())
 
     if dissolution_type == 'involuntary':
+        batch = Batch(
+            batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+            status=Batch.BatchStatus.PROCESSING,
+            size=1,
+        )
+        batch.save()
         batch_processing = BatchProcessing(
-            batch_id=1,
+            batch_id=batch.id,
             business_id=business.id,
             business_identifier=business.identifier,
-            step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            step=BatchProcessing.BatchProcessingStep.DISSOLUTION,
             status=BatchProcessing.BatchProcessingStatus.QUEUED,
             created_date=datetime.utcnow()-datedelta(days=42),
             trigger_date=datetime.utcnow(),
@@ -143,7 +149,6 @@ def test_dissolution(app, session, minio_server, legal_type, identifier, dissolu
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
     if dissolution_type == 'involuntary':
         assert batch_processing
-        assert batch_processing.step == BatchProcessing.BatchProcessingStep.DISSOLUTION
         assert batch_processing.status == BatchProcessing.BatchProcessingStatus.COMPLETED
 
     expected_dissolution_date = filing.effective_date
