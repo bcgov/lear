@@ -5318,7 +5318,6 @@ components:
                 - alteration
                 - agmExtension
                 - agmLocationChange
-                - annualReport
                 - amalgamationApplication
                 - amendedAGM
                 - amendedAnnualReport
@@ -5694,7 +5693,7 @@ components:
                 - $ref: '#/components/schemas/Unmanaged'
           description: Submitting updates related to a business or incorporating/registering a new business.
       required:
-        - header
+        - filing
     Foreign_jurisdiction:
       type: object
       title: Foreign Jurisdiction Schema
