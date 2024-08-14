@@ -5660,37 +5660,34 @@ components:
                         hasRightsOrRestrictions: true
       description: Submitting updates related to a business or incorporating/registering a new business.
       properties:
-        header:
-          $ref: '#/components/schemas/filing_header'
-        business:
-          $ref: '#/components/schemas/Business'
         filing:
+          allOf:
+            - $ref: '#/components/schemas/filing_header'
+            - $ref: '#/components/schemas/Business'
           oneOf:
-            - oneOf:
-                - $ref: '#/components/schemas/Incorporation_application'
-                - $ref: '#/components/schemas/Registration'
-            - anyOf:
-                - $ref: '#/components/schemas/Agm_extension'
-                - $ref: '#/components/schemas/Agm_location_change'
-                - $ref: '#/components/schemas/Alteration'
-                - $ref: '#/components/schemas/Annual_report'
-                - $ref: '#/components/schemas/Change_of_address'
-                - $ref: '#/components/schemas/Change_of_directors'
-                - $ref: '#/components/schemas/Change_of_name'
-                - $ref: '#/components/schemas/Change_of_registration'
-                - $ref: '#/components/schemas/Consent_continuation_out'
-                - $ref: '#/components/schemas/Conversion'
-                - $ref: '#/components/schemas/Court_order'
-                - $ref: '#/components/schemas/Correction'
-                - $ref: '#/components/schemas/Dissolution'
-                - $ref: '#/components/schemas/Incorporation_application'
-                - $ref: '#/components/schemas/Registrars_notation'
-                - $ref: '#/components/schemas/Registrars_order'
-                - $ref: '#/components/schemas/Registration'
-                - $ref: '#/components/schemas/Restoration'
-                - $ref: '#/components/schemas/Special_resolution'
-                - $ref: '#/components/schemas/Transition'
-                - $ref: '#/components/schemas/Unmanaged'
+            - $ref: '#/components/schemas/Incorporation_application'
+            - $ref: '#/components/schemas/Registration'
+            - $ref: '#/components/schemas/Agm_extension'
+            - $ref: '#/components/schemas/Agm_location_change'
+            - $ref: '#/components/schemas/Alteration'
+            - $ref: '#/components/schemas/Annual_report'
+            - $ref: '#/components/schemas/Change_of_address'
+            - $ref: '#/components/schemas/Change_of_directors'
+            - $ref: '#/components/schemas/Change_of_name'
+            - $ref: '#/components/schemas/Change_of_registration'
+            - $ref: '#/components/schemas/Consent_continuation_out'
+            - $ref: '#/components/schemas/Conversion'
+            - $ref: '#/components/schemas/Court_order'
+            - $ref: '#/components/schemas/Correction'
+            - $ref: '#/components/schemas/Dissolution'
+            - $ref: '#/components/schemas/Incorporation_application'
+            - $ref: '#/components/schemas/Registrars_notation'
+            - $ref: '#/components/schemas/Registrars_order'
+            - $ref: '#/components/schemas/Registration'
+            - $ref: '#/components/schemas/Restoration'
+            - $ref: '#/components/schemas/Special_resolution'
+            - $ref: '#/components/schemas/Transition'
+            - $ref: '#/components/schemas/Unmanaged'
           description: Submitting updates related to a business or incorporating/registering a new business.
       required:
         - filing
