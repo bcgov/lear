@@ -30,7 +30,7 @@ def upgrade():
 
 def downgrade():
     # Need to convert any existing QUEUED statuses to PROCESSING
-    op.execute('UPDATE batch_processing SET status = "PROCESSED" WHERE status = "QUEUED"')
+    op.execute('UPDATE batch_processing SET status = \'PROCESSING\' WHERE status = \'QUEUED\'')
     op.execute('ALTER TYPE batch_processing_status RENAME TO tmp_batch_processing_status')
     old_type.create(op.get_bind())
     op.execute('ALTER TABLE batch_processing ALTER COLUMN status TYPE batch_processing_status USING status::text::batch_processing_status')
