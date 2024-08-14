@@ -3652,7 +3652,7 @@ components:
         addressRegion:
           type: string
           maxLength: 2
-          example: 'BC for British Columbia'
+          example: 'BC'
           description: '2 char code for province, state, territory or district.'
         addressCountry:
           type: string
@@ -3763,7 +3763,7 @@ components:
           enum:
             - sample
             - custom
-          example: Sample or custom
+          example: sample
           description: 'Example: Sample and custom'
       required:
         - agreementType
@@ -4033,7 +4033,7 @@ components:
                   cessationDate:
                     type: string
                     format: date
-                    example: 'Date the officer has ended his/her role '
+                    example: '2024-07-23'
                     description: Date the director or officer has been terminated in the role.
                 required:
                   - officer
@@ -4224,12 +4224,12 @@ components:
             - XL
             - XP
             - XS
-          example: 'GP: General Partnership'
+          example: 'GP'
           description: 'Type of business eg: BC corporation (B), Continued in corporation (C), Sole proprietor(SP), General Partnership(GP).'
         taxId:
           type: string
-          pattern: '^[0-9]{9}$'
-          example: BN123456789
+          pattern: '^[0-9]{9}[A-Z]{2}[0-9]{4}$|^[0-9]{9}$'
+          example: '123456789BC0001'
           description: 'Company unique business number assigned by CRA: BN9 or BN15. '
         goodStanding:
           type: boolean
@@ -4302,7 +4302,7 @@ components:
                 format: date
                 description: The end date of the alternate name (reserved for future use)
                 nullable: true
-                example: ''
+                example: '2024-07-15'
               type:
                 type: string
                 description: The type of the alternate name
@@ -4785,7 +4785,7 @@ components:
           description: 'Phone number to be used to contact the business eg: (250) 234-4433.'
         extension:
           type: number
-          example: (555) 555-5555
+          example: 123
           description: Extension number of the business contact phone number (555) 555-5555.
       required:
         - email
@@ -4936,7 +4936,7 @@ components:
             - CP
             - HC
             - CSC
-          example: '''CP'''
+          example: 'CP'
           description: 'Defines cooperatives by type of membership eg: Financial Cooperatives.'
         rulesFileKey:
           type: string
@@ -5303,184 +5303,178 @@ components:
             isPaymentActionRequired: true
           '': string
       properties:
-        header:
-          type: object
-          required:
-            - name
-            - date
-            - certifiedBy
-          properties:
-            name:
-              type: string
-              title: The type of the main filing.
-              enum:
-                - adminFreeze
-                - alteration
-                - agmExtension
-                - agmLocationChange
-                - annualReport
-                - amalgamationApplication
-                - amendedAGM
-                - amendedAnnualReport
-                - amendedChangeOfDirectors
-                - annualReport
-                - appointReceiver
-                - changeOfDirectors
-                - changeOfAddress
-                - changeOfName
-                - changeOfRegistration
-                - consentContinuationOut
-                - continuationIn
-                - continuationOut
-                - continuedOut
-                - conversion
-                - correction
-                - courtOrder
-                - dissolution
-                - dissolved
-                - incorporationApplication
-                - putBackOn
-                - registration
-                - restoration
-                - specialResolution
-                - transition
-                - registrarsNotation
-                - registrarsOrder
-              description: 'Filing name. '
-            availableOnPaperOnly:
-              type: boolean
-              description: 'If filing results(ouputs) available only on paper: Yes/No. '
-            inColinOnly:
-              type: boolean
-              description: 'Filing information stored in COLIN only: Yes/No.'
-            date:
-              type: string
-              format: date
-              title: The submission date of the final version of the filing.
-              description: 'Date of the filing. '
-            certifiedBy:
-              type: string
-              description: 'Staff certifying filing. '
-            email:
-              type: string
-              format: email
-              description: email contact for the filing.
-            filingId:
-              type: integer
-              title: The id of the filing.
-              default: 0
-              description: 'Filing identifier eg: 1234. '
-              example: 1234
-            effectiveDate:
-              type: string
-              format: date-time
-              title: The date and time a filing should become valid and applied.
-              description: Date and time the filing is taking effect.
-            paymentToken:
-              type: string
-              title: A valid payment token for this filing against this business.
-              description: 'Replaces sensitive payment information with a unique identifier, received back from SBC_PAY'
-            submitter:
-              type: string
-              title: Account name of the person submitting this filing.
-              description: 'Person/applicant submitting the filing. '
-            status:
-              type: string
-              title: The status of this filing.
-              enum:
-                - DRAFT
-                - PENDING
-                - COMPLETED
-                - ERROR
-              description: 'Status of the filing eg: ''draft''. '
-              example: '"DRAFT", "PENDING", "COMPLETED", "ERROR"'
-            affectedFilings:
-              type: array
-              title: List of affected filings (ids) from this filing.
-              description: 'Filings related to the header eg: [1234,4856].'
-              items:
-                type: integer
-                example: '[1234,4856]'
-            isCorrected:
-              type: boolean
-              title: Has this filing been corrected?
-              description: 'If filing has been corrected: Yes/No.'
-            isCorrectionPending:
-              type: boolean
-              title: Is a correction pending for this filing?
-              description: 'If filing correction are in pending status: Yes/No.'
-            comments:
-              type: array
-              title: List of filing comments.
-              description: 'Notes about filing. '
-              items:
-                $ref: '#/components/schemas/Comment'
-            waiveFees:
-              type: boolean
-              description: 'Are fees being waived for the filing: Yes/No.'
-            priority:
-              type: boolean
-              description: 'Is it a priority filing: Yes/No. '
-            routingSlipNumber:
-              type: string
-              title: A valid routing slip number in case of a staff filing.
-              maxLength: 9
-              pattern: '^\d{9}$'
-              description: If filing paid with cash or cheque there will be a routing slip of 9 digits.
-            folioNumber:
-              type: string
-              title: A folio number used for payment tracking purposes.
-              maxLength: 50
-              description: 'Reference number to help keep track of transactions eg: used in BCOL. '
-              example: '1332'
-            datNumber:
-              type: string
-              title: A dat number used for payment tracking purposes.
-              maxLength: 10
-              pattern: '^[A-Z]{1}[0-9]{7,9}$'
-              description: Payment identifyer (9 digits) for FAS payments.
-              example: C234567890
-            bcolAccountNumber:
-              type: string
-              title: BCOL account number.
-              maxLength: 6
-              pattern: ^(.*)$
-              example: '910207'
-              description: 'BCOL account number to be debited if paying with a BCOL account eg: 910207.'
-            sbcAccount:
-              type: integer
-              title: authorization system account number.
-              description: 'SBC_AUTH account number. '
-              example: '416'
-            paymentAccount:
-              type: string
-              title: payment org account identifier.
-              maxLength: 30
-              pattern: ^(.*)$
-              description: 'Payment identifyer from where the payment will be debited. '
-              example: '180670'
-            paymentMethod:
-              type: string
-              title: payment method.
-              enum:
-                - ONLINE_BANKING
-                - CC
-                - DIRECT_PAY
-                - DRAWDOWN
-                - INTERNAL
-              description: 'Method of payment used to pay for filing, possible values are: ONLINE_BANKING,CC,DIRECT_PAY,DRAWDOWN,INTERNAL.'
-              example: credit card CC
-            isPaymentActionRequired:
-              type: boolean
-              title: flag for payment redirect.
-              description: Further action required to finalize the payment.
+        name:
+          type: string
+          title: The type of the main filing.
+          enum:
+            - adminFreeze
+            - alteration
+            - agmExtension
+            - agmLocationChange
+            - amalgamationApplication
+            - amendedAGM
+            - amendedAnnualReport
+            - amendedChangeOfDirectors
+            - annualReport
+            - appointReceiver
+            - changeOfDirectors
+            - changeOfAddress
+            - changeOfName
+            - changeOfRegistration
+            - consentContinuationOut
+            - continuationIn
+            - continuationOut
+            - continuedOut
+            - conversion
+            - correction
+            - courtOrder
+            - dissolution
+            - dissolved
+            - incorporationApplication
+            - putBackOn
+            - registration
+            - restoration
+            - specialResolution
+            - transition
+            - registrarsNotation
+            - registrarsOrder
+          description: 'Filing name. '
+        availableOnPaperOnly:
+          type: boolean
+          description: 'If filing results(ouputs) available only on paper: Yes/No. '
+        inColinOnly:
+          type: boolean
+          description: 'Filing information stored in COLIN only: Yes/No.'
+        date:
+          type: string
+          format: date
+          title: The submission date of the final version of the filing.
+          description: 'Date of the filing. '
+        certifiedBy:
+          type: string
+          description: 'Staff certifying filing. '
+        email:
+          type: string
+          format: email
+          description: email contact for the filing.
+        filingId:
+          type: integer
+          title: The id of the filing.
+          default: 0
+          description: 'Filing identifier eg: 1234. '
+          example: 1234
+        effectiveDate:
+          type: string
+          format: date-time
+          title: The date and time a filing should become valid and applied.
+          description: Date and time the filing is taking effect.
+        paymentToken:
+          type: string
+          title: A valid payment token for this filing against this business.
+          description: 'Replaces sensitive payment information with a unique identifier, received back from SBC_PAY'
+        submitter:
+          type: string
+          title: Account name of the person submitting this filing.
+          description: 'Person/applicant submitting the filing. '
+        status:
+          type: string
+          title: The status of this filing.
+          enum:
+            - DRAFT
+            - PENDING
+            - COMPLETED
+            - ERROR
+          description: 'Status of the filing eg: ''draft''. '
+          example: 'DRAFT'
+        affectedFilings:
+          type: array
+          title: List of affected filings (ids) from this filing.
+          description: 'Filings related to the header eg: [1234,4856].'
+          items:
+            type: integer
+            example: 1234
+        isCorrected:
+          type: boolean
+          title: Has this filing been corrected?
+          description: 'If filing has been corrected: Yes/No.'
+        isCorrectionPending:
+          type: boolean
+          title: Is a correction pending for this filing?
+          description: 'If filing correction are in pending status: Yes/No.'
+        comments:
+          type: array
+          title: List of filing comments.
+          description: 'Notes about filing. '
+          items:
+            $ref: '#/components/schemas/Comment'
+        waiveFees:
+          type: boolean
+          description: 'Are fees being waived for the filing: Yes/No.'
+        priority:
+          type: boolean
+          description: 'Is it a priority filing: Yes/No. '
+        routingSlipNumber:
+          type: string
+          title: A valid routing slip number in case of a staff filing.
+          maxLength: 9
+          pattern: '^\d{9}$'
+          description: If filing paid with cash or cheque there will be a routing slip of 9 digits.
+        folioNumber:
+          type: string
+          title: A folio number used for payment tracking purposes.
+          maxLength: 50
+          description: 'Reference number to help keep track of transactions eg: used in BCOL. '
+          example: '1332'
+        datNumber:
+          type: string
+          title: A dat number used for payment tracking purposes.
+          maxLength: 10
+          pattern: '^[A-Z]{1}[0-9]{7,9}$'
+          description: Payment identifyer (9 digits) for FAS payments.
+          example: C234567890
+        bcolAccountNumber:
+          type: string
+          title: BCOL account number.
+          maxLength: 6
+          pattern: ^(.*)$
+          example: '910207'
+          description: 'BCOL account number to be debited if paying with a BCOL account eg: 910207.'
+        sbcAccount:
+          type: integer
+          title: authorization system account number.
+          description: 'SBC_AUTH account number. '
+          example: 416
+        paymentAccount:
+          type: string
+          title: payment org account identifier.
+          maxLength: 30
+          pattern: ^(.*)$
+          description: 'Payment identifyer from where the payment will be debited. '
+          example: '180670'
+        paymentMethod:
+          type: string
+          title: payment method.
+          enum:
+            - ONLINE_BANKING
+            - CC
+            - DIRECT_PAY
+            - DRAWDOWN
+            - INTERNAL
+          description: 'Method of payment used to pay for filing, possible values are: ONLINE_BANKING,CC,DIRECT_PAY,DRAWDOWN,INTERNAL.'
+          example: 'CC'
+        isPaymentActionRequired:
+          type: boolean
+          title: flag for payment redirect.
+          description: Further action required to finalize the payment.
         '':
           type: string
           x-stoplight:
             id: 7nl2sc9w8mtqr
           description: Header name.
       required:
-        - header
+        - name
+        - date
+        - certifiedBy
     Filing:
       type: object
       title: Registry Filing Envelope
@@ -5661,40 +5655,42 @@ components:
                         hasRightsOrRestrictions: true
       description: Submitting updates related to a business or incorporating/registering a new business.
       properties:
-        header:
-          $ref: '#/components/schemas/filing_header'
-        business:
-          $ref: '#/components/schemas/Business'
         filing:
-          oneOf:
-            - oneOf:
-                - $ref: '#/components/schemas/Incorporation_application'
-                - $ref: '#/components/schemas/Registration'
-            - anyOf:
-                - $ref: '#/components/schemas/Agm_extension'
-                - $ref: '#/components/schemas/Agm_location_change'
-                - $ref: '#/components/schemas/Alteration'
-                - $ref: '#/components/schemas/Annual_report'
-                - $ref: '#/components/schemas/Change_of_address'
-                - $ref: '#/components/schemas/Change_of_directors'
-                - $ref: '#/components/schemas/Change_of_name'
-                - $ref: '#/components/schemas/Change_of_registration'
-                - $ref: '#/components/schemas/Consent_continuation_out'
-                - $ref: '#/components/schemas/Conversion'
-                - $ref: '#/components/schemas/Court_order'
-                - $ref: '#/components/schemas/Correction'
-                - $ref: '#/components/schemas/Dissolution'
-                - $ref: '#/components/schemas/Incorporation_application'
-                - $ref: '#/components/schemas/Registrars_notation'
-                - $ref: '#/components/schemas/Registrars_order'
-                - $ref: '#/components/schemas/Registration'
-                - $ref: '#/components/schemas/Restoration'
-                - $ref: '#/components/schemas/Special_resolution'
-                - $ref: '#/components/schemas/Transition'
-                - $ref: '#/components/schemas/Unmanaged'
+          properties:
+            header:
+              $ref: '#/components/schemas/filing_header'
+            business:
+              $ref: '#/components/schemas/Business'
+            filing:
+              oneOf:
+                - oneOf:
+                    - $ref: '#/components/schemas/Incorporation_application'
+                    - $ref: '#/components/schemas/Registration'
+                - anyOf:
+                    - $ref: '#/components/schemas/Agm_extension'
+                    - $ref: '#/components/schemas/Agm_location_change'
+                    - $ref: '#/components/schemas/Alteration'
+                    - $ref: '#/components/schemas/Annual_report'
+                    - $ref: '#/components/schemas/Change_of_address'
+                    - $ref: '#/components/schemas/Change_of_directors'
+                    - $ref: '#/components/schemas/Change_of_name'
+                    - $ref: '#/components/schemas/Change_of_registration'
+                    - $ref: '#/components/schemas/Consent_continuation_out'
+                    - $ref: '#/components/schemas/Conversion'
+                    - $ref: '#/components/schemas/Court_order'
+                    - $ref: '#/components/schemas/Correction'
+                    - $ref: '#/components/schemas/Dissolution'
+                    - $ref: '#/components/schemas/Incorporation_application'
+                    - $ref: '#/components/schemas/Registrars_notation'
+                    - $ref: '#/components/schemas/Registrars_order'
+                    - $ref: '#/components/schemas/Registration'
+                    - $ref: '#/components/schemas/Restoration'
+                    - $ref: '#/components/schemas/Special_resolution'
+                    - $ref: '#/components/schemas/Transition'
+                    - $ref: '#/components/schemas/Unmanaged'
           description: Submitting updates related to a business or incorporating/registering a new business.
       required:
-        - header
+        - filing
     Foreign_jurisdiction:
       type: object
       title: Foreign Jurisdiction Schema
@@ -5980,7 +5976,7 @@ components:
                     type: string
                     format: uri
                     description: 'Name of legal filing. '
-                    example: '"http://example.com"'
+                    example: 'http://example.com'
             receipt:
               type: string
               description: 'Confirmation of filing and payment completion.  '
@@ -6160,7 +6156,7 @@ components:
           type: string
           pattern: '^[0-9]{5,9}$'
           description: 'Six digits unique identifier assigned to a business activity.  '
-          example: 32621 is the code for 'Tires Manufacturing' description
+          example: '32621'
         naicsDescription:
           type: string
           example: 32621 is the code for 'Tires Manufacturing' description
@@ -6737,7 +6733,7 @@ components:
           type: integer
           title: 'The display order of the shares that indicates priority. '
           description: 'The display order that indicates priority eg: 2. with value 2, the share class will be displayed the second, after share class with priority 1. '
-          example: 'Eg: with value 2, the share class will be displayed the second, after share class with priority 1. '
+          example: 2
         maxNumberOfShares:
           type: number
           title: 'Maximum number of shares in the class. '
