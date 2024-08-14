@@ -99,7 +99,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     # update batch processing entry, if any is present
     if flag_on:
-        batch_processings = BatchProcessing.find_by(filing_id=dissolution_filing.get("id"))
+        batch_processings = BatchProcessing.find_by(filing_id=filing_rec.id)
         for batch_processing in batch_processings:
             if batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED:
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
