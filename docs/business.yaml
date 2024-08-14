@@ -5664,7 +5664,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/filing_header'
             - $ref: '#/components/schemas/Business'
-          oneOf:
+          anyOf:
             - $ref: '#/components/schemas/Incorporation_application'
             - $ref: '#/components/schemas/Registration'
             - $ref: '#/components/schemas/Agm_extension'
