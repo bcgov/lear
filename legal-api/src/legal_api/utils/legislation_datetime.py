@@ -17,7 +17,7 @@ import pytz
 from dateutil.tz import gettz
 from flask import current_app
 
-from .datetime import date, datetime, timezone
+from .datetime import date, datetime, timedelta, timezone
 
 
 class LegislationDatetime():
@@ -45,7 +45,7 @@ class LegislationDatetime():
     @staticmethod
     def tomorrow_one_minute_after_midnight() -> datetime:
         """Construct a datetime tomorrow 12:01 AM using the legislation timezone."""
-        return LegislationDatetime.tomorrow_midnight() + datetime.timedelta(minutes=1)
+        return LegislationDatetime.tomorrow_midnight() + timedelta(minutes=1)
 
     @staticmethod
     def as_legislation_timezone(date_time: datetime) -> datetime:
