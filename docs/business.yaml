@@ -5976,7 +5976,7 @@ components:
                     type: string
                     format: uri
                     description: 'Name of legal filing. '
-                    example: '"http://example.com"'
+                    example: 'http://example.com'
             receipt:
               type: string
               description: 'Confirmation of filing and payment completion.  '
@@ -6156,7 +6156,7 @@ components:
           type: string
           pattern: '^[0-9]{5,9}$'
           description: 'Six digits unique identifier assigned to a business activity.  '
-          example: 32621 is the code for 'Tires Manufacturing' description
+          example: '32621'
         naicsDescription:
           type: string
           example: 32621 is the code for 'Tires Manufacturing' description
@@ -6733,7 +6733,7 @@ components:
           type: integer
           title: 'The display order of the shares that indicates priority. '
           description: 'The display order that indicates priority eg: 2. with value 2, the share class will be displayed the second, after share class with priority 1. '
-          example: 'Eg: with value 2, the share class will be displayed the second, after share class with priority 1. '
+          example: 2
         maxNumberOfShares:
           type: number
           title: 'Maximum number of shares in the class. '
