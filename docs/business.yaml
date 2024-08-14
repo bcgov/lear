@@ -131,241 +131,6 @@ paths:
                 type: object
                 properties: {}
               examples:
-                agm-location-change-success-response:
-                  summary: AGM Location Change Response
-                  value:
-                    errors: [
-                      null
-                    ]
-                    filing:
-                      agmLocationChange:
-                        agmLocation: Victoria, BC, Canada
-                        reason: API Specs Tests
-                        year: '2024'
-                      business:
-                        foundingDate: '2023-07-12T17:31:58.000+00:00'
-                        identifier: BC0882365
-                        legalName: 882365 B.C. LTD.
-                        legalType: BC
-                      header:
-                        affectedFilings: []
-                        availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
-                        colinIds: []
-                        comments: []
-                        date: '2024-07-18T15:36:26.345331+00:00'
-                        filingId: 150147
-                        inColinOnly: false
-                        isCorrected: false
-                        isCorrectionPending: false
-                        name: agmLocationChange
-                        status: DRAFT
-                        submitter: mocked submitter
-                consent-continuation-out-success-response:
-                  summary: Consent Continuation Out Response
-                  value:
-                    filing:
-                      business:
-                        legalName: 0882848 B.C. LTD.
-                        legalType: BEN
-                        identifier: BC0882848
-                        foundingDate: '2024-07-08T15:34:57.844764+00:00'
-                      consentContinuationOut:
-                        foreignJurisdiction:
-                          country: CA
-                          region: SK
-                        courtOrder:
-                          fileNumber: '12345'
-                          effectOfOrder: planOfArrangement
-                      header:
-                        affectedFilings: []
-                        availableOnPaperOnly: false
-                        certifiedBy: "string"
-                        colinIds: []
-                        comments: []
-                        date: '2024-07-18'
-                        deletionLocked: false
-                        documentOptionalEmail: "user@example.com"
-                        effectiveDate: '2024-07-18T07:00:42.552434+00:00'
-                        email: "user@example.com"
-                        filingId: 150056
-                        inColinOnly: false
-                        isCorrected: false
-                        isCorrectionPending: false
-                        isPaymentActionRequired: true
-                        name: consentContinuationOut
-                        paymentAccount: '1234'
-                        paymentStatusCode: 'CREATED'
-                        paymentToken: '12345'
-                        status: 'PENDING'
-                        submitter: 'mocked submitter'
-                voluntary-dissolution-success-response:
-                  summary: Voluntary Dissolution Response
-                  value:
-                    filing:
-                      business:
-                        foundingDate: '2023-07-12T17:31:58.000+00:00'
-                        identifier: BC0882365
-                        legalName: 882365 B.C. LTD.
-                        legalType: BC
-                      dissolution:
-                        affidavitConfirmed: true
-                        courtOrder:
-                          effectOfOrder: ''
-                          fileNumber: '12345'
-                          hasPlanOfArrangement: false
-                        custodialOffice:
-                          deliveryAddress:
-                            addressCity: Victoria
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
-                            streetAddressAdditional: ''
-                          mailingAddress:
-                            addressCity: Victoria
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
-                            streetAddressAdditional: ''
-                        dissolutionDate: '2024-07-18'
-                        dissolutionType: voluntary
-                        parties:
-                          - party:
-                              deliveryAddress:
-                                addressCity: Victoria
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: ''
-                                postalCode: V8W 3E6
-                                streetAddress: 200-940 Blanshard St
-                              inheritMailingAddress: true
-                              mailingAddress:
-                                addressCity: Victoria
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: ''
-                                postalCode: V8W 3E6
-                                streetAddress: 200-940 Blanshard St
-                              officer:
-                                email: api.specs@example.com
-                                firstName: Firstname
-                                lastName: Lastname
-                                middleName: ''
-                                organizationName: ''
-                                partyType: person
-                              roles:
-                                - appointmentDate: '2024-07-18'
-                                  roleType: Custodian
-                        resolution:
-                          resolutionConfirmed: true
-                      header:
-                        affectedFilings: []
-                        availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
-                        colinIds: []
-                        comments: []
-                        date: '2024-07-18T15:36:26.345331+00:00'
-                        deletionLocked: false
-                        effectiveDate: '2027-07-21T07:00:00.000+00:00'
-                        filingId: 149994
-                        inColinOnly: false
-                        isCorrected: false
-                        isCorrectionPending: false
-                        isPaymentActionRequired: true
-                        name: dissolution
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
-                        priority: false
-                        status: PENDING
-                        submitter: mocked submitter
-                change-of-address-success-response:
-                  summary: Change Of Address Response
-                  value:
-                    filing:
-                      business:
-                        legalType: BC
-                        foundingDate: '2024-06-09T00:00:00+00:00'
-                        identifier: BC0880343
-                        legalName: KD TEST BAKING BC LIMITED
-                      changeOfAddress:
-                        legalType: BC
-                        offices:
-                          recordsOffice:
-                            deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: delivery
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST D 2
-                              streetAddressAdditional: 
-                            mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: mailing
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST M 2
-                              streetAddressAdditional:
-                          registeredOffice: 
-                            deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: delivery
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST D 1
-                              streetAddressAdditional:
-                            mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: mailing
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST M 1
-                              streetAddressAdditional:
-                      header: 
-                        affectedFilings: []
-                        availableOnPaperOnly: false
-                        certifiedBy: "full name"
-                        colinIds: []
-                        comments: []
-                        date: '2024-07-17T23:14:58.831553+00:00'
-                        deletionLocked: false
-                        effectiveDate: '2024-07-18T07:00:00+00:00'
-                        email: no_one@never.get
-                        filingId: 150166
-                        futureEffectiveDate: '2024-07-18T07:00:00+00:00'
-                        inColinOnly: false
-                        isCorrected: false
-                        isCorrectionPending: false
-                        isPaymentActionRequired: true
-                        name: changeOfAddress
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
-                        status: 'PENDING'
-                        submitter: 'mocked submitter'
                 agm-extension-success-response:
                   summary: AGM Extension Response
                   value:
@@ -411,6 +176,102 @@ paths:
                         isCorrectionPending: false
                         name: agmExtension
                         status: DRAFT
+                        submitter: mocked submitter
+                agm-location-change-success-response:
+                  summary: AGM Location Change Response
+                  value:
+                    errors: [
+                      null
+                    ]
+                    filing:
+                      agmLocationChange:
+                        agmLocation: Victoria, BC, Canada
+                        reason: API Specs Tests
+                        year: '2024'
+                      business:
+                        foundingDate: '2023-07-12T17:31:58.000+00:00'
+                        identifier: BC0882365
+                        legalName: 882365 B.C. LTD.
+                        legalType: BC
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: Sample Certified Person
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-18T15:36:26.345331+00:00'
+                        filingId: 150147
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        name: agmLocationChange
+                        status: DRAFT
+                        submitter: mocked submitter
+                alteration-success-response:
+                  summary: Alteration Response
+                  value:
+                    filing:
+                      alteration:
+                        business:
+                          identifier: BC0883028
+                          legalType: BEN
+                        contactPoint:
+                          email: APISpecs@gov.bc.ca
+                          phone: (111) 111-1111
+                        courtOrder:
+                          effectOfOrder: planOfArrangement
+                          fileNumber: '12345'
+                          hasPlanOfArrangement: true
+                        nameRequest:
+                          expirationDate: '2024-09-10T06:59:00+00:00'
+                          legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
+                          legalType: BEN
+                          nrNumber: NR 9684750
+                          submittedDate: '2024-07-15T21:57:31+00:00'
+                          submitter_userid: ''
+                          userId: user@example
+                        nameTranslations:
+                          - name: API Specs Trans
+                        provisionsRemoved: false
+                        shareStructure:
+                        resolutionDates: [
+                          '2024-07-12'
+                        ]
+                        shareClasses:
+                          - currency: CAD
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            maxNumberOfShares: 600
+                            name: Class1 Shares
+                            parValue: 10
+                            priority: 1
+                            series: []
+                            type: Class
+                      business:
+                        foundingDate: '2024-07-12T20:19:33.556441+00:00'
+                        identifier: BC0883028
+                        legalName: 0883028 B.C. LTD.
+                        legalType: BC
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: API Specs
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-16T19:55:40.497561+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-16T19:55:40.497583+00:00'
+                        filingId: 150107
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: alteration
+                        paymentAccount: 1234
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        status: PENDING
                         submitter: mocked submitter
                 annual-report-success-response:
                   summary: Annual Report Response
@@ -528,6 +389,89 @@ paths:
                         status: PENDING
                         submitter: mocked submitter
                         waiveFees: false
+                change-of-address-success-response:
+                  summary: Change Of Address Response
+                  value:
+                    filing:
+                      business:
+                        legalType: BC
+                        foundingDate: '2024-06-09T00:00:00+00:00'
+                        identifier: BC0880343
+                        legalName: KD TEST BAKING BC LIMITED
+                      changeOfAddress:
+                        legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions:
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 2
+                              streetAddressAdditional: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions:
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 2
+                              streetAddressAdditional:
+                          registeredOffice:
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions:
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 1
+                              streetAddressAdditional:
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions:
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 1
+                              streetAddressAdditional:
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: "full name"
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-17T23:14:58.831553+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2024-07-18T07:00:00+00:00'
+                        email: no_one@never.get
+                        filingId: 150166
+                        futureEffectiveDate: '2024-07-18T07:00:00+00:00'
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: changeOfAddress
+                        paymentStatusCode: CREATED
+                        paymentToken: 12345
+                        status: 'PENDING'
+                        submitter: 'mocked submitter'
                 change-of-directors-success-response:
                   summary: Change Of Directors Response
                   value:
@@ -718,70 +662,126 @@ paths:
                         paymentToken: 12345
                         status: PENDING
                         submitter: mocked submitter
-                alteration-success-response:
-                  summary: Alteration Response
+                consent-continuation-out-success-response:
+                  summary: Consent Continuation Out Response
                   value:
                     filing:
-                      alteration:
-                        business:
-                          identifier: BC0883028
-                          legalType: BEN
-                        contactPoint:
-                          email: APISpecs@gov.bc.ca
-                          phone: (111) 111-1111
-                        courtOrder:
-                          effectOfOrder: planOfArrangement
-                          fileNumber: '12345'
-                          hasPlanOfArrangement: true
-                        nameRequest:
-                          expirationDate: '2024-09-10T06:59:00+00:00'
-                          legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
-                          legalType: BEN
-                          nrNumber: NR 9684750
-                          submittedDate: '2024-07-15T21:57:31+00:00'
-                          submitter_userid: ''
-                          userId: user@example
-                        nameTranslations:
-                          - name: API Specs Trans
-                        provisionsRemoved: false
-                        shareStructure:
-                        resolutionDates: [
-                          '2024-07-12'
-                        ]
-                        shareClasses: 
-                          - currency: CAD
-                            hasMaximumShares: true
-                            hasParValue: true
-                            hasRightsOrRestrictions: true
-                            maxNumberOfShares: 600
-                            name: Class1 Shares
-                            parValue: 10
-                            priority: 1
-                            series: []
-                            type: Class
                       business:
-                        foundingDate: '2024-07-12T20:19:33.556441+00:00'
-                        identifier: BC0883028
-                        legalName: 0883028 B.C. LTD.
-                        legalType: BC
+                        legalName: 0882848 B.C. LTD.
+                        legalType: BEN
+                        identifier: BC0882848
+                        foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                      consentContinuationOut:
+                        foreignJurisdiction:
+                          country: CA
+                          region: SK
+                        courtOrder:
+                          fileNumber: '12345'
+                          effectOfOrder: planOfArrangement
                       header:
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: API Specs
+                        certifiedBy: "string"
                         colinIds: []
                         comments: []
-                        date: '2024-07-16T19:55:40.497561+00:00'
+                        date: '2024-07-18'
                         deletionLocked: false
-                        effectiveDate: '2024-07-16T19:55:40.497583+00:00'
-                        filingId: 150107
+                        documentOptionalEmail: "user@example.com"
+                        effectiveDate: '2024-07-18T07:00:42.552434+00:00'
+                        email: "user@example.com"
+                        filingId: 150056
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
-                        name: alteration
+                        name: consentContinuationOut
+                        paymentAccount: '1234'
+                        paymentStatusCode: 'CREATED'
+                        paymentToken: '12345'
+                        status: 'PENDING'
+                        submitter: 'mocked submitter'
+                voluntary-dissolution-success-response:
+                  summary: Voluntary Dissolution Response
+                  value:
+                    filing:
+                      business:
+                        foundingDate: '2023-07-12T17:31:58.000+00:00'
+                        identifier: BC0882365
+                        legalName: 882365 B.C. LTD.
+                        legalType: BC
+                      dissolution:
+                        affidavitConfirmed: true
+                        courtOrder:
+                          effectOfOrder: ''
+                          fileNumber: '12345'
+                          hasPlanOfArrangement: false
+                        custodialOffice:
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: V8W 3E6
+                            streetAddress: 200-940 Blanshard St
+                            streetAddressAdditional: ''
+                        dissolutionDate: '2024-07-18'
+                        dissolutionType: voluntary
+                        parties:
+                          - party:
+                              deliveryAddress:
+                                addressCity: Victoria
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: ''
+                                postalCode: V8W 3E6
+                                streetAddress: 200-940 Blanshard St
+                              inheritMailingAddress: true
+                              mailingAddress:
+                                addressCity: Victoria
+                                addressCountry: CA
+                                addressRegion: BC
+                                deliveryInstructions: ''
+                                postalCode: V8W 3E6
+                                streetAddress: 200-940 Blanshard St
+                              officer:
+                                email: api.specs@example.com
+                                firstName: Firstname
+                                lastName: Lastname
+                                middleName: ''
+                                organizationName: ''
+                                partyType: person
+                              roles:
+                                - appointmentDate: '2024-07-18'
+                                  roleType: Custodian
+                        resolution:
+                          resolutionConfirmed: true
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: Sample Certified Person
+                        colinIds: []
+                        comments: []
+                        date: '2024-07-18T15:36:26.345331+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2027-07-21T07:00:00.000+00:00'
+                        filingId: 149994
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: dissolution
                         paymentAccount: 1234
                         paymentStatusCode: CREATED
                         paymentToken: 12345
+                        priority: false
                         status: PENDING
                         submitter: mocked submitter
         '400':
@@ -789,46 +789,51 @@ paths:
           content:
             application/json:
               examples:
-                consent-continuation-out-failed-invalid-jurisdiction-response:
-                  summary: Consent Continuation Out - Same Unexpired Foreign Jurisdiction Exist Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Can't have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
-                consent-continuation-out-failed-invalid-foreign-jurisdiction-country-response:
-                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Country Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Invalid country.,path:/filing/consentContinuationOut/foreignJurisdiction/country],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
-                consent-continuation-out-failed-invalid-foreign-jurisdiction-region-response:
-                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Region Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Invalid region.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,state:HISTORICAL,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
-                consent-continuation-out-failed-missing-required-field-response:
-                  summary: Consent Continuation Out - Missing Required Field Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: errors:[message:A valid business is required.]
-                consent-continuation-out-failed-bc-as-foreign-jurisdiction-region-response:
-                  summary: Consent Continuation Out - BC Specified as Foreign Jurisdiction Region Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut 
-                voluntary-dissolution-failed-missing-filing-name-response:
-                  summary: Voluntary Dissolution - Missing Filing Name Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: errors:[message:filing/header/name is a required property]
                 agm-extension-failed-invalid-total-approved-extension-response:
                   summary: AGM Extension - Invalid Total Approved Extension Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension
-                change-of-directors-failed-missing-business-response:
-                  summary: Change Of Directors - Missing Business Response
+                alteration-failed-invalid-legal-type-change-response:
+                  summary: Alteration - Invalid Legal Type Change Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Your business type has not been updated to a BC Benefit Company, BC Unlimited Liability Company, BC Community Contribution Company, BC Limited Company or BC Cooperative Association.,path:/filing/alteration/business/legalType]
+                alteration-failed-missing-business-legal-name-response:
+                  summary: Alteration - Missing Business Legal Name Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration to Numbered Company can only be done for a Named Company.,path:/filing/business/legalName]
+                alteration-failed-missing-business-response:
+                  summary: Alteration - Missing Business Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[message:A valid business is required.]
+                alteration-failed-missing-max-number-of-share-response:
+                  summary: Alteration - Missing Max Number of Shares Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Share class Common Shares must provide value for maximum number of shares,path:/filing/alteration/shareClasses/0/maxNumberOfShares/]
+                alteration-failed-name-request-does-not-have-the-same-legal-name-response:
+                  summary: Alteration - Name Request Does Not Have the Same Legal Name Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                alteration-failed-name-request-does-not-have-the-same-legal-type-response:
+                  summary: Alteration - Name Request Does Not Have the Same Legal Type Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Name Request legal type is not same as the business legal type.,path:/filing/alteration/nameRequest/legalType]
+                alteration-failed-name-request-is-not-approved-response:
+                  summary: Alteration - Name Request Is Not Approved Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Alteration of Name Request is not approved.,path:/filing/alteration/nameRequest/nrNumber,error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                change-of-directors-failed-invalid-address-country:
+                  summary: Change Of Directors - Invalid Address Country
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: errors:[error:Address Country must resolve to a valid ISO-2 country.]
                 change-of-directors-failed-invalid-effective-date-prior-to-most-recent-filing-response:
                   summary: Change Of Directors - Invalid Effective Date (Earlier Than Previous Change of Director Filing)
                   value:
@@ -839,46 +844,41 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Filing cannot have a future effective date.]
-                change-of-directors-invalid-address-country:
-                  summary: Change Of Directors - Invalid Address Country
+                change-of-directors-failed-missing-business-response:
+                  summary: Change Of Directors - Missing Business Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Address Country must resolve to a valid ISO-2 country.]
-                alteration-failed-missing-business-response:
-                  summary: Alteration - Missing Business Response
+                    rootCause: errors:[message:A valid business is required.]
+                consent-continuation-out-failed-bc-as-foreign-jurisdiction-region-response:
+                  summary: Consent Continuation Out - BC Specified as Foreign Jurisdiction Region Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[message:A valid business is required.] 
-                alteration-failed-name-request-does-not-have-the-same-legal-type-response:
-                  summary: Alteration - Name Request Does Not Have the Same Legal Type Response
+                    rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                consent-continuation-out-failed-invalid-foreign-jurisdiction-country-response:
+                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Country Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Name Request legal type is not same as the business legal type.,path:/filing/alteration/nameRequest/legalType]
-                alteration-failed-name-request-does-not-have-the-same-legal-name-response:
-                  summary: Alteration - Name Request Does Not Have the Same Legal Name Response
+                    rootCause: errors:[error:Invalid country.,path:/filing/consentContinuationOut/foreignJurisdiction/country],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                consent-continuation-out-failed-invalid-foreign-jurisdiction-region-response:
+                  summary: Consent Continuation Out - Invalid Foreign Jurisdiction Region Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
-                alteration-failed-name-request-is-not-approved-response:
-                  summary: Alteration - Name Request Is Not Approved Response
+                    rootCause: errors:[error:Invalid region.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,state:HISTORICAL,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                consent-continuation-out-failed-missing-required-field-response:
+                  summary: Consent Continuation Out - Missing Required Field Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Alteration of Name Request is not approved.,path:/filing/alteration/nameRequest/nrNumber,error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
-                alteration-failed-invalid-legal-type-change-response:
-                  summary: Alteration - Invalid Legal Type Change Response
+                    rootCause: errors:[message:A valid business is required.]
+                consent-continuation-out-failed-invalid-jurisdiction-response:
+                  summary: Consent Continuation Out - Same Unexpired Foreign Jurisdiction Exist Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Your business type has not been updated to a BC Benefit Company, BC Unlimited Liability Company, BC Community Contribution Company, BC Limited Company or BC Cooperative Association.,path:/filing/alteration/business/legalType]
-                alteration-failed-missing-max-number-of-share-response:
-                  summary: Alteration - Missing Max Number of Shares Response
+                    rootCause: errors:[error:Can't have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                voluntary-dissolution-failed-missing-filing-name-response:
+                  summary: Voluntary Dissolution - Missing Filing Name Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Share class Common Shares must provide value for maximum number of shares,path:/filing/alteration/shareClasses/0/maxNumberOfShares/]
-                alteration-failed-missing-business-legal-name-response:
-                  summary: Alteration - Missing Business Legal Name Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Alteration to Numbered Company can only be done for a Named Company.,path:/filing/business/legalName]
+                    rootCause: errors:[message:filing/header/name is a required property]
         '401':
           description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
           content:
@@ -894,6 +894,21 @@ paths:
           content:
             application/json:
               examples:
+                agm-extension-failed-missing-agm-year-response:
+                   summary: AGM Extension - Missing agmYear Response
+                   value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                agm-extension-failed-missing-ext-req-for-agm-year-response:
+                   summary: AGM Extension - Missing extReqForAgmYear Response
+                   value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                agm-extension-failed-missing-is-first-agm-response:
+                   summary: AGM Extension - Missing isFirstAgm Response
+                   value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 agm-location-change-failed-missing-agm-location-response:
                   summary: 'AGM Location Change - Missing AGM Location Response'
                   value:
@@ -909,33 +924,9 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                consent-continuation-out-failed-invalid-court-order-response:
-                  summary: Consent Continuation Out - Invalid Court Order Response
+                alteration-failed-missing-court-order-file-number-response:
+                  summary: Alteration - Missing Court Order File Number Response
                   value:
-                    errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                voluntary-dissolution-failed-missing-dissolution-date-response:
-                  summary: Voluntary Dissolution - Missing Dissolution Date Response
-                  value:
-                    errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                change-of-address-failed-missing-records-office-response:
-                  summary: Change Of Address - Missing Records Office Address Response
-                  value:
-                    errorMessage: "API backend third party service error."
-                agm-extension-failed-missing-agm-year-response:
-                   summary: AGM Extension - Missing agmYear Response
-                   value:
-                    errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                agm-extension-failed-missing-is-first-agm-response:
-                   summary: AGM Extension - Missing isFirstAgm Response
-                   value:
-                    errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                agm-extension-failed-missing-ext-req-for-agm-year-response:
-                   summary: AGM Extension - Missing extReqForAgmYear Response
-                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
                 annual-report-failed-missing-annual-report-date-response:
@@ -953,8 +944,17 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                alteration-failed-missing-court-order-file-number-response:
-                  summary: Alteration - Missing Court Order File Number Response
+                change-of-address-failed-missing-records-office-response:
+                  summary: Change Of Address - Missing Records Office Address Response
+                  value:
+                    errorMessage: "API backend third party service error."
+                consent-continuation-out-failed-invalid-court-order-response:
+                  summary: Consent Continuation Out - Invalid Court Order Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                voluntary-dissolution-failed-missing-dissolution-date-response:
+                  summary: Voluntary Dissolution - Missing Dissolution Date Response
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: "errors:<comma delimited list of potential validation errors by json path>"
@@ -977,181 +977,6 @@ paths:
             schema:
               $ref: '#/components/schemas/Filing'
             examples:
-              agm-location-change-request:
-                summary: AGM Location Change Request
-                value:
-                  filing:
-                    header:
-                      date: '2024-07-18'
-                      name: agmLocationChange
-                      certifiedBy: Sample Certified Person
-                    business:
-                      foundingDate: '2023-07-12T17:31:58.000+00:00'
-                      identifier: BC0882365
-                      legalName: 882365 B.C. LTD.
-                      legalType: BC
-                    agmLocationChange:
-                      year: '2024'
-                      reason: API Specs Tests
-                      agmLocation: Victoria, BC, Canada
-              consent-continuation-out-request:
-                summary: Consent Continuation Out Request
-                value:
-                  filing:
-                    header:
-                      name: consentContinuationOut
-                      date: '2024-07-18'
-                      certifiedBy: "string"
-                      email: "user@example.com"
-                      documentOptionalEmail: "user@example.com"
-                    business:
-                      legalName: 0882848 B.C. LTD.
-                      legalType: BEN
-                      identifier: BC0882848
-                      foundingDate: '2024-07-08T15:34:57.844764+00:00'
-                    consentContinuationOut:
-                      foreignJurisdiction:
-                        country: CA
-                        region: SK
-                      courtOrder:
-                        fileNumber: '12345'
-                        effectOfOrder: planOfArrangement
-              voluntary-dissolution-request:
-                summary: Voluntary Dissolution Request
-                value:
-                  filing:
-                    header:
-                      date: '2024-07-18'
-                      effectiveDate: '2027-07-21T07:00:00.000+00:00'
-                      name: dissolution
-                      certifiedBy: Sample Certified Person
-                      priority: false
-                    business:
-                      foundingDate: '2023-07-12T17:31:58.000+00:00'
-                      identifier: BC0882365
-                      legalName: 882365 B.C. LTD.
-                      legalType: BC
-                    dissolution:
-                      dissolutionDate: '2024-07-18'
-                      affidavitConfirmed: true
-                      custodialOffice:
-                        deliveryAddress:
-                          addressCity: Victoria
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          postalCode: V8W 3E6
-                          streetAddress: 200-940 Blanshard St
-                          streetAddressAdditional: ''
-                        mailingAddress:
-                          addressCity: Victoria
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          postalCode: V8W 3E6
-                          streetAddress: 200-940 Blanshard St
-                          streetAddressAdditional: ''
-                      dissolutionType: voluntary
-                      parties: 
-                        - party:
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
-                            inheritMailingAddress: true
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
-                            officer:
-                              email: api.specs@example.com
-                              firstName: Firstname
-                              lastName: Lastname
-                              middleName: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2024-07-18'
-                                roleType: Custodian
-                      resolution:
-                        resolutionConfirmed: true
-                      courtOrder:
-                        fileNumber: '12345'
-                        effectOfOrder: ''
-                        hasPlanOfArrangement: false
-              change-of-address-request:
-                summary: Change Of Address
-                value:
-                    filing:
-                      header:
-                        name: changeOfAddress
-                        certifiedBy: "full name"
-                        email: "no_one@never.get"
-                        date: '2024-07-23'
-                      business:
-                        legalType: BC
-                        foundingDate: '2024-06-09T00:00:00+00:00'
-                        identifier: BC0880343
-                        legalName: KD TEST BAKING BC LIMITED
-                      changeOfAddress:
-                        legalType: BC
-                        offices:
-                          recordsOffice:
-                            deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: delivery
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST D 2
-                              streetAddressAdditional: 
-                            mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: mailing
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST M 2
-                              streetAddressAdditional:
-                          registeredOffice: 
-                            deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: delivery
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST D 1
-                              streetAddressAdditional:
-                            mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              addressType: mailing
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST M 1
-                              streetAddressAdditional:
               agm-extension-request:
                 summary: AGM Extension Request
                 value:
@@ -1183,6 +1008,73 @@ paths:
                       extensionDuration: 6
                       agmDueDate: '2026-06-20'
                       isEligible: true
+              agm-location-change-request:
+                summary: AGM Location Change Request
+                value:
+                  filing:
+                    header:
+                      date: '2024-07-18'
+                      name: agmLocationChange
+                      certifiedBy: Sample Certified Person
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    agmLocationChange:
+                      year: '2024'
+                      reason: API Specs Tests
+                      agmLocation: Victoria, BC, Canada
+              alteration-request:
+                summary: Alteration Request
+                value:
+                  filing:
+                    header:
+                      name: alteration
+                      certifiedBy: Sample Certified Person
+                      date: '2024-07-25'
+                    business:
+                      foundingDate: '2024-07-12T20:19:33.556441+00:00'
+                      identifier: BC0883028
+                      legalName: 0883028 B.C. LTD.
+                      legalType: BC
+                    alteration:
+                      business:
+                        identifier: BC0883028
+                        legalType: BEN
+                      nameRequest:
+                        legalType: BEN
+                        expirationDate: '2024-09-10T06:59:00+00:00'
+                        submittedDate: '2024-07-15T21:57:31+00:00'
+                        submitter_userid: ''
+                        userId: user@example
+                        legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
+                        nrNumber: NR 9684750
+                      nameTranslations:
+                        - name: API Specs Trans
+                      provisionsRemoved: false
+                      contactPoint:
+                        email: APISpecs@gov.bc.ca
+                        phone: '(111) 111-1111'
+                      shareStructure:
+                        resolutionDates: [
+                          '2024-07-12'
+                        ]
+                        shareClasses:
+                          - currency: CAD
+                            hasMaximumShares: true
+                            hasParValue: true
+                            hasRightsOrRestrictions: true
+                            maxNumberOfShares: 600
+                            name: Class1 Shares
+                            parValue: 10
+                            priority: 1
+                            series: []
+                            type: Class
+                      courtOrder:
+                        fileNumber: '12345'
+                        effectOfOrder: planOfArrangement
+                        hasPlanOfArrangement: true
               annual-report-request:
                 summary: Annual Report Request
                 value:
@@ -1284,6 +1176,73 @@ paths:
                           isFeeApplied: false
                           isDirectorActionable: true
                           actions: []
+              change-of-address-request:
+                summary: Change Of Address
+                value:
+                    filing:
+                      header:
+                        name: changeOfAddress
+                        certifiedBy: "full name"
+                        email: "no_one@never.get"
+                        date: '2024-07-23'
+                      business:
+                        legalType: BC
+                        foundingDate: '2024-06-09T00:00:00+00:00'
+                        identifier: BC0880343
+                        legalName: KD TEST BAKING BC LIMITED
+                      changeOfAddress:
+                        legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 2
+                              streetAddressAdditional: 
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 2
+                              streetAddressAdditional:
+                          registeredOffice: 
+                            deliveryAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: delivery
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST D 1
+                              streetAddressAdditional:
+                            mailingAddress:
+                              actions: [
+                                  addressChanged
+                              ]
+                              addressCity: RICHMOND
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: mailing
+                              deliveryInstructions: 
+                              postalCode: V8N 4R7
+                              streetAddress: TEST M 1
+                              streetAddressAdditional:
               change-of-directors-request:
                 summary: Change Of Directors Request
                 value:
@@ -1459,56 +1418,97 @@ paths:
                           cessationDate: null
                           actions:
                             - nameChanged
-              alteration-request:
-                summary: Alteration Request
+              consent-continuation-out-request:
+                summary: Consent Continuation Out Request
                 value:
                   filing:
                     header:
-                      name: alteration
-                      certifiedBy: Sample Certified Person
-                      date: '2024-07-25'
+                      name: consentContinuationOut
+                      date: '2024-07-18'
+                      certifiedBy: "string"
+                      email: "user@example.com"
+                      documentOptionalEmail: "user@example.com"
                     business:
-                      foundingDate: '2024-07-12T20:19:33.556441+00:00'
-                      identifier: BC0883028
-                      legalName: 0883028 B.C. LTD.
-                      legalType: BC
-                    alteration:
-                      business:
-                        identifier: BC0883028
-                        legalType: BEN
-                      nameRequest:
-                        legalType: BEN
-                        expirationDate: '2024-09-10T06:59:00+00:00'
-                        submittedDate: '2024-07-15T21:57:31+00:00'
-                        submitter_userid: ''
-                        userId: user@example
-                        legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
-                        nrNumber: NR 9684750
-                      nameTranslations:
-                        - name: API Specs Trans
-                      provisionsRemoved: false
-                      contactPoint:
-                        email: APISpecs@gov.bc.ca
-                        phone: '(111) 111-1111'
-                      shareStructure:
-                        resolutionDates: [
-                          '2024-07-12'
-                        ]
-                        shareClasses: 
-                          - currency: CAD
-                            hasMaximumShares: true
-                            hasParValue: true
-                            hasRightsOrRestrictions: true
-                            maxNumberOfShares: 600
-                            name: Class1 Shares
-                            parValue: 10
-                            priority: 1
-                            series: []
-                            type: Class
+                      legalName: 0882848 B.C. LTD.
+                      legalType: BEN
+                      identifier: BC0882848
+                      foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                    consentContinuationOut:
+                      foreignJurisdiction:
+                        country: CA
+                        region: SK
                       courtOrder:
                         fileNumber: '12345'
                         effectOfOrder: planOfArrangement
-                        hasPlanOfArrangement: true
+              voluntary-dissolution-request:
+                summary: Voluntary Dissolution Request
+                value:
+                  filing:
+                    header:
+                      date: '2024-07-18'
+                      effectiveDate: '2027-07-21T07:00:00.000+00:00'
+                      name: dissolution
+                      certifiedBy: Sample Certified Person
+                      priority: false
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC0882365
+                      legalName: 882365 B.C. LTD.
+                      legalType: BC
+                    dissolution:
+                      dissolutionDate: '2024-07-18'
+                      affidavitConfirmed: true
+                      custodialOffice:
+                        deliveryAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          postalCode: V8W 3E6
+                          streetAddress: 200-940 Blanshard St
+                          streetAddressAdditional: ''
+                        mailingAddress:
+                          addressCity: Victoria
+                          addressCountry: CA
+                          addressRegion: BC
+                          deliveryInstructions: ''
+                          postalCode: V8W 3E6
+                          streetAddress: 200-940 Blanshard St
+                          streetAddressAdditional: ''
+                      dissolutionType: voluntary
+                      parties:
+                        - party:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                            inheritMailingAddress: true
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: V8W 3E6
+                              streetAddress: 200-940 Blanshard St
+                            officer:
+                              email: api.specs@example.com
+                              firstName: Firstname
+                              lastName: Lastname
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-18'
+                                roleType: Custodian
+                      resolution:
+                        resolutionConfirmed: true
+                      courtOrder:
+                        fileNumber: '12345'
+                        effectOfOrder: ''
+                        hasPlanOfArrangement: false
       parameters:
         - schema:
             type: boolean
