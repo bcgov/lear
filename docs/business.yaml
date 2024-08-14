@@ -3652,7 +3652,7 @@ components:
         addressRegion:
           type: string
           maxLength: 2
-          example: 'BC for British Columbia'
+          example: 'BC'
           description: '2 char code for province, state, territory or district.'
         addressCountry:
           type: string
@@ -3763,7 +3763,7 @@ components:
           enum:
             - sample
             - custom
-          example: Sample or custom
+          example: sample
           description: 'Example: Sample and custom'
       required:
         - agreementType
@@ -4033,7 +4033,7 @@ components:
                   cessationDate:
                     type: string
                     format: date
-                    example: 'Date the officer has ended his/her role '
+                    example: '2024-07-23'
                     description: Date the director or officer has been terminated in the role.
                 required:
                   - officer
@@ -4224,12 +4224,12 @@ components:
             - XL
             - XP
             - XS
-          example: 'GP: General Partnership'
+          example: 'GP'
           description: 'Type of business eg: BC corporation (B), Continued in corporation (C), Sole proprietor(SP), General Partnership(GP).'
         taxId:
           type: string
-          pattern: '^[0-9]{9}$'
-          example: BN123456789
+          pattern: '^[0-9]{9}[A-Z]{2}[0-9]{4}$|^[0-9]{9}$'
+          example: '123456789BC0001'
           description: 'Company unique business number assigned by CRA: BN9 or BN15. '
         goodStanding:
           type: boolean
@@ -4302,7 +4302,7 @@ components:
                 format: date
                 description: The end date of the alternate name (reserved for future use)
                 nullable: true
-                example: ''
+                example: '2024-07-15'
               type:
                 type: string
                 description: The type of the alternate name
