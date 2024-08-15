@@ -128,5 +128,5 @@ async def run(application: Flask, qsm: QueueService):  # pylint: disable=redefin
                 application.logger.debug('Entering stage 3 of furnishings job.')
                 stage_three.process(application, xml_furnishings_dict)
                 application.logger.debug('Exiting stage 3 of furnishings job.')
-            
+
             post_processor.process(application, xml_furnishings_dict)
