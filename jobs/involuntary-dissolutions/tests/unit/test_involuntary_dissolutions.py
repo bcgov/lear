@@ -155,6 +155,7 @@ def test_stage_1_process(app, session):
     assert batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION
     assert batch.status == Batch.BatchStatus.PROCESSING
     assert batch.size == 3
+    assert batch.max_size == 10
     assert batch.start_date.date() == datetime.now().date()
 
     batch_processings = BatchProcessing.find_by(batch_id=batch.id)
