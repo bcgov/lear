@@ -2444,6 +2444,7 @@ paths:
   /businesses:
     post:
       summary: save business creation filing
+      operationId: post-business
       tags:
         - business
       responses:
@@ -4657,7 +4658,6 @@ components:
           properties:
             business:
               $ref: '#/components/schemas/Business'
-              title: Provide identifier and/or taxId if already registered as extra provincial business.
             foreignJurisdiction:
               type: object
               required:
@@ -4668,10 +4668,8 @@ components:
               properties:
                 country:
                   $ref: '#/components/schemas/Foreign_jurisdiction/properties/country'
-                  title: The jurisdiction country code.
                 region:
                   $ref: '#/components/schemas/Foreign_jurisdiction/properties/region'
-                  title: The jurisdiction region code.
                 identifier:
                   type: string
                   title: Identifier of the business in the foreign jurisdiction.
@@ -5669,12 +5667,14 @@ components:
                     - $ref: '#/components/schemas/Agm_extension'
                     - $ref: '#/components/schemas/Agm_location_change'
                     - $ref: '#/components/schemas/Alteration'
+                    - $ref: '#/components/schemas/Amalgamation_application'
                     - $ref: '#/components/schemas/Annual_report'
                     - $ref: '#/components/schemas/Change_of_address'
                     - $ref: '#/components/schemas/Change_of_directors'
                     - $ref: '#/components/schemas/Change_of_name'
                     - $ref: '#/components/schemas/Change_of_registration'
                     - $ref: '#/components/schemas/Consent_continuation_out'
+                    - $ref: '#/components/schemas/Continuation_in'
                     - $ref: '#/components/schemas/Conversion'
                     - $ref: '#/components/schemas/Court_order'
                     - $ref: '#/components/schemas/Correction'
