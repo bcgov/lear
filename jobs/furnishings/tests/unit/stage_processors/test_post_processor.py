@@ -79,6 +79,48 @@ def test_process(app, session, test_name, furnishing_name, step):
     assert xml_payload
     assert xml_payload.payload
 
+
+def test_process_combined_xml(app, session):
+    """Assert that FurnishingGroup and XmlPayload entry are created correctly for both stages at once."""
+    furnishing_name_stage_2 = Furnishing.FurnishingName.INTENT_TO_DISSOLVE
+    furnishings_stage_2 = helper_create_furnishings(
+        ['BC2222222'],
+        furnishing_name_stage_2,
+        BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+    )
+
+    furnishing_name_stage_3 = Furnishing.FurnishingName.CORP_DISSOLVED
+    furnishings_stage_3 = helper_create_furnishings(
+        ['BC3333333'],
+        furnishing_name_stage_3,
+        BatchProcessing.BatchProcessingStep.DISSOLUTION
+    )
+
+    furnishing_dict = {
+        furnishing_name_stage_2: furnishings_stage_2,
+        furnishing_name_stage_3: furnishings_stage_3
+    }
+    process(app, furnishing_dict)
+
+    furnishing_stage_2 = furnishings_stage_2[0]
+    assert furnishing_stage_2.status == Furnishing.FurnishingStatus.PROCESSED
+
+    furnishing_stage_3 = furnishings_stage_3[0]
+    assert furnishing_stage_3.status == Furnishing.FurnishingStatus.PROCESSED
+
+    furnishing_group_id = furnishing_stage_2.furnishing_group_id
+    assert furnishing_group_id
+    assert furnishing_group_id == furnishing_stage_3.furnishing_group_id
+    furnishing_group = FurnishingGroup.find_by_id(furnishing_group_id)
+    assert furnishing_group
+
+    xml_payload_id = furnishing_group.xml_payload_id
+    assert xml_payload_id
+    xml_payload = XmlPayload.find_by_id(xml_payload_id)
+    assert xml_payload
+    assert xml_payload.payload
+
+
 @pytest.mark.parametrize(
     'test_name, furnishing_name, step', [
         (
