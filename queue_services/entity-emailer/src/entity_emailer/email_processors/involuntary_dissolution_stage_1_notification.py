@@ -51,10 +51,16 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    # get response from get jurisdictions
-    jurisdictions_response = get_jurisdictions(business_identifier, token)
-    # get extra provincials array
-    extra_provincials = get_extra_provincials(jurisdictions_response)
+
+    extra_provincials = []
+    if furnishing.furnishing_name not in \
+        [Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
+         Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO]:
+        # get response from get jurisdictions
+        jurisdictions_response = get_jurisdictions(business_identifier, token)
+        # get extra provincials array
+        extra_provincials = get_extra_provincials(jurisdictions_response)
+
     html_out = jnja_template.render(
         business=business.json(),
         entity_dashboard_url=get_entity_dashboard_url(business_identifier, token),
@@ -136,9 +142,15 @@ def _get_pdfs(
         logger.error('Failed to get pdf for furnishing: %s', furnishing.id)
         return []
 
+    if furnishing.furnishing_name == Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO:
+        filename = 'Notice of Commencement of Cancellation.pdf'
+    else:
+        filename = 'Notice of Commencement of Dissolution.pdf'
+
     furnishing_pdf_encoded = base64.b64encode(furnishing_pdf.content)
+
     return [{
-        'fileName': 'Notice of Commencement of Dissolution.pdf',
+        'fileName': filename,
         'fileBytes': furnishing_pdf_encoded.decode('utf-8'),
         'fileUrl': '',
         'attachOrder': '1'
