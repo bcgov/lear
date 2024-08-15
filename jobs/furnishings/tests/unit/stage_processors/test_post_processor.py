@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import pytest
+
 from legal_api.models import BatchProcessing, Furnishing, FurnishingGroup, XmlPayload
 
 from furnishings.stage_processors.post_processor import PostProcessor, process
@@ -18,7 +20,7 @@ from furnishings.stage_processors.post_processor import PostProcessor, process
 from .. import factory_batch, factory_batch_processing, factory_business, factory_furnishing
 
 
-def helper_create_furnishings(identifiers: list):
+def helper_create_furnishings(identifiers: list, furnishing_name, step):
     """Test helper to create furnishings for post processing."""
     furnishings = []
     for identifier in identifiers:
@@ -28,25 +30,38 @@ def helper_create_furnishings(identifiers: list):
             batch_id=batch.id,
             business_id=business.id,
             identifier=business.identifier,
-            step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+            step=step
         )
         furnishing = factory_furnishing(
             batch_id=batch.id,
             business_id=business.id,
             identifier=business.identifier,
-            furnishing_name=Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
+            furnishing_name=furnishing_name,
             furnishing_type=Furnishing.FurnishingType.GAZETTE,
             business_name=business.legal_name
         )
         furnishings.append(furnishing)
     return furnishings
 
-
-def test_process(app, session):
+@pytest.mark.parametrize(
+    'test_name, furnishing_name, step', [
+        (
+            'STAGE_2_BC',
+            Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+        ),
+        (
+            'STAGE_3_BC',
+            Furnishing.FurnishingName.CORP_DISSOLVED,
+            BatchProcessing.BatchProcessingStep.DISSOLUTION
+        ),
+    ]
+)
+def test_process(app, session, test_name, furnishing_name, step):
     """Assert that FurnishingGroup and XmlPayload entry are created correctly."""
-    furnishings = helper_create_furnishings(['BC1234567'])
+    furnishings = helper_create_furnishings(['BC1234567'], furnishing_name, step)
     furnishing_dict = {
-        Furnishing.FurnishingName.INTENT_TO_DISSOLVE: furnishings
+        furnishing_name: furnishings
     }
     process(app, furnishing_dict)
 
@@ -64,20 +79,38 @@ def test_process(app, session):
     assert xml_payload
     assert xml_payload.payload
 
-
-def test_processor_format_furnishings(app, session):
+@pytest.mark.parametrize(
+    'test_name, furnishing_name, step', [
+        (
+            'STAGE_2_BC',
+            Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+        ),
+        (
+            'STAGE_3_BC',
+            Furnishing.FurnishingName.CORP_DISSOLVED,
+            BatchProcessing.BatchProcessingStep.DISSOLUTION
+        ),
+    ]
+)
+def test_processor_format_furnishings(app, session, test_name, furnishing_name, step):
     """Assert that furnishing details are formated/sorted correctly."""
-    furnishings = helper_create_furnishings(['BC7654321', 'BC1234567'])
-    name = Furnishing.FurnishingName.INTENT_TO_DISSOLVE
+    furnishings = helper_create_furnishings(
+        ['BC7654321', 'BC1234567'],
+        furnishing_name,
+        step
+    )
+
     furnishing_dict = {
-        name: furnishings
+        furnishing_name: furnishings,
     }
 
     processor = PostProcessor(app, furnishing_dict)
     processor._format_furnishings()
 
     assert processor._xml_data
-    assert processor._xml_data['furnishings'][name]['items']
-    furnishing_items = processor._xml_data['furnishings'][name]['items']
+    assert processor._xml_data['furnishings'][furnishing_name]['items']
+
+    furnishing_items = processor._xml_data['furnishings'][furnishing_name]['items']
     assert furnishing_items[0] == furnishings[1]
     assert furnishing_items[1] == furnishings[0]
