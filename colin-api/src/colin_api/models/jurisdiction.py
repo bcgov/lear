@@ -84,7 +84,7 @@ class Jurisdiction:
                 """
                 insert into JURISDICTION (CORP_NUM, START_EVENT_ID, CAN_JUR_TYP_CD, XPRO_TYP_CD, HOME_RECOGN_DT,
                   OTHR_JURIS_DESC, HOME_JURIS_NUM, BC_XPRO_NUM, HOME_COMPANY_NME)
-                values 
+                values
                  (:corp_num, :start_event_id, :can_jur_typ_cd, :xpro_typ_cd, TO_DATE(:home_recogn_dt, 'YYYY-mm-dd'),
                   :othr_juris_desc, :home_juris_num, :bc_xpro_num, :home_company_nme)
                 """,
@@ -109,7 +109,7 @@ class Jurisdiction:
         querystring = (
             """
             select corp_num, start_event_id, can_jur_typ_cd, xpro_typ_cd, home_recogn_dt, othr_juris_desc,
-	        home_juris_num, bc_xpro_num, home_company_nme
+              home_juris_num, bc_xpro_num, home_company_nme
             from jurisdiction
             where start_event_id=:event_id
             """
