@@ -4658,7 +4658,6 @@ components:
           properties:
             business:
               $ref: '#/components/schemas/Business'
-              title: Provide identifier and/or taxId if already registered as extra provincial business.
             foreignJurisdiction:
               type: object
               required:
@@ -4669,10 +4668,8 @@ components:
               properties:
                 country:
                   $ref: '#/components/schemas/Foreign_jurisdiction/properties/country'
-                  title: The jurisdiction country code.
                 region:
                   $ref: '#/components/schemas/Foreign_jurisdiction/properties/region'
-                  title: The jurisdiction region code.
                 identifier:
                   type: string
                   title: Identifier of the business in the foreign jurisdiction.
