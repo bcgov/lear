@@ -21,14 +21,15 @@ from tests.unit.models import factory_business_with_stage_one_furnishing
 
 
 @pytest.mark.parametrize(
-    'test_name, variant', [
-        ('COMMENCEMENT_DEFAULT', 'default'),
-        ('COMMENCEMENT_GREYSCALE', 'greyscale'),
+    'test_name, variant, legal_type', [
+        ('COMMENCEMENT_DEFAULT_DISSOLUTION', 'default', 'BEN'),
+        ('COMMENCEMENT_GREYSCALE_DISSOLUTION', 'greyscale', 'BC'),
+        ('COMMENCEMENT_GREYSCALE_CANCELLATION', 'greyscale', 'A'),
     ]
 )
-def test_get_pdf(session, test_name, variant):
+def test_get_pdf(session, test_name, variant, legal_type):
     """Assert that furnishing can be returned as a Gotenberg PDF."""
-    business, furnishing = factory_business_with_stage_one_furnishing()
+    business, furnishing = factory_business_with_stage_one_furnishing(legal_type=legal_type)
     with patch.object(MrasService, 'get_jurisdictions', return_value=[]):
         report = ReportV2(business, furnishing, ReportTypes.DISSOLUTION, variant)
         filename = report._get_report_filename()
@@ -40,7 +41,10 @@ def test_get_pdf(session, test_name, variant):
         assert template_data['furnishing']
         assert template_data['variant'] == variant
         assert template_data['registrarInfo']
-        assert template_data['title'] == 'NOTICE OF COMMENCEMENT OF DISSOLUTION'
+        if legal_type == 'A':
+            assert template_data['title'] == 'NOTICE OF COMMENCEMENT OF CANCELLATION'
+        else:
+            assert template_data['title'] == 'NOTICE OF COMMENCEMENT OF DISSOLUTION'
         report_files = report._get_report_files(template_data)
         assert report_files
         assert 'header.html' in report_files
