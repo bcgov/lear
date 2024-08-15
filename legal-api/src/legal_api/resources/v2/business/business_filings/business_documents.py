@@ -36,8 +36,6 @@ from ..bp import bp
 
 
 DOCUMENTS_BASE_ROUTE: Final = '/<string:identifier>/filings/<int:filing_id>/documents'
-OUTPUT_DATE_FORMAT: Final = '%b %-d, %Y at %-I:%M %p Pacific time'
-#    example                'Jun 9, 2021 at 11:36 am Pacific time'
 
 
 @cors_preflight('GET, POST')
@@ -105,17 +103,19 @@ def _get_document_list(business, filing):
 def _get_receipt(business: Business, filing: Filing, token):
     """Get the receipt for the filing."""
     if filing.status not in (
-            Filing.Status.PAID,
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
+            Filing.Status.PAID,
+            Filing.Status.AWAITING_REVIEW,
+            Filing.Status.CHANGE_REQUESTED,
+            Filing.Status.APPROVED,
+            Filing.Status.REJECTED,
     ):
         return {}, HTTPStatus.BAD_REQUEST
 
     effective_date = None
     if filing.storage.effective_date.date() != filing.storage.filing_date.date():
-        effective_date = (LegislationDatetime
-                          .as_legislation_timezone(filing.storage.effective_date)
-                          .strftime(OUTPUT_DATE_FORMAT))
+        effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
 
     headers = {'Authorization': 'Bearer ' + token}
 
@@ -124,9 +124,7 @@ def _get_receipt(business: Business, filing: Filing, token):
         url,
         json={
             'corpName': business.legal_name if business else filing.storage.temp_reg,
-            'filingDateTime': (LegislationDatetime
-                               .as_legislation_timezone(filing.storage.filing_date)
-                               .strftime(OUTPUT_DATE_FORMAT)),
+            'filingDateTime': LegislationDatetime.format_as_report_string(filing.storage.filing_date),
             'effectiveDateTime': effective_date if effective_date else '',
             'filingIdentifier': str(filing.id),
             'businessNumber': business.tax_id if business and business.tax_id else ''

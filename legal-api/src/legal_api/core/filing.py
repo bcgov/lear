@@ -514,7 +514,11 @@ class Filing:
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
-        if filing.status in [Filing.Status.PAID, Filing.Status.APPROVED] and \
+        if filing.status in [Filing.Status.PAID,
+                             Filing.Status.AWAITING_REVIEW,
+                             Filing.Status.CHANGE_REQUESTED,
+                             Filing.Status.APPROVED,
+                             Filing.Status.REJECTED] and \
             not (filing.filing_type in no_legal_filings_in_paid_status
                  or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
                      business.legal_type in [

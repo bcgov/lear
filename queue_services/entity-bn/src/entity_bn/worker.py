@@ -124,7 +124,7 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                 'data': {}
             }
             subject = APP_CONFIG.SUBSCRIPTION_OPTIONS['subject']
-            publish_event(payload, subject)
+            await publish_event(payload, subject)
         except Exception as err:  # pylint: disable=broad-except; # noqa: B902
             capture_message('Entity-bn queue publish identifier error: ' + identifier, level='error')
             logger.error('Queue Publish queue publish identifier error: %s %s', identifier, err, exc_info=True)
