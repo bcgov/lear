@@ -129,6 +129,7 @@ class FilingInfo(Resource):
                     'annualReport': json_data.get('annualReport', None),
                     'incorporationApplication': json_data.get('incorporationApplication', None),
                     'amalgamationApplication': json_data.get('amalgamationApplication', None),
+                    'continuationIn': json_data.get('continuationIn', None),
                     'alteration': json_data.get('alteration', None),
                     'transition': json_data.get('transition', None),
                     'registrarsNotation': json_data.get('registrarsNotation', None),
@@ -220,7 +221,7 @@ class FilingInfo(Resource):
             # get utc lear effective date and convert to pacific time for insert into oracle
             filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
 
-            if filing_type in ['amalgamationApplication', 'incorporationApplication']:
+            if filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication']:
                 filing.business = Business.create_corporation(con, json_data)
             else:
                 filing.business = Business.find_by_identifier(identifier, con=con)
