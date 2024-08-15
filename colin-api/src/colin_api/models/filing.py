@@ -33,7 +33,7 @@ from colin_api.exceptions import (  # noqa: I001
     PartiesNotFoundException,  # noqa: I001
     UnableToDetermineCorpTypeException,  # noqa: I001
 )  # noqa: I001
-from colin_api.models import (
+from colin_api.models import (  # noqa: I001
     Business,
     CorpInvolved,
     CorpName,
@@ -42,7 +42,7 @@ from colin_api.models import (
     Office,
     Party,
     ShareObject,
-)
+)  # noqa: I001
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
 
