@@ -117,7 +117,8 @@ class XmlMeta:
             'subcategory': 'B.C.',
             'corp_class': 'BC Company(s)',
             'description': (
-                'The Registrar of Companies hereby gives notice the following companies were dissolved under section 317, 422 or 423 of the Business Corporations Act.'
+                'The Registrar of Companies hereby gives notice the following companies were dissolved under '
+                'section 317, 422 or 423 of the Business Corporations Act.'
             )
         },
     }
