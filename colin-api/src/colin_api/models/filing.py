@@ -113,27 +113,30 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         'amalgamationApplication': {
             'sub_type_property': 'type',
             'sub_type_list': ['regular', 'horizontal', 'vertical'],
-            'type_code_list': ['OTAMA', 'AMALR', 'AMLRU', 'AMALH', 'AMLHU', 'AMALV', 'AMLVU'],
+            'type_code_list': ['OTAMA',
+                               'AMLRB', 'AMALR', 'AMLRU', 'AMLRC',
+                               'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
+                               'AMLVB', 'AMALV', 'AMLVU', 'AMLVC'],
             'regular': {
                 Business.TypeCodes.COOP.value: 'OTAMA',
-                Business.TypeCodes.BCOMP.value: 'AMALR',
+                Business.TypeCodes.BCOMP.value: 'AMLRB',
                 Business.TypeCodes.BC_COMP.value: 'AMALR',
                 Business.TypeCodes.ULC_COMP.value: 'AMLRU',
-                Business.TypeCodes.CCC_COMP.value: 'AMALR'
+                Business.TypeCodes.CCC_COMP.value: 'AMLRC'
             },
             'horizontal': {
                 Business.TypeCodes.COOP.value: 'OTAMA',
-                Business.TypeCodes.BCOMP.value: 'AMALH',
+                Business.TypeCodes.BCOMP.value: 'AMLHB',
                 Business.TypeCodes.BC_COMP.value: 'AMALH',
                 Business.TypeCodes.ULC_COMP.value: 'AMLHU',
-                Business.TypeCodes.CCC_COMP.value: 'AMALH'
+                Business.TypeCodes.CCC_COMP.value: 'AMLHC'
             },
             'vertical': {
                 Business.TypeCodes.COOP.value: 'OTAMA',
-                Business.TypeCodes.BCOMP.value: 'AMALV',
+                Business.TypeCodes.BCOMP.value: 'AMLVB',
                 Business.TypeCodes.BC_COMP.value: 'AMALV',
                 Business.TypeCodes.ULC_COMP.value: 'AMLVU',
-                Business.TypeCodes.CCC_COMP.value: 'AMALV'
+                Business.TypeCodes.CCC_COMP.value: 'AMLVC'
             }
         },
         'dissolved': {
@@ -152,7 +155,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         # `voluntaryDissolution filing type in place as unsure if it is being used in other places
         'dissolution': {
             'sub_type_property': 'dissolutionType',
-            'sub_type_list': ['voluntary', 'administrative'],
+            'sub_type_list': ['voluntary', 'administrative', 'involuntary'],
             'type_code_list': ['OTVDS', 'ADVD2'],
             'voluntary': {
                 Business.TypeCodes.COOP.value: 'OTVDS',
@@ -449,7 +452,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 )
             elif filing_type_code in ['NOCAD', 'CRBIN', 'TRANS',
                                       'BEINC', 'ICORP', 'ICORU', 'ICORC',
-                                      'AMALR', 'AMALH', 'AMALV',
+                                      'AMLRB', 'AMALR', 'AMLRU', 'AMLRC',
+                                      'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
+                                      'AMLVB', 'AMALV', 'AMLVU', 'AMLVC',
                                       'NOALA', 'NOALB', 'NOALC', 'NOALE', 'NOALR', 'NOALU',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
@@ -991,6 +996,29 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                    Business.CorpStateTypes.ADMINISTRATIVE_DISSOLUTION.value)
         return event_id
 
+    @classmethod
+    def add_involuntary_dissolution_event(cls, con, corp_num, filing_body) -> int:
+        """Add involuntary dissolution event."""
+        if not (filing_meta_data := filing_body.get('metaData')):
+            return None
+
+        event_type = None
+        corp_state = None
+        if filing_meta_data.get('overdueARs'):
+            event_type = 'SYSDF'
+            corp_state = Business.CorpStateTypes.INVOLUNTARY_DISSOLUTION_NO_AR.value
+        elif filing_meta_data.get('overdueTransition'):
+            event_type = 'SYSDT'
+            corp_state = Business.CorpStateTypes.INVOLUNTARY_DISSOLUTION_NO_TR.value
+
+        if event_type:
+            cursor = con.cursor()
+            event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, event_type=event_type)
+            Business.update_corp_state(cursor, event_id, corp_num, corp_state)
+            return event_id
+
+        return None
+
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
     def add_filing(cls, con, filing: Filing) -> int:
@@ -1098,10 +1126,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report,
                     last_ar_filed_dt=last_ar_filed_dt)
 
-                # Freeze entity for Alteration
-                if filing.filing_type == 'alteration' or (
-                        filing.filing_type == 'incorporationApplication' and
-                        business['business']['legalType'] == Business.TypeCodes.BCOMP.value):
+                # Freeze BEN entity
+                if (filing.filing_type == 'alteration' or
+                        (filing.filing_type in ['incorporationApplication', 'amalgamationApplication'] and
+                         business['business']['legalType'] == Business.TypeCodes.BCOMP.value)):
                     Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
 
             return filing.event_id

@@ -146,11 +146,17 @@ class FilingInfo(Resource):
                 con.begin()
 
                 # No filing will be created for administrative dissolution. Create an event and update corp state.
-                if ('dissolution' in filing_list and
-                        Filing.get_filing_sub_type('dissolution', filing_list['dissolution']) == 'administrative'):
+                if (
+                    'dissolution' in filing_list and
+                    (filing_sub_type := Filing.get_filing_sub_type('dissolution', filing_list['dissolution']))
+                    in ['administrative', 'involuntary']
+                ):
                     if legal_type == Business.TypeCodes.COOP.value:
                         raise Exception('Not implemented!')  # pylint: disable=broad-exception-raised
-                    event_id = Filing.add_administrative_dissolution_event(con, identifier)
+                    if filing_sub_type == 'administrative':
+                        event_id = Filing.add_administrative_dissolution_event(con, identifier)
+                    else:
+                        event_id = Filing.add_involuntary_dissolution_event(con, identifier, filing_list['dissolution'])
                     con.commit()
                     return jsonify({
                         'filing': {

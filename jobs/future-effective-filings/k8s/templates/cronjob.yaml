@@ -47,11 +47,11 @@ objects:
                       secretKeyRef:
                         name: ${NAME}-${TAG}-secret
                         key: COLIN_URL
-                  - name: LEGAL_URL
+                  - name: LEGAL_API_URL
                     valueFrom:
                       secretKeyRef:
                         name: ${NAME}-${TAG}-secret
-                        key: LEGAL_URL
+                        key: LEGAL_API_URL
                   - name: ACCOUNT_SVC_AUTH_URL
                     valueFrom:
                       secretKeyRef:

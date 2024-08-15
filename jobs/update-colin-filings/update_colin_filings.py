@@ -22,7 +22,6 @@ import os
 import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from flask import Flask
-from legal_api.services.bootstrap import AccountService
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
 
 import config  # pylint: disable=import-error; false positive in gha only
@@ -47,10 +46,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             integrations=[SENTRY_LOGGING]
         )
 
-    # Static class load the variables while importing the class for the first time,
-    # By then config is not loaded, so it never get the config value
-    AccountService.timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
-
     register_shellcontext(app)
 
     return app
@@ -67,18 +62,18 @@ def register_shellcontext(app):
 
 def get_filings(app: Flask, token, page, limit):
     """Get a filing with filing_id."""
-    req = requests.get(f'{app.config["LEGAL_API_URL"]}/internal/filings?page={page}&limit={limit}',
-                       headers={'Authorization': AccountService.BEARER + token},
-                       timeout=AccountService.timeout)
+    requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
+    req = requests.get(f'{app.config["LEGAL_API_URL"]}/businesses/internal/filings?page={page}&limit={limit}',
+                       headers={'Authorization': 'Bearer ' + token},
+                       timeout=requests_timeout)
     if not req or req.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}')
         raise Exception  # pylint: disable=broad-exception-raised
     return req.json()
 
 
-def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
+def send_filing(app: Flask, token: str, filing: dict, filing_id: str):
     """Post to colin-api with filing."""
-    token = AccountService.get_bearer_token()
     clean_none(filing)
 
     filing_type = filing['filing']['header'].get('name', None)
@@ -87,11 +82,12 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
 
     req = None
     if legal_type and identifier and filing_type:
+        requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
         req = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}',
-                            headers={**AccountService.CONTENT_TYPE_JSON,
-                                     'Authorization': AccountService.BEARER + token},
+                            headers={'Content-Type': 'application/json',
+                                     'Authorization': 'Bearer ' + token},
                             json=filing,
-                            timeout=AccountService.timeout)
+                            timeout=requests_timeout)
 
     if not req or req.status_code != 201:
         app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')
@@ -101,13 +97,14 @@ def send_filing(app: Flask = None, filing: dict = None, filing_id: str = None):
     return req.json()['filing']['header']['colinIds']
 
 
-def update_colin_id(app: Flask = None, filing_id: str = None, colin_ids: list = None, token: dict = None):
+def update_colin_id(app: Flask, token: dict, filing_id: str, colin_ids: list):
     """Update the colin_id in the filings table."""
+    requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
     req = requests.patch(
-        f'{app.config["LEGAL_API_URL"]}/internal/filings/{filing_id}',
-        headers={'Authorization': AccountService.BEARER + token},
+        f'{app.config["LEGAL_API_URL"]}/businesses/internal/filings/{filing_id}',
+        headers={'Authorization': 'Bearer ' + token},
         json={'colinIds': colin_ids},
-        timeout=AccountService.timeout
+        timeout=requests_timeout
     )
     if not req or req.status_code != 202:
         app.logger.error(f'Failed to update colin id in legal db for filing {filing_id} {req.status_code}')
@@ -125,6 +122,28 @@ def clean_none(dictionary: dict = None):
             dictionary[key] = ''
 
 
+def get_bearer_token(app):
+    """Get a valid Bearer token for the service to use."""
+    token_url = app.config.get('ACCOUNT_SVC_AUTH_URL')
+    client_id = app.config.get('ACCOUNT_SVC_CLIENT_ID')
+    client_secret = app.config.get('ACCOUNT_SVC_CLIENT_SECRET')
+    requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
+
+    data = 'grant_type=client_credentials'
+
+    # get service account token
+    res = requests.post(url=token_url,
+                        data=data,
+                        headers={'content-type': 'application/x-www-form-urlencoded'},
+                        auth=(client_id, client_secret),
+                        timeout=requests_timeout)
+
+    try:
+        return res.json().get('access_token')
+    except Exception:  # noqa: B902
+        return None
+
+
 def run():
     """Get filings that haven't been synced with colin and send them to the colin-api."""
     application = create_app()
@@ -132,7 +151,7 @@ def run():
     with application.app_context():
         try:
             # get updater-job token
-            token = AccountService.get_bearer_token()
+            token = get_bearer_token(application)
 
             page = 1
             limit = 50
@@ -152,11 +171,10 @@ def run():
                         application.logger.debug(f'Skipping filing {filing_id} for'
                                                  f' {filing["filing"]["business"]["identifier"]}.')
                     else:
-                        colin_ids = send_filing(app=application, filing=filing, filing_id=filing_id)
+                        colin_ids = send_filing(application, token, filing, filing_id)
                         update = None
                         if colin_ids:
-                            update = update_colin_id(app=application, filing_id=filing_id,
-                                                     colin_ids=colin_ids, token=token)
+                            update = update_colin_id(application, token, filing_id, colin_ids)
                         if update:
                             # pylint: disable=no-member; false positive
                             application.logger.debug(f'Successfully updated filing {filing_id}')

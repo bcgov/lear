@@ -1165,5 +1165,5 @@ def test_coa_future_effective(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert 'effectiveDate' in rv.json['filing']['header']
     effective_date = parse(rv.json['filing']['header']['effectiveDate'])
-    valid_date = LegislationDatetime.tomorrow_midnight()
+    valid_date = LegislationDatetime.tomorrow_one_minute_after_midnight()
     assert effective_date == valid_date

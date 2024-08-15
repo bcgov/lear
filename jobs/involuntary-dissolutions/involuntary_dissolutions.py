@@ -279,18 +279,22 @@ async def stage_3_process(app: Flask, qsm: QueueService):
         if eligible:
             filing = create_invountary_dissolution_filing(batch_processing.business_id)
             app.logger.debug(f'Created Involuntary Dissolution Filing with ID: {filing.id}')
+            batch_processing.filing_id = filing.id
+            batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.QUEUED
+            batch_processing.last_modified = datetime.utcnow()
+            batch_processing.save()
+
             await put_filing_on_queue(filing.id, app, qsm)
 
-            batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
-            batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
             app.logger.debug(
-                f'Batch Processing with identifier: {batch_processing.business_identifier} has been marked as complete.'
+                f'Batch Processing with identifier: {batch_processing.business_identifier} has been marked as queued.'
             )
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
-        batch_processing.last_modified = datetime.utcnow()
-        batch_processing.save()
+            batch_processing.last_modified = datetime.utcnow()
+            batch_processing.save()
 
     mark_eligible_batches_completed()
     app.logger.debug('Marked batches complete when all of their associated batch_processings are completed.')
