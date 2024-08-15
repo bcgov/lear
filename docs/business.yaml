@@ -2444,7 +2444,6 @@ paths:
   /businesses:
     post:
       summary: save business creation filing
-      operationId: post-business
       tags:
         - business
       responses:
