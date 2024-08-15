@@ -159,7 +159,7 @@ class ReportV2:
             if self._business.legal_type in [Business.LegalTypes.EXTRA_PRO_A.value]:
                 title = title.replace('{{REPORT_TYPE}}', 'CANCELLATION')
             else:
-               title = title.replace('{{REPORT_TYPE}}', 'DISSOLUTION') 
+                title = title.replace('{{REPORT_TYPE}}', 'DISSOLUTION')
         self._report_data['title'] = title.upper()
 
     def _set_address(self):
