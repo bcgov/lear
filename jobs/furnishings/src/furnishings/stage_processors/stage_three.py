@@ -19,10 +19,18 @@ from legal_api.models import Batch, BatchProcessing, Business, Furnishing, db
 from sqlalchemy import exists, not_
 
 
-def process(app: Flask):
+def process(app: Flask, xml_furnishings: dict):
     """Run process to manage and track notifications for dissolution stage three process."""
     try:
-        furnishing_subquery = exists().where(
+        has_stage_2_furnishing = exists().where(
+            Furnishing.batch_id == BatchProcessing.batch_id,
+            Furnishing.business_id == BatchProcessing.business_id,
+            Furnishing.furnishing_name.in_([
+                Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
+                Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO
+            ])
+        )
+        has_stage_3_furnishing = exists().where(
             Furnishing.batch_id == BatchProcessing.batch_id,
             Furnishing.business_id == BatchProcessing.business_id,
             Furnishing.furnishing_name.in_([
@@ -32,15 +40,15 @@ def process(app: Flask):
         )
         batch_processings = (
             db.session.query(BatchProcessing)
-            .filter(BatchProcessing.status == BatchProcessing.BatchProcessingStatus.PROCESSING)
+            .filter(BatchProcessing.status == BatchProcessing.BatchProcessingStatus.COMPLETED)
             .filter(BatchProcessing.step == BatchProcessing.BatchProcessingStep.DISSOLUTION)
             .filter(Batch.id == BatchProcessing.batch_id)
             .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
-            .filter(Batch.status == Batch.BatchStatus.PROCESSING)
-            .filter(not_(furnishing_subquery))
+            .filter(has_stage_2_furnishing)
+            .filter(not_(has_stage_3_furnishing))
         ).all()
 
-        furnishing_group_id = Furnishing.get_next_furnishing_group_id()
+        bc_furnishings = []
 
         for batch_processing in batch_processings:
             business = batch_processing.business
@@ -58,13 +66,16 @@ def process(app: Flask):
                 created_date=datetime.utcnow(),
                 last_modified=datetime.utcnow(),
                 status=Furnishing.FurnishingStatus.QUEUED,
-                furnishing_group_id=furnishing_group_id,
                 business_name=business.legal_name
             )
             new_furnishing.save()
             app.logger.debug(f'Created corp dissolved furnishing entry with ID: {new_furnishing.id}')
-        # TODO: create data files and SFTPing to BC Laws
-        # TODO: mark furnishings entry processed
+
+            if business != Business.LegalTypes.EXTRA_PRO_A.value:
+                bc_furnishings.append(new_furnishing)
+
+        if bc_furnishings:
+            xml_furnishings[Furnishing.FurnishingName.CORP_DISSOLVED] = bc_furnishings
 
     except Exception as err:
         app.logger.error(err)

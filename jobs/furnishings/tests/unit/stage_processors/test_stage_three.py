@@ -63,7 +63,20 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
         batch_id=batch.id,
         business_id=business.id,
         identifier=business.identifier,
-        step=step
+        step=step,
+        status=BatchProcessing.BatchProcessingStatus.COMPLETED
+    )
+
+    #stage 2 furnishing
+    factory_furnishing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=business.identifier,
+        furnishing_name=Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
+        furnishing_type=Furnishing.FurnishingType.GAZETTE,
+        created_date=datetime.utcnow()+datedelta(years=1),
+        last_modified=datetime.utcnow()+datedelta(years=1),
+        business_name=business.legal_name
     )
 
     if test_name == 'STAGE_3_ALREADY_RUN':
@@ -78,12 +91,12 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
             business_name=business.legal_name
         )
 
-    process(app)
+    process(app, {})
 
     furnishings = Furnishing.find_by(business_id=business.id)
     if new_entry:
-        assert len(furnishings) == 1
-        furnishing = furnishings[0]
+        assert len(furnishings) == 2
+        furnishing = furnishings[1]
         assert furnishing.furnishing_type == Furnishing.FurnishingType.GAZETTE
         assert furnishing.business_name == business.legal_name
         if entity_type == Business.LegalTypes.EXTRA_PRO_A.value:
@@ -92,8 +105,8 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
             assert furnishing.furnishing_name == Furnishing.FurnishingName.CORP_DISSOLVED
     else:
         if test_name == 'STAGE_3_ALREADY_RUN':
-            assert len(furnishings) == 1
-            furnishing = furnishings[0]
+            assert len(furnishings) == 2
+            furnishing = furnishings[1]
             assert furnishing == existing_furnishing
         else:
-            assert len(furnishings) == 0
+            assert len(furnishings) == 1

@@ -66,7 +66,8 @@ def process(app: Flask, xml_furnishings: dict):
             if business != Business.LegalTypes.EXTRA_PRO_A.value:
                 bc_furnishings.append(new_furnishing)
 
-        xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE] = bc_furnishings
+        if bc_furnishings:
+            xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE] = bc_furnishings
 
     except Exception as err:
         app.logger.error(err)
