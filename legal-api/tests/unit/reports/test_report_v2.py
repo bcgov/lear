@@ -24,6 +24,7 @@ from tests.unit.models import factory_business_with_stage_one_furnishing
     'test_name, variant, legal_type', [
         ('COMMENCEMENT_DEFAULT_DISSOLUTION', 'default', 'BEN'),
         ('COMMENCEMENT_GREYSCALE_DISSOLUTION', 'greyscale', 'BC'),
+        ('COMMENCEMENT_DEFAULT_CANCELLATION', 'default', 'A'),
         ('COMMENCEMENT_GREYSCALE_CANCELLATION', 'greyscale', 'A'),
     ]
 )
