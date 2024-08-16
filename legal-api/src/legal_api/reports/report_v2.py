@@ -149,7 +149,7 @@ class ReportV2:
         self._report_data['furnishing']['processedDate'] = processed_date.strftime(OUTPUT_DATE_FORMAT)
 
         self._report_data['furnishing']['businessLegalType'] = 'BC'
-        if self._business.legal_type in [Business.LegalTypes.EXTRA_PRO_A.value]: 
+        if self._business.legal_type in [Business.LegalTypes.EXTRA_PRO_A.value]:
             self._report_data['furnishing']['businessLegalType'] = 'EP'
 
     def _set_meta_info(self):
