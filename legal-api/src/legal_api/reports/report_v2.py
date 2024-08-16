@@ -148,6 +148,10 @@ class ReportV2:
             processed_date = LegislationDatetime.as_legislation_timezone(self._report_date_time)
         self._report_data['furnishing']['processedDate'] = processed_date.strftime(OUTPUT_DATE_FORMAT)
 
+        self._report_data['furnishing']['businessLegalType'] = 'BC'
+        if self._business.legal_type in [Business.LegalTypes.EXTRA_PRO_A.value]: 
+            self._report_data['furnishing']['businessLegalType'] = 'EP'
+
     def _set_meta_info(self):
         if self._variant:
             self._report_data['variant'] = self._variant

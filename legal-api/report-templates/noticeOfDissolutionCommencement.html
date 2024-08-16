@@ -33,8 +33,13 @@
       <div class="container letter-container ml-3">
         <div class="mt-5"><span class="bold">No Annual Reports Filed Since {{ furnishing.lastARDate }} for {{ furnishing.businessIdentifier }}</span></div>
         <div class="mt-4">To file an annual report online, log in to your Business Page at <a href="https://www.business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}" class="break-url">business.bcregistry.gov.bc.ca/<wbr>{{ furnishing.businessIdentifier }}</a> to file any outstanding annual reports listed.</div>
-        <div class="mt-5">Under section 422 of the Business Corporation Act (the Act), this letter is to notify you that your company has for two years failed to file the annual reports required under section 51 of the Act. A company must annually, within two months after each anniversary of the date on which the company was recognized, file an annual report with the Registrar.</div>
-        <div class="mt-5">If within one month after the date of this letter, the company fails to file the outstanding annual reports, a notice may be published on the BC Laws website www.bclaws.ca. This notice will state that, at any time after the expiration of one month after the date of publication of the notice, the company will be dissolved, unless cause is shown to the contrary; I am satisfied the failure has been or is being remedied; or a copy of the entered court order to the contrary has been filed.</div>
+        {% if furnishing.businessLegalType == 'EP' %}
+          <div class="mt-5">Under section 422 of the Business Corporation Act (the Act), this letter is to notify you that your extraprovincial company has for two years failed to file the annual reports required under section 51 of the Act. A company must annually, within two months after each anniversary of the date on which the company was recognized, file an annual report with the Registrar.</div>
+          <div class="mt-5">If within one month after the date of this letter, the company fails to file the outstanding annual reports, a notice may be published on the BC Laws website <a href="https://www.bclaws.gov.bc.ca/" class="break-url">www.bclaws.ca</a>. This notice will state that, at any time after the expiration of one month after the date of publication of the notice, the company will be cancelled, unless cause is shown to the contrary; I am satisfied the failure has been or is being remedied; or a copy of the entered court order to the contrary has been filed.</div>
+        {% else %}
+          <div class="mt-5">Under section 422 of the Business Corporation Act (the Act), this letter is to notify you that your company has for two years failed to file the annual reports required under section 51 of the Act. A company must annually, within two months after each anniversary of the date on which the company was recognized, file an annual report with the Registrar.</div>
+          <div class="mt-5">If within one month after the date of this letter, the company fails to file the outstanding annual reports, a notice may be published on the BC Laws website <a href="https://www.bclaws.gov.bc.ca/" class="break-url">www.bclaws.ca</a>. This notice will state that, at any time after the expiration of one month after the date of publication of the notice, the company will be dissolved, unless cause is shown to the contrary; I am satisfied the failure has been or is being remedied; or a copy of the entered court order to the contrary has been filed.</div>
+        {% endif %}
 
         {% if furnishing.foreignRegistrations %}
         <div class="mt-5">
@@ -58,8 +63,13 @@
         </div>
         {% endif %}
 
-        <div class="mt-5">To request a delay of the dissolution, go to <a href="https://www.business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}" class="break-url">business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}</a> and request for a Delay of Dissolution or Cancellation under the To Do section. This must be completed prior to the dissolution of the company.</div>
-        <div class="mt-5">If your company is dissolved under section 422(1)(a) of the Act, section 347 of the Act states the liability of each director, officer, shareholder and liquidator of a company that is dissolved continues and may be enforced as if the company had not been dissolved.</div>
+        {% if furnishing.businessLegalType == 'EP' %}
+          <div class="mt-5">To request a delay of the cancellation, go to <a href="https://www.business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}" class="break-url">business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}</a> and request for a Delay of Dissolution or Cancellation under the To Do section. This must be completed prior to the dissolution of the company.</div>
+          <div class="mt-5">If your company is cancelled under section 422(1)(a) of the Act, section 347 of the Act states the liability of each director, officer, shareholder and liquidator of a company that is cancelled continues and may be enforced as if the company had not been cancelled.</div>
+        {% else %}
+          <div class="mt-5">To request a delay of the dissolution, go to <a href="https://www.business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}" class="break-url">business.bcregistry.gov.bc.ca/{{ furnishing.businessIdentifier }}</a> and request for a Delay of Dissolution or Cancellation under the To Do section. This must be completed prior to the dissolution of the company.</div>
+          <div class="mt-5">If your company is dissolved under section 422(1)(a) of the Act, section 347 of the Act states the liability of each director, officer, shareholder and liquidator of a company that is dissolved continues and may be enforced as if the company had not been dissolved.</div>
+        {% endif %}
         <div class="mt-5">If you have filed the outstanding annual reports, no further action is required.</div>
         <div class="mt-5">If you need help with setting up an account or managing a business, please visit our Resources and Help page at <a href="https://bcreg.ca/resources" class="break-url">bcreg.ca/resources</a></div>
 
