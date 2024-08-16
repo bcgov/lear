@@ -133,7 +133,8 @@ class ReportV2:
     def _format_furnishing_data(self):
         self._report_data['furnishing'] = {
             'businessName': self._furnishing.business_name,
-            'businessIdentifier': self._furnishing.business_identifier
+            'businessIdentifier': self._furnishing.business_identifier,
+            'businessLegalType':  self._business.legal_type
         }
 
         if self._furnishing.last_ar_date:
@@ -147,10 +148,6 @@ class ReportV2:
         else:
             processed_date = LegislationDatetime.as_legislation_timezone(self._report_date_time)
         self._report_data['furnishing']['processedDate'] = processed_date.strftime(OUTPUT_DATE_FORMAT)
-
-        self._report_data['furnishing']['businessLegalType'] = 'BC'
-        if self._business.legal_type in [Business.LegalTypes.EXTRA_PRO_A.value]:
-            self._report_data['furnishing']['businessLegalType'] = 'EP'
 
     def _set_meta_info(self):
         if self._variant:
