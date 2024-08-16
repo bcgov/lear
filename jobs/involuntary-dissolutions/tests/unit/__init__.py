@@ -49,14 +49,12 @@ def factory_business(identifier,
 def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                   status=Batch.BatchStatus.HOLD,
                   size=3,
-                  max_size=10,
                   notes=''):
     """Create a batch."""
     batch = Batch(
         batch_type=batch_type,
         status=status,
         size=size,
-        max_size=max_size,
         notes=notes
     )
     batch.save()
