@@ -15,19 +15,27 @@
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
+import pytest
 import requests
+from legal_api.models import Furnishing
 
 from entity_emailer.email_processors import involuntary_dissolution_stage_1_notification
 from tests.unit import create_business, create_furnishing  # noqa: I003
 
 
-def test_involuntary_dissolution_stage_1_notification(app, session):
+@pytest.mark.parametrize(
+        'test_name, legal_type, furnishing_name', [
+            ('TEST_BC_NO_AR', 'BC', Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR),
+            ('TEST_XPRO_NO_AR', 'A', Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO)
+        ]
+)
+def test_involuntary_dissolution_stage_1_notification(app, session, test_name, legal_type, furnishing_name):
     """Assert that the test_involuntary_dissolution_stage_1_notification can be processed."""
     token = 'token'
     message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
     business_identifier = 'BC1234567'
-    business = create_business(business_identifier, 'BC', 'Test Business')
-    furnishing = create_furnishing(session, business=business)
+    business = create_business(business_identifier, legal_type, 'Test Business')
+    furnishing = create_furnishing(session, business=business, furnishing_name=furnishing_name)
     message_payload = {
         'specversion': '1.x-wip',
         'type': 'bc.registry.dissolution',
@@ -56,7 +64,12 @@ def test_involuntary_dissolution_stage_1_notification(app, session):
 
             assert email['content']['subject'] == f'Attention {business_identifier} - Test Business'
             assert email['recipients'] == 'test@test.com'
-            assert email['content']['body']
+            body = email['content']['body']
+            assert body
+            if test_name == 'TEST_XPRO_NO_AR':
+                assert 'Notice of Commencement of Cancellation' in body
+            else:
+                assert 'Notice of Commencement of Dissolution' in body
             assert email['content']['attachments']
             assert mock_get_pdfs.call_args[0][0] == token
             assert mock_get_pdfs.call_args[0][1] == business
