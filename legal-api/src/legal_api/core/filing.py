@@ -460,10 +460,14 @@ class Filing:
     @staticmethod
     def _is_display_ledger(filing: FilingStorage) -> bool:
         """Return boolean that display the ledger."""
-        # If filing is an admin freeze or involuntary dissolution, we will NOT display it on ledger
-        if (filing.filing_type == Filing.FilingTypes.ADMIN_FREEZE or
-            (filing.filing_type == Filing.FilingTypes.DISSOLUTION and filing.filing_sub_type == 'involuntary')): return False
-        return True
+        # If filing is NOT an admin freeze or involuntary dissolution, we will display it on ledger
+        return not (
+            filing.filing_type == Filing.FilingTypes.ADMIN_FREEZE or
+            (
+                filing.filing_type == Filing.FilingTypes.DISSOLUTION and
+                filing.filing_sub_type == 'involuntary'
+            )
+        )
 
     @staticmethod
     def get_document_list(business,  # pylint: disable=too-many-locals disable=too-many-branches
