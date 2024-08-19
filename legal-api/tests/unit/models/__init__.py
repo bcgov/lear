@@ -459,7 +459,7 @@ def factory_furnishing(business_id,
     return furnishing
 
 
-def factory_business_with_stage_one_furnishing(legal_type=None):
+def factory_business_with_stage_one_furnishing(legal_type=None, furnishing_name=None):
     """Create a business with a stage one furnishing entry."""
     business = factory_business(identifier='BC1234567', entity_type=legal_type)
     factory_business_mailing_address(business)
@@ -468,7 +468,8 @@ def factory_business_with_stage_one_furnishing(legal_type=None):
                                     business_identifier=business.identifier,
                                     batch_id=batch.id,
                                     last_ar_date=EPOCH_DATETIME,
-                                    business_name='TEST-BUSINESS')
+                                    business_name='TEST-BUSINESS',
+                                    furnishing_name=furnishing_name)
     return business, furnishing
 
 

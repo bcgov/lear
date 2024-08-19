@@ -22,7 +22,7 @@ import requests
 from flask import current_app, jsonify
 from jinja2 import Template
 
-from legal_api.models import Address, Business
+from legal_api.models import Address
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MrasService
 from legal_api.utils.base import BaseEnum
@@ -134,7 +134,7 @@ class ReportV2:
         self._report_data['furnishing'] = {
             'businessName': self._furnishing.business_name,
             'businessIdentifier': self._furnishing.business_identifier,
-            'businessLegalType':  self._business.legal_type
+            'furnishingName': self._furnishing.furnishing_name.name
         }
 
         if self._furnishing.last_ar_date:
@@ -157,7 +157,7 @@ class ReportV2:
 
         title = ReportMeta.reports[self._document_key]['reportDescription']
         if self._document_key == ReportTypes.DISSOLUTION:
-            if self._business.legal_type in [Business.LegalTypes.EXTRA_PRO_A.value]:
+            if 'XPRO' in self._furnishing.furnishing_name.name:
                 title = title.replace('{{REPORT_TYPE}}', 'CANCELLATION')
             else:
                 title = title.replace('{{REPORT_TYPE}}', 'DISSOLUTION')

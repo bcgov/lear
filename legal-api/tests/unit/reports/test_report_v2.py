@@ -21,16 +21,18 @@ from tests.unit.models import factory_business_with_stage_one_furnishing
 
 
 @pytest.mark.parametrize(
-    'test_name, variant, legal_type', [
-        ('COMMENCEMENT_DEFAULT_DISSOLUTION', 'default', 'BEN'),
-        ('COMMENCEMENT_GREYSCALE_DISSOLUTION', 'greyscale', 'BC'),
-        ('COMMENCEMENT_DEFAULT_CANCELLATION', 'default', 'A'),
-        ('COMMENCEMENT_GREYSCALE_CANCELLATION', 'greyscale', 'A'),
+    'test_name, variant, legal_type, furnishing_name', [
+        ('COMMENCEMENT_DEFAULT_DISSOLUTION_AR', 'default', 'BEN', 'DISSOLUTION_COMMENCEMENT_NO_AR'),
+        ('COMMENCEMENT_GREYSCALE_DISSOLUTION_AR', 'greyscale', 'BC', 'DISSOLUTION_COMMENCEMENT_NO_AR'),
+        ('COMMENCEMENT_DEFAULT_CANCELLATION_AR_EP', 'default', 'A', 'DISSOLUTION_COMMENCEMENT_NO_AR_XPRO'),
+        ('COMMENCEMENT_GREYSCALE_CANCELLATION_AR_EP', 'greyscale', 'A', 'DISSOLUTION_COMMENCEMENT_NO_AR_XPRO'),
+        ('COMMENCEMENT_DEFAULT_DISSOLUTION_TR', 'default', 'BEN', 'DISSOLUTION_COMMENCEMENT_NO_TR'),
+        ('COMMENCEMENT_GREYSCALE_DISSOLUTION_TR', 'greyscale', 'BC', 'DISSOLUTION_COMMENCEMENT_NO_TR'),
     ]
 )
-def test_get_pdf(session, test_name, variant, legal_type):
+def test_get_pdf(session, test_name, variant, legal_type, furnishing_name):
     """Assert that furnishing can be returned as a Gotenberg PDF."""
-    business, furnishing = factory_business_with_stage_one_furnishing(legal_type=legal_type)
+    business, furnishing = factory_business_with_stage_one_furnishing(legal_type=legal_type, furnishing_name=furnishing_name)
     with patch.object(MrasService, 'get_jurisdictions', return_value=[]):
         report = ReportV2(business, furnishing, ReportTypes.DISSOLUTION, variant)
         filename = report._get_report_filename()
