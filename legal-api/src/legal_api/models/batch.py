@@ -49,6 +49,7 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
     start_date = db.Column('start_date', db.DateTime(timezone=True), default=datetime.utcnow)
     end_date = db.Column('end_date', db.DateTime(timezone=True), nullable=True)
     notes = db.Column('notes', db.String(150), default='', nullable=True)
+    max_size = db.Column('max_size', db.Integer, nullable=True)
 
     def save(self):
         """Save the object to the database immediately."""
