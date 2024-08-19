@@ -77,7 +77,10 @@ class PostProcessor:
                 furnishing.save()
 
     def process(self):
-        """Postprocess to generate and upload file to external resources(BC Laws)."""
+        """Postprocess to generate and upload file to external resources (BC Laws)."""
+        if not self._furnishings_dict:
+            return
+
         self._format_furnishings()
         self._app.logger.debug('Formatted furnishing details presented in XML file')
         self._set_meta_info()
@@ -106,6 +109,16 @@ class XmlMeta:
                 'at any time after the expiration of one month from the date of publication of this notice, '
                 'unless cause is shown to the contrary, '
                 'be dissolved under section 422 of the Business Corporations Act.'
+            )
+        },
+        Furnishing.FurnishingName.CORP_DISSOLVED: {
+            'title': 'Dissolutions (B.C.)',
+            'category': 'DISSOLUTIONS',
+            'subcategory': 'B.C.',
+            'corp_class': 'BC Company(s)',
+            'description': (
+                'The Registrar of Companies hereby gives notice the following companies were dissolved under '
+                'section 317, 422 or 423 of the Business Corporations Act.'
             )
         },
     }
