@@ -112,11 +112,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.CCC_COMP.value: 'CONVL'
         },
         'alteration': {
-            'type_code_list': ['NOALA', 'NOALR'],
-            Business.TypeCodes.BCOMP.value: 'NOALR',
+            'type_code_list': ['NOABE', 'NOALE', 'NOALR', 'NOALD', 'NOALA', 'NOALB', 'NOALU', 'NOALC'],
+            Business.TypeCodes.BCOMP.value: 'NOABE',
+            'BC_TO_BEN': 'NOALE',
+            'BEN_TO_BC': 'NOALR',
+            'ULC_TO_BEN': 'NOALD',
             Business.TypeCodes.BC_COMP.value: 'NOALA',
             Business.TypeCodes.ULC_COMP.value: 'NOALA',
-            Business.TypeCodes.CCC_COMP.value: 'NOALA'
+            Business.TypeCodes.CCC_COMP.value: 'NOALA',
+            'ULC_TO_BC': 'NOALB',
+            'BC_TO_ULC': 'NOALU',
+            'BC_TO_CC': 'NOALC',
         },
         'correction': {
             'type_code_list': ['CRBIN'],
@@ -294,6 +300,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             return Filing.FILING_TYPES.get(self.filing_type, {})\
                 .get(self.filing_sub_type, {})\
                 .get(self.business.corp_type, None)
+        elif self.filing_type == 'alteration':
+            corp_type_change = self.business.corp_type
+            if ((to_type := self.body.get('business', {}).get('legalType')) and
+                    to_type != self.business.corp_type):
+                corp_type_change = f'{self.business.corp_type}_TO_{to_type}'
+            return Filing.FILING_TYPES.get(self.filing_type, {}).get(corp_type_change, None)
         return Filing.FILING_TYPES.get(self.filing_type, {}).get(self.business.corp_type, None)
 
     def as_dict(self) -> Dict:
@@ -476,7 +488,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
                                       'AMLVB', 'AMALV', 'AMLVU', 'AMLVC',
                                       'CONTB', 'CONTI', 'CONTU', 'CONTC',
-                                      'NOALA', 'NOALB', 'NOALC', 'NOALE', 'NOALR', 'NOALU',
+                                      'NOABE', 'NOALE', 'NOALR', 'NOALD', 'NOALA', 'NOALB', 'NOALU', 'NOALC'
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
                 court_order_num = None
@@ -811,12 +823,16 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                         # should only ever be 1 active name for any given event
                         break
 
-            if 'business' in components and schema_name != 'continuation_in':
+            if 'business' in components and schema_name == 'alteration':
                 filing.body['business'] = {}
-                if filing_event_info['filing_type_code'] == 'NOALR':
+                if filing_event_info['filing_type_code'] in ['NOALR', 'NOALB']:
                     filing.body['business']['legalType'] = Business.TypeCodes.BC_COMP.value
-                elif filing_event_info['filing_type_code'] == 'NOALE':
+                elif filing_event_info['filing_type_code'] in ['NOALE', 'NOALD', 'NOABE']:
                     filing.body['business']['legalType'] = Business.TypeCodes.BCOMP.value
+                elif filing_event_info['filing_type_code'] == 'NOALU':
+                    filing.body['business']['legalType'] = Business.TypeCodes.ULC_COMP.value
+                elif filing_event_info['filing_type_code'] == 'NOALC':
+                    filing.body['business']['legalType'] = Business.TypeCodes.CCC_COMP.value
                 elif filing_event_info['filing_type_code'] == 'NOALA':
                     corp_type = cls._get_corp_type_for_event(corp_num=corp_num,
                                                              event_id=filing_event_info['event_id'],
@@ -827,7 +843,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                         raise UnableToDetermineCorpTypeException(filing_type=filing.filing_type)
                 else:
                     raise InvalidFilingTypeException(filing_type=filing_event_info['filing_type_code'])
-                filing.body['business']['identifier'] = f'BC{filing.business.corp_num}'
+                if filing.business.corp_num.isdecimal():  # valid only for BC
+                    filing.body['business']['identifier'] = f'BC{filing.business.corp_num}'
+                else:
+                    filing.body['business']['identifier'] = filing.business.corp_num
 
             if 'provisionsRemoved' in components:
                 provisions = Business.get_corp_restriction(
@@ -1149,12 +1168,18 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report,
                     last_ar_filed_dt=last_ar_filed_dt)
 
-                # Freeze BEN entity
-                if (filing.filing_type == 'alteration' or
-                        (filing.filing_type in ['incorporationApplication', 'amalgamationApplication'] and
-                         business['business']['legalType'] == Business.TypeCodes.BCOMP.value) or
-                        (filing.filing_type == 'continuationIn' and
-                         business['business']['legalType'] == Business.TypeCodes.BCOMP_CONTINUE_IN.value)):
+                is_new_ben = (filing.filing_type in ['incorporationApplication', 'amalgamationApplication'] and
+                              business['business']['legalType'] == Business.TypeCodes.BCOMP.value)
+                is_new_cben = (filing.filing_type == 'continuationIn' and
+                               business['business']['legalType'] == Business.TypeCodes.BCOMP_CONTINUE_IN.value)
+                is_alteration_to_ben_or_cben = (filing.filing_type == 'alteration' and
+                                                filing.body.get('business', {}).get('legalType') in [
+                                                    Business.TypeCodes.BCOMP.value,
+                                                    Business.TypeCodes.BCOMP_CONTINUE_IN.value,
+                                                ])
+
+                # Freeze BEN/CBEN entity
+                if (is_new_ben or is_new_cben or is_alteration_to_ben_or_cben):
                     Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
 
             return filing.event_id
@@ -1390,15 +1415,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _create_corp_name(cls, cursor, filing: Filing, corp_num: str, name: str = None):
         """Create name."""
+        if not name and filing.filing_type != 'correction':
+            name = filing.body.get('nameRequest', {}).get('legalName', None)
+
         if filing.filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication']:
             # create corp state
             Business.create_corp_state(cursor=cursor, corp_num=corp_num, event_id=filing.event_id)
         elif filing.filing_type == 'alteration':
-            # end old
-            CorpName.end_current(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
-
-        if not name and filing.filing_type != 'correction':
-            name = filing.body.get('nameRequest', {}).get('legalName', None)
+            old_corp_name = CorpName.get_current_name_or_numbered(cursor=cursor, corp_num=corp_num)
+            if old_corp_name.corp_name != name:
+                # end old corp name
+                CorpName.end_current(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
+            else:
+                return  # No change
 
         corp_name_obj = CorpName()
         corp_name_obj.corp_num = corp_num
