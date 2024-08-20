@@ -293,19 +293,20 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             return self.body['contactPoint']['email']
         return self.header.get('email', '')
 
-    def get_filing_type_code(self, filing_sub_type: str = None) -> Optional[str]:
+    def get_filing_type_code(self) -> Optional[str]:
         """Get filing type code."""
-        sub_type = filing_sub_type or self.filing_sub_type
-        if sub_type:
-            return Filing.FILING_TYPES.get(self.filing_type, {})\
-                .get(self.filing_sub_type, {})\
-                .get(self.business.corp_type, None)
-        elif self.filing_type == 'alteration':
+        if self.filing_type == 'alteration':
             corp_type_change = self.business.corp_type
             if ((to_type := self.body.get('business', {}).get('legalType')) and
                     to_type != self.business.corp_type):
                 corp_type_change = f'{self.business.corp_type}_TO_{to_type}'
             return Filing.FILING_TYPES.get(self.filing_type, {}).get(corp_type_change, None)
+
+        if self.filing_sub_type:
+            return (Filing.FILING_TYPES.get(self.filing_type, {})
+                    .get(self.filing_sub_type, {})
+                    .get(self.business.corp_type, None))
+
         return Filing.FILING_TYPES.get(self.filing_type, {}).get(self.business.corp_type, None)
 
     def as_dict(self) -> Dict:
