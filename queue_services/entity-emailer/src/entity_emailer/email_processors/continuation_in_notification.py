@@ -19,6 +19,7 @@ import re
 from http import HTTPStatus
 from pathlib import Path
 
+import pycountry
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
@@ -140,6 +141,15 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     numbered_description = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
     jnja_template = Template(filled_template, autoescape=True)
 
+    # compute Foreign Jurisdiction string as in report.py and business_document.py
+    country_code = filing_data['foreignJurisdiction']['country']
+    region_code = filing_data['foreignJurisdiction']['region']
+    country = pycountry.countries.get(alpha_2=country_code)
+    region = None
+    if region_code and region_code.upper() != 'FEDERAL':
+        region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+    foreign_jurisdiction = f'{region.name}, {country.name}' if region else country.name
+
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
@@ -150,7 +160,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         entity_dashboard_url=get_entity_dashboard_url(business.get('identifier'), token),
         email_header=filing_name.upper(),
         filing_type=filing_type,
-        numbered_description=numbered_description
+        numbered_description=numbered_description,
+        foreign_jurisdiction=foreign_jurisdiction
     )
 
     # get attachments

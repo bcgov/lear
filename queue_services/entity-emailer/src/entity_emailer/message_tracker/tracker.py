@@ -109,7 +109,7 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
                      'restoration', 'specialResolution', 'correction', 'amalgamationApplication', 'continuationIn') \
                 and (option := email.get('option', None)) \
                 and (filing_id := email.get('filingId', None)):
-            # option contains current status of filing - PAID or COMPLETED
+            # option contains current status of filing - PAID or COMPLETED or CHANGE_REQUESTED, etc
             message_id = f'{etype}_{option}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
 
