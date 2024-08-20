@@ -18,11 +18,12 @@ from typing import Dict
 import dpath
 import sentry_sdk
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Business, Document, Filing, db
+from legal_api.models import BatchProcessing, Business, Document, Filing, db
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.minio import MinioService
 from legal_api.services.pdf_service import RegistrarStampData
+from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
@@ -31,7 +32,8 @@ from entity_filer.filing_processors.filing_components.parties import update_part
 from entity_filer.utils import replace_file_with_certified_copy
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+# pylint: disable=too-many-locals
+def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta, flag_on: bool = False):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
         logger.error('Could not find Dissolution in: %s', filing)
@@ -94,6 +96,15 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
             'dissolutionType': dissolution_type,
             'dissolutionDate': LegislationDatetime.format_as_legislation_date(business.dissolution_date)
         }
+
+    # update batch processing entry, if any is present
+    if flag_on:
+        batch_processings = BatchProcessing.find_by(filing_id=filing_rec.id)
+        for batch_processing in batch_processings:
+            if batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED:
+                batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
+                batch_processing.last_modified = datetime.utcnow()
+                batch_processing.save()
 
 
 def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Filing, dissolution_type):

@@ -62,7 +62,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

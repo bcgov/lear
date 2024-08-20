@@ -62,6 +62,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     MSG_RETRY_NUM = int(os.getenv('MSG_RETRY_NUM', '5'))
 
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
     # urls

@@ -24,7 +24,7 @@ from flask import current_app
 from jinja2 import Environment, FileSystemLoader
 from legal_api.models import Business, CorpType, Filing
 
-from entity_emailer.email_processors import get_filing_info
+from entity_emailer.email_processors import get_filing_document, get_filing_info
 
 
 def _get_completed_pdfs(
@@ -35,21 +35,11 @@ def _get_completed_pdfs(
     """Get the pdfs for the restoration output."""
     pdfs = []
     attach_order = 1
-    headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
-    }
 
     # add notice of articles
-    noa = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-        params={'type': 'noticeOfArticles'},
-        headers=headers
-    )
-    if noa.status_code != HTTPStatus.OK:
-        logger.error('Failed to get noa pdf for filing: %s', filing.id)
-    else:
-        noa_encoded = base64.b64encode(noa.content)
+    noa_pdf_type = 'noticeOfArticles'
+    noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
+    if noa_encoded:
         pdfs.append(
             {
                 'fileName': 'Notice of Articles.pdf',
@@ -60,15 +50,9 @@ def _get_completed_pdfs(
         )
         attach_order += 1
     # add certificate of restoration
-    certificate = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-        '?type=certificateOfRestoration',
-        headers=headers
-    )
-    if certificate.status_code != HTTPStatus.OK:
-        logger.error('Failed to get certificate pdf for filing: %s', filing.id)
-    else:
-        certificate_encoded = base64.b64encode(certificate.content)
+    certificate_pdf_type = 'certificateOfRestoration'
+    certificate_encoded = get_filing_document(business['identifier'], filing.id, certificate_pdf_type, token)
+    if certificate_encoded:
         pdfs.append(
             {
                 'fileName': 'Certificate of Restoration.pdf',
@@ -97,14 +81,9 @@ def _get_paid_pdfs(
         'Authorization': f'Bearer {token}'
     }
 
-    filing_pdf = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}',
-        headers=headers
-    )
-    if filing_pdf.status_code != HTTPStatus.OK:
-        logger.error('Failed to get pdf for filing: %s', filing.id)
-    else:
-        filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+    filing_pdf_type = 'restoration'
+    filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+    if filing_pdf_encoded:
         pdfs.append(
             {
                 'fileName': 'Restoration Application.pdf',

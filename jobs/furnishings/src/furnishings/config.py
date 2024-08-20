@@ -47,7 +47,8 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
     AUTH_URL = os.getenv('AUTH_URL', None)
@@ -85,6 +86,8 @@ class _Config:  # pylint: disable=too-few-public-methods
     DEBUG = False
 
     SECOND_NOTICE_DELAY = int(os.getenv('SECOND_NOTICE_DELAY', '5'))
+    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
+    TEMPLATE_PATH = os.getenv('TEMPLATE_PATH', 'src/furnishings-templates')
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods

@@ -16,8 +16,9 @@
 Currently this only resets changes made to COOP data made with user COOPER
 """
 import json
+
 from flask import current_app, jsonify, request
-from flask_restx import Namespace, Resource, cors, fields
+from flask_restx import Namespace, Resource, cors
 
 from colin_api.models.reset import Reset
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
@@ -62,10 +63,12 @@ class ResetInfo(Resource):
 @API.route('/by_event_id')
 class ResetByEventId(Resource):
     """Reset filing(s) based on the provided event_id, or array of event_ids.
-      This is only tested to work on Annual Reports, ymmv"""
 
-    eventResetParser = API.parser()
-    eventResetParser.add_argument(
+    This is only tested to work on Annual Reports, ymmv
+    """
+
+    event_reset_parser = API.parser()
+    event_reset_parser.add_argument(
         'event_ids',
         type=list,
         help='The list of event ids to reset. Can be one id',
@@ -75,19 +78,21 @@ class ResetByEventId(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_roles([COLIN_SVC_ROLE])
-    @API.expect(eventResetParser)
+    @API.expect(event_reset_parser)
     def post():
         """Reset filing(s) based on the provided event_id, or array of event_ids.
-        This is only tested to work on Annual Reports, ymmv"""
+
+        This is only tested to work on Annual Reports, ymmv
+        """
         try:
-            
+
             event_ids = API.payload.get('event_ids', None)
 
             Reset.reset_filings_by_event(
-              event_ids=event_ids
+                event_ids=event_ids
             )
-            
-            return jsonify({'message':"Reset for event ids "+json.dumps(event_ids)}), 200
+
+            return jsonify({'message': 'Reset for event ids ' + json.dumps(event_ids)}), 200
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception

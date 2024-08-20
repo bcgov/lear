@@ -32,6 +32,8 @@ from legal_api.models import (
     Business,
     Comment,
     Filing,
+    Furnishing,
+    FurnishingGroup,
     Office,
     Party,
     PartyRole,
@@ -378,12 +380,12 @@ def factory_share_class(business_identifier: str):
     return share_class
 
 
-def factory_incomplete_statuses(unknown_statuses:list = []):
+def factory_incomplete_statuses(unknown_statuses: list = []):
     result = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
-                       Filing.Status.PENDING_CORRECTION.value,
-                       Filing.Status.ERROR.value,
-                       Filing.Status.PAID.value]
+              Filing.Status.PENDING.value,
+              Filing.Status.PENDING_CORRECTION.value,
+              Filing.Status.ERROR.value,
+              Filing.Status.PAID.value]
 
     if unknown_statuses:
         result.extend(unknown_statuses)
@@ -408,16 +410,70 @@ def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
 def factory_batch_processing(batch_id,
                              business_id,
                              identifier,
-                             step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-                             status = BatchProcessing.BatchProcessingStatus.PROCESSING,
-                             notes = ''):
+                             step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+                             status=BatchProcessing.BatchProcessingStatus.PROCESSING,
+                             trigger_date=datetime.utcnow() + datedelta(days=42),
+                             notes=''
+                             ):
     batch_processing = BatchProcessing(
-        batch_id = batch_id,
-        business_id = business_id,
-        business_identifier = identifier,
-        step = step,
-        status = status,
-        notes = notes
+        batch_id=batch_id,
+        business_id=business_id,
+        business_identifier=identifier,
+        step=step,
+        status=status,
+        trigger_date=trigger_date,
+        notes=notes
     )
     batch_processing.save()
     return batch_processing
+
+
+def factory_furnishing(business_id,
+                       business_identifier,
+                       batch_id,
+                       furnishing_type=Furnishing.FurnishingType.EMAIL,
+                       furnishing_name=Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+                       status=Furnishing.FurnishingStatus.QUEUED,
+                       created_date=datetime.utcnow(),
+                       last_modified=datetime.utcnow(),
+                       processed_date=datetime.utcnow(),
+                       last_ar_date=None,
+                       business_name=None
+                       ):
+    """Create a furnishing."""
+    furnishing = Furnishing(
+        business_id=business_id,
+        business_identifier=business_identifier,
+        batch_id=batch_id,
+        furnishing_type=furnishing_type,
+        furnishing_name=furnishing_name,
+        status=status,
+        created_date=created_date,
+        last_modified=last_modified,
+        processed_date=processed_date,
+        last_ar_date=last_ar_date,
+        business_name=business_name
+    )
+
+    furnishing.save()
+    return furnishing
+
+
+def factory_business_with_stage_one_furnishing(legal_type=None):
+    """Create a business with a stage one furnishing entry."""
+    business = factory_business(identifier='BC1234567', entity_type=legal_type)
+    factory_business_mailing_address(business)
+    batch = factory_batch()
+    furnishing = factory_furnishing(business_id=business.id,
+                                    business_identifier=business.identifier,
+                                    batch_id=batch.id,
+                                    last_ar_date=EPOCH_DATETIME,
+                                    business_name='TEST-BUSINESS')
+    return business, furnishing
+
+
+def factory_furnishing_group():
+    """Create a furnishing group."""
+    furnishing_group = FurnishingGroup()
+    furnishing_group.save()
+    return furnishing_group

@@ -18,7 +18,7 @@ import json
 import nats
 from flask import current_app
 
-from entity_emailer.email_processors import filing_notification
+from entity_emailer.email_processors import filing_notification, involuntary_dissolution_stage_1_notification
 from tracker.models import MessageProcessing
 from tracker.services import MessageProcessingService
 
@@ -61,6 +61,14 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             identifier = email_msg.get('identifier', None)
             message_id = f'{etype}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, identifier, False)
+
+        if etype == 'bc.registry.dissolution':
+            furnishing_name = email_msg.get('data', {}).get('furnishing', {}).get('furnishingName', None)
+            if furnishing_name \
+                    and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
+                source = email_msg.get('source', None)
+                identifier = email_msg.get('identifier', None)
+                return create_message_context_properties(etype, message_id, source, identifier, False)
     else:
         email = email_msg.get('email', None)
         etype = email_msg.get('email', {}).get('type', None)

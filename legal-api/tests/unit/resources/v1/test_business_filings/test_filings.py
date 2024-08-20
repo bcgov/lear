@@ -902,8 +902,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
                     headers=create_header(jwt, [STAFF_ROLE], identifier)
                     )
 
-    assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json['errors'][0] == {'error': 'Filings cannot be changed after the invoice is created.'}
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
@@ -1032,6 +1031,7 @@ del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
 CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
 CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
+
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
     filing_sub_type = Filing.get_filings_sub_type(filing_name, filing_json)
@@ -1065,10 +1065,10 @@ def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_
         ('BC1234567', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.COMP.value, False, []),
         ('BC1234568', ALTERATION_FILING_TEMPLATE, 'alteration', Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234567', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.COMP.value, False, []),
-        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value,False, []),
+        ('BC1234568', TRANSITION_FILING_TEMPLATE, 'transition', Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234569', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234569', FILING_HEADER, 'changeOfAddress', Business.LegalTypes.BCOMP.value, False, []),
-        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value,  False, []),
+        ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234569', FILING_HEADER, 'changeOfDirectors', Business.LegalTypes.BCOMP.value, True, []),
         ('BC1234569', CORRECTION_INCORPORATION, 'correction', Business.LegalTypes.BCOMP.value, False, []),
         ('CP1234567', ANNUAL_REPORT, 'annualReport', Business.LegalTypes.COOP.value, False, []),
@@ -1165,5 +1165,5 @@ def test_coa_future_effective(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
     assert 'effectiveDate' in rv.json['filing']['header']
     effective_date = parse(rv.json['filing']['header']['effectiveDate'])
-    valid_date = LegislationDatetime.tomorrow_midnight()
+    valid_date = LegislationDatetime.tomorrow_one_minute_after_midnight()
     assert effective_date == valid_date

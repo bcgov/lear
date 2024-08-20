@@ -123,6 +123,40 @@ from . import create_mock_message  # noqa: I003
                  }
              }
          }),
+        ('f36e3af7-90c3-4859-a6f6-2feefbdc1e30',
+         {
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.dissolution',
+            'source': 'furnishingsJob',
+            'id': 'f36e3af7-90c3-4859-a6f6-2feefbdc1e30',
+            'time': '',
+            'datacontenttype': 'application/json',
+            'identifier': 'BC123223',
+            'data': {
+                'furnishing': {
+                    'type': 'INVOLUNTARY_DISSOLUTION',
+                    'furnishingId': 1,
+                    'furnishingName': 'DISSOLUTION_COMMENCEMENT_NO_AR'
+                }
+            }
+         }),
+        ('f36e3af7-90c3-4859-a6f6-2feefbdc1e30',
+         {
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.dissolution',
+            'source': 'furnishingsJob',
+            'id': 'f36e3af7-90c3-4859-a6f6-2feefbdc1e30',
+            'time': '',
+            'datacontenttype': 'application/json',
+            'identifier': 'BC123223',
+            'data': {
+                'furnishing': {
+                    'type': 'INVOLUNTARY_DISSOLUTION',
+                    'furnishingId': 1,
+                    'furnishingName': 'DISSOLUTION_COMMENCEMENT_NO_TR'
+                }
+            }
+         }),
         ('bc.registry.affiliation_1',
          {
              'type': 'bc.registry.affiliation',

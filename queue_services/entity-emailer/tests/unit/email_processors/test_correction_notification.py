@@ -165,19 +165,19 @@ def test_complete_special_resolution_correction_attachments(session, config):
                 f'{config.get("LEGAL_API_URL")}'
                 f'/businesses/{CP_IDENTIFIER}'
                 f'/filings/{filing.id}'
-                f'?type=specialResolution'
+                '/documents/specialResolution'
             ),
             content=b'pdf_content_1',
             status_code=200
         )
         m.get(
             f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}'
-            '?type=certificateOfNameChange',
+            '/documents/certificateOfNameChange',
             content=b'pdf_content_2',
             status_code=200
         )
         m.get(
-            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}?type=certifiedRules',
+            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}/documents/certifiedRules',
             content=b'pdf_content_3',
             status_code=200
         )
@@ -211,8 +211,7 @@ def test_paid_special_resolution_correction_attachments(session, config):
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
     with requests_mock.Mocker() as m:
         m.get(
-            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}'
-            f'?type=correction',
+            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}/filings/{filing.id}/documents/correction',
             content=b'pdf_content_1',
             status_code=200
         )

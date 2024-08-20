@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base href="/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin-when-cross-origin"/>
+    <meta name="author" content="BC Registries and Online Services">
+    <title>Attention {{ business.identifier }} {{ business.legalName }}</title>
+    [[style.html]]
+  </head>
+
+  <body>
+    <table class="body-table" role="presentation">
+      <tr>
+        <td>
+          [[header.html]]
+
+          <div class="container">
+            <p class="title-message bold">
+              <span>Attention {{ business.identifier }} {{ business.legalName }}<span>
+            </p>
+
+            [[20px.html]]
+
+            {% if 'NO_AR' in furnishing_name %}
+            <p>
+              {% if 'XPRO' in furnishing_name %}
+              Your extraprovincial company is in the process of being cancelled because it hasn't filed its required annual reports. 
+              {% else %}
+              Your business is in the process of being dissolved because it hasn't filed its required annual reports. 
+              {% endif %}
+              Please file your overdue annual reports as soon as possible by <a href="{{ entity_dashboard_url }}">logging into your Business Page</a>.
+            </p>
+            {% else %}
+            <p>Your business is in the process of being dissolved because it hasn't 
+              filed its required Post Restoration Transition Application (PRTA).
+              Please file your overdue PRTA as soon as possible by <a href="{{ entity_dashboard_url }}">logging into 
+              your Business Page</a>.
+            </p>
+            {% endif %}
+
+            [[whitespace-16px.html]]
+
+            {% if 'NO_AR' in furnishing_name %}
+            <p>
+              Under the Business Corporations Act, if you don't file these reports 
+              within one month from today, the Registrar will post a public notice 
+              on <a href="https://www.bclaws.gov.bc.ca/">www.bclaws.ca</a>. 
+              {% if 'XPRO' in furnishing_name %}
+              This notice will state that your extraprovincial company may be cancelled if the annual reports aren't filed after one month.
+              {% else %}
+              This notice will state that your company may be 
+              dissolved if the annual reports aren't filed after one month.
+              {% endif %}
+            </p>
+            {% else %}
+            <p>
+              Under the Business Corporations Act, if you don't file your PRTA 
+              within one month from today, the Registrar will post a public notice 
+              on <a href="https://www.bclaws.gov.bc.ca/">www.bclaws.ca</a>. This notice will state that your company may be 
+              dissolved if the PRTA aren't filed after one month.
+            </p>
+            {% endif %}
+
+            [[whitespace-16px.html]]
+
+            {% if extra_provincials %}
+            <p>
+              Our records indicate your company is registered in 
+              {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              as an extraprovincial company. Therefore, if your company is dissolved, its registration as an extraprovincial company 
+              in {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              will automatically be cancelled as well.
+            </p>
+            {% endif %}
+
+            [[whitespace-16px.html]]
+            [[divider.html]]
+            [[whitespace-16px.html]]
+
+            <p>
+              You can ask for more time by requesting 
+              {% if furnishing_name == 'DISSOLUTION_COMMENCEMENT_NO_AR_XPRO' %}
+              a delay of the cancellation process. 
+              {% elif extra_provincials %}
+              a delay of the dissolution or cancellation process. 
+              {% else %}
+              a delay of the dissolution process. 
+              {% endif %}
+              Go to your <a href="{{ entity_dashboard_url }}">business page</a> and click on “Request 
+              Delay of Dissolution or Cancellation" under the “More Actions” menu.
+            </p>
+            [[whitespace-16px.html]]
+            [[divider.html]]
+            [[whitespace-16px.html]]
+
+            <p>
+              The following document is attached to this email:
+            </p>
+            
+            <ul class="outputs">
+              {% if furnishing_name == 'DISSOLUTION_COMMENCEMENT_NO_AR_XPRO' %}
+              <li>Notice of Commencement of Cancellation</li>
+              {% else %}
+              <li>Notice of Commencement of Dissolution</li>
+              {% endif %}
+            </ul>
+
+            [[whitespace-16px.html]]
+            [[20px.html]]
+            [[footer.html]]
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

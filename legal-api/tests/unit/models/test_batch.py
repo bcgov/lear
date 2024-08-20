@@ -26,6 +26,7 @@ def test_valid_batch_save(session):
         batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
         status=Batch.BatchStatus.HOLD,
         size=3,
+        max_size=10,
         notes=''
     )
     batch.save()
@@ -38,6 +39,7 @@ def test_find_batch_by_id(session):
         batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
         status=Batch.BatchStatus.HOLD,
         size=3,
+        max_size=10,
         notes=''
     )
     batch.save()

@@ -25,7 +25,12 @@ from flask import current_app
 from jinja2 import Template
 from legal_api.models import Business, Filing, UserRoles
 
-from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
+from entity_emailer.email_processors import (
+    get_filing_document,
+    get_filing_info,
+    get_recipient_from_auth,
+    substitute_template_parts,
+)
 
 
 def _get_pdfs(
@@ -44,14 +49,9 @@ def _get_pdfs(
     }
 
     # add filing pdf
-    filing_pdf = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business["identifier"]}/filings/{filing.id}'
-        '?type=letterOfConsent', headers=headers
-    )
-    if filing_pdf.status_code != HTTPStatus.OK:
-        logger.error('Failed to get pdf for filing: %s', filing.id)
-    else:
-        filing_pdf_encoded = base64.b64encode(filing_pdf.content)
+    filing_pdf_type = 'letterOfConsent'
+    filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+    if filing_pdf_encoded:
         pdfs.append(
             {
                 'fileName': 'Letter of Consent.pdf',

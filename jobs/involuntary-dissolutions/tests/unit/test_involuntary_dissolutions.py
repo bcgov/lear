@@ -155,6 +155,7 @@ def test_stage_1_process(app, session):
     assert batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION
     assert batch.status == Batch.BatchStatus.PROCESSING
     assert batch.size == 3
+    assert batch.max_size == 600
     assert batch.start_date.date() == datetime.now().date()
 
     batch_processings = BatchProcessing.find_by(batch_id=batch.id)
@@ -283,7 +284,7 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
     'test_name, status, step', [
         (
             'DISSOLVE_BUSINESS',
-            BatchProcessing.BatchProcessingStatus.COMPLETED,
+            BatchProcessing.BatchProcessingStatus.QUEUED,
             BatchProcessing.BatchProcessingStep.DISSOLUTION
         ),
         (
@@ -316,8 +317,10 @@ async def test_stage_3_process(app, session, test_name, status, step):
         await stage_3_process(app, qsm)
         if test_name == 'DISSOLVE_BUSINESS':
             mock_put_filing_on_queue.assert_called()
+            assert batch_processing.filing_id
+            assert batch.status == Batch.BatchStatus.PROCESSING
+        else:
+            assert batch.status == Batch.BatchStatus.COMPLETED
 
     assert batch_processing.status == status
     assert batch_processing.step == step
-
-    assert batch.status == Batch.BatchStatus.COMPLETED

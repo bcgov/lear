@@ -69,7 +69,8 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN', None)
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
     SECRET_KEY = 'a secret'
 
@@ -170,6 +171,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     # MRAS
     MRAS_SVC_URL = os.getenv('MRAS_SVC_URL')
     MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
+
+    # GCP Gotenberg report service
+    REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
+    REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
+
+    # involuntary dissolution
+    STAGE_1_DELAY = int(os.getenv('STAGE_1_DELAY', '42'))
+    STAGE_2_DELAY = int(os.getenv('STAGE_2_DELAY', '30'))
 
     TESTING = False
     DEBUG = False

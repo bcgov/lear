@@ -486,9 +486,12 @@ def is_allowed(business: Business,
     is_ignore_draft_blockers = False
 
     if filing_id:
-        filing = Filing.find_by_id(filing_id)
-        if filing and filing.status == Filing.Status.DRAFT.value:
-            is_ignore_draft_blockers = True
+        if filing := Filing.find_by_id(filing_id):
+            if filing.status not in [Filing.Status.DRAFT.value, Filing.Status.CHANGE_REQUESTED.value]:
+                return False  # common for all filings
+
+            if filing.status == Filing.Status.DRAFT.value:
+                is_ignore_draft_blockers = True
 
     # Special case: handiling authorization for amalgamation application
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps

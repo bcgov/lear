@@ -53,6 +53,12 @@ class Filing:
         PAPER_ONLY = 'PAPER_ONLY'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
 
+        # filings with staff review
+        APPROVED = 'APPROVED'
+        AWAITING_REVIEW = 'AWAITING_REVIEW'
+        CHANGE_REQUESTED = 'CHANGE_REQUESTED'
+        REJECTED = 'REJECTED'
+
     class FilingTypes(str, Enum):
         """Render an Enum of all Filing Types."""
 
@@ -189,6 +195,7 @@ class Filing:
     def get_json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
         if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
+                                                                                Filing.Status.APPROVED.value,
                                                                                 Filing.Status.PAID.value,
                                                                                 Filing.Status.PENDING.value,
                                                                                 ]):
@@ -199,7 +206,9 @@ class Filing:
         # This ASSUMES that the JSONSchemas remain valid for that period of time
         # which fits with the N-1 approach to versioning, and
         # that handling of filings stuck in PENDING are handled appropriately.
-        elif self._storage.status in [Filing.Status.PAID.value, Filing.Status.PENDING.value]:
+        elif self._storage.status in [Filing.Status.APPROVED.value,
+                                      Filing.Status.PAID.value,
+                                      Filing.Status.PENDING.value]:
             if self._storage.tech_correction_json:
                 filing = self._storage.tech_correction_json
             else:
@@ -505,7 +514,11 @@ class Filing:
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
-        if filing.status == Filing.Status.PAID and \
+        if filing.status in [Filing.Status.PAID,
+                             Filing.Status.AWAITING_REVIEW,
+                             Filing.Status.CHANGE_REQUESTED,
+                             Filing.Status.APPROVED,
+                             Filing.Status.REJECTED] and \
             not (filing.filing_type in no_legal_filings_in_paid_status
                  or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
                      business.legal_type in [

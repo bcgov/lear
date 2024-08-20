@@ -173,18 +173,21 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
         businesses_eligible = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
 
+        # get the MAX_DISSOLUTIONS_ALLOWED number of businesses
+        max_dissolutions_allowed = Configuration.find_by_name(config_name='MAX_DISSOLUTIONS_ALLOWED').val
+
         if len(businesses_eligible) == 0:
             app.logger.debug('Skipping job run since there are no businesses eligible for dissolution.')
             return
 
         # get stage_1 & stage_2 delay configs
         stage_1_delay = timedelta(days=app.config.get('STAGE_1_DELAY'))
-        stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
 
         # create new entry in batches table
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                       status=Batch.BatchStatus.PROCESSING,
                       size=len(businesses_eligible),
+                      max_size=max_dissolutions_allowed,
                       start_date=datetime.utcnow())
         batch.save()
         app.logger.debug(f'New batch has been created with ID: {batch.id}')
@@ -200,12 +203,9 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
                                                batch_id=batch.id,
                                                business_id=business.id)
 
-            target_dissolution_date = batch_processing.created_date + stage_1_delay + stage_2_delay
-
             batch_processing.meta_data = {
                 'overdueARs': ar_overdue,
-                'overdueTransition': transition_overdue,
-                'targetDissolutionDate': target_dissolution_date.date().isoformat()
+                'overdueTransition': transition_overdue
             }
             batch_processing.save()
             app.logger.debug(f'New batch processing has been created with ID: {batch_processing.id}')
@@ -283,18 +283,22 @@ async def stage_3_process(app: Flask, qsm: QueueService):
         if eligible:
             filing = create_invountary_dissolution_filing(batch_processing.business_id)
             app.logger.debug(f'Created Involuntary Dissolution Filing with ID: {filing.id}')
+            batch_processing.filing_id = filing.id
+            batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.QUEUED
+            batch_processing.last_modified = datetime.utcnow()
+            batch_processing.save()
+
             await put_filing_on_queue(filing.id, app, qsm)
 
-            batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
-            batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
             app.logger.debug(
-                f'Batch Processing with identifier: {batch_processing.business_identifier} has been marked as complete.'
+                f'Batch Processing with identifier: {batch_processing.business_identifier} has been marked as queued.'
             )
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
-        batch_processing.last_modified = datetime.utcnow()
-        batch_processing.save()
+            batch_processing.last_modified = datetime.utcnow()
+            batch_processing.save()
 
     mark_eligible_batches_completed()
     app.logger.debug('Marked batches complete when all of their associated batch_processings are completed.')

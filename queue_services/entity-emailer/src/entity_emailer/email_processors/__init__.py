@@ -17,7 +17,9 @@ Processors hold the business logic for how an email is interpreted and sent.
 """
 from __future__ import annotations
 
+import base64
 from datetime import datetime
+from http import HTTPStatus
 from pathlib import Path
 from typing import Tuple
 
@@ -194,3 +196,45 @@ def substitute_template_parts(template_code: str) -> str:
         template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
 
     return template_code
+
+
+def get_jurisdictions(identifier: str, token: str) -> dict:
+    """Get jurisdictions call."""
+    headers = {
+        'Accept': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+
+    response = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
+    )
+    if response.status_code != HTTPStatus.OK:
+        return None
+    try:
+        return response.json()
+    except Exception:  # noqa B902; pylint: disable=W0703;
+        current_app.logger.error('Failed to get MRAS response')
+        return None
+
+
+def get_filing_document(business_identifier, filing_id, document_type, token):
+    """Get the filing documents."""
+    headers = {
+        'Accept': 'application/pdf',
+        'Authorization': f'Bearer {token}'
+    }
+
+    document = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business_identifier}/filings/{filing_id}'
+        f'/documents/{document_type}', headers=headers
+    )
+
+    if document.status_code != HTTPStatus.OK:
+        current_app.logger.error('Failed to get %s pdf for filing: %s', document_type, filing_id)
+        return None
+    try:
+        filing_pdf_encoded = base64.b64encode(document.content)
+        return filing_pdf_encoded
+    except Exception:  # noqa B902; pylint: disable=W0703;
+        current_app.logger.error('Failed to get document response')
+        return None

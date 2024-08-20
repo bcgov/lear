@@ -172,7 +172,8 @@ class InternalBusinessInfo(Resource):
                 if not json_data or not json_data['identifiers']:
                     return jsonify({'message': 'No input data provided'}), HTTPStatus.BAD_REQUEST
                 # remove the BC prefix
-                identifiers = [x[-7:] for x in json_data['identifiers']]
+                identifiers = [x[-7:] if x.startswith('BC') else x
+                               for x in json_data['identifiers']]
                 bn_15s = Business._get_bn_15s(  # pylint: disable = protected-access; internal call
                     cursor=cursor,
                     identifiers=identifiers

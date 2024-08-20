@@ -21,7 +21,7 @@ from sqlalchemy.orm import backref
 from legal_api.utils.datetime import datetime
 
 from .db import db
-from .review import ReviewStatus
+from .review import Review, ReviewStatus
 
 
 class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -60,12 +60,12 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
         return review_results
 
     @ classmethod
-    def get_last_review_result(cls, review_id) -> ReviewResult:
-        """Return the last review result by the review id."""
+    def get_last_review_result(cls, filing_id) -> ReviewResult:
+        """Return the last review result by the filing id."""
         review_result = None
-        if review_id:
-            review_result = (db.session.query(ReviewResult).
-                             filter(ReviewResult.review_id == review_id).
+        if filing_id:
+            review_result = (db.session.query(ReviewResult).join(Review).
+                             filter(Review.filing_id == filing_id).
                              order_by(ReviewResult.creation_date.desc()).
                              first())
         return review_result
@@ -78,5 +78,5 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
             'comments': self.comments,
             'reviewer': self.reviewer.display_name,
             'submissionDate': self.submission_date.isoformat() if self.submission_date else None,
-            'creationDate': self.creation_date
+            'creationDate': self.creation_date.isoformat()
         }

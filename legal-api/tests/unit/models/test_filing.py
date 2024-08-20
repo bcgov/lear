@@ -541,6 +541,7 @@ def test_get_internal_filings(session, client, jwt):
     filing.colin_event_ids.append(colin_event_id)
     filing.save()
     filings = Filing.get_completed_filings_for_colin()
+    filings = filings.get('filings')
 
     # test method
     # assert doesn't return completed filing with colin_event_ids set
@@ -549,6 +550,7 @@ def test_get_internal_filings(session, client, jwt):
     filing.colin_event_ids.clear()
     filing.save()
     filings = Filing.get_completed_filings_for_colin()
+    filings = filings.get('filings')
     assert len(filings) == 1
     assert filing.id == filings[0].json['filing']['header']['filingId']
     assert filings[0].json['filing']['header']['colinIds'] == []
@@ -557,6 +559,7 @@ def test_get_internal_filings(session, client, jwt):
     filing.save()
     assert filing.status != Filing.Status.COMPLETED.value
     filings = Filing.get_completed_filings_for_colin()
+    filings = filings.get('filings')
     assert len(filings) == 0
 
 

@@ -82,7 +82,8 @@ class Config:  # pylint: disable=too-few-public-methods
 
     PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
 
-    SENTRY_DSN = os.getenv("SENTRY_DSN", None)
+    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
+    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -142,7 +143,7 @@ class Config:  # pylint: disable=too-few-public-methods
     )
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
-    
+
     SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
 
     NATS_CONNECT_ERROR_COUNT_MAX =  os.getenv("NATS_CONNECT_ERROR_COUNT_MAX", 10)

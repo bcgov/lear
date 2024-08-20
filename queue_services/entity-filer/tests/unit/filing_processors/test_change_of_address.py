@@ -116,9 +116,7 @@ def test_change_of_address_delay_dissolution(app, session, test_name, status, st
                              trigger_date=trigger_date)
 
     utc_now = datetime.utcnow()
-    dissolution_date = utc_now + datedelta(days=72)
     trigger_date = batch_processing.trigger_date
-    delay_dissolution_date = utc_now + datedelta(days=92)
     delay_trigger_date = utc_now + datedelta(days=62)
     
     filing_meta = FilingMeta()
@@ -128,8 +126,6 @@ def test_change_of_address_delay_dissolution(app, session, test_name, status, st
     if delay:
         assert batch_processing.trigger_date.date() == delay_trigger_date.date()
         assert batch_processing.meta_data.get('changeOfAddressDelay') is True
-        assert batch_processing.meta_data.get('targetDissolutionDate') == delay_dissolution_date.date().isoformat()
     else:
         assert batch_processing.trigger_date == trigger_date
         assert batch_processing.meta_data.get('changeOfAddressDelay') is None
-        assert batch_processing.meta_data.get('targetDissolutionDate') == dissolution_date.date().isoformat()

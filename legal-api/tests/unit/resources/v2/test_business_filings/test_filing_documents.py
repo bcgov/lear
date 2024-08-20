@@ -1382,6 +1382,38 @@ def filer_action(filing_name, filing_json, meta_data, business):
                     ]}},
      HTTPStatus.OK
      ),
+    ('cben_ci_awaiting_review', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.AWAITING_REVIEW,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
+                    ]}},
+     HTTPStatus.OK
+     ),
+    ('cben_ci_change_requested', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.CHANGE_REQUESTED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
+                    ]}},
+     HTTPStatus.OK
+     ),
+    ('cben_ci_approved', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.APPROVED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
+                    ]}},
+     HTTPStatus.OK
+     ),
+    ('cben_ci_rejected', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+     'continuationIn', CONTINUATION_IN, Filing.Status.REJECTED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
+                    ]}},
+     HTTPStatus.OK
+     ),
     ('cben_ci_completed', 'Tb31yQIuBw', 'BC7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED,
      {'documents': {}}, HTTPStatus.OK

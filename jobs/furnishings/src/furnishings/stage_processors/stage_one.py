@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Furnishings job procssing rules for stage one of involuntary dissolution."""
+"""Furnishings job processing rules for stage one of involuntary dissolution."""
 import uuid
 from datetime import datetime
 
@@ -34,8 +34,8 @@ class StageOneProcessor:
         self._qsm = qsm
 
         self._second_notice_delay = app.config.get('SECOND_NOTICE_DELAY')
-        self._email_grouping_identifier = None
-        self._mail_grouping_identifier = None
+        self._email_furnishing_group_id = None
+        self._mail_furnishing_group_id = None
 
     async def process(self, batch_processing: BatchProcessing):
         """Process batch_processing entry."""
@@ -84,9 +84,7 @@ class StageOneProcessor:
         # send email/letter notification for the first time
         email = self._get_email_address_from_auth(batch_processing.business_identifier)
         business = Business.find_by_identifier(batch_processing.business_identifier)
-        if email:
-            # send email letter
-            new_furnishing = self._create_new_furnishing(
+        new_furnishing = self._create_new_furnishing(
                 batch_processing,
                 eligible_details,
                 Furnishing.FurnishingType.EMAIL,
@@ -94,26 +92,29 @@ class StageOneProcessor:
                 business.legal_name,
                 email
                 )
-            # notify emailer
+        self._app.logger.debug(f'New furnishing has been created with ID (first round): {new_furnishing.id}')
+
+        mailing_address = business.mailing_address.one_or_none()
+        if mailing_address:
+            self._create_furnishing_address(mailing_address, new_furnishing.id)
+            self._app.logger.debug(f'Created address (first round) with furnishing ID: {new_furnishing.id}')
+        if email:
+            # send email letter
             await self._send_email(new_furnishing)
+            self._app.logger.debug(
+                f'Successfully put email message on the queue for furnishing entry with ID: {new_furnishing.id}')
         else:
             # send paper letter if business doesn't have email address
-            new_furnishing = self._create_new_furnishing(
-                batch_processing,
-                eligible_details,
-                Furnishing.FurnishingType.MAIL,
-                business.last_ar_date if business.last_ar_date else business.founding_date,
-                business.legal_name
-            )
-
-            mailing_address = business.mailing_address.one_or_none()
-            if mailing_address:
-                self._create_furnishing_address(mailing_address, new_furnishing.id)
+            new_furnishing.furnishing_type = Furnishing.FurnishingType.MAIL
+            new_furnishing.save()
+            self._app.logger.debug(f'Changed furnishing type to MAIL for funishing with ID: {new_furnishing.id}')
 
             # TODO: create and add letter to either AR or transition pdf
             # TODO: send AR and transition pdf to BCMail+
             new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
             new_furnishing.processed_date = datetime.utcnow()
+            new_furnishing.save()
+            self._app.logger.debug(f'Changed furnishing status to PROCESSED for funishing with ID: {new_furnishing.id}')
 
     async def _send_second_round_notification(self, batch_processing: BatchProcessing):
         """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
@@ -133,15 +134,18 @@ class StageOneProcessor:
             business.last_ar_date if business.last_ar_date else business.founding_date,
             business.legal_name
         )
+        self._app.logger.debug(f'New furnishing has been created with ID (second round): {new_furnishing.id}')
 
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
+            self._app.logger.debug(f'Created address (second round) with furnishing ID: {new_furnishing.id}')
 
         # TODO: create and add letter to either AR or transition pdf
         # TODO: send AR and transition pdf to BCMail+
         new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
         new_furnishing.processed_date = datetime.utcnow()
+        new_furnishing.save()
 
     def _create_new_furnishing(  # pylint: disable=too-many-arguments
             self,
@@ -167,7 +171,7 @@ class StageOneProcessor:
                 else Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR
             )
 
-        grouping_identifier = self._get_grouping_identifier(furnishing_type)
+        furnishing_group_id = self._get_furnishing_group_id(furnishing_type)
 
         new_furnishing = Furnishing(
             furnishing_type=furnishing_type,
@@ -178,7 +182,7 @@ class StageOneProcessor:
             created_date=datetime.utcnow(),
             last_modified=datetime.utcnow(),
             status=Furnishing.FurnishingStatus.QUEUED,
-            grouping_identifier=grouping_identifier,
+            furnishing_group_id=furnishing_group_id,
             last_ar_date=last_ar_date,
             business_name=business_name,
             email=email
@@ -190,7 +194,7 @@ class StageOneProcessor:
     def _create_furnishing_address(self, mailing_address: Address, furnishings_id: int) -> Address:
         """Clone business mailing address to be used by mail furnishings."""
         furnishing_address = Address(
-            address_type=Address.FURNISHING,
+            address_type=mailing_address.address_type,
             street=mailing_address.street,
             street_additional=mailing_address.street_additional,
             city=mailing_address.city,
@@ -229,16 +233,16 @@ class StageOneProcessor:
         except Exception as err:
             self._app.logger.error('Queue Error: furnishing.id=%s, %s', furnishing.id, err, exc_info=True)
 
-    def _get_grouping_identifier(self, furnishing_type: Furnishing.FurnishingType) -> int:
-        """Return grouping identifier based on furnishing type."""
+    def _get_furnishing_group_id(self, furnishing_type: Furnishing.FurnishingType) -> int:
+        """Return furnishing group id based on furnishing type."""
         if furnishing_type == Furnishing.FurnishingType.EMAIL:
-            if not self._email_grouping_identifier:
-                self._email_grouping_identifier = Furnishing.get_next_grouping_identifier()
-            return self._email_grouping_identifier
+            if not self._email_furnishing_group_id:
+                self._email_furnishing_group_id = Furnishing.get_next_furnishing_group_id()
+            return self._email_furnishing_group_id
         elif furnishing_type == Furnishing.FurnishingType.MAIL:
-            if not self._mail_grouping_identifier:
-                self._mail_grouping_identifier = Furnishing.get_next_grouping_identifier()
-            return self._mail_grouping_identifier
+            if not self._mail_furnishing_group_id:
+                self._mail_furnishing_group_id = Furnishing.get_next_furnishing_group_id()
+            return self._mail_furnishing_group_id
         else:
             return None
 
@@ -251,12 +255,22 @@ class StageOneProcessor:
             'Authorization': f'Bearer {token}'
         }
 
-        contact_info = requests.get(
-            f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
-            headers=headers
-        )
-        contacts = contact_info.json()['contacts']
-        if not contacts or not contacts[0]['email']:
+        url = f'{current_app.config.get("AUTH_URL")}/entities/{identifier}'
+        try:
+            contact_info = requests.get(url, headers=headers)
+            contact_info.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                current_app.logger.info(f'No entity found for identifier: {identifier}')
+            else:
+                current_app.logger.error(f'HTTP error occurred: {e}, URL: {url}, Status code: {e.response.status_code}')
+            return None
+        except requests.exceptions.RequestException as e:
+            current_app.logger.error(f'Request failed: {e}, URL: {url}')
+            return None
+
+        contacts = contact_info.json().get('contacts', [])
+        if not contacts or not contacts[0].get('email'):
             return None
         return contacts[0]['email']
 

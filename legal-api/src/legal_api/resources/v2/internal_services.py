@@ -27,6 +27,15 @@ from legal_api.utils.datetime import date, datetime
 bp = Blueprint('INTERNAL_SERVICE', __name__, url_prefix='/api/v2/internal')
 
 
+@bp.route('/filings/future_effective', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.system])
+def get_future_effective_filing_ids():
+    """Return filing ids which should be effective now."""
+    filing_ids = Filing.get_future_effective_filing_ids()
+    return jsonify(filing_ids), HTTPStatus.OK
+
+
 @bp.route('/bnmove', methods=['POST'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.system])

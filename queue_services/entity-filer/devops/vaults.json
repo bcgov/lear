@@ -20,13 +20,8 @@
             "entity-filer",
             "nats-filer",
             "entity-service-account",
-            "launchdarkly"
-        ]
-    },
-    {
-        "vault": "sentry",
-        "application": [
-          "entity"
+            "launchdarkly",
+            "sentry"
         ]
     },
     {

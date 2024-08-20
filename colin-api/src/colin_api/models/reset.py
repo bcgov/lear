@@ -253,7 +253,7 @@ class Reset:
             raise err
 
     @classmethod
-    def reset_filings_by_event(cls, event_ids: list = []):
+    def reset_filings_by_event(cls, event_ids: list = []):  # pylint: disable=dangerous-default-value
         """Reset changes made for given event ids."""
         # initialize reset object
         reset_obj = Reset()

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Furnishings job procssing rules for stage two of involuntary dissolution."""
+"""Furnishings job processing rules for stage two of involuntary dissolution."""
 from datetime import datetime
 
 from flask import Flask
@@ -19,7 +19,7 @@ from legal_api.models import Batch, BatchProcessing, Business, Furnishing, db
 from sqlalchemy import exists, not_
 
 
-def process(app: Flask):
+def process(app: Flask, xml_furnishings: dict):
     """Run process to manage and track notifications for dissolution stage two process."""
     try:
         furnishing_subquery = exists().where(
@@ -40,7 +40,7 @@ def process(app: Flask):
             .filter(not_(furnishing_subquery))
         ).all()
 
-        grouping_identifier = Furnishing.get_next_grouping_identifier()
+        bc_furnishings = []
 
         for batch_processing in batch_processings:
             business = batch_processing.business
@@ -58,12 +58,16 @@ def process(app: Flask):
                 created_date=datetime.utcnow(),
                 last_modified=datetime.utcnow(),
                 status=Furnishing.FurnishingStatus.QUEUED,
-                grouping_identifier=grouping_identifier,
                 business_name=business.legal_name
             )
             new_furnishing.save()
-        # TODO: create data files and SFTPing to BC Laws
-        # TODO: mark furnishings entry processed
+            app.logger.debug(f'Created intent to dissolve furnishing entry with ID: {new_furnishing.id}')
+
+            if business != Business.LegalTypes.EXTRA_PRO_A.value:
+                bc_furnishings.append(new_furnishing)
+
+        if bc_furnishings:
+            xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE] = bc_furnishings
 
     except Exception as err:
         app.logger.error(err)

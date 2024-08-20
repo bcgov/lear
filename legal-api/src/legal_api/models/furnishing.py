@@ -23,6 +23,7 @@ from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
 
 from .db import db
+from .furnishing_group import FurnishingGroup
 
 
 class Furnishing(db.Model):
@@ -59,7 +60,6 @@ class Furnishing(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     furnishing_type = db.Column('furnishing_type', db.Enum(FurnishingType), nullable=False)
     furnishing_name = db.Column('furnishing_name', db.Enum(FurnishingName), nullable=False)
-    grouping_identifier = db.Column(db.Integer, nullable=True)
     business_identifier = db.Column('business_identifier', db.String(10), default='', nullable=False)
     processed_date = db.Column('processed_date', db.DateTime(timezone=True), nullable=True)
     status = db.Column('status', db.Enum(FurnishingStatus), nullable=False)
@@ -77,9 +77,12 @@ class Furnishing(db.Model):
     # parent keys
     batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
+    furnishing_group_id = db.Column('furnishing_group_id', db.Integer, db.ForeignKey('furnishing_groups.id'),
+                                    index=True, nullable=True)
 
     # relationships
     business = db.relationship('Business', backref=db.backref('furnishings', lazy=True))
+    furnishing_group = db.relationship('FurnishingGroup', backref=db.backref('furnishings', lazy=True))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -101,7 +104,7 @@ class Furnishing(db.Model):
                 furnishing_name: str = None,
                 furnishing_type: str = None,
                 status: str = None,
-                grouping_identifier: int = None
+                furnishing_group_id: int = None
                 ) -> List[Furnishing]:
         """Return the Furnishing entries matching the filter."""
         query = db.session.query(Furnishing)
@@ -121,12 +124,14 @@ class Furnishing(db.Model):
         if status:
             query = query.filter(Furnishing.status == status)
 
-        if grouping_identifier:
-            query = query.filter(Furnishing.grouping_identifier == grouping_identifier)
+        if furnishing_group_id:
+            query = query.filter(Furnishing.furnishing_group_id == furnishing_group_id)
 
         return query.all()
 
     @classmethod
-    def get_next_grouping_identifier(cls):
-        """Return the next grouping_identifier from the sequence."""
-        return db.session.execute("SELECT nextval('grouping_identifier')").scalar()
+    def get_next_furnishing_group_id(cls):
+        """Return thefurnishing_group_id."""
+        furnishing_group = FurnishingGroup()
+        furnishing_group.save()
+        return furnishing_group.id

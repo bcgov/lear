@@ -16,6 +16,7 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 from contextlib import suppress
+from datetime import datetime, timezone
 from http import HTTPStatus
 
 from flask import current_app, g, jsonify, request
@@ -182,8 +183,15 @@ def search_businesses():
         for draft_dao in draft_query.all():
             draft = {
                 'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
-                'legalType': draft_dao.json_legal_type  # Legal type of the draft entity
+                'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
+                'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
+                'draftStatus': draft_dao.status
             }
+
+            if (draft_dao.status in [Filing.Status.PAID.value, Filing.Status.APPROVED.value] and
+                    draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
+                draft['effectiveDate'] = draft_dao.effective_date.isoformat()
+
             if draft_dao.json_nr:
                 draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
             # Retrieves the legal name from the filing JSON. Defaults to None if not found.
@@ -191,7 +199,7 @@ def search_businesses():
                                   .get(draft_dao.filing_type, {})
                                   .get('nameRequest', {})
                                   .get('legalName'))
-            draft['draftType'] = Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode')
+
             if draft['legalName'] is None:
                 # Fallback to a generic legal name based on the legal type if no specific legal name is found
                 draft['legalName'] = (Business.BUSINESSES

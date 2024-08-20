@@ -131,7 +131,7 @@ class ListFilingResource(Resource):
 
         # Does it make sense to get a PDF of all filings?
         if str(request.accept_mimetypes) == 'application/pdf':
-            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}),\
+            return jsonify({'message': _('Cannot return a single PDF of multiple filing submissions.')}), \
                 HTTPStatus.NOT_ACCEPTABLE
 
         rv = []
@@ -213,7 +213,7 @@ class ListFilingResource(Resource):
         filing_json = filing.json
         if response:
             filing_json['filing']['header'].update(response)
-        return jsonify(filing_json),\
+        return jsonify(filing_json), \
             (HTTPStatus.CREATED if (request.method == 'POST') else HTTPStatus.ACCEPTED)
 
     @staticmethod
@@ -229,7 +229,7 @@ class ListFilingResource(Resource):
         # check authorization
         if not authorized(identifier, jwt, action=['edit']):
             return jsonify({'message':
-                            _('You are not authorized to delete a filing for:') + identifier}),\
+                            _('You are not authorized to delete a filing for:') + identifier}), \
                 HTTPStatus.UNAUTHORIZED
 
         if identifier.startswith('T'):
@@ -836,7 +836,7 @@ class ListFilingResource(Resource):
 
         elif business.legal_type != Business.LegalTypes.COOP.value:
             if filing_type == 'changeOfAddress':
-                effective_date = LegislationDatetime.tomorrow_midnight()
+                effective_date = LegislationDatetime.tomorrow_one_minute_after_midnight()
                 filing.filing_json['filing']['header']['futureEffectiveDate'] = effective_date
                 filing.effective_date = effective_date
                 filing.save()
@@ -867,7 +867,7 @@ class InternalFilings(Resource):
 
         if status is None:
             pending_filings = Filing.get_completed_filings_for_colin()
-            for filing in pending_filings:
+            for filing in pending_filings.get('filings'):
                 filing_json = filing.filing_json
                 business = Business.find_by_internal_id(filing.business_id)
                 if filing_json and filing.filing_type != 'lear_epoch' and \
