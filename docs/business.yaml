@@ -18,16 +18,12 @@ info:
     - Annual Report 
     - Change of Address
     - Change of Directors
-    - Change of Entity Name
     - Change of Registration 
     - Consent Continuation Out 
-    - Conversion (to change the business type of an organization eg: convert from a Member Funded Society to a BC Company)
-    - Court Order Information
-    - Correction
+    - Conversion
     - Dissolution
     - Registration (Sole Proprietorship, General Partnership)
     - Special Resolution
-    - Transition
 
     All API requests must include a BC Registries issued API key and an Account ID.
   contact:
