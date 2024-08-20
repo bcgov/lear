@@ -133,7 +133,7 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
     except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
         logger.error('Failed to publish BN email message onto the NATS emailer subject', exc_info=True)
         raise err
-    
+
     # publish identifier (so other things know business has changed)
     try:
         payload = {
