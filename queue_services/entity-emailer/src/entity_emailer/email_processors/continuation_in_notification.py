@@ -58,7 +58,7 @@ def _get_pdfs(
         if filing_pdf_encoded:
             pdfs.append(
                 {
-                    'fileName': 'Continuation Application.pdf',
+                    'fileName': 'Continuation Application - Pending.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': str(attach_order)
