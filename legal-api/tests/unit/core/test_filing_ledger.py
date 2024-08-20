@@ -107,6 +107,13 @@ def test_common_ledger_items(session):
     assert common_ledger_items['documentsLink'] is not None
     assert common_ledger_items['displayLedger'] is True
 
+    filing['filing']['dissolution']['dissolutionType'] = 'involuntary'
+    completed_filing = \
+        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+    common_ledger_items = CoreFiling.common_ledger_items(identifier, completed_filing)
+    assert common_ledger_items['documentsLink'] is not None
+    assert common_ledger_items['displayLedger'] is False
+
     filing['filing']['header']['name'] = 'adminFreeze'
     completed_filing = \
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1), filing_type='adminFreeze')
