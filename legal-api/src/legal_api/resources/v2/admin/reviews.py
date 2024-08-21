@@ -27,7 +27,7 @@ from .bp import bp_admin
 
 @bp_admin.route('/reviews', methods=['GET'])
 @cross_origin(origin='*')
-# @jwt.has_one_of_roles([UserRoles.staff])
+@jwt.has_one_of_roles([UserRoles.staff])
 def get_reviews():
     """Return a list of reviews."""
     page = int(request.args.get('page', 1))
