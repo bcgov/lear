@@ -54,7 +54,6 @@ class NameXService():
         """Return a JSON object with name request information."""
         namex_url = current_app.config.get('NAMEX_SVC_URL')
 
-        # Get access token for namex-api in a different keycloak realm
         token = AccountService.get_bearer_token()
 
         # Perform proxy call using the inputted identifier (e.g. NR 1234567)
@@ -70,7 +69,6 @@ class NameXService():
         """Return a JSON object with name request information."""
         namex_url = current_app.config.get('NAMEX_SVC_URL')
 
-        # Get access token for namex-api in a different keycloak realm
         token = AccountService.get_bearer_token()
 
         # Perform proxy call with identifiers (e.g. NR 1234567, NR 1234568)
