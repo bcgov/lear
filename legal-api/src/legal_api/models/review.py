@@ -97,8 +97,8 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
                 future_effective_date = LegislationDatetime.format_as_legislation_date(effective_date)
 
             result.append({
-                'review': review.json,
-                'effectiveDate': future_effective_date
+                **review.json,
+                'futureEffectiveDate': future_effective_date
             })
 
         reviews = {

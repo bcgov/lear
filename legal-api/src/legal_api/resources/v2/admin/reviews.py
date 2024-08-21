@@ -39,8 +39,9 @@ def get_reviews():
         return jsonify({'message': 'Reviews not found.'}), HTTPStatus.NOT_FOUND
 
     nr_numbers = get_applicable_nr_numbers(reviews)
-    nr_expiry_dates = get_expiry_date_for_each_nr(nr_numbers)
-    update_reviews(reviews, nr_expiry_dates)
+    if nr_numbers:
+        nr_expiry_dates = get_expiry_date_for_each_nr(nr_numbers)
+        update_reviews(reviews, nr_expiry_dates)
 
     return jsonify(result), HTTPStatus.OK
 
@@ -49,8 +50,8 @@ def get_applicable_nr_numbers(reviews):
     """Return list of NR numbers of review with status CHANGE_REQUESTED/AWAITING_REVIEW/RESUBMITTED."""
     nr_numbers = []
     for review in reviews:
-        current_nr = review['review']['nrNumber']
-        current_status = review['review']['status']
+        current_nr = review['nrNumber']
+        current_status = review['status']
         if (current_nr is not None and
             current_status in [ReviewStatus.CHANGE_REQUESTED.name,
                                ReviewStatus.AWAITING_REVIEW.name,
@@ -70,7 +71,7 @@ def get_expiry_date_for_each_nr(nr_numbers):
 def update_reviews(reviews, nr_expiry_date):
     """Update review by appending NR Expiry date."""
     for review in reviews:
-        nr = review['review']['nrNumber']
+        nr = review['nrNumber']
         if nr is not None:
             match = next((n for n in nr_expiry_date if n['nr'] == nr), None)
             if match:
