@@ -69,9 +69,9 @@ def get_expiry_date_for_each_nr(nr_numbers):
 def update_reviews(reviews, nr_expiry_date):
     """Update review by appending NR Expiry date"""
     for review in reviews:
-        filteredNr = review['review']['nrNumber']
-        if filteredNr is not None:
-            match = next((n for n in nr_expiry_date if n['nr'] == filteredNr), None)
+        nr = review['review']['nrNumber']
+        if nr is not None:
+            match = next((n for n in nr_expiry_date if n['nr'] == nr), None)
             review['nrExpiryDate'] = match['expiry_date']
 
 
