@@ -14,6 +14,7 @@
 """The Test Suites to ensure that the registration is operating correctly."""
 import xml.etree.ElementTree as Et
 
+from flask import current_app
 import pytest
 from legal_api.models import Business, RequestTracker
 
@@ -47,7 +48,12 @@ async def test_registration(app, session, mocker, legal_type):
             return 200, acknowledgement_response
 
     mocker.patch('entity_bn.bn_processors.registration.request_bn_hub', side_effect=side_effect)
-    mocker.patch('entity_bn.bn_processors.registration.publish_event')
+
+    subjects_in_queue = {}
+    def publish_event(payload, subject):
+        subjects_in_queue[subject] = payload
+
+    mocker.patch('entity_bn.bn_processors.registration.publish_event', side_effect=publish_event)
 
     business_number = '993775204'
     business_program_id = 'BC'
@@ -86,6 +92,10 @@ async def test_registration(app, session, mocker, legal_type):
 
     business = Business.find_by_internal_id(business_id)
     assert business.tax_id == f'{business_number}{business_program_id}{str(program_account_ref_no).zfill(4)}'
+
+    assert current_app.config['EMAIL_PUBLISH_OPTIONS']['subject'] in subjects_in_queue
+    assert current_app.config['SUBSCRIPTION_OPTIONS']['subject'] in subjects_in_queue
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('request_type', [
