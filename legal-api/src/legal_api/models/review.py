@@ -91,16 +91,9 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         results = pagination.items
         total_count = pagination.total
         result = []
-        nrNumbers = []
 
         for review, effective_date in results:
             futureEffectiveDate = ''
-            if (review.nr_number is not None and
-                (review.status in [ReviewStatus.CHANGE_REQUESTED,
-                            ReviewStatus.AWAITING_REVIEW,
-                            ReviewStatus.RESUBMITTED])):
-                nrNumbers.append(review.nr_number)
-               
             if (effective_date > datetime.now(timezone.utc)):
                 futureEffectiveDate = LegislationDatetime.format_as_legislation_date(effective_date)
 

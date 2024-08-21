@@ -17,6 +17,7 @@ from datetime import datetime
 from enum import Enum
 
 import datedelta
+from legal_api.services.bootstrap import AccountService
 import pytz
 import requests
 from flask import current_app
@@ -70,6 +71,24 @@ class NameXService():
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
         })
+
+        return nr_response
+    
+    @staticmethod
+    def query_nr_numbers(identifiers):
+        """Return a JSON object with name request information."""
+        namex_url = current_app.config.get('NAMEX_SVC_URL')
+
+        # Get access token for namex-api in a different keycloak realm
+        token = AccountService.get_bearer_token()
+
+        # Perform proxy call with identifiers (e.g. NR 1234567, NR 1234568)
+        nr_response = requests.post(namex_url + 'requests/search',
+                                    json={'identifiers': identifiers},
+                                    headers={
+                                        'Content-Type': 'application/json',
+                                        'Authorization': 'Bearer ' + token
+                                    })
 
         return nr_response
 
