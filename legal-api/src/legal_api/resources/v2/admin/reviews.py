@@ -55,7 +55,7 @@ def get_applicable_nr_numbers(reviews):
             current_status in [ReviewStatus.CHANGE_REQUESTED.name,
                                ReviewStatus.AWAITING_REVIEW.name,
                                ReviewStatus.RESUBMITTED.name]):
-            nr_numbers.append(current_status)
+            nr_numbers.append(current_nr)
     return nr_numbers
 
 
