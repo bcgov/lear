@@ -93,13 +93,13 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         result = []
 
         for review, effective_date in results:
-            futureEffectiveDate = ''
-            if (effective_date > datetime.now(timezone.utc)):
-                futureEffectiveDate = LegislationDatetime.format_as_legislation_date(effective_date)
+            future_effective_date = ''
+            if effective_date > datetime.now(timezone.utc):
+                future_effective_date = LegislationDatetime.format_as_legislation_date(effective_date)
 
             result.append({
                 'review': review.json,
-                'effectiveDate': futureEffectiveDate
+                'effectiveDate': future_effective_date
             })
 
         reviews = {
@@ -108,7 +108,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             'limit': limit,
             'total': total_count
         }
-        return reviews         
+        return reviews
 
     @property
     def json(self) -> dict:

@@ -21,7 +21,6 @@ from flask_cors import cross_origin
 from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
 from legal_api.services import namex, queue
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp_admin
 
@@ -49,13 +48,13 @@ def get_applicable_nr_numbers(reviews):
     """Return list of NR numbers of review with status CHANGE_REQUESTED/AWAITING_REVIEW/RESUBMITTED"""
     nr_numbers = []
     for review in reviews:
-        currentNr = review['review']['nrNumber']
-        currentStatus = review['review']['status']
-        if (currentNr is not None and 
-            currentStatus in [ReviewStatus.CHANGE_REQUESTED.name,
+        current_nr = review['review']['nrNumber']
+        current_status = review['review']['status']
+        if (current_nr is not None and
+            current_status in [ReviewStatus.CHANGE_REQUESTED.name,
                         ReviewStatus.AWAITING_REVIEW.name,
                         ReviewStatus.RESUBMITTED.name]):
-            nr_numbers.append(currentNr)
+            nr_numbers.append(current_status)
     return nr_numbers
 
 def get_expiry_date_for_each_nr(nr_numbers):

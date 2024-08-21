@@ -17,10 +17,11 @@ from datetime import datetime
 from enum import Enum
 
 import datedelta
-from legal_api.services.bootstrap import AccountService
 import pytz
 import requests
 from flask import current_app
+
+from legal_api.services.bootstrap import AccountService
 
 from ..models import Filing
 from .utils import get_str
@@ -63,7 +64,7 @@ class NameXService():
         })
 
         return nr_response
-    
+
     @staticmethod
     def query_nr_numbers(identifiers):
         """Return a JSON object with name request information."""
