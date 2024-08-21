@@ -73,7 +73,8 @@ def update_reviews(reviews, nr_expiry_date):
         nr = review['review']['nrNumber']
         if nr is not None:
             match = next((n for n in nr_expiry_date if n['nr'] == nr), None)
-            review['nrExpiryDate'] = match['expiry_date']
+            if match:
+                review['nrExpiryDate'] = match['expiry_date']
 
 
 @bp_admin.route('/reviews/<int:review_id>', methods=['POST'])
