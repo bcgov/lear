@@ -96,9 +96,11 @@ def get_extra_provincials(response: dict):
     extra_provincials = []
     if response:
         jurisdictions = response.get('jurisdictions', [])
+        # List of NWPTA jurisdictions
+        nwpta_Jurisdictions = ['Alberta', 'British Columbia', 'Manitoba', 'Saskatchewan']
         for jurisdiction in jurisdictions:
             name = jurisdiction.get('name')
-            if name:
+            if name and (name in nwpta_Jurisdictions):
                 extra_provincials.append(name)
         extra_provincials.sort()
     return extra_provincials
