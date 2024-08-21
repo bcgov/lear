@@ -44,29 +44,31 @@ def get_reviews():
 
     return jsonify(result), HTTPStatus.OK
 
+
 def get_applicable_nr_numbers(reviews):
-    """Return list of NR numbers of review with status CHANGE_REQUESTED/AWAITING_REVIEW/RESUBMITTED"""
+    """Return list of NR numbers of review with status CHANGE_REQUESTED/AWAITING_REVIEW/RESUBMITTED."""
     nr_numbers = []
     for review in reviews:
         current_nr = review['review']['nrNumber']
         current_status = review['review']['status']
         if (current_nr is not None and
             current_status in [ReviewStatus.CHANGE_REQUESTED.name,
-                        ReviewStatus.AWAITING_REVIEW.name,
-                        ReviewStatus.RESUBMITTED.name]):
+                               ReviewStatus.AWAITING_REVIEW.name,
+                               ReviewStatus.RESUBMITTED.name]):
             nr_numbers.append(current_status)
     return nr_numbers
 
+
 def get_expiry_date_for_each_nr(nr_numbers):
-    """Return list of NR numbers and respective Expiry date"""
+    """Return list of NR numbers and respective Expiry date."""
     nr_response = namex.query_nr_numbers(nr_numbers)
     response_json = nr_response.json()
-    nr_expiry_dates = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']}
-                      for one in response_json]
+    nr_expiry_dates = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']} for one in response_json]
     return nr_expiry_dates
 
+
 def update_reviews(reviews, nr_expiry_date):
-    """Update review by appending NR Expiry date"""
+    """Update review by appending NR Expiry date."""
     for review in reviews:
         nr = review['review']['nrNumber']
         if nr is not None:
