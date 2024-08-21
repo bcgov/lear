@@ -71,7 +71,7 @@ def process(app: Flask, xml_furnishings: dict):
 
         if bc_furnishings:
             xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE] = bc_furnishings
-        
+
         if ep_furnishings:
             xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO] = ep_furnishings
 
