@@ -21,6 +21,7 @@ from flask_cors import cross_origin
 from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
 from legal_api.services import namex, queue
 from legal_api.utils.auth import jwt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp_admin
 
@@ -39,8 +40,8 @@ def get_reviews():
         return jsonify({'message': 'Reviews not found.'}), HTTPStatus.NOT_FOUND
 
     nr_numbers = get_applicable_nr_numbers(reviews)
-    nr_expiry_date = get_expiry_date_for_each_nr(nr_numbers)
-    update_reviews(reviews, nr_expiry_date)
+    nr_expiry_dates = get_expiry_date_for_each_nr(nr_numbers)
+    update_reviews(reviews, nr_expiry_dates)
 
     return jsonify(result), HTTPStatus.OK
 
@@ -59,12 +60,11 @@ def get_applicable_nr_numbers(reviews):
 
 def get_expiry_date_for_each_nr(nr_numbers):
     """Return list of NR numbers and respective Expiry date"""
-    nr_expiry_date = []
     nr_response = namex.query_nr_numbers(nr_numbers)
     response_json = nr_response.json()
-    nr_expiry_date = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']}
+    nr_expiry_dates = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']}
                       for one in response_json]
-    return nr_expiry_date
+    return nr_expiry_dates
 
 def update_reviews(reviews, nr_expiry_date):
     """Update review by appending NR Expiry date"""
