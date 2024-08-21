@@ -64,7 +64,7 @@ def process(app: Flask, xml_furnishings: dict):
             new_furnishing.save()
             app.logger.debug(f'Created intent to dissolve furnishing entry with ID: {new_furnishing.id}')
 
-            if business != Business.LegalTypes.EXTRA_PRO_A.value:
+            if business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value:
                 bc_furnishings.append(new_furnishing)
             else:
                 ep_furnishings.append(new_furnishing)
