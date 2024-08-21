@@ -35,9 +35,6 @@ def get_reviews():
     result = Review.get_paginated_reviews(page, limit)
     reviews = result['reviews']
 
-    if not reviews:
-        return jsonify({'message': 'Reviews not found.'}), HTTPStatus.NOT_FOUND
-
     nr_numbers = get_applicable_nr_numbers(reviews)
     if nr_numbers:
         nr_expiry_dates = get_expiry_date_for_each_nr(nr_numbers)
