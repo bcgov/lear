@@ -511,46 +511,6 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
      },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('ulc_dissolution_completed', 'BC7654321', 'LLC',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-             'certificateOfDissolution':
-             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
-                 'legalFilings': [
-                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
-                 ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('llc_dissolution_completed', 'BC7654321', 'LLC',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-             'certificateOfDissolution':
-             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
-                 'legalFilings': [
-                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
-                 ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('dissolution_completed_no_certificate_of_dissolution', 'BC7654321', 'LLC',
-     'dissolution', ADMIN_DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
     ('sp_registration_paid', 'FM7654321', 'SP',
      'registration', REGISTRATION, None, None, Filing.Status.PAID,
      {
