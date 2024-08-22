@@ -1,4 +1,4 @@
-{% if newLegalType == 'BEN' %}
+{% if newLegalType in ['BEN', 'CBEN'] %}
   <div class="no-page-break">
     <div class="section-title mt-4">BC Benefit Company Statement</div>
     <div class="section-data mt-4">
@@ -6,7 +6,7 @@
         business in a responsible and sustainable manner and promoting one or more public benefits.
     </div>
   </div>
-{% elif newLegalType == 'CC' %}
+{% elif newLegalType in ['CC', 'CCC'] %}
   <div class="no-page-break">
     <div class="section-title mt-4">BC Community Contribution Company Statement</div>
     <div class="section-data mt-4">
@@ -15,7 +15,7 @@
       distribute its assets on dissolution or otherwise.
     </div>
   </div>
-{% elif newLegalType == 'ULC' %}
+{% elif newLegalType in ['ULC', 'CUL'] %}
   <div class="no-page-break">
     <div class="section-title mt-4">BC Unlimited Liability Company Statement</div>
     <div class="section-data mt-4">
@@ -23,4 +23,4 @@
       liabilities of this company to the extent provided in section 51.3 of the Business Corporations Act.
     </div>
   </div>
-{% endif %}    
+{% endif %}

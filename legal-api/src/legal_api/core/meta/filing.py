@@ -87,13 +87,20 @@ FILINGS: Final = {
         'title': 'AGM Extension',
         'displayName': 'Request for AGM Extension',
         'codes': {
-                'BC': 'AGMDT',
-                'BEN': 'AGMDT',
-                'ULC': 'AGMDT',
-                'CC': 'AGMDT'
+            'BC': 'AGMDT',
+            'BEN': 'AGMDT',
+            'ULC': 'AGMDT',
+            'CC': 'AGMDT',
+            'C': 'AGMDT',
+            'CBEN': 'AGMDT',
+            'CUL': 'AGMDT',
+            'CCC': 'AGMDT'
         },
         'additional': [
-            {'types': 'BC, BEN, CC, ULC', 'outputs': ['letterOfAgmExtension', ]},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['letterOfAgmExtension']
+            },
         ],
     },
     'agmLocationChange': {
@@ -104,10 +111,17 @@ FILINGS: Final = {
             'BC': 'AGMLC',
             'BEN': 'AGMLC',
             'ULC': 'AGMLC',
-            'CC': 'AGMLC'
+            'CC': 'AGMLC',
+            'C': 'AGMLC',
+            'CBEN': 'AGMLC',
+            'CUL': 'AGMLC',
+            'CCC': 'AGMLC'
         },
         'additional': [
-            {'types': 'BC, BEN, CC, ULC', 'outputs': ['letterOfAgmLocationChange', ]},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['letterOfAgmLocationChange']
+            },
         ]
     },
     'alteration': {
@@ -118,16 +132,26 @@ FILINGS: Final = {
             'BC': 'ALTER',
             'BEN': 'ALTER',
             'ULC': 'ALTER',
-            'CC': 'ALTER'
+            'CC': 'ALTER',
+            'C': 'ALTER',
+            'CBEN': 'ALTER',
+            'CUL': 'ALTER',
+            'CCC': 'ALTER'
         },
         'additional': [
-            {'types': 'BC,BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles']
+            },
         ]
     },
     'amalgamationApplication': {
         'name': 'amalgamationApplication',
         'additional': [
-            {'types': 'BC,ULC,BEN,CC', 'outputs': ['noticeOfArticles', 'certificateOfAmalgamation']},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC'],
+                'outputs': ['noticeOfArticles', 'certificateOfAmalgamation']
+            },
         ],
         'regular': {
             'name': 'regularAmalgamation',
@@ -172,7 +196,11 @@ FILINGS: Final = {
             'BEN': 'BCANN',
             'BC': 'BCANN',
             'ULC': 'BCANN',
-            'CC': 'BCANN'
+            'CC': 'BCANN',
+            'CBEN': 'BCANN',
+            'C': 'BCANN',
+            'CUL': 'BCANN',
+            'CCC': 'BCANN'
         }
     },
     'changeOfAddress': {
@@ -184,10 +212,17 @@ FILINGS: Final = {
             'BEN': 'BCADD',
             'BC': 'BCADD',
             'ULC': 'BCADD',
-            'CC': 'BCADD'
+            'CC': 'BCADD',
+            'CBEN': 'BCADD',
+            'C': 'BCADD',
+            'CUL': 'BCADD',
+            'CCC': 'BCADD'
         },
         'additional': [
-            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles']
+            },
         ]
     },
     'changeOfDirectors': {
@@ -199,7 +234,11 @@ FILINGS: Final = {
             'BEN': 'BCCDR',
             'BC': 'BCCDR',
             'ULC': 'BCCDR',
-            'CC': 'BCCDR'
+            'CC': 'BCCDR',
+            'CBEN': 'BCCDR',
+            'C': 'BCCDR',
+            'CUL': 'BCCDR',
+            'CCC': 'BCCDR'
         },
         'free': {
             'codes': {
@@ -207,11 +246,18 @@ FILINGS: Final = {
                 'BEN': 'BCFDR',
                 'BC': 'BCFDR',
                 'ULC': 'BCFDR',
-                'CC': 'BCFDR'
+                'CC': 'BCFDR',
+                'CBEN': 'BCFDR',
+                'C': 'BCFDR',
+                'CUL': 'BCFDR',
+                'CCC': 'BCFDR'
             }
         },
         'additional': [
-            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles']
+            },
         ]
     },
     'changeOfName': {
@@ -220,10 +266,7 @@ FILINGS: Final = {
         'displayName': 'Legal Name Change',
         'codes': {
             'CP': 'OTCON'
-        },
-        'additional': [
-            {'types': 'BEN', 'outputs': ['noticeOfArticles', ]},
-        ]
+        }
     },
     'changeOfRegistration': {
         'name': 'changeOfRegistration',
@@ -237,7 +280,10 @@ FILINGS: Final = {
             'GP': 'FMCHANGE'
         },
         'additional': [
-            {'types': 'SP,GP', 'outputs': ['amendedRegistrationStatement', ]},
+            {
+                'types': ['SP', 'GP'],
+                'outputs': ['amendedRegistrationStatement']
+            },
         ]
     },
     'consentContinuationOut': {
@@ -248,10 +294,17 @@ FILINGS: Final = {
             'BC': 'CONTO',
             'BEN': 'CONTO',
             'ULC': 'CONTO',
-            'CC': 'CONTO'
+            'CC': 'CONTO',
+            'C': 'CONTO',
+            'CBEN': 'CONTO',
+            'CUL': 'CONTO',
+            'CCC': 'CONTO'
         },
         'additional': [
-            {'types': 'BC,BEN,CC,ULC', 'outputs': ['letterOfConsent', ]},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['letterOfConsent']
+            },
         ]
     },
     'continuationIn': {
@@ -270,7 +323,10 @@ FILINGS: Final = {
             'CCC': 'CONTI'
         },
         'additional': [
-            {'types': 'C,CBEN,CUL,CCC', 'outputs': ['noticeOfArticles', 'certificateOfContinuation']},
+            {
+                'types': ['C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles', 'certificateOfContinuation']
+            },
         ]
     },
     'continuationOut': {
@@ -281,7 +337,11 @@ FILINGS: Final = {
             'BC': 'COUTI',
             'BEN': 'COUTI',
             'ULC': 'COUTI',
-            'CC': 'COUTI'
+            'CC': 'COUTI',
+            'C': 'COUTI',
+            'CBEN': 'COUTI',
+            'CUL': 'COUTI',
+            'CCC': 'COUTI'
         }
     },
     'conversion': {
@@ -308,11 +368,21 @@ FILINGS: Final = {
             'CC': 'CRCTN',
             'CP': 'CRCTN',
             'SP': 'FMCORR',
-            'GP': 'FMCORR'
+            'GP': 'FMCORR',
+            'CBEN': 'CRCTN',
+            'C': 'CRCTN',
+            'CUL': 'CRCTN',
+            'CCC': 'CRCTN'
         },
         'additional': [
-            {'types': 'BEN,BC,CC,ULC', 'outputs': ['noticeOfArticles', ]},
-            {'types': 'SP,GP', 'outputs': ['correctedRegistrationStatement', ]}
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles']
+            },
+            {
+                'types': ['SP', 'GP'],
+                'outputs': ['correctedRegistrationStatement']
+            }
         ]
     },
     'courtOrder': {
@@ -324,8 +394,14 @@ FILINGS: Final = {
     'dissolution': {
         'name': 'dissolution',
         'additional': [
-            {'types': 'CP', 'outputs': ['certificateOfDissolution', 'affidavit']},
-            {'types': 'BC,BEN,CC,ULC,LLC', 'outputs': ['certificateOfDissolution']},
+            {
+                'types': ['CP'],
+                'outputs': ['certificateOfDissolution', 'affidavit']
+            },
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['certificateOfDissolution']
+            },
         ],
         'voluntary': {
             'title': ReportTitles.VOLUNTARY_DISSOLUTION.value,
@@ -349,9 +425,12 @@ FILINGS: Final = {
                 'BEN': 'DIS_VOL',
                 'ULC': 'DIS_VOL',
                 'CC': 'DIS_VOL',
-                'LLC': 'DIS_VOL',
                 'SP': 'DIS_VOL',
-                'GP': 'DIS_VOL'
+                'GP': 'DIS_VOL',
+                'C': 'DIS_VOL',
+                'CBEN': 'DIS_VOL',
+                'CUL': 'DIS_VOL',
+                'CCC': 'DIS_VOL'
             },
         },
         'administrative': {
@@ -376,9 +455,12 @@ FILINGS: Final = {
                 'BEN': 'DIS_VOL',
                 'ULC': 'DIS_VOL',
                 'CC': 'DIS_VOL',
-                'LLC': 'DIS_VOL',
                 'SP': 'DIS_VOL',
-                'GP': 'DIS_VOL'
+                'GP': 'DIS_VOL',
+                'C': 'DIS_ADM',
+                'CBEN': 'DIS_ADM',
+                'CUL': 'DIS_ADM',
+                'CCC': 'DIS_ADM'
             },
         }
     },
@@ -400,8 +482,14 @@ FILINGS: Final = {
             'CP': 'OTINC'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']},
-            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificate']},
+            {
+                'types': ['CP'],
+                'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']
+            },
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles', 'certificate']
+            },
         ]
     },
     'putBackOn': {
@@ -437,7 +525,10 @@ FILINGS: Final = {
     'restoration': {
         'name': 'restoration',
         'additional': [
-            {'types': 'BC,BEN,ULC,CC', 'outputs': ['noticeOfArticles', 'certificateOfRestoration']},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles', 'certificateOfRestoration']
+            },
         ],
         'fullRestoration': {
             'name': 'fullRestoration',
@@ -447,7 +538,11 @@ FILINGS: Final = {
                 'BC': 'RESTF',
                 'BEN': 'RESTF',
                 'ULC': 'RESTF',
-                'CC': 'RESTF'
+                'CC': 'RESTF',
+                'C': 'RESTF',
+                'CBEN': 'RESTF',
+                'CUL': 'RESTF',
+                'CCC': 'RESTF'
             }
         },
         'limitedRestoration': {
@@ -458,7 +553,11 @@ FILINGS: Final = {
                 'BC': 'RESTL',
                 'BEN': 'RESTL',
                 'ULC': 'RESTL',
-                'CC': 'RESTL'
+                'CC': 'RESTL',
+                'C': 'RESTL',
+                'CBEN': 'RESTL',
+                'CUL': 'RESTL',
+                'CCC': 'RESTL'
             }
         },
         'limitedRestorationExtension': {
@@ -469,7 +568,11 @@ FILINGS: Final = {
                 'BC': 'RESXL',
                 'BEN': 'RESXL',
                 'ULC': 'RESXL',
-                'CC': 'RESXL'
+                'CC': 'RESXL',
+                'C': 'RESXL',
+                'CBEN': 'RESXL',
+                'CUL': 'RESXL',
+                'CCC': 'RESXL'
             }
         },
         'limitedRestorationToFull': {
@@ -480,7 +583,11 @@ FILINGS: Final = {
                 'BC': 'RESXF',
                 'BEN': 'RESXF',
                 'ULC': 'RESXF',
-                'CC': 'RESXF'
+                'CC': 'RESXF',
+                'C': 'RESXF',
+                'CBEN': 'RESXF',
+                'CUL': 'RESXF',
+                'CCC': 'RESXF'
             }
         }
     },
@@ -492,7 +599,10 @@ FILINGS: Final = {
             'CP': 'SPRLN'
         },
         'additional': [
-            {'types': 'CP', 'outputs': ['certifiedRules', 'certifiedMemorandum']},
+            {
+                'types': ['CP'],
+                'outputs': ['certifiedRules', 'certifiedMemorandum']
+            },
         ]
     },
     'transition': {
@@ -503,10 +613,17 @@ FILINGS: Final = {
             'BC': 'TRANS',
             'BEN': 'TRANS',
             'ULC': 'TRANS',
-            'CC': 'TRANS'
+            'CC': 'TRANS',
+            'C': 'TRANS',
+            'CBEN': 'TRANS',
+            'CUL': 'TRANS',
+            'CCC': 'TRANS'
         },
         'additional': [
-            {'types': 'BC,BEN', 'outputs': ['noticeOfArticles', ]},
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['noticeOfArticles']
+            },
         ]
     }
 }
@@ -569,7 +686,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Return list of all outputs."""
         filing = FILINGS.get(filing_name)
         for docs in filing.get('additional', []):
-            if business_type in docs.get('types'):
+            if business_type in docs.get('types', []):
                 return docs.get('outputs')
         return []
 

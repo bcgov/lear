@@ -405,9 +405,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 }
             }
         },
-        'specialResolution': {'name': 'specialResolution', 'title': 'Special Resolution',
-                              'codes': {
-                                  'CP': 'SPRLN'}},
+        'specialResolution': {
+            'name': 'specialResolution',
+            'title': 'Special Resolution',
+            'codes': {
+                'CP': 'SPRLN'
+            }
+        },
         'transition': {
             'name': 'transition',
             'title': 'Transition',
