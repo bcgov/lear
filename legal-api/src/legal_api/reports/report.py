@@ -686,7 +686,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             identifier = filing.get('business').get('identifier')
             name_request_json = filing.get('alteration').get('nameRequest')
             if name_request_json:
-                to_legal_name = name_request_json.get('legalName', identifier[2:] + ' B.C. LTD.')
+                to_legal_name = self._create_numbered_legal_name(new_legal_type, identifier)
 
         if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
             filing['previousLegalName'] = prev_legal_name
@@ -1049,21 +1049,24 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         prev_legal_name = versioned_business.legal_name
 
         if not (new_legal_name := name_request_json.get('legalName')):
-            legal_type = name_request_json['legalType']
-            numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
-            numbered_legal_name_prefix = ''
-            if legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-                              Business.LegalTypes.ULC_CONTINUE_IN.value,
-                              Business.LegalTypes.CCC_CONTINUE_IN.value,
-                              Business.LegalTypes.CONTINUE_IN.value):
-                numbered_legal_name_prefix = versioned_business.identifier[1:]
-            else:
-                numbered_legal_name_prefix = versioned_business.identifier[2:]
-            new_legal_name = f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
+            new_legal_name = self._create_numbered_legal_name(name_request_json['legalType'],
+                                                              versioned_business.identifier)
 
         if prev_legal_name != new_legal_name:
             filing['previousLegalName'] = prev_legal_name
             filing['newLegalName'] = new_legal_name
+
+    def _create_numbered_legal_name(self, legal_type, identifier):
+        numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
+        numbered_legal_name_prefix = ''
+        if legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                          Business.LegalTypes.ULC_CONTINUE_IN.value,
+                          Business.LegalTypes.CCC_CONTINUE_IN.value,
+                          Business.LegalTypes.CONTINUE_IN.value):
+            numbered_legal_name_prefix = identifier[1:]
+        else:
+            numbered_legal_name_prefix = identifier[2:]
+        return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
