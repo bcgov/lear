@@ -487,7 +487,7 @@ FILINGS: Final = {
                 'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']
             },
             {
-                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'types': ['BC', 'BEN', 'CC', 'ULC'],
                 'outputs': ['noticeOfArticles', 'certificate']
             },
         ]
