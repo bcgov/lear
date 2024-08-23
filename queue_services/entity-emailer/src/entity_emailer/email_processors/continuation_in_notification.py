@@ -66,6 +66,7 @@ def _get_pdfs(
             )
             attach_order += 1
 
+        # add receipt
         corp_name = business.get('legalName')
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
@@ -91,6 +92,22 @@ def _get_pdfs(
                 }
             )
             attach_order += 1
+
+    elif status == 'RESUBMITTED':
+        # add filing pdf
+        filing_pdf_type = 'continuationIn'
+        filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+        if filing_pdf_encoded:
+            pdfs.append(
+                {
+                    'fileName': 'Continuation Application - Resubmitted.pdf',
+                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': str(attach_order)
+                }
+            )
+            attach_order += 1
+
     elif status == Filing.Status.COMPLETED.value:
         # add certificate of continuation
         certificate_pdf_type = 'certificateOfContinuation'
@@ -105,6 +122,7 @@ def _get_pdfs(
                 }
             )
             attach_order += 1
+
         # add notice of articles
         noa_pdf_type = 'noticeOfArticles'
         noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
@@ -118,13 +136,14 @@ def _get_pdfs(
                 }
             )
             attach_order += 1
+
     return pdfs
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Continuation notification."""
     logger.debug('filing_notification: %s', email_info)
-    # get template and fill in parts
+    # get template vars from email info
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
@@ -134,6 +153,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         business = filing_data['nameRequest']
         business['identifier'] = filing.temp_reg
 
+    # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/CONT-IN-{status}.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
@@ -183,6 +203,14 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         subject = 'Confirmation of Filing from the Business Registry'
     elif status == Filing.Status.COMPLETED.value:
         subject = 'Continuation Documents from the Business Registry'
+    elif status == Filing.Status.CHANGE_REQUESTED.value:
+        subject = 'Change Requested from the Business Registry'
+    elif status == Filing.Status.APPROVED.value:
+        subject = 'Results of your Filing from the Business Registry'
+    elif status == Filing.Status.REJECTED.value:
+        subject = 'Results of your Filing from the Business Registry'
+    elif status == 'RESUBMITTED':
+        subject = 'Confirmation of Filing from the Business Registry'
 
     subject = f'{legal_name} - {subject}' if legal_name else subject
 
