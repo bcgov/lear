@@ -166,15 +166,17 @@ def substitute_template_parts(template_code: str) -> str:
     Template parts are marked by [[partname.html]] in templates.
 
     This functionality is restricted by:
-    - markup must be exactly [[partname.html]] and have no extra spaces around file name
-    - template parts can only be one level deep, ie: this rudimentary framework does not handle nested template
-    parts. There is no recursive search and replace.
+    - Markup must be exactly [[partname.html]] and have no extra spaces around the file name.
+    - Some nesting is supported: earlier templates can include later templates. Hence, the order of
+      template parts, below, is important.
+    - Do not comment out template parts as they may be replaced anyway!
     """
     template_parts = [
         'business-dashboard-link',
         'business-dashboard-link-alt',
         'business-info',
         'business-information',
+        'continuation-application-details',
         'reg-business-info',
         'cra-notice',
         'nr-footer',
@@ -183,11 +185,14 @@ def substitute_template_parts(template_code: str) -> str:
         'initiative-notice',
         'logo',
         'pdf-notice',
-        'style',
         'divider',
+        '8px',
+        '16px',
         '20px',
+        '24px',
         'whitespace-16px',
-        'whitespace-24px'
+        'whitespace-24px',
+        'style'
     ]
 
     # substitute template parts - marked up by [[filename]]

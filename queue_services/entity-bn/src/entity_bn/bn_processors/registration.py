@@ -13,6 +13,7 @@
 # limitations under the License.
 """File processing rules and actions for the registration of a business."""
 import json
+import uuid
 import xml.etree.ElementTree as Et
 from contextlib import suppress
 from http import HTTPStatus
@@ -132,6 +133,23 @@ async def process(business: Business,  # pylint: disable=too-many-branches, too-
     except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
         logger.error('Failed to publish BN email message onto the NATS emailer subject', exc_info=True)
         raise err
+
+    # publish identifier (so other things know business has changed)
+    try:
+        payload = {
+            'specversion': '1.x-wip',
+            'type': 'bc.registry.business.bn',
+            'source': 'entity-bn.cb_subscription_handler',
+            'id': str(uuid.uuid4()),
+            'time': datetime.utcnow().isoformat(),
+            'datacontenttype': 'application/json',
+            'identifier': business.identifier,
+            'data': {}
+        }
+        subject = current_app.config['SUBSCRIPTION_OPTIONS']['subject']
+        await publish_event(payload, subject)
+    except Exception as err:  # pylint: disable=broad-except; # noqa: B902
+        logger.error('Failed to publish BN update for %s %s', business.identifier, err, exc_info=True)
 
 
 def _inform_cra(business: Business,  # pylint: disable=too-many-locals

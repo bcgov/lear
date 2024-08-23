@@ -66,6 +66,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
         AMALGAMATED = 'HAM'
         INVOLUNTARY_DISSOLUTION_NO_AR = 'HDF'
         INVOLUNTARY_DISSOLUTION_NO_TR = 'HDT'
+        CONTINUE_IN = 'HCI'
 
     NUMBERED_CORP_NAME_SUFFIX = {
         TypeCodes.BCOMP.value: 'B.C. LTD.',
@@ -365,23 +366,6 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
 
         except Exception as err:
             current_app.logger.error('Error inserting business.')
-            raise err
-
-    @classmethod
-    def create_corp_jurisdiction(cls, cursor, corp_num: str, event_id: str):
-        """Add record to the JURISDICTION table on incorporation."""
-        try:
-            cursor.execute(
-                """
-                insert into JURISDICTION (CORP_NUM, START_EVENT_ID, STATE_TYP_CD)
-                values (:corp_num, :event_id, 'ACT')
-                """,
-                corp_num=corp_num,
-                event_id=event_id
-            )
-
-        except Exception as err:
-            current_app.logger.error('Error inserting jurisdiction.')
             raise err
 
     @classmethod

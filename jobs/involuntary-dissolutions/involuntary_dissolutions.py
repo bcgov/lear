@@ -173,6 +173,9 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
         businesses_eligible = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
 
+        # get the MAX_DISSOLUTIONS_ALLOWED number of businesses
+        max_dissolutions_allowed = Configuration.find_by_name(config_name='MAX_DISSOLUTIONS_ALLOWED').val
+
         if len(businesses_eligible) == 0:
             app.logger.debug('Skipping job run since there are no businesses eligible for dissolution.')
             return
@@ -184,6 +187,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
         batch = Batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                       status=Batch.BatchStatus.PROCESSING,
                       size=len(businesses_eligible),
+                      max_size=max_dissolutions_allowed,
                       start_date=datetime.utcnow())
         batch.save()
         app.logger.debug(f'New batch has been created with ID: {batch.id}')

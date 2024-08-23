@@ -43,15 +43,17 @@ def process(
             alteration_json = dpath.util.get(filing, '/alteration')
             coop_association_type = alteration_json.get('cooperativeAssociationType')
             filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromCooperativeAssociationType': business.association_type,
-                                         'toCooperativeAssociationType': coop_association_type}}
+                                      'fromCooperativeAssociationType': business.association_type,
+                                      'toCooperativeAssociationType': coop_association_type}
             business_info.set_association_type(business, coop_association_type)
         else:
             business_json = dpath.util.get(filing, '/alteration/business')
-            filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromLegalType': business.legal_type,
-                                         'toLegalType': business_json.get('legalType')}}
-            business_info.set_corp_type(business, business_json)
+            to_legal_type = business_json.get('legalType')
+            if business.legal_type != to_legal_type:
+                filing_meta.alteration = {**filing_meta.alteration,
+                                          'fromLegalType': business.legal_type,
+                                          'toLegalType': to_legal_type}
+                business_info.set_corp_type(business, business_json)
 
     # Alter the business name, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -62,8 +64,8 @@ def process(
         business_info.set_legal_name(business.identifier, business, business_json)
         if from_legal_name != business.legal_name:
             filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'fromLegalName': from_legal_name,
-                                         'toLegalName': business.legal_name}}
+                                      'fromLegalName': from_legal_name,
+                                      'toLegalName': business.legal_name}
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -93,7 +95,7 @@ def process(
         if rules_file_key:
             rules_and_memorandum.update_rules(business, filing_submission, rules_file_key, rules_file_name)
             filing_meta.alteration = {**filing_meta.alteration,
-                                      **{'uploadNewRules': True}}
+                                      'uploadNewRules': True}
 
     with suppress(IndexError, KeyError, TypeError):
         memorandum_file_key = dpath.util.get(filing, '/alteration/memorandumFileKey')

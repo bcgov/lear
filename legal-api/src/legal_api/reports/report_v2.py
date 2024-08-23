@@ -22,7 +22,7 @@ import requests
 from flask import current_app, jsonify
 from jinja2 import Template
 
-from legal_api.models import Address
+from legal_api.models import Address, Business
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MrasService
 from legal_api.utils.base import BaseEnum
@@ -133,7 +133,8 @@ class ReportV2:
     def _format_furnishing_data(self):
         self._report_data['furnishing'] = {
             'businessName': self._furnishing.business_name,
-            'businessIdentifier': self._furnishing.business_identifier
+            'businessIdentifier': self._furnishing.business_identifier,
+            'businessLegalType':  self._business.legal_type
         }
 
         if self._furnishing.last_ar_date:
@@ -153,7 +154,14 @@ class ReportV2:
             self._report_data['variant'] = self._variant
         else:
             self._report_data['variant'] = 'default'
-        self._report_data['title'] = ReportMeta.reports[self._document_key]['reportDescription'].upper()
+
+        title = ReportMeta.reports[self._document_key]['reportDescription']
+        if self._document_key == ReportTypes.DISSOLUTION:
+            if self._business.legal_type in [Business.LegalTypes.EXTRA_PRO_A.value]:
+                title = title.replace('{{REPORT_TYPE}}', 'CANCELLATION')
+            else:
+                title = title.replace('{{REPORT_TYPE}}', 'DISSOLUTION')
+        self._report_data['title'] = title.upper()
 
     def _set_address(self):
         if (furnishing_address := Address.find_by(furnishings_id=self._furnishing.id)):
@@ -244,6 +252,6 @@ class ReportMeta:
         ReportTypes.DISSOLUTION: {
             'reportName': 'dissoluion',
             'templateName': 'noticeOfDissolutionCommencement',
-            'reportDescription': 'Notice of Commencement of Dissolution'
+            'reportDescription': 'Notice of Commencement of {{REPORT_TYPE}}'
         }
     }
