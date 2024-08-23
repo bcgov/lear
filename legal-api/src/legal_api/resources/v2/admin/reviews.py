@@ -19,7 +19,7 @@ from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
-from legal_api.services import queue
+from legal_api.services import namex, queue
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
@@ -32,9 +32,47 @@ def get_reviews():
     """Return a list of reviews."""
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 10))
-    reviews = Review.get_paginated_reviews(page, limit)
+    result = Review.get_paginated_reviews(page, limit)
+    reviews = result['reviews']
 
-    return jsonify(reviews), HTTPStatus.OK
+    nr_numbers = get_applicable_nr_numbers(reviews)
+    if nr_numbers:
+        nr_expiry_dates = get_expiry_date_for_each_nr(nr_numbers)
+        update_reviews(reviews, nr_expiry_dates)
+
+    return jsonify(result), HTTPStatus.OK
+
+
+def get_applicable_nr_numbers(reviews):
+    """Return list of NR numbers of review with status CHANGE_REQUESTED/AWAITING_REVIEW/RESUBMITTED."""
+    nr_numbers = []
+    for review in reviews:
+        current_nr = review['nrNumber']
+        current_status = review['status']
+        if (current_nr is not None and
+            current_status in [ReviewStatus.CHANGE_REQUESTED.name,
+                               ReviewStatus.AWAITING_REVIEW.name,
+                               ReviewStatus.RESUBMITTED.name]):
+            nr_numbers.append(current_nr)
+    return nr_numbers
+
+
+def get_expiry_date_for_each_nr(nr_numbers):
+    """Return list of NR numbers and respective Expiry date."""
+    nr_response = namex.query_nr_numbers(nr_numbers)
+    response_json = nr_response.json()
+    nr_expiry_dates = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']} for one in response_json]
+    return nr_expiry_dates
+
+
+def update_reviews(reviews, nr_expiry_date):
+    """Update review by appending NR Expiry date."""
+    for review in reviews:
+        nr = review['nrNumber']
+        if nr is not None:
+            match = next((n for n in nr_expiry_date if n['nr'] == nr), None)
+            if match:
+                review['nrExpiryDate'] = match['expiry_date']
 
 
 @bp_admin.route('/reviews/<int:review_id>', methods=['POST'])
