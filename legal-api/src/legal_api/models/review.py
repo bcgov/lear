@@ -19,7 +19,6 @@ from enum import auto
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 from .filing import Filing
@@ -94,7 +93,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         for review, effective_date in results:
             future_effective_date = ''
             if effective_date > datetime.now(timezone.utc):
-                future_effective_date = LegislationDatetime.format_as_legislation_date(effective_date)
+                future_effective_date = effective_date.isoformat()
 
             result.append({
                 **review.json,
