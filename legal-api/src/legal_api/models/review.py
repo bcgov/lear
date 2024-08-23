@@ -19,7 +19,6 @@ from enum import auto
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 from .filing import Filing
