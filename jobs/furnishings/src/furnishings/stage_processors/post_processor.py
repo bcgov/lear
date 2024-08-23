@@ -111,6 +111,18 @@ class XmlMeta:
                 'be dissolved under section 422 of the Business Corporations Act.'
             )
         },
+        Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO: {
+            'title': 'Intent to Cancel Registrations (extraprovincial)',
+            'category': 'INTENT TO CANCEL REGISTRATIONS',
+            'subcategory': 'Extraprovincial',
+            'corp_class': 'Extraprovincial Company(s)',
+            'description': (
+                'The Registrar of Companies hereby gives notice that the following extraprovincial '
+                'companies may, at any time after the expiration of one month from the date of publication '
+                'of this notice, unless cause is shown to the contrary, have their registrations cancelled '
+                'under section 422 of the Business Corporations Act'
+            )
+        },
         Furnishing.FurnishingName.CORP_DISSOLVED: {
             'title': 'Dissolutions (B.C.)',
             'category': 'DISSOLUTIONS',

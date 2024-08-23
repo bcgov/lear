@@ -41,6 +41,7 @@ def process(app: Flask, xml_furnishings: dict):
         ).all()
 
         bc_furnishings = []
+        ep_furnishings = []
 
         for batch_processing in batch_processings:
             business = batch_processing.business
@@ -63,11 +64,16 @@ def process(app: Flask, xml_furnishings: dict):
             new_furnishing.save()
             app.logger.debug(f'Created intent to dissolve furnishing entry with ID: {new_furnishing.id}')
 
-            if business != Business.LegalTypes.EXTRA_PRO_A.value:
+            if business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value:
                 bc_furnishings.append(new_furnishing)
+            else:
+                ep_furnishings.append(new_furnishing)
 
         if bc_furnishings:
             xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE] = bc_furnishings
+
+        if ep_furnishings:
+            xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO] = ep_furnishings
 
     except Exception as err:
         app.logger.error(err)

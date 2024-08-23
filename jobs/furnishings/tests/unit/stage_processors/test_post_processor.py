@@ -51,6 +51,11 @@ def helper_create_furnishings(identifiers: list, furnishing_name, step):
             BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
         ),
         (
+            'STAGE_2_EP',
+            Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO,
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+        ),
+        (
             'STAGE_3_BC',
             Furnishing.FurnishingName.CORP_DISSOLVED,
             BatchProcessing.BatchProcessingStep.DISSOLUTION
@@ -126,6 +131,11 @@ def test_process_combined_xml(app, session):
         (
             'STAGE_2_BC',
             Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+        ),
+        (
+            'STAGE_2_EP',
+            Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO,
             BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
         ),
         (
