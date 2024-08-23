@@ -94,7 +94,8 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         for review, effective_date in results:
             future_effective_date = ''
             if effective_date > datetime.now(timezone.utc):
-                future_effective_date = LegislationDatetime.format_as_legislation_date(effective_date)
+                effective_date_utc = LegislationDatetime.as_utc_timezone(effective_date)
+                future_effective_date = effective_date_utc.isoformat()
 
             result.append({
                 **review.json,
