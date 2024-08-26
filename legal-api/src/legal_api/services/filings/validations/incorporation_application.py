@@ -133,7 +133,11 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
         Business.LegalTypes.BCOMP.value: 1,
         Business.LegalTypes.COMP.value: 1,
         Business.LegalTypes.BC_ULC_COMPANY.value: 1,
-        Business.LegalTypes.BC_CCC.value: 3
+        Business.LegalTypes.BC_CCC.value: 3,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value: 1,
+        Business.LegalTypes.CONTINUE_IN.value: 1,
+        Business.LegalTypes.ULC_CONTINUE_IN.value: 1,
+        Business.LegalTypes.CCC_CONTINUE_IN.value: 3
     }
     parties_array = filing_dict['filing'][filing_type]['parties']
     msg = []

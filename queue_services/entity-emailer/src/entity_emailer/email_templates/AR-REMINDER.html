@@ -60,7 +60,7 @@
               filing your annual report.
             </p>
 
-            {% if business.legalType == 'BEN' %}
+            {% if business.legalType in ['BEN', 'CBEN'] %}
             [[whitespace-16px.html]]
             <p>
               In addition to filing the annual report with the Business Registry, there is a legal requirement for

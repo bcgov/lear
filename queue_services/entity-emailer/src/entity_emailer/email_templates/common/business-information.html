@@ -11,8 +11,7 @@
     <div class="name bold">Company Name:</div>
     {% endif %}
 
-    {% if filing_status == 'PAID' and filing_type in ['amalgamationApplication', 'incorporationApplication',
-      'continuationIn'] %}
+    {% if filing_status == 'PAID' and filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication'] %}
       {% if filing.nameRequest.legalName %}
       <!-- try to get legal name from Name Request object -->
       <div class="value">{{ filing.nameRequest.legalName }}</div>
@@ -36,7 +35,7 @@
     {% else %}
       <div class="name bold">Incorporation Number:</div>
     {% endif %}
-    {% if filing_status == 'PAID' and filing_type in ['amalgamationApplication', 'incorporationApplication'] %}
+    {% if filing_status == 'PAID' and filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication'] %}
     <div class="value">Pending</div>
     {% else %}
     <!-- Eg, BC0878529 -->
