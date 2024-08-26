@@ -25,7 +25,7 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
-from legal_api.models import Filing
+from legal_api.models import Business, Filing
 
 from entity_emailer.email_processors import get_filing_document, get_filing_info, substitute_template_parts
 from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs
@@ -107,7 +107,7 @@ def _get_pdfs(
                     }
                 )
                 attach_order += 1
-        elif legal_type in ('BC', 'BEN', 'CC', 'ULC'):
+        elif legal_type in Business.CORPS:
             # add notice of articles
             noa_pdf_type = 'noticeOfArticles'
             noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
@@ -206,7 +206,7 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
 
     if legal_type in ['SP', 'GP']:
         prefix = 'FIRM'
-    elif legal_type in ['BC', 'BEN', 'CC', 'ULC']:
+    elif legal_type in Business.CORPS:
         original_filing_type = filing.filing_json['filing']['correction']['correctedFilingType']
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None

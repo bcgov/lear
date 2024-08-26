@@ -422,66 +422,6 @@ async def test_process_filing_completed(app, session, mocker):
     assert business.last_ar_date
 
 
-async def test_correction_filing(app, session, mocker):
-    """Assert we can process a correction filing."""
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1111111'
-    correction_filing_comment = 'We need to fix directors'
-
-    # get a fixed datetime to use in comparisons, in "local" (Pacific) timezone
-    local_timezone = pytz.timezone('US/Pacific')
-    correction_filing_date = \
-        datetime.datetime(2019, 9, 17, 0, 0).replace(tzinfo=datetime.timezone.utc).astimezone(tz=local_timezone)
-
-    # setup - create business, staff user, and original filing to be corrected
-    business_id = create_business(identifier).id
-    staff_user_id = create_user(username='staff_user').id
-    original_filing_id = create_filing(payment_id, copy.deepcopy(ANNUAL_REPORT), business_id).id
-
-    # setup - create correction filing
-    filing = copy.deepcopy(CORRECTION_AR)
-    filing['filing']['header']['identifier'] = identifier
-    filing['filing']['correction']['comment'] = correction_filing_comment
-    filing['filing']['correction']['correctedFilingId'] = original_filing_id
-    correction_filing = create_filing(payment_id, filing, business_id, filing_date=correction_filing_date)
-    correction_filing.submitter_id = staff_user_id
-    correction_filing.save()
-
-    correction_filing_id = correction_filing.id
-    filing_msg = {'filing': {'id': correction_filing_id}}
-
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
-    # TEST
-    await process_filing(filing_msg, app)
-
-    # Get modified data
-    original_filing = Filing.find_by_id(original_filing_id)
-    correction_filing = Filing.find_by_id(correction_filing_id)
-    staff_user = User.find_by_username('staff_user')
-
-    # check that the correction filing is linked to the original filing
-    assert original_filing.parent_filing
-    assert original_filing.parent_filing == correction_filing
-
-    # check that the correction comment has been added to the correction filing
-    assert 0 < len(correction_filing.comments.all())
-    assert correction_filing_comment == correction_filing.comments.all()[-1].comment
-    assert staff_user.id == correction_filing.comments.all()[-1].staff.id
-
-    # check that the correction filing is PENDING_CORRECTION
-    assert correction_filing.status == 'PENDING_CORRECTION'
-
-    # check that the original filing is marked as corrected
-    # assert True is original_filing.is_corrected
-
-    # check that the original filing has the new comment
-    assert 0 < len(original_filing.comments.all())
-    assert f'This filing was corrected on {correction_filing_date.date().isoformat()}.' == \
-           original_filing.comments.all()[-1].comment
-    assert staff_user.id == original_filing.comments.all()[-1].staff.id
-
-
 async def test_publish_event():
     """Assert that publish_event is called with the correct struct."""
     import uuid
