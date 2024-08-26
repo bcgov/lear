@@ -20,7 +20,9 @@
             <!-- first section -->
             <p class="title-message bold">Results of your Continuation Application</p>
 
-            <p>Your Continuation Authorization is <span class="bold">rejected</span>.</p>
+            <p>Your Continuation Authorization is <span class="bold">rejected</span> and a refund request
+              has been submitted. The refund will be applied to your original payment method. Refunds
+              are usually processed within 10-14 business days.</p>
 
             [[20px.html]]
             [[divider.html]]
@@ -31,7 +33,7 @@
 
             <ol class="outputs">
               <li>Review the reasons for rejected as outlined below:</li>
-              <p>{Note from staff goes here.}</p>
+                <pre class="bold">{{ latest_review_comment }}</pre>
               <li>Visit <a href="{{ entity_dashboard_url }}">BC Business Registry account</a> to submit
                 a new Continuation Application.</li>
             </ol>
