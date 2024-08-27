@@ -68,9 +68,14 @@
             {% if extra_provincials %}
             <p>
               Our records indicate your company is registered in 
-              {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              {% for province in extra_provincials %}
+              {{ province }}{% if not loop.last %}{% if loop.length == 2 and loop.first %} and {% elif loop.revindex == 2 %}, and {% else %}, {% endif %}{% endif %}
+              {% endfor %}
               as an extraprovincial company. Therefore, if your company is dissolved, its registration as an extraprovincial company 
-              in {% for province in extra_provincials %}{{ province }}{% if not loop.last %} and {% endif %}{% endfor %} 
+              in 
+              {% for province in extra_provincials %}
+              {{ province }}{% if not loop.last %}{% if loop.length == 2 and loop.first %} and {% elif loop.revindex == 2 %}, and {% else %}, {% endif %}{% endif %}
+              {% endfor %}
               will automatically be cancelled as well.
             </p>
             {% endif %}
