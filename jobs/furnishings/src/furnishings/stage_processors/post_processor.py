@@ -133,6 +133,17 @@ class XmlMeta:
                 'section 317, 422 or 423 of the Business Corporations Act.'
             )
         },
+        Furnishing.FurnishingName.CORP_DISSOLVED_XPRO: {
+            'title': 'Registrations Cancelled (extraprovincial)',
+            'category': 'REGISTRATIONS CANCELLED',
+            'subcategory': 'Extraprovincial',
+            'corp_class': 'Extraprovincial Company(s)',
+            'description': (
+                'The Registrar of Companies hereby gives notice that the registrations of the following '
+                'extraprovincial companies have been cancelled under section 397 or 422 of the Business '
+                'Corporations Act.'
+            )
+        },
     }
 
     @staticmethod
