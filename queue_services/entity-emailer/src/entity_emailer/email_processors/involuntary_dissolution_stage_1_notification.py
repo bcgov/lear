@@ -123,9 +123,7 @@ def _get_pdfs(
 ) -> list:
     """Get the pdf for the involuntary dissolution stage 1."""
     # get pdf for overdue ARs
-    if furnishing.furnishing_name not in \
-        [Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
-         Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO]:
+    if furnishing.furnishing_name not in PROCESSABLE_FURNISHING_NAMES:
         return []
     headers = {
         'Accept': 'application/pdf',
@@ -142,7 +140,9 @@ def _get_pdfs(
         logger.error('Failed to get pdf for furnishing: %s', furnishing.id)
         return []
 
-    if furnishing.furnishing_name == Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO:
+    if furnishing.furnishing_name in \
+        [Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
+         Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO]:
         filename = 'Notice of Commencement of Cancellation.pdf'
     else:
         filename = 'Notice of Commencement of Dissolution.pdf'
