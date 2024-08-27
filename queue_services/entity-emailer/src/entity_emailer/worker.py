@@ -268,10 +268,3 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                                                          email_msg,
                                                          tracker_msg,
                                                          error_details)
-
-# *** TODO: remove this after debugging ***
-import asyncio
-event_loop = asyncio.get_event_loop()
-event_loop.run_until_complete(process_email({
-    "email": {"filingId": 150390, "type": "continuationIn", "option": "REJECTED"}
-}, FLASK_APP))
