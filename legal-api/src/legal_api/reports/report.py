@@ -684,8 +684,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             new_legal_type = filing.get('alteration').get('business').get('legalType')
             prev_legal_name = filing.get('business').get('legalName')
             identifier = filing.get('business').get('identifier')
-            name_request_json = filing.get('alteration').get('nameRequest')
-            if name_request_json:
+            name_request_json = filing.get('alteration').get('nameRequest', {})
+            if not (to_legal_name := name_request_json.get('legalName')):
                 to_legal_name = self._create_numbered_legal_name(new_legal_type, identifier)
 
         if prev_legal_name and to_legal_name and prev_legal_name != to_legal_name:
