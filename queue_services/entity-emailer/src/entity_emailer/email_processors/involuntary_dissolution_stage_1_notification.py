@@ -123,7 +123,7 @@ def _get_pdfs(
 ) -> list:
     """Get the pdf for the involuntary dissolution stage 1."""
     # get pdf for overdue ARs
-    if furnishing.furnishing_name not in PROCESSABLE_FURNISHING_NAMES:
+    if furnishing.furnishing_name.name not in PROCESSABLE_FURNISHING_NAMES:
         return []
     headers = {
         'Accept': 'application/pdf',
