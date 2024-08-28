@@ -89,10 +89,12 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
 
         if review_filter.start_date:
             start_date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(review_filter.start_date)
-            query = query.filter(Review.submission_date >= start_date_utc)
+            start_of_day = datetime.combine(start_date_utc, datetime.min.time())
+            query = query.filter(Review.submission_date >= start_of_day)
         if review_filter.end_date:
             end_date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(review_filter.end_date)
-            query = query.filter(Review.submission_date <= end_date_utc)
+            end_of_day = datetime.combine(end_date_utc, datetime.max.time())
+            query = query.filter(Review.submission_date <= end_of_day)
         if review_filter.nr_number:
             query = query.filter(Review.nr_number.ilike(f'%{review_filter.nr_number}%'))
         if review_filter.identifier:
