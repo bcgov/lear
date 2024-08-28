@@ -84,7 +84,7 @@ class PostProcessor:
         self._format_furnishings()
         self._app.logger.debug('Formatted furnishing details presented in XML file')
         self._set_meta_info()
-        payload = self._build_xml_data(self._xml_data, self._processed_date.strftime('%-I:%M %p'))
+        payload = self._build_xml_data(self._xml_data, self._processed_date.strftime('%I:%M %p'))
         furnishing_group, _ = self._save_xml_payload(payload)
         self._app.logger.debug('Saved XML payload')
         # TODO: SFTP to BC Laws
