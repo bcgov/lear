@@ -60,6 +60,11 @@ def helper_create_furnishings(identifiers: list, furnishing_name, step):
             Furnishing.FurnishingName.CORP_DISSOLVED,
             BatchProcessing.BatchProcessingStep.DISSOLUTION
         ),
+        (
+            'STAGE_3_EP',
+            Furnishing.FurnishingName.CORP_DISSOLVED_XPRO,
+            BatchProcessing.BatchProcessingStep.DISSOLUTION
+        ),
     ]
 )
 def test_process(app, session, test_name, furnishing_name, step):
@@ -141,6 +146,11 @@ def test_process_combined_xml(app, session):
         (
             'STAGE_3_BC',
             Furnishing.FurnishingName.CORP_DISSOLVED,
+            BatchProcessing.BatchProcessingStep.DISSOLUTION
+        ),
+        (
+            'STAGE_3_EP',
+            Furnishing.FurnishingName.CORP_DISSOLVED_XPRO,
             BatchProcessing.BatchProcessingStep.DISSOLUTION
         ),
     ]
