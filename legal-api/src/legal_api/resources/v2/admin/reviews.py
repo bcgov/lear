@@ -19,6 +19,7 @@ from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
+from legal_api.models.dataclass import ReviewFilter
 from legal_api.services import namex, queue
 from legal_api.utils.auth import jwt
 
@@ -30,9 +31,20 @@ from .bp import bp_admin
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_reviews():
     """Return a list of reviews."""
-    page = int(request.args.get('page', 1))
-    limit = int(request.args.get('limit', 10))
-    result = Review.get_paginated_reviews(page, limit)
+    review_filter = ReviewFilter(
+        start_date=request.args.get('startDate', None),
+        end_date=request.args.get('endDate', None),
+        nr_number=request.args.get('nrNumber', None),
+        identifier=request.args.get('identifier', None),
+        completing_party=request.args.get('completingParty', None),
+        status=request.args.getlist('status', None),
+        submitted_sort_by=request.args.get('sortBy', None),
+        submitted_sort_order=request.args.get('sortDesc', None),
+        page=int(request.args.get('page', 1)),
+        limit=int(request.args.get('limit', 10))
+    )
+
+    result = Review.get_paginated_reviews(review_filter, get_mapped_column(review_filter.submitted_sort_by))
     reviews = result['reviews']
 
     nr_numbers = get_applicable_nr_numbers(reviews)
@@ -73,6 +85,23 @@ def update_reviews(reviews, nr_expiry_date):
             match = next((n for n in nr_expiry_date if n['nr'] == nr), None)
             if match:
                 review['nrExpiryDate'] = match['expiry_date']
+
+
+def get_mapped_column(submitted_sort_by):
+    """Get mapped column for each param."""
+    mapped_column = ''
+    if submitted_sort_by:
+        if submitted_sort_by == 'nrNumber':
+            mapped_column = 'nr_number'
+        if submitted_sort_by == 'completingParty':
+            mapped_column = 'completing_party'
+        if submitted_sort_by == 'submissionDate':
+            mapped_column = 'submission_date'
+        if submitted_sort_by == 'status':
+            mapped_column = 'status'
+        if submitted_sort_by == 'identifier':
+            mapped_column = 'identifier'
+    return mapped_column
 
 
 @bp_admin.route('/reviews/<int:review_id>', methods=['POST'])
