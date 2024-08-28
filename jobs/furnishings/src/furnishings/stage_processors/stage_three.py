@@ -49,6 +49,7 @@ def process(app: Flask, xml_furnishings: dict):
         ).all()
 
         bc_furnishings = []
+        ep_furnishings = []
 
         for batch_processing in batch_processings:
             business = batch_processing.business
@@ -73,9 +74,14 @@ def process(app: Flask, xml_furnishings: dict):
 
             if business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value:
                 bc_furnishings.append(new_furnishing)
+            else:
+                ep_furnishings.append(new_furnishing)
 
         if bc_furnishings:
             xml_furnishings[Furnishing.FurnishingName.CORP_DISSOLVED] = bc_furnishings
+
+        if ep_furnishings:
+            xml_furnishings[Furnishing.FurnishingName.CORP_DISSOLVED_XPRO] = ep_furnishings
 
     except Exception as err:
         app.logger.error(err)

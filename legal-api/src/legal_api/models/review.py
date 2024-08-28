@@ -14,11 +14,14 @@
 """This module holds the data about review."""
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import timezone
 from enum import auto
+from typing import List
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
 from .filing import Filing
@@ -79,15 +82,48 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         return review
 
     @classmethod
-    def get_paginated_reviews(cls, page, limit):
-        """Return paginated reviews."""
+    def get_paginated_reviews(cls, review_filter, mapped_sort_by_column):
+        """Return filtered, sorted and paginated reviews."""
         query = db.session.query(Review, Filing.effective_date). \
-            join(Filing, Filing.id == Review.filing_id). \
-            order_by(Review.creation_date.asc())
+            join(Filing, Filing.id == Review.filing_id)
 
-        pagination = query.paginate(per_page=limit, page=page)
+        if review_filter.start_date:
+            start_date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(review_filter.start_date)
+            query = query.filter(Review.submission_date >= start_date_utc)
+        if review_filter.end_date:
+            end_date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(review_filter.end_date)
+            query = query.filter(Review.submission_date <= end_date_utc)
+        if review_filter.nr_number:
+            query = query.filter(Review.nr_number.ilike(f'%{review_filter.nr_number}%'))
+        if review_filter.identifier:
+            query = query.filter(Review.identifier.ilike(f'%{review_filter.identifier}%'))
+        if review_filter.completing_party:
+            query = query.filter(Review.identifier.ilike(f'%{review_filter.completing_party}%'))
+        if review_filter.status:
+            query = query.filter(Review.status.in_(review_filter.status))
+        if review_filter.submitted_sort_by:
+            column = Review.__table__.columns[mapped_sort_by_column]
+            desc_sort_order = review_filter.submitted_sort_order
+            query = query.order_by(column.desc() if desc_sort_order == 'true' else column.asc())
+        else:
+            query = query.order_by(Review.creation_date.asc())
+
+        pagination = query.paginate(per_page=review_filter.limit, page=review_filter.page)
         results = pagination.items
         total_count = pagination.total
+        result = Review.build_reviews(results)
+
+        reviews = {
+            'reviews': result,
+            'page': review_filter.page,
+            'limit': review_filter.limit,
+            'total': total_count
+        }
+        return reviews
+
+    @classmethod
+    def build_reviews(cls, results):
+        """Return reviews with appended future effective date."""
         result = []
 
         for review, effective_date in results:
@@ -99,14 +135,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
                 **review.json,
                 'futureEffectiveDate': future_effective_date
             })
-
-        reviews = {
-            'reviews': result,
-            'page': page,
-            'limit': limit,
-            'total': total_count
-        }
-        return reviews
+        return result
 
     @property
     def json(self) -> dict:
@@ -122,3 +151,18 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             'filingId': self.filing_id,
             'results': [result.json for result in self.review_results]
         }
+
+    @dataclass
+    class ReviewFilter:
+        """Used for filtering and sorting reviews."""
+
+        status: List[str] = field()
+        start_date: str = ''
+        end_date: str = ''
+        nr_number: str = ''
+        identifier: str = ''
+        completing_party: str = ''
+        submitted_sort_by: str = ''
+        submitted_sort_order: bool = ''
+        page: int = 1
+        limit: int = 10
