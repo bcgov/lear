@@ -14,8 +14,10 @@
 """This module holds the data about review."""
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from datetime import timezone
 from enum import auto
+from typing import List
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
@@ -104,7 +106,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             desc_sort_order = review_filter.submitted_sort_order
             query = query.order_by(column.desc() if desc_sort_order == 'true' else column.asc())
         else:
-            query = query.order_by(Review.submission_date.asc())
+            query = query.order_by(Review.creation_date.asc())
 
         pagination = query.paginate(per_page=review_filter.limit, page=review_filter.page)
         results = pagination.items
@@ -149,3 +151,18 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             'filingId': self.filing_id,
             'results': [result.json for result in self.review_results]
         }
+
+    @dataclass
+    class ReviewFilter:
+        """Used for filtering and sorting reviews."""
+
+        status: List[str] = field()
+        start_date: str = ''
+        end_date: str = ''
+        nr_number: str = ''
+        identifier: str = ''
+        completing_party: str = ''
+        submitted_sort_by: str = ''
+        submitted_sort_order: bool = ''
+        page: int = 1
+        limit: int = 10

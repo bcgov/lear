@@ -135,7 +135,26 @@ def test_get_reviews_with_valid_user(app, session, client, jwt, mocker):
     assert 1 == rv.json.get('page')
     assert 10 == rv.json.get('limit')
     assert no_of_reviews == rv.json.get('total')
+    
+def test_filterd_get_reviews(app, session, client, jwt, mocker):
+    """Assert reviews are filtered and sorted by given params."""
+    no_of_reviews = 6
+    create_reviews(no_of_reviews)
+    nrs_response = create_nr_data(no_of_reviews)
+    
+    mock_response_obj = mocker.Mock()
+    mock_response_obj.json.return_value = nrs_response
 
+    mocker.patch('legal_api.services.NameXService.query_nr_numbers', return_value=mock_response_obj)
+
+    rv = client.get(f'/api/v2/admin/reviews?sortBy=nrNumber&sortDesc=true&page=1&limit=5',
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert len(rv.json.get('reviews')) == 5
+    assert no_of_reviews == rv.json.get('total')
+    assert rv.json.get('reviews')[0]['nrNumber'] == 'NR 8798955'
+    assert rv.json.get('reviews')[4]['nrNumber'] == 'NR 8798951'
 
 def test_get_specific_review_with_valid_user(app, session, client, jwt, mocker):
     """Assert specific review object returned for STAFF role."""

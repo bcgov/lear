@@ -19,7 +19,6 @@ from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
-from legal_api.models.dataclass import ReviewFilter
 from legal_api.services import namex, queue
 from legal_api.utils.auth import jwt
 
@@ -31,7 +30,7 @@ from .bp import bp_admin
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_reviews():
     """Return a list of reviews."""
-    review_filter = ReviewFilter(
+    review_filter = Review.ReviewFilter(
         start_date=request.args.get('startDate', None),
         end_date=request.args.get('endDate', None),
         nr_number=request.args.get('nrNumber', None),
