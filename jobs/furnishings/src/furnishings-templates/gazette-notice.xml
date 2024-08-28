@@ -18,7 +18,13 @@
                 {%- else -%}
                 <corp_num>{{ f.business_identifier[2:] }}</corp_num>
                 {%- endif %}
-                <text>{{ f.business_name }}</text>
+                <text>
+                    {% if furnishing['category'] == 'DISSOLUTIONS' -%}
+                    {{ f.business_name }} {{ processed_time }}
+                    {%- else -%}
+                    {{ f.business_name }}
+                    {%- endif %}
+                </text>
             </filing_detail>
             {%- endfor %}
         </filings>

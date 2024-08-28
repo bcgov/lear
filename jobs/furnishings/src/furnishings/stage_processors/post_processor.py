@@ -48,14 +48,14 @@ class PostProcessor:
             self._xml_data['furnishings'][name]['items'] = sorted(furnishings, key=lambda f: f.business_name)
 
     @staticmethod
-    def _build_xml_data(xml_data):
+    def _build_xml_data(xml_data, processed_time):
         """Build XML payload."""
         template = Path(
             f'{current_app.config.get("TEMPLATE_PATH")}/gazette-notice.xml'
         ).read_text()
         jinja_template = Template(template, autoescape=True)
 
-        return jinja_template.render(xml_data)
+        return jinja_template.render(xml_data, processed_time=processed_time)
 
     @staticmethod
     def _save_xml_payload(payload):
@@ -84,7 +84,7 @@ class PostProcessor:
         self._format_furnishings()
         self._app.logger.debug('Formatted furnishing details presented in XML file')
         self._set_meta_info()
-        payload = self._build_xml_data(self._xml_data)
+        payload = self._build_xml_data(self._xml_data, self._processed_date.strftime('%-I:%M %p'))
         furnishing_group, _ = self._save_xml_payload(payload)
         self._app.logger.debug('Saved XML payload')
         # TODO: SFTP to BC Laws
