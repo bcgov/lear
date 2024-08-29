@@ -19,7 +19,7 @@
                 <corp_num>{{ f.business_identifier[2:] }}</corp_num>
                 {%- endif %}
                 <text>
-                    {% if furnishing['category'] == 'DISSOLUTIONS' -%}
+                    {% if furnishing['category'] == 'DISSOLUTIONS' or furnishing['category'] == 'REGISTRATIONS CANCELLED' -%}
                     {{ f.business_name }} {{ processed_time }}
                     {%- else -%}
                     {{ f.business_name }}
