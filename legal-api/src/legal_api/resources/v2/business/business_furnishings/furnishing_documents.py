@@ -15,13 +15,13 @@
 from http import HTTPStatus
 from typing import Final
 
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Furnishing, UserRoles
-from legal_api.reports.report_v2 import ReportTypes, ReportV2
-from legal_api.services import authorized
+from legal_api.reports.report_v2 import ReportTypes
+from legal_api.services import FurnishingDocumentsService, authorized
 from legal_api.utils.auth import jwt
 
 from ..bp import bp
@@ -46,7 +46,9 @@ def get_furnishing_document(identifier: str, furnishing_id: int):
             message=get_error_message(ErrorCode.MISSING_BUSINESS,
                                       **{'identifier': identifier})
         ), HTTPStatus.NOT_FOUND
-    if not (furnishing := Furnishing.find_by_id(furnishing_id)) or furnishing.business_id != business.id:
+    if not (furnishing := Furnishing.find_by_id(furnishing_id)) or\
+        furnishing.business_id != business.id or\
+        furnishing.furnishing_type == Furnishing.FurnishingType.GAZETTE:
         return jsonify(
             message=get_error_message(ErrorCode.FURNISHING_NOT_FOUND,
                                       **{'furnishing_id': furnishing_id, 'identifier': identifier})
@@ -58,7 +60,14 @@ def get_furnishing_document(identifier: str, furnishing_id: int):
 
     if 'application/pdf' in request.accept_mimetypes:
         try:
-            return ReportV2(business, furnishing, ReportTypes.DISSOLUTION, variant).get_pdf()
+            pdf = FurnishingDocumentsService(ReportTypes.DISSOLUTION, variant).get_furnishing_document(furnishing)
+            if not pdf:
+                return jsonify({'message': 'Unable to get furnishing document.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+            return current_app.response_class(
+                response=pdf,
+                status=HTTPStatus.OK,
+                mimetype='application/pdf'
+            )
         except Exception:
             return jsonify({'message': 'Unable to get furnishing document.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 

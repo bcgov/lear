@@ -19,12 +19,11 @@ from typing import Final
 import google.auth.transport.requests
 import google.oauth2.id_token
 import requests
-from flask import current_app, jsonify
+from flask import current_app
 from jinja2 import Template
 
-from legal_api.models import Address
+from legal_api.models import Address, Business
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MrasService
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -54,7 +53,7 @@ REPORT_FILES = {
 class ReportV2:
     """Service to create Gotenberg document outputs."""
 
-    def __init__(self, business, furnishing, document_key, variant=None):
+    def __init__(self, business=None, furnishing=None, document_key=None, variant=None):
         """Create ReportV2 instance."""
         self._furnishing = furnishing
         self._business = business
@@ -79,17 +78,20 @@ class ReportV2:
         response = requests.post(url=url, headers=headers, data=REPORT_META_DATA, files=files, timeout=1800.0)
 
         if response.status_code != HTTPStatus.OK:
-            return jsonify(message=str(response.content)), response.status_code
+            return None
 
-        # return response.content, response.status_code
-        return current_app.response_class(
-            response=response.content,
-            status=response.status_code,
-            mimetype='application/pdf'
-        )
+        return response.content
+
+    def set_report_data(self, business=None, furnishing=None, document_key=None):
+        """Set report data."""
+        self._business = business or self._business
+        self._furnishing = furnishing or self._furnishing
+        self._document_key = document_key or self._document_key
 
     def _get_report_filename(self):
         report_date = str(self._report_date_time)[:19]
+        if self._document_key == ReportTypes.DISSOLUTION_COVER:
+            return 'cover_{}.pdf'.format(report_date)
         return '{}_{}_{}.pdf'.format(self._business.identifier, report_date,
                                      ReportMeta.reports[self._document_key]['reportName']).replace(' ', '_')
 
@@ -121,13 +123,15 @@ class ReportV2:
         return template_code
 
     def _get_template_data(self):
-        self._report_data = {}
-        self._format_furnishing_data()
-        self._set_meta_info()
-        self._set_address()
-        self._set_registrar_info()
+        # note that the cover template data should be set in service class
         if self._document_key == ReportTypes.DISSOLUTION:
-            self._set_ep_registration()
+            self._report_data = {}
+            self._format_furnishing_data()
+            self._set_meta_info()
+            self._set_address()
+            self._set_registrar_info()
+            if self._business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value:
+                self._set_ep_registration()
         return self._report_data
 
     def _format_furnishing_data(self):
@@ -182,6 +186,7 @@ class ReportV2:
             self._report_data['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
 
     def _set_ep_registration(self):
+        from legal_api.services import MrasService  # pylint: disable=import-outside-toplevel
         jurisdictions = MrasService.get_jurisdictions(self._furnishing.business_identifier)
         if jurisdictions:
             ep_registrations = [e['name'] for e in jurisdictions if e['id'] in ['AB', 'SK', 'MB']]
@@ -192,6 +197,8 @@ class ReportV2:
 
     def _get_report_files(self, data):
         """Get gotenberg report generation source file data."""
+        if self._document_key == ReportTypes.DISSOLUTION_COVER:
+            return { 'index.html': self._get_html_from_data(data) }
         title = self._report_data['title']
         files = copy.deepcopy(REPORT_FILES)
         files['index.html'] = self._get_html_from_data(data)
@@ -243,6 +250,7 @@ class ReportTypes(BaseEnum):
     """Render an Enum of the Gotenberg report types."""
 
     DISSOLUTION = auto()
+    DISSOLUTION_COVER = auto()
 
 
 class ReportMeta:
@@ -253,5 +261,10 @@ class ReportMeta:
             'reportName': 'dissoluion',
             'templateName': 'noticeOfDissolutionCommencement',
             'reportDescription': 'Notice of Commencement of {{REPORT_TYPE}}'
+        },
+        ReportTypes.DISSOLUTION_COVER: {
+            'reportName': 'dissolution cover',
+            'templateName': 'dissolutionCover',
+            'reportDescription': 'Cover for Dissolution/Cancellation Letter'
         }
     }
