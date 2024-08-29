@@ -137,3 +137,17 @@ class LegislationDatetime():
         """Return the boolean for whether the date string is in the future."""
         effective_date = datetime.fromisoformat(date_string)
         return effective_date > datetime.utcnow().replace(tzinfo=timezone.utc)
+
+    @staticmethod
+    def get_start_of_date(date_string: str) -> datetime:
+        """Convert date string to date as UTC and return start of the day for a DateTime."""
+        date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(date_string)
+        start_of_day = datetime.combine(date_utc, datetime.min.time())
+        return start_of_day
+
+    @staticmethod
+    def get_end_of_date(date_string: str) -> datetime:
+        """Convert date string to date as UTC return end of the day for a DateTime."""
+        date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(date_string)
+        end_of_day = datetime.combine(date_utc, datetime.max.time())
+        return end_of_day

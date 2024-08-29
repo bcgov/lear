@@ -27,12 +27,14 @@ from .bp import bp_admin
 
 @bp_admin.route('/reviews', methods=['GET'])
 @cross_origin(origin='*')
-@jwt.has_one_of_roles([UserRoles.staff])
+# @jwt.has_one_of_roles([UserRoles.staff])
 def get_reviews():
     """Return a list of reviews."""
     review_filter = Review.ReviewFilter(
         start_date=request.args.get('startDate', None),
         end_date=request.args.get('endDate', None),
+        start_effective_date=request.args.get('startEffectiveDate', None),
+        end_effective_date=request.args.get('endEffectiveDate', None),
         nr_number=request.args.get('nrNumber', None),
         identifier=request.args.get('identifier', None),
         completing_party=request.args.get('completingParty', None),
@@ -100,6 +102,8 @@ def get_mapped_column(submitted_sort_by):
             mapped_column = 'status'
         if submitted_sort_by == 'identifier':
             mapped_column = 'identifier'
+        if submitted_sort_by == 'futureEffectiveDate':
+            mapped_column = 'effective_date'
     return mapped_column
 
 

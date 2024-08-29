@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import timezone
 from enum import auto
+from operator import and_
 from typing import List
 
 from legal_api.utils.base import BaseEnum
@@ -88,25 +89,31 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             join(Filing, Filing.id == Review.filing_id)
 
         if review_filter.start_date:
-            start_date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(review_filter.start_date)
-            start_of_day = datetime.combine(start_date_utc, datetime.min.time())
-            query = query.filter(Review.submission_date >= start_of_day)
+            start_date = LegislationDatetime.get_start_of_date(review_filter.start_date)
+            query = query.filter(Review.submission_date >= start_date)
         if review_filter.end_date:
-            end_date_utc = LegislationDatetime.as_utc_timezone_from_legislation_date_str(review_filter.end_date)
-            end_of_day = datetime.combine(end_date_utc, datetime.max.time())
-            query = query.filter(Review.submission_date <= end_of_day)
+            end_date = LegislationDatetime.get_end_of_date(review_filter.end_date)
+            query = query.filter(Review.submission_date <= end_date)
+        if review_filter.start_effective_date:
+            start_fed = LegislationDatetime.get_start_of_date(review_filter.start_effective_date)
+            query = query.filter(and_(Filing.effective_date > datetime.now(timezone.utc),
+                                      Filing.effective_date >= start_fed))
+        if review_filter.end_effective_date:
+            end_fed = LegislationDatetime.get_end_of_date(review_filter.end_effective_date)
+            query = query.filter(and_(Filing.effective_date > datetime.now(timezone.utc),
+                                      Filing.effective_date <= end_fed))
         if review_filter.nr_number:
             query = query.filter(Review.nr_number.ilike(f'%{review_filter.nr_number}%'))
         if review_filter.identifier:
             query = query.filter(Review.identifier.ilike(f'%{review_filter.identifier}%'))
         if review_filter.completing_party:
-            query = query.filter(Review.completing_party.ilike(f'%{review_filter.completing_party}%'))
+            query = query.filter(Review.identifier.ilike(f'%{review_filter.completing_party}%'))
         if review_filter.status:
             query = query.filter(Review.status.in_(review_filter.status))
         if review_filter.submitted_sort_by:
-            column = Review.__table__.columns[mapped_sort_by_column]
-            desc_sort_order = review_filter.submitted_sort_order
-            query = query.order_by(column.desc() if desc_sort_order == 'true' else column.asc())
+            column = Filing.__table__.columns[mapped_sort_by_column] if mapped_sort_by_column == 'effective_date'\
+                else Review.__table__.columns[mapped_sort_by_column]
+            query = query.order_by(column.desc() if review_filter.submitted_sort_order == 'true' else column.asc())
         else:
             query = query.order_by(Review.creation_date.asc())
 
@@ -161,6 +168,8 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         status: List[str] = field()
         start_date: str = ''
         end_date: str = ''
+        start_effective_date: str = ''
+        end_effective_date: str = ''
         nr_number: str = ''
         identifier: str = ''
         completing_party: str = ''
