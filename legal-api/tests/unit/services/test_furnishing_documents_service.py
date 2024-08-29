@@ -59,4 +59,4 @@ def test_get_merged_furnishing_document(session, app):
                 service = FurnishingDocumentsService(ReportTypes.DISSOLUTION, 'default')
                 pdf = service.get_merged_furnishing_document(furnishings)
                 assert pdf == PDF_CONTENT
-                assert mock_merge.assert_called()
+                mock_merge.assert_called()
