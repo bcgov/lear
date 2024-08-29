@@ -100,7 +100,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         if review_filter.identifier:
             query = query.filter(Review.identifier.ilike(f'%{review_filter.identifier}%'))
         if review_filter.completing_party:
-            query = query.filter(Review.identifier.ilike(f'%{review_filter.completing_party}%'))
+            query = query.filter(Review.completing_party.ilike(f'%{review_filter.completing_party}%'))
         if review_filter.status:
             query = query.filter(Review.status.in_(review_filter.status))
         if review_filter.submitted_sort_by:
