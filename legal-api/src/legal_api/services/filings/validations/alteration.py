@@ -37,10 +37,10 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    msg.extend(company_name_validation(filing))
+    msg.extend(type_change_validation(filing, business))
+    msg.extend(company_name_validation(filing, business))
     msg.extend(share_structure_validation(filing))
     msg.extend(court_order_validation(filing))
-    msg.extend(type_change_validation(filing))
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
 
@@ -73,7 +73,7 @@ def share_structure_validation(filing):
     return []
 
 
-def company_name_validation(filing):
+def company_name_validation(filing, business):
     """Validate company name."""
     # This is added specifically for the sandbox environment.
     # i.e. NR check should only ever have feature flag disabled for sandbox environment.
@@ -82,6 +82,7 @@ def company_name_validation(filing):
 
     msg = []
     nr_path: Final = '/filing/alteration/nameRequest/nrNumber'
+    nr_legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
     if nr_number := get_str(filing, nr_path):
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number).json()
@@ -97,7 +98,6 @@ def company_name_validation(filing):
             msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
 
         # ensure NR request has the same legal name
-        nr_legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
         legal_name = get_str(filing, nr_legal_name_path)
         nr_name = namex.get_approved_name(nr_response)
         if nr_name != legal_name:
@@ -111,42 +111,66 @@ def company_name_validation(filing):
             msg.append({'error': babel('Name Request legal type is not same as the business legal type.'),
                         'path': nr_legal_type_path})
     else:
-        # ensure legalType is valid
-        legal_type_path: Final = '/filing/business/legalType'
-        if get_str(filing, legal_type_path) not in \
-                (Business.LegalTypes.BC_ULC_COMPANY.value,
-                 Business.LegalTypes.BC_CCC.value,
-                 Business.LegalTypes.COMP.value,
-                 Business.LegalTypes.BCOMP.value,
-                 Business.LegalTypes.COOP.value):
-            msg.append({'error': babel('Alteration not valid for selected Legal Type.'), 'path': legal_type_path})
+        new_legal_name = get_str(filing, nr_legal_name_path)
 
-        # ensure company is named if being altered to numbered
-        legal_name_path: Final = '/filing/business/legalName'
-        if not get_str(filing, legal_name_path):
-            msg.append({'error': babel('Alteration to Numbered Company can only be done for a Named Company.'),
-                        'path': legal_name_path})
+        valid_names = [business.legal_name]
+        if ((new_legal_type := get_str(filing, '/filing/alteration/business/legalType')) and
+                (new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier))):
+            # if existing legal_name is a numbered name and if type has changed
+            # then the legal name get updated according to the new legal type
+            valid_names.append(new_numbered_name)
 
+        if new_legal_name and new_legal_name not in valid_names:
+            msg.append({'error': babel('Unexpected legal name.'), 'path': nr_legal_name_path})
     return msg
 
 
-def type_change_validation(filing):
+def type_change_validation(filing, business):
     """Validate type change."""
     msg = []
     legal_type_path: Final = '/filing/alteration/business/legalType'
-    # you must alter to a bc benefit company or a COOP
-    if get_str(filing, legal_type_path) not in (Business.LegalTypes.BCOMP.value,
-                                                Business.LegalTypes.COOP.value,
-                                                Business.LegalTypes.BC_ULC_COMPANY.value,
-                                                Business.LegalTypes.COMP.value,
-                                                Business.LegalTypes.BC_CCC.value):
-        error_msg = """Your business type has not been updated to a BC Benefit Company,
-                       BC Unlimited Liability Company, BC Community Contribution Company,
-                       BC Limited Company or BC Cooperative Association."""
-        msg.append({'error': babel(error_msg),
-                    'path': legal_type_path})
-        return msg
-    return []
+    new_legal_type = get_str(filing, legal_type_path)
+    valid_type_changes = {
+        Business.LegalTypes.COOP.value: [Business.LegalTypes.COOP.value],
+        Business.LegalTypes.BCOMP.value: [Business.LegalTypes.BCOMP.value,
+                                          Business.LegalTypes.COMP.value],
+        Business.LegalTypes.COMP.value: [Business.LegalTypes.COMP.value,
+                                         Business.LegalTypes.BCOMP.value,
+                                         Business.LegalTypes.BC_ULC_COMPANY.value,
+                                         Business.LegalTypes.BC_CCC.value],
+        Business.LegalTypes.BC_CCC.value: [Business.LegalTypes.BC_CCC.value],
+        Business.LegalTypes.BC_ULC_COMPANY.value: [Business.LegalTypes.BC_ULC_COMPANY.value,
+                                                   Business.LegalTypes.BCOMP.value,
+                                                   Business.LegalTypes.COMP.value],
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value: [Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                                                      Business.LegalTypes.CONTINUE_IN.value],
+        Business.LegalTypes.CONTINUE_IN.value: [Business.LegalTypes.CONTINUE_IN.value,
+                                                Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                                                Business.LegalTypes.ULC_CONTINUE_IN.value,
+                                                Business.LegalTypes.CCC_CONTINUE_IN.value],
+        Business.LegalTypes.CCC_CONTINUE_IN.value: [Business.LegalTypes.CCC_CONTINUE_IN.value],
+        Business.LegalTypes.ULC_CONTINUE_IN.value: [Business.LegalTypes.ULC_CONTINUE_IN.value,
+                                                    Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                                                    Business.LegalTypes.CONTINUE_IN.value]
+    }
+
+    errors = {
+        Business.LegalTypes.COOP.value: 'Cannot change the business type of a Cooperative Association.',
+        Business.LegalTypes.BCOMP.value: 'BC Benefit Company can only change to BC Limited Company.',
+        Business.LegalTypes.COMP.value: ("""BC Limited Company can only change to 
+                                         BC Benefit Company or BC Unlimited Liability Company."""),
+        Business.LegalTypes.BC_CCC.value: 'Cannot change the business type of a BC Community Contribution Company.',
+        Business.LegalTypes.BC_ULC_COMPANY.value: ("""BC Unlimited Liability Company can only change to
+                                                   BC Benefit Company or BC Limited Company.""")
+    }
+    errors[Business.LegalTypes.BCOMP_CONTINUE_IN.value] = errors[Business.LegalTypes.BCOMP.value]
+    errors[Business.LegalTypes.CONTINUE_IN.value] = errors[Business.LegalTypes.COMP.value]
+    errors[Business.LegalTypes.CCC_CONTINUE_IN.value] = errors[Business.LegalTypes.BC_CCC.value]
+    errors[Business.LegalTypes.ULC_CONTINUE_IN.value] = errors[Business.LegalTypes.BC_ULC_COMPANY.value]
+
+    if new_legal_type and new_legal_type not in valid_type_changes.get(business.legal_type, []):
+        msg.append({'error': babel(errors.get(business.legal_type, '')), 'path': legal_type_path})
+    return msg
 
 
 def rules_change_validation(filing):

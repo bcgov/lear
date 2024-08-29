@@ -49,7 +49,7 @@ def process(
         else:
             business_json = dpath.util.get(filing, '/alteration/business')
             to_legal_type = business_json.get('legalType')
-            if business.legal_type != to_legal_type:
+            if to_legal_type and business.legal_type != to_legal_type:
                 filing_meta.alteration = {**filing_meta.alteration,
                                           'fromLegalType': business.legal_type,
                                           'toLegalType': to_legal_type}

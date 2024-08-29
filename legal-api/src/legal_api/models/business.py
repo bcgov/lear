@@ -787,6 +787,23 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         return filing
 
     @classmethod
+    def generate_numbered_legal_name(cls, legal_type, identifier):
+        """Generate legal name for a numbered business."""
+        if legal_type not in Business.BUSINESSES:
+            return None
+
+        numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
+        numbered_legal_name_prefix = ''
+        if legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                          Business.LegalTypes.ULC_CONTINUE_IN.value,
+                          Business.LegalTypes.CCC_CONTINUE_IN.value,
+                          Business.LegalTypes.CONTINUE_IN.value):
+            numbered_legal_name_prefix = identifier[1:]
+        else:
+            numbered_legal_name_prefix = identifier[2:]
+        return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
+
+    @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
         """Return the next value from the sequence."""
         sequence_mapping = {
