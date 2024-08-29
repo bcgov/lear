@@ -20,11 +20,11 @@ from flask_babel import _ as babel  # noqa: N81
 from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.services import flags, namex
 from legal_api.services.utils import get_bool, get_str
 
 from .common_validations import (
     validate_court_order,
+    validate_name_request,
     validate_pdf,
     validate_resolution_date_in_share_structure,
     validate_share_structure,
@@ -73,59 +73,33 @@ def share_structure_validation(filing):
     return []
 
 
-def company_name_validation(filing, business):
+def company_name_validation(filing, business: Business):
     """Validate company name."""
-    # This is added specifically for the sandbox environment.
-    # i.e. NR check should only ever have feature flag disabled for sandbox environment.
-    if flags.is_on('disable-nr-check'):
-        return []
-
     msg = []
-    nr_path: Final = '/filing/alteration/nameRequest/nrNumber'
-    nr_legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
-    if nr_number := get_str(filing, nr_path):
-        # ensure NR is approved or conditionally approved
-        nr_response = namex.query_nr_number(nr_number).json()
-        validation_result = namex.validate_nr(nr_response)
 
-        error_msg = """The name type associated with the name request number entered cannot be used for this
-                       transaction type."""
-        if not nr_response['requestTypeCd'] in ('CCR', 'CCP', 'BEC', 'BECR', 'BECV', 'CCV', 'UC', 'ULCB', 'ULBE'):
-            msg.append({'error': babel(error_msg).replace('\n', '').replace('  ', ''),
-                        'path': nr_path})
-
-        if not validation_result['is_consumable']:
-            msg.append({'error': babel('Alteration of Name Request is not approved.'), 'path': nr_path})
-
-        # ensure NR request has the same legal name
-        legal_name = get_str(filing, nr_legal_name_path)
-        nr_name = namex.get_approved_name(nr_response)
-        if nr_name != legal_name:
-            msg.append({'error': babel('Alteration of Name Request has a different legal name.'),
-                        'path': nr_legal_name_path})
-
-        nr_legal_type_path: Final = '/filing/alteration/nameRequest/legalType'
-        legal_type = get_str(filing, nr_legal_type_path)
-        nr_legal_type = nr_response.get('legalType')
-        if legal_type != nr_legal_type:
-            msg.append({'error': babel('Name Request legal type is not same as the business legal type.'),
-                        'path': nr_legal_type_path})
+    new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
+    if get_str(filing, '/filing/alteration/nameRequest/nrNumber'):
+        accepted_request_types = ['CCR', 'CCP', 'BEC', 'BECR', 'BECV', 'CCV', 'UC', 'ULCB', 'ULBE']
+        msg.extend(validate_name_request(filing,
+                                         new_legal_type or business.legal_type,
+                                         'alteration',
+                                         accepted_request_types))
     else:
-        new_legal_name = get_str(filing, nr_legal_name_path)
-
         valid_names = [business.legal_name]
-        if ((new_legal_type := get_str(filing, '/filing/alteration/business/legalType')) and
+        if (new_legal_type and
                 (new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier))):
             # if existing legal_name is a numbered name and if type has changed
             # then the legal name get updated according to the new legal type
             valid_names.append(new_numbered_name)
 
+        nr_legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
+        new_legal_name = get_str(filing, nr_legal_name_path)
         if new_legal_name and new_legal_name not in valid_names:
             msg.append({'error': babel('Unexpected legal name.'), 'path': nr_legal_name_path})
     return msg
 
 
-def type_change_validation(filing, business):
+def type_change_validation(filing, business: Business):
     """Validate type change."""
     msg = []
     legal_type_path: Final = '/filing/alteration/business/legalType'
@@ -157,7 +131,7 @@ def type_change_validation(filing, business):
     errors = {
         Business.LegalTypes.COOP.value: 'Cannot change the business type of a Cooperative Association.',
         Business.LegalTypes.BCOMP.value: 'BC Benefit Company can only change to BC Limited Company.',
-        Business.LegalTypes.COMP.value: ("""BC Limited Company can only change to 
+        Business.LegalTypes.COMP.value: ("""BC Limited Company can only change to
                                          BC Benefit Company or BC Unlimited Liability Company."""),
         Business.LegalTypes.BC_CCC.value: 'Cannot change the business type of a BC Community Contribution Company.',
         Business.LegalTypes.BC_ULC_COMPANY.value: ("""BC Unlimited Liability Company can only change to
