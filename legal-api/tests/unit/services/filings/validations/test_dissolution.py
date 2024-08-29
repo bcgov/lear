@@ -52,7 +52,7 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
                           identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a VD can be validated."""
     # setup
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, legal_type=legal_type)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
@@ -93,7 +93,7 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
                                     identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a VD can be validated."""
     # setup
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, legal_type=legal_type)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
@@ -138,7 +138,7 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
                              identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a VD can be validated."""
     # setup
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, legal_type=legal_type)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
@@ -187,7 +187,7 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
     """Assert that special resolution can be validated."""
     from legal_api.services.filings import validate
     # setup
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, legal_type=legal_type)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
@@ -237,7 +237,7 @@ def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dis
                                identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that an affidavit can be validated."""
     # setup
-    business = Business(identifier=identifier)
+    business = Business(identifier=identifier, legal_type=legal_type)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
