@@ -48,7 +48,7 @@ def get_furnishing_document(identifier: str, furnishing_id: int):
         ), HTTPStatus.NOT_FOUND
     if not (furnishing := Furnishing.find_by_id(furnishing_id)) or\
         furnishing.business_id != business.id or\
-        furnishing.furnishing_type == Furnishing.FurnishingType.GAZETTE:
+            furnishing.furnishing_type == Furnishing.FurnishingType.GAZETTE:
         return jsonify(
             message=get_error_message(ErrorCode.FURNISHING_NOT_FOUND,
                                       **{'furnishing_id': furnishing_id, 'identifier': identifier})

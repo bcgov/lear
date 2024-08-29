@@ -198,7 +198,7 @@ class ReportV2:
     def _get_report_files(self, data):
         """Get gotenberg report generation source file data."""
         if self._document_key == ReportTypes.DISSOLUTION_COVER:
-            return { 'index.html': self._get_html_from_data(data) }
+            return {'index.html': self._get_html_from_data(data)}
         title = self._report_data['title']
         files = copy.deepcopy(REPORT_FILES)
         files['index.html'] = self._get_html_from_data(data)
