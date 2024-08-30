@@ -145,15 +145,16 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
         data = {
-                'filing': {
-                    'header': {'filingId': filing.id,
-                               'effectiveDate': filing.effective_date.isoformat()
-                               },
-                    'business': {'identifier': business.identifier},
-                    'legalFilings': get_filing_types(filing.filing_json)
+            'filing': {
+                'header': {
+                    'filingId': filing.id,
+                    'effectiveDate': filing.effective_date.isoformat()
                 },
-                'identifier': business.identifier
-            }
+                'business': {'identifier': business.identifier},
+                'legalFilings': get_filing_types(filing.filing_json)
+            },
+            'identifier': business.identifier
+        }
         if filing.temp_reg:
             data['tempidentifier'] = filing.temp_reg
 
@@ -363,7 +364,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 if filing_core_submission.filing_type != FilingCore.FilingTypes.CONVERSION:
                     business_profile.update_affiliation(business, filing_submission)
 
-                name_request.consume_nr(business, filing_submission)
+                name_request.consume_nr(business, filing_submission, flags=flags)
                 business_profile.update_business_profile(business, filing_submission)
                 await publish_mras_email(filing_submission)
             else:
@@ -386,7 +387,10 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         FilingCore.FilingTypes.CORRECTION,
                         FilingCore.FilingTypes.RESTORATION,
                     ]:
-                        name_request.consume_nr(business, filing_submission, filing_type)
+                        name_request.consume_nr(business,
+                                                filing_submission,
+                                                filing_type=filing_type,
+                                                flags=flags)
                         if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
                             business_profile.update_business_profile(business, filing_submission, filing_type)
 
