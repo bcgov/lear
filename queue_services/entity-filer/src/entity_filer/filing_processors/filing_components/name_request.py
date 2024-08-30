@@ -17,14 +17,14 @@ from http import HTTPStatus
 
 import requests
 import sentry_sdk
-from entity_queue_common.service_utils import QueueException
+from entity_queue_common.service_utils import QueueException, logger
 from flask import current_app
 from legal_api.models import Business, Filing, RegistrationBootstrap
-from legal_api.services.bootstrap import AccountService
+from legal_api.services import AccountService, Flags
 from legal_api.services.utils import get_str
 
 
-def consume_nr(business: Business, filing: Filing, filing_type: str = None):
+def consume_nr(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
     """Update the nr to a consumed state."""
     try:
         filing_type = filing_type if filing_type else filing.filing_type
@@ -33,9 +33,12 @@ def consume_nr(business: Business, filing: Filing, filing_type: str = None):
 
             namex_svc_url = current_app.config.get('NAMEX_API')
             token = AccountService.get_bearer_token()
+            if flags and (flag_on := flags.is_on('namex-nro-decommissioned')):
+                logger.debug('namex-nro-decommissioned flag: %s', flag_on)
+                data = json.dumps({'state': 'CONSUMED', 'corpNum': business.identifier})
+            else:
+                data = json.dumps({'consume': {'corpNum': business.identifier}})
 
-            # Create an entity record
-            data = json.dumps({'consume': {'corpNum': business.identifier}})
             rv = requests.patch(
                 url=''.join([namex_svc_url, nr_num]),
                 headers={**AccountService.CONTENT_TYPE_JSON,
