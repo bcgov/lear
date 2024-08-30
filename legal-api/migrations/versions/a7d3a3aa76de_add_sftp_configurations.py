@@ -1,4 +1,4 @@
-"""Add SFTP configuration.
+"""Add SFTP configurations.
 
 Revision ID: a7d3a3aa76de
 Revises: 7d486343384b
@@ -18,11 +18,12 @@ depends_on = None
 
 def upgrade():
     op.execute("""INSERT INTO configurations (name, val, short_description, full_description) VALUES
-            ('ENABLE_FURNISHINGS_SFTP', 'True', 'Turns SFTP functionality on and off.', 'Turns SFTP functionality on and off.')
+            ('ENABLE_BCLAWS_SFTP', 'False', 'Turns BCLaws SFTP functionality on and off.', 'Turns BCLaws SFTP functionality on and off.'),
+            ('ENABLE_BCMAIL_SFTP', 'False', 'Turns BCMail+ SFTP functionality on and off.', 'Turns BCMail+ SFTP functionality on and off.')
             """)
 
 
 def downgrade():
     op.execute("""DELETE FROM configurations
-            WHERE name = 'ENABLE_FURNISHINGS_SFTP'
+            WHERE name IN ('ENABLE_BCLAWS_SFTP', 'ENABLE_BCMAIL_SFTP')
             """)
