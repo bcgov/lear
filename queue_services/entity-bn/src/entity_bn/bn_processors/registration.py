@@ -164,7 +164,7 @@ def _inform_cra(business: Business,  # pylint: disable=too-many-locals
         input_xml = request_tracker.request_object
     else:
         is_firms = business.legal_type in FIRMS
-        is_corps = business.legal_type in CORPS
+        is_corps = business.legal_type in Business.CORPS
 
         owner_legal_type = None
         business_owned = False  # True when SP is owned by GP
@@ -195,7 +195,11 @@ def _inform_cra(business: Business,  # pylint: disable=too-many-locals
             retry_number = request_tracker.message_id + '-' + retry_number
 
         input_xml = build_input_xml('create_program_account_request', {
-            'business': business.json(),
+            'business': {
+                'identifier': business.identifier,
+                'legalName': business.legal_name,  # name of the new business (operating name of SP, GP)
+                'naicsDescription': business.naics_description
+            },
             'businessNumber': business_number,
             'userRole': '01' if request_tracker.is_admin else '02',
             'retryNumber': retry_number,
