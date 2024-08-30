@@ -89,19 +89,23 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             join(Filing, Filing.id == Review.filing_id)
 
         if review_filter.start_date:
-            start_date = LegislationDatetime.get_start_of_date(review_filter.start_date)
+            start_date = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
+                                          (review_filter.start_date), datetime.min.time())
             query = query.filter(Review.submission_date >= start_date)
         if review_filter.end_date:
-            end_date = LegislationDatetime.get_end_of_date(review_filter.end_date)
+            end_date = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
+                                        (review_filter.end_date), datetime.max.time())
             query = query.filter(Review.submission_date <= end_date)
         if review_filter.start_effective_date:
-            start_fed = LegislationDatetime.get_start_of_date(review_filter.start_effective_date)
+            start_date_fed = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
+                                              (review_filter.start_effective_date), datetime.min.time())
             query = query.filter(and_(Filing.effective_date > datetime.now(timezone.utc),
-                                      Filing.effective_date >= start_fed))
+                                      Filing.effective_date >= start_date_fed))
         if review_filter.end_effective_date:
-            end_fed = LegislationDatetime.get_end_of_date(review_filter.end_effective_date)
+            end_date_fed = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
+                                            (review_filter.end_effective_date), datetime.max.time())
             query = query.filter(and_(Filing.effective_date > datetime.now(timezone.utc),
-                                      Filing.effective_date <= end_fed))
+                                      Filing.effective_date <= end_date_fed))
         if review_filter.nr_number:
             query = query.filter(Review.nr_number.ilike(f'%{review_filter.nr_number}%'))
         if review_filter.identifier:
