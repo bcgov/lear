@@ -66,7 +66,7 @@ def get_business_type_and_sub_type_code(legal_type: str, business_owned: bool, o
                 business_type = '03'  # Corporation
                 business_sub_type = '08'  # Association
             elif owner_legal_type in ['QC', 'QD', 'QB', 'QE', 'QA', 'BC', 'BEN',
-                                      'A', 'C', 'LLC', 'CUL', 'ULC', 'CC', 'CCC', 'FI', 'PA']:
+                                      'A', 'C', 'CBEN', 'LLC', 'CUL', 'ULC', 'CC', 'CCC', 'FI', 'PA']:
                 business_type = '03'  # Corporation
                 business_sub_type = '99'  # Business
             else:
@@ -87,7 +87,7 @@ def build_input_xml(template_name, data):
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/{template_name}.xml'
     ).read_text()
-    jnja_template = Template(template, autoescape=True)
+    jnja_template = Template(template, autoescape=False)
     return jnja_template.render(data)
 
 
