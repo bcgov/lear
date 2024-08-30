@@ -48,6 +48,7 @@ class FurnishingDocumentsService():
         return self._merge_documents(files)
 
     def _get_batch_furnishing_documents(self, furnishings: list) -> list:
+        self._report._document_key = ReportTypes.DISSOLUTION  # pylint: disable=protected-access
         pdfs = []
         for f in furnishings:
             self._report.set_report_data(business=f.business, furnishing=f)
