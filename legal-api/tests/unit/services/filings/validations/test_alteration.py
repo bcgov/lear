@@ -20,6 +20,7 @@ import pytest
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 from reportlab.lib.pagesizes import letter
 
+from legal_api.models import Business
 from legal_api.services import flags, NameXService
 from legal_api.services.filings import validate
 from tests.unit.models import factory_business
@@ -39,26 +40,112 @@ class MockResponse:
         return self.json_data
 
 
-@pytest.mark.parametrize('use_nr, new_name, legal_type, nr_type, should_pass, num_errors', [
-    (False, '', 'BEN', '', True, 0),
-    (False, '', 'BC', '', True, 0),
-    (False, '', 'ULC', '', True, 0),
-    (False, '', 'CC', '', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BC', 'CCR', True, 0),
-    (True, 'legal_name-BC1234568', 'CP', 'XCLP', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BECV', True, 0)
+@pytest.mark.parametrize('use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors', [
+    (False, '', 'CP', 'CP', '', True, 0),
+    (False, '', 'CP', 'BEN', '', False, 1),
+    (False, '', 'CP', 'BC', '', False, 1),
+    (False, '', 'CP', 'ULC', '', False, 1),
+    (False, '', 'CP', 'CC', '', False, 1),
+    (False, '', 'CP', 'C', '', False, 1),
+    (False, '', 'CP', 'CBEN', '', False, 1),
+    (False, '', 'CP', 'CUL', '', False, 1),
+    (False, '', 'CP', 'CCC', '', False, 1),
+
+    (False, '', 'BEN', 'BEN', '', True, 0),
+    (False, '', 'BEN', 'BC', '', True, 0),
+    (False, '', 'BEN', 'ULC', '', False, 1),
+    (False, '', 'BEN', 'CC', '', False, 1),
+    (False, '', 'BEN', 'CP', '', False, 1),
+    (False, '', 'BEN', 'C', '', False, 1),
+    (False, '', 'BEN', 'CBEN', '', False, 1),
+    (False, '', 'BEN', 'CUL', '', False, 1),
+    (False, '', 'BEN', 'CCC', '', False, 1),
+
+    (False, '', 'BC', 'BC', '', True, 0),
+    (False, '', 'BC', 'BEN', '', True, 0),
+    (False, '', 'BC', 'ULC', '', True, 0),
+    (False, '', 'BC', 'CC', '', True, 0),
+    (False, '', 'BC', 'CP', '', False, 1),
+    (False, '', 'BC', 'C', '', False, 1),
+    (False, '', 'BC', 'CBEN', '', False, 1),
+    (False, '', 'BC', 'CUL', '', False, 1),
+    (False, '', 'BC', 'CCC', '', False, 1),
+
+    (False, '', 'ULC', 'ULC', '', True, 0),
+    (False, '', 'ULC', 'BC', '', True, 0),
+    (False, '', 'ULC', 'BEN', '', True, 0),
+    (False, '', 'ULC', 'CC', '', False, 1),
+    (False, '', 'ULC', 'CP', '', False, 1),
+    (False, '', 'ULC', 'C', '', False, 1),
+    (False, '', 'ULC', 'CBEN', '', False, 1),
+    (False, '', 'ULC', 'CUL', '', False, 1),
+    (False, '', 'ULC', 'CCC', '', False, 1),
+
+    (False, '', 'CC', 'CC', '', True, 0),
+    (False, '', 'CC', 'BEN', '', False, 1),
+    (False, '', 'CC', 'BC', '', False, 1),
+    (False, '', 'CC', 'ULC', '', False, 1),
+    (False, '', 'CC', 'CP', '', False, 1),
+    (False, '', 'CC', 'C', '', False, 1),
+    (False, '', 'CC', 'CBEN', '', False, 1),
+    (False, '', 'CC', 'CUL', '', False, 1),
+    (False, '', 'CC', 'CCC', '', False, 1),
+
+    (False, '', 'CBEN', 'CBEN', '', True, 0),
+    (False, '', 'CBEN', 'C', '', True, 0),
+    (False, '', 'CBEN', 'CUL', '', False, 1),
+    (False, '', 'CBEN', 'CCC', '', False, 1),
+    (False, '', 'CBEN', 'BEN', '', False, 1),
+    (False, '', 'CBEN', 'BC', '', False, 1),
+    (False, '', 'CBEN', 'ULC', '', False, 1),
+    (False, '', 'CBEN', 'CC', '', False, 1),
+    (False, '', 'CBEN', 'CP', '', False, 1),
+
+    (False, '', 'C', 'C', '', True, 0),
+    (False, '', 'C', 'CBEN', '', True, 0),
+    (False, '', 'C', 'CUL', '', True, 0),
+    (False, '', 'C', 'CCC', '', True, 0),
+    (False, '', 'C', 'BC', '', False, 1),
+    (False, '', 'C', 'BEN', '', False, 1),
+    (False, '', 'C', 'ULC', '', False, 1),
+    (False, '', 'C', 'CC', '', False, 1),
+    (False, '', 'C', 'CP', '', False, 1),
+
+    (False, '', 'CUL', 'CUL', '', True, 0),
+    (False, '', 'CUL', 'C', '', True, 0),
+    (False, '', 'CUL', 'CBEN', '', True, 0),
+    (False, '', 'CUL', 'CCC', '', False, 1),
+    (False, '', 'CUL', 'ULC', '', False, 1),
+    (False, '', 'CUL', 'BC', '', False, 1),
+    (False, '', 'CUL', 'BEN', '', False, 1),
+    (False, '', 'CUL', 'CC', '', False, 1),
+    (False, '', 'CUL', 'CP', '', False, 1),
+
+    (False, '', 'CCC', 'CCC', '', True, 0),
+    (False, '', 'CCC', 'CBEN', '', False, 1),
+    (False, '', 'CCC', 'C', '', False, 1),
+    (False, '', 'CCC', 'CUL', '', False, 1),
+    (False, '', 'CCC', 'CC', '', False, 1),
+    (False, '', 'CCC', 'BEN', '', False, 1),
+    (False, '', 'CCC', 'BC', '', False, 1),
+    (False, '', 'CCC', 'ULC', '', False, 1),
+    (False, '', 'CCC', 'CP', '', False, 1),
+
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEN', 'BEC', True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'BC', 'CCR', True, 0),
+    (True, 'legal_name-BC1234568', 'CP', 'CP', 'XCLP', False, 1),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEN', 'BECV', True, 0)
 ])
-def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass, num_errors):
+def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    business = factory_business(identifier, entity_type=legal_type)
 
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
     f['filing']['business']['legalType'] = legal_type
-    f['filing']['alteration']['business']['legalType'] = legal_type
+    f['filing']['alteration']['business']['legalType'] = new_legal_type
 
     if use_nr:
         f['filing']['business']['identifier'] = identifier
@@ -84,7 +171,7 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
         nr_response = MockResponse(nr_json, 200)
         with patch.object(flags, 'is_on', return_value=False):
             with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-                    err = validate(business, f)
+                err = validate(business, f)
     else:
         del f['filing']['alteration']['nameRequest']
         err = validate(business, f)
@@ -102,15 +189,73 @@ def test_alteration(session, use_nr, new_name, legal_type, nr_type, should_pass,
         assert len(err.msg) == num_errors
 
 
-@pytest.mark.parametrize('new_name, legal_type, nr_legal_type, nr_type, err_msg', [
-    ('legal_name-BC1234568', 'CP', 'CP', 'BECV', None),
-    ('legal_name-BC1234567_Changed', 'BEN', 'CP', 'BECV', 'Name Request legal type is not same as the business legal type.')
+@pytest.mark.parametrize('test_name, legal_type, new_legal_type, err_msg', [
+    ('numbered_to_numbered', 'BC', 'BC', None),
+    ('numbered_to_numbered', 'BC', 'BEN', None),
+    ('numbered_to_numbered', 'BC', 'CC', None),
+    ('numbered_to_numbered', 'BC', 'ULC', None),
+    ('numbered_to_numbered', 'BEN', 'BEN', None),
+    ('numbered_to_numbered', 'BEN', 'BC', None),
+    ('numbered_to_numbered', 'ULC', 'ULC', None),
+    ('numbered_to_numbered', 'ULC', 'BC', None),
+    ('numbered_to_numbered', 'ULC', 'BEN', None),
+    ('numbered_to_numbered', 'CC', 'CC', None),
+    ('numbered_to_numbered_invalid', 'CC', 'CC', 'Unexpected legal name.'),
+    ('named_to_numbered', 'BC', 'BC', None),
+    ('named_to_numbered', 'BEN', 'BEN', None),
+    ('named_to_numbered', 'CC', 'CC', None),
+    ('named_to_numbered', 'ULC', 'ULC', None),
 ])
-def test_alteration_name_change(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, err_msg):
     """Test that validator validates the alteration with legal type change."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    business = factory_business(identifier, entity_type=legal_type)
+    if test_name in ['numbered_to_numbered', 'numbered_to_numbered_invalid']:
+        business.legal_name = Business.generate_numbered_legal_name(legal_type, identifier)
+    business.save()
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    if not new_legal_type:
+        new_legal_type = legal_type
+    f['filing']['alteration']['business']['legalType'] = new_legal_type
+
+    f['filing']['business']['identifier'] = identifier
+    f['filing']['business']['legalName'] = 'legal_name-BC1234567'
+
+    del f['filing']['alteration']['nameRequest']['nrNumber']
+    if test_name == 'numbered_to_numbered_invalid':
+        f['filing']['alteration']['nameRequest']['legalName'] = 'zxy'
+    else:
+        f['filing']['alteration']['nameRequest']['legalName'] = Business.generate_numbered_legal_name(
+            new_legal_type,
+            identifier)
+    f['filing']['alteration']['nameRequest']['legalType'] = legal_type
+
+    err = validate(business, f)
+    if err:
+        print(err.msg)
+
+    if not err_msg:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert err.msg[0]['error'] == err_msg
+
+
+@pytest.mark.parametrize('new_name, legal_type, nr_legal_type, nr_type, err_msg', [
+    ('legal_name-BC1234568', 'CP', 'CP', 'BECV', None),
+    ('legal_name-BC1234567_Changed', 'BEN', 'ULC', 'BECV', 'Name Request legal type is not same as the business legal type.')
+])
+def test_validate_nr_type(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+    """Test that validator validates the alteration with legal type change."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=legal_type)
 
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
@@ -173,6 +318,7 @@ def test_alteration_resolution_date(
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
     del f['filing']['alteration']['nameRequest']
+    del f['filing']['alteration']['business']['legalType']
 
     f['filing']['alteration']['shareStructure']['shareClasses'][0]['hasRightsOrRestrictions'] = \
         has_rights_or_restrictions
@@ -202,6 +348,7 @@ def test_alteration_share_classes_optional(session):
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
     del f['filing']['alteration']['nameRequest']
+    del f['filing']['alteration']['business']['legalType']
     del f['filing']['alteration']['shareStructure']['shareClasses']
     f['filing']['alteration']['shareStructure']['resolutionDates'] = ['2020-05-23']
 
@@ -246,6 +393,7 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
     filing_json = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     filing_json['filing']['header']['identifier'] = identifier
     del filing_json['filing']['alteration']['nameRequest']
+    del filing_json['filing']['alteration']['business']['legalType']
 
     # Mock upload file for test scenarios
     if scenario == 'success':

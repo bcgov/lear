@@ -59,7 +59,6 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
     err = None
 
-    legal_type = get_str(filing_json, '/filing/business/legalType')
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
     if 'correction' in filing_json['filing'].keys():
@@ -74,10 +73,10 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
         if err:
             return err
 
-        legal_type = get_str(filing_json, '/filing/business/legalType')
         dissolution_type = get_str(filing_json, '/filing/dissolution/dissolutionType')
 
-        if legal_type == Business.LegalTypes.COOP.value and dissolution_type != DissolutionTypes.ADMINISTRATIVE:
+        if (business.legal_type == Business.LegalTypes.COOP.value and
+                dissolution_type != DissolutionTypes.ADMINISTRATIVE):
             if 'specialResolution' in filing_json['filing'].keys():
                 err = special_resolution_validate(business, filing_json)
             else:
@@ -85,7 +84,8 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
                                                       'path': '/filing/specialResolution'}])
         if err:
             return err
-    elif 'specialResolution' in filing_json['filing'].keys() and legal_type in [Business.LegalTypes.COOP.value]:
+    elif ('specialResolution' in filing_json['filing'].keys() and
+          business.legal_type in [Business.LegalTypes.COOP.value]):
         err = special_resolution_validate(business, filing_json)
         if err:
             return err
@@ -150,7 +150,7 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
                     err = registration_validate(filing_json)
 
                 elif k == Filing.FILINGS['changeOfRegistration'].get('name'):
-                    err = change_of_registration_validate(filing_json)
+                    err = change_of_registration_validate(business, filing_json)
 
                 elif k == Filing.FILINGS['putBackOn'].get('name'):
                     err = put_back_on_validate(business, filing_json)

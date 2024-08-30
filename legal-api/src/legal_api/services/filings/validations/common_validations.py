@@ -262,16 +262,8 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     nr_number = get_str(filing_json, nr_number_path)
     legal_name = get_str(filing_json, legal_name_path)
 
-    valid_numbered_legal_type = [Business.LegalTypes.BCOMP.value,
-                                 Business.LegalTypes.COMP.value,
-                                 Business.LegalTypes.BC_CCC.value,
-                                 Business.LegalTypes.BC_ULC_COMPANY.value,
-                                 Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-                                 Business.LegalTypes.CONTINUE_IN.value,
-                                 Business.LegalTypes.CCC_CONTINUE_IN.value,
-                                 Business.LegalTypes.ULC_CONTINUE_IN.value]
     if not nr_number and not legal_name:
-        if legal_type in valid_numbered_legal_type:
+        if legal_type in Business.CORPS:
             return []  # It's numbered company
         else:
             # CP, SP, GP doesn't support numbered company
