@@ -167,7 +167,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
             if etype == 'businessNumber':
                 email = bn_notification.process(email_msg['email'])
                 send_email(email, token)
-            elif etype == 'incorporationApplication' and option == 'mras':
+            elif etype in ['amalgamationApplication', 'continuationIn','incorporationApplication'] and option == 'mras':
                 email = mras_notification.process(email_msg['email'])
                 send_email(email, token)
             elif etype == 'annualReport' and option == 'reminder':

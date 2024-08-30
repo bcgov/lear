@@ -37,7 +37,7 @@ def process(email_msg: dict) -> dict:
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
         business=business,
-        filing=(filing.json)['filing']['incorporationApplication'],
+        filing=get_filing_data(filing, filing_type),
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
@@ -56,3 +56,15 @@ def process(email_msg: dict) -> dict:
             'attachments': []
         }
     }
+    
+def get_filing_data(filing, filing_type):
+    filing_data = []
+    if filing_type == 'amalgamationApplication':
+        filing_data=(filing.json)['filing']['amalgamationApplication']
+        
+    if filing_type == 'continuationIn':
+        filing_data=(filing.json)['filing']['continuationIn']
+        
+    if filing_type == 'incorporationApplication':
+        filing_data=(filing.json)['filing']['incorporationApplication']
+    return filing_data

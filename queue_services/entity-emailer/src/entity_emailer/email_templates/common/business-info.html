@@ -12,7 +12,7 @@
     <td class="name">Company Name:</td>
     {% endif %}
 
-    {% if filing_status == 'PAID' and filing_type == 'incorporationApplication' %}
+    {% if filing_status == 'PAID' and filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication'] %}
       {% if filing.nameRequest.legalName %}
       <!-- try to get legal name from Name Request object -->
       <td class="value bold">{{ filing.nameRequest.legalName }}</td>
