@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import pytest
-
 from legal_api.models import BatchProcessing, Furnishing, FurnishingGroup, XmlPayload
 
 from furnishings.stage_processors.post_processor import PostProcessor, process
