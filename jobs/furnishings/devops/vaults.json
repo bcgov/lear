@@ -15,5 +15,12 @@
             "entity-service-account",
             "furnishings"
         ]
+    },
+    {
+        "vault": "api",
+        "application": [
+            "mras-api",
+            "report-api-gotenberg"
+        ]
     }
 ]
