@@ -22,7 +22,7 @@ import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; confli
 from croniter import croniter
 from flask import Flask
 from legal_api.core.filing import Filing as CoreFiling
-from legal_api.models import Batch, BatchProcessing, Business, Configuration, Filing, db  # noqa: I001
+from legal_api.models import Batch, BatchProcessing, Business, Configuration, Filing, Furnishing, db  # noqa: I001
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
@@ -238,6 +238,26 @@ def stage_2_process(app: Flask):
     stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
 
     for batch_processing in batch_processings:
+        # Check if email or letter furnishing entry has been completed. If not, do not transition to stage 2.
+        furnishings = Furnishing.find_by(
+            batch_id=batch_processing.batch_id,
+            business_id=batch_processing.business_id
+        )
+        furnishing_entry_completed = any(
+            furnishing.furnishing_type in (Furnishing.FurnishingType.EMAIL, Furnishing.FurnishingType.MAIL)
+            and furnishing.status == Furnishing.FurnishingStatus.PROCESSED
+            for furnishing in furnishings
+        )
+        if not furnishing_entry_completed:
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.ERROR
+            batch_processing.notes = 'stage 1 email or letter has not been sent'
+            batch_processing.save()
+            app.logger.debug(
+                f'Changed Batch Processing with id: {batch_processing.id} status to Error. '
+                'Stage 1 email or letter has not been sent'
+            )
+            continue
+
         eligible, _ = InvoluntaryDissolutionService.check_business_eligibility(
             batch_processing.business_identifier,
             InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
@@ -276,6 +296,26 @@ async def stage_3_process(app: Flask, qsm: QueueService):
     # TODO: add check if warnings have been sent out & set batch_processing.status to error if not
 
     for batch_processing in batch_processings:
+        # Check if gazette furnishing entry has been completed. If not, do not transition to stage 3.
+        furnishings = Furnishing.find_by(
+            batch_id=batch_processing.batch_id,
+            business_id=batch_processing.business_id
+        )
+        furnishing_entry_completed = any(
+            (furnishing.furnishing_type == Furnishing.FurnishingType.GAZETTE)
+            and furnishing.status == Furnishing.FurnishingStatus.PROCESSED
+            for furnishing in furnishings
+        )
+        if not furnishing_entry_completed:
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.ERROR
+            batch_processing.notes = 'stage 2 intent to dissolve data has not been sent'
+            batch_processing.save()
+            app.logger.debug(
+                f'Changed Batch Processing with id: {batch_processing.id} status to Error. '
+                'Stage 2 intent to dissolve data has not been sent'
+            )
+            continue
+
         eligible, _ = InvoluntaryDissolutionService.check_business_eligibility(
             batch_processing.business_identifier,
             InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)

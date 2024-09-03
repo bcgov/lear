@@ -21,7 +21,7 @@ import pytest
 import pytz
 from datedelta import datedelta
 from legal_api.core.filing import Filing as CoreFiling
-from legal_api.models import Batch, BatchProcessing, Configuration, Filing
+from legal_api.models import Batch, BatchProcessing, Configuration, Filing, Furnishing
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 
 from involuntary_dissolutions import (
@@ -231,6 +231,15 @@ def test_stage_2_process_find_entry(app, session, test_name, batch_status, statu
         trigger_date=created_date+datedelta(days=42),
         last_modified=last_modified
     )
+    furnishing = Furnishing(
+        furnishing_type = Furnishing.FurnishingType.EMAIL,
+        furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+        batch_id = batch.id,
+        business_id = business.id,
+        business_identifier = business.identifier,
+        status = Furnishing.FurnishingStatus.PROCESSED,
+    )
+    furnishing.save()
 
     stage_2_process(app)
 
@@ -265,6 +274,15 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
         created_date=CREATED_DATE,
         trigger_date=TRIGGER_DATE
     )
+    furnishing = Furnishing(
+        furnishing_type = Furnishing.FurnishingType.EMAIL,
+        furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+        batch_id = batch.id,
+        business_id = business.id,
+        business_identifier = business.identifier,
+        status = Furnishing.FurnishingStatus.PROCESSED,
+    )
+    furnishing.save()
 
     if test_name == 'MOVE_BACK_2_GOOD_STANDING':
         business.last_ar_date = datetime.utcnow()
