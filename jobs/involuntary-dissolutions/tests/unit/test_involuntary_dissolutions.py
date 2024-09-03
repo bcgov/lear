@@ -327,7 +327,7 @@ async def test_stage_3_process(app, session, test_name, status, step):
     )
     furnishing = Furnishing(
         furnishing_type = Furnishing.FurnishingType.GAZETTE,
-        furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+        furnishing_name = Furnishing.FurnishingName.INTENT_TO_DISSOLVE,
         batch_id = batch.id,
         business_id = business.id,
         business_identifier = business.identifier,
