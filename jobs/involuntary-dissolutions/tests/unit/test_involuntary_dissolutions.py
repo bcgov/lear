@@ -325,6 +325,15 @@ async def test_stage_3_process(app, session, test_name, status, step):
         created_date=CREATED_DATE,
         trigger_date=TRIGGER_DATE
     )
+    furnishing = Furnishing(
+        furnishing_type = Furnishing.FurnishingType.GAZETTE,
+        furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+        batch_id = batch.id,
+        business_id = business.id,
+        business_identifier = business.identifier,
+        status = Furnishing.FurnishingStatus.PROCESSED,
+    )
+    furnishing.save()
 
     if test_name == 'MOVE_BACK_TO_GOOD_STANDING':
         business.last_ar_date = datetime.utcnow()
