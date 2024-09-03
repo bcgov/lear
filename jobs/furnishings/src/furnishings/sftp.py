@@ -136,7 +136,7 @@ class SftpConnection:
             file.write(buffer)
             file.close()
 
-    def put_fo(self, fl, remote_path: str) -> SFTPAttributes | None:
+    def put_fo(self, fl, remote_path: str) -> SFTPAttributes | None:  # pylint: disable=inconsistent-return-statements
         """Copy the contents of an open file object (fl) to the SFTP server.
 
         Args:

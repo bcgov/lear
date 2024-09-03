@@ -17,7 +17,6 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Final
-
 from flask import Flask, current_app
 from jinja2 import Template
 from legal_api.models import Furnishing, FurnishingGroup, XmlPayload
@@ -138,12 +137,12 @@ class PostProcessor:
         furnishing_group.save()
         return furnishing_group, xml_payload
 
-    def update_furnishings_status(self, funishing_status, furnishing_group=None, notes=None):
+    def update_furnishings_status(self, funishing_status, furnishing_group_id=None, notes=None):
         """Update furnishing entries after processing."""
         for furnishings in self._furnishings_dict.values():
             for furnishing in furnishings:
-                if furnishing_group:
-                    furnishing.furnishing_group_id = furnishing_group.id
+                if furnishing_group_id:
+                    furnishing.furnishing_group_id = furnishing_group_id
                     furnishing.processed_date = datetime.utcnow()
 
                 if notes:
@@ -182,7 +181,7 @@ class PostProcessor:
         self._app.logger.debug('Saved XML payload')
 
         # mark furnishing records processed
-        self.update_furnishings_status(furnishing_group.id)
+        self.update_furnishings_status(Furnishing.FurnishingStatus.PROCESSED, furnishing_group_id=furnishing_group.id)
         self._app.logger.debug(
             f'Furnishing records with group id: {furnishing_group.id} marked as processed')
 
@@ -193,24 +192,15 @@ def process(app: Flask, furnishings_dict: dict):
     try:
         processor = PostProcessor(app, furnishings_dict)
         processor.process()
-        status = Furnishing.FurnishingStatus.PROCESSED
-        notes = None
     except AuthenticationException as err:
-        status = Furnishing.FurnishingStatus.FAILED
         notes='SFTP Error: Unable to authenticate.'
+        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
         app.logger.error(err)
-    except NoValidConnectionsError as err:
-        status = Furnishing.FurnishingStatus.FAILED
-        notes='SFTP Error: Unable to connect.'
-        app.logger.error(err)
-    except IOError as err:
-        status = Furnishing.FurnishingStatus.FAILED
+    except (NoValidConnectionsError, IOError) as err:
         notes=f'SFTP Error: {os.strerror(err.errno)}.'
+        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
         app.logger.error(err)
     except Exception as err:
-        status = Furnishing.FurnishingStatus.FAILED
         notes = "Unnexpected error during post-processing."
-        status = Furnishing.FurnishingStatus.FAILED
+        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
         app.logger.error(err)
-    finally:
-        processor.update_furnishings_status(status, notes)
