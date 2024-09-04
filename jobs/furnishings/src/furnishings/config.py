@@ -143,6 +143,12 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
+    # BCLaws SFTP
+    BCLAWS_SFTP_STORAGE_DIRECTORY = 'bclaws'
+
+    # BCMail+ SFTP
+    BCMAIL_SFTP_STORAGE_DIRECTORY = 'bcmail'
+
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""

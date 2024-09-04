@@ -11,8 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from unittest.mock import patch
+
 import pytest
 from legal_api.models import BatchProcessing, Furnishing, FurnishingGroup, XmlPayload
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from furnishings.stage_processors.post_processor import PostProcessor, process
 
@@ -66,22 +69,32 @@ def helper_create_furnishings(identifiers: list, furnishing_name, step):
         ),
     ]
 )
-def test_process(app, session, test_name, furnishing_name, step):
+def test_processor(app, session, sftpserver, sftpconnection, test_name, furnishing_name, step):
     """Assert that FurnishingGroup and XmlPayload entry are created correctly."""
     furnishings = helper_create_furnishings(['BC1234567'], furnishing_name, step)
     furnishing_dict = {
         furnishing_name: furnishings
     }
-    process(app, furnishing_dict)
 
+    processor = PostProcessor(app, furnishing_dict)
+    with sftpserver.serve_content({app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'): {}}):
+        with patch.object(processor, '_bclaws_sftp_connection', new=sftpconnection):
+            processor.process()
+            # assert xml file is uploaded
+            with sftpconnection as sftpclient:
+                assert len(sftpclient.listdir(app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'))) == 1
+
+    # assert the furnishings are marked as processed
     furnishing = furnishings[0]
     assert furnishing.status == Furnishing.FurnishingStatus.PROCESSED
 
+    # assert the furnishing group is created
     furnishing_group_id = furnishing.furnishing_group_id
     assert furnishing_group_id
     furnishing_group = FurnishingGroup.find_by_id(furnishing_group_id)
     assert furnishing_group
 
+    # assert xml payload is generated
     xml_payload_id = furnishing_group.xml_payload_id
     assert xml_payload_id
     xml_payload = XmlPayload.find_by_id(xml_payload_id)
@@ -89,7 +102,7 @@ def test_process(app, session, test_name, furnishing_name, step):
     assert xml_payload.payload
 
 
-def test_process_combined_xml(app, session):
+def test_processor_combined_xml(app, session, sftpserver, sftpconnection):
     """Assert that FurnishingGroup and XmlPayload entry are created correctly for both stages at once."""
     furnishing_name_stage_2 = Furnishing.FurnishingName.INTENT_TO_DISSOLVE
     furnishings_stage_2 = helper_create_furnishings(
@@ -109,20 +122,30 @@ def test_process_combined_xml(app, session):
         furnishing_name_stage_2: furnishings_stage_2,
         furnishing_name_stage_3: furnishings_stage_3
     }
-    process(app, furnishing_dict)
 
+    processor = PostProcessor(app, furnishing_dict)
+    with sftpserver.serve_content({app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'): {}}):
+        with patch.object(processor, '_bclaws_sftp_connection', new=sftpconnection):
+            processor.process()
+            # assert xml file is uploaded
+            with sftpconnection as sftpclient:
+                assert len(sftpclient.listdir(app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'))) == 1
+
+
+    # assert the furnishings are marked as processed
     furnishing_stage_2 = furnishings_stage_2[0]
     assert furnishing_stage_2.status == Furnishing.FurnishingStatus.PROCESSED
-
     furnishing_stage_3 = furnishings_stage_3[0]
     assert furnishing_stage_3.status == Furnishing.FurnishingStatus.PROCESSED
 
+    # assert the furnishing group is created
     furnishing_group_id = furnishing_stage_2.furnishing_group_id
     assert furnishing_group_id
     assert furnishing_group_id == furnishing_stage_3.furnishing_group_id
     furnishing_group = FurnishingGroup.find_by_id(furnishing_group_id)
     assert furnishing_group
 
+    # assert xml payload is generated
     xml_payload_id = furnishing_group.xml_payload_id
     assert xml_payload_id
     xml_payload = XmlPayload.find_by_id(xml_payload_id)
@@ -156,6 +179,7 @@ def test_process_combined_xml(app, session):
 )
 def test_processor_format_furnishings(app, session, test_name, furnishing_name, step):
     """Assert that furnishing details are formated/sorted correctly."""
+    processed_date = LegislationDatetime.now()
     furnishings = helper_create_furnishings(
         ['BC7654321', 'BC1234567'],
         furnishing_name,
@@ -166,12 +190,11 @@ def test_processor_format_furnishings(app, session, test_name, furnishing_name, 
         furnishing_name: furnishings,
     }
 
-    processor = PostProcessor(app, furnishing_dict)
-    processor._format_furnishings()
+    xml_data = PostProcessor._format_furnishings(furnishing_dict, processed_date)
 
-    assert processor._xml_data
-    assert processor._xml_data['furnishings'][furnishing_name]['items']
+    assert xml_data
+    assert xml_data['furnishings'][furnishing_name]['items']
 
-    furnishing_items = processor._xml_data['furnishings'][furnishing_name]['items']
+    furnishing_items = xml_data['furnishings'][furnishing_name]['items']
     assert furnishing_items[0] == furnishings[1]
     assert furnishing_items[1] == furnishings[0]

@@ -17,6 +17,7 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Final
+
 from flask import Flask, current_app
 from jinja2 import Template
 from legal_api.models import Furnishing, FurnishingGroup, XmlPayload
@@ -96,7 +97,7 @@ class PostProcessor:
         self._processed_date = LegislationDatetime.now()
 
         # setup the sftp connection objects
-        self._bclaws_sftp_service = SftpConnection(
+        self._bclaws_sftp_connection = SftpConnection(
             username=app.config.get('BCLAWS_SFTP_USERNAME'),
             host=app.config.get('BCLAWS_SFTP_HOST'),
             port=app.config.get('BCLAWS_SFTP_PORT'),
@@ -165,15 +166,14 @@ class PostProcessor:
         payload = self._build_xml_data(xml_data)
         filename = f'QP_CORP_{LegislationDatetime.format_as_legislation_date(self._processed_date)}.xml'
 
-        self._bclaws_sftp_service.connect()
-        resp = self._bclaws_sftp_service.put_fo(
-                fl=StringIO(payload),
-                remote_path=(
-                    f'{self._app.config.get("BCLAWS_SFTP_STORAGE_DIRECTORY")}'
-                    f'/{filename}'
+        with self._bclaws_sftp_connection as client:
+            resp = client.putfo(
+                    fl=StringIO(payload),
+                    remotepath=(
+                        f'{self._app.config.get("BCLAWS_SFTP_STORAGE_DIRECTORY")}'
+                        f'/{filename}'
+                    )
                 )
-            )
-        self._bclaws_sftp_service.close()
         self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCLaws SFTP')
 
         # Save xml payload
@@ -186,21 +186,20 @@ class PostProcessor:
             f'Furnishing records with group id: {furnishing_group.id} marked as processed')
 
 
-
 def process(app: Flask, furnishings_dict: dict):
     """Run postprocess after stage run to upload files to external resources."""
     try:
         processor = PostProcessor(app, furnishings_dict)
         processor.process()
     except AuthenticationException as err:
-        notes='SFTP Error: Unable to authenticate.'
+        notes = 'SFTP Error: Unable to authenticate.'
         processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
         app.logger.error(err)
     except (NoValidConnectionsError, IOError) as err:
-        notes=f'SFTP Error: {os.strerror(err.errno)}.'
+        notes = f'SFTP Error: {os.strerror(err.errno)}.'
         processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
         app.logger.error(err)
     except Exception as err:
-        notes = "Unnexpected error during post-processing."
+        notes = 'Unnexpected error during post-processing.'
         processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
         app.logger.error(err)

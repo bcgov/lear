@@ -19,7 +19,6 @@ from enum import auto
 from typing import Callable
 
 import paramiko
-from paramiko.sftp_attr import SFTPAttributes
 
 from furnishings.utils.base import BaseEnum
 
@@ -65,7 +64,7 @@ class SftpConnection:
         self.sftp_handler = None
         self.ssh_connection = None
 
-    def connect(self) -> Callable:
+    def __enter__(self) -> Callable:
         """Connect to the SFTP server.
 
         Returns:
@@ -102,7 +101,7 @@ class SftpConnection:
             print(e)
             raise e
 
-    def close(self):
+    def __exit__(self, exc_type, exc_value, traceback):
         """Close the SFTP Connection object."""
         if self.sftp_handler:
             self.sftp_handler.close()
@@ -110,38 +109,3 @@ class SftpConnection:
         if self.ssh_connection:
             self.ssh_connection.close()
             self.ssh_connection = None
-
-    def put(self, local_path: str, remote_path: str) -> None:
-        """Upload a file to the SFTP server.
-
-        Args:
-            local_path (str): The local path of the file to upload.
-            remote_path (str): The remote path of the file to upload.
-        """
-        if self.sftp_handler:
-            with io.open(local_path, 'rb').read() as buffer:
-                with self.sftp_handler.open(remote_path, 'wb') as file:
-                    file.write(buffer)
-                    file.close()
-
-    def put_buffer(self, buffer: bytes, remote_path: str) -> None:
-        """Upload a buffer of bytes to the SFTP server.
-
-        Args:
-            buffer (bytes): The buffer of the file to upload.
-            remote_path (str): The remote path of the file to upload.
-        """
-        if self.sftp_handler:
-            file = self.sftp_handler.open(remote_path, 'wb')
-            file.write(buffer)
-            file.close()
-
-    def put_fo(self, fl, remote_path: str) -> SFTPAttributes | None:  # pylint: disable=inconsistent-return-statements
-        """Copy the contents of an open file object (fl) to the SFTP server.
-
-        Args:
-            fl: The opened file or file-like object to copy.
-            remote_path (str): The remote path of the file to upload.
-        """
-        if self.sftp_handler:
-            return self.sftp_handler.putfo(fl, remotepath=remote_path)
