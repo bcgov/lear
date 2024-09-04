@@ -250,20 +250,28 @@ def test_stage_2_process_find_entry(app, session, test_name, batch_status, statu
 
 
 @pytest.mark.parametrize(
-    'test_name, status, step', [
+    'test_name, status, step, furnishing_status', [
         (
-            'MOVE_2_STAGE_2',
+            'MOVE_2_STAGE_2_SUCCESS',
             BatchProcessing.BatchProcessingStatus.PROCESSING,
-            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            Furnishing.FurnishingStatus.PROCESSED
+        ),
+        (
+            'MOVE_2_STAGE_2_FAILED',
+            BatchProcessing.BatchProcessingStatus.ERROR,
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+            Furnishing.FurnishingStatus.FAILED
         ),
         (
             'MOVE_BACK_2_GOOD_STANDING',
             BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+            Furnishing.FurnishingStatus.PROCESSED
         ),
     ]
 )
-def test_stage_2_process_update_business(app, session, test_name, status, step):
+def test_stage_2_process_update_business(app, session, test_name, status, step, furnishing_status):
     """Assert that businesses are processed correctly."""
     business = factory_business(identifier='BC1234567')
     batch = factory_batch(status=Batch.BatchStatus.PROCESSING)
@@ -280,7 +288,7 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
         batch_id = batch.id,
         business_id = business.id,
         business_identifier = business.identifier,
-        status = Furnishing.FurnishingStatus.PROCESSED,
+        status = furnishing_status,
     )
     furnishing.save()
 
@@ -293,27 +301,38 @@ def test_stage_2_process_update_business(app, session, test_name, status, step):
     assert batch_processing.status == status
     assert batch_processing.step == step
 
-    if test_name == 'MOVE_2_STAGE_2':
+    if test_name == 'MOVE_2_STAGE_2_FAILED':
+        assert batch_processing.notes == 'stage 1 email or letter has not been sent'
+
+    if test_name == 'MOVE_2_STAGE_2_SUCCESS':
         assert batch_processing.trigger_date.date() == datetime.utcnow().date() + datedelta(days=30)
     else:
         assert batch_processing.trigger_date == TRIGGER_DATE
 
 @pytest.mark.parametrize(
-    'test_name, status, step', [
+    'test_name, status, step, furnishing_status', [
         (
             'DISSOLVE_BUSINESS',
             BatchProcessing.BatchProcessingStatus.QUEUED,
-            BatchProcessing.BatchProcessingStep.DISSOLUTION
+            BatchProcessing.BatchProcessingStep.DISSOLUTION,
+            Furnishing.FurnishingStatus.PROCESSED
+        ),
+        (
+            'DISSOLVE_BUSINESS_FAILED',
+            BatchProcessing.BatchProcessingStatus.ERROR,
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            Furnishing.FurnishingStatus.FAILED
         ),
         (
             'MOVE_BACK_TO_GOOD_STANDING',
             BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            Furnishing.FurnishingStatus.PROCESSED
         ),
     ]
 )
 @pytest.mark.asyncio
-async def test_stage_3_process(app, session, test_name, status, step):
+async def test_stage_3_process(app, session, test_name, status, step, furnishing_status):
     """Assert that businesses are processed correctly."""
     business = factory_business(identifier='BC1234567')
     batch = factory_batch(status=Batch.BatchStatus.PROCESSING)
@@ -331,7 +350,7 @@ async def test_stage_3_process(app, session, test_name, status, step):
         batch_id = batch.id,
         business_id = business.id,
         business_identifier = business.identifier,
-        status = Furnishing.FurnishingStatus.PROCESSED,
+        status = furnishing_status,
     )
     furnishing.save()
 
@@ -346,6 +365,9 @@ async def test_stage_3_process(app, session, test_name, status, step):
             mock_put_filing_on_queue.assert_called()
             assert batch_processing.filing_id
             assert batch.status == Batch.BatchStatus.PROCESSING
+        elif test_name == 'DISSOLVE_BUSINESS_FAILED':
+            assert batch.status == Batch.BatchStatus.PROCESSING
+            assert batch_processing.notes == 'stage 2 intent to dissolve data has not been sent'
         else:
             assert batch.status == Batch.BatchStatus.COMPLETED
 
