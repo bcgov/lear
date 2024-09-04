@@ -17,7 +17,7 @@ import pytest
 from legal_api.models import BatchProcessing, Furnishing, FurnishingGroup, XmlPayload
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from furnishings.stage_processors.post_processor import PostProcessor, process
+from furnishings.stage_processors.post_processor import PostProcessor
 
 from .. import factory_batch, factory_batch_processing, factory_business, factory_furnishing
 

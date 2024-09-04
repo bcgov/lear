@@ -20,7 +20,7 @@ from typing import Final
 
 from flask import Flask, current_app
 from jinja2 import Template
-from legal_api.models import Furnishing, FurnishingGroup, XmlPayload
+from legal_api.models import Configuration, Furnishing, FurnishingGroup, XmlPayload
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from paramiko.ssh_exception import AuthenticationException, NoValidConnectionsError
 
@@ -120,14 +120,14 @@ class PostProcessor:
         return xml_data
 
     @staticmethod
-    def _build_xml_data(xml_data: dict):
+    def _build_xml_data(xml_data: dict, processed_time: str):
         """Build XML payload."""
         template = Path(
             f'{current_app.config.get("XML_TEMPLATE_PATH")}/gazette-notice.xml'
         ).read_text()
         jinja_template = Template(template, autoescape=True)
 
-        return jinja_template.render(xml_data)
+        return jinja_template.render(xml_data, processed_time=processed_time)
 
     @staticmethod
     def _save_xml_payload(payload):
@@ -159,31 +159,33 @@ class PostProcessor:
             return
 
         # Create the XML data from the furnishings dict
-        xml_data = self._format_furnishings(self._furnishings_dict, self._processed_date.strftime('%I:%M %p'))
+        xml_data = self._format_furnishings(self._furnishings_dict, self._processed_date)
         self._app.logger.debug('Formatted furnishing details presented in XML file')
 
         # SFTP to BC Laws
-        payload = self._build_xml_data(xml_data)
+        payload = self._build_xml_data(xml_data, self._processed_date.strftime('%I:%M %p'))
         filename = f'QP_CORP_{LegislationDatetime.format_as_legislation_date(self._processed_date)}.xml'
 
-        with self._bclaws_sftp_connection as client:
-            resp = client.putfo(
-                    fl=StringIO(payload),
-                    remotepath=(
-                        f'{self._app.config.get("BCLAWS_SFTP_STORAGE_DIRECTORY")}'
-                        f'/{filename}'
+        enable_sftp = Configuration.find_by_name(config_name='ENABLE_BCLAWS_SFTP').val
+        if enable_sftp == "True":
+            with self._bclaws_sftp_connection as client:
+                resp = client.putfo(
+                        fl=StringIO(payload),
+                        remotepath=(
+                            f'{self._app.config.get("BCLAWS_SFTP_STORAGE_DIRECTORY")}'
+                            f'/{filename}'
+                        )
                     )
-                )
-        self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCLaws SFTP')
+            self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCLaws SFTP')
 
-        # Save xml payload
-        furnishing_group, _ = self._save_xml_payload(payload)
-        self._app.logger.debug('Saved XML payload')
+            # Save xml payload
+            furnishing_group, _ = self._save_xml_payload(payload)
+            self._app.logger.debug('Saved XML payload')
 
-        # mark furnishing records processed
-        self.update_furnishings_status(Furnishing.FurnishingStatus.PROCESSED, furnishing_group_id=furnishing_group.id)
-        self._app.logger.debug(
-            f'Furnishing records with group id: {furnishing_group.id} marked as processed')
+            # mark furnishing records processed
+            self.update_furnishings_status(Furnishing.FurnishingStatus.PROCESSED, furnishing_group_id=furnishing_group.id)
+            self._app.logger.debug(
+                f'Furnishing records with group id: {furnishing_group.id} marked as processed')
 
 
 def process(app: Flask, furnishings_dict: dict):
