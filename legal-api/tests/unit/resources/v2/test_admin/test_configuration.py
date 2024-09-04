@@ -34,7 +34,7 @@ def test_get_configurations(app, session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert 'configurations' in rv.json
     results = rv.json['configurations']
-    assert len(results) == 7
+    assert len(results) == 9
 
     names = {'NUM_DISSOLUTIONS_ALLOWED',
              'MAX_DISSOLUTIONS_ALLOWED',
