@@ -42,7 +42,9 @@ def test_get_configurations(app, session, client, jwt):
              'DISSOLUTIONS_STAGE_1_SCHEDULE',
              'DISSOLUTIONS_STAGE_2_SCHEDULE',
              'DISSOLUTIONS_STAGE_3_SCHEDULE',
-             'DISSOLUTIONS_SUMMARY_EMAIL'
+             'DISSOLUTIONS_SUMMARY_EMAIL',
+             'ENABLE_BCLAWS_SFTP',
+             'ENABLE_BCMAIL_SFTP'
              }
     for res in results:
         assert res['name'] in names
