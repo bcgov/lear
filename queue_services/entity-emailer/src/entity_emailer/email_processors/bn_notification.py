@@ -34,9 +34,12 @@ def process(email_msg: dict) -> dict:
 
     # get filing and business json
     business = Business.find_by_identifier(email_msg['identifier'])
-    filing_type = 'incorporationApplication'
-    if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-        filing_type = 'registration'
+    
+    # get filings by types. There will be only one of the listed filing types at once
+    filings = Filing.get_filings_by_types(business.id, ['amalgamationApplication', 'continuationIn',
+                                                        'incorporationApplication', 'registration'])
+    filing_type = filings[0].filing_type
+    
     filing = (Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, filing_type))
     corp_type = CorpType.find_by_id(business.legal_type)
 
