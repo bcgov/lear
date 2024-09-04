@@ -167,7 +167,7 @@ class PostProcessor:
         filename = f'QP_CORP_{LegislationDatetime.format_as_legislation_date(self._processed_date)}.xml'
 
         enable_sftp = Configuration.find_by_name(config_name='ENABLE_BCLAWS_SFTP').val
-        if enable_sftp == "True":
+        if enable_sftp == 'True':
             with self._bclaws_sftp_connection as client:
                 resp = client.putfo(
                         fl=StringIO(payload),
@@ -183,7 +183,10 @@ class PostProcessor:
             self._app.logger.debug('Saved XML payload')
 
             # mark furnishing records processed
-            self.update_furnishings_status(Furnishing.FurnishingStatus.PROCESSED, furnishing_group_id=furnishing_group.id)
+            self.update_furnishings_status(
+                Furnishing.FurnishingStatus.PROCESSED,
+                furnishing_group_id=furnishing_group.id
+            )
             self._app.logger.debug(
                 f'Furnishing records with group id: {furnishing_group.id} marked as processed')
 
