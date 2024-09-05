@@ -38,8 +38,7 @@ def process(email_msg: dict) -> dict:
     # get filings by types. There will be only one of the listed filing types at once
     filings = Filing.get_filings_by_types(business.id, ['amalgamationApplication', 'continuationIn',
                                                         'incorporationApplication', 'registration'])
-    filing_type = filings[0].filing_type
-    filing = (Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, filing_type))
+    filing = filings[0]
     corp_type = CorpType.find_by_id(business.legal_type)
 
     # render template with vars
@@ -50,7 +49,7 @@ def process(email_msg: dict) -> dict:
     )
 
     # get recipients
-    recipients = get_recipients(email_msg['option'], filing.filing_json, filing_type=filing_type)
+    recipients = get_recipients(email_msg['option'], filing.filing_json, filing_type=filing.filing_type)
     return {
         'recipients': recipients,
         'requestBy': 'BCRegistries@gov.bc.ca',
