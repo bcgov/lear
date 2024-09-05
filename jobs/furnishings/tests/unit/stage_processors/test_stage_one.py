@@ -24,12 +24,20 @@ import pytest
 import requests
 from legal_api.models import Address, Business, Furnishing
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
 from legal_api.utils.datetime import datetime as datetime_util
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
 from furnishings.stage_processors.stage_one import StageOneProcessor, process
 
-from .. import factory_address, factory_batch, factory_batch_processing, factory_business, factory_completed_filing, factory_furnishing
+from .. import (
+    factory_address,
+    factory_batch,
+    factory_batch_processing,
+    factory_business,
+    factory_completed_filing,
+    factory_furnishing,
+)
 
 
 RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
@@ -122,7 +130,7 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                 furnishing = furnishings[0]
                 assert furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
                 assert furnishing.furnishing_name == expected_furnishing_name
-                assert furnishing.status == Furnishing.FurnishingStatus.PROCESSED
+                assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
                 assert furnishing.furnishing_group_id is not None
 
                 furnishing_addresses = Address.find_by(furnishings_id=furnishing.id)
@@ -203,7 +211,7 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
         assert len(furnishings) == 2
         mail_furnishing = next((f for f in furnishings if f.furnishing_type == Furnishing.FurnishingType.MAIL), None)
         assert mail_furnishing
-        assert mail_furnishing.status == Furnishing.FurnishingStatus.PROCESSED
+        assert mail_furnishing.status == Furnishing.FurnishingStatus.QUEUED
         assert mail_furnishing.furnishing_group_id is not None
 
         furnishing_addresses = Address.find_by(furnishings_id=mail_furnishing.id)
@@ -218,3 +226,57 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
     else:
         # any other case should not create additional furnishings
         assert len(furnishings) == existing_furnishings
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+        'test_name, entity_type', [
+            ('TEST_FIRST_ROUND_BC', Business.LegalTypes.COMP.value),
+            ('TEST_SECOND_ROUND_BC', Business.LegalTypes.COMP.value),
+            ('TEST_FIRST_ROUND_XPRO', Business.LegalTypes.EXTRA_PRO_A.value),
+            ('TEST_SECOND_ROUND_XPRO', Business.LegalTypes.EXTRA_PRO_A.value),
+            ('TEST_NO_GENERATION', Business.LegalTypes.COMP.value)
+        ]
+)
+async def test_generate_paper_letters(app, session, test_name, entity_type):
+    """Assert that the merged paper letter is generated correctly."""
+    business = factory_business(identifier='BC1234567', entity_type=entity_type)
+    factory_address(address_type=Address.MAILING, business_id=business.id)
+    batch = factory_batch()
+    factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=business.identifier,
+    )
+
+    email = None
+    if 'SECOND' in test_name:
+        email = 'test@no-reply.com'
+        email_furnishing = factory_furnishing(
+            batch_id=batch.id,
+            business_id=business.id,
+            identifier=business.identifier,
+            furnishing_type=Furnishing.FurnishingType.EMAIL,
+            status=Furnishing.FurnishingStatus.QUEUED,
+        )
+        days_elapsed = int(app.config.get('SECOND_NOTICE_DELAY')) + 1
+        email_furnishing.created_date = datetime_util.add_business_days(datetime.datetime.utcnow(), -days_elapsed)
+        email_furnishing.save()
+    
+    if test_name == 'TEST_NO_GENERATION':
+        factory_furnishing(
+            batch_id=batch.id,
+            business_id=business.id,
+            identifier=business.identifier,
+            furnishing_type=Furnishing.FurnishingType.MAIL,
+            status=Furnishing.FurnishingStatus.PROCESSED,
+        )
+
+    qsm = MagicMock()
+    with patch.object(StageOneProcessor, '_get_email_address_from_auth', return_value=email):
+        with patch.object(FurnishingDocumentsService, 'get_merged_furnishing_document', return_value=b'TEST') as mock_get_document:
+            await process(app, qsm)
+            if test_name == 'TEST_NO_GENERATION':
+                mock_get_document.assert_not_called()
+            else:
+                mock_get_document.assert_called()

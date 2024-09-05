@@ -87,7 +87,15 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     SECOND_NOTICE_DELAY = int(os.getenv('SECOND_NOTICE_DELAY', '5'))
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
-    TEMPLATE_PATH = os.getenv('TEMPLATE_PATH', 'src/furnishings-templates')
+    XML_TEMPLATE_PATH = os.getenv('XML_TEMPLATE_PATH', 'furnishings-templates')
+
+    # Letter - GCP Gotenberg report service
+    REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
+    REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
+    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+    # Letter - MRAS
+    MRAS_SVC_URL = os.getenv('MRAS_SVC_URL')
+    MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods

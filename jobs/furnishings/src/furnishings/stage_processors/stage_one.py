@@ -19,7 +19,9 @@ import pytz
 import requests
 from flask import Flask, current_app
 from legal_api.models import Address, Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
+from legal_api.reports.report_v2 import ReportTypes
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
 from legal_api.utils.datetime import datetime as datetime_util
@@ -36,6 +38,11 @@ class StageOneProcessor:
         self._second_notice_delay = app.config.get('SECOND_NOTICE_DELAY')
         self._email_furnishing_group_id = None
         self._mail_furnishing_group_id = None
+
+        self._bc_mail_furnishings = []
+        self._xpro_mail_furnishings = []
+        self._bc_letters = None
+        self._xpro_letters = None
 
     async def process(self, batch_processing: BatchProcessing):
         """Process batch_processing entry."""
@@ -71,6 +78,23 @@ class StageOneProcessor:
             if has_elapsed_email_entry and not has_mail_entry:
                 await self._send_second_round_notification(batch_processing)
 
+    def generate_paper_letters(self):
+        """Generate merged paper letter with cover for BC/XPRO businesses."""
+        self._app.logger.debug('Start generating batch letters.')
+        try:
+            document_service = FurnishingDocumentsService(ReportTypes.DISSOLUTION, 'greyscale')
+            if self._bc_mail_furnishings:
+                self._app.logger.debug('Start generating BC batch letter.')
+                self._bc_letters = document_service.get_merged_furnishing_document(self._bc_mail_furnishings)
+                self._app.logger.debug('Finish generating BC batch letter.')
+            if self._xpro_mail_furnishings:
+                self._app.logger.debug('Start generating XPRO batch letter.')
+                self._xpro_letters = document_service.get_merged_furnishing_document(self._xpro_mail_furnishings)
+                self._app.logger.debug('Finish generating XPRO batch letter.')
+        except Exception as e:
+            self._app.logger.error(f'Error generating batch letters: {e}')
+        self._app.logger.debug('Finish generating batch letters.')
+
     async def _send_first_round_notification(self, batch_processing: BatchProcessing, business: Business):
         """Process first round of notification(email/letter)."""
         _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
@@ -92,7 +116,8 @@ class StageOneProcessor:
                 business.legal_name,
                 email
                 )
-        self._app.logger.debug(f'New furnishing has been created with ID (first round): {new_furnishing.id}')
+        self._app.logger.debug(
+            f'New furnishing has been created for {business.identifier} with ID (first round): {new_furnishing.id}')
 
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
@@ -109,12 +134,12 @@ class StageOneProcessor:
             new_furnishing.save()
             self._app.logger.debug(f'Changed furnishing type to MAIL for funishing with ID: {new_furnishing.id}')
 
-            # TODO: create and add letter to either AR or transition pdf
-            # TODO: send AR and transition pdf to BCMail+
-            new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
-            new_furnishing.processed_date = datetime.utcnow()
+            if business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value:
+                self._xpro_mail_furnishings.append(new_furnishing)
+            else:
+                self._bc_mail_furnishings.append(new_furnishing)
+
             new_furnishing.save()
-            self._app.logger.debug(f'Changed furnishing status to PROCESSED for funishing with ID: {new_furnishing.id}')
 
     async def _send_second_round_notification(self, batch_processing: BatchProcessing):
         """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
@@ -134,17 +159,19 @@ class StageOneProcessor:
             business.last_ar_date if business.last_ar_date else business.founding_date,
             business.legal_name
         )
-        self._app.logger.debug(f'New furnishing has been created with ID (second round): {new_furnishing.id}')
+        self._app.logger.debug(
+            f'New furnishing has been created for {business.identifier} with ID (second round): {new_furnishing.id}')
 
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
             self._app.logger.debug(f'Created address (second round) with furnishing ID: {new_furnishing.id}')
 
-        # TODO: create and add letter to either AR or transition pdf
-        # TODO: send AR and transition pdf to BCMail+
-        new_furnishing.status = Furnishing.FurnishingStatus.PROCESSED
-        new_furnishing.processed_date = datetime.utcnow()
+        if business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value:
+            self._xpro_mail_furnishings.append(new_furnishing)
+        else:
+            self._bc_mail_furnishings.append(new_furnishing)
+
         new_furnishing.save()
 
     def _create_new_furnishing(  # pylint: disable=too-many-arguments
@@ -291,6 +318,9 @@ async def process(app: Flask, qsm: QueueService):  # pylint: disable=redefined-o
 
         for batch_processing in batch_processings:
             await processor.process(batch_processing)
+        processor.generate_paper_letters()
+        # TODO: send AR and transition pdf to BCMail+
+        # TODO: mark MAIL entries as PROCESSED/FAILED
 
     except Exception as err:
         app.logger.error(err)

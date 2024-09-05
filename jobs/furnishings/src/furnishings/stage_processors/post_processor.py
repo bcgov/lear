@@ -51,7 +51,7 @@ class PostProcessor:
     def _build_xml_data(xml_data, processed_time):
         """Build XML payload."""
         template = Path(
-            f'{current_app.config.get("TEMPLATE_PATH")}/gazette-notice.xml'
+            f'{current_app.config.get("XML_TEMPLATE_PATH")}/gazette-notice.xml'
         ).read_text()
         jinja_template = Template(template, autoescape=True)
 
