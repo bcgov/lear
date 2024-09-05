@@ -20,13 +20,11 @@ from datedelta import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 from sqlalchemy_continuum import versioning_manager
-from legal_api.exceptions.error_messages import ErrorCode
 
+from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
     Address,
     Alias,
-    amalgamation,
-    amalgamating_business,
     Batch,
     BatchProcessing,
     Business,
@@ -40,6 +38,8 @@ from legal_api.models import (
     ShareClass,
     ShareSeries,
     User,
+    amalgamating_business,
+    amalgamation,
     db,
 )
 from legal_api.models.colin_event_id import ColinEventId
@@ -459,9 +459,9 @@ def factory_furnishing(business_id,
     return furnishing
 
 
-def factory_business_with_stage_one_furnishing(legal_type=None, furnishing_name=Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR):
+def factory_business_with_stage_one_furnishing(identifier='BC1234567', legal_type=None, furnishing_name=Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR):
     """Create a business with a stage one furnishing entry."""
-    business = factory_business(identifier='BC1234567', entity_type=legal_type)
+    business = factory_business(identifier=identifier, entity_type=legal_type)
     factory_business_mailing_address(business)
     batch = factory_batch()
     furnishing = factory_furnishing(business_id=business.id,

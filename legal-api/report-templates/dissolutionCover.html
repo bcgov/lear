@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Cover for Dissolution/Cancellation Letter</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[common/v2/styleMail.html]]
+  </head>
+  <body>
+    <div class="cover-container">
+        <div class="cover-header">
+            <span>Dissolution / Cancellation Letter<span>
+        </div>
+
+        <table class="cover-statistics">
+            <tr>
+                <td class="bold">Number of Letters:</td>
+                <td>{{ letterCount }}</td>
+            </tr>
+            <tr>
+                <td class="bold">Report Run Date:</td>
+                <td>{{ reportDate }}</td>
+            </tr>
+            <tr>
+                <td class="bold">Report Batch ID:</td>
+                <td>{{ customBatchId }}</td>
+            </tr>
+            <tr>
+                <td class="bold">Report Page Count:</td>
+                <td>{{ pageCount }}</td>
+            </tr>
+        </table>
+
+        <div class="cover-environment upper-text">
+            {{ environment }}
+        </div>
+    </div>
+  </body>
+</html>
