@@ -651,7 +651,7 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
                            business_id=business.id, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date
     filing.save()
-    if option == Filing.Status.COMPLETED.value:
+    if option in [Filing.Status.COMPLETED.value, 'bn']:
         uow = versioning_manager.unit_of_work(session)
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id
@@ -679,7 +679,7 @@ def prep_continuation_in_filing(session, identifier, payment_id, option):
                            business_id=business.id, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date
     filing.save()
-    if option == Filing.Status.COMPLETED.value:
+    if option in [Filing.Status.COMPLETED.value, 'bn']:
         uow = versioning_manager.unit_of_work(session)
         transaction = uow.create_transaction(session)
         filing.transaction_id = transaction.id

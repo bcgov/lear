@@ -45,7 +45,7 @@ def process(email_msg: dict) -> dict:
     )
 
     # get recipients
-    recipients = get_recipients(email_msg['option'], filing.filing_json)
+    recipients = get_recipients(email_msg['option'], filing.filing_json, None, filing_type)
 
     return {
         'recipients': recipients,
@@ -56,15 +56,15 @@ def process(email_msg: dict) -> dict:
             'attachments': []
         }
     }
-    
+
+
 def get_filing_data(filing, filing_type):
+    """Get filing data based on filing type."""
     filing_data = []
     if filing_type == 'amalgamationApplication':
-        filing_data=(filing.json)['filing']['amalgamationApplication']
-        
+        filing_data = (filing.json)['filing']['amalgamationApplication']
     if filing_type == 'continuationIn':
-        filing_data=(filing.json)['filing']['continuationIn']
-        
+        filing_data = (filing.json)['filing']['continuationIn']
     if filing_type == 'incorporationApplication':
-        filing_data=(filing.json)['filing']['incorporationApplication']
+        filing_data = (filing.json)['filing']['incorporationApplication']
     return filing_data
