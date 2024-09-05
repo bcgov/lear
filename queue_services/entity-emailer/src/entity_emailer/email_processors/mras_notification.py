@@ -45,7 +45,7 @@ def process(email_msg: dict) -> dict:
     )
 
     # get recipients
-    recipients = get_recipients(email_msg['option'], filing.filing_json, None, filing_type)
+    recipients = get_recipients(email_msg['option'], filing.filing_json, filing_type=filing_type)
 
     return {
         'recipients': recipients,
