@@ -13,7 +13,6 @@
 # limitations under the License.
 """Furnishings job processing rules after stage runs of involuntary dissolution."""
 import os
-import base64
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -169,10 +168,10 @@ class PostProcessor:
         if flag_on := flags.is_on('disable-dissolution-sftp-bclaws'):
             self._app.logger.debug(f'disable-dissolution-sftp-bclaws flag on: {flag_on}')
             return
-        
+
         # SFTP to BC Laws
         payload = self._build_xml_data(xml_data, self._processed_date.strftime('%I:%M %p'))
-        filename = f'QP_CORP_{LegislationDatetime.format_as_legislation_date(self._processed_date)}.xml'  
+        filename = f'QP_CORP_{LegislationDatetime.format_as_legislation_date(self._processed_date)}.xml'
         with self._bclaws_sftp_connection as client:
             resp = client.putfo(
                     fl=StringIO(payload),
