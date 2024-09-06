@@ -203,3 +203,6 @@ def _set_shares(primary_or_holding_business, amalgamation_filing):
             del series['id']
         share_classes.append(share_class_json)
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
+    business_dates = [item.resolution_date.isoformat() for item in primary_or_holding_business.resolutions]
+    if business_dates:
+        amalgamation_filing['shareStructure']['resolutionDates'] = business_dates

@@ -154,6 +154,9 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
                                                                              primary_or_holding_business.id)
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
+    business_dates = [item.resolution_date.isoformat() for item in primary_or_holding_business.resolutions]
+    if business_dates:
+        amalgamation_filing['shareStructure']['resolutionDates'] = business_dates
 
 
 @bp.route('/internal/filings/<int:filing_id>', methods=['PATCH'])
