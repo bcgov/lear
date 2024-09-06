@@ -18,7 +18,7 @@ from ldclient.config import Config  # noqa: I005
 from ldclient.impl.integrations.files.file_data_source import _FileDataSource
 from ldclient.interfaces import UpdateProcessor
 
-from legal_api.models import User
+# from legal_api.models import User
 
 
 class FileDataSource(UpdateProcessor):
@@ -106,15 +106,15 @@ class Flags():
         }
 
     @staticmethod
-    def _user_as_key(user: User):
+    def _user_as_key(user):
         user_json = {
-            'key': user.sub,
-            'firstName': user.firstname,
-            'lastName': user.lastname
+            'key': getattr(user, 'sub', None),
+            'firstName': getattr(user, 'firstname', None),
+            'lastName': getattr(user, 'lastname', None)
         }
         return user_json
 
-    def is_on(self, flag: str, user: User = None) -> bool:
+    def is_on(self, flag: str, user = None) -> bool:
         """Assert that the flag is set for this user."""
         client = self._get_client()
 
@@ -129,7 +129,7 @@ class Flags():
             current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
             return False
 
-    def value(self, flag: str, user: User = None) -> bool:
+    def value(self, flag: str, user = None) -> bool:
         """Retrieve the value  of the (flag, user) tuple."""
         client = self._get_client()
 

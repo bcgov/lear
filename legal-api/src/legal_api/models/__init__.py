@@ -49,6 +49,7 @@ from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User, UserRoles
 from .xml_payload import XmlPayload
+# from .versioning import VersionedMixin
 
 
 __all__ = (
@@ -93,4 +94,5 @@ __all__ = (
     'User',
     'UserRoles',
     'XmlPayload'
+    # 'VersionedMixin'
 )
