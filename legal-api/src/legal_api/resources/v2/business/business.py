@@ -212,3 +212,17 @@ def search_businesses():
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+
+@bp.route('/<string:identifier>/db_versioning_test', methods=['GET'])
+@cross_origin(origin='*')
+def db_versioning_test(identifier: str):
+    """Return a JSON object with meta information about the Service."""
+    identifier = 'FM0385546'
+    business = Business.find_by_identifier(identifier)
+
+    business.admin_freeze = not business.admin_freeze
+    business.save()
+    business = Business.find_by_identifier(identifier)
+    return jsonify({'success': True, 'admin_freeze': business.admin_freeze}), HTTPStatus.OK
