@@ -231,3 +231,62 @@ class FilingInfo(Resource):
                                   'filing_type': filing_type,
                                   'filing_sub_type': filing.filing_sub_type})
         return filings_added
+
+
+@cors_preflight('POST')
+@API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
+# pylint: disable=too-few-public-methods
+class UpdateARStatus(Resource):
+    """Updates the corporation and set_ar_to_no tables after a AR Reminder email is sent"""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def post(identifier, **kwargs):
+        """Called by Business AR Reminder Batch job for each corporation after an email AR reminder is sent"""
+
+        # pylint: disable=unused-argument
+        try:
+            with DB.connection as con:
+                with con.cursor() as cursor:
+                    # First, check if the send_ar_ind flag is 'Y' for the given corporation
+                    check_flag_query = """
+                        SELECT send_ar_ind
+                        FROM corporation
+                        WHERE corp_num = :identifier
+                    """
+                    cursor.execute(check_flag_query, {'identifier': identifier})
+                    result = cursor.fetchone()
+
+                    # Return an error if corporation is not found or if the flag is already set to 'N'
+                    if not result:
+                        current_app.logger.warning(f'Corporation with identifier {identifier} not found.')
+                        return jsonify({'message': f'Corporation with identifier {identifier} not found.'}), HTTPStatus.NOT_FOUND
+                    set_ar_ind_flag = result[0].strip()
+                    if set_ar_ind_flag != 'Y':
+                        current_app.logger.warning(f'send_ar_ind for corporation {identifier} is not Y. Current value: {set_ar_ind_flag}')
+                        return jsonify({'message': f'send_ar_ind for corporation {identifier} must be Y, but it is {set_ar_ind_flag}.'}), HTTPStatus.BAD_REQUEST
+
+                    # Update the send_ar_ind flag to 'N' in the corporation table
+                    update_corporation_query = """
+                        UPDATE corporation
+                        SET send_ar_ind = 'N'
+                        WHERE corp_num = :identifier
+                    """
+                    cursor.execute(update_corporation_query, {'identifier': identifier})
+
+                    # Insert the corporation into the set_ar_to_no table with a previous value of 'Y'
+                    insert_ar_to_no_query = """
+                        INSERT INTO set_ar_to_no (corp_num, previous_value, update_date)
+                        VALUES (:identifier, 'Y', CURRENT_TIMESTAMP)
+                    """
+                    cursor.execute(insert_ar_to_no_query, {'identifier': identifier})
+
+                    # Commit the transaction
+                    con.commit()
+                    current_app.logger.info(f'Successfully updated AR status for corporation {identifier}.')
+                    return jsonify({'message': f'AR status updated for corporation {identifier}.'}), HTTPStatus.OK
+
+        except Exception as err:  # pylint: disable=broad-except
+            current_app.logger.error(f'Error updating AR status for {identifier}: {str(err)}')
+            return jsonify({'message': 'Error updating AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR
