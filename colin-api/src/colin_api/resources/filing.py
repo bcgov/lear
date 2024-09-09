@@ -237,14 +237,13 @@ class FilingInfo(Resource):
 @API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
 # pylint: disable=too-few-public-methods
 class UpdateARStatus(Resource):
-    """Updates the corporation and set_ar_to_no tables after a AR Reminder email is sent"""
+    """Update the corporation and set_ar_to_no tables after a AR Reminder email is sent."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(identifier, **kwargs):
-        """Called by Business AR Reminder Batch job for each corporation after an email AR reminder is sent"""
-
+        """Trigger cleaning up data in Colin for the corporation after a Business AR Reminder email is sent."""
         # pylint: disable=unused-argument
         try:
             with DB.connection as con:
@@ -261,11 +260,17 @@ class UpdateARStatus(Resource):
                     # Return an error if corporation is not found or if the flag is already set to 'N'
                     if not result:
                         current_app.logger.warning(f'Corporation with identifier {identifier} not found.')
-                        return jsonify({'message': f'Corporation with identifier {identifier} not found.'}), HTTPStatus.NOT_FOUND
+                        return jsonify(
+                            {'message': f'Corporation with identifier {identifier} not found.'}
+                        ), HTTPStatus.NOT_FOUND
                     set_ar_ind_flag = result[0].strip()
                     if set_ar_ind_flag != 'Y':
-                        current_app.logger.warning(f'send_ar_ind for corporation {identifier} is not Y. Current value: {set_ar_ind_flag}')
-                        return jsonify({'message': f'send_ar_ind for corporation {identifier} must be Y, but it is {set_ar_ind_flag}.'}), HTTPStatus.BAD_REQUEST
+                        current_app.logger.warning(
+                            f'send_ar_ind for corporation {identifier} is not Y. Current value: {set_ar_ind_flag}'
+                        )
+                        return jsonify(
+                            {'message': f'send_ar_ind for corporation {identifier} must be Y.'}
+                        ), HTTPStatus.BAD_REQUEST
 
                     # Update the send_ar_ind flag to 'N' in the corporation table
                     update_corporation_query = """
