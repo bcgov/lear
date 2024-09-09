@@ -333,14 +333,14 @@ def get_allowable_filings_dict():
                     'fullRestoration': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'invalidStateFilings': ['continuationIn', 'continuationOut'],
+                            'invalidStateFilings': ['continuationOut'],
                             'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
                         }
                     },
                     'limitedRestoration': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'invalidStateFilings': ['continuationIn', 'continuationOut'],
+                            'invalidStateFilings': ['continuationOut'],
                             'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
                         }
                     }

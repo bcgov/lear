@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
@@ -14,7 +14,7 @@
         },
         {
             "name": "Python: Flask",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "flask",
             "env": {
@@ -31,12 +31,14 @@
             "justMyCode": false
         },
         {
-          "name": "Python: Debug Unit Tests",
-          "type": "python",
-          "request": "launch",
-          "purpose": ["debug-test"],
-          "console": "integratedTerminal",
-          "justMyCode": false
+            "name": "Python: Debug Unit Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "purpose": [
+                "debug-test"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ]
 }
