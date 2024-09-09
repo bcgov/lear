@@ -20,6 +20,7 @@ from legal_api import db as _db
 from sqlalchemy import event, text
 from sqlalchemy.schema import MetaData
 
+from furnishings.sftp import SftpConnection
 from furnishings.worker import create_app
 
 
@@ -40,6 +41,18 @@ def client_ctx(app):
     """
     with app.test_client() as c:
         yield c
+
+@pytest.fixture(scope="session")
+def sftpconnection(sftpserver):
+    """
+    Returns a session-wide SFTP connection.
+    """
+    return SftpConnection(
+        username="user",
+        password="pwd",
+        host=sftpserver.host,
+        port=sftpserver.port
+    )
 
 @pytest.fixture(scope='session')
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name

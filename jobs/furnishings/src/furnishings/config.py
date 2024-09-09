@@ -82,6 +82,24 @@ class _Config:  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
+    # BCLaws SFTP
+    BCLAWS_SFTP_STORAGE_DIRECTORY = os.getenv('BCLAWS_SFTP_STORAGE_DIRECTORY', None)
+    BCLAWS_SFTP_HOST = os.getenv('BCLAWS_SFTP_HOST', None)
+    BCLAWS_SFTP_PORT = os.getenv('BCLAWS_SFTP_PORT', None)
+    BCLAWS_SFTP_USERNAME = os.getenv('BCLAWS_SFTP_USERNAME', None)
+    BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM', 'ED25519')
+    BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv('BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE', None)
+    BCLAWS_SFTP_PRIVATE_KEY = os.getenv('BCLAWS_SFTP_PRIVATE_KEY', None)
+
+    # BCMail+ SFTP
+    BCMAIL_SFTP_STORAGE_DIRECTORY = os.getenv('BCMAIL_SFTP_STORAGE_DIRECTORY', None)
+    BCMAIL_SFTP_HOST = os.getenv('BCMAIL_SFTP_HOST', None)
+    BCMAIL_SFTP_PORT = os.getenv('BCMAIL_SFTP_PORT', None)
+    BCMAIL_SFTP_USERNAME = os.getenv('BCMAIL_SFTP_USERNAME', None)
+    BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM', 'ED25519')
+    BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE', None)
+    BCMAIL_SFTP_PRIVATE_KEY = os.getenv('BCMAIL_SFTP_PRIVATE_KEY', None)
+
     TESTING = False
     DEBUG = False
 
@@ -124,6 +142,12 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
         port=int(DB_PORT),
         name=DB_NAME,
     )
+
+    # BCLaws SFTP
+    BCLAWS_SFTP_STORAGE_DIRECTORY = 'bclaws'
+
+    # BCMail+ SFTP
+    BCMAIL_SFTP_STORAGE_DIRECTORY = 'bcmail'
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
