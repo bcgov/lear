@@ -1191,6 +1191,52 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             raise err
 
     @classmethod
+    def _insert_set_ar_to_no(cls, cursor, filing.corp_num):
+        """Add to SET_AR_TO_NO table."""
+        """Update CORPORATION table."""
+        try:
+            cursor.execute(
+                """
+                INSERT INTO set_ar_to_no (corp_num,previous_value,update_date)
+                VALUES (:corp_num,(select send_ar_ind from corporation WHERE corp_num=:corp_num),sysdate)
+                """,
+                event_id=filing.event_id,
+                user_id=filing.user_id,
+                last_name=filing.get_certified_by(),
+                email_address=filing.get_email()
+            )
+            cursor.execute(
+                """
+                UPDATE corporation SET send_ar_ind='N' WHERE corp_num=:corp_num
+                """,
+                event_id=filing.event_id,
+                user_id=filing.user_id,
+                last_name=filing.get_certified_by(),
+                email_address=filing.get_email()
+            )
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+    @classmethod
+
+    def _delete__ar_prompt(cls, cursor, filing.corp_num):
+        """delete corporation record in AR_PROMPT table."""
+        try:
+            cursor.execute(
+                """
+                SELECT * FROM ar_prompt WHERE corp_num=:corp_num;
+                DELETE from AR_PROMPT WHERE corp_num=:corp_num;
+                """,
+                event_id=filing.event_id,
+                user_id=filing.user_id,
+                last_name=filing.get_certified_by(),
+                email_address=filing.get_email()
+            )
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
+           
+    @classmethod
     def _get_last_ar_filed_date(cls, header: dict, business: dict, filing_source: str):
         last_ar_filed_dt = datetime.datetime.utcnow().strftime('%Y-%m-%d')
         if filing_source == cls.FilingSource.BAR.value:
