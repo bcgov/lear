@@ -137,7 +137,11 @@ def get_businesses(legal_types: list):
 async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
     """Find business to send annual report reminder."""
     try:
-        legal_types = [Business.LegalTypes.BCOMP.value]  # entity types to send ar reminder
+        legal_types = [Business.LegalTypes.BCOMP.value,
+                       Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                       Business.LegalTypes.CONTINUE_IN.value,
+                       Business.LegalTypes.ULC_CONTINUE_IN.value,
+                       Business.LegalTypes.CCC_CONTINUE_IN.value,]  # entity types to send ar reminder
 
         if flags.is_on('enable-bc-ccc-ulc'):
             legal_types.extend(
