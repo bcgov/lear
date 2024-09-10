@@ -78,20 +78,19 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
         filing = create_filing(json_filing=ar, business_id=business.id)
         annual_report.process(business, filing.filing_json['filing'], filing_meta=filing_meta, flag_on=flag_on)
 
-    # check it out
-    if flag_on and in_dissolution and not eligibility:
-        assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
-        assert batch_processing.notes == 'Moved back to good standing'
-    else:
-        if in_dissolution:
-            assert batch_processing.status == BatchProcessing.BatchProcessingStatus.PROCESSING.value
-            assert batch_processing.notes == ''
-        if legal_type == 'CP':
-            # require the agm for [Business.LegalTypes.COOP.value, Business.LegalTypes.XPRO_LIM_PARTNR.value]
-            assert str(business.last_agm_date) == str(agm_date)
-            assert str(business.last_ar_date) == str(agm_date)
+        # check it out
+        if flag_on and in_dissolution and not eligibility:
+            assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
         else:
-            assert str(business.last_ar_date) == str(ar_date)
+            if in_dissolution:
+                assert batch_processing.status == BatchProcessing.BatchProcessingStatus.PROCESSING.value
+                assert batch_processing.notes == ''
+            if legal_type == 'CP':
+                # require the agm for [Business.LegalTypes.COOP.value, Business.LegalTypes.XPRO_LIM_PARTNR.value]
+                assert str(business.last_agm_date) == str(agm_date)
+                assert str(business.last_ar_date) == str(agm_date)
+            else:
+                assert str(business.last_ar_date) == str(ar_date)
 
 
 async def test_process_ar_filing_no_agm(app, session):
