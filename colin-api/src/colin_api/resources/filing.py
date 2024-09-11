@@ -124,19 +124,20 @@ class FilingInfo(Resource):
                 filing_list = {'correction': json_data['correction']}
             else:
                 filing_list = {
+                    'alteration': json_data.get('alteration', None),
+                    'amalgamationApplication': json_data.get('amalgamationApplication', None),
+                    'annualReport': json_data.get('annualReport', None),
                     'changeOfAddress': json_data.get('changeOfAddress', None),
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
-                    'annualReport': json_data.get('annualReport', None),
-                    'incorporationApplication': json_data.get('incorporationApplication', None),
-                    'amalgamationApplication': json_data.get('amalgamationApplication', None),
+                    'consentContinuationOut': json_data.get('consentContinuationOut', None),
                     'continuationIn': json_data.get('continuationIn', None),
-                    'alteration': json_data.get('alteration', None),
-                    'transition': json_data.get('transition', None),
-                    'registrarsNotation': json_data.get('registrarsNotation', None),
-                    'registrarsOrder': json_data.get('registrarsOrder', None),
                     'courtOrder': json_data.get('courtOrder', None),
                     'dissolution': json_data.get('dissolution', None),
-                    'specialResolution': json_data.get('specialResolution', None)
+                    'incorporationApplication': json_data.get('incorporationApplication', None),
+                    'registrarsNotation': json_data.get('registrarsNotation', None),
+                    'registrarsOrder': json_data.get('registrarsOrder', None),
+                    'specialResolution': json_data.get('specialResolution', None),
+                    'transition': json_data.get('transition', None),
                 }
 
             # Filter out null-values in the filing_list dictionary
