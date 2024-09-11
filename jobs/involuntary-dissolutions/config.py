@@ -80,8 +80,6 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     TESTING = False
     DEBUG = False
 
-    SUMMARY_STORAGE_PATH = os.getenv('SUMMARY_STORAGE_PATH', '')
-    SECOND_NOTICE_DELAY = os.getenv('SECOND_NOTICE_DELAY', None)
     STAGE_1_DELAY = int(os.getenv('STAGE_1_DELAY', '42'))
     STAGE_2_DELAY = int(os.getenv('STAGE_2_DELAY', '30'))
 
