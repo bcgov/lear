@@ -98,6 +98,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
     last_ar_date = None
     last_ledger_timestamp = None
     status = None
+    admin_freeze = None
 
     def __init__(self):
         """Initialize with all values None."""
@@ -122,7 +123,8 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 'lastLedgerTimestamp': self.last_ledger_timestamp,
                 'legalName': self.corp_name,
                 'legalType': self.corp_type,
-                'status': self.status
+                'status': self.status,
+                'adminFreeze': self.admin_freeze
             }
         }
 
@@ -140,8 +142,9 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 'homeJurisdictionNumber': self.home_juris_num,
                 'homeCompanyName': self.home_company_nme,
                 'legalName': self.corp_name,
-                'legalType': self.corp_type,
-                'status': self.status
+                'legalType': self.corp_type,                
+                'status': self.status,
+                'adminFreeze': self.admin_freeze
             }
         }
 
@@ -251,7 +254,11 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             cursor = con.cursor()
             cursor.execute(
                 f"""
-                select corp.corp_num, corp.corp_typ_cd, recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
+                select corp.corp_num, corp.corp_typ_cd, 
+                    CASE WHEN corp.corp_frozen_typ_cd is null THEN 'False'
+                         ELSE 'True'
+                    END AS admin_freeze,
+                    recognition_dts, bn_15, can_jur_typ_cd, othr_juris_desc,
                     home_recogn_dt, home_juris_num, home_company_nme,
                     filing.period_end_dt, last_agm_date, corp_op_state.full_desc as state, admin_email,
                     corp_state.state_typ_cd as corp_state, corp_op_state.op_state_typ_cd as corp_state_class,
@@ -327,6 +334,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 else convert_to_json_date(business['last_agm_date'])
             business_obj.last_ledger_timestamp = convert_to_json_datetime(business['last_ledger_timestamp'])
             business_obj.status = business['state']
+            business_obj.admin_freeze = business['admin_freeze']
 
             return business_obj
 
