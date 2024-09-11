@@ -142,7 +142,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 'homeJurisdictionNumber': self.home_juris_num,
                 'homeCompanyName': self.home_company_nme,
                 'legalName': self.corp_name,
-                'legalType': self.corp_type,                
+                'legalType': self.corp_type,
                 'status': self.status,
                 'adminFreeze': self.admin_freeze
             }
@@ -254,7 +254,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             cursor = con.cursor()
             cursor.execute(
                 f"""
-                select corp.corp_num, corp.corp_typ_cd, 
+                select corp.corp_num, corp.corp_typ_cd,
                     CASE WHEN corp.corp_frozen_typ_cd is null THEN 'False'
                          ELSE 'True'
                     END AS admin_freeze,
