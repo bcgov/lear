@@ -153,7 +153,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             cls.TypeCodes.BC_COMP.value,
             cls.TypeCodes.ULC_COMP.value,
             cls.TypeCodes.CCC_COMP.value
-        ]:
+        ] and lear_identifier.startswith('BC'):
             return lear_identifier[-7:]
 
         return lear_identifier

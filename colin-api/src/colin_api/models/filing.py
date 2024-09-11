@@ -72,6 +72,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.BC_COMP.value: 'ANNBC',
             Business.TypeCodes.ULC_COMP.value: 'ANNBC',
             Business.TypeCodes.CCC_COMP.value: 'ANNBC',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'ANNBC',
+            Business.TypeCodes.CONTINUE_IN.value: 'ANNBC',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'ANNBC',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'ANNBC',
         },
         'changeOfDirectors': {
             'type_code_list': ['OTCDR', 'NOCDR'],
@@ -79,7 +83,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.BCOMP.value: 'NOCDR',
             Business.TypeCodes.BC_COMP.value: 'NOCDR',
             Business.TypeCodes.ULC_COMP.value: 'NOCDR',
-            Business.TypeCodes.CCC_COMP.value: 'NOCDR'
+            Business.TypeCodes.CCC_COMP.value: 'NOCDR',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'NOCDR',
+            Business.TypeCodes.CONTINUE_IN.value: 'NOCDR',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'NOCDR',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'NOCDR',
         },
         'changeOfAddress': {
             'type_code_list': ['OTADD', 'NOCAD'],
@@ -88,7 +96,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.BC_COMP.value: 'NOCAD',
             Business.TypeCodes.ULC_COMP.value: 'NOCAD',
             Business.TypeCodes.CCC_COMP.value: 'NOCAD',
-
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'NOCAD',
+            Business.TypeCodes.CONTINUE_IN.value: 'NOCAD',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'NOCAD',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'NOCAD',
         },
         'incorporationApplication': {
             'type_code_list': ['OTINC', 'BEINC', 'ICORP', 'ICORU', 'ICORC'],
@@ -113,16 +124,26 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         },
         'alteration': {
             'type_code_list': ['NOABE', 'NOALE', 'NOALR', 'NOALD', 'NOALA', 'NOALB', 'NOALU', 'NOALC'],
-            Business.TypeCodes.BCOMP.value: 'NOABE',
+            Business.TypeCodes.BCOMP.value: 'NOABE',  # No corp type change
+            Business.TypeCodes.BC_COMP.value: 'NOALA',  # No corp type change
+            Business.TypeCodes.ULC_COMP.value: 'NOALA',  # No corp type change
+            Business.TypeCodes.CCC_COMP.value: 'NOALA',  # No corp type change
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'NOABE',  # No corp type change
+            Business.TypeCodes.CONTINUE_IN.value: 'NOALA',  # No corp type change
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'NOALA',  # No corp type change
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'NOALA',  # No corp type change
             'BC_TO_BEN': 'NOALE',
             'BEN_TO_BC': 'NOALR',
             'ULC_TO_BEN': 'NOALD',
-            Business.TypeCodes.BC_COMP.value: 'NOALA',
-            Business.TypeCodes.ULC_COMP.value: 'NOALA',
-            Business.TypeCodes.CCC_COMP.value: 'NOALA',
             'ULC_TO_BC': 'NOALB',
             'BC_TO_ULC': 'NOALU',
             'BC_TO_CC': 'NOALC',
+            'C_TO_CBEN': 'NOALE',
+            'CBEN_TO_C': 'NOALR',
+            'CUL_TO_CBEN': 'NOALD',
+            'CUL_TO_C': 'NOALB',
+            'C_TO_CUL': 'NOALU',
+            'C_TO_CCC': 'NOALC',
         },
         'correction': {
             'type_code_list': ['CRBIN'],
@@ -184,8 +205,23 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 Business.TypeCodes.BCOMP.value: 'ADVD2',
                 Business.TypeCodes.BC_COMP.value: 'ADVD2',
                 Business.TypeCodes.ULC_COMP.value: 'ADVD2',
-                Business.TypeCodes.CCC_COMP.value: 'ADVD2'
+                Business.TypeCodes.CCC_COMP.value: 'ADVD2',
+                Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'ADVD2',
+                Business.TypeCodes.CONTINUE_IN.value: 'ADVD2',
+                Business.TypeCodes.ULC_CONTINUE_IN.value: 'ADVD2',
+                Business.TypeCodes.CCC_CONTINUE_IN.value: 'ADVD2',
             }
+        },
+        'consentContinuationOut': {
+            'type_code_list': ['CONTO'],
+            Business.TypeCodes.BCOMP.value: 'CONTO',
+            Business.TypeCodes.BC_COMP.value: 'CONTO',
+            Business.TypeCodes.ULC_COMP.value: 'CONTO',
+            Business.TypeCodes.CCC_COMP.value: 'CONTO',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'CONTO',
+            Business.TypeCodes.CONTINUE_IN.value: 'CONTO',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'CONTO',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'CONTO',
         },
         'changeOfName': {
             'type_code_list': ['OTNCN'],
@@ -489,7 +525,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
                                       'AMLVB', 'AMALV', 'AMLVU', 'AMLVC',
                                       'CONTB', 'CONTI', 'CONTU', 'CONTC',
-                                      'NOABE', 'NOALE', 'NOALR', 'NOALD', 'NOALA', 'NOALB', 'NOALU', 'NOALC'
+                                      'NOABE', 'NOALE', 'NOALR', 'NOALD', 'NOALA', 'NOALB', 'NOALU', 'NOALC',
+                                      'CONTO',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
                 court_order_num = None
@@ -825,6 +862,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                         break
 
             if 'business' in components and schema_name == 'alteration':
+                is_corp_num_decimal = corp_num.isdecimal()   # valid only for BC
                 filing.body['business'] = {}
                 if filing_event_info['filing_type_code'] in ['NOALR', 'NOALB']:
                     filing.body['business']['legalType'] = Business.TypeCodes.BC_COMP.value
@@ -844,7 +882,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                         raise UnableToDetermineCorpTypeException(filing_type=filing.filing_type)
                 else:
                     raise InvalidFilingTypeException(filing_type=filing_event_info['filing_type_code'])
-                if filing.business.corp_num.isdecimal():  # valid only for BC
+                if is_corp_num_decimal:
                     filing.body['business']['identifier'] = f'BC{filing.business.corp_num}'
                 else:
                     filing.body['business']['identifier'] = filing.business.corp_num
@@ -1066,7 +1104,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['alteration', 'amalgamationApplication', 'annualReport', 'changeOfAddress',
-                                          'changeOfDirectors', 'continuationIn', 'correction', 'courtOrder',
+                                          'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
+                                          'correction', 'courtOrder',
                                           'dissolution', 'incorporationApplication', 'registrarsNotation',
                                           'registrarsOrder', 'specialResolution', 'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
@@ -1141,6 +1180,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     elif not provisions:
                         Business.create_corp_restriction(
                             cursor=cursor, event_id=filing.event_id, corp_num=corp_num, provisions=True)
+
                 ledger_text = f'{ar_text}{dir_text}{office_text}'.replace('  ', '')
                 if ledger_text != '':
                     cls._insert_ledger_text(cursor, filing, ledger_text)
@@ -1149,6 +1189,18 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 if filing.filing_type in ['registrarsNotation', 'registrarsOrder', 'courtOrder']:
                     order_details = filing.body.get('orderDetails')
                     cls._insert_ledger_text(cursor, filing, order_details)
+                elif filing.filing_type == 'specialResolution':
+                    resolution_text = filing.body.get('resolution')
+                    cls._insert_ledger_text(cursor, filing, resolution_text)
+                elif filing.filing_type == 'consentContinuationOut':
+                    authorization_text = 'AUTHORIZATION TO CONTINUE OUT TO '
+                    foreign_jurisdiction = filing.body.get('foreignJurisdiction')
+                    country_code = foreign_jurisdiction.get('country').upper()
+                    region_code = (foreign_jurisdiction.get('region') or '').upper()
+                    authorization_text += (f'{country_code}, {region_code}'
+                                           if region_code
+                                           else country_code)
+                    cls._insert_ledger_text(cursor, filing, authorization_text)
 
                 # process voluntary dissolution
                 if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
@@ -1156,11 +1208,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                filing.event_id,
                                                corp_num,
                                                Business.CorpStateTypes.VOLUNTARY_DISSOLUTION.value)
-
-                # process special resolution
-                if filing.filing_type == 'specialResolution':
-                    resolution_text = filing.body.get('resolution')
-                    cls._insert_ledger_text(cursor, filing, resolution_text)
 
                 # update corporation record
                 is_annual_report = filing.filing_type == 'annualReport'
@@ -1475,12 +1522,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _process_name_translations(cls, cursor, filing: Filing, corp_num: str):
         """Process name translations."""
-        old_translations = CorpName.get_current_by_type(
-            cursor=cursor,
-            corp_num=corp_num,
-            type_code=CorpName.TypeCodes.TRANSLATION.value
-        )
         if name_translations := filing.body.get('nameTranslations', []):
+            old_translations = CorpName.get_current_by_type(
+                cursor=cursor,
+                corp_num=corp_num,
+                type_code=CorpName.TypeCodes.TRANSLATION.value
+            )
+
             CorpName.create_translations(cursor, corp_num, filing.event_id, name_translations, old_translations)
             #  End translations in db that are not present in the incoming filing json.
             for old_translation in old_translations:
