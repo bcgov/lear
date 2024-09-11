@@ -299,16 +299,16 @@ class UpdateARStatus(Resource):
  
  
 @cors_preflight('POST')
-@API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
+@API.route('/string:identifier/filings')
 # pylint: disable=too-few-public-methods
 class DeleteARPrompt(Resource):
-    """Update the corporation and set_ar_to_no tables after a AR Reminder email is sent."""
+    """Delete AR Prompt for corporation."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(identifier, **kwargs):
-        """Clean up data in Colin for the corporation after a Business AR Reminder email is sent."""
+        """Clean up data in Colin for the corporation."""
         # pylint: disable=unused-argument
         try:
             with DB.connection as con:
