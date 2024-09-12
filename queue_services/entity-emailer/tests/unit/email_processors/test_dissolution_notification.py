@@ -96,9 +96,11 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
                 email = dissolution_notification.process(
                     {'filingId': filing.id, 'type': 'dissolution', 'option': status}, token)
                 if status == 'PAID':
-                    assert email['content']['subject'] == 'JANE A DOE - Confirmation of Filing from the Business Registry'
+                    assert email['content']['subject'] == \
+                        'JANE A DOE - Confirmation of Filing from the Business Registry'
                 else:
-                    assert email['content']['subject'] == 'JANE A DOE - Dissolution Documents from the Business Registry'
+                    assert email['content']['subject'] == \
+                        'JANE A DOE - Dissolution Documents from the Business Registry'
 
                 if submitter_role:
                     assert f'{submitter_role}@email.com' in email['recipients']

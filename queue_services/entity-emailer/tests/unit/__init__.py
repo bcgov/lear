@@ -200,7 +200,8 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
     return filing
 
 
-def prep_dissolution_filing(session, identifier, payment_id, option, legal_type, legal_name, submitter_role, parties=None):
+def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
+                            legal_name, submitter_role, parties=None):
     """Return a new dissolution filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name, parties)
     filing_template = copy.deepcopy(FILING_HEADER)
@@ -331,7 +332,8 @@ def prep_restoration_filing(identifier, payment_id, legal_type, legal_name, r_ty
     return filing
 
 
-def prep_change_of_registration_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role, parties=None):
+def prep_change_of_registration_filing(session, identifier, payment_id, legal_type,
+                                       legal_name, submitter_role, parties=None):
     """Return a new change of registration filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name, parties)
 
@@ -750,6 +752,7 @@ def create_furnishing(session, business=None, batch_id=None,
         furnishing.batch_id = batch_id
     furnishing.save()
     return furnishing
+
 
 def create_party_role(delivery_address, mailing_address, officer, appointment_date, cessation_date, role_type):
     """Create a role."""

@@ -43,7 +43,8 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
         'partyType': 'person',
         'organizationName': ''
     }]
-    filing = prep_change_of_registration_filing(session, 'FM1234567', '1', legal_type, legal_name, submitter_role, parties)
+    filing = prep_change_of_registration_filing(session, 'FM1234567', '1', legal_type,
+                                                legal_name, submitter_role, parties)
     token = 'token'
     # test processor
     mocker.patch(
@@ -55,7 +56,8 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
         if status == 'PAID':
             assert email['content']['subject'] == 'JANE A DOE - Confirmation of Filing from the Business Registry'
         else:
-            assert email['content']['subject'] == 'JANE A DOE - Change of Registration Documents from the Business Registry'
+            assert email['content']['subject'] == \
+                'JANE A DOE - Change of Registration Documents from the Business Registry'
 
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
