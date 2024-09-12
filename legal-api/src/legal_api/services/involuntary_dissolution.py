@@ -21,6 +21,12 @@ from sqlalchemy.orm import aliased
 
 from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 
+from .bootstrap import AccountService
+from .flags import Flags  # pylint: disable=import-outside-toplevel
+
+
+flags = Flags()
+
 
 class InvoluntaryDissolutionService():
     """Provides services to get information for involuntary dissolution."""
@@ -158,6 +164,8 @@ class InvoluntaryDissolutionService():
                 _has_specific_filing_overdue().asc()
             )
 
+        query = query.filter(_check_feature_flags_filter())
+
         return query
 
 
@@ -273,3 +281,51 @@ def _is_xpro_from_nwpta():
         Business.foreign_jurisdiction_region.isnot(None),
         Business.foreign_jurisdiction_region.in_(['AB', 'SK', 'MB'])
     )
+
+
+def _check_feature_flags_filter():
+    """Check eligibility for dissolution based on inclusion and exclusion of businesses."""
+    # pylint: disable=E1101
+    # Scenario 1: If the flag is off, proceed with the standard eligibility check.
+    if not flags.is_on('enable-involuntary-dissolution-filter'):
+        return True  # Continue with the usual logic
+
+    # Get the dissolution filter data (handle if filter is None or empty)
+    involuntary_dissolution_filter = flags.value('involuntary-dissolution-filter') or {}
+
+    include_accounts = involuntary_dissolution_filter.get('include-accounts', [])
+    exclude_accounts = involuntary_dissolution_filter.get('exclude-accounts', [])
+
+    # Convert accounts to sets for efficient filtering
+    include_entities = set(_get_filtered_entities(include_accounts)) if include_accounts else set()
+    exclude_entities = set(_get_filtered_entities(exclude_accounts)) if exclude_accounts else set()
+
+    # Scenario 2: Exclude businesses listed in `exclude_accounts`
+    if not include_accounts and exclude_accounts:
+        return Business.identifier.notin_(list(exclude_entities))
+
+    # Scenario 3: Only include businesses listed in `include_accounts`
+    if include_accounts and not exclude_accounts:
+        return Business.identifier.in_(list(include_entities))
+
+    # Scenario 4: Include businesses from `include_accounts` but remove those in `exclude_accounts`
+    if include_accounts and exclude_accounts:
+        eligible_entities = include_entities - exclude_entities  # Remove any overlap between include and exclude
+        return Business.identifier.in_(list(eligible_entities))
+
+    return True
+
+
+def _get_filtered_entities(accounts):
+    """Fetch and filter business entities based on the account ID."""
+    filtered_entities = []
+
+    for org_id in accounts:
+        entities = AccountService.get_affiliations(int(org_id))
+
+        for entity in entities:
+            identifier = entity.get('businessIdentifier')
+            if identifier and not (identifier.startswith('T') or identifier.startswith('NR')):
+                filtered_entities.append(identifier)
+
+    return filtered_entities
