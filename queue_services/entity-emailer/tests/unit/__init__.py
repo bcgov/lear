@@ -18,7 +18,7 @@ from datetime import datetime
 from random import randrange
 from unittest.mock import Mock
 
-from legal_api.models import Batch, Business, Filing, Furnishing, RegistrationBootstrap, User
+from legal_api.models import Batch, Business, Filing, Furnishing, Party, PartyRole, RegistrationBootstrap, User
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
@@ -67,12 +67,21 @@ def create_user(user_name: str):
     return user
 
 
-def create_business(identifier, legal_type=None, legal_name=None):
+def create_business(identifier, legal_type=None, legal_name=None, parties=None):
     """Return a test business."""
     business = Business()
     business.identifier = identifier
     business.legal_type = legal_type
     business.legal_name = legal_name
+
+    for party in (parties or []):
+        if business.legal_type == Business.LegalTypes.SOLE_PROP:
+            proprietor_role = create_party_role(None, None, party, None, None, PartyRole.RoleTypes.PROPRIETOR)
+            business.party_roles.append(proprietor_role)
+        elif legal_type == Business.LegalTypes.PARTNERSHIP:
+            partner_role = create_party_role(None, None, party, None, None, PartyRole.RoleTypes.PARTNER)
+            business.party_roles.append(partner_role)
+
     business.save()
     return business
 
@@ -191,9 +200,9 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
     return filing
 
 
-def prep_dissolution_filing(session, identifier, payment_id, option, legal_type, legal_name, submitter_role):
+def prep_dissolution_filing(session, identifier, payment_id, option, legal_type, legal_name, submitter_role, parties=None):
     """Return a new dissolution filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
+    business = create_business(identifier, legal_type, legal_name, parties)
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'dissolution'
     if submitter_role:
@@ -322,9 +331,9 @@ def prep_restoration_filing(identifier, payment_id, legal_type, legal_name, r_ty
     return filing
 
 
-def prep_change_of_registration_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+def prep_change_of_registration_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role, parties=None):
     """Return a new change of registration filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
+    business = create_business(identifier, legal_type, legal_name, parties)
 
     gp_change_of_registration = copy.deepcopy(FILING_HEADER)
     gp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
@@ -489,9 +498,9 @@ def prep_incorporation_correction_filing(session, business, original_filing_id, 
     return filing
 
 
-def prep_firm_correction_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+def prep_firm_correction_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role, parties=None):
     """Return a firm correction filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
+    business = create_business(identifier, legal_type, legal_name, parties)
 
     gp_correction = copy.deepcopy(CORRECTION_REGISTRATION)
     gp_correction['filing']['correction']['parties'][0]['officer']['email'] = 'party@email.com'
@@ -741,3 +750,23 @@ def create_furnishing(session, business=None, batch_id=None,
         furnishing.batch_id = batch_id
     furnishing.save()
     return furnishing
+
+def create_party_role(delivery_address, mailing_address, officer, appointment_date, cessation_date, role_type):
+    """Create a role."""
+    party = Party(
+        first_name=officer['firstName'],
+        last_name=officer['lastName'],
+        middle_initial=officer['middleInitial'],
+        party_type=officer['partyType'],
+        organization_name=officer['organizationName']
+    )
+    party.delivery_address = delivery_address
+    party.mailing_address = mailing_address
+    party.save()
+    party_role = PartyRole(
+        role=role_type.value,
+        appointment_date=appointment_date,
+        cessation_date=cessation_date,
+        party_id=party.id
+    )
+    return party_role

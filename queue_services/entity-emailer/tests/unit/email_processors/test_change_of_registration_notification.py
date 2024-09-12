@@ -36,7 +36,14 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'test business'
-    filing = prep_change_of_registration_filing(session, 'FM1234567', '1', legal_type, legal_name, submitter_role)
+    parties = [{
+        'firstName': 'Jane',
+        'lastName': 'Doe',
+        'middleInitial': 'A',
+        'partyType': 'person',
+        'organizationName': ''
+    }]
+    filing = prep_change_of_registration_filing(session, 'FM1234567', '1', legal_type, legal_name, submitter_role, parties)
     token = 'token'
     # test processor
     mocker.patch(
@@ -46,10 +53,9 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
         email = change_of_registration_notification.process(
             {'filingId': filing.id, 'type': 'changeOfRegistration', 'option': status}, token)
         if status == 'PAID':
-            assert email['content']['subject'] == legal_name + ' - Confirmation of Filing from the Business Registry'
+            assert email['content']['subject'] == 'JANE A DOE - Confirmation of Filing from the Business Registry'
         else:
-            assert email['content']['subject'] == \
-                legal_name + ' - Change of Registration Documents from the Business Registry'
+            assert email['content']['subject'] == 'JANE A DOE - Change of Registration Documents from the Business Registry'
 
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']

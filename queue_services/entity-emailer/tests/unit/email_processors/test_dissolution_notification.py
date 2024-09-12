@@ -80,7 +80,14 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
     """Assert that the dissolution email processor for firms works as expected."""
     # setup filing + business for email
     legal_name = 'test business'
-    filing = prep_dissolution_filing(session, 'FM1234567', '1', status, legal_type, legal_name, submitter_role)
+    parties = [{
+        'firstName': 'Jane',
+        'lastName': 'Doe',
+        'middleInitial': 'A',
+        'partyType': 'person',
+        'organizationName': ''
+    }]
+    filing = prep_dissolution_filing(session, 'FM1234567', '1', status, legal_type, legal_name, submitter_role, parties)
     token = 'token'
     # test processor
     with patch.object(dissolution_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
@@ -89,11 +96,9 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
                 email = dissolution_notification.process(
                     {'filingId': filing.id, 'type': 'dissolution', 'option': status}, token)
                 if status == 'PAID':
-                    assert email['content']['subject'] == legal_name + \
-                        ' - Confirmation of Filing from the Business Registry'
+                    assert email['content']['subject'] == 'JANE A DOE - Confirmation of Filing from the Business Registry'
                 else:
-                    assert email['content']['subject'] == \
-                        legal_name + ' - Dissolution Documents from the Business Registry'
+                    assert email['content']['subject'] == 'JANE A DOE - Dissolution Documents from the Business Registry'
 
                 if submitter_role:
                     assert f'{submitter_role}@email.com' in email['recipients']
@@ -106,6 +111,6 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
                 assert mock_get_pdfs.call_args[0][0] == status
                 assert mock_get_pdfs.call_args[0][1] == token
                 assert mock_get_pdfs.call_args[0][2]['identifier'] == 'FM1234567'
-                assert mock_get_pdfs.call_args[0][2]['legalName'] == legal_name
+                assert mock_get_pdfs.call_args[0][2]['legalName'] == 'JANE A DOE'
                 assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
                 assert mock_get_pdfs.call_args[0][3] == filing
