@@ -299,7 +299,7 @@ class UpdateARStatus(Resource):
 
 
 @cors_preflight('DELETE')
-@API.route('/<string:legal_type>/<string:identifier>/filings/arprompt')
+@API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
 # pylint: disable=too-few-public-methods
 class DeleteARPrompt(Resource):
     """Delete AR Prompt for corporation."""
@@ -327,4 +327,3 @@ class DeleteARPrompt(Resource):
         except Exception as err:  # pylint: disable=broad-except
             current_app.logger.error(f'Error Deleteing AR status for {identifier}: {str(err)}')
             return jsonify({'message': 'Error Deleteing AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR
-    
