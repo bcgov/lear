@@ -296,10 +296,10 @@ class UpdateARStatus(Resource):
         except Exception as err:  # pylint: disable=broad-except
             current_app.logger.error(f'Error updating AR status for {identifier}: {str(err)}')
             return jsonify({'message': 'Error updating AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR
- 
- 
-@cors_preflight('POST')
-@API.route('/string:identifier/filings')
+
+
+@cors_preflight('DELETE')
+@API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
 # pylint: disable=too-few-public-methods
 class DeleteARPrompt(Resource):
     """Delete AR Prompt for corporation."""
@@ -307,7 +307,7 @@ class DeleteARPrompt(Resource):
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_roles([COLIN_SVC_ROLE])
-    def post(identifier, **kwargs):
+    def delete(identifier, **kwargs):
         """Clean up data in Colin for the corporation."""
         # pylint: disable=unused-argument
         try:
@@ -318,8 +318,7 @@ class DeleteARPrompt(Resource):
                         DELETE FROM AR_PROMPT  
                         WHERE corp_num = :identifier
                     """
-                    cursor.execute(delete_ar_prompt, {'identifier': identifier})                 
-
+                    cursor.execute(delete_ar_prompt, {'identifier': identifier})
                     # Commit the transaction
                     con.commit()
                     current_app.logger.info(f'Successfully deleted AR prompt for corporation {identifier}.')
@@ -327,4 +326,4 @@ class DeleteARPrompt(Resource):
 
         except Exception as err:  # pylint: disable=broad-except
             current_app.logger.error(f'Error Deleteing AR status for {identifier}: {str(err)}')
-            return jsonify({'message': 'Error Deleteing AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR    
+            return jsonify({'message': 'Error Deleteing AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR
