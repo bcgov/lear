@@ -56,6 +56,7 @@ def get_completed_filings_for_colin():
         if filing_json and filing.filing_type != 'lear_epoch' and \
                 (filing.filing_type != 'correction' or business.legal_type != Business.LegalTypes.COOP.value):
             filing_json['filingId'] = filing.id
+            filing_json['filing']['header']['date'] = filing.filing_date.isoformat()
             filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
             if not filing_json['filing'].get('business'):
                 # ideally filing should have transaction_id once completed.
