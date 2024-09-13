@@ -11,10 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Meta information about the service.
-
-Currently this only provides API versioning information
-"""
+"""This module holds data about cont_out table."""
 from __future__ import annotations
 
 from typing import List
@@ -26,6 +23,7 @@ from colin_api.resources.db import DB
 
 class ContOut:
     """ContOut object."""
+
     corp_num = None
     start_event_id = None
     can_jur_typ_cd = None
@@ -72,7 +70,7 @@ class ContOut:
         try:
             cursor.execute(
                 """
-                insert into cont_out 
+                insert into cont_out
                     (CORP_NUM, START_EVENT_ID, CAN_JUR_TYP_CD, CONT_OUT_DT, OTHR_JURI_DESC, HOME_COMPANY_NME)
                 values
                  (:corp_num, :start_event_id, :can_jur_typ_cd, TO_DATE(:cont_out_dt, 'YYYY-mm-dd'),
