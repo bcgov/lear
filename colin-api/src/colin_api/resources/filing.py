@@ -131,6 +131,7 @@ class FilingInfo(Resource):
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
                     'consentContinuationOut': json_data.get('consentContinuationOut', None),
                     'continuationIn': json_data.get('continuationIn', None),
+                    'continuationOut': json_data.get('continuationOut', None),
                     'courtOrder': json_data.get('courtOrder', None),
                     'dissolution': json_data.get('dissolution', None),
                     'incorporationApplication': json_data.get('incorporationApplication', None),
@@ -214,7 +215,7 @@ class FilingInfo(Resource):
         for filing_type in filing_list:
             filing = Filing()
             filing.header = json_data['header']
-            filing.filing_date = filing.header['date']
+            filing.filing_date = convert_to_pacific_time(filing.header['date'])
             filing.filing_type = filing_type
             filing_body = filing_list[filing_type]
             filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
@@ -315,7 +316,7 @@ class DeleteARPrompt(Resource):
                 with con.cursor() as cursor:
                     # Delete from AR prompt for the given corporation
                     delete_ar_prompt = """
-                        DELETE FROM AR_PROMPT  
+                        DELETE FROM AR_PROMPT
                         WHERE corp_num = :identifier
                     """
                     cursor.execute(delete_ar_prompt, {'identifier': identifier})
