@@ -60,8 +60,8 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
     now = datetime.datetime.utcnow()
     if eligibility:
         # setup ar_date to """INTERVAL '26 MONTHS'"" to make the businees is eligibility
-        ar_date = datetime.date(year=now.year-3, month=now.month-1, day=now.day)
-        agm_date = datetime.date(year=now.year-3, month=now.month-2, day=now.day)
+        ar_date = datetime.date(year=now.year-4, month=now.month-1, day=now.day)
+        agm_date = datetime.date(year=now.year-4, month=now.month-2, day=now.day)
     else:
         ar_date = datetime.date(year=now.year, month=now.month-1, day=now.day)
         agm_date = datetime.date(year=now.year, month=now.month-2, day=now.day)
@@ -81,6 +81,7 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
         # check it out
         if flag_on and in_dissolution and not eligibility:
             assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
+            assert batch_processing.notes == 'Moved back into good standing'
         else:
             if in_dissolution:
                 assert batch_processing.status == BatchProcessing.BatchProcessingStatus.PROCESSING.value
