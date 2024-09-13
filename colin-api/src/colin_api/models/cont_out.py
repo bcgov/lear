@@ -106,5 +106,5 @@ class ContOut:
             return cls._create_cont_out_objs(cursor=cursor)
 
         except Exception as err:
-            current_app.logger.error(f'error getting cont_out for event {event_id}')
+            current_app.logger.error(f'Error getting cont_out for event {event_id}')
             raise err
