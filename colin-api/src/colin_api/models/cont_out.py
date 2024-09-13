@@ -55,7 +55,7 @@ class ContOut:
         cont_out_objs = []
         for cont_out in cont_outs:
             cont_out = dict(zip([x[0].lower() for x in cursor.description], cont_out))
-            cont_out_obj = cont_out()
+            cont_out_obj = ContOut()
             cont_out_obj.corp_num = cont_out['corp_num']
             cont_out_obj.start_event_id = cont_out['start_event_id']
             cont_out_obj.can_jur_typ_cd = cont_out['can_jur_typ_cd']
