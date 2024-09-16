@@ -22,10 +22,6 @@ from sqlalchemy.orm import aliased
 from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 
 from .bootstrap import AccountService
-from .flags import Flags  # pylint: disable=import-outside-toplevel
-
-
-flags = Flags()
 
 
 class InvoluntaryDissolutionService():
@@ -286,6 +282,7 @@ def _is_xpro_from_nwpta():
 def _check_feature_flags_filter():
     """Check eligibility for dissolution based on inclusion and exclusion of businesses."""
     # pylint: disable=E1101
+    from . import flags  # pylint: disable=import-outside-toplevel
     # Scenario 1: If the flag is off, proceed with the standard eligibility check.
     if not flags.is_on('enable-involuntary-dissolution-filter'):
         return True  # Continue with the usual logic
