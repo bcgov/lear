@@ -819,6 +819,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 share_classes.append(share_class.json)
         filing['shareClasses'] = share_classes
 
+        # copy resolution dates
+        resolutions = []
+        if self._filing.transaction_id:
+            resolutions = VersionedBusinessDetailsService.get_resolution_dates_revision(
+                self._filing.transaction_id,
+                primary_or_holding_business.id)
+        else:
+            for resolution in primary_or_holding_business.resolutions.all():
+                resolutions.append({'date': resolution.resolution_date.strftime(OUTPUT_DATE_FORMAT)})
+        filing['resolutions'] = resolutions
+
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.\

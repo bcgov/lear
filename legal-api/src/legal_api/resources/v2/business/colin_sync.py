@@ -56,6 +56,7 @@ def get_completed_filings_for_colin():
         if filing_json and filing.filing_type != 'lear_epoch' and \
                 (filing.filing_type != 'correction' or business.legal_type != Business.LegalTypes.COOP.value):
             filing_json['filingId'] = filing.id
+            filing_json['filing']['header']['date'] = filing.filing_date.isoformat()
             filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
             if not filing_json['filing'].get('business'):
                 # ideally filing should have transaction_id once completed.
@@ -154,6 +155,9 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
                                                                              primary_or_holding_business.id)
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
+    business_dates = [item.resolution_date.isoformat() for item in primary_or_holding_business.resolutions]
+    if business_dates:
+        amalgamation_filing['shareStructure']['resolutionDates'] = business_dates
 
 
 @bp.route('/internal/filings/<int:filing_id>', methods=['PATCH'])

@@ -39,6 +39,7 @@ from entity_queue_common.service_utils import error_cb, logger, signal_handler
 
 affiliation_type: Final = 'bc.registry.affiliation'
 dissolution_type: Final = 'bc.registry.dissolution'
+bn: Final = 'businessNumber'
 
 
 async def run(loop, email_info):  # pylint: disable=too-many-locals
@@ -121,7 +122,7 @@ if __name__ == '__main__':
             identifier = arg
         elif opt in ('-n', '--name'):
             name = arg
-    if not etype or (etype not in [affiliation_type, dissolution_type] and not all([fid, etype, option])):
+    if not etype or (etype not in [affiliation_type, dissolution_type, bn] and not all([fid, etype, option])):
         print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier>')
         sys.exit()
     elif etype and etype in [affiliation_type] and not all([fid, etype]):
@@ -129,6 +130,8 @@ if __name__ == '__main__':
         sys.exit()
     elif etype and etype in [dissolution_type] and not all([fid, etype, identifier, name]):
         print('q_cli.py -f <furnishing_id> -t <email_type> -i <identifier> -n <furnishing_name>')
+    elif etype and etype in [bn] and not all([etype, identifier]):
+        print('q_cli.py -t <email_type> -i <identifier>')
 
     if etype in [affiliation_type]:
         msg_id = str(uuid.uuid4())

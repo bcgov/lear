@@ -124,19 +124,21 @@ class FilingInfo(Resource):
                 filing_list = {'correction': json_data['correction']}
             else:
                 filing_list = {
+                    'alteration': json_data.get('alteration', None),
+                    'amalgamationApplication': json_data.get('amalgamationApplication', None),
+                    'annualReport': json_data.get('annualReport', None),
                     'changeOfAddress': json_data.get('changeOfAddress', None),
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
-                    'annualReport': json_data.get('annualReport', None),
-                    'incorporationApplication': json_data.get('incorporationApplication', None),
-                    'amalgamationApplication': json_data.get('amalgamationApplication', None),
+                    'consentContinuationOut': json_data.get('consentContinuationOut', None),
                     'continuationIn': json_data.get('continuationIn', None),
-                    'alteration': json_data.get('alteration', None),
-                    'transition': json_data.get('transition', None),
-                    'registrarsNotation': json_data.get('registrarsNotation', None),
-                    'registrarsOrder': json_data.get('registrarsOrder', None),
+                    'continuationOut': json_data.get('continuationOut', None),
                     'courtOrder': json_data.get('courtOrder', None),
                     'dissolution': json_data.get('dissolution', None),
-                    'specialResolution': json_data.get('specialResolution', None)
+                    'incorporationApplication': json_data.get('incorporationApplication', None),
+                    'registrarsNotation': json_data.get('registrarsNotation', None),
+                    'registrarsOrder': json_data.get('registrarsOrder', None),
+                    'specialResolution': json_data.get('specialResolution', None),
+                    'transition': json_data.get('transition', None),
                 }
 
             # Filter out null-values in the filing_list dictionary
@@ -213,7 +215,7 @@ class FilingInfo(Resource):
         for filing_type in filing_list:
             filing = Filing()
             filing.header = json_data['header']
-            filing.filing_date = filing.header['date']
+            filing.filing_date = convert_to_pacific_time(filing.header['date'])
             filing.filing_type = filing_type
             filing_body = filing_list[filing_type]
             filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
@@ -231,3 +233,98 @@ class FilingInfo(Resource):
                                   'filing_type': filing_type,
                                   'filing_sub_type': filing.filing_sub_type})
         return filings_added
+
+
+@cors_preflight('POST')
+@API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
+# pylint: disable=too-few-public-methods
+class UpdateARStatus(Resource):
+    """Update the corporation and set_ar_to_no tables after a AR Reminder email is sent."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def post(identifier, **kwargs):
+        """Trigger cleaning up data in Colin for the corporation after a Business AR Reminder email is sent."""
+        # pylint: disable=unused-argument
+        try:
+            with DB.connection as con:
+                with con.cursor() as cursor:
+                    # First, check if the send_ar_ind flag is 'Y' for the given corporation
+                    check_flag_query = """
+                        SELECT send_ar_ind
+                        FROM corporation
+                        WHERE corp_num = :identifier
+                    """
+                    cursor.execute(check_flag_query, {'identifier': identifier})
+                    result = cursor.fetchone()
+
+                    # Return an error if corporation is not found or if the flag is already set to 'N'
+                    if not result:
+                        current_app.logger.warning(f'Corporation with identifier {identifier} not found.')
+                        return jsonify(
+                            {'message': f'Corporation with identifier {identifier} not found.'}
+                        ), HTTPStatus.NOT_FOUND
+                    set_ar_ind_flag = result[0].strip()
+                    if set_ar_ind_flag != 'Y':
+                        current_app.logger.warning(
+                            f'send_ar_ind for corporation {identifier} is not Y. Current value: {set_ar_ind_flag}'
+                        )
+                        return jsonify(
+                            {'message': f'send_ar_ind for corporation {identifier} must be Y.'}
+                        ), HTTPStatus.BAD_REQUEST
+
+                    # Update the send_ar_ind flag to 'N' in the corporation table
+                    update_corporation_query = """
+                        UPDATE corporation
+                        SET send_ar_ind = 'N'
+                        WHERE corp_num = :identifier
+                    """
+                    cursor.execute(update_corporation_query, {'identifier': identifier})
+
+                    # Insert the corporation into the set_ar_to_no table with a previous value of 'Y'
+                    insert_ar_to_no_query = """
+                        INSERT INTO set_ar_to_no (corp_num, previous_value, update_date)
+                        VALUES (:identifier, 'Y', CURRENT_TIMESTAMP)
+                    """
+                    cursor.execute(insert_ar_to_no_query, {'identifier': identifier})
+
+                    # Commit the transaction
+                    con.commit()
+                    current_app.logger.info(f'Successfully updated AR status for corporation {identifier}.')
+                    return jsonify({'message': f'AR status updated for corporation {identifier}.'}), HTTPStatus.OK
+
+        except Exception as err:  # pylint: disable=broad-except
+            current_app.logger.error(f'Error updating AR status for {identifier}: {str(err)}')
+            return jsonify({'message': 'Error updating AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('DELETE')
+@API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
+# pylint: disable=too-few-public-methods
+class DeleteARPrompt(Resource):
+    """Delete AR Prompt for corporation."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def delete(identifier, **kwargs):
+        """Clean up data in Colin for the corporation."""
+        # pylint: disable=unused-argument
+        try:
+            with DB.connection as con:
+                with con.cursor() as cursor:
+                    # Delete from AR prompt for the given corporation
+                    delete_ar_prompt = """
+                        DELETE FROM AR_PROMPT
+                        WHERE corp_num = :identifier
+                    """
+                    cursor.execute(delete_ar_prompt, {'identifier': identifier})
+                    # Commit the transaction
+                    con.commit()
+                    current_app.logger.info(f'Successfully deleted AR prompt for corporation {identifier}.')
+                    return jsonify({'message': f'AR prompt deleted for corporation {identifier}.'}), HTTPStatus.OK
+
+        except Exception as err:  # pylint: disable=broad-except
+            current_app.logger.error(f'Error Deleteing AR status for {identifier}: {str(err)}')
+            return jsonify({'message': 'Error Deleteing AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR

@@ -31,7 +31,7 @@ def test_get_furnishing_document(session, client, jwt):
     """Assert that the endpoint is worked as expected."""
 
     business, furnishing = factory_business_with_stage_one_furnishing()
-    with patch.object(ReportV2, 'get_pdf', return_value=('', HTTPStatus.OK)):
+    with patch.object(ReportV2, 'get_pdf', return_value=b'TEST'):
         rv = client.get(f'/api/v2/businesses/{business.identifier}/furnishings/{furnishing.id}/document',
                         headers=create_header(jwt, [UserRoles.system, ], business.identifier, **{'accept': 'application/pdf'}))
         
@@ -87,7 +87,7 @@ def test_get_furnishing_document_missing_furnishing(session, client, jwt):
 )
 def test_get_furnishing_document_variant(session, client, jwt, test_name, variant, valid):
     business, furnishing = factory_business_with_stage_one_furnishing()
-    with patch.object(ReportV2, 'get_pdf', return_value=('', HTTPStatus.OK)):
+    with patch.object(ReportV2, 'get_pdf', return_value=b'TEST'):
         rv = client.get(f'/api/v2/businesses/{business.identifier}/furnishings/{furnishing.id}/document?variant={variant}',
                         headers=create_header(jwt, [UserRoles.system, ], business.identifier, **{'accept': 'application/pdf'}))
         

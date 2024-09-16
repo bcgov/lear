@@ -17,11 +17,12 @@ import uuid
 
 from datedelta import datedelta
 from datetime import datetime
+from dateutil.parser import parse
 from freezegun import freeze_time
 from sqlalchemy_continuum import versioning_manager
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
-from legal_api.models import db, Batch, BatchProcessing, Filing, ShareClass, ShareSeries
+from legal_api.models import db, Batch, BatchProcessing, Filing, Resolution, ShareClass, ShareSeries
 from legal_api.models.colin_event_id import ColinEventId
 
 AR_FILING = {
@@ -533,8 +534,10 @@ def create_party_role(business, party, roles, appointment_date):
     return business
 
 
-
-def create_share_class(business, no_of_shares=1, no_of_series_in_each_share=2):
+def create_share_class(business,
+                       no_of_shares=1,
+                       no_of_series_in_each_share=2,
+                       include_resolution_date=False):
     """Create a new share class and associated series."""
     for i in range(no_of_shares):
         share_class = ShareClass(
@@ -560,6 +563,14 @@ def create_share_class(business, no_of_shares=1, no_of_series_in_each_share=2):
             share_class.series.append(share_series)
 
     business.share_classes.append(share_class)
+
+    if include_resolution_date:
+        resolution = Resolution(
+            resolution_date=parse('2024-09-05').date(),
+            resolution_type=Resolution.ResolutionType.SPECIAL.value
+        )
+        business.resolutions.append(resolution)
+
     business.save()
 
 
@@ -612,7 +623,7 @@ def factory_batch_processing(batch_id,
                              step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                              status=BatchProcessing.BatchProcessingStatus.PROCESSING,
                              created_date=datetime.utcnow(),
-                             trigger_date=datetime.utcnow()+datedelta(days=42),
+                             trigger_date=datetime.utcnow() + datedelta(days=42),
                              last_modified=datetime.utcnow(),
                              notes=''):
     """Create a batch processing entry."""

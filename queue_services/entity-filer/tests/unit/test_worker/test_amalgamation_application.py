@@ -24,7 +24,15 @@ from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from entity_filer.filing_processors.filing_components import business_info, business_profile
 from entity_filer.worker import process_filing
-from tests.unit import create_entity, create_filing, create_office, create_office_address, create_party, create_party_role, create_share_class
+from tests.unit import (
+    create_entity,
+    create_filing,
+    create_office,
+    create_office_address,
+    create_party,
+    create_party_role,
+    create_share_class,
+)
 
 
 async def test_regular_amalgamation_application_process(app, session):
@@ -110,11 +118,11 @@ async def test_regular_amalgamation_application_process(app, session):
 
 
 @pytest.mark.parametrize(
-        'amalgamation_type, amalgamating_role',
-        [
-            (Amalgamation.AmalgamationTypes.horizontal.name, AmalgamatingBusiness.Role.primary.name),
-            (Amalgamation.AmalgamationTypes.vertical.name, AmalgamatingBusiness.Role.holding.name)
-        ]
+    'amalgamation_type, amalgamating_role',
+    [
+        (Amalgamation.AmalgamationTypes.horizontal.name, AmalgamatingBusiness.Role.primary.name),
+        (Amalgamation.AmalgamationTypes.vertical.name, AmalgamatingBusiness.Role.holding.name)
+    ]
 )
 async def test_short_form_amalgamation_application_process(app, session, amalgamation_type, amalgamating_role):
     """Assert that the amalgamation application object is correctly populated to model objects."""
@@ -126,36 +134,35 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
     primary_or_holding_business_name = f'{amalgamating_role} business 1'
 
     amalgamating_business_1 = create_entity(amalgamating_identifier_1, 'BC', primary_or_holding_business_name)
-    
+
     office = create_office(amalgamating_business_1, 'registeredOffice')
     office_delivery_address = create_office_address(amalgamating_business_1, office, 'delivery')
     office_mailing_address = create_office_address(amalgamating_business_1, office, 'mailing')
 
-    create_share_class(amalgamating_business_1)
+    create_share_class(amalgamating_business_1, include_resolution_date=True)
 
     party = create_party({
-            'officer': {
-                'firstName': f'{amalgamating_business_1.identifier} first_name',
-                'lastName': 'Director',
-                'middleName': 'P',
-            },
-            'mailingAddress': {
-                'streetAddress': f'{amalgamating_business_1.identifier} mailing_address',
-                'addressCity': 'mailing_address city',
-                'addressCountry': 'CA',
-                'postalCode': 'H0H0H0',
-                'addressRegion': 'BC'
-            },
-            'deliveryAddress': {
-                'streetAddress': f'{amalgamating_business_1.identifier} delivery_address',
-                'addressCity': 'delivery_address city',
-                'addressCountry': 'CA',
-                'postalCode': 'H0H0H0',
-                'addressRegion': 'BC'
-            }
-        })
+        'officer': {
+            'firstName': f'{amalgamating_business_1.identifier} first_name',
+            'lastName': 'Director',
+            'middleName': 'P',
+        },
+        'mailingAddress': {
+            'streetAddress': f'{amalgamating_business_1.identifier} mailing_address',
+            'addressCity': 'mailing_address city',
+            'addressCountry': 'CA',
+            'postalCode': 'H0H0H0',
+            'addressRegion': 'BC'
+        },
+        'deliveryAddress': {
+            'streetAddress': f'{amalgamating_business_1.identifier} delivery_address',
+            'addressCity': 'delivery_address city',
+            'addressCountry': 'CA',
+            'postalCode': 'H0H0H0',
+            'addressRegion': 'BC'
+        }
+    })
     create_party_role(amalgamating_business_1, party, ['director'], datetime.utcnow())
-
 
     amalgamating_business_1_id = amalgamating_business_1.id
     amalgamating_business_2_id = create_entity(amalgamating_identifier_2, 'BC', 'amalgamating business 2').id
@@ -207,6 +214,7 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
     assert business.state == Business.State.ACTIVE
 
     assert len(business.share_classes.all()) == 1
+    assert len(business.resolutions.all()) == 1
     assert len(business.offices.all()) == 1
     assert len(business.aliases.all()) == len(filing['filing'][filing_type]['nameTranslations'])
     assert business.party_roles[0].role == 'director'
@@ -232,4 +240,3 @@ async def test_short_form_amalgamation_application_process(app, session, amalgam
             assert amalgamating_business.foreign_jurisdiction_region
             assert amalgamating_business.foreign_name
             assert amalgamating_business.foreign_identifier
-

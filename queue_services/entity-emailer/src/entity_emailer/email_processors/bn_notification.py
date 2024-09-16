@@ -34,10 +34,11 @@ def process(email_msg: dict) -> dict:
 
     # get filing and business json
     business = Business.find_by_identifier(email_msg['identifier'])
-    filing_type = 'incorporationApplication'
-    if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-        filing_type = 'registration'
-    filing = (Filing.get_a_businesses_most_recent_filing_of_a_type(business.id, filing_type))
+
+    # get filings by types. There will be only one of the listed filing types at once
+    filings = Filing.get_filings_by_types(business.id, ['amalgamationApplication', 'continuationIn',
+                                                        'incorporationApplication', 'registration'])
+    filing = filings[0]
     corp_type = CorpType.find_by_id(business.legal_type)
 
     # render template with vars
@@ -48,7 +49,7 @@ def process(email_msg: dict) -> dict:
     )
 
     # get recipients
-    recipients = get_recipients(email_msg['option'], filing.filing_json, filing_type=filing_type)
+    recipients = get_recipients(email_msg['option'], filing.filing_json, filing_type=filing.filing_type)
     return {
         'recipients': recipients,
         'requestBy': 'BCRegistries@gov.bc.ca',

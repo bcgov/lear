@@ -82,12 +82,38 @@ class _Config:  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
+    # BCLaws SFTP
+    BCLAWS_SFTP_STORAGE_DIRECTORY = os.getenv('BCLAWS_SFTP_STORAGE_DIRECTORY', None)
+    BCLAWS_SFTP_HOST = os.getenv('BCLAWS_SFTP_HOST', None)
+    BCLAWS_SFTP_PORT = os.getenv('BCLAWS_SFTP_PORT', None)
+    BCLAWS_SFTP_USERNAME = os.getenv('BCLAWS_SFTP_USERNAME', None)
+    BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM', 'ED25519')
+    BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv('BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE', None)
+    BCLAWS_SFTP_PRIVATE_KEY = os.getenv('BCLAWS_SFTP_PRIVATE_KEY', None)
+
+    # BCMail+ SFTP
+    BCMAIL_SFTP_STORAGE_DIRECTORY = os.getenv('BCMAIL_SFTP_STORAGE_DIRECTORY', None)
+    BCMAIL_SFTP_HOST = os.getenv('BCMAIL_SFTP_HOST', None)
+    BCMAIL_SFTP_PORT = os.getenv('BCMAIL_SFTP_PORT', None)
+    BCMAIL_SFTP_USERNAME = os.getenv('BCMAIL_SFTP_USERNAME', None)
+    BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM', 'ED25519')
+    BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE', None)
+    BCMAIL_SFTP_PRIVATE_KEY = os.getenv('BCMAIL_SFTP_PRIVATE_KEY', None)
+
     TESTING = False
     DEBUG = False
 
     SECOND_NOTICE_DELAY = int(os.getenv('SECOND_NOTICE_DELAY', '5'))
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
-    TEMPLATE_PATH = os.getenv('TEMPLATE_PATH', 'src/furnishings-templates')
+    XML_TEMPLATE_PATH = os.getenv('XML_TEMPLATE_PATH', 'furnishings-templates')
+
+    # Letter - GCP Gotenberg report service
+    REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
+    REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
+    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+    # Letter - MRAS
+    MRAS_SVC_URL = os.getenv('MRAS_SVC_URL')
+    MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
@@ -116,6 +142,12 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
         port=int(DB_PORT),
         name=DB_NAME,
     )
+
+    # BCLaws SFTP
+    BCLAWS_SFTP_STORAGE_DIRECTORY = 'bclaws'
+
+    # BCMail+ SFTP
+    BCMAIL_SFTP_STORAGE_DIRECTORY = 'bcmail'
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

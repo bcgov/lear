@@ -12,87 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job processing rules after stage runs of involuntary dissolution."""
+import os
 from datetime import datetime
+from io import StringIO
 from pathlib import Path
 from typing import Final
 
 from flask import Flask, current_app
 from jinja2 import Template
 from legal_api.models import Furnishing, FurnishingGroup, XmlPayload
+from legal_api.services.flags import Flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from paramiko.ssh_exception import AuthenticationException, NoValidConnectionsError
+
+from furnishings.sftp import SftpConnection
 
 
 XML_DATE_FORMAT: Final = '%B %-d, %Y'
-
-
-class PostProcessor:
-    """Processor after stage run of furnishings job."""
-
-    def __init__(self, app, furnishings_dict):
-        """Create post process helper instance."""
-        self._app = app
-        self._furnishings_dict = furnishings_dict
-        self._xml_data = {}
-        self._processed_date = LegislationDatetime.now()
-
-    def _set_meta_info(self):
-        """Set meta information for XML file."""
-        # we leave date and volume in XML blank
-        self._xml_data['effective_date'] = self._processed_date.strftime(XML_DATE_FORMAT)
-
-    def _format_furnishings(self):
-        """Format furnishing details presented in XML file."""
-        self._xml_data['furnishings'] = {}
-        for name, furnishings in self._furnishings_dict.items():
-            self._xml_data['furnishings'][name] = XmlMeta.get_info_by_name(name)
-            self._xml_data['furnishings'][name]['items'] = sorted(furnishings, key=lambda f: f.business_name)
-
-    @staticmethod
-    def _build_xml_data(xml_data, processed_time):
-        """Build XML payload."""
-        template = Path(
-            f'{current_app.config.get("TEMPLATE_PATH")}/gazette-notice.xml'
-        ).read_text()
-        jinja_template = Template(template, autoescape=True)
-
-        return jinja_template.render(xml_data, processed_time=processed_time)
-
-    @staticmethod
-    def _save_xml_payload(payload):
-        """Save XML payload."""
-        xml_payload = XmlPayload(payload=payload)
-        xml_payload.save()
-        furnishing_group = FurnishingGroup(xml_payload_id=xml_payload.id)
-        furnishing_group.save()
-        return furnishing_group, xml_payload
-
-    def _update_furnishings_status(self, furnishing_group_id):
-        """Update furnishing entries after processing."""
-        for furnishings in self._furnishings_dict.values():
-            for furnishing in furnishings:
-                furnishing.furnishing_group_id = furnishing_group_id
-                furnishing.status = Furnishing.FurnishingStatus.PROCESSED
-                furnishing.processed_date = datetime.utcnow()
-                furnishing.last_modified = datetime.utcnow()
-                furnishing.save()
-
-    def process(self):
-        """Postprocess to generate and upload file to external resources (BC Laws)."""
-        if not self._furnishings_dict:
-            return
-
-        self._format_furnishings()
-        self._app.logger.debug('Formatted furnishing details presented in XML file')
-        self._set_meta_info()
-        payload = self._build_xml_data(self._xml_data, self._processed_date.strftime('%I:%M %p'))
-        furnishing_group, _ = self._save_xml_payload(payload)
-        self._app.logger.debug('Saved XML payload')
-        # TODO: SFTP to BC Laws
-
-        # mark furnishing records processed
-        self._update_furnishings_status(furnishing_group.id)
-        self._app.logger.debug(
-            f'furnishing records with group id: {furnishing_group.id} marked as processed')
+flags = Flags()
 
 
 class XmlMeta:
@@ -152,10 +89,126 @@ class XmlMeta:
         return XmlMeta.furnishings[name]
 
 
+class PostProcessor:
+    """Processor after stage run of furnishings job."""
+
+    def __init__(self, app, furnishings_dict):
+        """Create post process helper instance."""
+        self._app = app
+        self._furnishings_dict = furnishings_dict
+        self._processed_date = LegislationDatetime.now()
+
+        # setup the sftp connection objects
+        self._bclaws_sftp_connection = SftpConnection(
+            username=app.config.get('BCLAWS_SFTP_USERNAME'),
+            host=app.config.get('BCLAWS_SFTP_HOST'),
+            port=app.config.get('BCLAWS_SFTP_PORT'),
+            private_key=app.config.get('BCLAWS_SFTP_PRIVATE_KEY'),
+            private_key_algorithm=app.config.get('BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM'),
+            private_key_passphrase=app.config.get('BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE')
+        )
+
+    @staticmethod
+    def _format_furnishings(furnishings_dict: dict, processed_date: datetime) -> dict:
+        """Format furnishing details presented in XML file."""
+        xml_data = {
+            'furnishings': {}
+        }
+        for name, furnishings in furnishings_dict.items():
+            xml_data['furnishings'][name] = XmlMeta.get_info_by_name(name)
+            xml_data['furnishings'][name]['items'] = sorted(furnishings, key=lambda f: f.business_name)
+        # we leave date and volume in XML blank
+        xml_data['effective_date'] = processed_date.strftime(XML_DATE_FORMAT)
+        return xml_data
+
+    @staticmethod
+    def _build_xml_data(xml_data: dict, processed_time: str):
+        """Build XML payload."""
+        template = Path(
+            f'{current_app.config.get("XML_TEMPLATE_PATH")}/gazette-notice.xml'
+        ).read_text()
+        jinja_template = Template(template, autoescape=True)
+
+        return jinja_template.render(xml_data, processed_time=processed_time)
+
+    @staticmethod
+    def _save_xml_payload(payload):
+        """Save XML payload."""
+        xml_payload = XmlPayload(payload=payload)
+        xml_payload.save()
+        furnishing_group = FurnishingGroup(xml_payload_id=xml_payload.id)
+        furnishing_group.save()
+        return furnishing_group, xml_payload
+
+    def update_furnishings_status(self, funishing_status, furnishing_group_id=None, notes=None):
+        """Update furnishing entries after processing."""
+        for furnishings in self._furnishings_dict.values():
+            for furnishing in furnishings:
+                if furnishing_group_id:
+                    furnishing.furnishing_group_id = furnishing_group_id
+                    furnishing.processed_date = datetime.utcnow()
+
+                if notes:
+                    furnishing.notes = notes
+
+                furnishing.status = funishing_status
+                furnishing.last_modified = datetime.utcnow()
+                furnishing.save()
+
+    def process(self):
+        """Postprocess to generate and upload file to external resources (BC Laws)."""
+        if not self._furnishings_dict:
+            return
+
+        # Create the XML data from the furnishings dict
+        xml_data = self._format_furnishings(self._furnishings_dict, self._processed_date)
+        self._app.logger.debug('Formatted furnishing details presented in XML file')
+
+        # Skip rest of processing if sftp is disabled
+        if flag_on := flags.is_on('disable-dissolution-sftp-bclaws'):
+            self._app.logger.debug(f'disable-dissolution-sftp-bclaws flag on: {flag_on}')
+            return
+
+        # SFTP to BC Laws
+        payload = self._build_xml_data(xml_data, self._processed_date.strftime('%I:%M %p'))
+        filename = f'QP_CORP_{LegislationDatetime.format_as_legislation_date(self._processed_date)}.xml'
+        with self._bclaws_sftp_connection as client:
+            resp = client.putfo(
+                    fl=StringIO(payload),
+                    remotepath=(
+                        f'{self._app.config.get("BCLAWS_SFTP_STORAGE_DIRECTORY")}'
+                        f'/{filename}'
+                    )
+                )
+        self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCLaws SFTP')
+
+        # Save xml payload
+        furnishing_group, _ = self._save_xml_payload(payload)
+        self._app.logger.debug('Saved XML payload')
+
+        # mark furnishing records processed
+        self.update_furnishings_status(
+            Furnishing.FurnishingStatus.PROCESSED,
+            furnishing_group_id=furnishing_group.id
+        )
+        self._app.logger.debug(
+            f'Furnishing records with group id: {furnishing_group.id} marked as processed')
+
+
 def process(app: Flask, furnishings_dict: dict):
     """Run postprocess after stage run to upload files to external resources."""
     try:
         processor = PostProcessor(app, furnishings_dict)
         processor.process()
+    except AuthenticationException as err:
+        notes = 'SFTP Error: Unable to authenticate.'
+        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
+        app.logger.error(err)
+    except (NoValidConnectionsError, IOError) as err:
+        notes = f'SFTP Error: {os.strerror(err.errno)}.'
+        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
+        app.logger.error(err)
     except Exception as err:
+        notes = 'Unnexpected error during post-processing.'
+        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
         app.logger.error(err)
