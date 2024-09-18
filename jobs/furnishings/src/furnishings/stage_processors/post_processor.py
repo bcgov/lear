@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job processing rules after stage runs of involuntary dissolution."""
+import base64
 import os
 from datetime import datetime
 from io import StringIO
@@ -103,7 +104,7 @@ class PostProcessor:
             username=app.config.get('BCLAWS_SFTP_USERNAME'),
             host=app.config.get('BCLAWS_SFTP_HOST'),
             port=app.config.get('BCLAWS_SFTP_PORT'),
-            private_key=app.config.get('BCLAWS_SFTP_PRIVATE_KEY'),
+            private_key=base64.b64decode(app.config.get('BCLAWS_SFTP_PRIVATE_KEY')).decode('utf-8'),
             private_key_algorithm=app.config.get('BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM'),
             private_key_passphrase=app.config.get('BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE')
         )
