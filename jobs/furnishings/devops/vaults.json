@@ -13,7 +13,9 @@
             "launchdarkly",
             "nats-furnishings",
             "entity-service-account",
-            "furnishings"
+            "furnishings",
+            "sftp-bclaws",
+            "sftp-bcmail"
         ]
     },
     {
