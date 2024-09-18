@@ -127,6 +127,7 @@ class FilingInfo(Resource):
                     'alteration': json_data.get('alteration', None),
                     'amalgamationApplication': json_data.get('amalgamationApplication', None),
                     'annualReport': json_data.get('annualReport', None),
+                    'agmLocationChange': json_data.get('agmLocationChange', None),
                     'changeOfAddress': json_data.get('changeOfAddress', None),
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
                     'consentContinuationOut': json_data.get('consentContinuationOut', None),
@@ -156,10 +157,13 @@ class FilingInfo(Resource):
                 ):
                     if legal_type == Business.TypeCodes.COOP.value:
                         raise Exception('Not implemented!')  # pylint: disable=broad-exception-raised
+
+                    filing_dt = convert_to_pacific_time(json_data['header']['date'])
                     if filing_sub_type == 'administrative':
-                        event_id = Filing.add_administrative_dissolution_event(con, identifier)
+                        event_id = Filing.add_administrative_dissolution_event(con, identifier, filing_dt)
                     else:
-                        event_id = Filing.add_involuntary_dissolution_event(con, identifier, filing_list['dissolution'])
+                        event_id = Filing.add_involuntary_dissolution_event(con, identifier,
+                                                                            filing_dt, filing_list['dissolution'])
                     con.commit()
                     return jsonify({
                         'filing': {
