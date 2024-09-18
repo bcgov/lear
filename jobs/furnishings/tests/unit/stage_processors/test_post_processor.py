@@ -17,7 +17,7 @@ import pytest
 from legal_api.models import BatchProcessing, Furnishing, FurnishingGroup, XmlPayload
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from furnishings.stage_processors.post_processor import PostProcessor
+from furnishings.stage_processors.post_processor import PostProcessor, flags
 
 from .. import factory_batch, factory_batch_processing, factory_business, factory_furnishing
 
@@ -79,10 +79,11 @@ def test_processor(app, session, sftpserver, sftpconnection, test_name, furnishi
     processor = PostProcessor(app, furnishing_dict)
     with sftpserver.serve_content({app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'): {}}):
         with patch.object(processor, '_bclaws_sftp_connection', new=sftpconnection):
-            processor.process()
-            # assert xml file is uploaded
-            with sftpconnection as sftpclient:
-                assert len(sftpclient.listdir(app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'))) == 1
+            with patch.object(flags, 'is_on', return_value=False):
+                processor.process()
+                # assert xml file is uploaded
+                with sftpconnection as sftpclient:
+                    assert len(sftpclient.listdir(app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'))) == 1
 
     # assert the furnishings are marked as processed
     furnishing = furnishings[0]
@@ -126,10 +127,11 @@ def test_processor_combined_xml(app, session, sftpserver, sftpconnection):
     processor = PostProcessor(app, furnishing_dict)
     with sftpserver.serve_content({app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'): {}}):
         with patch.object(processor, '_bclaws_sftp_connection', new=sftpconnection):
-            processor.process()
-            # assert xml file is uploaded
-            with sftpconnection as sftpclient:
-                assert len(sftpclient.listdir(app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'))) == 1
+            with patch.object(flags, 'is_on', return_value=False):
+                processor.process()
+                # assert xml file is uploaded
+                with sftpconnection as sftpclient:
+                    assert len(sftpclient.listdir(app.config.get('BCLAWS_SFTP_STORAGE_DIRECTORY'))) == 1
 
 
     # assert the furnishings are marked as processed
