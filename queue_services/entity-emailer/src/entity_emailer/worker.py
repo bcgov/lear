@@ -103,15 +103,18 @@ def send_email(email: dict, token: str):
         logger.debug('Send email: email object(s) is missing')
         raise QueueException('Unsuccessful sending email - required email object(s) is missing. ')
 
-    resp = requests.post(
-        f'{APP_CONFIG.NOTIFY_API_URL}',
-        json=email,
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {token}'
-        }
-    )
-    if resp.status_code != HTTPStatus.OK:
+    try:
+        resp = requests.post(
+            f'{APP_CONFIG.NOTIFY_API_URL}',
+            json=email,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {token}'
+            }
+        )
+        if resp.status_code != HTTPStatus.OK:
+            raise EmailException
+    except Exception:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
         # this should log the error and put the email msg back on the queue
         raise EmailException('Unsuccessful response when sending email.')
 
