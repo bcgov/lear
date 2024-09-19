@@ -14,6 +14,7 @@
 """Furnishings job processing rules for stage one of involuntary dissolution."""
 import uuid
 from datetime import datetime
+from io import BytesIO
 
 import pytz
 import requests
@@ -21,10 +22,17 @@ from flask import Flask, current_app
 from legal_api.models import Address, Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
 from legal_api.reports.report_v2 import ReportTypes
 from legal_api.services.bootstrap import AccountService
+from legal_api.services.flags import Flags
 from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
 from legal_api.utils.datetime import datetime as datetime_util
+from paramiko.ssh_exception import AuthenticationException, NoValidConnectionsError
+
+from furnishings.sftp import SftpConnection
+
+
+flags = Flags()
 
 
 class StageOneProcessor:
@@ -43,6 +51,16 @@ class StageOneProcessor:
         self._xpro_mail_furnishings = []
         self._bc_letters = None
         self._xpro_letters = None
+
+        # setup the sftp connection objects
+        self._bcmail_sftp_connection = SftpConnection(
+            username=app.config.get('BCMAIL_SFTP_USERNAME'),
+            host=app.config.get('BCMAIL_SFTP_HOST'),
+            port=app.config.get('BCMAIL_SFTP_PORT'),
+            private_key=app.config.get('BCMAIL_SFTP_PRIVATE_KEY'),
+            private_key_algorithm=app.config.get('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM'),
+            private_key_passphrase=app.config.get('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE')
+        )
 
     async def process(self, batch_processing: BatchProcessing):
         """Process batch_processing entry."""
@@ -94,6 +112,50 @@ class StageOneProcessor:
         except Exception as e:
             self._app.logger.error(f'Error generating batch letters: {e}')
         self._app.logger.debug('Finish generating batch letters.')
+
+    def upload_to_sftp(self, client, data, filename):
+        """SFTP data to targeted destination."""
+        return client.putfo(
+            fl=BytesIO(data),
+            remotepath=f'{self._app.config.get("BCMAIL_SFTP_STORAGE_DIRECTORY")}/{filename}'
+        )
+    
+    def update_notes_and_status(self, furnishings_list, funishing_status, furnishing_notes=None):
+        """Update the notes and status of furnishing entries in a list."""
+        for furnishing in furnishings_list:
+            furnishing.notes = furnishing_notes
+            furnishing.status = funishing_status
+            furnishing.save()
+
+    def process_paper_letters(self):
+        """Process the generated paper letts of BC and XPRO businesses (SFTP)."""
+        # Skip SFTPing PDF files to BCMail+ if flag is on
+        if flag_on := flags.is_on('disable-dissolution-sftp-bcmail'):
+            self._app.logger.debug(f'disable-dissolution-sftp-bcmail flag on: {flag_on}')
+            #return
+
+        current_date = datetime_util.now()
+        if self._bc_mail_furnishings:
+            try:
+                filename = current_date.strftime('DIS1_LETTER_BC_%b.%d.%Y.pdf')
+                # SFTP BC batch letter PDF to BCMail+
+                with self._bcmail_sftp_connection as client:
+                    resp = self.upload_to_sftp(client, self._bc_letters, filename)
+                self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (BC letter)')
+            except Exception as err:
+                self.update_notes_and_status(self._bc_mail_furnishings, Furnishing.FurnishingStatus.FAILED, 'SFTP error of BC batch letter.')
+                self._app.logger.debug(f'SFTP error of BC batch letter: {err}')
+
+        if self._xpro_mail_furnishings:
+            try:
+                filename = current_date.strftime('DIS1_LETTER_EP_%b.%d.%Y.pdf')
+                # SFTP XPRO batch letter PDF to BCMail+
+                with self._bcmail_sftp_connection as client:
+                    resp = self.upload_to_sftp(client, self._xpro_letters, filename)
+                self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (XPRO letter)')
+            except Exception as err:
+                self.update_notes_and_status(self._bc_mail_furnishings, Furnishing.FurnishingStatus.FAILED, 'SFTP error of XPRO batch letter.')
+                self._app.logger.debug(f'SFTP error of XPRO batch letter: {err}')
 
     async def _send_first_round_notification(self, batch_processing: BatchProcessing, business: Business):
         """Process first round of notification(email/letter)."""
@@ -319,8 +381,7 @@ async def process(app: Flask, qsm: QueueService):  # pylint: disable=redefined-o
         for batch_processing in batch_processings:
             await processor.process(batch_processing)
         processor.generate_paper_letters()
-        # TODO: send AR and transition pdf to BCMail+
-        # TODO: mark MAIL entries as PROCESSED/FAILED
+        processor.process_paper_letters()
 
-    except Exception as err:
+    except (AuthenticationException, NoValidConnectionsError, IOError, Exception) as err:
         app.logger.error(err)
