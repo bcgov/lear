@@ -28,7 +28,6 @@ from legal_api.services.furnishing_documents_service import FurnishingDocumentsS
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
 from legal_api.utils.datetime import datetime as datetime_util
-from paramiko.ssh_exception import AuthenticationException, NoValidConnectionsError
 
 from furnishings.sftp import SftpConnection
 
@@ -393,5 +392,5 @@ async def process(app: Flask, qsm: QueueService):  # pylint: disable=redefined-o
         processor.generate_paper_letters()
         processor.process_paper_letters()
 
-    except (AuthenticationException, NoValidConnectionsError, IOError, Exception) as err:
+    except (IOError, Exception) as err:
         app.logger.error(err)
