@@ -114,7 +114,7 @@ def send_email(email: dict, token: str):
         )
         if resp.status_code != HTTPStatus.OK:
             raise EmailException
-    except Exception as err:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
+    except Exception:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
         # this should log the error and put the email msg back on the queue
         raise EmailException('Unsuccessful response when sending email.')
 
