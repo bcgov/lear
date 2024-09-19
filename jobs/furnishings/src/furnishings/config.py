@@ -149,6 +149,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     # BCMail+ SFTP
     BCMAIL_SFTP_STORAGE_DIRECTORY = 'bcmail'
+    BCMAIL_SFTP_PRIVATE_KEY = ''
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job processing rules for stage one of involuntary dissolution."""
+import base64
 import uuid
 from datetime import datetime
 from io import BytesIO
@@ -51,13 +52,14 @@ class StageOneProcessor:
         self._xpro_mail_furnishings = []
         self._bc_letters = None
         self._xpro_letters = None
+        self._disable_bcmail_sftp = flags.is_on('disable-dissolution-sftp-bcmail')
 
         # setup the sftp connection objects
         self._bcmail_sftp_connection = SftpConnection(
             username=app.config.get('BCMAIL_SFTP_USERNAME'),
             host=app.config.get('BCMAIL_SFTP_HOST'),
             port=app.config.get('BCMAIL_SFTP_PORT'),
-            private_key=app.config.get('BCMAIL_SFTP_PRIVATE_KEY'),
+            private_key=base64.b64decode(app.config.get('BCMAIL_SFTP_PRIVATE_KEY')).decode('utf-8'),
             private_key_algorithm=app.config.get('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM'),
             private_key_passphrase=app.config.get('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE')
         )
@@ -119,7 +121,7 @@ class StageOneProcessor:
             fl=BytesIO(data),
             remotepath=f'{self._app.config.get("BCMAIL_SFTP_STORAGE_DIRECTORY")}/{filename}'
         )
-    
+
     def update_notes_and_status(self, furnishings_list, funishing_status, furnishing_notes=None):
         """Update the notes and status of furnishing entries in a list."""
         for furnishing in furnishings_list:
@@ -130,9 +132,9 @@ class StageOneProcessor:
     def process_paper_letters(self):
         """Process the generated paper letts of BC and XPRO businesses (SFTP)."""
         # Skip SFTPing PDF files to BCMail+ if flag is on
-        if flag_on := flags.is_on('disable-dissolution-sftp-bcmail'):
-            self._app.logger.debug(f'disable-dissolution-sftp-bcmail flag on: {flag_on}')
-            #return
+        if self._disable_bcmail_sftp:
+            self._app.logger.debug(f'disable-dissolution-sftp-bcmail flag on: {self._disable_bcmail_sftp}')
+            return
 
         current_date = datetime_util.now()
         if self._bc_mail_furnishings:
@@ -143,7 +145,11 @@ class StageOneProcessor:
                     resp = self.upload_to_sftp(client, self._bc_letters, filename)
                 self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (BC letter)')
             except Exception as err:
-                self.update_notes_and_status(self._bc_mail_furnishings, Furnishing.FurnishingStatus.FAILED, 'SFTP error of BC batch letter.')
+                self.update_notes_and_status(
+                    self._bc_mail_furnishings,
+                    Furnishing.FurnishingStatus.FAILED,
+                    'SFTP error of BC batch letter.'
+                )
                 self._app.logger.debug(f'SFTP error of BC batch letter: {err}')
 
         if self._xpro_mail_furnishings:
@@ -154,7 +160,11 @@ class StageOneProcessor:
                     resp = self.upload_to_sftp(client, self._xpro_letters, filename)
                 self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (XPRO letter)')
             except Exception as err:
-                self.update_notes_and_status(self._bc_mail_furnishings, Furnishing.FurnishingStatus.FAILED, 'SFTP error of XPRO batch letter.')
+                self.update_notes_and_status(
+                    self._xpro_mail_furnishings,
+                    Furnishing.FurnishingStatus.FAILED,
+                    'SFTP error of XPRO batch letter.'
+                )
                 self._app.logger.debug(f'SFTP error of XPRO batch letter: {err}')
 
     async def _send_first_round_notification(self, batch_processing: BatchProcessing, business: Business):
