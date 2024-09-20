@@ -23,6 +23,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 from legal_api.models import Address, Business, Furnishing
+from legal_api.services import flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
 from legal_api.utils.datetime import datetime as datetime_util
@@ -124,23 +125,24 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                 assert furnishing.last_ar_date == business.founding_date
                 assert furnishing.business_name == business.legal_name
             else:
-                mock_send_email.assert_not_called()
-                furnishings = Furnishing.find_by(business_id=business.id)
-                assert len(furnishings) == 1
-                furnishing = furnishings[0]
-                assert furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
-                assert furnishing.furnishing_name == expected_furnishing_name
-                assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
-                assert furnishing.furnishing_group_id is not None
+                with patch.object(flags, 'is_on', return_value=True):
+                    mock_send_email.assert_not_called()
+                    furnishings = Furnishing.find_by(business_id=business.id)
+                    assert len(furnishings) == 1
+                    furnishing = furnishings[0]
+                    assert furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
+                    assert furnishing.furnishing_name == expected_furnishing_name
+                    assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
+                    assert furnishing.furnishing_group_id is not None
 
-                furnishing_addresses = Address.find_by(furnishings_id=furnishing.id)
-                assert len(furnishing_addresses) == 1
-                furnishing_address = furnishing_addresses[0]
-                assert furnishing_address
-                assert furnishing_address.address_type == mailing_address.address_type
-                assert furnishing_address.furnishings_id == furnishing.id
-                assert furnishing_address.business_id == None
-                assert furnishing_address.office_id == None
+                    furnishing_addresses = Address.find_by(furnishings_id=furnishing.id)
+                    assert len(furnishing_addresses) == 1
+                    furnishing_address = furnishing_addresses[0]
+                    assert furnishing_address
+                    assert furnishing_address.address_type == mailing_address.address_type
+                    assert furnishing_address.furnishings_id == furnishing.id
+                    assert furnishing_address.business_id == None
+                    assert furnishing_address.office_id == None
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
