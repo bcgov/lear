@@ -275,3 +275,27 @@ class AccountService:
         except Exception:  # noqa B902; pylint: disable=W0703;
             current_app.logger.error('Failed to get response')
             return None
+
+    @classmethod
+    def get_affiliations(cls, account: int):
+        """Affiliate a business to an account."""
+        auth_url = current_app.config.get('AUTH_SVC_URL')
+        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
+
+        token = cls.get_bearer_token()
+
+        if not token:
+            current_app.logger.error('Not Authorized')
+            return None
+
+        affiliates = requests.get(
+            url=account_svc_affiliate_url,
+            headers={**cls.CONTENT_TYPE_JSON,
+                     'Authorization': cls.BEARER + token},
+            timeout=cls.timeout
+        )
+
+        if affiliates.status_code == HTTPStatus.OK:
+            return affiliates.json().get('entities')
+
+        return None
