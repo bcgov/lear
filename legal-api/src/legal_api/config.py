@@ -61,6 +61,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
+    COLIN_URL = os.getenv('COLIN_URL', '')
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://PAYMENT_BASE/api/v1/payment-request')
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
     REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')

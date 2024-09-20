@@ -15,6 +15,8 @@
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
+import requests
+from flask import current_app
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
@@ -33,6 +35,7 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
 )
 from legal_api.services.utils import get_date, get_str
+from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -49,6 +52,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
+    msg.extend(validate_business_in_colin(filing_json, filing_type))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
     msg.extend(validate_offices(filing_json, filing_type))
     msg.extend(validate_roles(filing_json, legal_type, filing_type))
@@ -165,3 +169,22 @@ def validate_continuation_in_court_order(filing: dict, filing_type) -> list:
         if err:
             return err
     return []
+
+
+def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
+    """Validate continuation EXPRO business by making a call to Colin API."""
+    msg = []
+    business_identifier_path = f'/filing/{filing_type}/business/identifier'
+
+    if filing_json['filing'][filing_type].get('business'):
+        identifier = filing_json['filing'][filing_type]['business']['identifier']
+        url = f'{current_app.config["COLIN_URL"]}/businesses/{identifier}/public'
+        headers = {
+            'Authorization': f'Bearer {jwt.get_token_auth_header()}',
+            'Content-Type': 'application/json'
+        }
+        response = requests.get(url, headers=headers)
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            msg.append({'error': 'Could not fetch business data for company from Colin.',
+                        'path': business_identifier_path})
+    return msg
