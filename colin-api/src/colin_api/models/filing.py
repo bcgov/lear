@@ -35,6 +35,7 @@ from colin_api.exceptions import (  # noqa: I001
 )  # noqa: I001
 from colin_api.models import (  # noqa: I001
     Business,  # noqa: I001
+    ContOut,  # noqa: I001
     CorpInvolved,  # noqa: I001
     CorpName,  # noqa: I001
     FilingType,  # noqa: I001
@@ -65,6 +66,28 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         LEAR = 'LEAR'
 
     FILING_TYPES = {
+        'agmExtension': {
+            'type_code_list': ['AGMDT'],
+            Business.TypeCodes.BCOMP.value: 'AGMDT',
+            Business.TypeCodes.BC_COMP.value: 'AGMDT',
+            Business.TypeCodes.ULC_COMP.value: 'AGMDT',
+            Business.TypeCodes.CCC_COMP.value: 'AGMDT',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'AGMDT',
+            Business.TypeCodes.CONTINUE_IN.value: 'AGMDT',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'AGMDT',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'AGMDT',
+        },
+        'agmLocationChange': {
+            'type_code_list': ['AGMLC'],
+            Business.TypeCodes.BCOMP.value: 'AGMLC',
+            Business.TypeCodes.BC_COMP.value: 'AGMLC',
+            Business.TypeCodes.ULC_COMP.value: 'AGMLC',
+            Business.TypeCodes.CCC_COMP.value: 'AGMLC',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'AGMLC',
+            Business.TypeCodes.CONTINUE_IN.value: 'AGMLC',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'AGMLC',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'AGMLC',
+        },
         'annualReport': {
             'type_code_list': ['OTANN', 'ANNBC'],
             Business.TypeCodes.COOP.value: 'OTANN',
@@ -223,6 +246,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.ULC_CONTINUE_IN.value: 'CONTO',
             Business.TypeCodes.CCC_CONTINUE_IN.value: 'CONTO',
         },
+        'continuationOut': {
+            'type_code_list': ['COUTI'],
+            Business.TypeCodes.BCOMP.value: 'COUTI',
+            Business.TypeCodes.BC_COMP.value: 'COUTI',
+            Business.TypeCodes.ULC_COMP.value: 'COUTI',
+            Business.TypeCodes.CCC_COMP.value: 'COUTI',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'COUTI',
+            Business.TypeCodes.CONTINUE_IN.value: 'COUTI',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'COUTI',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'COUTI',
+        },
         'changeOfName': {
             'type_code_list': ['OTNCN'],
             Business.TypeCodes.COOP.value: 'OTNCN',
@@ -379,7 +413,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return None
 
     @classmethod
-    def _get_event_id(cls, cursor, corp_num: str, event_type: str = 'FILE') -> str:
+    def _get_event_id(cls, cursor, corp_num: str, filing_dt: str, event_type: str = 'FILE') -> str:
         """Get next event ID for filing.
 
         :param cursor: oracle cursor
@@ -409,10 +443,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             cursor.execute(
                 """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
-                VALUES (:event_id, :corp_num, :event_type, sysdate, NULL)
+                VALUES (:event_id, :corp_num, :event_type,
+                    TO_TIMESTAMP_TZ(:filing_dt,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'), NULL)
                 """,
                 event_id=event_id,
                 corp_num=corp_num,
+                filing_dt=filing_dt,
                 event_type=event_type
             )
         except Exception as err:
@@ -525,8 +561,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
                                       'AMLVB', 'AMALV', 'AMLVU', 'AMLVC',
                                       'CONTB', 'CONTI', 'CONTU', 'CONTC',
-                                      'NOABE', 'NOALE', 'NOALR', 'NOALD', 'NOALA', 'NOALB', 'NOALU', 'NOALC',
-                                      'CONTO',
+                                      'NOABE', 'NOALE', 'NOALR', 'NOALD',
+                                      'NOALA', 'NOALB', 'NOALU', 'NOALC',
+                                      'CONTO', 'COUTI',
+                                      'AGMDT', 'AGMLC',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
                 court_order_num = None
@@ -1067,16 +1105,16 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             raise err
 
     @classmethod
-    def add_administrative_dissolution_event(cls, con, corp_num) -> int:
+    def add_administrative_dissolution_event(cls, con, corp_num, filing_dt) -> int:
         """Add administrative dissolution event."""
         cursor = con.cursor()
-        event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, event_type='SYSDA')
+        event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing_dt, event_type='SYSDA')
         Business.update_corp_state(cursor, event_id, corp_num,
                                    Business.CorpStateTypes.ADMINISTRATIVE_DISSOLUTION.value)
         return event_id
 
     @classmethod
-    def add_involuntary_dissolution_event(cls, con, corp_num, filing_body) -> int:
+    def add_involuntary_dissolution_event(cls, con, corp_num, filing_dt, filing_body) -> int:
         """Add involuntary dissolution event."""
         if not (filing_meta_data := filing_body.get('metaData')):
             return None
@@ -1092,7 +1130,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         if event_type:
             cursor = con.cursor()
-            event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, event_type=event_type)
+            event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num,
+                                         filing_dt=filing_dt, event_type=event_type)
             Business.update_corp_state(cursor, event_id, corp_num, corp_state)
             return event_id
 
@@ -1103,9 +1142,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def add_filing(cls, con, filing: Filing) -> int:
         """Add new filing to COLIN tables."""
         try:
-            if filing.filing_type not in ['alteration', 'amalgamationApplication', 'annualReport', 'changeOfAddress',
+            if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
+                                          'amalgamationApplication', 'annualReport', 'changeOfAddress',
                                           'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
-                                          'correction', 'courtOrder',
+                                          'continuationOut', 'correction', 'courtOrder',
                                           'dissolution', 'incorporationApplication', 'registrarsNotation',
                                           'registrarsOrder', 'specialResolution', 'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
@@ -1123,7 +1163,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             business = filing.business.as_dict()
             cursor = con.cursor()
             # create new event record, return event ID
-            filing.event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num)
+            filing.event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing.filing_date)
             # create new filing user
             cls._insert_filing_user(cursor=cursor, filing=filing)
 
@@ -1138,6 +1178,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 cls._process_amalgamating_businesses(cursor, filing)
             elif filing.filing_type == 'continuationIn':
                 cls._process_continuation_in(cursor, filing)
+            elif filing.filing_type == 'continuationOut':
+                cls._process_continuation_out(cursor, filing)
 
             if filing.filing_type == 'correction':
                 cls._process_correction(cursor, business, filing, corp_num)
@@ -1201,6 +1243,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                            if region_code
                                            else country_code)
                     cls._insert_ledger_text(cursor, filing, authorization_text)
+                elif filing.filing_type == 'agmLocationChange':
+                    year = filing.body.get('year')
+                    agm_location = filing.body.get('agmLocation')
+                    agm_location_text = f'OKAY TO HOLD {year} AGM IN {agm_location}.'
+                    cls._insert_ledger_text(cursor, filing, agm_location_text)
+                elif filing.filing_type == 'agmExtension':
+                    year = filing.body.get('year')
+                    agm_ext_dt = filing.body.get('expireDateApprovedExt')
+                    agm_ext_str = datetime.datetime.fromisoformat(agm_ext_dt).strftime('%B %-d, %Y')
+                    agm_extension_text = f'The {year} AGM must be held by {agm_ext_str} at 11:59 pm Pacific time.'
+                    cls._insert_ledger_text(cursor, filing, agm_extension_text)
 
                 # process voluntary dissolution
                 if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
@@ -1211,7 +1264,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
                 # update corporation record
                 is_annual_report = filing.filing_type == 'annualReport'
-                last_ar_filed_dt = Filing._get_last_ar_filed_date(filing.header, business, filing_source)
+                if filing_source == cls.FilingSource.BAR.value:
+                    last_ar_filed_dt = Filing._get_last_ar_filed_date(filing.header, business)
+                else:
+                    last_ar_filed_dt = ar_date
+
                 Business.update_corporation(
                     cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report,
                     last_ar_filed_dt=last_ar_filed_dt)
@@ -1238,12 +1295,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             raise err
 
     @classmethod
-    def _get_last_ar_filed_date(cls, header: dict, business: dict, filing_source: str):
-        last_ar_filed_dt = datetime.datetime.utcnow().strftime('%Y-%m-%d')
-        if filing_source == cls.FilingSource.BAR.value:
-            filing_year = header.get('filingYear')
-            recognition_dt = datetime.datetime.fromisoformat(business.get('business').get('foundingDate')).date()
-            last_ar_filed_dt = f'{filing_year}-{recognition_dt.month}-{recognition_dt.day}'
+    def _get_last_ar_filed_date(cls, header: dict, business: dict):
+        filing_year = header.get('filingYear')
+        recognition_dt = datetime.datetime.fromisoformat(business.get('business').get('foundingDate')).date()
+        last_ar_filed_dt = f'{filing_year}-{recognition_dt.month}-{recognition_dt.day}'
         return last_ar_filed_dt
 
     @classmethod
@@ -1267,6 +1322,42 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def is_filing_type_match(cls, filing: Filing, filing_type: str, filing_sub_type: str):
         """Return whether filing has specificed filing type and filing sub-type."""
         return filing.filing_type == filing_type and filing.filing_sub_type == filing_sub_type
+
+    @classmethod
+    def _process_continuation_out(cls, cursor, filing):
+        """Process continuation out."""
+        corp_num = filing.get_corp_num()
+
+        cont_out = ContOut()
+        cont_out.corp_num = corp_num
+        cont_out.start_event_id = filing.event_id
+        cont_out.cont_out_dt = filing.body.get('continuationOutDate')
+        cont_out.home_company_nme = filing.body.get('legalName')
+
+        foreign_jurisdiction = filing.body.get('foreignJurisdiction')
+        country_code = foreign_jurisdiction.get('country').upper()
+        region_code = (foreign_jurisdiction.get('region') or '').upper()
+        if country_code == 'CA':
+            if region_code == 'FEDERAL':
+                cont_out.can_jur_typ_cd = 'FD'
+            else:
+                cont_out.can_jur_typ_cd = region_code
+        else:
+            cont_out.can_jur_typ_cd = 'OT'
+            cont_out.othr_juri_desc = \
+                f'{country_code}, {region_code}' if region_code else country_code
+
+        ContOut.create_cont_out(cursor, cont_out)
+
+        continued_to = cont_out.othr_juri_desc if cont_out.can_jur_typ_cd == 'OT' else cont_out.can_jur_typ_cd
+        cont_out_dt_str = datetime.datetime.fromisoformat(cont_out.cont_out_dt).strftime('%B %-d, %Y')
+        cls._insert_ledger_text(
+            cursor,
+            filing,
+            f'CONTINUED TO {continued_to} EFFECTIVE {cont_out_dt_str} UNDER THE NAME "{cont_out.home_company_nme}"'
+        )
+
+        Business.update_corp_state(cursor, filing.event_id, corp_num, Business.CorpStateTypes.CONTINUE_OUT.value)
 
     @classmethod
     def _process_continuation_in(cls, cursor, filing):

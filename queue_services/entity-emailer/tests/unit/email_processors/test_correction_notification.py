@@ -44,17 +44,24 @@ def test_firm_correction_notification(app, session, status, legal_type):
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'test business'
-    filing = prep_firm_correction_filing(session, 'FM1234567', '1', legal_type, legal_name, 'staff')
+    parties = [{
+        'firstName': 'Jane',
+        'lastName': 'Doe',
+        'middleInitial': 'A',
+        'partyType': 'person',
+        'organizationName': ''
+    }]
+    filing = prep_firm_correction_filing(session, 'FM1234567', '1', legal_type, legal_name, 'staff', parties)
     token = 'token'
     # test processor
     with patch.object(correction_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = correction_notification.process(
             {'filingId': filing.id, 'type': 'correction', 'option': status}, token)
         if status == 'PAID':
-            assert email['content']['subject'] == legal_name + ' - Confirmation of Filing from the Business Registry'
+            assert email['content']['subject'] == 'JANE A DOE - Confirmation of Filing from the Business Registry'
         else:
             assert email['content']['subject'] == \
-                legal_name + COMPLETED_SUBJECT_SUFIX
+                'JANE A DOE' + COMPLETED_SUBJECT_SUFIX
 
         if status == 'COMPLETED':
             assert 'no_one@never.get' in email['recipients']

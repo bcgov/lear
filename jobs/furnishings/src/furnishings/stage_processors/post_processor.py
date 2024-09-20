@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job processing rules after stage runs of involuntary dissolution."""
+import base64
 import os
 from datetime import datetime
 from io import StringIO
@@ -97,13 +98,14 @@ class PostProcessor:
         self._app = app
         self._furnishings_dict = furnishings_dict
         self._processed_date = LegislationDatetime.now()
+        self._disable_bclaws_sftp = flags.is_on('disable-dissolution-sftp-bclaws')
 
         # setup the sftp connection objects
         self._bclaws_sftp_connection = SftpConnection(
             username=app.config.get('BCLAWS_SFTP_USERNAME'),
             host=app.config.get('BCLAWS_SFTP_HOST'),
             port=app.config.get('BCLAWS_SFTP_PORT'),
-            private_key=app.config.get('BCLAWS_SFTP_PRIVATE_KEY'),
+            private_key=base64.b64decode(app.config.get('BCLAWS_SFTP_PRIVATE_KEY')).decode('utf-8'),
             private_key_algorithm=app.config.get('BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM'),
             private_key_passphrase=app.config.get('BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE')
         )
@@ -165,8 +167,8 @@ class PostProcessor:
         self._app.logger.debug('Formatted furnishing details presented in XML file')
 
         # Skip rest of processing if sftp is disabled
-        if flag_on := flags.is_on('disable-dissolution-sftp-bclaws'):
-            self._app.logger.debug(f'disable-dissolution-sftp-bclaws flag on: {flag_on}')
+        if self._disable_bclaws_sftp:
+            self._app.logger.debug(f'disable-dissolution-sftp-bclaws flag on: {self._disable_bclaws_sftp}')
             return
 
         # SFTP to BC Laws

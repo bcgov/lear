@@ -20,10 +20,12 @@ import copy
 
 import pytest
 from datedelta import datedelta
+from unittest.mock import patch
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
+from sqlalchemy.sql import true
 
 from legal_api.models import Batch, Business
-from legal_api.services import InvoluntaryDissolutionService
+from legal_api.services import flags, InvoluntaryDissolutionService
 from legal_api.utils.datetime import datetime
 from tests.unit.models import (
     factory_batch,
@@ -369,3 +371,87 @@ def test_get_businesses_eligible_query_order(session, test_name, expected_order)
     assert result
     result_details = [(res[0].identifier, res[1], res[2]) for res in result]
     assert result_details == expected_order
+
+
+@pytest.mark.parametrize(
+    'test_name, enable_involuntary_dissolution_filter, involuntary_dissolution_filter', [
+        ('no_filter', False, {}),
+        ('no_filter', False, {'include-accounts': [0, 1], 'exclude-accounts': [3]}),
+        ('no_filter', True, {'include-accounts': [], 'exclude-accounts': []}),
+        ('exclude_filter', True, {'include-accounts': [], 'exclude-accounts': [2, 3]}),
+        ('include_filter', True, {'include-accounts': [0, 1], 'exclude-accounts': []}),
+        ('combine_filter', True, {'include-accounts': [0, 1], 'exclude-accounts': [2, 3]})
+    ]
+)
+def test_check_feature_flags_filte(app, session, mocker, test_name, enable_involuntary_dissolution_filter, involuntary_dissolution_filter):
+    """Assert the feature_flags_filter with flag"""
+    identifiers = ['BC1111111', 'BC2222222', 'BC3333333', 'BC4444444', 'BC5555555', 'BC6666666', 'BC7777777', 'BC8888888', 'BC9999999']
+    for indetifier in identifiers:
+        business = factory_business(identifier=indetifier, entity_type=Business.LegalTypes.COMP.value)
+        business.last_ar_date = datetime.utcnow() - datedelta(years=3)
+        business.save()
+
+    get_affiliation_response = [
+        # account id - 1: entities
+        [
+            {'businessIdentifier': 'BC1111111', 'affiliations': {}},
+            {'businessIdentifier': 'BC2222222', 'affiliations': {}},
+            {'businessIdentifier': 'BC3333333', 'affiliations': {}},
+            {'businessIdentifier': 'NR 111', 'affiliations': {}},
+            {'businessIdentifier': 'T111', 'affiliations': {}},
+        ],
+        # account id - 2: entities
+        [
+            {'businessIdentifier': 'BC3333333', 'affiliations': {}},
+            {'businessIdentifier': 'BC4444444', 'affiliations': {}},
+            {'businessIdentifier': 'BC5555555', 'affiliations': {}},
+            {'businessIdentifier': 'NR 222', 'affiliations': {}},
+            {'businessIdentifier': 'T222', 'affiliations': {}},
+        ],
+        # account id - 3: entities
+        [
+            {'businessIdentifier': 'BC5555555', 'affiliations': {}},
+            {'businessIdentifier': 'BC6666666', 'affiliations': {}},
+            {'businessIdentifier': 'BC7777777', 'affiliations': {}},
+            {'businessIdentifier': 'NR 333', 'affiliations': {}},
+            {'businessIdentifier': 'T333', 'affiliations': {}},
+        ],
+        # account id - 2: entities
+        [
+            {'businessIdentifier': 'BC7777777', 'affiliations': {}},
+            {'businessIdentifier': 'BC8888888', 'affiliations': {}},
+            {'businessIdentifier': 'BC9999999', 'affiliations': {}},
+            {'businessIdentifier': 'NR 444', 'affiliations': {}},
+            {'businessIdentifier': 'T444', 'affiliations': {}},
+        ]
+    ]
+    def side_effect(id):
+        return get_affiliation_response[id]
+    
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_affiliations', side_effect=side_effect)
+    
+    with patch.object(flags, 'is_on', return_value=enable_involuntary_dissolution_filter):
+        with patch.object(flags, 'value', return_value=involuntary_dissolution_filter):
+            result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
+
+    if test_name == 'no_filter':
+        assert len(result) == 9
+    elif test_name == 'exclude_filter':
+        assert len(result) == 4
+        assert result[0][0].identifier == 'BC1111111'
+        assert result[1][0].identifier == 'BC2222222'
+        assert result[2][0].identifier == 'BC3333333'
+        assert result[3][0].identifier == 'BC4444444'
+    elif test_name == 'include_filter':
+        assert len(result) == 5
+        assert result[0][0].identifier == 'BC1111111'
+        assert result[1][0].identifier == 'BC2222222'
+        assert result[2][0].identifier == 'BC3333333'
+        assert result[3][0].identifier == 'BC4444444'
+        assert result[4][0].identifier == 'BC5555555'
+    elif test_name == 'combine_filter':
+        assert len(result) == 4 
+        assert result[0][0].identifier == 'BC1111111'
+        assert result[1][0].identifier == 'BC2222222'
+        assert result[2][0].identifier == 'BC3333333'
+        assert result[3][0].identifier == 'BC4444444'

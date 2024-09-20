@@ -124,6 +124,8 @@ class FilingInfo(Resource):
                 filing_list = {'correction': json_data['correction']}
             else:
                 filing_list = {
+                    'agmExtension': json_data.get('agmExtension', None),
+                    'agmLocationChange': json_data.get('agmLocationChange', None),
                     'alteration': json_data.get('alteration', None),
                     'amalgamationApplication': json_data.get('amalgamationApplication', None),
                     'annualReport': json_data.get('annualReport', None),
@@ -131,6 +133,7 @@ class FilingInfo(Resource):
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
                     'consentContinuationOut': json_data.get('consentContinuationOut', None),
                     'continuationIn': json_data.get('continuationIn', None),
+                    'continuationOut': json_data.get('continuationOut', None),
                     'courtOrder': json_data.get('courtOrder', None),
                     'dissolution': json_data.get('dissolution', None),
                     'incorporationApplication': json_data.get('incorporationApplication', None),
@@ -155,10 +158,13 @@ class FilingInfo(Resource):
                 ):
                     if legal_type == Business.TypeCodes.COOP.value:
                         raise Exception('Not implemented!')  # pylint: disable=broad-exception-raised
+
+                    filing_dt = convert_to_pacific_time(json_data['header']['date'])
                     if filing_sub_type == 'administrative':
-                        event_id = Filing.add_administrative_dissolution_event(con, identifier)
+                        event_id = Filing.add_administrative_dissolution_event(con, identifier, filing_dt)
                     else:
-                        event_id = Filing.add_involuntary_dissolution_event(con, identifier, filing_list['dissolution'])
+                        event_id = Filing.add_involuntary_dissolution_event(con, identifier,
+                                                                            filing_dt, filing_list['dissolution'])
                     con.commit()
                     return jsonify({
                         'filing': {
@@ -214,7 +220,7 @@ class FilingInfo(Resource):
         for filing_type in filing_list:
             filing = Filing()
             filing.header = json_data['header']
-            filing.filing_date = filing.header['date']
+            filing.filing_date = convert_to_pacific_time(filing.header['date'])
             filing.filing_type = filing_type
             filing_body = filing_list[filing_type]
             filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
@@ -296,3 +302,34 @@ class UpdateARStatus(Resource):
         except Exception as err:  # pylint: disable=broad-except
             current_app.logger.error(f'Error updating AR status for {identifier}: {str(err)}')
             return jsonify({'message': 'Error updating AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('DELETE')
+@API.route('/<string:legal_type>/<string:identifier>/filings/reminder')
+# pylint: disable=too-few-public-methods
+class DeleteARPrompt(Resource):
+    """Delete AR Prompt for corporation."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def delete(identifier, **kwargs):
+        """Clean up data in Colin for the corporation."""
+        # pylint: disable=unused-argument
+        try:
+            with DB.connection as con:
+                with con.cursor() as cursor:
+                    # Delete from AR prompt for the given corporation
+                    delete_ar_prompt = """
+                        DELETE FROM AR_PROMPT
+                        WHERE corp_num = :identifier
+                    """
+                    cursor.execute(delete_ar_prompt, {'identifier': identifier})
+                    # Commit the transaction
+                    con.commit()
+                    current_app.logger.info(f'Successfully deleted AR prompt for corporation {identifier}.')
+                    return jsonify({'message': f'AR prompt deleted for corporation {identifier}.'}), HTTPStatus.OK
+
+        except Exception as err:  # pylint: disable=broad-except
+            current_app.logger.error(f'Error Deleteing AR status for {identifier}: {str(err)}')
+            return jsonify({'message': 'Error Deleteing AR status.'}), HTTPStatus.INTERNAL_SERVER_ERROR

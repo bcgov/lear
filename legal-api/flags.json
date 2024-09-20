@@ -4,6 +4,11 @@
         "bool-flag": true,
         "integer-flag": 10,
         "enable-legal-name-fix": true,
-        "disable-nr-check": false
+        "disable-nr-check": false,
+        "enable-involuntary-dissolution-filter": false,
+        "involuntary-dissolution-filter": {
+            "include-accounts": [],
+            "exclude-accounts": []
+        }
     }
 }

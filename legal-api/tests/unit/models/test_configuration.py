@@ -74,11 +74,7 @@ def test_find_existing_configuration_by_name(session):
     ('DISSOLUTIONS_STAGE_2_SCHEDULE', '100', False),
     ('DISSOLUTIONS_STAGE_2_SCHEDULE', '0 2 * * *', True),
     ('DISSOLUTIONS_STAGE_3_SCHEDULE', '100', False),
-    ('DISSOLUTIONS_STAGE_3_SCHEDULE', '0 2 * * *', True),
-    ('DISSOLUTIONS_ON_HOLD', '100', False),
-    ('DISSOLUTIONS_ON_HOLD', 'True', True),
-    ('DISSOLUTIONS_SUMMARY_EMAIL', 'asdf', False),
-    ('DISSOLUTIONS_SUMMARY_EMAIL', 'test@no-reply.com', True)
+    ('DISSOLUTIONS_STAGE_3_SCHEDULE', '0 2 * * *', True)
 ])
 def test_configuration_value_validation(session, config_name, test_val, expected):
     configuration = Configuration.find_by_name(config_name)

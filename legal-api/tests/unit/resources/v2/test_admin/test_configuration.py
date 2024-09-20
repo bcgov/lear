@@ -34,15 +34,13 @@ def test_get_configurations(app, session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert 'configurations' in rv.json
     results = rv.json['configurations']
-    assert len(results) == 7
+    assert len(results) == 5
 
     names = {'NUM_DISSOLUTIONS_ALLOWED',
              'MAX_DISSOLUTIONS_ALLOWED',
-             'DISSOLUTIONS_ON_HOLD',
              'DISSOLUTIONS_STAGE_1_SCHEDULE',
              'DISSOLUTIONS_STAGE_2_SCHEDULE',
-             'DISSOLUTIONS_STAGE_3_SCHEDULE',
-             'DISSOLUTIONS_SUMMARY_EMAIL'
+             'DISSOLUTIONS_STAGE_3_SCHEDULE'
              }
     for res in results:
         assert res['name'] in names
@@ -61,7 +59,7 @@ def test_get_configurations_with_invalid_user(app, session, client, jwt):
 
 def test_get_configurations_with_single_filter_name(app, session, client, jwt):
     """Assert that get results with a single filter name are returned."""
-    filter_name = 'DISSOLUTIONS_SUMMARY_EMAIL'
+    filter_name = 'NUM_DISSOLUTIONS_ALLOWED'
 
     # test
     rv = client.get(f'/api/v2/admin/configurations?names={filter_name}',
@@ -78,7 +76,7 @@ def test_get_configurations_with_single_filter_name(app, session, client, jwt):
 
 def test_get_configurations_with_multiple_filter_names(app, session, client, jwt):
     """Assert that get results with multiple filter names are returned."""
-    filter_names = 'DISSOLUTIONS_SUMMARY_EMAIL, NUM_DISSOLUTIONS_ALLOWED, dissolutions_on_hold'
+    filter_names = 'MAX_DISSOLUTIONS_ALLOWED, NUM_DISSOLUTIONS_ALLOWED'
     expected_names = [name.strip().upper() for name in filter_names.split(',') if name.strip()]
 
     # test
@@ -134,10 +132,6 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
                 'value': '2500'
             },
             {
-                'name': 'DISSOLUTIONS_ON_HOLD',
-                'value': 'True'
-            },
-            {
                 'name': 'dissolutions_stage_1_schedule', # should work with downcase name
                 'value': '0 0 2 * *'
             },
@@ -148,10 +142,6 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
             {
                 'name': 'DISSOLUTIONS_STAGE_3_SCHEDULE',
                 'value': '0 0 2 * *'
-            },
-            {
-                'name': 'DISSOLUTIONS_SUMMARY_EMAIL',
-                'value': 'test@no-reply.com'
             }
         ]
     }
@@ -177,16 +167,12 @@ def test_put_configurations_with_valid_data(app, session, client, jwt):
     ('duplicated_key',{'configurations': [{'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '1'},
                                           {'name': 'NUM_DISSOLUTIONS_ALLOWED','value': '10'}]},
      'Duplicate names error.', HTTPStatus.BAD_REQUEST),
-    ('dissolution_hold', {'configurations': [{'name': 'DISSOLUTIONS_ON_HOLD','value': '1'}]},
-     'Value for key DISSOLUTIONS_ON_HOLD must be a boolean', HTTPStatus.BAD_REQUEST),
     ('invalid_dissolution_schedule_1', {'configurations': [{'name': 'DISSOLUTIONS_STAGE_1_SCHEDULE','value': '1'}]},
      'Value for key DISSOLUTIONS_STAGE_1_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
     ('invalid_dissolution_schedule_2', {'configurations': [{'name': 'DISSOLUTIONS_STAGE_2_SCHEDULE','value': '1'}]},
      'Value for key DISSOLUTIONS_STAGE_2_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
     ('invalid_dissolution_schedule_3', {'configurations': [{'name': 'DISSOLUTIONS_STAGE_3_SCHEDULE','value': '1'}]},
      'Value for key DISSOLUTIONS_STAGE_3_SCHEDULE must be a cron string', HTTPStatus.BAD_REQUEST),
-    ('invalid_email_address', {'configurations': [{'name': 'DISSOLUTIONS_SUMMARY_EMAIL','value': 'asdf'}]},
-     'Value for key DISSOLUTIONS_SUMMARY_EMAIL must be an email address', HTTPStatus.BAD_REQUEST),
     ('blank_request_body', None, 'Request body cannot be blank', HTTPStatus.BAD_REQUEST),
     ('request_body_without_configuration_list', {'configurations': []}, 'Configurations list cannot be empty', HTTPStatus.BAD_REQUEST),
 ])

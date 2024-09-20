@@ -35,7 +35,8 @@
                 <span class="bold-italic">{{business.legalName}}</span>
               {% elif restoration.type == 'limitedRestoration' %}
                 has on {{effective_date_time}} been restored for a period ending
-                <span class="bold-italic">{{restoration_expiry_date}}</span> under the {{entityAct}}.
+                <span class="bold-italic">{{restoration_expiry_date}}</span> under the {{entityAct}} as
+                <span class="bold-italic">{{business.legalName}}</span>
               {% elif restoration.type == 'limitedRestorationExtension' %}
                 has on {{effective_date_time}} had the period of restoration extended to
                 <span class="bold-italic">expire on {{restoration_expiry_date}}</span>, under the {{entityAct}}.

@@ -49,11 +49,14 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
     if flag_on and business.in_dissolution:
         eligibility, _ = InvoluntaryDissolutionService.check_business_eligibility(
             business.identifier,
-            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
+            InvoluntaryDissolutionService.EligibilityFilters(
+                    exclude_in_dissolution=False, exclude_future_effective_filing=True
+                )
             )
         if not eligibility:
             batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
+            batch_processing.notes = 'Moved back into good standing'
             batch_processing.last_modified = datetime.datetime.utcnow()
 
     # save the annual report date to the filing meta info
