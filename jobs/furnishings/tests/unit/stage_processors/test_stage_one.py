@@ -319,7 +319,7 @@ async def test_process_paper_letters(app, session, sftpserver, sftpconnection, t
 
             # Determine which furnishings to patch based on the test name
             furnishings_attr = '_bc_mail_furnishings' if test_name == 'BC_BATCH_LETTER_SFTP' else '_xpro_mail_furnishings'
-                
+
             with patch.object(processor, furnishings_attr, new=[mail_furnishing]):
                 processor.process_paper_letters()
 
