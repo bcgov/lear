@@ -66,6 +66,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         LEAR = 'LEAR'
 
     FILING_TYPES = {
+        'agmExtension': {
+            'type_code_list': ['AGMDT'],
+            Business.TypeCodes.BCOMP.value: 'AGMDT',
+            Business.TypeCodes.BC_COMP.value: 'AGMDT',
+            Business.TypeCodes.ULC_COMP.value: 'AGMDT',
+            Business.TypeCodes.CCC_COMP.value: 'AGMDT',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'AGMDT',
+            Business.TypeCodes.CONTINUE_IN.value: 'AGMDT',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'AGMDT',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'AGMDT',
+        },
         'agmLocationChange': {
             'type_code_list': ['AGMLC'],
             Business.TypeCodes.BCOMP.value: 'AGMLC',
@@ -553,7 +564,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'NOABE', 'NOALE', 'NOALR', 'NOALD',
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
                                       'CONTO', 'COUTI',
-                                      'AGMLC',
+                                      'AGMDT', 'AGMLC',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
                 court_order_num = None
@@ -1131,8 +1142,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def add_filing(cls, con, filing: Filing) -> int:
         """Add new filing to COLIN tables."""
         try:
-            if filing.filing_type not in ['agmLocationChange', 'alteration', 'amalgamationApplication',
-                                          'annualReport', 'changeOfAddress',
+            if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
+                                          'amalgamationApplication', 'annualReport', 'changeOfAddress',
                                           'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
                                           'continuationOut', 'correction', 'courtOrder',
                                           'dissolution', 'incorporationApplication', 'registrarsNotation',
@@ -1237,6 +1248,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     agm_location = filing.body.get('agmLocation')
                     agm_location_text = f'OKAY TO HOLD {year} AGM IN {agm_location}.'
                     cls._insert_ledger_text(cursor, filing, agm_location_text)
+                elif filing.filing_type == 'agmExtension':
+                    year = filing.body.get('year')
+                    agm_ext_dt = filing.body.get('expireDateApprovedExt')
+                    agm_ext_str = datetime.datetime.fromisoformat(agm_ext_dt).strftime('%B %-d, %Y')
+                    agm_extension_text = f'The {year} AGM must be held by {agm_ext_str} at 11:59 pm Pacific time.'
+                    cls._insert_ledger_text(cursor, filing, agm_extension_text)
 
                 # process voluntary dissolution
                 if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):

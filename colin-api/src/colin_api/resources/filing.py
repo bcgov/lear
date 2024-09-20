@@ -124,10 +124,11 @@ class FilingInfo(Resource):
                 filing_list = {'correction': json_data['correction']}
             else:
                 filing_list = {
+                    'agmExtension': json_data.get('agmExtension', None),
+                    'agmLocationChange': json_data.get('agmLocationChange', None),
                     'alteration': json_data.get('alteration', None),
                     'amalgamationApplication': json_data.get('amalgamationApplication', None),
                     'annualReport': json_data.get('annualReport', None),
-                    'agmLocationChange': json_data.get('agmLocationChange', None),
                     'changeOfAddress': json_data.get('changeOfAddress', None),
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
                     'consentContinuationOut': json_data.get('consentContinuationOut', None),
