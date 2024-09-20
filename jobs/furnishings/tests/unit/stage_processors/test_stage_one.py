@@ -280,3 +280,50 @@ async def test_generate_paper_letters(app, session, test_name, entity_type):
                 mock_get_document.assert_not_called()
             else:
                 mock_get_document.assert_called()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+        'test_name, entity_type', [
+            ('BC_BATCH_LETTER_SFTP', Business.LegalTypes.COMP.value),
+            ('XPRO_BATCH_LETTER_SFTP', Business.LegalTypes.EXTRA_PRO_A.value),
+        ]
+)
+async def test_process_paper_letters(app, session, sftpserver, sftpconnection, test_name, entity_type):
+    """Assert that SFTP of PDFs is working correctly correctly."""
+    business = factory_business(identifier='BC1234567', entity_type=entity_type)
+    factory_address(address_type=Address.MAILING, business_id=business.id)
+    batch = factory_batch()
+    factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=business.identifier,
+    )
+    
+    mail_furnishing = factory_furnishing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=business.identifier,
+        furnishing_type=Furnishing.FurnishingType.MAIL,
+        status=Furnishing.FurnishingStatus.QUEUED,
+    )
+
+    qsm = MagicMock()
+    processor = StageOneProcessor(app, qsm)
+    storage_directory = app.config.get('BCMAIL_SFTP_STORAGE_DIRECTORY')
+    # Serve content with the specified storage directory
+    with sftpserver.serve_content({storage_directory: {}}):
+        # Patch the necessary attributes of the processor
+        with patch.object(processor, '_bcmail_sftp_connection', new=sftpconnection), \
+            patch.object(processor, '_disable_bcmail_sftp', new=False):
+
+            # Determine which furnishings to patch based on the test name
+            furnishings_attr = '_bc_mail_furnishings' if test_name == 'BC_BATCH_LETTER_SFTP' else '_xpro_mail_furnishings'
+                
+            with patch.object(processor, furnishings_attr, new=[mail_furnishing]):
+                processor.process_paper_letters()
+
+                # Assert that a PDF file is uploaded
+                with sftpconnection as sftpclient:
+                    uploaded_files = sftpclient.listdir(storage_directory)
+                    assert len(uploaded_files) == 1
