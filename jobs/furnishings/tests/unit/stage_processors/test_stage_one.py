@@ -23,7 +23,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 from legal_api.models import Address, Business, Furnishing
-from legal_api.services import flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
 from legal_api.utils.datetime import datetime as datetime_util
@@ -125,7 +124,8 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                 assert furnishing.last_ar_date == business.founding_date
                 assert furnishing.business_name == business.legal_name
             else:
-                with patch.object(flags, 'is_on', return_value=True):
+                processor = StageOneProcessor(app, qsm)
+                with patch.object(processor, '_disable_bcmail_sftp', new=True):
                     mock_send_email.assert_not_called()
                     furnishings = Furnishing.find_by(business_id=business.id)
                     assert len(furnishings) == 1
