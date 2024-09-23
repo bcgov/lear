@@ -15,12 +15,11 @@
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
-import requests
-from flask import current_app
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
+from legal_api.services import colin
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
@@ -35,7 +34,6 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
 )
 from legal_api.services.utils import get_date, get_str
-from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -175,16 +173,17 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
     """Validate continuation EXPRO business by making a call to Colin API."""
     msg = []
     business_identifier_path = f'/filing/{filing_type}/business/identifier'
+    business_legal_name_path = f'/filing/{filing_type}/business/legalName'
 
     if filing_json['filing'][filing_type].get('business'):
         identifier = filing_json['filing'][filing_type]['business']['identifier']
-        url = f'{current_app.config["COLIN_URL"]}/businesses/{identifier}/public'
-        headers = {
-            'Authorization': f'Bearer {jwt.get_token_auth_header()}',
-            'Content-Type': 'application/json'
-        }
-        response = requests.get(url, headers=headers)
-        if response.status_code == HTTPStatus.NOT_FOUND:
+        legal_name = filing_json['filing'][filing_type]['business']['legalName']
+        response = colin.query_business(identifier)
+        response_json = response.json()
+        if response.status_code != HTTPStatus.OK:
             msg.append({'error': 'Could not fetch business data for company from Colin.',
                         'path': business_identifier_path})
+        elif legal_name != response_json['business']['legalName']:
+            msg.append({'error': 'Legal name does not match with company legal name from Colin.',
+                        'path': business_legal_name_path})
     return msg

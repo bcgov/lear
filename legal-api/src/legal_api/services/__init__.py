@@ -22,6 +22,7 @@ from legal_api.utils.datetime import datetime
 
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
+from .colin import ColinService
 from .digital_credentials import DigitalCredentialsService
 from .document_meta import DocumentMetaService
 from .flags import Flags
@@ -51,6 +52,7 @@ from .authz import (  # noqa: I001; noqa: I001;
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
+colin = ColinService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()
 
 
