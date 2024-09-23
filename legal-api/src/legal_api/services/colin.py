@@ -1,4 +1,4 @@
-# Copyright © 2020 Province of British Columbia
+# Copyright © 2024 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ class ColinService():
     def query_business(identifier: str):
         """Return a JSON object with business information."""
         # Perform proxy call with identifier
-        url = f'{current_app.config["COLIN_URL"]}/businesses/{identifier}/public'
+        url = f'{current_app.config["COLIN_URL"]}/api/v1/businesses/{identifier}/public'
         token = AccountService.get_bearer_token()
         headers = {
             'Content-Type': 'application/json',
