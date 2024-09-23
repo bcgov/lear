@@ -23,6 +23,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 from legal_api.models import Address, Business, Furnishing
+from legal_api.services import flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
 from legal_api.utils.datetime import datetime as datetime_util
@@ -315,7 +316,7 @@ async def test_process_paper_letters(app, session, sftpserver, sftpconnection, t
     with sftpserver.serve_content({storage_directory: {}}):
         # Patch the necessary attributes of the processor
         with patch.object(processor, '_bcmail_sftp_connection', new=sftpconnection), \
-            patch.object(processor, '_disable_bcmail_sftp', new=False):
+            patch.object(flags, 'is_on', return_value=False):
 
             # Determine which furnishings to patch based on the test name
             furnishings_attr = '_bc_mail_furnishings' if test_name == 'BC_BATCH_LETTER_SFTP' else '_xpro_mail_furnishings'

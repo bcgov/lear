@@ -23,16 +23,12 @@ from flask import Flask, current_app
 from legal_api.models import Address, Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
 from legal_api.reports.report_v2 import ReportTypes
 from legal_api.services.bootstrap import AccountService
-from legal_api.services.flags import Flags
 from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 from legal_api.services.queue import QueueService
 from legal_api.utils.datetime import datetime as datetime_util
 
 from furnishings.sftp import SftpConnection
-
-
-flags = Flags()
 
 
 class StageOneProcessor:
@@ -51,7 +47,6 @@ class StageOneProcessor:
         self._xpro_mail_furnishings = []
         self._bc_letters = None
         self._xpro_letters = None
-        self._disable_bcmail_sftp = flags.is_on('disable-dissolution-sftp-bcmail')
 
         # setup the sftp connection objects
         self._bcmail_sftp_connection = SftpConnection(
@@ -130,9 +125,11 @@ class StageOneProcessor:
 
     def process_paper_letters(self):
         """Process the generated paper letts of BC and XPRO businesses (SFTP)."""
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
         # Skip SFTPing PDF files to BCMail+ if flag is on
-        if self._disable_bcmail_sftp:
-            self._app.logger.debug(f'disable-dissolution-sftp-bcmail flag on: {self._disable_bcmail_sftp}')
+        if flags.is_on('disable-dissolution-sftp-bcmail'):
+            self._app.logger.debug(f'disable-dissolution-sftp-bcmail flag is on')
             return
 
         current_date = datetime_util.now()
