@@ -12,7 +12,8 @@
             "sentry",
             "launchdarkly",
             "nats-filer",
-            "involuntary-dissolutions"
+            "involuntary-dissolutions",
+            "entity-service-account"
         ]
     }
 ]
