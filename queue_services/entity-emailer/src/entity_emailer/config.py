@@ -74,7 +74,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     PAY_API_URL = os.getenv('PAY_API_URL', None)
     AUTH_URL = os.getenv('AUTH_URL', None)
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
-    AUTH_SVC_URL = os.getenv('AUTH_URL', 'https://')
     # secrets
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
