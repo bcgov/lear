@@ -110,9 +110,7 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
     with patch.object(StageOneProcessor, '_get_email_address_from_auth', return_value=email):
         with patch.object(StageOneProcessor, '_send_email', return_value=None) as mock_send_email:
             processor = StageOneProcessor(app, qsm)
-            print(f"_disable_bcmail_sftp: {processor._disable_bcmail_sftp}")
             with patch.object(processor, '_disable_bcmail_sftp', new=True):
-                print(f"_disable_bcmail_sftp: {processor._disable_bcmail_sftp}")
                 await processor.process(batch_processing)
 
                 if email:
@@ -134,7 +132,6 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                     furnishing = furnishings[0]
                     assert furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
                     assert furnishing.furnishing_name == expected_furnishing_name
-                    print(f"_disable_bcmail_sftp: {processor._disable_bcmail_sftp}")
                     assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
                     assert furnishing.furnishing_group_id is not None
 
@@ -175,7 +172,7 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
     business = factory_business(identifier='BC1234567')
     mailing_address = factory_address(address_type=Address.MAILING, business_id=business.id)
     batch = factory_batch()
-    factory_batch_processing(
+    batch_processing = factory_batch_processing(
         batch_id=batch.id,
         business_id=business.id,
         identifier=business.identifier,
@@ -208,7 +205,9 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
         existing_furnishings += 1
 
     qsm = MagicMock()
-    await process(app, qsm)
+    processor = StageOneProcessor(app, qsm)
+    with patch.object(processor, '_disable_bcmail_sftp', new=True):
+        await processor.process(batch_processing)
 
     furnishings = Furnishing.find_by(business_id=business.id)
 
