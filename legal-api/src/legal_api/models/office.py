@@ -18,9 +18,10 @@ Currently this only provides API versioning information
 
 
 from .db import db
+from sql_versioning import Versioned
 
 
-class Office(db.Model):  # pylint: disable=too-few-public-methods
+class Office(db.Model, Versioned):  # pylint: disable=too-few-public-methods
     """This is the object mapping for the Office entity.
 
     An office is associated with one business, and 0...n addresses
@@ -37,6 +38,19 @@ class Office(db.Model):  # pylint: disable=too-few-public-methods
 
     # relationships
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+
+
+    def save(self):
+        """Render a Office to the local cache."""
+        print(f"Save - Office object: {self}, __versioned__: {getattr(self, '__versioned__', 'Not set')}")
+        try:
+            db.session.add(self)
+            db.session.commit()
+            print(f"Save - After commit, Office object: {self}, __versioned__: {getattr(self, '__versioned__', 'Not set')}")
+        except Exception as e:
+            print(f"Error during save: {str(e)}")
+            db.session.rollback()
+            raise
 
 
 class OfficeType(db.Model):  # pylint: disable=too-few-public-methods

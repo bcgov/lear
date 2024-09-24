@@ -25,7 +25,8 @@ from flask_cors import cross_origin
 from sqlalchemy import and_
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap, db
+from legal_api.models import Address, Business, Filing, Office, RegistrationBootstrap, db
+from legal_api.models.db import VersioningProxy
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,
@@ -36,7 +37,7 @@ from legal_api.services import (  # noqa: I001;
 )  # noqa: I001;
 from legal_api.services.authz import get_allowable_actions, get_allowed
 from legal_api.utils.auth import jwt
-
+from sql_versioning.versioned_history import enable_versioning, disable_versioning
 from .bp import bp
 
 
@@ -214,15 +215,169 @@ def search_businesses():
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-
-@bp.route('/<string:identifier>/db_versioning_test', methods=['GET'])
+# experimental debugging endpoints
+@bp.route('/db_versioning_test/update', methods=['GET'])
 @cross_origin(origin='*')
-def db_versioning_test(identifier: str):
-    """Return a JSON object with meta information about the Service."""
+def db_versioning_test():
+    """Return a JSON object with meta information about the Service.
+    
+    Update a business.
+    """
     identifier = 'FM0385546'
     business = Business.find_by_identifier(identifier)
-
     business.admin_freeze = not business.admin_freeze
     business.save()
     business = Business.find_by_identifier(identifier)
     return jsonify({'success': True, 'admin_freeze': business.admin_freeze}), HTTPStatus.OK
+
+
+@bp.route('/db_versioning_test/updates', methods=['GET'])
+@cross_origin(origin='*')
+def db_versioning_test_updates():
+    """Return a JSON object with meta information about the Service.
+    
+    Update a business and FK related address. (business -> office -> address)
+    """
+    identifier = 'FM0385546'
+    business = Business.find_by_identifier(identifier)
+    business.admin_freeze = not business.admin_freeze
+    mailing_address = business.mailing_address.one_or_none()
+    if mailing_address:
+        mailing_address.delivery_instructions = 'HJ Test' if not mailing_address.delivery_instructions else ''
+    else:
+        print(f'Skip updating mailing address for Business(id={business.id})')
+    business.save()
+    business = Business.find_by_identifier(identifier)
+    return jsonify({'success': True, 'id': business.id, 'admin_freeze': business.admin_freeze, 'address_id': mailing_address.id, 'delivery_instructions': mailing_address.delivery_instructions}), HTTPStatus.OK
+
+
+@bp.route('/db_versioning_test/insert', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_insert():
+    """Return a JSON object with meta information about the Service.
+
+    Create and insert a dummy business.
+    """
+    identifier = 'BC0000001'
+    business = Business(identifier=identifier, legal_name='HJ Test db versioning')
+    business.save()
+    return jsonify({'success': True, 'id': business.id})
+
+
+@bp.route('/db_versioning_test/inserts', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_inserts():
+    """Return a JSON object with meta information about the Service.
+
+    Create and insert a dummy business with FK related offices, addresses.
+    """
+    identifier = 'BC0000001'
+    business = Business(identifier=identifier, legal_name='HJ Test db versioning')
+    address=Address(
+        city='HJ TEST City',
+        street='HJ Test Street',
+        postal_code='X1X1X1',
+        country='CA',
+        region='BC',
+        address_type=Address.MAILING
+    )
+    office=Office(office_type='registeredOffice')
+    office.addresses.append(address)
+    business.offices.append(office)
+    business.save()
+    return jsonify({'success': True, 'business_id': business.id, 'office_id': office.id, 'address_id': address.id})
+
+
+@bp.route('/db_versioning_test/delete/<int:business_id>', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_delete(business_id):
+    """Return a JSON object with meta information about the Service.
+
+    Delete a dummy business.
+    Need a dummy business without FK related records to test this endpoint.
+    """
+    business = Business.find_by_internal_id(business_id)
+    db.session.delete(business)
+    db.session.commit()
+    return jsonify({'success': True, 'id': business_id})
+
+
+@bp.route('/db_versioning_test/deletes/<int:business_id>', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_deletes(business_id):
+    """Return a JSON object with meta information about the Service.
+
+    Delete a dummy business with FK related offices, addresses.
+    Need a dummy business with FK related records to test this endpoint.
+    """
+    business = Business.find_by_internal_id(business_id)
+    db.session.delete(business)
+    db.session.commit()
+    return jsonify({'success': True, 'id': business_id})
+
+
+@bp.route('/db_versioning_test/flush', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_flush():
+    """Return a JSON object with meta information about the Service.
+
+    Test flush + add + flush/commit scenario. The transaction_id should keep the same.
+    """
+    identifier_1 = 'BC0000001'
+    business_1 = Business(identifier=identifier_1, legal_name='HJ Test db versioning-1')
+    db.session.add(business_1)
+    db.session.flush()
+    identifier_2 = 'BC0000002'
+    business_2 = Business(identifier=identifier_2, legal_name='HJ Test db versioning-2')
+    db.session.add(business_2)
+    db.session.commit()
+
+    return jsonify({'success': True, 'id_1': business_1.id, 'id_2': business_2.id})
+
+
+@bp.route('/db_versioning_test/query/<int:business_id>/<int:transaction_id>', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_query(business_id, transaction_id):
+    """Return a JSON object of versioned business data.
+    """
+    try:
+        session = db.session()
+        business_version = VersioningProxy.version_class(session, Business)
+        print(f'Primary Key={business_version.__table__.primary_key}')
+
+        query = session.query(business_version)\
+            .filter(business_version.id == business_id)\
+            .filter(business_version.transaction_id <= transaction_id)
+
+        business_list = query.all()
+
+        return jsonify({'success': True, 'found': len(business_list)})
+    except Exception as e:
+        print(f'Error:{e}')
+        return jsonify({'success': False})
+
+
+@bp.route('/db_versioning_test/enable', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_enable():
+    """Return a JSON object with meta information about the Service.
+
+    Enable new versioning (Don't use it when two versionings are both enabled)
+    """
+    if not Business.is_enable:
+        enable_versioning(db.session)
+
+    return jsonify({'success': True, 'enable': Business.is_enable})
+
+
+@bp.route('/db_versioning_test/disable', methods=['GET'])
+@cross_origin(origins='*')
+def db_versioning_test_disable():
+    """Return a JSON object with meta information about the Service.
+
+    Disable new versioning (Don't use it when two versionings are both enabled)
+    """
+    if Business.is_enable:
+        disable_versioning(db.session)
+
+    return jsonify({'success': True, 'enable': Business.is_enable})

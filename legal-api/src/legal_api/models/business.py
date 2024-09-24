@@ -472,38 +472,36 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
 
     def save(self):
-        session = db.session()
-        print(f"Save - current versioning: {getattr(session, 'current_versioning', 'Not set')}")
-        print(f"Save - versioning enabled: {getattr(session, 'versioning_enabled', 'Not set')}")
-        print(f"Save - Business object: {self}, __versioned__: {getattr(self, '__versioned__', 'Not set')}")
+        assert hasattr(Business, '__versioning_manager__'), "Versioning manager not found for Business!"
+        current_session_versioning_type = db.session().info.get('_versioning_locked')
 
-        session.add(self)
+        db.session.add(self)
         try:
-            session.commit()
+            db.session.commit()
             print(f"Save - After commit, Business object: {self}, __versioned__: {getattr(self, '__versioned__', 'Not set')}")
         except Exception as e:
             print(f"Error during save: {str(e)}")
-            session.rollback()
+            db.session.rollback()
             raise
-
-        if session.is_new_versioning_active():
+        
+        if current_session_versioning_type == 'new':
             print('Save - new versioning')
             if hasattr(self, '__versioned_cls__'):
-                latest_version = session.query(self.__versioned_cls__).filter(
+                latest_version = db.session.query(self.__versioned_cls__).filter(
                     self.__versioned_cls__.id == self.id,
                     self.__versioned_cls__.end_transaction_id.is_(None)
                 ).order_by(self.__versioned_cls__.transaction_id.desc()).first()
                 if latest_version:
-                    print(f"New versioning transaction id: {latest_version.transaction_id}")
+                    print(f"\033[31mNew versioning transaction id: {latest_version.transaction_id}\033[0m")
                 else:
-                    print("No new version created")
-        elif getattr(session, 'current_versioning', None) == 'old':
+                    print("\033[31mNo new version created\033[0m")
+        elif current_session_versioning_type == 'old':
             print('Save - old versioning')
             if hasattr(self, 'versions'):
                 if self.versions:
-                    print(f"Old versioning transaction id: {self.versions[-1].transaction_id}")
+                    print(f"\033[31mOld versioning transaction id: {self.versions[-1].transaction_id}\033[0m")
                 else:
-                    print("No old version created")
+                    print("\033[31mNo old version created\033[0m")
         else:
             print('Save - no versioning used')
 

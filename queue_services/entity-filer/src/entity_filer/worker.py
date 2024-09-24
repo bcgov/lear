@@ -36,7 +36,8 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
-from legal_api import db
+from legal_api import db, init_db
+from legal_api.models.db import VersioningProxy
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
 from legal_api.services import Flags
@@ -83,7 +84,7 @@ gcp_queue = GcpQueue()
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
-db.init_app(FLASK_APP)
+init_db(FLASK_APP)
 gcp_queue.init_app(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):
@@ -224,8 +225,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
         if legal_filings := filing_core_submission.legal_filings():
-            uow = versioning_manager.unit_of_work(db.session)
-            transaction = uow.create_transaction(db.session)
+            transaction_id = VersioningProxy.get_transaction_id(db.session)
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
@@ -334,7 +334,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
-            filing_submission.transaction_id = transaction.id
+            filing_submission.transaction_id = transaction_id
 
             business_type = business.legal_type if business else filing_submission['business']['legal_type']
             filing_submission.set_processed(business_type)

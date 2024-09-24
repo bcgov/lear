@@ -1,23 +1,27 @@
 """Versioned mixin class and other utilities."""
 import datetime
 from contextlib import suppress
-from sqlalchemy import Column, String, DateTime, Integer, event, inspect, insert, Table, func, and_, or_, select, \
-    update, SmallInteger
-from sqlalchemy.ext.declarative import declared_attr, declarative_base
-from sqlalchemy.orm import mapper, Session
+
+from sqlalchemy import (BigInteger, Column, DateTime, Integer, SmallInteger,
+                        String, Table, and_, event, func, insert, inspect, or_,
+                        select, update)
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm import Session, mapper
 
 Base = declarative_base()
 
 class Transaction(Base):
     __tablename__ = 'transaction'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    issued_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    issued_at = Column(DateTime(timezone=False), default=datetime.datetime.utcnow, nullable=True)
     remote_addr = Column(String(50), nullable=True)
 
-class TransactionManager:
     def __repr__(self):
         return f"<Transaction(id={self.id}, issued_at={self.issued_at})>"
+
+
+class TransactionManager:
 
     def __init__(self, session):
         self.session = session
@@ -30,7 +34,7 @@ class TransactionManager:
 
         # Use insert().returning() to get the ID and issued_at without committing
         stmt = insert(Transaction).values(
-            issued_at=func.now()
+            issued_at = None
         ).returning(Transaction.id, Transaction.issued_at)
         result = self.session.execute(stmt)
         transaction_id, issued_at = result.first()
@@ -48,7 +52,11 @@ class TransactionManager:
         print(f"Clearing current transaction: {self.session.info.get('current_transaction_id')}")
         self.session.info.pop('current_transaction_id', None)
 
+
 class Versioned:
+
+    is_enable = None  # debugging
+
     @declared_attr
     def __versioned_cls__(cls):
         return cls.get_or_create_version_class()
@@ -62,8 +70,8 @@ class Versioned:
             attrs = {
                 '__tablename__': table_name,
                 'id': Column(Integer, primary_key=True),
-                'transaction_id': Column(Integer, nullable=False),
-                'end_transaction_id': Column(Integer, nullable=True),
+                'transaction_id': Column(BigInteger, primary_key=True, nullable=False),
+                'end_transaction_id': Column(BigInteger, nullable=True),
                 'operation_type': Column(SmallInteger, nullable=False),
             }
 
@@ -76,7 +84,6 @@ class Versioned:
             cls._pending_version_classes.append(cls)
 
         return cls._version_cls
-
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -94,133 +101,147 @@ class Versioned:
                         setattr(version_cls, c.name, Column(c.type))
             delattr(cls, '_pending_version_classes')
 
-    @staticmethod
-    def create_version(target, operation_type):
-        session = Session.object_session(target)
-        print(f"create_version called for {target.__class__.__name__} (id={target.id}), operation_type: {operation_type}")
-        print(f"Session versioning enabled: {session.versioning_enabled}")
-        print(f"Session current versioning: {session.current_versioning}")
 
-        if not session or not session.is_new_versioning_active():
-            print(f"Skipping version creation for {target.__class__.__name__} (id={target.id})")
-            return
+def create_version(session, target, operation_type):
+    print(f"Creating version for {target.__class__.__name__} (id={target.id}), operation_type: {operation_type}")
 
-        if getattr(target, '__versioned__', {}).get('versioning', True):
-            print(f"Warning: Object {target} still has versioning enabled")
-            return
+    if not session:
+        print(f"Skipping version creation for {target.__class__.__name__} (id={target.id})")
+        return
 
-        # transaction_manager = TransactionManager(session)
-        # transaction_id = transaction_manager.get_current_transaction_id()
-        transaction_id = session.get_or_create_transaction()
-        if transaction_id is None:
-            print(f"Error: Unable to create transaction for {target.__class__.__name__} (id={target.id})")
-            return
+    transaction_manager = TransactionManager(session)
+    transaction_id = transaction_manager.create_transaction()
 
-        print(f"Using transaction_id: {transaction_id}")
+    if transaction_id is None:
+        print(f"Error: Unable to create transaction for {target.__class__.__name__} (id={target.id})")
+        return
 
-        VersionClass = target.__class__.__versioned_cls__
+    VersionClass = target.__class__.__versioned_cls__
 
-        # Use a more robust way to track versioned objects
-        if not hasattr(session, '_versioned_objects'):
-            session._versioned_objects = {}
-
-        object_key = (target.__class__, target.id)
-        if object_key in session._versioned_objects:
-            if operation_type in session._versioned_objects[object_key]:
-                print(f"Skipping duplicate version creation for {target.__class__.__name__} (id={target.id}), operation_type: {operation_type}")
-                return
-        else:
-            session._versioned_objects[object_key] = set()
-
-        # Convert operation_type to integer
-        operation_type_map = {'I': 0, 'U': 1, 'D': 2}
-        operation_type_int = operation_type_map.get(operation_type, 1)  # Default to UPDATE if unknown
-
-        # Prepare the data for the new version
-        new_version_data = {
-            'id': target.id,
-            'transaction_id': transaction_id,
-            'end_transaction_id': None,
-            'operation_type': operation_type_int
-        }
-        for column in inspect(target.__class__).columns:
-            if column.name not in ['transaction_id', 'end_transaction_id', 'operation_type']:
-                if hasattr(target, column.name):
-                    new_version_data[column.name] = getattr(target, column.name)
-
-        # Check if a version already exists for this transaction
-        existing_version = session.execute(
-            select(VersionClass).where(
-                and_(
-                    VersionClass.id == target.id,
-                    VersionClass.transaction_id == transaction_id
-                )
+    # Check if a version for this transaction already exists
+    existing_version = session.execute(
+        select(VersionClass).where(
+            and_(
+                VersionClass.id == target.id,
+                VersionClass.transaction_id == transaction_id
             )
-        ).scalar_one_or_none()
+        )
+    ).scalar_one_or_none()
 
-        if existing_version:
-            # Update the existing version
-            print(f"Updating existing version for {target.__class__.__name__} (id={target.id}), transaction_id: {transaction_id}")
-            session.execute(
-                update(VersionClass).
-                where(and_(
-                    VersionClass.id == target.id,
-                    VersionClass.transaction_id == transaction_id
-                )).
-                values(new_version_data)
-            )
-        else:
-            # Insert a new version
-            print(f"Inserting new version for {target.__class__.__name__} (id={target.id}), transaction_id: {transaction_id}")
-            session.execute(insert(VersionClass).values(new_version_data))
+    # Prepare new version data
+    new_version_data = {
+        'id': target.id,
+        'transaction_id': transaction_id,
+        'end_transaction_id': None,
+        'operation_type': {'I': 0, 'U': 1, 'D': 2}.get(operation_type, 1)
+    }
 
-        # Close any other open versions
+    for column in inspect(target.__class__).columns:
+        if column.name not in ['transaction_id', 'end_transaction_id', 'operation_type']:
+            if hasattr(target, column.name):
+                new_version_data[column.name] = getattr(target, column.name)
+
+    if existing_version:
+        # Update the existing version
         session.execute(
             update(VersionClass).
             where(and_(
                 VersionClass.id == target.id,
-                VersionClass.end_transaction_id.is_(None),
-                VersionClass.transaction_id != transaction_id
+                VersionClass.transaction_id == transaction_id
             )).
-            values(end_transaction_id=transaction_id)
+            values(new_version_data)
         )
+    else:
+        # Insert a new version
+        session.execute(insert(VersionClass).values(new_version_data))
 
-        # Mark this object as versioned for this operation type
-        session._versioned_objects[object_key].add(operation_type)
+    # Close any open versions
+    session.execute(
+        update(VersionClass).
+        where(and_(
+            VersionClass.id == target.id,
+            VersionClass.end_transaction_id.is_(None),
+            VersionClass.transaction_id != transaction_id
+        )).
+        values(end_transaction_id=transaction_id)
+    )
 
-        print(f"Version created/updated for {target.__class__.__name__} (id={target.id}), transaction_id: {transaction_id}")
+    print(f"Version created/updated for {target.__class__.__name__} (id={target.id}), transaction_id: {transaction_id}")
 
-    @classmethod
-    def _before_flush(cls, session, flush_context, instances):
-        print(f"_before_flush called for {cls.__name__}")
-        if session.is_new_versioning_active():
-            # transaction_manager = TransactionManager(session)
-            # transaction_id = transaction_manager.get_current_transaction_id()
-            transaction_id = session.get_or_create_transaction()
-            if transaction_id is None:
-                print(f"Error: Unable to create transaction in _before_flush for {cls.__name__}")
-                return
-            print(f"Using transaction_id: {transaction_id}")
-            for obj in session.new:
-                if isinstance(obj, cls):
-                    cls.create_version(obj, 'I')
-            for obj in session.dirty:
-                if isinstance(obj, cls):
-                    cls.create_version(obj, 'U')
-            for obj in session.deleted:
-                if isinstance(obj, cls):
-                    cls.create_version(obj, 'D')
-        print(f"_before_flush completed for {cls.__name__}")
 
-# def versioned_session(session):
-#     @event.listens_for(session, "before_flush")
-#     def before_flush(session, flush_context, instances):
-#         if not session.versioning_enabled or session.current_versioning != 'new':
-#             return
-#
-#         for obj in session.new.union(session.dirty).union(session.deleted):
-#             if hasattr(obj, '__versioned_cls__'):
-#                 obj._before_flush(session, flush_context, instances)
+def _before_flush(session, flush_context, instances):
+    print("Entering new_before_flush")
+    try:
+        transaction_manager = TransactionManager(session)
+        transaction_manager.create_transaction()
+
+    except Exception as e:
+        print(f"Error in new_before_flush: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+    print("Exiting new_before_flush")
+
+
+def _after_flush(session, flush_context):
+    print("Entering _after_flush")
+    try:
+        for obj in session.new.union(session.dirty).union(session.deleted):
+            if isinstance(obj, Versioned):
+                operation_type = 'I' if obj in session.new else 'U' if obj in session.dirty else 'D'
+                create_version(session, obj, operation_type)
+    except Exception as e:
+        print(f"Error in new.after_flush: {str(e)}")
+    print("Exiting _after_flush")
+
+
+def _clear_transaction(session):
+    print("Entering new_clear_transaction")
+    transaction_manager = TransactionManager(session)
+    transaction_manager.clear_current_transaction()
+    print("Exiting new_clear_transaction")
+
+
+event_listeners = {
+    'before_flush': _before_flush,
+    'after_flush': _after_flush,
+    'after_commit': _clear_transaction,
+    'after_rollback': _clear_transaction
+}
+
+
+def enable_versioning():
+    print('Entering new enable_versioning')
+    Versioned.is_enable = True
+    try:
+        for event_name, listener in event_listeners.items():
+            event.listen(Session, event_name, listener)
+            print(f'Register {listener}')
+        print('Exiting new enable_versioning')
+    except Exception as e:
+        print(e)
+        raise e
+
+
+def disable_versioning():
+    print('Entering new_disable_versioning')
+    Versioned.is_enable = False
+    try:
+        for event_name, listener in event_listeners.items():
+            event.remove(Session, event_name, listener)
+            print(f'Remove {listener}')
+    except Exception as e:
+        print(e)
+        raise e
+    print('Exiting new_disable_versioning')
+
+
+def versioned_cls(obj):
+    with suppress(Exception):
+        versioned_class = obj.__versioned_cls__
+        print(f'New Versioned Class={versioned_class}')
+        return versioned_class
+    return None
+
 
 def history_cls(obj):
     with suppress(Exception):
@@ -233,5 +254,3 @@ def versioned_objects(iter_):
     for obj in iter_:
         if hasattr(obj, "__history_mapper__"):
             yield obj
-
-
