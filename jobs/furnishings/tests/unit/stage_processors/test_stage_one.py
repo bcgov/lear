@@ -110,39 +110,38 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
     with patch.object(StageOneProcessor, '_get_email_address_from_auth', return_value=email):
         with patch.object(StageOneProcessor, '_send_email', return_value=None) as mock_send_email:
             processor = StageOneProcessor(app, qsm)
-            with patch.object(processor, '_disable_bcmail_sftp', new=True):
-                await processor.process(batch_processing)
+            await processor.process(batch_processing)
 
-                if email:
-                    mock_send_email.assert_called()
-                    furnishings = Furnishing.find_by(business_id=business.id)
-                    assert len(furnishings) == 1
-                    furnishing = furnishings[0]
-                    assert furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
-                    assert furnishing.email == 'test@no-reply.com'
-                    assert furnishing.furnishing_name == expected_furnishing_name
-                    assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
-                    assert furnishing.furnishing_group_id is not None
-                    assert furnishing.last_ar_date == business.founding_date
-                    assert furnishing.business_name == business.legal_name
-                else:
-                    mock_send_email.assert_not_called()
-                    furnishings = Furnishing.find_by(business_id=business.id)
-                    assert len(furnishings) == 1
-                    furnishing = furnishings[0]
-                    assert furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
-                    assert furnishing.furnishing_name == expected_furnishing_name
-                    assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
-                    assert furnishing.furnishing_group_id is not None
+            if email:
+                mock_send_email.assert_called()
+                furnishings = Furnishing.find_by(business_id=business.id)
+                assert len(furnishings) == 1
+                furnishing = furnishings[0]
+                assert furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
+                assert furnishing.email == 'test@no-reply.com'
+                assert furnishing.furnishing_name == expected_furnishing_name
+                assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
+                assert furnishing.furnishing_group_id is not None
+                assert furnishing.last_ar_date == business.founding_date
+                assert furnishing.business_name == business.legal_name
+            else:
+                mock_send_email.assert_not_called()
+                furnishings = Furnishing.find_by(business_id=business.id)
+                assert len(furnishings) == 1
+                furnishing = furnishings[0]
+                assert furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
+                assert furnishing.furnishing_name == expected_furnishing_name
+                assert furnishing.status == Furnishing.FurnishingStatus.QUEUED
+                assert furnishing.furnishing_group_id is not None
 
-                    furnishing_addresses = Address.find_by(furnishings_id=furnishing.id)
-                    assert len(furnishing_addresses) == 1
-                    furnishing_address = furnishing_addresses[0]
-                    assert furnishing_address
-                    assert furnishing_address.address_type == mailing_address.address_type
-                    assert furnishing_address.furnishings_id == furnishing.id
-                    assert furnishing_address.business_id == None
-                    assert furnishing_address.office_id == None
+                furnishing_addresses = Address.find_by(furnishings_id=furnishing.id)
+                assert len(furnishing_addresses) == 1
+                furnishing_address = furnishing_addresses[0]
+                assert furnishing_address
+                assert furnishing_address.address_type == mailing_address.address_type
+                assert furnishing_address.furnishings_id == furnishing.id
+                assert furnishing_address.business_id == None
+                assert furnishing_address.office_id == None
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
@@ -206,8 +205,7 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
 
     qsm = MagicMock()
     processor = StageOneProcessor(app, qsm)
-    with patch.object(processor, '_disable_bcmail_sftp', new=True):
-        await processor.process(batch_processing)
+    await processor.process(batch_processing)
 
     furnishings = Furnishing.find_by(business_id=business.id)
 
