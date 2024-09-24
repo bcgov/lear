@@ -57,6 +57,8 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filer')
     NATS_ENTITY_EVENTS_SUBJECT = os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'entity.events')
 
+    AUTH_SVC_URL = os.getenv('AUTH_URL', 'http://')
+
     SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
