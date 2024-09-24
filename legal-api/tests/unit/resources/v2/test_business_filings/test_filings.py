@@ -1470,6 +1470,8 @@ def test_resubmit_filing(session, client, jwt, mocker):
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+                 return_value=[])
 
     json_data['filing']['header']['effectiveDate'] = (
         datetime.now(timezone.utc) + datedelta.datedelta(days=1)).isoformat()

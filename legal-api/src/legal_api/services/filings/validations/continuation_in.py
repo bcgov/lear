@@ -19,6 +19,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
+from legal_api.services import colin
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
@@ -49,6 +50,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
+    msg.extend(validate_business_in_colin(filing_json, filing_type))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
     msg.extend(validate_offices(filing_json, filing_type))
     msg.extend(validate_roles(filing_json, legal_type, filing_type))
@@ -165,3 +167,23 @@ def validate_continuation_in_court_order(filing: dict, filing_type) -> list:
         if err:
             return err
     return []
+
+
+def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
+    """Validate continuation EXPRO business by making a call to Colin API."""
+    msg = []
+    business_identifier_path = f'/filing/{filing_type}/business/identifier'
+    business_legal_name_path = f'/filing/{filing_type}/business/legalName'
+
+    if filing_json['filing'][filing_type].get('business'):
+        identifier = filing_json['filing'][filing_type]['business']['identifier']
+        legal_name = filing_json['filing'][filing_type]['business']['legalName']
+        response = colin.query_business(identifier)
+        response_json = response.json()
+        if response.status_code != HTTPStatus.OK:
+            msg.append({'error': 'Could not fetch business data for company from Colin.',
+                        'path': business_identifier_path})
+        elif legal_name != response_json['business']['legalName']:
+            msg.append({'error': 'Legal name does not match with company legal name from Colin.',
+                        'path': business_legal_name_path})
+    return msg
