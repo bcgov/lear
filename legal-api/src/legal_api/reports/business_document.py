@@ -568,7 +568,10 @@ class BusinessDocument:
                                   filing_sub_type: Optional[str],
                                   legal_type: Optional[str]) -> str:
         if filing_type == 'dissolution':
-            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
+            if filing_sub_type == 'voluntary' and legal_type in ['SP', 'GP']:
+                return 'Dissolution Application'
+            else:
+                return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
         elif filing_type == 'restoration':
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
         else:
@@ -582,32 +585,9 @@ class BusinessDocument:
     FILING_SUMMARY_DISPLAY_NAME = {
         'amalgamationApplication': 'Amalgamated Into',
         'dissolution': {
-            'voluntary': {
-                'CP': 'Voluntary Dissolution',
-                'BC': 'Voluntary Dissolution',
-                'BEN': 'Voluntary Dissolution',
-                'ULC': 'Voluntary Dissolution',
-                'CC': 'Voluntary Dissolution',
-                'LLC': 'Voluntary Dissolution',
-                'SP': 'Dissolution Application',
-                'GP': 'Dissolution Application'
-            },
-            'involuntary': {
-                'BC': 'Involuntary Dissolution',
-                'BEN': 'Involuntary Dissolution',
-                'ULC': 'Involuntary Dissolution',
-                'CC': 'Involuntary Dissolution',
-            },
-            'administrative': {
-                'CP': 'Administrative Dissolution',
-                'BC': 'Administrative Dissolution',
-                'BEN': 'Administrative Dissolution',
-                'ULC': 'Administrative Dissolution',
-                'CC': 'Administrative Dissolution',
-                'LLC': 'Administrative Dissolution',
-                'SP': 'Administrative Dissolution',
-                'GP': 'Administrative Dissolution'
-            }
+            'voluntary': 'Voluntary Dissolution',
+            'involuntary': 'Involuntary Dissolution',
+            'administrative': 'Administrative Dissolution'
         },
         'restorationApplication': 'Restoration Application',
         'restoration': {
