@@ -40,10 +40,15 @@ acknowledgement_response = """<?xml version="1.0"?>
 @pytest.mark.asyncio
 async def test_registration(app, session, mocker, legal_type):
     """Test inform cra about new SP/GP registration."""
-    filing_id, business_id = create_registration_data(legal_type)
+    filing_id, business_id = create_registration_data(
+        legal_type,
+        # adding special character to verify jinja2 autoescape based on the file type (which is .xml)
+        # note: not all characters in this require escape
+        legal_name="test-reg-'~ ` ! @ # $ % ^ & * ( ) _ - + = \ | ] } [ { ' :; \" / ? > . < ,"
+    )
 
     def side_effect(input_xml):
-        root = Et.fromstring(input_xml)
+        root = Et.fromstring(input_xml)  # if it loads xml from string then its a valid xml
         if root.tag == 'SBNCreateProgramAccountRequest':
             return 200, acknowledgement_response
 
