@@ -87,7 +87,7 @@ def build_input_xml(template_name, data):
     Which helps jinja2 to identify the file type (which is .xml)
     to perform autoescape of special characters according to the file type.
     """
-    template_loader = jinja2.FileSystemLoader(searchpath=current_app.config.get("TEMPLATE_PATH"))
+    template_loader = jinja2.FileSystemLoader(searchpath=current_app.config.get('TEMPLATE_PATH'))
     template_env = jinja2.Environment(loader=template_loader, autoescape=True)
     template = template_env.get_template(f'{template_name}.xml')
     return template.render(data)
