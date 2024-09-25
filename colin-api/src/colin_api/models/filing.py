@@ -18,6 +18,7 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 import datetime
+import pytz
 from enum import Enum
 from http import HTTPStatus
 from typing import Dict, List, Optional
@@ -1297,8 +1298,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _get_last_ar_filed_date(cls, header: dict, business: dict):
         filing_year = header.get('filingYear')
-        recognition_dt = datetime.datetime.fromisoformat(business.get('business').get('foundingDate')).date()
-        last_ar_filed_dt = f'{filing_year}-{recognition_dt.month}-{recognition_dt.day}'
+        pacific_founding_date = (
+            datetime.datetime.fromisoformat(business['business']['foundingDate'])
+            .astimezone(pytz.timezone('America/Los_Angeles'))
+            .date()
+        )
+
+        last_ar_filed_dt = f'{filing_year}-{pacific_founding_date.month}-{pacific_founding_date.day}'
         return last_ar_filed_dt
 
     @classmethod
