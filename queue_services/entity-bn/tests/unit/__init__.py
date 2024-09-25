@@ -120,7 +120,7 @@ def create_party_role(business, party, roles, appointment_date=EPOCH_DATETIME):
         business.party_roles.append(party_role)
 
 
-def create_registration_data(legal_type, identifier='FM1234567', tax_id=None):
+def create_registration_data(legal_type, identifier='FM1234567', tax_id=None, legal_name='test-reg-'):
     """Test data for registration."""
     person_json = {
         'officer': {
@@ -152,7 +152,7 @@ def create_registration_data(legal_type, identifier='FM1234567', tax_id=None):
 
     business = create_business(identifier,
                                legal_type=legal_type,
-                               legal_name='test-reg-' + legal_type)
+                               legal_name=legal_name + legal_type)
     if tax_id:
         business.tax_id = tax_id
 

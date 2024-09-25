@@ -15,13 +15,11 @@
 
 Processors hold the logic to communicate with CRA.
 """
-from pathlib import Path
-
+import jinja2
 import requests
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import logger
 from flask import current_app
-from jinja2 import Template
 from legal_api.models import Business, RequestTracker
 
 
@@ -83,12 +81,16 @@ def get_business_type_and_sub_type_code(legal_type: str, business_owned: bool, o
 
 
 def build_input_xml(template_name, data):
-    """Build input XML."""
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/{template_name}.xml'
-    ).read_text()
-    jnja_template = Template(template, autoescape=False)
-    return jnja_template.render(data)
+    """Build input XML.
+
+    Using jinja2 FileSystemLoader to load template from path.
+    Which helps jinja2 to identify the file type (which is .xml)
+    to perform autoescape of special characters according to the file type.
+    """
+    template_loader = jinja2.FileSystemLoader(searchpath=current_app.config.get('TEMPLATE_PATH'))
+    template_env = jinja2.Environment(loader=template_loader, autoescape=True)
+    template = template_env.get_template(f'{template_name}.xml')
+    return template.render(data)
 
 
 def get_splitted_business_number(tax_id: str):
