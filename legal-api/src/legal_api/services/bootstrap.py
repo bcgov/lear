@@ -280,8 +280,6 @@ class AccountService:
     def get_affiliations(cls, account: int):
         """Affiliate a business to an account."""
         auth_url = current_app.config.get('AUTH_SVC_URL')
-        current_app.logger.debug(f'AUTH_SVC_URL: {auth_url}')
-
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
 
         token = cls.get_bearer_token()

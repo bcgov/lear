@@ -171,9 +171,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
 
         # get first NUM_DISSOLUTIONS_ALLOWED number of businesses
         num_dissolutions_allowed = Configuration.find_by_name(config_name='NUM_DISSOLUTIONS_ALLOWED').val
-        app.logger.debug(f'it is good before calling InvoluntaryDissolutionService: {num_dissolutions_allowed}')
         businesses_eligible = InvoluntaryDissolutionService.get_businesses_eligible(num_dissolutions_allowed)
-        app.logger.debug(f'it is good before calling InvoluntaryDissolutionService: {businesses_eligible}')
 
         # get the MAX_DISSOLUTIONS_ALLOWED number of businesses
         max_dissolutions_allowed = Configuration.find_by_name(config_name='MAX_DISSOLUTIONS_ALLOWED').val
@@ -381,8 +379,6 @@ async def run(application: Flask, qsm: QueueService):  # pylint: disable=redefin
     with application.app_context():
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
-        auth_url = application.config.get('AUTH_SVC_URL')
-        application.logger.debug(f'Get the AUTH_URL from the config: {auth_url}')
         if flag_on:
             # check if batch can be run today
             stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()

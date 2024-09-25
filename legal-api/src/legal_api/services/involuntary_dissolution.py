@@ -15,7 +15,6 @@
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
 from typing import Final, Tuple
-from flask import current_app
 
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
@@ -320,7 +319,6 @@ def _get_filtered_entities(accounts):
 
     for org_id in accounts:
         entities = AccountService.get_affiliations(int(org_id))
-        current_app.logger.debug(f'after call the Auth_api: {entities}')
 
         for entity in entities:
             identifier = entity.get('businessIdentifier')
