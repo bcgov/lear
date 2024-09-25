@@ -172,8 +172,7 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
-                                         BusinessBlocker.IN_DISSOLUTION,
-                                         BusinessBlocker.DRAFT_PENDING],
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -183,8 +182,7 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
-                                         BusinessBlocker.IN_DISSOLUTION,
-                                         BusinessBlocker.DRAFT_PENDING],
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -194,8 +192,7 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
-                                         BusinessBlocker.IN_DISSOLUTION,
-                                         BusinessBlocker.DRAFT_PENDING],
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -379,8 +376,7 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
-                                         BusinessBlocker.IN_DISSOLUTION,
-                                         BusinessBlocker.DRAFT_PENDING],
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -390,8 +386,7 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
-                                         BusinessBlocker.IN_DISSOLUTION,
-                                         BusinessBlocker.DRAFT_PENDING],
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
@@ -401,8 +396,7 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
-                                         BusinessBlocker.IN_DISSOLUTION,
-                                         BusinessBlocker.DRAFT_PENDING],
+                                         BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
                                                        filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                         }
