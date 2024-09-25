@@ -45,7 +45,7 @@ from colin_api.models import (  # noqa: I001
     ShareObject,  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
 
 
 # Code smells:
@@ -1297,8 +1297,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _get_last_ar_filed_date(cls, header: dict, business: dict):
         filing_year = header.get('filingYear')
-        recognition_dt = datetime.datetime.fromisoformat(business.get('business').get('foundingDate')).date()
-        last_ar_filed_dt = f'{filing_year}-{recognition_dt.month}-{recognition_dt.day}'
+        founding_date_str = business.get('business').get('foundingDate')
+
+        # If the founding date has `-00:00`, replace it with `+00:00` before passing to the function
+        if '-00:00' in founding_date_str:
+            founding_date_str = founding_date_str.replace('-00:00', '+00:00')
+
+        pacific_founding_date = datetime.datetime.fromisoformat(
+            convert_to_pacific_time(founding_date_str)
+        ).date()
+
+        last_ar_filed_dt = f'{filing_year}-{pacific_founding_date.month:02}-{pacific_founding_date.day:02}'
         return last_ar_filed_dt
 
     @classmethod
