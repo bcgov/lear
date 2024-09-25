@@ -283,7 +283,7 @@ class AccountService:
         current_app.logger.debug('AUTH_SVC_URL: ', auth_url)
         if not auth_url:
             current_app.logger.error('Not found the AUTH_SVC_URL', auth_url)
-            return None
+            # return None
 
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
 
