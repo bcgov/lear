@@ -97,7 +97,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     BCMAIL_SFTP_HOST = os.getenv('BCMAIL_SFTP_HOST', None)
     BCMAIL_SFTP_PORT = os.getenv('BCMAIL_SFTP_PORT', None)
     BCMAIL_SFTP_USERNAME = os.getenv('BCMAIL_SFTP_USERNAME', None)
-    BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM', 'ED25519')
+    BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM', 'RSA')
     BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE', None)
     BCMAIL_SFTP_PRIVATE_KEY = os.getenv('BCMAIL_SFTP_PRIVATE_KEY', None)
 
@@ -150,6 +150,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     # BCMail+ SFTP
     BCMAIL_SFTP_STORAGE_DIRECTORY = 'bcmail'
+    BCMAIL_SFTP_PRIVATE_KEY = ''
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

@@ -74,7 +74,7 @@ class SftpConnection:
             self.ssh_connection = paramiko.SSHClient()
             self.ssh_connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             if self.private_key:
-                if self.private_key_algorithm == PublicKeyAlgorithms.RSA:
+                if self.private_key_algorithm == PublicKeyAlgorithms.RSA.name:
                     f__from_private_key = paramiko.RSAKey.from_private_key
                 else:
                     f__from_private_key = paramiko.Ed25519Key.from_private_key
