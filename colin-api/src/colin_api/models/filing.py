@@ -18,7 +18,6 @@ Currently this only provides API versioning information
 from __future__ import annotations
 
 import datetime
-import pytz
 from enum import Enum
 from http import HTTPStatus
 from typing import Dict, List, Optional
@@ -46,7 +45,7 @@ from colin_api.models import (  # noqa: I001
     ShareObject,  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake, convert_to_pacific_time
 
 
 # Code smells:
@@ -1298,12 +1297,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _get_last_ar_filed_date(cls, header: dict, business: dict):
         filing_year = header.get('filingYear')
-        pacific_founding_date = (
+        pacific_founding_date = convert_to_pacific_time(
             datetime.datetime.fromisoformat(business['business']['foundingDate'])
-            .astimezone(pytz.timezone('America/Los_Angeles'))
-            .date()
-        )
-
+        ).date()
         last_ar_filed_dt = f'{filing_year}-{pacific_founding_date.month}-{pacific_founding_date.day}'
         return last_ar_filed_dt
 
