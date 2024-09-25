@@ -15,6 +15,13 @@
             [[logo.html]]
           </td>
           <td>
+            {% if amalgamationApplication.type == 'regular' %}
+              <div class="report-type">REGULAR FORM</div>
+            {% elif amalgamationApplication.type == 'horizontal' %}
+              <div class="report-type">HORIZONTAL SHORT FORM</div>
+            {% elif amalgamationApplication.type == 'vertical' %}
+              <div class="report-type">VERTICAL SHORT FORM</div>
+            {% endif %}
             <div class="report-type">AMALGAMATION APPLICATION</div>
             <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
           </td>

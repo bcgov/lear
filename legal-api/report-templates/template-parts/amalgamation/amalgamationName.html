@@ -1,8 +1,11 @@
-Name of Amalgamated Company:
-{% if business.legalName %}
-{{ business.legalName }}
-{% elif nameRequest.legalName %}
-{{ nameRequest.legalName }}
-{% else %}
-{{numberedDescription}}
-{% endif %}
+<div class="section-data">
+    Name of Amalgamated Company:
+    {% if business.legalName %}
+    {{ business.legalName }}
+    {% elif nameRequest.legalName %}
+    {{ nameRequest.legalName }}
+    {% else %}
+    {{ numberedDescription }}
+    {% endif %}
+</div>
+  
