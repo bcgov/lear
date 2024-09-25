@@ -133,12 +133,6 @@ class VersioningProxy:
                             and bool(db_versioning.get('enable-new-versioning', {}).get(current_service)))
         cls._current_versioning ='new' if use_new_versioning else 'old'
         print(f'\033[31mCurrent versioning={cls._current_versioning}\033[0m')
-
-    
-    @classmethod
-    def _switch_versioning(cls, previous_versioning, current_versioning):
-        cls._versioning_control[previous_versioning]['enable']()
-        cls._versioning_control[current_versioning]['disable']()
         
     @classmethod
     def _initialize_versioning(cls):
