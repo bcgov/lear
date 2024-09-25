@@ -379,6 +379,8 @@ async def run(application: Flask, qsm: QueueService):  # pylint: disable=redefin
     with application.app_context():
         flag_on = flags.is_on('enable-involuntary-dissolution')
         application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
+        auth_url = application.config.get('AUTH_SVC_URL')
+        application.logger.debug(f'Get the AUTH_URL from the config: {auth_url}')
         if flag_on:
             # check if batch can be run today
             stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
