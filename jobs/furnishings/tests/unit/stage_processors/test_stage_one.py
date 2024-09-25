@@ -292,7 +292,7 @@ async def test_generate_paper_letters(app, session, test_name, entity_type):
         ]
 )
 async def test_process_paper_letters(app, session, sftpserver, sftpconnection, test_name, entity_type):
-    """Assert that SFTP of PDFs is working correctly correctly."""
+    """Assert that SFTP of PDFs is working correctly."""
     business = factory_business(identifier='BC1234567', entity_type=entity_type)
     factory_address(address_type=Address.MAILING, business_id=business.id)
     batch = factory_batch()
