@@ -45,7 +45,7 @@ from colin_api.models import (  # noqa: I001
     ShareObject,  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
-from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_snake, convert_to_pacific_time
+from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
 
 
 # Code smells:
