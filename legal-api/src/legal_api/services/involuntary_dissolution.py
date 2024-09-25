@@ -320,7 +320,6 @@ def _get_filtered_entities(accounts):
 
     for org_id in accounts:
         entities = AccountService.get_affiliations(int(org_id))
-        current_app.logger.debug(f'after call the Auth_api: {entities}')
 
         for entity in entities:
             identifier = entity.get('businessIdentifier')
