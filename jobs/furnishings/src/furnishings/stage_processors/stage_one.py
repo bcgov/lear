@@ -142,6 +142,11 @@ class StageOneProcessor:
                 # SFTP BC batch letter PDF to BCMail+
                 with self._bcmail_sftp_connection as client:
                     resp = self.upload_to_sftp(client, self._bc_letters, filename)
+                self.update_notes_and_status(
+                    self._bc_mail_furnishings,
+                    Furnishing.FurnishingStatus.PROCESSED,
+                    'SFTP of BC batch letter was a success.'
+                )
                 self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (BC letter)')
             except Exception as err:
                 self.update_notes_and_status(
@@ -157,6 +162,11 @@ class StageOneProcessor:
                 # SFTP XPRO batch letter PDF to BCMail+
                 with self._bcmail_sftp_connection as client:
                     resp = self.upload_to_sftp(client, self._xpro_letters, filename)
+                self.update_notes_and_status(
+                    self._bc_mail_furnishings,
+                    Furnishing.FurnishingStatus.PROCESSED,
+                    'SFTP of XPRO batch letter was a success.'
+                )
                 self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (XPRO letter)')
             except Exception as err:
                 self.update_notes_and_status(
