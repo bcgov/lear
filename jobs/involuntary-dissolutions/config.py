@@ -58,6 +58,9 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     NATS_ENTITY_EVENTS_SUBJECT = os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'entity.events')
 
     AUTH_SVC_URL = os.getenv('AUTH_URL', 'http://')
+    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
+    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
 
     SECRET_KEY = 'a secret'
 
