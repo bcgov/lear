@@ -1192,10 +1192,10 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BCOMP.value, False, [], False),
         ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
         ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BC_CCC.value, False, [], False),
-        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.CONTINUE_IN.value, False, [], False),
-        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BCOMP_CONTINUE_IN.value, False, [], False),
-        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.ULC_CONTINUE_IN.value, False, [], False),
-        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.CCC_CONTINUE_IN.value, False, [], False),
+        ('C1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.CONTINUE_IN.value, False, [], False),
+        ('C1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BCOMP_CONTINUE_IN.value, False, [], False),
+        ('C1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.ULC_CONTINUE_IN.value, False, [], False),
+        ('C1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.CCC_CONTINUE_IN.value, False, [], False),
     ]
 )
 def test_get_correct_fee_codes(
