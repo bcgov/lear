@@ -64,7 +64,15 @@ install-dev: ## Install local application
 ci: lint flake8 test ## CI flow
 
 pylint: ## Linting with pylint
-	. venv/bin/activate && pylint --rcfile=setup.cfg  --load-plugins=pylint_flask src/$(PROJECT_NAME)
+	@. venv/bin/activate; \
+	PYLINT_VERSION=$$(pylint --version 2>&1 | grep -oP 'pylint \K(\d+\.\d+)'); \
+	if [ "$$PYLINT_VERSION" \> "3.3" ] || [ "$$PYLINT_VERSION" = "3.3" ]; then \
+		echo ". venv/bin/activate && pylint --rcfile=setup.cfg --load-plugins=pylint_flask --disable=too-many-positional-arguments src/$(PROJECT_NAME)";\
+		pylint --rcfile=setup.cfg --load-plugins=pylint_flask --disable=too-many-positional-arguments src/$(PROJECT_NAME); \
+	else \
+		echo ". venv/bin/activate && pylint --rcfile=setup.cfg --load-plugins=pylint_flask src/$(PROJECT_NAME)";\
+		pylint --rcfile=setup.cfg --load-plugins=pylint_flask src/$(PROJECT_NAME); \
+	fi
 
 flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME)
