@@ -490,6 +490,21 @@ FILINGS: Final = {
             },
         ]
     },
+    'noticeOfWithdrawal': {
+        'name': 'noticeOfWithdrawal',
+        'title': 'Notice of Withdrawal',
+        'displayName': 'Notice of Withdrawal',
+        'codes': {
+            'BC': 'NWITH',
+            'BEN': 'NWITH',
+            'ULC': 'NWITH',
+            'CC': 'NWITH',
+            'C': 'NWITH',
+            'CBEN': 'NWITH',
+            'CUL': 'NWITH',
+            'CCC': 'NWITH'
+        }
+    },
     'putBackOn': {
         'name': 'putBackOn',
         'title': 'Put Back On',
