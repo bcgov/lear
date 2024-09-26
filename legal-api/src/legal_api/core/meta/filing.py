@@ -503,7 +503,7 @@ FILINGS: Final = {
             'CBEN': 'NWITH',
             'CUL': 'NWITH',
             'CCC': 'NWITH'
-        },
+        }
     },
     'putBackOn': {
         'name': 'putBackOn',
