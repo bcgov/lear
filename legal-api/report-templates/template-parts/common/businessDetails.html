@@ -48,7 +48,11 @@
                     {% if business.legalType in ['GP', 'SP'] and business.state == 'HISTORICAL' %}
                         <span>Dissolved</span>
                     {% else %}
-                        <span>{{stateFilings[0].filingName}}</span>
+                        {% if stateFilings[0].filingName == 'Amalgamated Into' %}
+                           <span>Amalgamated</span>
+                        {% else %}
+                           <span>{{ stateFilings[0].filingName }}</span>
+                        {% endif %}
                     {% endif %}
                     <span> - Effective {{stateFilings[0].effectiveDateTime}}</span>
                    {% endif %}
