@@ -16,7 +16,6 @@
 from dataclasses import dataclass
 from typing import Final, Tuple
 
-from flask import current_app
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
