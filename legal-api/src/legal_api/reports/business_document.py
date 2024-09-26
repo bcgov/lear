@@ -567,11 +567,13 @@ class BusinessDocument:
     def _get_summary_display_name(filing_type: str,
                                   filing_sub_type: Optional[str],
                                   legal_type: Optional[str]) -> str:
+        display_name = None
         if filing_type == 'dissolution':
-            if filing_sub_type == 'voluntary' and legal_type in ['SP', 'GP']:
-                return 'Dissolution Application'
+            if legal_type in BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]:
+                display_name = BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type][legal_type]
             else:
-                return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
+                display_name = BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]['defaultName']
+            return display_name
         elif filing_type == 'restoration':
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
         else:
@@ -585,9 +587,47 @@ class BusinessDocument:
     FILING_SUMMARY_DISPLAY_NAME = {
         'amalgamationApplication': 'Amalgamated Into',
         'dissolution': {
-            'voluntary': 'Voluntary Dissolution',
-            'involuntary': 'Involuntary Dissolution',
-            'administrative': 'Administrative Dissolution'
+            'voluntary': {
+                'CP': 'Voluntary Dissolution',
+                'BC': 'Voluntary Dissolution',
+                'BEN': 'Voluntary Dissolution',
+                'ULC': 'Voluntary Dissolution',
+                'CC': 'Voluntary Dissolution',
+                'C': 'Voluntary Dissolution',
+                'CBEN': 'Voluntary Dissolution',
+                'CUL': 'Voluntary Dissolution',
+                'CCC': 'Voluntary Dissolution',
+                'LLC': 'Voluntary Dissolution',
+                'SP': 'Dissolution Application',
+                'GP': 'Dissolution Application',
+                'defaultName': 'Voluntary Dissolution'
+            },
+            'involuntary': {
+                'BC': 'Involuntary Dissolution',
+                'BEN': 'Involuntary Dissolution',
+                'ULC': 'Involuntary Dissolution',
+                'CC': 'Involuntary Dissolution',
+                'C': 'Involuntary Dissolution',
+                'CBEN': 'Involuntary Dissolution',
+                'CUL': 'Involuntary Dissolution',
+                'CCC': 'Involuntary Dissolution',
+                'defaultName': 'Involuntary Dissolution'
+            },
+            'administrative': {
+                'CP': 'Administrative Dissolution',
+                'BC': 'Administrative Dissolution',
+                'BEN': 'Administrative Dissolution',
+                'ULC': 'Administrative Dissolution',
+                'CC': 'Administrative Dissolution',
+                'C': 'Administrative Dissolution',
+                'CBEN': 'Administrative Dissolution',
+                'CUL': 'Administrative Dissolution',
+                'CCC': 'Administrative Dissolution',
+                'LLC': 'Administrative Dissolution',
+                'SP': 'Administrative Dissolution',
+                'GP': 'Administrative Dissolution',
+                'defaultName': 'Administrative Dissolution'
+            }
         },
         'restorationApplication': 'Restoration Application',
         'restoration': {
