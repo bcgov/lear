@@ -50,6 +50,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         PAID = 'PAID'
         PENDING = 'PENDING'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
+        WITHDRAWN = 'WITHDRAWN'
 
         # filings with staff review
         APPROVED = 'APPROVED'
@@ -336,6 +337,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CP': 'OTINC'
             },
             'temporaryCorpTypeCode': 'TMP'
+        },
+        'noticeOfWithdrawal': {
+            'name': 'noticeOfWithdrawal',
+            'title': 'Notice of Withdrawal',
+            'displayName': 'Notice of Withdrawal',
+            'codes': {
+                'BC': 'NWITH',
+                'BEN': 'NWITH',
+                'ULC': 'NWITH',
+                'CC': 'NWITH',
+                'C': 'NWITH',
+                'CBEN': 'NWITH',
+                'CUL': 'NWITH',
+                'CCC': 'NWITH'
+            }
         },
         'registration': {
             'name': 'registration',

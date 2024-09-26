@@ -1031,6 +1031,9 @@ del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
 CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
 CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
+NOTICE_OF_WITHDRAWAL = copy.deepcopy(FILING_HEADER)
+NOTICE_OF_WITHDRAWAL['filing']['noticeOfWithdrawal'] = {}
+
 
 def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
     """Return fee codes for legal type."""
@@ -1096,6 +1099,14 @@ def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_CCC.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.COMP.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BC_CCC.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.CONTINUE_IN.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.BCOMP_CONTINUE_IN.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.ULC_CONTINUE_IN.value, False, []),
+        ('BC1234567', NOTICE_OF_WITHDRAWAL, 'noticeOfWithdrawal', Business.LegalTypes.CCC_CONTINUE_IN.value, False, []),
     ]
 )
 def test_get_correct_fee_codes(

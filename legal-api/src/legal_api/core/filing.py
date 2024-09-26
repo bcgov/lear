@@ -52,6 +52,7 @@ class Filing:
         PENDING = 'PENDING'
         PAPER_ONLY = 'PAPER_ONLY'
         PENDING_CORRECTION = 'PENDING_CORRECTION'
+        WITHDRAWN = 'WITHDRAWN'
 
         # filings with staff review
         APPROVED = 'APPROVED'
@@ -86,6 +87,7 @@ class Filing:
         DISSOLUTION = 'dissolution'
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
+        NOTICEOFWITHDRAWAL = 'noticeOfWithdrawal'
         PUTBACKON = 'putBackOn'
         REGISTRARSNOTATION = 'registrarsNotation'
         REGISTRARSORDER = 'registrarsOrder'
