@@ -345,12 +345,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'codes': {
                 'BC': 'NWITH',
                 'BEN': 'NWITH',
-                'ULC': 'NWITH',
                 'CC': 'NWITH',
+                'ULC': 'NWITH',
                 'C': 'NWITH',
+                'CCC': 'NWITH',
                 'CBEN': 'NWITH',
-                'CUL': 'NWITH',
-                'CCC': 'NWITH'
+                'CUL': 'NWITH'
             }
         },
         'registration': {
