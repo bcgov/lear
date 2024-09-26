@@ -580,7 +580,7 @@ class BusinessDocument:
         return corp_type.full_desc if corp_type else ''
 
     FILING_SUMMARY_DISPLAY_NAME = {
-        'amalgamationApplication': 'Amalgamated Into',
+        'amalgamationApplication': 'Amalgamated',
         'dissolution': {
             'voluntary': {
                 'CP': 'Voluntary Dissolution',
