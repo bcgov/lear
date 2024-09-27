@@ -52,6 +52,7 @@ class BusinessBlocker(str, Enum):
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
     IN_DISSOLUTION = 'IN_DISSOLUTION'
+    NO_FUTURE_EFFECTIVE_FILING = 'NO_FUTURE_EFFECTIVE_FILING'
 
 
 class BusinessRequirement(str, Enum):
@@ -313,6 +314,13 @@ def get_allowable_filings_dict():
                                                   filing_types_compact.RESTORATION_LIMITED_RESTORATION_EXT],
                             'business': [BusinessBlocker.DEFAULT]
                         }
+                    }
+                },
+                'noticeOfWithdrawal':{
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.BUSINESS_FROZEN,
+                                     BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING]
                     }
                 }
             },
@@ -648,7 +656,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.DRAFT_PENDING: False,
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
         BusinessBlocker.AMALGAMATING_BUSINESS: False,
-        BusinessBlocker.IN_DISSOLUTION: False
+        BusinessBlocker.IN_DISSOLUTION: False,
+        BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING: True
     }
 
     if not business:
@@ -670,6 +679,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
+
+    if has_any_future_effective_filing(business):
+        business_blocker_checks[BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING] = False
 
     return business_blocker_checks
 
@@ -751,6 +763,14 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
     is_fed = any(f.effective_date > now for f in pending_filings)
 
     return is_fed
+
+
+def has_any_future_effective_filing(business: Business):
+    """Return True if the business has any future effective filing."""
+    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    pending_filings = Filing.get_filings_by_status(business.id,
+                                                  [Filing.Status.PENDING.value, Filing.Status.PAID.value])
+    return any(f.effective_date and f.effective_date > now for f in pending_filings)
 
 
 def has_filing_match(filing: Filing, filing_types: list):
