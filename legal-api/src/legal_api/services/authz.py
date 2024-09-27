@@ -316,7 +316,7 @@ def get_allowable_filings_dict():
                         }
                     }
                 },
-                'noticeOfWithdrawal':{
+                'noticeOfWithdrawal': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.BUSINESS_FROZEN,
@@ -768,8 +768,7 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
 def has_any_future_effective_filing(business: Business):
     """Return True if the business has any future effective filing."""
     now = datetime.utcnow().replace(tzinfo=timezone.utc)
-    pending_filings = Filing.get_filings_by_status(business.id,
-                                                  [Filing.Status.PENDING.value, Filing.Status.PAID.value])
+    pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PENDING.value, Filing.Status.PAID.value])
     return any(f.effective_date and f.effective_date > now for f in pending_filings)
 
 
