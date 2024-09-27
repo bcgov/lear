@@ -1416,9 +1416,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                         party['officeNotificationDt'] = filing.body.get('applicationDate')
                         role['appointmentDate'] = filing.body.get('noticeDate')
 
-        if filing.filing_sub_type in ['fullRestoration', 'limitedRestorationToFull']:
-            corp_state = Business.CorpStateTypes.ACTIVE.value
-        elif filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
+        corp_state = Business.CorpStateTypes.ACTIVE.value  # Active for fullRestoration and limitedRestorationToFull
+        if filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
             expiry_date = filing.body.get('expiry')
             cursor.execute("""UPDATE event SET trigger_dts=TO_DATE(:trigger_dts, 'YYYY-mm-dd')
                            WHERE event_id=:event_id""",
