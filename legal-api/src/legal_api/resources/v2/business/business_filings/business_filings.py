@@ -990,7 +990,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                     names = []
                     names.append(party['officer']['firstName'])
 
-                    if middle_name := party['officer'].get('middleName'):
+                    if middle_name := party['officer'].get('middleName', party['officer'].get('middleInitial')):
                         names.append(middle_name)
 
                     names.append(party['officer']['lastName'])

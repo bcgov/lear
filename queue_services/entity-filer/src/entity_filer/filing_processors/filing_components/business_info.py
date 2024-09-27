@@ -13,7 +13,6 @@
 # limitations under the License.
 """Manages the type of Business."""
 from datetime import datetime
-from tokenize import String
 from typing import Dict
 
 import requests
@@ -39,7 +38,7 @@ def set_corp_type(business: Business, business_info: Dict) -> Dict:
     return None
 
 
-def set_association_type(business: Business, association_type: String) -> Dict:
+def set_association_type(business: Business, association_type: str) -> Dict:
     """Set the association type of business."""
     if not business:
         return {'error': babel('Business required before type can be set.')}
@@ -54,24 +53,14 @@ def set_association_type(business: Business, association_type: String) -> Dict:
     return None
 
 
-def set_legal_name(corp_num: str, business: Business, business_info: Dict):
+def set_legal_name(corp_num: str, business: Business, business_info: Dict, new_legal_type: str = None):
     """Set the legal_name in the business object."""
     legal_name = business_info.get('legalName', None)
     if legal_name:
         business.legal_name = legal_name
     else:
-        legal_type = business_info.get('legalType', None)
-        numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
-        numbered_legal_name_prefix = ''
-        if legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-                          Business.LegalTypes.ULC_CONTINUE_IN.value,
-                          Business.LegalTypes.CCC_CONTINUE_IN.value,
-                          Business.LegalTypes.CONTINUE_IN.value):
-            numbered_legal_name_prefix = corp_num[1:]
-        else:
-            numbered_legal_name_prefix = corp_num[2:]
-
-        business.legal_name = f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
+        legal_type = new_legal_type or business_info.get('legalType', None)
+        business.legal_name = Business.generate_numbered_legal_name(legal_type, corp_num)
 
 
 def update_business_info(corp_num: str, business: Business, business_info: Dict, filing: Filing):

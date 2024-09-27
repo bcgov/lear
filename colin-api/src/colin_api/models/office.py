@@ -166,11 +166,8 @@ class Office:
             raise err
 
     @classmethod
-    def update_office(cls, cursor, office_info: Dict):
-        """Update old office end event id and insert new row into office table.
-
-        office_info.keys() = ['new_event_id', 'corp_num', 'new_delivery_addr_id', 'new_mailing_addr_id', 'office_code']
-        """
+    def end_office(cls, cursor, event_id: str, corp_num: str, office_code: str):
+        """Update old office with end event id."""
         try:
             cursor.execute(
                 """
@@ -178,15 +175,25 @@ class Office:
                 SET end_event_id = :event_id
                 WHERE corp_num = :corp_num and office_typ_cd = :office_typ_cd and end_event_id is null
                 """,
-                event_id=office_info['new_event_id'],
-                corp_num=office_info['corp_num'],
-                office_typ_cd=office_info['office_code']
+                event_id=event_id,
+                corp_num=corp_num,
+                office_typ_cd=office_code
             )
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errs
             current_app.logger.error('Error updating office table')
             raise err
 
+    @classmethod
+    def update_office(cls, cursor, office_info: Dict):
+        """Update old office end event id and insert new row into office table.
+
+        office_info.keys() = ['new_event_id', 'corp_num', 'new_delivery_addr_id', 'new_mailing_addr_id', 'office_code']
+        """
+        cls.end_office(cursor,
+                       event_id=office_info['new_event_id'],
+                       corp_num=office_info['corp_num'],
+                       office_code=office_info['office_code'])
         try:
             cursor.execute(
                 """

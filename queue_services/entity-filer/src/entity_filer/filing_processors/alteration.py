@@ -37,6 +37,8 @@ def process(
 ):  # pylint: disable=W0613, R0914
     """Render the Alteration onto the model objects."""
     filing_meta.alteration = {}
+    to_legal_type = None
+
     # Alter the corp type, if any
     with suppress(IndexError, KeyError, TypeError):
         if business.legal_type == Business.LegalTypes.COOP.value:
@@ -61,7 +63,7 @@ def process(
         # from name -> numbered OR name -> name OR numbered to name
         business_json = dpath.util.get(filing, '/alteration/nameRequest')
         from_legal_name = business.legal_name
-        business_info.set_legal_name(business.identifier, business, business_json)
+        business_info.set_legal_name(business.identifier, business, business_json, to_legal_type)
         if from_legal_name != business.legal_name:
             filing_meta.alteration = {**filing_meta.alteration,
                                       'fromLegalName': from_legal_name,

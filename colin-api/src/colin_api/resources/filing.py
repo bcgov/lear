@@ -139,6 +139,7 @@ class FilingInfo(Resource):
                     'incorporationApplication': json_data.get('incorporationApplication', None),
                     'registrarsNotation': json_data.get('registrarsNotation', None),
                     'registrarsOrder': json_data.get('registrarsOrder', None),
+                    'restoration': json_data.get('restoration', None),
                     'specialResolution': json_data.get('specialResolution', None),
                     'transition': json_data.get('transition', None),
                 }

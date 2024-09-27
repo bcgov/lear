@@ -50,15 +50,16 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     corp_num = None
 
     role_types = {
-        'Director': 'DIR',
-        'Incorporator': 'INC',
-        'Liquidator': 'LIQ',
-        'Officer': 'OFF',
+        'Applicant': 'APP',
         'Attorney': 'ATT',
         'Completing Party': 'CPRTY',
         'Custodian': 'RCC',
+        'Director': 'DIR',
         'Firm Business Owner': 'FBO',
-        'Firm Individual Owner': 'FIO'
+        'Firm Individual Owner': 'FIO',
+        'Incorporator': 'INC',
+        'Liquidator': 'LIQ',
+        'Officer': 'OFF',
     }
 
     def __init__(self):
@@ -438,10 +439,11 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             """
             insert into corp_party (corp_party_id, mailing_addr_id, delivery_addr_id, corp_num, party_typ_cd,
               start_event_id, end_event_id, appointment_dt, cessation_dt, last_nme, middle_nme, first_nme,
-              bus_company_num, business_nme, prev_party_id)
+              bus_company_num, business_nme, office_notification_dt, prev_party_id)
             values (:corp_party_id, :mailing_addr_id, :delivery_addr_id, :corp_num, :party_typ_cd, :start_event_id,
               :end_event_id, TO_DATE(:appointment_dt, 'YYYY-mm-dd'), TO_DATE(:cessation_dt, 'YYYY-mm-dd'),
-              :last_nme, :middle_nme, :first_nme, :bus_company_num, :business_name, :prev_party_id)
+              :last_nme, :middle_nme, :first_nme, :bus_company_num, :business_name,
+              TO_DATE(:office_notification_dt, 'YYYY-mm-dd'), :prev_party_id)
             """
 
         completing_party_query = \
@@ -460,31 +462,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
 
         # create new corp party entry
         corp_num = business['business']['identifier']
-        try:
-            if corp_num == 'CP':
-                cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
-                row = cursor.fetchone()
-                corp_party_id = int(row[0])
-            else:
-                cursor.execute("""
-                    SELECT id_num
-                    FROM system_id
-                    WHERE id_typ_cd = 'CP'
-                    FOR UPDATE
-                """)
-
-                corp_party_id = int(cursor.fetchone()[0])
-
-                if corp_party_id:
-                    cursor.execute("""
-                        UPDATE system_id
-                        SET id_num = :new_num
-                        WHERE id_typ_cd = 'CP'
-                    """, new_num=corp_party_id + 1)
-
-        except Exception as err:
-            current_app.logger.error('Error in corp_party: Failed to get next corp_party_id.')
-            raise err
         try:
             role_type = party.get('role_type', 'DIR')
 
@@ -520,6 +497,31 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     )
             else:
                 date_format = '%Y-%m-%d'
+                try:
+                    if corp_num == 'CP':
+                        cursor.execute("""select noncorp_party_seq.NEXTVAL from dual""")
+                        row = cursor.fetchone()
+                        corp_party_id = int(row[0])
+                    else:
+                        cursor.execute("""
+                            SELECT id_num
+                            FROM system_id
+                            WHERE id_typ_cd = 'CP'
+                            FOR UPDATE
+                        """)
+
+                        corp_party_id = int(cursor.fetchone()[0])
+
+                        if corp_party_id:
+                            cursor.execute("""
+                                UPDATE system_id
+                                SET id_num = :new_num
+                                WHERE id_typ_cd = 'CP'
+                            """, new_num=corp_party_id + 1)
+
+                except Exception as err:
+                    current_app.logger.error('Error in corp_party: Failed to get next corp_party_id.')
+                    raise err
                 if party.get('prev_id'):
                     cursor.execute(
                         query,
@@ -530,9 +532,15 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         party_typ_cd=role_type,
                         start_event_id=event_id,
                         end_event_id=event_id if party.get('cessationDate', '') else None,
-                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10],
-                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
-                        if party.get('cessationDate', None) else None,
+                        appointment_dt=(
+                            str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10]
+                            if party.get('appointmentDate', None) else None),
+                        cessation_dt=(
+                            str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
+                            if party.get('cessationDate', None) else None),
+                        office_notification_dt=(
+                            str(datetime.datetime.strptime(party['officeNotificationDt'], date_format))[:10]
+                            if party.get('officeNotificationDt') else None),
                         last_nme=party['officer']['lastName'],
                         middle_nme=party['officer'].get('middleInitial', ''),
                         first_nme=party['officer']['firstName'],
@@ -551,9 +559,15 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         party_typ_cd=role_type,
                         start_event_id=event_id,
                         end_event_id=event_id if party.get('cessationDate', '') else None,
-                        appointment_dt=str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10],
-                        cessation_dt=str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
-                        if party.get('cessationDate', None) else None,
+                        appointment_dt=(
+                            str(datetime.datetime.strptime(party['appointmentDate'], date_format))[:10]
+                            if party.get('appointmentDate', None) else None),
+                        cessation_dt=(
+                            str(datetime.datetime.strptime(party['cessationDate'], date_format))[:10]
+                            if party.get('cessationDate', None) else None),
+                        office_notification_dt=(
+                            str(datetime.datetime.strptime(party['officeNotificationDt'], date_format))[:10]
+                            if party.get('officeNotificationDt') else None),
                         last_nme=party['officer']['lastName'],
                         middle_nme=party['officer'].get('middleInitial', ''),
                         first_nme=party['officer']['firstName'],
@@ -564,8 +578,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         except Exception as err:
             current_app.logger.error(f'Error in corp_party: Failed create new party for {corp_num}')
             raise err
-
-        return corp_party_id
 
     @classmethod
     def compare_parties(cls, party: Party, officer_json: Dict):

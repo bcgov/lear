@@ -261,6 +261,54 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             'type_code_list': ['OTNCN'],
             Business.TypeCodes.COOP.value: 'OTNCN',
         },
+        'restoration': {
+            'sub_type_property': 'type',
+            'sub_type_list': ['fullRestoration',
+                              'limitedRestoration',
+                              'limitedRestorationExtension',
+                              'limitedRestorationToFull'],
+            'type_code_list': ['RESTF', 'RESTL', 'RESXL', 'RESXF'],
+            'fullRestoration': {
+                Business.TypeCodes.BCOMP.value: 'RESTF',
+                Business.TypeCodes.BC_COMP.value: 'RESTF',
+                Business.TypeCodes.ULC_COMP.value: 'RESTF',
+                Business.TypeCodes.CCC_COMP.value: 'RESTF',
+                Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'RESTF',
+                Business.TypeCodes.CONTINUE_IN.value: 'RESTF',
+                Business.TypeCodes.ULC_CONTINUE_IN.value: 'RESTF',
+                Business.TypeCodes.CCC_CONTINUE_IN.value: 'RESTF',
+            },
+            'limitedRestoration': {
+                Business.TypeCodes.BCOMP.value: 'RESTL',
+                Business.TypeCodes.BC_COMP.value: 'RESTL',
+                Business.TypeCodes.ULC_COMP.value: 'RESTL',
+                Business.TypeCodes.CCC_COMP.value: 'RESTL',
+                Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'RESTL',
+                Business.TypeCodes.CONTINUE_IN.value: 'RESTL',
+                Business.TypeCodes.ULC_CONTINUE_IN.value: 'RESTL',
+                Business.TypeCodes.CCC_CONTINUE_IN.value: 'RESTL',
+            },
+            'limitedRestorationExtension': {
+                Business.TypeCodes.BCOMP.value: 'RESXL',
+                Business.TypeCodes.BC_COMP.value: 'RESXL',
+                Business.TypeCodes.ULC_COMP.value: 'RESXL',
+                Business.TypeCodes.CCC_COMP.value: 'RESXL',
+                Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'RESXL',
+                Business.TypeCodes.CONTINUE_IN.value: 'RESXL',
+                Business.TypeCodes.ULC_CONTINUE_IN.value: 'RESXL',
+                Business.TypeCodes.CCC_CONTINUE_IN.value: 'RESXL',
+            },
+            'limitedRestorationToFull': {
+                Business.TypeCodes.BCOMP.value: 'RESXF',
+                Business.TypeCodes.BC_COMP.value: 'RESXF',
+                Business.TypeCodes.ULC_COMP.value: 'RESXF',
+                Business.TypeCodes.CCC_COMP.value: 'RESXF',
+                Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'RESXF',
+                Business.TypeCodes.CONTINUE_IN.value: 'RESXF',
+                Business.TypeCodes.ULC_CONTINUE_IN.value: 'RESXF',
+                Business.TypeCodes.CCC_CONTINUE_IN.value: 'RESXF',
+            }
+        },
         'restorationApplication': {
             'type_code_list': ['OTRES'],
             Business.TypeCodes.COOP.value: 'OTRES',
@@ -565,6 +613,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
                                       'CONTO', 'COUTI',
                                       'AGMDT', 'AGMLC',
+                                      'RESTF', 'RESTL', 'RESXL', 'RESXF',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
                 court_order_num = None
@@ -903,13 +952,25 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 is_corp_num_decimal = corp_num.isdecimal()   # valid only for BC
                 filing.body['business'] = {}
                 if filing_event_info['filing_type_code'] in ['NOALR', 'NOALB']:
-                    filing.body['business']['legalType'] = Business.TypeCodes.BC_COMP.value
+                    filing.body['business']['legalType'] = (
+                        Business.TypeCodes.BC_COMP.value if is_corp_num_decimal
+                        else Business.TypeCodes.CONTINUE_IN.value
+                    )
                 elif filing_event_info['filing_type_code'] in ['NOALE', 'NOALD', 'NOABE']:
-                    filing.body['business']['legalType'] = Business.TypeCodes.BCOMP.value
+                    filing.body['business']['legalType'] = (
+                        Business.TypeCodes.BCOMP.value if is_corp_num_decimal
+                        else Business.TypeCodes.BCOMP_CONTINUE_IN.value
+                    )
                 elif filing_event_info['filing_type_code'] == 'NOALU':
-                    filing.body['business']['legalType'] = Business.TypeCodes.ULC_COMP.value
+                    filing.body['business']['legalType'] = (
+                        Business.TypeCodes.ULC_COMP.value if is_corp_num_decimal
+                        else Business.TypeCodes.ULC_CONTINUE_IN.value
+                    )
                 elif filing_event_info['filing_type_code'] == 'NOALC':
-                    filing.body['business']['legalType'] = Business.TypeCodes.CCC_COMP.value
+                    filing.body['business']['legalType'] = (
+                        Business.TypeCodes.CCC_COMP.value if is_corp_num_decimal
+                        else Business.TypeCodes.CCC_CONTINUE_IN.value
+                    )
                 elif filing_event_info['filing_type_code'] == 'NOALA':
                     corp_type = cls._get_corp_type_for_event(corp_num=corp_num,
                                                              event_id=filing_event_info['event_id'],
@@ -1147,7 +1208,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                           'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
                                           'continuationOut', 'correction', 'courtOrder',
                                           'dissolution', 'incorporationApplication', 'registrarsNotation',
-                                          'registrarsOrder', 'specialResolution', 'transition']:
+                                          'registrarsOrder', 'restoration', 'specialResolution', 'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             if filing.filing_sub_type \
@@ -1180,6 +1241,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 cls._process_continuation_in(cursor, filing)
             elif filing.filing_type == 'continuationOut':
                 cls._process_continuation_out(cursor, filing)
+            elif filing.filing_type == 'restoration':
+                cls._process_restoration(cursor, filing)
 
             if filing.filing_type == 'correction':
                 cls._process_correction(cursor, business, filing, corp_num)
@@ -1331,6 +1394,39 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def is_filing_type_match(cls, filing: Filing, filing_type: str, filing_sub_type: str):
         """Return whether filing has specificed filing type and filing sub-type."""
         return filing.filing_type == filing_type and filing.filing_sub_type == filing_sub_type
+
+    @classmethod
+    def _process_restoration(cls, cursor, filing):
+        """Process restoration."""
+        corp_num = filing.get_corp_num()
+
+        Office.end_office(cursor=cursor,
+                          event_id=filing.event_id,
+                          corp_num=corp_num,
+                          office_code=Office.OFFICE_TYPES_CODES['custodialOffice'])
+
+        Party.end_current(cursor, filing.event_id, corp_num, 'Custodian')
+
+        approval_type = filing.body.get('approvalType')
+        if approval_type == 'registrar':
+            for party in filing.body['parties']:
+                for role in party['roles']:
+                    party['role_type'] = Party.role_types[(role['roleType'])]
+                    if party['role_type'] == 'APP':
+                        party['officeNotificationDt'] = filing.body.get('applicationDate')
+                        role['appointmentDate'] = filing.body.get('noticeDate')
+
+        if filing.filing_sub_type in ['fullRestoration', 'limitedRestorationToFull']:
+            corp_state = Business.CorpStateTypes.ACTIVE.value
+        elif filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
+            expiry_date = filing.body.get('expiry')
+            cursor.execute("""UPDATE event SET trigger_dts=TO_DATE(:trigger_dts, 'YYYY-mm-dd')
+                           WHERE event_id=:event_id""",
+                           event_id=filing.event_id,
+                           trigger_dts=expiry_date
+                           )
+            corp_state = Business.CorpStateTypes.LIMITED_RESTORATION.value
+        Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
 
     @classmethod
     def _process_continuation_out(cls, cursor, filing):
@@ -1569,7 +1665,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         if filing.filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication']:
             # create corp state
             Business.create_corp_state(cursor=cursor, corp_num=corp_num, event_id=filing.event_id)
-        elif filing.filing_type == 'alteration':
+        elif filing.filing_type in ['alteration', 'restoration']:
             old_corp_name = CorpName.get_current_name_or_numbered(cursor=cursor, corp_num=corp_num)
             if old_corp_name.corp_name != name:
                 # end old corp name
