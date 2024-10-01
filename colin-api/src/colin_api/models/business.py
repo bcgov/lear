@@ -61,13 +61,15 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
     class CorpStateTypes(Enum):
         """Render an Enum of the CorpState Type Codes."""
 
-        VOLUNTARY_DISSOLUTION = 'HDV'
+        ACTIVE = 'ACT'
         ADMINISTRATIVE_DISSOLUTION = 'HDA'
         AMALGAMATED = 'HAM'
-        INVOLUNTARY_DISSOLUTION_NO_AR = 'HDF'
-        INVOLUNTARY_DISSOLUTION_NO_TR = 'HDT'
         CONTINUE_IN = 'HCI'
         CONTINUE_OUT = 'HCO'
+        INVOLUNTARY_DISSOLUTION_NO_AR = 'HDF'
+        INVOLUNTARY_DISSOLUTION_NO_TR = 'HDT'
+        LIMITED_RESTORATION = 'LRS'
+        VOLUNTARY_DISSOLUTION = 'HDV'
 
     NUMBERED_CORP_NAME_SUFFIX = {
         TypeCodes.BCOMP.value: 'B.C. LTD.',
