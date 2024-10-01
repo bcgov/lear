@@ -154,7 +154,7 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
     filing['filing']['header']['name'] = 'consentContinuationOut'
     effective_date = datetime.utcnow()
     if test_name == 'SUCCESS':
-        effective_date -= datedelta.datedelta(months=6, days=1)
+        effective_date -= datedelta.datedelta(months=6, days=5)
 
     previous_filing = factory_completed_filing(business, filing, filing_date=effective_date)
 
