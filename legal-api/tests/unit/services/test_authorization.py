@@ -529,13 +529,14 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'changeOfDirectors', 'consentContinuationOut', 'continuationOut', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'transition',
-          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
+          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
           {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'changeOfAddress',
           'changeOfDirectors', 'continuationIn', 'consentContinuationOut', 'continuationOut', 'correction',
           'courtOrder', {'dissolution': ['voluntary', 'administrative']}, 'registrarsNotation', 'registrarsOrder',
-          'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
+          'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']},
+          'noticeOfWithdrawal']),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
@@ -1940,7 +1941,13 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                              filing_sub_type=filing_sub_type,
                                              is_future_effective=is_fed)
                     allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
-                    assert allowed_filing_types == expected
+
+                    current_expected = expected.copy()
+                    if username == 'staff' and filing_status == Filing.Status.PAID.value:
+                        notice_of_withdrawal = expected_lookup([FilingKey.NOTICE_OF_WITHDRAWAL])[0]
+                        if notice_of_withdrawal not in current_expected:
+                            current_expected.append(notice_of_withdrawal)
+                    assert allowed_filing_types == current_expected
 
 
 @pytest.mark.parametrize(
@@ -2826,9 +2833,9 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
                                          filing_name='unknownFiling',
                                          filing_status='DRAFT')
             elif blocker_status == 'FUTURE_EFFECTIVE':
-                future_filing= create_incomplete_filing(business=business,
+                create_incomplete_filing(business=business,
                                           filing_name='unknownFiling',
-                                          filing_status='PENDING',
+                                          filing_status='PAID',
                                           is_future_effective=True)
 
             allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
