@@ -657,7 +657,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
         BusinessBlocker.AMALGAMATING_BUSINESS: False,
         BusinessBlocker.IN_DISSOLUTION: False,
-        BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING: True
+        BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING: False
     }
 
     if not business:
@@ -680,8 +680,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
 
-    if has_any_future_effective_filing(business):
-        business_blocker_checks[BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING] = False
+    if not has_any_future_effective_filing(business):
+        business_blocker_checks[BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING] = True
 
     return business_blocker_checks
 
@@ -767,8 +767,8 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
 
 def has_any_future_effective_filing(business: Business):
     """Return True if the business has any future effective filing."""
-    now = datetime.utcnow().replace(tzinfo=timezone.utc)
-    pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PENDING.value, Filing.Status.PAID.value])
+    now = datetime.now(timezone.utc)
+    pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
     return any(f.effective_date and f.effective_date > now for f in pending_filings)
 
 
