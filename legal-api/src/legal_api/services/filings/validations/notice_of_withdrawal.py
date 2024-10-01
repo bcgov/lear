@@ -13,11 +13,15 @@
 # limitations under the License.
 """Validation for the Notice of Withdrawal filing."""
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Dict, Optional, Final
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I003
 from legal_api.errors import Error
+from legal_api.services.utils import get_int
+
+from legal_api.models.db import db # noqa: I001
+from legal_api.models import Filing
 
 
 
@@ -27,3 +31,7 @@ def validate(filing: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     
     msg = []
+
+    filing_id_path: Final = '/filing/noticeOfWithdrawal/filingId'
+    filing_id = get_int(filing, filing_id_path)
+
