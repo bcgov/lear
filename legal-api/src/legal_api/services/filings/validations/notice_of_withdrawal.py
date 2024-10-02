@@ -22,6 +22,7 @@ from legal_api.services.utils import get_int
 
 from legal_api.models.db import db # noqa: I001
 from legal_api.models import Filing
+from legal_api.utils.datetime import datetime as dt
 
 
 
@@ -32,6 +33,42 @@ def validate(filing: Dict) -> Optional[Error]:
     
     msg = []
 
-    filing_id_path: Final = '/filing/noticeOfWithdrawal/filingId'
-    filing_id = get_int(filing, filing_id_path)
+    withdrawn_filing_id_path: Final = '/filing/noticeOfWithdrawal/filingId'
+    withdrawn_filing_id = get_int(filing, withdrawn_filing_id_path)
+    if not withdrawn_filing_id:
+        msg.append({'error': babel('Filing Id is required.'), 'path': withdrawn_filing_id_path})
+        return msg # cannot continue validation without the to be withdrawn filing id
+    
+    err = validate_withdrawn_filing(withdrawn_filing_id)
+    if err:
+        msg.extend(err)
+    
+    if msg:
+        return Error(HTTPStatus.BAD_REQUEST, msg)
+    return None
+    
 
+
+def validate_withdrawn_filing(withdrawn_filing_id: int):
+    """Validate the to be withdrawn filing id exists, the filing has a FED, the filing status is PAID """
+    msg = []
+    
+    # check whether the filing ID exists
+    withdrawn_filing:Filing = db.session.query(Filing). \
+                        filter(Filing.id == withdrawn_filing_id).one_or_none()
+    if not withdrawn_filing:
+        msg.append({'error':  babel('The filing to be withdrawn cannot be found.')})
+        return msg # cannot continue if the withdrawn filing doesn't exist
+    
+    # check whether the filing has a Future Effective Date(FED)
+    now = dt.utcnow()
+    filing_effective_date = dt.fromisoformat(withdrawn_filing.effective_date)
+    if filing_effective_date < now:
+        msg.append({'error': babel('Only filings with a future effective date can be withdrawn.')})
+
+    # check the filing status
+    filing_status = withdrawn_filing.status
+    if filing_status != Filing.Status.PAID.value:
+        msg.append({'error': babel('Only paid filings with a future effective date can be withdrawn')})
+    
+    return msg
