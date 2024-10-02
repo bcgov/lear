@@ -10,10 +10,14 @@
                <tr>
                   <td class="col-33">
                      <div class="section-sub-title">
+                        {% if party.officer.partyType == 'organization' %}
+                        <span class="capitalize-text">{{ party.officer.organizationName }}</span>
+                        {% else %}
                         <span class="capitalize-text">{{ party.officer.lastName }}</span>,
                         <span class="capitalize-text">{{ party.officer.firstName }}</span>
-                        {% if party.officer.middleName %}
-                        <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                           {% if party.officer.middleName %}
+                           <span class="capitalize-text">{{ party.officer.middleName }}</span>
+                           {% endif %}
                         {% endif %}
                      </div>
                   </td>
