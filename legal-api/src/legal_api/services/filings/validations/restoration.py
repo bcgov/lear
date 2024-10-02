@@ -125,7 +125,7 @@ def validate_approval_type(filing: dict, restoration_type: str, limited_restorat
     approval_type = get_str(filing, APPROVAL_TYPE_PATH)
     if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull') and \
             limited_restoration.approval_type =='courtOrder' and approval_type != 'courtOrder':
-        msg.append({'error': f'Must provide approval type with value of courtOrder.',
+        msg.append({'error': 'Must provide approval type with value of courtOrder.',
                     'path': APPROVAL_TYPE_PATH})
     return msg
 
