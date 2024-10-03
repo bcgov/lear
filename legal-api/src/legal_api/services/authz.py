@@ -765,13 +765,6 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
     return is_fed
 
 
-def has_any_future_effective_filing(business: Business):
-    """Return True if the business has any future effective filing."""
-    now = datetime.now(timezone.utc)
-    pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
-    return any(f.effective_date and f.effective_date > now for f in pending_filings)
-
-
 def has_filing_match(filing: Filing, filing_types: list):
     """Return if filing matches any filings provided in filing_types arg ."""
     for filing_type in filing_types:
@@ -823,7 +816,9 @@ def has_notice_of_withdrawal_filing_blocker(business: Business):
     if any(blocker_filing_matches):
         return True
 
-    return not has_any_future_effective_filing(business)
+    now = datetime.now(timezone.utc)
+    paid_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
+    return not any(f.effective_date and f.effective_date > now for f in paid_filings)
 
 
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
