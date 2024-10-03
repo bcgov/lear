@@ -272,7 +272,7 @@ def stage_2_process(app: Flask):
             batch_processing.notes = 'Moved back into good standing'
             app.logger.debug(f'Changed Batch Processing with id: {batch_processing.id} status to Withdrawn.')
         batch_processing.last_modified = datetime.utcnow()
-        batch_processing.meta_data = { **batch_processing.meta_data, 'stage_2_date': datetime.utcnow() }
+        batch_processing.meta_data = {**batch_processing.meta_data, 'stage_2_date': datetime.utcnow()}
         batch_processing.save()
 
 
@@ -322,7 +322,7 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             batch_processing.business_identifier,
             InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
         )
-        batch_processing.meta_data = { **batch_processing.meta_data, 'stage_3_date': datetime.utcnow() }
+        batch_processing.meta_data = {**batch_processing.meta_data, 'stage_3_date': datetime.utcnow()}
         batch_processing.last_modified = datetime.utcnow()
         if eligible:
             filing = create_invountary_dissolution_filing(batch_processing.business_id)
