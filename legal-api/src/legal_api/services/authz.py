@@ -52,7 +52,7 @@ class BusinessBlocker(str, Enum):
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
     IN_DISSOLUTION = 'IN_DISSOLUTION'
-    NO_FUTURE_EFFECTIVE_FILING = 'NO_FUTURE_EFFECTIVE_FILING'
+    FILING_WITHDRAWAL = 'FILING_WITHDRAWAL'
 
 
 class BusinessRequirement(str, Enum):
@@ -317,10 +317,10 @@ def get_allowable_filings_dict():
                     }
                 },
                 'noticeOfWithdrawal': {
+                    'businessRequirement': BusinessRequirement.NO_RESTRICTION,
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.BUSINESS_FROZEN,
-                                     BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING]
+                        'business': [BusinessBlocker.FILING_WITHDRAWAL]
                     }
                 }
             },
@@ -657,7 +657,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
         BusinessBlocker.AMALGAMATING_BUSINESS: False,
         BusinessBlocker.IN_DISSOLUTION: False,
-        BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING: False
+        BusinessBlocker.FILING_WITHDRAWAL: False
     }
 
     if not business:
@@ -680,8 +680,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
 
-    if not has_any_future_effective_filing(business):
-        business_blocker_checks[BusinessBlocker.NO_FUTURE_EFFECTIVE_FILING] = True
+    if has_notice_of_withdrawal_filing_blocker(business):
+        business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
 
     return business_blocker_checks
 
@@ -809,6 +809,20 @@ def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
     warning_matches = any(x for x in warning_types if x in blocker_warning_filings)
     return warning_matches
 
+def has_notice_of_withdrawal_filing_blocker(business: Business):
+    """Check if there are any blockers specific to Notice of Withdrawal."""
+    if business.admin_freeze:
+        return True
+
+    filing_statuses = [Filing.Status.DRAFT.value,
+                       Filing.Status.PENDING.value,
+                       Filing.Status.PENDING_CORRECTION.value,
+                       Filing.Status.ERROR.value]
+    blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
+    if any(blocker_filing_matches):
+        return True
+
+    return not has_any_future_effective_filing(business)
 
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
     """Get allowed type of filing types for the current user."""
