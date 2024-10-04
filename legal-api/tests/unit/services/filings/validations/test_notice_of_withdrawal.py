@@ -98,7 +98,14 @@ def test_validate_notice_of_withdrawal(session, test_name, is_temp_business, is_
     # create a notice of withdrawal filing json
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = 'noticeOfWithdrawal'
-    filing_json['filing']['business']['legalType'] = 'BC'
+    if is_temp_business:
+        temp_business_dict = {
+            "legalType": "BC",
+            "identifier": identifier
+        }
+        filing_json['filing']['business'] = temp_business_dict
+    else:
+        filing_json['filing']['business']['legalType'] = 'BC'
     filing_json['filing']['noticeOfWithdrawal'] = copy.deepcopy(NOTICE_OF_WITHDRAWAL)
     if has_filing_id:
         if is_filing_exist:
