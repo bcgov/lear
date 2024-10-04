@@ -267,12 +267,12 @@ def stage_2_process(app: Flask):
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
             batch_processing.trigger_date = datetime.utcnow() + stage_2_delay
             app.logger.debug(f'Changed Batch Processing with id: {batch_processing.id} step to level 2.')
-        else:
-            batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
-            batch_processing.notes = 'Moved back into good standing'
             if batch_processing.meta_data is None:
                 batch_processing.meta_data = {}
             batch_processing.meta_data = {**batch_processing.meta_data, 'stage_2_date': datetime.utcnow().isoformat()}
+        else:
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
+            batch_processing.notes = 'Moved back into good standing'
             app.logger.debug(f'Changed Batch Processing with id: {batch_processing.id} status to Withdrawn.')
         batch_processing.last_modified = datetime.utcnow()
         batch_processing.save()
@@ -331,6 +331,9 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             batch_processing.filing_id = filing.id
             batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
             batch_processing.status = BatchProcessing.BatchProcessingStatus.QUEUED
+            if batch_processing.meta_data is None:
+                batch_processing.meta_data = {}
+            batch_processing.meta_data = {**batch_processing.meta_data, 'stage_3_date': datetime.utcnow().isoformat()}
             batch_processing.save()
 
             await put_filing_on_queue(filing.id, app, qsm)
@@ -341,9 +344,6 @@ async def stage_3_process(app: Flask, qsm: QueueService):
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
-            if batch_processing.meta_data is None:
-                batch_processing.meta_data = {}
-            batch_processing.meta_data = {**batch_processing.meta_data, 'stage_3_date': datetime.utcnow().isoformat()}
             batch_processing.save()
 
     mark_eligible_batches_completed()
