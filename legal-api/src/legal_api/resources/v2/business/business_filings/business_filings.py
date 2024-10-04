@@ -449,8 +449,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing_type = json_input.get('filing', {}).get('header', {}).get('name')
         if not filing_type:
             return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
-        
-        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES and business is None and filing_type is not CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
+
+        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES and business is None \
+                and filing_type is not CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         return None, None
