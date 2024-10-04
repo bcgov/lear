@@ -54,7 +54,7 @@ def validate_withdrawn_filing(withdrawn_filing_id: int):
     msg = []
     
     # check whether the filing ID exists
-    withdrawn_filing:Filing = db.session.query(Filing). \
+    withdrawn_filing = db.session.query(Filing). \
                         filter(Filing.id == withdrawn_filing_id).one_or_none()
     if not withdrawn_filing:
         msg.append({'error':  babel('The filing to be withdrawn cannot be found.')})
@@ -62,13 +62,15 @@ def validate_withdrawn_filing(withdrawn_filing_id: int):
     
     # check whether the filing has a Future Effective Date(FED)
     now = dt.utcnow()
-    filing_effective_date = dt.fromisoformat(withdrawn_filing.effective_date)
+    filing_effective_date = dt.fromisoformat(str(withdrawn_filing.effective_date))
     if filing_effective_date < now:
-        msg.append({'error': babel('Only filings with a future effective date can be withdrawn.')})
+        msg.append({'error': babel(f'Only filings with a future effective date can be withdrawn.')})
 
     # check the filing status
     filing_status = withdrawn_filing.status
     if filing_status != Filing.Status.PAID.value:
-        msg.append({'error': babel('Only paid filings with a future effective date can be withdrawn')})
+        msg.append({'error': babel(f'Only paid filings with a future effective date can be withdrawn.')})
     
-    return msg
+    if msg:
+        return msg
+    return None
