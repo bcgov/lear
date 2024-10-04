@@ -205,7 +205,8 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
 
             batch_processing.meta_data = {
                 'overdueARs': ar_overdue,
-                'overdueTransition': transition_overdue
+                'overdueTransition': transition_overdue,
+                'stage_1_date': datetime.utcnow().isoformat()
             }
             batch_processing.save()
             app.logger.debug(f'New batch processing has been created with ID: {batch_processing.id}')
@@ -266,6 +267,9 @@ def stage_2_process(app: Flask):
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
             batch_processing.trigger_date = datetime.utcnow() + stage_2_delay
             app.logger.debug(f'Changed Batch Processing with id: {batch_processing.id} step to level 2.')
+            if batch_processing.meta_data is None:
+                batch_processing.meta_data = {}
+            batch_processing.meta_data = {**batch_processing.meta_data, 'stage_2_date': datetime.utcnow().isoformat()}
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
@@ -320,13 +324,16 @@ async def stage_3_process(app: Flask, qsm: QueueService):
             batch_processing.business_identifier,
             InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
         )
+        batch_processing.last_modified = datetime.utcnow()
         if eligible:
             filing = create_invountary_dissolution_filing(batch_processing.business_id)
             app.logger.debug(f'Created Involuntary Dissolution Filing with ID: {filing.id}')
             batch_processing.filing_id = filing.id
             batch_processing.step = BatchProcessing.BatchProcessingStep.DISSOLUTION
             batch_processing.status = BatchProcessing.BatchProcessingStatus.QUEUED
-            batch_processing.last_modified = datetime.utcnow()
+            if batch_processing.meta_data is None:
+                batch_processing.meta_data = {}
+            batch_processing.meta_data = {**batch_processing.meta_data, 'stage_3_date': datetime.utcnow().isoformat()}
             batch_processing.save()
 
             await put_filing_on_queue(filing.id, app, qsm)
@@ -337,7 +344,6 @@ async def stage_3_process(app: Flask, qsm: QueueService):
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = 'Moved back into good standing'
-            batch_processing.last_modified = datetime.utcnow()
             batch_processing.save()
 
     mark_eligible_batches_completed()
