@@ -317,7 +317,6 @@ def get_allowable_filings_dict():
                     }
                 },
                 'noticeOfWithdrawal': {
-                    'businessRequirement': BusinessRequirement.NO_RESTRICTION,
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.FILING_WITHDRAWAL]
