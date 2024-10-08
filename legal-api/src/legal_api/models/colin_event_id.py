@@ -15,6 +15,7 @@
 
 The ColinEventId class and Schema are held in this module.
 """
+from legal_api.models import BatchProcessing
 
 from .db import db
 
@@ -27,7 +28,10 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
     colin_event_id = db.Column('colin_event_id', db.Integer, unique=True, primary_key=True)
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
     batch_processing_id = db.Column('batch_processing_id', db.Integer, db.ForeignKey('batch_processing.id'))
-    batch_processing_step = db.Column('batch_processing_step', db.String(1000))
+    batch_processing_step = db.Column('batch_processing_step', db.Enum(BatchProcessing.BatchProcessingStep))
+
+    # relationships
+    batch_processing = db.relationship('BatchProcessing', lazy='select', uselist=False)
 
     def save(self):
         """Save the object to the database immediately."""
