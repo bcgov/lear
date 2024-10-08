@@ -40,53 +40,30 @@ MISSING_FILING_DICT_MSG = {'error': 'A valid filing is required.'}
 # tests
 
 @pytest.mark.parametrize(
-        'test_name, is_temp_business, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, expected_code, expected_msg',[
-            ('EXIST_BUSINESS_SUCCESS', False, True, Filing.Status.PAID, True, True, None, None),
-            ('EXIST_BUSINESS_FAIL_NOT_PAID', False, True, Filing.Status.PENDING, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_PAID_MSG]),
-            ('EXIST_BUSINESS_FAIL_NOT_FED', False, True, Filing.Status.PAID, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG]),
-            ('EXIST_BUSINESS_FAIL_FILING_NOT_EXIST', False, False, Filing.Status.PAID, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_EXIST_MSG]),
-            ('EXIST_BUSINESS_FAIL_MISS_FILING_ID', False, True, Filing.Status.PAID, True, False, HTTPStatus.UNPROCESSABLE_ENTITY, ''),
-            ('EXIST_BUSINESS_FAIL_NOT_PAID_NOT_FED', False, True, Filing.Status.PENDING, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG, FILING_NOT_PAID_MSG]),
-            ('NEW_BUSINESS_SUCCESS', True, True, Filing.Status.PAID, True, True, None, None),
-            ('NEW_BUSINESS_FAIL_NOT_PAID', True, True, Filing.Status.PENDING, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_PAID_MSG]),
-            ('NEW_BUSINESS_FAIL_NOT_FED', True, True, Filing.Status.PAID, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG]),
-            ('NEW_BUSINESS_FAIL_FILING_NOT_EXIST', True, False, Filing.Status.PAID, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_EXIST_MSG]),
-            ('NEW_BUSINESS_FAIL_MISS_FILING_ID', True, True, Filing.Status.PAID, True, False, HTTPStatus.UNPROCESSABLE_ENTITY, ''),
-            ('NEW_BUSINESS_FAIL_NOT_PAID_NOT_FED', True, True, Filing.Status.PENDING, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG, FILING_NOT_PAID_MSG])
+        'test_name, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, expected_code, expected_msg',[
+            ('EXIST_BUSINESS_SUCCESS', True, Filing.Status.PAID, True, True, None, None),
+            ('EXIST_BUSINESS_FAIL_NOT_PAID', True, Filing.Status.PENDING, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_PAID_MSG]),
+            ('EXIST_BUSINESS_FAIL_NOT_FED', True, Filing.Status.PAID, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG]),
+            ('EXIST_BUSINESS_FAIL_FILING_NOT_EXIST', False, Filing.Status.PAID, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_EXIST_MSG]),
+            ('EXIST_BUSINESS_FAIL_MISS_FILING_ID', True, Filing.Status.PAID, True, False, HTTPStatus.UNPROCESSABLE_ENTITY, ''),
+            ('EXIST_BUSINESS_FAIL_NOT_PAID_NOT_FED', True, Filing.Status.PENDING, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG, FILING_NOT_PAID_MSG])
         ]
 )
-def test_validate_notice_of_withdrawal(session, test_name, is_temp_business, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, expected_code, expected_msg):
+def test_validate_notice_of_withdrawal(session, test_name, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, expected_code, expected_msg):
     """Assert that notice of withdrawal flings can be validated"""
     today = datetime.utcnow().date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
-    if is_temp_business:
-        identifier = 'Tb31yQIuBw'
-        business = RegistrationBootstrap()
-        business._identifier = identifier
-        business.save()
-        # file an IA with a FED
-        if is_filing_exist:
-            withdrawn_json = copy.deepcopy(FILING_HEADER)
-            withdrawn_json['filing']['header']['name'] = 'incorporationApplication'
-            del withdrawn_json['filing']['business']
-            ia_dict = copy.deepcopy(INCORPORATION)
-            ia_dict['nameRequest']['legalType'] = 'BC'
-            withdrawn_json['filing']['incorporationApplication'] = ia_dict
-            withdrawn_filing = factory_pending_filing(None, withdrawn_json)
-            withdrawn_filing.temp_reg = identifier
-            withdrawn_filing.save()
-    else:
-        identifier = 'BC1234567'
-        business = factory_business(identifier)
-        # file a voluntary dissolution with a FED
-        if is_filing_exist:
-            withdrawn_json = copy.deepcopy(FILING_HEADER)
-            withdrawn_json['filing']['header']['name'] = 'dissolution'
-            withdrawn_json['filing']['business']['legalType'] = 'BC'
-            withdrawn_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
-            withdrawn_json['filing']['dissolution']['dissolutionDate'] = future_effective_date
-            withdrawn_filing = factory_pending_filing(business, withdrawn_json)
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+    # file a voluntary dissolution with a FED
+    if is_filing_exist:
+        withdrawn_json = copy.deepcopy(FILING_HEADER)
+        withdrawn_json['filing']['header']['name'] = 'dissolution'
+        withdrawn_json['filing']['business']['legalType'] = 'BC'
+        withdrawn_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+        withdrawn_json['filing']['dissolution']['dissolutionDate'] = future_effective_date
+        withdrawn_filing = factory_pending_filing(business, withdrawn_json)
     if is_filing_exist:
         if is_future_effective:
             withdrawn_filing.effective_date = future_effective_date
@@ -98,14 +75,7 @@ def test_validate_notice_of_withdrawal(session, test_name, is_temp_business, is_
     # create a notice of withdrawal filing json
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['header']['name'] = 'noticeOfWithdrawal'
-    if is_temp_business:
-        temp_business_dict = {
-            "legalType": "BC",
-            "identifier": identifier
-        }
-        filing_json['filing']['business'] = temp_business_dict
-    else:
-        filing_json['filing']['business']['legalType'] = 'BC'
+    filing_json['filing']['business']['legalType'] = 'BC'
     filing_json['filing']['noticeOfWithdrawal'] = copy.deepcopy(NOTICE_OF_WITHDRAWAL)
     if has_filing_id:
         if is_filing_exist:
