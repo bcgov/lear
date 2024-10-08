@@ -26,4 +26,3 @@ def downgrade():
     op.drop_constraint('colin_event_ids_batch_processing_id_fkey', 'colin_event_ids', type_='foreignkey')
     op.drop_column('colin_event_ids', 'batch_processing_id')
     op.drop_column('colin_event_ids', 'batch_processing_step')
-    op.execute("DROP TYPE batch_processing_step;")
