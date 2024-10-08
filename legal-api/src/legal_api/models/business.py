@@ -22,11 +22,11 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
+from sql_versioning import Versioned
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql import and_, exists, func, not_, text
-from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -40,7 +40,6 @@ from .db import db  # noqa: I001
 from .party import Party
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
 
-
 from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
 from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
@@ -50,7 +49,7 @@ from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; 
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly
@@ -471,10 +470,40 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
             one_or_none()
         return find_in_batch_processing is not None
 
+
     def save(self):
-        """Render a Business to the local cache."""
+        assert hasattr(Business, '__versioning_manager__'), "Versioning manager not found for Business!"
+        current_session_versioning_type = db.session().info.get('_versioning_locked')
+
         db.session.add(self)
-        db.session.commit()
+        try:
+            db.session.commit()
+            print(f"Save - After commit, Business object: {self}, __versioned__: {getattr(self, '__versioned__', 'Not set')}")
+        except Exception as e:
+            print(f"Error during save: {str(e)}")
+            db.session.rollback()
+            raise
+        
+        if current_session_versioning_type == 'new':
+            print('Save - new versioning')
+            if hasattr(self, '__versioned_cls__'):
+                latest_version = db.session.query(self.__versioned_cls__).filter(
+                    self.__versioned_cls__.id == self.id,
+                    self.__versioned_cls__.end_transaction_id.is_(None)
+                ).order_by(self.__versioned_cls__.transaction_id.desc()).first()
+                if latest_version:
+                    print(f"\033[31mNew versioning transaction id: {latest_version.transaction_id}\033[0m")
+                else:
+                    print("\033[31mNo new version created\033[0m")
+        elif current_session_versioning_type == 'old':
+            print('Save - old versioning')
+            if hasattr(self, 'versions'):
+                if self.versions:
+                    print(f"\033[31mOld versioning transaction id: {self.versions[-1].transaction_id}\033[0m")
+                else:
+                    print("\033[31mNo old version created\033[0m")
+        else:
+            print('Save - no versioning used')
 
     def delete(self):
         """Businesses cannot be deleted.
@@ -845,7 +874,6 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
 
         return True
 
-
 ASSOCIATION_TYPE_DESC: Final = {
     Business.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
     Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
@@ -854,3 +882,4 @@ ASSOCIATION_TYPE_DESC: Final = {
     Business.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: 'Sole Proprietorship',
     Business.AssociationTypes.SP_DOING_BUSINESS_AS.value: 'Sole Proprietorship (DBA)'
 }
+

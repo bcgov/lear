@@ -18,9 +18,9 @@ Currently this only provides API versioning information
 import pycountry
 
 from .db import db
+from sql_versioning import Versioned
 
-
-class Address(db.Model):  # pylint: disable=too-many-instance-attributes
+class Address(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the business addresses.
 
     Every business is required to have 2 addresses on record, DELIVERY and MAILING.
@@ -60,9 +60,16 @@ class Address(db.Model):  # pylint: disable=too-many-instance-attributes
     #                                            foreign_keys=[business_id])
 
     def save(self):
-        """Render a Business to the local cache."""
-        db.session.add(self)
-        db.session.commit()
+        """Render an Address to the local cache."""
+        print(f"Save - Address object: {self}, __versioned__: {getattr(self, '__versioned__', 'Not set')}")
+        try:
+            db.session.add(self)
+            db.session.commit()
+            print(f"Save - After commit, Address object: {self}, __versioned__: {getattr(self, '__versioned__', 'Not set')}")
+        except Exception as e:
+            print(f"Error during save: {str(e)}")
+            db.session.rollback()
+            raise
 
     @property
     def json(self):
