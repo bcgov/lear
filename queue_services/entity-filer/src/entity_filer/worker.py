@@ -31,7 +31,17 @@ import uuid
 from typing import Dict
 
 import nats
+from entity_queue_common.messages import publish_email_message
+from entity_queue_common.service import QueueServiceManager
+from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
+from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
+from legal_api import db
+from legal_api.core import Filing as FilingCore
+from legal_api.models import Business, Filing
+from legal_api.models.db import init_db, versioning_manager
+from legal_api.services import Flags
+from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
@@ -65,16 +75,6 @@ from entity_filer.filing_processors import (
     transition,
 )
 from entity_filer.filing_processors.filing_components import business_profile, name_request
-from entity_queue_common.messages import publish_email_message
-from entity_queue_common.service import QueueServiceManager
-from entity_queue_common.service_utils import FilingException, QueueException, logger
-from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
-from legal_api import db
-from legal_api.core import Filing as FilingCore
-from legal_api.models import Business, Filing
-from legal_api.models.db import init_db, versioning_manager
-from legal_api.services import Flags
-from legal_api.utils.datetime import datetime, timezone
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
