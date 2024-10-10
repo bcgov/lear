@@ -19,12 +19,13 @@ from http import HTTPStatus
 from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
+from sql_versioning import Versioned
 
 from .db import db
 from .share_series import ShareSeries  # noqa: F401 pylint: disable=unused-import
 
 
-class ShareClass(db.Model):  # pylint: disable=too-many-instance-attributes
+class ShareClass(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages the share classes."""
 
     __versioned__ = {}

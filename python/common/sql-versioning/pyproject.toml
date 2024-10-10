@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "sql-versioning"
+version = "0.1.0"
+description = ""
+authors = ["Hongjing Chen <Hongjing.Chen@gov.bc.ca>"]
+readme = "README.md"
+packages = [{include = "sql_versioning"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+sqlalchemy = "1.4.44"
+
+
+[tool.poetry.group.dev.dependencies]
+psycopg2-binary = "^2.9.9"
+pytest = "^8.3.3"
+isort = "^5.13.2"
+lovely-pytest-docker = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

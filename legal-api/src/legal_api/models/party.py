@@ -20,12 +20,15 @@ from http import HTTPStatus
 from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
+from sql_versioning import Versioned
 
 from .db import db  # noqa: I001
+
+
 from .address import Address  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
-class Party(db.Model):  # pylint: disable=too-many-instance-attributes
+class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the parties (people and organizations)."""
 
     class PartyTypes(Enum):

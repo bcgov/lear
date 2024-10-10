@@ -32,6 +32,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from sql_versioning import Versioned
 
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
@@ -50,7 +51,7 @@ from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; 
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly

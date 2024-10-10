@@ -18,9 +18,10 @@ import uuid
 
 from datedelta import datedelta
 from freezegun import freeze_time
+
 from legal_api.models import Address, Batch, BatchProcessing, Business, Filing, Furnishing, db
 from legal_api.models.colin_event_id import ColinEventId
-from sqlalchemy_continuum import versioning_manager
+from legal_api.models.db import versioning_manager
 
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
