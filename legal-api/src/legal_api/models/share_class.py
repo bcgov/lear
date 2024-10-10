@@ -17,9 +17,9 @@ from __future__ import annotations
 from http import HTTPStatus
 
 from sqlalchemy import event
+from sql_versioning import Versioned
 
 from legal_api.exceptions import BusinessException
-from sql_versioning import Versioned
 
 from .db import db
 from .share_series import ShareSeries  # noqa: F401 pylint: disable=unused-import

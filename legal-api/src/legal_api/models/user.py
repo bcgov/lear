@@ -20,10 +20,10 @@ from datetime import datetime
 from enum import auto
 
 from flask import current_app
+from sql_versioning import Versioned
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
-from sql_versioning import Versioned
 
 from .db import db
 

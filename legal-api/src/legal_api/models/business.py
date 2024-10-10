@@ -27,12 +27,12 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql import and_, exists, func, not_, text
 from sqlalchemy_continuum import version_class
+from sql_versioning import Versioned
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from sql_versioning import Versioned
 
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
