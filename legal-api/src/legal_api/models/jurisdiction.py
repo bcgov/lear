@@ -14,11 +14,13 @@
 """This module holds the data about jurisdiction."""
 from __future__ import annotations
 
+from sql_versioning import Versioned
+
 from .db import db
 from .filing import Filing
 
 
-class Jurisdiction(db.Model):  # pylint: disable=too-many-instance-attributes
+class Jurisdiction(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages the jurisdiction."""
 
     __versioned__ = {}

@@ -22,11 +22,13 @@ from enum import auto
 from sqlalchemy import or_
 from sqlalchemy_continuum import version_class
 
+from sql_versioning import Versioned
+
 from ..utils.base import BaseEnum
 from .db import db
 
 
-class Amalgamation(db.Model):  # pylint: disable=too-many-instance-attributes
+class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages the amalgamations."""
 
     # pylint: disable=invalid-name

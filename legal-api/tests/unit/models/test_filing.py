@@ -36,10 +36,10 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
 )
 from sqlalchemy.exc import DataError
-from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User
+from legal_api.models.db import versioning_manager
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
 from tests.unit.models import (

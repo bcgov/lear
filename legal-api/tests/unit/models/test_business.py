@@ -18,26 +18,33 @@ Test-Suite to ensure that the Business Model is working as expected.
 """
 import copy
 from datetime import datetime, timedelta
-from flask import current_app
 from unittest.mock import patch
 
 import datedelta
 import pytest
-from sqlalchemy_continuum import versioning_manager
+from flask import current_app
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Batch, BatchProcessing, Business, Filing, Party, PartyRole, db
+from legal_api.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    Batch,
+    BatchProcessing,
+    Business,
+    Filing,
+    Party,
+    PartyRole,
+    db,
+)
+from legal_api.models.db import versioning_manager
 from legal_api.services import flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
 from tests.unit import has_expected_date_str_format
-from tests.unit.models import (
-    factory_party_role, 
-    factory_batch, 
-    factory_business as factory_business_from_tests,
-    factory_completed_filing
-)
+from tests.unit.models import factory_batch
+from tests.unit.models import factory_business as factory_business_from_tests
+from tests.unit.models import factory_completed_filing, factory_party_role
 
 
 def factory_business(designation: str = '001'):

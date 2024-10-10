@@ -35,9 +35,9 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
-from sqlalchemy_continuum import versioning_manager
 
 from legal_api.models import db  # noqa:I001
+from legal_api.models.db import versioning_manager
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
 from tests.unit.models import factory_business, factory_completed_filing  # noqa:E501,I001

@@ -31,19 +31,9 @@ import uuid
 from typing import Dict
 
 import nats
-from entity_queue_common.messages import publish_email_message
-from entity_queue_common.service import QueueServiceManager
-from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
-from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
-from legal_api import db
-from legal_api.core import Filing as FilingCore
-from legal_api.models import Business, Filing
-from legal_api.services import Flags
-from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
-from sqlalchemy_continuum import versioning_manager
 
 from entity_filer import config
 from entity_filer.filing_meta import FilingMeta, json_serial
@@ -75,6 +65,16 @@ from entity_filer.filing_processors import (
     transition,
 )
 from entity_filer.filing_processors.filing_components import business_profile, name_request
+from entity_queue_common.messages import publish_email_message
+from entity_queue_common.service import QueueServiceManager
+from entity_queue_common.service_utils import FilingException, QueueException, logger
+from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
+from legal_api import db
+from legal_api.core import Filing as FilingCore
+from legal_api.models import Business, Filing
+from legal_api.models.db import init_db, versioning_manager
+from legal_api.services import Flags
+from legal_api.utils.datetime import datetime, timezone
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
@@ -83,7 +83,7 @@ gcp_queue = GcpQueue()
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
-db.init_app(FLASK_APP)
+init_db(FLASK_APP)
 gcp_queue.init_app(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):
