@@ -17,10 +17,12 @@ Currently this only provides API versioning information
 """
 
 
+from sql_versioning import Versioned
+
 from .db import db
 
 
-class Office(db.Model):  # pylint: disable=too-few-public-methods
+class Office(db.Model, Versioned):  # pylint: disable=too-few-public-methods
     """This is the object mapping for the Office entity.
 
     An office is associated with one business, and 0...n addresses

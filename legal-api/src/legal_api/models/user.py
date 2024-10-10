@@ -23,6 +23,7 @@ from flask import current_app
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
+from sql_versioning import Versioned
 
 from .db import db
 
@@ -47,7 +48,7 @@ class UserRoles(BaseEnum):
     public_user = auto()
 
 
-class User(db.Model):
+class User(db.Model, Versioned):
     """Used to hold the audit information for a User of this service."""
 
     __versioned__ = {}

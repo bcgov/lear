@@ -19,7 +19,6 @@ import uuid
 from datedelta import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
-from sqlalchemy_continuum import versioning_manager
 
 from legal_api.exceptions.error_messages import ErrorCode
 from legal_api.models import (
@@ -43,6 +42,7 @@ from legal_api.models import (
     db,
 )
 from legal_api.models.colin_event_id import ColinEventId
+from legal_api.models.db import versioning_manager
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 

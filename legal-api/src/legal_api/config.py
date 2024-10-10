@@ -58,6 +58,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     Used as the base for all the other configurations.
     """
 
+    SERVICE_NAME = 'legal-api'
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
