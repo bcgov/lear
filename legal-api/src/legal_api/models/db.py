@@ -19,16 +19,15 @@ from datetime import datetime
 
 from flask import current_app
 from flask_sqlalchemy import SignallingSession, SQLAlchemy
+from sql_versioning import TransactionManager, debug
+from sql_versioning import disable_versioning as _new_disable_versioning
+from sql_versioning import enable_versioning as _new_enable_versioning
+from sql_versioning import version_class as _new_version_class
 from sqlalchemy import event, orm
 from sqlalchemy.orm import Session, mapper
 from sqlalchemy_continuum import make_versioned
 from sqlalchemy_continuum import version_class as _old_version_class
 from sqlalchemy_continuum.manager import VersioningManager
-
-from sql_versioning import TransactionManager, debug
-from sql_versioning import disable_versioning as _new_disable_versioning
-from sql_versioning import enable_versioning as _new_enable_versioning
-from sql_versioning import version_class as _new_version_class
 
 
 # by convention in the Flask community these are lower case,

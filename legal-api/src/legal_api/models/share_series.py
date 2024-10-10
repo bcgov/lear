@@ -15,8 +15,8 @@
 
 from http import HTTPStatus
 
-from sqlalchemy import event
 from sql_versioning import Versioned
+from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
 

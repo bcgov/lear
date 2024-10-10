@@ -17,15 +17,13 @@ from __future__ import annotations
 from enum import Enum
 from http import HTTPStatus
 
-from sqlalchemy import event
 from sql_versioning import Versioned
+from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
 
-from .db import db  # noqa: I001
-
-
 from .address import Address  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
+from .db import db  # noqa: I001
 
 
 class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes

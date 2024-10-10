@@ -19,10 +19,9 @@ from __future__ import annotations
 
 from enum import auto
 
+from sql_versioning import Versioned
 from sqlalchemy import or_
 from sqlalchemy_continuum import version_class
-
-from sql_versioning import Versioned
 
 from ..utils.base import BaseEnum
 from .db import db

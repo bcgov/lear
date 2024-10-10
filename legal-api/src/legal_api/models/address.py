@@ -16,7 +16,6 @@
 Currently this only provides API versioning information
 """
 import pycountry
-
 from sql_versioning import Versioned
 
 from .db import db

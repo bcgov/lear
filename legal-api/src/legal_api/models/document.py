@@ -20,9 +20,8 @@ from __future__ import annotations
 
 from enum import Enum
 
-from sqlalchemy import desc
-
 from sql_versioning import Versioned
+from sqlalchemy import desc
 
 from .db import db
 
