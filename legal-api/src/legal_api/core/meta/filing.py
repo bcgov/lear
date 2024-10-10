@@ -766,7 +766,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             continuation_in = filing.meta_data.get('continuationIn', {})
             if file_key := continuation_in.get('affidavitFileKey'):
                 outputs.append({
-                    'name': 'Director Affidavit',
+                    'name': 'Unlimited Liability Corporation Information',
                     'url': f'{url_prefix}/{file_key}'
                 })
             if authorization_files := continuation_in.get('authorizationFiles'):

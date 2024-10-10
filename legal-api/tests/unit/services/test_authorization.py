@@ -27,11 +27,23 @@ import jwt as pyjwt
 import pytest
 from unittest.mock import patch, PropertyMock, MagicMock
 from flask import jsonify
-from registry_schemas.example_data import AGM_EXTENSION, AGM_LOCATION_CHANGE, ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, \
-    CORRECTION_AR, CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, \
-    CONTINUATION_IN, CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
+from registry_schemas.example_data import (
+    AGM_EXTENSION,
+    AGM_LOCATION_CHANGE,
+    ALTERATION_FILING_TEMPLATE,
+    ANNUAL_REPORT,
+    CHANGE_OF_REGISTRATION_TEMPLATE,
+    CONSENT_CONTINUATION_OUT,
+    CONTINUATION_IN,
+    CONTINUATION_OUT,
+    CORRECTION_AR,
+    DISSOLUTION,
+    FILING_TEMPLATE,
+    PUT_BACK_ON,
+    RESTORATION,
+)
 
-from legal_api.models import Address, Filing, AmalgamatingBusiness
+from legal_api.models import Address, Filing
 from legal_api.models.business import Business, PartyRole, User
 
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, PUBLIC_USER, \
@@ -1682,7 +1694,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
         # active business - general user
         ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         BLOCKER_FILING_STATUSES, expected_lookup([ FilingKey.TRANSITION, ])),
+         BLOCKER_FILING_STATUSES, expected_lookup([FilingKey.TRANSITION, ])),
         ('general_user_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'general', [BASIC_USER],
          BLOCKER_FILING_STATUSES,
          expected_lookup_continue_in_corps([FilingKey.TRANSITION, ])),
@@ -2442,17 +2454,17 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                                               filing_status=filing_status,
                                               filing_dict=filing_dict,
                                               filing_type=filing_type)
-            filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing.id)
+            filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing)
             assert filing_types == expected
 
 
 @pytest.mark.parametrize('filing_status, expected', [
     (Filing.Status.DRAFT.value, True),
     (Filing.Status.CHANGE_REQUESTED.value, True),
+    (Filing.Status.APPROVED.value, True),
     (Filing.Status.PENDING.value, False),
     (Filing.Status.PAID.value, False),
     (Filing.Status.AWAITING_REVIEW.value, False),
-    (Filing.Status.APPROVED.value, False),
     (Filing.Status.REJECTED.value, False),
     (Filing.Status.COMPLETED.value, False),
     (Filing.Status.CORRECTED.value, False),
@@ -2479,7 +2491,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                                           filing_type=filing_type)
         filing.save()
 
-        filing_types = is_allowed(None, Business.State.ACTIVE, filing_type, 'CBEN', jwt, None, filing.id)
+        filing_types = is_allowed(None, Business.State.ACTIVE, filing_type, 'CBEN', jwt, None, filing)
         assert filing_types == expected
 
 
@@ -2685,6 +2697,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
+
 @pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,blocker_status,expected',
     [
@@ -2743,17 +2756,17 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE],
          None,
          expected_lookup([
-                          FilingKey.ADMN_FRZE,
-                          FilingKey.ALTERATION,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.CORRCTN,
-                          FilingKey.COURT_ORDER,
-                          FilingKey.ADM_DISS,
-                          FilingKey.REGISTRARS_NOTATION,
-                          FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+             FilingKey.ADMN_FRZE,
+             FilingKey.ALTERATION,
+             FilingKey.AR_CORPS,
+             FilingKey.COA_CORPS,
+             FilingKey.COD_CORPS,
+             FilingKey.CORRCTN,
+             FilingKey.COURT_ORDER,
+             FilingKey.ADM_DISS,
+             FilingKey.REGISTRARS_NOTATION,
+             FilingKey.REGISTRARS_ORDER,
+             FilingKey.TRANSITION])),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], None, []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE], None,
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -2774,11 +2787,11 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                           FilingKey.SPECIAL_RESOLUTION])),
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], None,
          expected_lookup([
-                          FilingKey.ALTERATION,
-                          FilingKey.AR_CORPS,
-                          FilingKey.COA_CORPS,
-                          FilingKey.COD_CORPS,
-                          FilingKey.TRANSITION])),
+             FilingKey.ALTERATION,
+             FilingKey.AR_CORPS,
+             FilingKey.COA_CORPS,
+             FilingKey.COD_CORPS,
+             FilingKey.TRANSITION])),
         ('general_user_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'general', [BASIC_USER],
          None,
          expected_lookup([FilingKey.ALTERATION,
@@ -2844,9 +2857,9 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
                                          filing_status='DRAFT')
             elif blocker_status == 'FUTURE_EFFECTIVE':
                 create_incomplete_filing(business=business,
-                                          filing_name='unknownFiling',
-                                          filing_status='PAID',
-                                          is_future_effective=True)
+                                         filing_name='unknownFiling',
+                                         filing_status='PAID',
+                                         is_future_effective=True)
 
             allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected

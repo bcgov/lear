@@ -64,7 +64,7 @@ from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
 from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from tests import api_v2, integration_payment
+from tests import integration_payment
 from tests.unit.models import (  # noqa:E501,I001
     factory_business,
     factory_business_mailing_address,
@@ -939,6 +939,7 @@ def test_deleting_filings_deletion_locked(session, client, jwt, legal_type, dele
     else:
         assert rv.status_code == HTTPStatus.OK
 
+
 def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     """Assert that updating a missing filing fails."""
     import copy
@@ -1429,50 +1430,53 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
     assert rv.json.get('errors')[0].get('error') == error
 
 
-def test_resubmit_filing(session, client, jwt, mocker):
-    """Assert that the a filing can be resubmitted."""
-    # filing with awaiting review
+@pytest.mark.parametrize(
+    'filing_status, review_status',
+    [
+        (Filing.Status.DRAFT.value, None),
+        (Filing.Status.CHANGE_REQUESTED.value, ReviewStatus.CHANGE_REQUESTED),
+        (Filing.Status.APPROVED.value, ReviewStatus.APPROVED),
+    ]
+)
+def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, filing_status, review_status):
+    """Assert that the a filing can be submitted/resubmitted."""
     identifier = 'Tb31yQIuBw'
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
     temp_reg.save()
     json_data = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
-    filing = factory_pending_filing(None, json_data)
+    filing = factory_filing(None, json_data)
     filing.temp_reg = identifier
-    filing.payment_completion_date = datetime.now(timezone.utc)
-    filing._status = Filing.Status.AWAITING_REVIEW.value
+    filing._status = filing_status
     filing.save()
 
-    review = Review()
-    review.filing_id = filing.id
-    review.nr_number = json_data['filing']['continuationIn']['nameRequest']['nrNumber']
-    review.identifier = json_data['filing']['continuationIn']['foreignJurisdiction']['identifier']
-    review.completing_party = 'completing party'
-    review.status = ReviewStatus.AWAITING_REVIEW
-    review.save()
+    if filing_status != Filing.Status.DRAFT.value:
+        review = Review()
+        review.filing_id = filing.id
+        review.nr_number = json_data['filing']['continuationIn']['nameRequest']['nrNumber']
+        review.identifier = json_data['filing']['continuationIn']['foreignJurisdiction']['identifier']
+        review.contact_details = json_data['filing']['continuationIn']['contactPoint']['email']
+        review.status = review_status
 
-    # filing with change requested
-    staff = User(username='staff_username',
-                 firstname='staff firstname',
-                 middlename='staff middlename',
-                 lastname='staff lastname',
-                 sub='sub',
-                 iss='iss',
-                 idp_userid='123',
-                 login_source='IDIR')
-    staff.save()
+        # filing with change requested
+        staff = User(username='staff_username',
+                     firstname='staff firstname',
+                     middlename='staff middlename',
+                     lastname='staff lastname',
+                     sub='sub',
+                     iss='iss',
+                     idp_userid='123',
+                     login_source='IDIR')
+        staff.save()
 
-    change_requested = ReviewResult()
-    change_requested.review_id = review.id
-    change_requested.comments = 'do the change'
-    change_requested.status = ReviewStatus.CHANGE_REQUESTED
-    change_requested.reviewer_id = staff.id
-    change_requested.submission_date = review.submission_date
-    review.review_results.append(change_requested)
-    review.status = ReviewStatus.CHANGE_REQUESTED
-    review.save()
-
-    filing.set_review_decision(Filing.Status.CHANGE_REQUESTED.value)
+        review_result = ReviewResult()
+        review_result.review_id = review.id
+        review_result.comments = 'do it'
+        review_result.status = review_status
+        review_result.reviewer_id = staff.id
+        review_result.submission_date = review.submission_date
+        review.review_results.append(review_result)
+        review.save()
 
     # test resubmit
     mocker.patch(
@@ -1484,6 +1488,23 @@ def test_resubmit_filing(session, client, jwt, mocker):
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
                  return_value=[])
 
+    if filing_status == Filing.Status.APPROVED.value:
+        del json_data['filing']['continuationIn']['business']
+        del json_data['filing']['continuationIn']['authorization']
+        del json_data['filing']['continuationIn']['nameRequest']
+        del json_data['filing']['continuationIn']['foreignJurisdiction']
+
+        requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
+                           json={'id': 21322,
+                                 'statusCode': 'COMPLETED',
+                                 'isPaymentActionRequired': True},
+                           status_code=HTTPStatus.CREATED)
+    else:
+        del json_data['filing']['header']['certifiedBy']
+        del json_data['filing']['continuationIn']['offices']
+        del json_data['filing']['continuationIn']['parties']
+        del json_data['filing']['continuationIn']['shareStructure']
+
     json_data['filing']['header']['effectiveDate'] = (
         datetime.now(timezone.utc) + datedelta.datedelta(days=1)).isoformat()
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filing.id}',
@@ -1492,38 +1513,52 @@ def test_resubmit_filing(session, client, jwt, mocker):
 
     # validate
     assert rv.status_code == HTTPStatus.ACCEPTED
-    assert rv.json['filing']['header']['isPaymentActionRequired'] == False
-    assert rv.json['filing']['header']['status'] == Filing.Status.AWAITING_REVIEW.value
+    if filing_status == Filing.Status.APPROVED.value:
+        assert rv.json['filing']['header']['isPaymentActionRequired'] == True
+        assert rv.json['filing']['header']['status'] == Filing.Status.PENDING.value
+        assert rv.json['filing']['continuationIn']['isApproved'] == True
+    else:
+        assert rv.json['filing']['header']['isPaymentActionRequired'] == False
+        assert rv.json['filing']['header']['status'] == Filing.Status.AWAITING_REVIEW.value
 
-    review = Review.get_review(rv.json['filing']['header']['filingId'])
-    assert review.status == ReviewStatus.RESUBMITTED
-    review_results = ReviewResult.get_review_results(review.id)
-    assert len(review_results) == 1
+        review = Review.get_review(rv.json['filing']['header']['filingId'])
+        review_results = ReviewResult.get_review_results(review.id)
+        if filing_status == Filing.Status.DRAFT.value:
+            assert review.status == ReviewStatus.AWAITING_REVIEW
+            assert len(review_results) == 0
+        else:
+            assert review.status == ReviewStatus.RESUBMITTED
+            assert len(review_results) == 1
+            assert review_results[0].submission_date == review.submission_date
 
-    resubmitted = review_results[0]
-    assert resubmitted.submission_date == review.submission_date
 
-
-def test_resubmit_filing_failed(session, client, jwt):
-    """Assert that the a filing can be resubmitted when in awaiting review."""
+@pytest.mark.parametrize(
+    'filing_status, review_status',
+    [
+        (Filing.Status.AWAITING_REVIEW.value, ReviewStatus.AWAITING_REVIEW),
+        (Filing.Status.REJECTED.value, ReviewStatus.REJECTED),
+        (Filing.Status.AWAITING_REVIEW.value, ReviewStatus.RESUBMITTED),
+    ]
+)
+def test_resubmit_filing_failed(session, client, jwt, filing_status, review_status):
+    """Assert that the a filing can be resubmitted when in awaiting review/rejected."""
     # filing with awaiting review
     identifier = 'Tb31yQIuBw'
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
     temp_reg.save()
     json_data = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
-    filing = factory_pending_filing(None, json_data)
+    filing = factory_filing(None, json_data)
     filing.temp_reg = identifier
-    filing.payment_completion_date = datetime.now(timezone.utc)
-    filing._status = Filing.Status.AWAITING_REVIEW.value
+    filing._status = filing_status
     filing.save()
 
     review = Review()
     review.filing_id = filing.id
     review.nr_number = json_data['filing']['continuationIn']['nameRequest']['nrNumber']
     review.identifier = json_data['filing']['continuationIn']['foreignJurisdiction']['identifier']
-    review.completing_party = 'completing party'
-    review.status = ReviewStatus.AWAITING_REVIEW
+    review.contact_details = json_data['filing']['continuationIn']['contactPoint']['email']
+    review.status = review_status
     review.save()
 
     # test resubmit

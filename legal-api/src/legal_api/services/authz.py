@@ -488,17 +488,17 @@ def is_allowed(business: Business,
                legal_type: str,
                jwt: JwtManager,
                sub_filing_type: str = None,
-               filing_id: int = None):
+               filing: Filing = None):
     """Is allowed to do filing."""
     is_ignore_draft_blockers = False
 
-    if filing_id:
-        if filing := Filing.find_by_id(filing_id):
-            if filing.status not in [Filing.Status.DRAFT.value, Filing.Status.CHANGE_REQUESTED.value]:
-                return False  # common for all filings
-
-            if filing.status == Filing.Status.DRAFT.value:
-                is_ignore_draft_blockers = True
+    if filing:
+        if filing.status not in [Filing.Status.DRAFT.value,
+                                 Filing.Status.CHANGE_REQUESTED.value,
+                                 Filing.Status.APPROVED.value]:
+            return False  # common for all filings
+        else:
+            is_ignore_draft_blockers = True
 
     # Special case: handiling authorization for amalgamation application
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
@@ -696,7 +696,10 @@ def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = Fals
                        Filing.Status.ERROR.value,
                        Filing.Status.PAID.value]
     if not is_ignore_draft_blockers:
-        filing_statuses.append(Filing.Status.DRAFT.value)
+        filing_statuses.extend([Filing.Status.DRAFT.value,
+                                Filing.Status.AWAITING_REVIEW.value,
+                                Filing.Status.CHANGE_REQUESTED.value,
+                                Filing.Status.APPROVED.value])
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
     if any(blocker_filing_matches):
         return True

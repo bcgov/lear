@@ -661,7 +661,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @filing_json.setter
     def filing_json(self, json_data: dict):
         """Property containing the filings data."""
-        if self.locked and not self.in_change_requested_status:
+        if self.locked:
             self._raise_default_lock_exception()
 
         try:
@@ -676,7 +676,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         self._filing_sub_type = self.get_filings_sub_type(self._filing_type, json_data)
 
-        if self._payment_token and not self.in_change_requested_status:
+        if self._payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
             if not valid:
                 self._filing_type = None
@@ -777,11 +777,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def is_amalgamation_application(self):
         """Is this an amalgamation application filing."""
         return self.filing_type == Filing.FILINGS['amalgamationApplication'].get('name')
-
-    @property
-    def in_change_requested_status(self):
-        """Filing is in change requested status."""
-        return self._status == Filing.Status.CHANGE_REQUESTED.value
 
     @hybrid_property
     def comments_count(self):
@@ -1029,8 +1024,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_future_effective_filing_ids() -> List[int]:
         """Return filing ids which should be effective now."""
         filings = db.session.query(Filing.id). \
-            filter(Filing._status.in_([Filing.Status.PAID.value,
-                                       Filing.Status.APPROVED.value])). \
+            filter(Filing._status == Filing.Status.PAID.value). \
             filter(Filing.effective_date <= datetime.now(timezone.utc)).all()
         return [filing.id for filing in filings]
 
@@ -1110,7 +1104,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     def reset_filing_to_draft(self):
         """Reset Filing to draft and remove payment token."""
-        self._status = Filing.Status.DRAFT.value
+        self._status = (Filing.Status.APPROVED.value
+                        if self.FILINGS[self._filing_type].get('staffApprovalRequired', False)
+                        else Filing.Status.DRAFT.value)
         self._payment_token = None
         self.save()
 
@@ -1124,16 +1120,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 status_code=HTTPStatus.FORBIDDEN
             )
         self._status = filing_status
-        if (self._status == Filing.Status.APPROVED.value and
-                self.effective_date < datetime.now(timezone.utc)):  # if not future effective
-            self.effective_date = datetime.now(timezone.utc)
         self.save()
 
-    def resubmit_filing_to_awaiting_review(self, submission_date):
-        """Resubmit filing to awaiting review."""
-        if self._status != Filing.Status.CHANGE_REQUESTED.value:
+    def submit_filing_to_awaiting_review(self, submission_date):
+        """Submit filing to awaiting review."""
+        if self._status not in [Filing.Status.DRAFT.value,
+                                Filing.Status.CHANGE_REQUESTED.value]:
             raise BusinessException(
-                error='Cannot resubmit this filing to awaiting review status.',
+                error='Cannot submit this filing to awaiting review status.',
                 status_code=HTTPStatus.FORBIDDEN
             )
         self._status = Filing.Status.AWAITING_REVIEW.value
@@ -1182,7 +1176,7 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     if (filing._status in [Filing.Status.AWAITING_REVIEW.value,
                            Filing.Status.CHANGE_REQUESTED.value,
                            Filing.Status.REJECTED.value] or
-            (filing._status == Filing.Status.APPROVED.value and not filing.transaction_id)):
+            (filing._status == Filing.Status.APPROVED.value and not filing.payment_token)):
         return  # should not override status in the review process
 
     # skip this status updater if the flag is set

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """API endpoints for retrieving review data."""
-from datetime import datetime, timezone
 from http import HTTPStatus
 
 from flask import current_app, g, jsonify, request
@@ -37,7 +36,7 @@ def get_reviews():
         end_effective_date=request.args.get('endEffectiveDate', None),
         nr_number=request.args.get('nrNumber', None),
         identifier=request.args.get('identifier', None),
-        completing_party=request.args.get('completingParty', None),
+        contact_details=request.args.get('officeEmail', None),
         status=request.args.getlist('status', None),
         submitted_sort_by=request.args.get('sortBy', None),
         submitted_sort_order=request.args.get('sortDesc', None),
@@ -94,15 +93,15 @@ def get_mapped_column(submitted_sort_by):
     if submitted_sort_by:
         if submitted_sort_by == 'nrNumber':
             mapped_column = 'nr_number'
-        if submitted_sort_by == 'completingParty':
-            mapped_column = 'completing_party'
-        if submitted_sort_by == 'submissionDate':
+        elif submitted_sort_by == 'officeEmail':
+            mapped_column = 'contact_details'
+        elif submitted_sort_by == 'submissionDate':
             mapped_column = 'submission_date'
-        if submitted_sort_by == 'status':
+        elif submitted_sort_by == 'status':
             mapped_column = 'status'
-        if submitted_sort_by == 'identifier':
+        elif submitted_sort_by == 'identifier':
             mapped_column = 'identifier'
-        if submitted_sort_by == 'futureEffectiveDate':
+        elif submitted_sort_by == 'futureEffectiveDate':
             mapped_column = 'effective_date'
     return mapped_column
 
@@ -162,13 +161,6 @@ def save_review(review_id: int):
         {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
         current_app.config.get('NATS_EMAILER_SUBJECT')
     )
-
-    if (filing.status == Filing.Status.APPROVED.value and
-            filing.effective_date <= datetime.now(timezone.utc)):
-        # filer notification
-        queue.publish_json(
-            {'filing': {'id': filing.id}},
-            current_app.config.get('NATS_FILER_SUBJECT'))
 
     return jsonify({'message': 'Review saved.'}), HTTPStatus.CREATED
 
