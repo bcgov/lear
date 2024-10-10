@@ -102,6 +102,27 @@ def get_completed_filings_for_colin():
         'total': pending_filings.get('total')
     }), HTTPStatus.OK
 
+@bp.route('/internal/batch_processings', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.colin])
+def get_eligible_batch_processings_for_colin():
+    """Get batch processings by status formatted in json."""
+    batch_processings = []
+
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 20))
+    pending_batch_processings = BatchProcessing.get_eligible_batch_processings_for_colin(page, limit)
+    for batch_processing in pending_batch_processings.get('batch_processings'):
+            batch_processings.append(batch_processing.json)
+
+    return jsonify({
+        'batch_processings': batch_processings,
+        'page': page,
+        'limit': limit,
+        'pages': pending_batch_processings.get('pages'),
+        'total': pending_batch_processings.get('total')
+    }), HTTPStatus.OK
+
 
 def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
     """Set legal_name, director, office and shares from holding/primary business."""

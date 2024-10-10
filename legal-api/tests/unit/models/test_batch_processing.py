@@ -124,7 +124,6 @@ def test_get_completed_filings_for_colin(session, test_name, step, event_id, exp
     batch_processings = BatchProcessing.get_eligible_batch_processings_for_colin()
     batch_processings = batch_processings.get("batch_processings")
     if expected:
-        print(batch_processings[0].colin_event_ids)
         assert len(batch_processings) == 1
     else:
         assert len(batch_processings) == 0

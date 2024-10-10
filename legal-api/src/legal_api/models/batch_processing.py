@@ -64,6 +64,27 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     business = db.relationship('Business', back_populates='batch_processing')
     colin_event_ids = db.relationship('ColinEventId', back_populates='batch_processing')
 
+    # json serializer
+    @property
+    def json(self):
+        """Return a json representation of this object."""
+        d = {
+            'id': self.id,
+            'business_identifier': self.business_identifier,
+            'step': self.step,
+            'status': self.status,
+            'notes': self.notes,
+            'created_date': self.created_date,
+            'trigger_date': self.trigger_date,
+            'last_modified': self.last_modified,
+            'meta_data': self.meta_data,
+            'batch_id': self.batch_id,
+            'business_id': self.business_id,
+            'filing_id': self.filing_id,
+        }
+        return d
+
+
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
