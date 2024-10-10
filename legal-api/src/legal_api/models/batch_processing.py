@@ -68,19 +68,22 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     @property
     def json(self):
         """Return a json representation of this object."""
+        from .colin_event_id import ColinEventId  # noqa: F401; pylint: disable=import-outside-toplevel
+
         d = {
             'id': self.id,
-            'business_identifier': self.business_identifier,
+            'businessIdentifier': self.business_identifier,
             'step': self.step,
             'status': self.status,
             'notes': self.notes,
-            'created_date': self.created_date,
-            'trigger_date': self.trigger_date,
-            'last_modified': self.last_modified,
-            'meta_data': self.meta_data,
-            'batch_id': self.batch_id,
-            'business_id': self.business_id,
-            'filing_id': self.filing_id,
+            'createdDate': self.created_date,
+            'triggerDate': self.trigger_date,
+            'lastModified': self.last_modified,
+            'metaData': self.meta_data,
+            'batchId': self.batch_id,
+            'businessId': self.business_id,
+            'filingId': self.filing_id,
+            'colinIds': ColinEventId.get_by_batch_processing_id(self.id)
         }
         return d
 

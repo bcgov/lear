@@ -28,6 +28,8 @@ from legal_api.models import Batch, BatchProcessing, Business, Filing
 from legal_api.services.authz import COLIN_SVC_ROLE
 from tests.unit.services.utils import create_header
 from tests.unit.models import (
+    factory_batch,
+    factory_batch_processing,
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
@@ -92,7 +94,6 @@ def test_get_internal_filings(session, client, jwt):
 def test_get_internal_batch_processings(session, client, jwt, test_name, step, event_id, expected):
     """Assert that the internal batch processings get endpoint returns all eligible batch processings."""
     from legal_api.models.colin_event_id import ColinEventId
-    from tests.unit.models import factory_batch, factory_batch_processing
 
     # Setup
     identifier = 'CP7654321'
@@ -171,6 +172,36 @@ def test_patch_internal_filings(session, client, jwt):
     assert colin_id in ColinEventId.get_by_filing_id(filing.id)
     assert rv.json['filing']['header']['filingId'] == filing.id
     assert colin_id in rv.json['filing']['header']['colinIds']
+
+
+def test_patch_internal_batch_processing(session, client, jwt):
+    """Assert that the internal batch processing patch endpoint updates the colin_event_id."""
+    from legal_api.models.colin_event_id import ColinEventId
+    
+    # Setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    batch = factory_batch(status=Batch.BatchStatus.PROCESSING)
+    batch_processing = factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=business.identifier,
+        step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
+    )
+    colin_id = 1234
+
+    # Make request
+    rv = client.patch(f'/api/v2/businesses/internal/batch_processings/{batch_processing.id}',
+                      json={'colinIds': [colin_id]},
+                      headers=create_header(jwt, [COLIN_SVC_ROLE])
+                      )
+
+    # test result
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    batch_processing = BatchProcessing.find_by_id(batch_processing.id)
+    assert colin_id in ColinEventId.get_by_batch_processing_id(batch_processing.id)
+    assert rv.json['id'] == batch_processing.id
+    assert colin_id in rv.json['colinIds']
 
 
 def test_get_colin_id(session, client, jwt):

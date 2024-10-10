@@ -213,6 +213,39 @@ def update_colin_id(filing_id):
         raise err
 
 
+@bp.route('/internal/batch_processings/<int:batch_processing_id>', methods=['PATCH'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.colin])
+def update_batch_processing_colin_id(batch_processing_id):
+    """Patch the colin_event_id for a batch processing."""
+    # check authorization
+    try:
+        json_input = request.get_json()
+        if not json_input:
+            return None, None, {'message': f'No batch processing json data in body of patch for {batch_processing_id}.'}, \
+                HTTPStatus.BAD_REQUEST
+
+        colin_ids = json_input['colinIds']
+        batch_processing = BatchProcessing.find_by_id(batch_processing_id)
+        if not batch_processing_id:
+            return {'message': f'{batch_processing_id} no batch processings found'}, HTTPStatus.NOT_FOUND
+        for colin_id in colin_ids:
+            try:
+                colin_event_id_obj = ColinEventId()
+                colin_event_id_obj.colin_event_id = colin_id
+                colin_event_id_obj.batch_processing_step = batch_processing.step
+                batch_processing.colin_event_ids.append(colin_event_id_obj)
+                batch_processing.save()
+            except BusinessException as err:
+                current_app.logger.Error(f'Error adding colin event id {colin_id} to batch processing with id {batch_processing_id}')
+                return None, None, {'message': err.error}, err.status_code
+
+        return jsonify(batch_processing.json), HTTPStatus.ACCEPTED
+    except Exception as err:
+        current_app.logger.Error(f'Error patching colin event id for batch processing with id {batch_processing}')
+        raise err
+
+
 @bp.route('/internal/filings/colin_id', methods=['GET'])
 @bp.route('/internal/filings/colin_id/<int:colin_id>', methods=['GET'])
 @cross_origin(origin='*')
