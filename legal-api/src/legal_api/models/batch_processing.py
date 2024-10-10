@@ -14,6 +14,7 @@
 """This module holds data for batch processing."""
 from enum import auto
 
+from sqlalchemy import exists, not_
 from sqlalchemy.dialects.postgresql import JSONB
 
 from legal_api.utils.base import BaseEnum
@@ -61,6 +62,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
 
     # relationships
     business = db.relationship('Business', back_populates='batch_processing')
+    colin_event_ids = db.relationship('ColinEventId', back_populates='batch_processing')
 
     def save(self):
         """Save the object to the database immediately."""
@@ -103,3 +105,35 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
 
         batch_processinges = query.order_by(BatchProcessing.id).all()
         return batch_processinges
+
+    @staticmethod
+    def get_eligible_batch_processings_for_colin(page=1, limit=20):
+        """Return the batch_processings that are ready to sync to colin."""
+        from .batch import Batch  # noqa: F401; pylint: disable=import-outside-toplevel
+        from .colin_event_id import ColinEventId  # noqa: F401; pylint: disable=import-outside-toplevel
+
+        has_colin_event_id = (
+            exists().where(
+                BatchProcessing.id == ColinEventId.batch_processing_id,
+                BatchProcessing.step == ColinEventId.batch_processing_step
+            )
+        )
+        batch_processings = db.session.query(BatchProcessing).\
+            filter(Batch.id == BatchProcessing.batch_id).\
+            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
+            filter(BatchProcessing.step.in_([
+                BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+                BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
+            ])).\
+            filter(BatchProcessing.status == BatchProcessing.BatchProcessingStatus.PROCESSING).\
+            filter(not_(has_colin_event_id)).\
+            order_by(BatchProcessing.last_modified).\
+            paginate(per_page=limit, page=page)
+
+        return {
+            'page': page,
+            'limit': limit,
+            'batch_processings': batch_processings.items,
+            'pages': batch_processings.pages,
+            'total': batch_processings.total
+        }
