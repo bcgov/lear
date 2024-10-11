@@ -193,7 +193,7 @@ def delete_filings(identifier, filing_id=None):
     if not filing:
         return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
-    if filing.locked or not filing.filing_type == Filing.Status.DRAFT.value:  # should not be deleted
+    if filing.locked or not filing.status == Filing.Status.DRAFT.value:  # should not be deleted
         return ListFilingResource.create_deletion_locked_response(business, filing)
 
     filing_type = filing.filing_type
