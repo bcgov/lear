@@ -487,7 +487,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
 
     @classmethod
     def add_involuntary_dissolution_warning_event(cls, con, corp_num, batch_processing) -> int:
-        """Add involuntary dissolution warning event."""
+        """Add involuntary dissolution warning event. This handles D1 and D2 dissolution stages."""
         from colin_api.models.filing import Filing  # pylint: disable=import-outside-toplevel
 
         if (dissolution_step := batch_processing.get("step")) and \
@@ -506,12 +506,12 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 event_type = 'SYSD1'
                 corp_state = Business.CorpStateTypes.D1_NO_AR.value
             elif dissolution_step == 'WARNING_LEVEL_2':
-                event_type = 'SYST1'
-                corp_state = Business.CorpStateTypes.D1_NO_TR.value
-        elif dissolution_meta_data.get('overdueTransition'):
-            if dissolution_step == 'WARNING_LEVEL_1':
                 event_type = 'SYSD2'
                 corp_state = Business.CorpStateTypes.D2_NO_AR.value
+        elif dissolution_meta_data.get('overdueTransition'):
+            if dissolution_step == 'WARNING_LEVEL_1':
+                event_type = 'SYST1'
+                corp_state = Business.CorpStateTypes.D1_NO_TR.value
             elif dissolution_step == 'WARNING_LEVEL_2':
                 event_type = 'SYST2'
                 corp_state = Business.CorpStateTypes.D2_NO_TR.value
