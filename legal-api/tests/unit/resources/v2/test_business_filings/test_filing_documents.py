@@ -1401,7 +1401,7 @@ def test_document_list_for_various_filing_states(session, mocker, client, jwt,
             affidavit_file_key = meta_data['continuationIn']['affidavitFileKey']
             expected_msg['documents']['staticDocuments'] = [
                 {
-                    'name': 'Director Affidavit',
+                    'name': 'Unlimited Liability Corporation Information',
                     'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{affidavit_file_key}'
                 }
             ]
