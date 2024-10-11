@@ -37,11 +37,7 @@ def session(db):
 
     # create tables
     Base.metadata.drop_all(engine)
-    Base.metadata.create_all(engine) 
-
-    # TODO: debug
-    for table in Base.metadata.tables:
-        print(f'Creating table: {table}')
+    Base.metadata.create_all(engine)
 
     Session = sessionmaker(bind=engine)
     session = Session()

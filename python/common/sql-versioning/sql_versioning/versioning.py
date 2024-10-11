@@ -48,7 +48,7 @@ def _is_obj_modified(obj):
 
 
 def _is_session_modified(session):
-    """Check if the session contains modified objects.
+    """Check if the session contains modified versioned objects.
     
     :param session: The database sesseion instance.
     :return: True if the session contains modified versioned objects, otherwise False.
@@ -242,7 +242,7 @@ def _before_flush(session, flush_context, instances):
     """Trigger before a flush operation to ensure a transaction is created."""
     try:
         if not _is_session_modified(session):
-            print('\033[31mThere is no modified object in this session.\033[0m')
+            print('\033[31mThere is no modified versioned object in this session.\033[0m')
             return
         transaction_manager = TransactionManager(session)
         transaction_manager.create_transaction()
