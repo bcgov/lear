@@ -19,7 +19,7 @@ import pytest
 from sqlalchemy import Column, ForeignKey, Integer, String, orm
 
 from sql_versioning import (Base, TransactionFactory, Versioned,
-                            enable_versioning, versioned_cls)
+                            enable_versioning, version_class)
 
 enable_versioning()
 
@@ -50,8 +50,8 @@ orm.configure_mappers()
 
 
 @pytest.mark.parametrize('test_name', ['CLASS','INSTANCE'])
-def test_versioned_cls(db, session, test_name):
-    """Test versioned_cls."""
+def test_version_class(db, session, test_name):
+    """Test version_class."""
     if test_name == 'CLASS':
         model = Model
         user = User
@@ -59,17 +59,17 @@ def test_versioned_cls(db, session, test_name):
         model = Model()
         user = User()
 
-    model_version = versioned_cls(model)
+    model_version = version_class(model)
     assert model_version is None
 
-    user_version = versioned_cls(user)
+    user_version = version_class(user)
     assert user_version
 
 
 def test_versioned_obj(db, session):
-    """Test versioned_cls-2."""
+    """Test version_class-2."""
     address = Address()
-    version = versioned_cls(address)
+    version = version_class(address)
     assert version
 
 
@@ -116,7 +116,7 @@ def test_versioning_insert(db, session):
     transaction = transactions[0]
     assert transaction
 
-    user_version = versioned_cls(User)
+    user_version = version_class(User)
     result_revision = session.query(user_version)\
         .filter(user_version.name=='user')\
         .one_or_none()
@@ -125,7 +125,7 @@ def test_versioning_insert(db, session):
     assert result_revision.operation_type == 0
     assert result_revision.end_transaction_id is None
 
-    address_version = versioned_cls(Address)
+    address_version = version_class(Address)
     result_versioned_address = session.query(address_version)\
         .filter(address_version.name=='address')\
         .one_or_none()
@@ -144,7 +144,7 @@ def test_versioning_delete(db, session):
     session.delete(user)
     session.commit()
 
-    user_version = versioned_cls(User)
+    user_version = version_class(User)
     results = session.query(user_version)\
         .filter(user_version.id==user.id)\
         .order_by(user_version.transaction_id)\
@@ -171,7 +171,7 @@ def test_versioning_update(db, session):
     session.add(user)
     session.commit()
 
-    user_version = versioned_cls(User)
+    user_version = version_class(User)
     results = session.query(user_version)\
         .filter(user_version.id==user.id)\
         .order_by(user_version.transaction_id)\
@@ -196,7 +196,7 @@ def test_versioning_query(db, session):
     session.add(user)
     session.commit()
 
-    user_version = versioned_cls(User)
+    user_version = version_class(User)
     result = session.query(user_version)\
         .filter(user_version.transaction_id==1)\
         .one_or_none()

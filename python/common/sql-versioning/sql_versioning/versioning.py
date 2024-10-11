@@ -208,12 +208,10 @@ class TransactionManager:
 
         # Use insert().returning() to get the ID and issued_at without committing
         stmt = insert(self.transaction_model).values(
-            # issued_at = func.now()
-            issued_at = None
+            issued_at = func.now()
         ).returning(self.transaction_model.id, self.transaction_model.issued_at)
         result = self.session.execute(stmt)
         transaction_id, issued_at = result.first()
-        # TODO: remove unused issued_at, revert issued_at = None
 
         print(f'\033[32mCreated new transaction: {transaction_id}\033[0m')
 
