@@ -461,7 +461,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return None
 
     @classmethod
-    def _get_event_id(cls, cursor, corp_num: str, filing_dt: str, event_type: str = 'FILE') -> str:
+    # pylint: disable=too-many-arguments
+    def _get_event_id(cls, cursor, corp_num: str, filing_dt: str, event_type: str = 'FILE', trigger_dt: str = 'NULL') -> str:
         """Get next event ID for filing.
 
         :param cursor: oracle cursor
@@ -492,12 +493,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
                 VALUES (:event_id, :corp_num, :event_type,
-                    TO_TIMESTAMP_TZ(:filing_dt,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'), NULL)
+                    TO_TIMESTAMP_TZ(:filing_dt,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'), :trigger_dts)
                 """,
                 event_id=event_id,
                 corp_num=corp_num,
                 filing_dt=filing_dt,
-                event_type=event_type
+                event_type=event_type,
+                trigger_dts=trigger_dt
             )
         except Exception as err:
             current_app.logger.error('Error in filing: Failed to create new event.')

@@ -154,6 +154,7 @@ class BusinessNamesInfo(Resource):
 @cors_preflight('GET')
 @API.route('/internal/<string:info_type>', methods=['GET'])
 @API.route('/internal/<string:legal_type>/<string:identifier>/<string:info_type>', methods=['GET'])
+@API.route('/internal/<string:legal_type>/<string:identifier>', methods=['PATCH'])
 class InternalBusinessInfo(Resource):
     """Meta information used by internal services about businesses."""
 
@@ -201,3 +202,53 @@ class InternalBusinessInfo(Resource):
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             current_app.logger.error(err.with_traceback(None))
             return jsonify({'message': 'Something went wrong.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def patch(legal_type, identifier):
+        """Update the business corp state."""
+        try:
+            if legal_type not in [x.value for x in Business.TypeCodes]:
+                return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
+
+            json_data = request.get_json()
+            if not json_data:
+                return jsonify({'message': 'No input data provided'}), HTTPStatus.BAD_REQUEST
+
+            json_data = json_data.get('batchProcessing', None)
+
+            # ensure that the business in the batch processing matches the business in the URL
+            if identifier != json_data['businessIdentifier']:
+                return jsonify(
+                    {'message': 'Error: Identifier in URL does not match identifier in batch processing'}
+                ), HTTPStatus.BAD_REQUEST
+
+            # convert identifier if BC legal_type
+            identifier = Business.get_colin_identifier(identifier, legal_type)
+
+            try:
+                # get db connection and start a session, in case we need to roll back
+                con = DB.connection
+                con.begin()
+
+                # create event and update corp state
+                event_id = Business.add_involuntary_dissolution_warning_event(con, identifier, json_data)
+                return jsonify({
+                    'batchProcessing': {
+                        'colinIds': [event_id]
+                    }
+                }), HTTPStatus.CREATED
+
+            except Exception as db_err:
+                current_app.logger.error('failed to file - rolling back partial db changes.')
+                if con:
+                    con.rollback()
+                raise db_err
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify(
+                {'message': f'Error when trying to update corp state for business {identifier}'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
