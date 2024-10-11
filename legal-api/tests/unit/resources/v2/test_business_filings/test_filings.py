@@ -1455,7 +1455,7 @@ def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, 
         review.filing_id = filing.id
         review.nr_number = json_data['filing']['continuationIn']['nameRequest']['nrNumber']
         review.identifier = json_data['filing']['continuationIn']['foreignJurisdiction']['identifier']
-        review.contact_details = json_data['filing']['continuationIn']['contactPoint']['email']
+        review.contact_email = json_data['filing']['continuationIn']['contactPoint']['email']
         review.status = review_status
 
         # filing with change requested
@@ -1558,7 +1558,7 @@ def test_resubmit_filing_failed(session, client, jwt, filing_status, review_stat
     review.filing_id = filing.id
     review.nr_number = json_data['filing']['continuationIn']['nameRequest']['nrNumber']
     review.identifier = json_data['filing']['continuationIn']['foreignJurisdiction']['identifier']
-    review.contact_details = json_data['filing']['continuationIn']['contactPoint']['email']
+    review.contact_email = json_data['filing']['continuationIn']['contactPoint']['email']
     review.status = review_status
     review.save()
 

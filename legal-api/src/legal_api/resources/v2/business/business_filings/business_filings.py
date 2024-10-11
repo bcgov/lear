@@ -193,10 +193,7 @@ def delete_filings(identifier, filing_id=None):
     if not filing:
         return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
-    if filing.locked or filing.filing_type in [Filing.Status.AWAITING_REVIEW.value,
-                                               Filing.Status.CHANGE_REQUESTED.value,
-                                               Filing.Status.APPROVED.value,
-                                               Filing.Status.REJECTED.value]:  # should not be deleted
+    if filing.locked or not filing.filing_type == Filing.Status.DRAFT.value:  # should not be deleted
         return ListFilingResource.create_deletion_locked_response(business, filing)
 
     filing_type = filing.filing_type
@@ -984,7 +981,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         review.nr_number = filing_data.get('nameRequest', {}).get('nrNumber')
         review.identifier = filing_data.get('foreignJurisdiction', {}).get('identifier')
-        review.contact_details = filing_data.get('contactPoint', {}).get('email')
+        review.contact_email = filing_data.get('contactPoint', {}).get('email')
         review.submission_date = submission_date
         review.save()
 

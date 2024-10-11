@@ -46,7 +46,7 @@ def test_review_result_save(session):
     review.filing_id = filing.id
     review.nr_number = filing_dict['filing']['continuationIn']['nameRequest']['nrNumber']
     review.identifier = filing_dict['filing']['continuationIn']['foreignJurisdiction']['identifier']
-    review.contact_details = 'contact@email.com'
+    review.contact_email = 'no_one@never.get'
     review.status = ReviewStatus.AWAITING_REVIEW
     review.save()
 

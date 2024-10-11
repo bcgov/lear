@@ -36,7 +36,7 @@ def get_reviews():
         end_effective_date=request.args.get('endEffectiveDate', None),
         nr_number=request.args.get('nrNumber', None),
         identifier=request.args.get('identifier', None),
-        contact_details=request.args.get('officeEmail', None),
+        contact_email=request.args.get('contactEmail', None),
         status=request.args.getlist('status', None),
         submitted_sort_by=request.args.get('sortBy', None),
         submitted_sort_order=request.args.get('sortDesc', None),
@@ -93,8 +93,8 @@ def get_mapped_column(submitted_sort_by):
     if submitted_sort_by:
         if submitted_sort_by == 'nrNumber':
             mapped_column = 'nr_number'
-        elif submitted_sort_by == 'officeEmail':
-            mapped_column = 'contact_details'
+        elif submitted_sort_by == 'contactEmail':
+            mapped_column = 'contact_email'
         elif submitted_sort_by == 'submissionDate':
             mapped_column = 'submission_date'
         elif submitted_sort_by == 'status':
