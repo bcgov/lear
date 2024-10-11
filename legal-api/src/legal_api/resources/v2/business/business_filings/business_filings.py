@@ -193,8 +193,9 @@ def delete_filings(identifier, filing_id=None):
     if not filing:
         return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
-    if filing.locked or not filing.status == Filing.Status.DRAFT.value:  # should not be deleted
-        return ListFilingResource.create_deletion_locked_response(business, filing)
+    err_message, err_code = ListFilingResource.is_filing_locked_from_deletion(business, filing)
+    if err_code:
+        return jsonify({'message': _(err_message)}), err_code
 
     filing_type = filing.filing_type
     filing_json = filing.filing_json
@@ -361,21 +362,23 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return True
 
     @staticmethod
-    def create_deletion_locked_response(business, filing):
-        """Create a filing that draft that cannot be deleted."""
-        err_message = 'This filing cannot be deleted.'
-        err_code = HTTPStatus.FORBIDDEN
-        if (filing.status == Filing.Status.DRAFT.value and
-                filing.filing_type == 'alteration' and
-                business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
-                                                            Business.UNLIMITED_COMPANIES)]):
-            err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
-            err_code = HTTPStatus.UNAUTHORIZED
-        elif filing.status in [Filing.Status.DRAFT.value, Filing.Status.PENDING.value]:
+    def is_filing_locked_from_deletion(business, filing):
+        """Check if a filing has locked from deletion."""
+        err_message = None
+        err_code = None
+        if filing.locked:  # should not be deleted
             err_message = 'This filing cannot be deleted at this moment.'
             err_code = HTTPStatus.UNAUTHORIZED
-
-        return jsonify({'message': _(err_message)}), err_code
+        elif (filing.status == Filing.Status.DRAFT.value and
+              filing.filing_type == 'alteration' and
+              business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
+                                                          Business.UNLIMITED_COMPANIES)]):
+            err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
+            err_code = HTTPStatus.UNAUTHORIZED
+        elif filing.status != Filing.Status.DRAFT.value:
+            err_message = 'This filing cannot be deleted.'
+            err_code = HTTPStatus.FORBIDDEN
+        return err_message, err_code
 
     @staticmethod
     def check_and_update_nr(filing):
