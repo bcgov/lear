@@ -15,8 +15,8 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
-from contextlib import suppress
 import copy
+from contextlib import suppress
 from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
@@ -428,7 +428,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_business_and_filing(identifier, filing_id=None) -> Tuple[Optional[Business], Optional[Filing]]:
-        """Retrieve business and filing"""
+        """Retrieve business and filing."""
         business = None
         filing = None
         if filing_id:
@@ -437,6 +437,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             else:
                 business = Business.find_by_identifier(identifier)
                 filing = Business.get_filing_by_id(identifier, filing_id)
+        else:
+            business = Business.find_by_identifier(identifier)
         return business, filing
 
     @staticmethod
@@ -907,17 +909,22 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                      .get('fileKey', None)):
             MinioService.delete_file(file_key)
         elif filing_type == Filing.FILINGS['continuationIn'].get('name'):
-            continuation_in = filing_json.get('filing', {}).get('continuationIn', {})
+            ListFilingResource.delete_continuation_in_files(filing_json)
 
-            # Delete affidavit file
-            if affidavit_file_key := continuation_in.get('foreignJurisdiction', {}).get('affidavitFileKey', None):
-                MinioService.delete_file(affidavit_file_key)
+    @staticmethod
+    def delete_continuation_in_files(filing_json: dict):
+        """Delete continuation in files from minio."""
+        continuation_in = filing_json.get('filing', {}).get('continuationIn', {})
 
-            # Delete authorization file(s)
-            authorization_files = continuation_in.get('authorization', {}).get('files', [])
-            for file in authorization_files:
-                if auth_file_key := file.get('fileKey', None):
-                    MinioService.delete_file(auth_file_key)
+        # Delete affidavit file
+        if affidavit_file_key := continuation_in.get('foreignJurisdiction', {}).get('affidavitFileKey', None):
+            MinioService.delete_file(affidavit_file_key)
+
+        # Delete authorization file(s)
+        authorization_files = continuation_in.get('authorization', {}).get('files', [])
+        for file in authorization_files:
+            if auth_file_key := file.get('fileKey', None):
+                MinioService.delete_file(auth_file_key)
 
     @staticmethod
     def details_for_invoice(business_identifier: str, corp_type: str):
