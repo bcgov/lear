@@ -23,6 +23,7 @@ from datedelta import datedelta
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models import Batch, BatchProcessing, Configuration, Filing, Furnishing
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
+from legal_api.services.flags import Flags
 
 from involuntary_dissolutions import (
     check_run_schedule,
@@ -172,14 +173,24 @@ def test_stage_1_process(app, session):
 
 
 @pytest.mark.parametrize(
-    'test_name, batch_status, status, step, created_date, found', [
+    'test_name, batch_status, status, step, created_date, found, has_email', [
         (
-            'FOUND',
+            'FOUND_HAS_EMAIL',
             Batch.BatchStatus.PROCESSING,
             BatchProcessing.BatchProcessingStatus.PROCESSING,
             BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
             CREATED_DATE,
+            True,
             True
+        ),
+        (
+            'FOUND_MAIL_ONLY',
+            Batch.BatchStatus.PROCESSING,
+            BatchProcessing.BatchProcessingStatus.PROCESSING,
+            BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+            CREATED_DATE,
+            True,
+            False
         ),
         (
             'NOT_FOUND_BATCH_STATUS',
@@ -187,6 +198,7 @@ def test_stage_1_process(app, session):
             BatchProcessing.BatchProcessingStatus.PROCESSING,
             BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
             CREATED_DATE,
+            False,
             False
         ),
         (
@@ -195,6 +207,7 @@ def test_stage_1_process(app, session):
             BatchProcessing.BatchProcessingStatus.HOLD,
             BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
             CREATED_DATE,
+            False,
             False
         ),
         (
@@ -203,6 +216,7 @@ def test_stage_1_process(app, session):
             BatchProcessing.BatchProcessingStatus.PROCESSING,
             BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
             CREATED_DATE,
+            False,
             False
         ),
         (
@@ -211,12 +225,13 @@ def test_stage_1_process(app, session):
             BatchProcessing.BatchProcessingStatus.PROCESSING,
             BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
             datetime.utcnow(),
+            False,
             False
         )
     ]
 
 )
-def test_stage_2_process_find_entry(app, session, test_name, batch_status, status, step, created_date, found):
+def test_stage_2_process_find_entry(app, session, test_name, batch_status, status, step, created_date, found, has_email):
     """Assert that only businesses that meet conditions can be processed for stage 2."""
     business = factory_business(identifier='BC1234567')
 
@@ -232,15 +247,30 @@ def test_stage_2_process_find_entry(app, session, test_name, batch_status, statu
         trigger_date=created_date+datedelta(days=42),
         last_modified=last_modified
     )
-    furnishing = Furnishing(
-        furnishing_type = Furnishing.FurnishingType.EMAIL,
+    if has_email:
+        furnishing_email = Furnishing(
+            furnishing_type = Furnishing.FurnishingType.EMAIL,
+            furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+            batch_id = batch.id,
+            business_id = business.id,
+            business_identifier = business.identifier,
+            status = Furnishing.FurnishingStatus.PROCESSED,
+        )
+        furnishing_email.save()
+        
+    flags = Flags()
+    mail_status = Furnishing.FurnishingStatus.PROCESSED
+    if flags.is_on('disable-dissolution-sftp-bcmail'):
+        mail_status = Furnishing.FurnishingStatus.QUEUED
+    furnishing_mail = Furnishing(
+        furnishing_type = Furnishing.FurnishingType.MAIL,
         furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
         batch_id = batch.id,
         business_id = business.id,
         business_identifier = business.identifier,
-        status = Furnishing.FurnishingStatus.PROCESSED,
+        status = mail_status,
     )
-    furnishing.save()
+    furnishing_mail.save()
 
     stage_2_process(app)
 
@@ -283,7 +313,7 @@ def test_stage_2_process_update_business(app, session, test_name, status, step, 
         created_date=CREATED_DATE,
         trigger_date=TRIGGER_DATE
     )
-    furnishing = Furnishing(
+    furnishing_email = Furnishing(
         furnishing_type = Furnishing.FurnishingType.EMAIL,
         furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
         batch_id = batch.id,
@@ -291,7 +321,20 @@ def test_stage_2_process_update_business(app, session, test_name, status, step, 
         business_identifier = business.identifier,
         status = furnishing_status,
     )
-    furnishing.save()
+    furnishing_email.save()
+
+    flags = Flags()
+    if flags.is_on('disable-dissolution-sftp-bcmail') and furnishing_status == Furnishing.FurnishingStatus.PROCESSED:
+        furnishing_status = Furnishing.FurnishingStatus.QUEUED
+    furnishing_mail = Furnishing(
+        furnishing_type = Furnishing.FurnishingType.MAIL,
+        furnishing_name = Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
+        batch_id = batch.id,
+        business_id = business.id,
+        business_identifier = business.identifier,
+        status = furnishing_status,
+    )
+    furnishing_mail.save()
 
     if test_name == 'MOVE_BACK_2_GOOD_STANDING':
         business.last_ar_date = datetime.utcnow()
