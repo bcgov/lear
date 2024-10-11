@@ -362,22 +362,23 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return True
 
     @staticmethod
-    def is_filing_locked_from_deletion(business, filing):
+    def is_filing_locked_from_deletion(business, filing: Filing):
         """Check if a filing has locked from deletion."""
         err_message = None
         err_code = None
-        if filing.locked:  # should not be deleted
-            err_message = 'This filing cannot be deleted at this moment.'
-            err_code = HTTPStatus.UNAUTHORIZED
-        elif (filing.status == Filing.Status.DRAFT.value and
-              filing.filing_type == 'alteration' and
-              business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
-                                                          Business.UNLIMITED_COMPANIES)]):
-            err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
-            err_code = HTTPStatus.UNAUTHORIZED
-        elif filing.status != Filing.Status.DRAFT.value:
+        if filing.status != Filing.Status.DRAFT.value:
             err_message = 'This filing cannot be deleted.'
             err_code = HTTPStatus.FORBIDDEN
+        elif filing.deletion_locked:
+            if (filing.filing_type == 'alteration' and
+                business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
+                                                            Business.UNLIMITED_COMPANIES)]):
+                err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
+                err_code = HTTPStatus.UNAUTHORIZED
+            else:
+                err_message = 'This filing cannot be deleted at this moment.'
+                err_code = HTTPStatus.UNAUTHORIZED
+
         return err_message, err_code
 
     @staticmethod
