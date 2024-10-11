@@ -87,7 +87,6 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
         }
         return d
 
-
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
@@ -157,7 +156,7 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
         return {
             'page': page,
             'limit': limit,
-            'batch_processings': batch_processings.items,
+            'batchProcessings': batch_processings.items,
             'pages': batch_processings.pages,
             'total': batch_processings.total
         }

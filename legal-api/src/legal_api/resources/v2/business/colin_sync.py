@@ -102,6 +102,7 @@ def get_completed_filings_for_colin():
         'total': pending_filings.get('total')
     }), HTTPStatus.OK
 
+
 @bp.route('/internal/batch_processings', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.colin])
@@ -112,11 +113,16 @@ def get_eligible_batch_processings_for_colin():
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 20))
     pending_batch_processings = BatchProcessing.get_eligible_batch_processings_for_colin(page, limit)
-    for batch_processing in pending_batch_processings.get('batch_processings'):
-            batch_processings.append(batch_processing.json)
+    for batch_processing in pending_batch_processings.get('batchProcessings'):
+        business = Business.find_by_internal_id(batch_processing.business_id)
+
+        batch_processings.append({
+            **batch_processing.json,
+            'businessLegalType': business.legal_type
+        })
 
     return jsonify({
-        'batch_processings': batch_processings,
+        'batchProcessings': batch_processings,
         'page': page,
         'limit': limit,
         'pages': pending_batch_processings.get('pages'),
@@ -222,8 +228,9 @@ def update_batch_processing_colin_id(batch_processing_id):
     try:
         json_input = request.get_json()
         if not json_input:
-            return None, None, {'message': f'No batch processing json data in body of patch for {batch_processing_id}.'}, \
-                HTTPStatus.BAD_REQUEST
+            return None, None, {
+                'message': f'No batch processing json data in body of patch for {batch_processing_id}.'
+            }, HTTPStatus.BAD_REQUEST
 
         colin_ids = json_input['colinIds']
         batch_processing = BatchProcessing.find_by_id(batch_processing_id)
@@ -237,7 +244,9 @@ def update_batch_processing_colin_id(batch_processing_id):
                 batch_processing.colin_event_ids.append(colin_event_id_obj)
                 batch_processing.save()
             except BusinessException as err:
-                current_app.logger.Error(f'Error adding colin event id {colin_id} to batch processing with id {batch_processing_id}')
+                current_app.logger.Error(
+                    f'Error adding colin event id {colin_id} to batch processing with id {batch_processing_id}'
+                )
                 return None, None, {'message': err.error}, err.status_code
 
         return jsonify(batch_processing.json), HTTPStatus.ACCEPTED
