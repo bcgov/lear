@@ -324,7 +324,6 @@ def test_stage_1_process(app, session):
 def test_stage_2_process_find_entry(app, session, test_name, batch_status, status, email_status, mail_status, step, created_date, found, has_email, disable_dissolution_sftp_bcmail):
     """Assert that only businesses that meet conditions can be processed for stage 2."""
     with patch.object(flags, 'is_on', return_value=disable_dissolution_sftp_bcmail):
-        print(flags.is_on("disable-dissolution-sftp-bcmail"))
         # create 2 entries, so that if sftp bc mail FF is on, we can test both mail status PROCESSED and QUEUED
         business1 = factory_business(identifier='BC1234567')
         business2 = factory_business(identifier='BC7654321')
