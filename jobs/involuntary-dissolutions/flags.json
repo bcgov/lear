@@ -1,7 +1,7 @@
 {
     "flagValues": {
         "enable-involuntary-dissolution": true,
-        "disable-dissolution-sftp-bcmail": true,
+        "disable-dissolution-sftp-bcmail": false,
         "disable-dissolution-sftp-bclaws": false
     }
 }
