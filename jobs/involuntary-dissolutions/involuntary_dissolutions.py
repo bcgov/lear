@@ -253,13 +253,13 @@ def stage_2_process(app: Flask):
             for furnishing in furnishings
         )
         # if SFTP function is off, we expect the mail status will be QUEUED
-        expected_mail_status = Furnishing.FurnishingStatus.PROCESSED
+        expected_mail_status = [Furnishing.FurnishingStatus.PROCESSED]
         if flags.is_on('disable-dissolution-sftp-bcmail'):
-            expected_mail_status = Furnishing.FurnishingStatus.QUEUED
+            expected_mail_status.append(Furnishing.FurnishingStatus.QUEUED)
 
         mail_processed = any(
-            furnishing.furnishing_type == Furnishing.FurnishingType.MAIL
-            and furnishing.status == expected_mail_status
+            (furnishing.furnishing_type == Furnishing.FurnishingType.MAIL)
+            and (furnishing.status in expected_mail_status)
             for furnishing in furnishings
         )
         email_exists = any(furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL for furnishing in furnishings)
