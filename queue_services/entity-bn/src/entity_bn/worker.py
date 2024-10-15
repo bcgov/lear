@@ -73,6 +73,7 @@ async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-man
     with flask_app.app_context():
         if msg['type'] == 'bc.registry.admin.bn':
             await admin.process(msg)
+            return
 
         filing_core_submission = FilingCore.find_by_id(msg['data']['filing']['header']['filingId'])
         if not filing_core_submission:

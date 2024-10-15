@@ -46,7 +46,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     id = db.Column(db.Integer, primary_key=True)
     nr_number = db.Column('nr_number', db.String(15))
     identifier = db.Column('identifier', db.String(50))
-    completing_party = db.Column('completing_party', db.String(150))
+    contact_email = db.Column('contact_email', db.String(150))
     status = db.Column('status', db.Enum(ReviewStatus), nullable=False)
     submission_date = db.Column('submission_date',
                                 db.DateTime(timezone=True),
@@ -110,8 +110,8 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             query = query.filter(Review.nr_number.ilike(f'%{review_filter.nr_number}%'))
         if review_filter.identifier:
             query = query.filter(Review.identifier.ilike(f'%{review_filter.identifier}%'))
-        if review_filter.completing_party:
-            query = query.filter(Review.completing_party.ilike(f'%{review_filter.completing_party}%'))
+        if review_filter.contact_email:
+            query = query.filter(Review.contact_email.ilike(f'%{review_filter.contact_email}%'))
         if review_filter.status:
             query = query.filter(Review.status.in_(review_filter.status))
         if review_filter.submitted_sort_by:
@@ -157,7 +157,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             'id': self.id,
             'nrNumber': self.nr_number,
             'identifier': self.identifier,
-            'completingParty': self.completing_party,
+            'contactEmail': self.contact_email,
             'status': self.status.name,
             'submissionDate': self.submission_date.isoformat(),
             'creationDate': self.creation_date.isoformat(),
@@ -176,7 +176,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         end_effective_date: str = ''
         nr_number: str = ''
         identifier: str = ''
-        completing_party: str = ''
+        contact_email: str = ''
         submitted_sort_by: str = ''
         submitted_sort_order: bool = ''
         page: int = 1

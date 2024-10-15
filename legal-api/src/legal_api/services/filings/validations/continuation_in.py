@@ -33,8 +33,7 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_offices,
     validate_parties_mailing_address,
 )
-from legal_api.services.utils import get_date, get_str
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.services.utils import get_bool, get_str
 
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
@@ -51,27 +50,25 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return msg  # Cannot continue validation without legal_type
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
-    msg.extend(validate_name_request(filing_json, legal_type, filing_type))
-    msg.extend(validate_offices(filing_json, filing_type))
-    msg.extend(validate_roles(filing_json, legal_type, filing_type))
-    msg.extend(validate_parties_names(filing_json, filing_type))
-
-    err = validate_parties_mailing_address(filing_json, legal_type, filing_type)
-    if err:
-        msg.extend(err)
-
-    err = validate_share_structure(filing_json, filing_type)
-    if err:
-        msg.extend(err)
-
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type))
     msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))
+    msg.extend(validate_name_request(filing_json, legal_type, filing_type))
 
-    err = validate_incorporation_effective_date(filing_json)
-    if err:
-        msg.extend(err)
+    if get_bool(filing_json, '/filing/continuationIn/isApproved'):
+        msg.extend(validate_offices(filing_json, filing_type))
+        msg.extend(validate_roles(filing_json, legal_type, filing_type))
+        msg.extend(validate_parties_names(filing_json, filing_type))
 
-    msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
+        if err := validate_parties_mailing_address(filing_json, legal_type, filing_type):
+            msg.extend(err)
+
+        if err := validate_share_structure(filing_json, filing_type):
+            msg.extend(err)
+
+        if err := validate_incorporation_effective_date(filing_json):
+            msg.extend(err)
+
+        msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -123,7 +120,7 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
         msg.extend(err)
     elif (legal_type == Business.LegalTypes.ULC_CONTINUE_IN.value and
           foreign_jurisdiction['country'] == 'CA' and
-          ((region := foreign_jurisdiction.get('region')) and region in ['AB', 'NS'])):
+          ((region := foreign_jurisdiction.get('region')) and region == 'AB')):
         affidavit_file_key_path = f'{foreign_jurisdiction_path}/affidavitFileKey'
         if file_key := foreign_jurisdiction.get('affidavitFileKey'):
             if err := validate_pdf(file_key, affidavit_file_key_path):
@@ -138,18 +135,6 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str) 
     """Validate continuation in authorization."""
     msg = []
     authorization_path = f'/filing/{filing_type}/authorization'
-
-    expiry_date_path = f'{authorization_path}/expiryDate'
-    date_path = f'{authorization_path}/date'
-    authorization_date = get_date(filing_json, date_path)
-    now = LegislationDatetime.now().date()
-    if authorization_date > now:
-        msg.append({'error': 'Authorization date cannot be in the future.', 'path': date_path})
-
-    if ((expiry_date := get_date(filing_json, expiry_date_path)) and
-            expiry_date < authorization_date):
-        msg.append({'error': 'Expiry date should be after Authorization date.', 'path': expiry_date_path})
-
     for index, file in enumerate(filing_json['filing'][filing_type]['authorization']['files']):
         file_key = file['fileKey']
         file_key_path = f'{authorization_path}/files/{index}/fileKey'

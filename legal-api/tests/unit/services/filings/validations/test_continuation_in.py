@@ -13,7 +13,6 @@
 # limitations under the License.
 """Test suite to ensure Continuation In is validated correctly."""
 import copy
-import datedelta
 from unittest.mock import patch
 from http import HTTPStatus
 
@@ -24,7 +23,6 @@ from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
 
-from src.legal_api.utils.legislation_datetime import LegislationDatetime
 from tests.unit.services.filings.validations import lists_are_equal
 
 
@@ -101,6 +99,8 @@ def test_invalid_party(mocker, app, session, legal_type):
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
+
     filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -293,6 +293,7 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -580,6 +581,7 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -648,6 +650,8 @@ def test_continuation_in_court_orders(mocker, app, session,
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
+
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     court_order = {'effectOfOrder': effect_of_order}
@@ -707,84 +711,6 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
         assert not err
 
 
-@pytest.mark.parametrize(
-    'test_status, expected_code, expected_msg',
-    [
-        ('FAIL', HTTPStatus.BAD_REQUEST, 'Authorization date cannot be in the future.'),
-        ('SUCCESS', None, None)
-    ]
-)
-def test_validate_continuation_in_authorization_date(mocker, app, session,
-                                                     test_status, expected_code, expected_msg):
-    """Assert valid continuation in authorization date."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
-    filing['filing']['continuationIn']['nameRequest']['legalType'] = 'C'
-    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
-
-    if test_status == 'SUCCESS':
-        filing['filing']['continuationIn']['authorization']['date'] = '2024-05-22'
-    else:
-        filing['filing']['continuationIn']['authorization']['date'] = (
-            LegislationDatetime.now() + datedelta.datedelta(days=1)).strftime('%Y-%m-%d')
-    del filing['filing']['continuationIn']['authorization']['expiryDate']
-
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
-                 return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
-                 return_value=[])
-
-    err = validate(None, filing)
-
-    # validate outcomes
-    if test_status == 'SUCCESS':
-        assert not err
-    else:
-        assert expected_code == err.code
-        assert expected_msg == err.msg[0]['error']
-
-
-@pytest.mark.parametrize(
-    'test_status, expected_code, expected_msg',
-    [
-        ('FAIL', HTTPStatus.BAD_REQUEST, 'Expiry date should be after Authorization date.'),
-        ('SUCCESS', None, None)
-    ]
-)
-def test_validate_continuation_in_authorization_expiry_date(mocker, app, session,
-                                                            test_status, expected_code, expected_msg):
-    """Assert valid continuation in authorization expiry date."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
-    filing['filing']['continuationIn']['nameRequest']['legalType'] = 'C'
-    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
-
-    filing['filing']['continuationIn']['authorization']['date'] = '2024-05-22'
-    if test_status == 'SUCCESS':
-        filing['filing']['continuationIn']['authorization']['expiryDate'] = '2024-05-24'
-    else:
-        filing['filing']['continuationIn']['authorization']['expiryDate'] = '2024-05-20'
-
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
-                 return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
-                 return_value=[])
-
-    err = validate(None, filing)
-
-    # validate outcomes
-    if test_status == 'SUCCESS':
-        assert not err
-    else:
-        assert expected_code == err.code
-        assert expected_msg == err.msg[0]['error']
-        
 def test_validate_business_in_colin(mocker, app, session):
     """Assert valid continuation EXPRO business"""
     filing = {'filing': {}}
@@ -793,12 +719,43 @@ def test_validate_business_in_colin(mocker, app, session):
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['nameRequest']['legalType'] = 'C'
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
-    
+
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
                  return_value=(404, {}))
-    
+
     err = validate(None, filing)
     assert err.code == HTTPStatus.BAD_REQUEST
+
+
+@pytest.mark.parametrize(
+    'test_status, is_approved',
+    [
+        ('FAIL', True),
+        ('SUCCESS', False)
+    ]
+)
+def test_validate_before_and_after_approval(mocker, app, session, test_status, is_approved):
+    """Assert not valid if these are ommited when approved."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = is_approved
+    del filing['filing']['continuationIn']['offices']
+    del filing['filing']['continuationIn']['parties']
+    del filing['filing']['continuationIn']['shareStructure']
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+                 return_value=[])
+
+    err = validate(None, filing)
+    if is_approved:
+        assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
+    else:
+        assert not err
