@@ -462,7 +462,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     # pylint: disable=too-many-arguments
-    def _get_event_id(cls, cursor, corp_num: str, filing_dt: str, event_type: str = 'FILE', trigger_dt: str = 'NULL') -> str:
+    def _get_event_id(cls, cursor, corp_num: str, filing_dt: str,
+                      event_type: str = 'FILE', trigger_dt: str = 'NULL') -> str:
         """Get next event ID for filing.
 
         :param cursor: oracle cursor
@@ -493,7 +494,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 """
                 INSERT INTO event (event_id, corp_num, event_typ_cd, event_timestmp, trigger_dts)
                 VALUES (:event_id, :corp_num, :event_type,
-                    TO_TIMESTAMP_TZ(:filing_dt,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'), :trigger_dts)
+                    TO_TIMESTAMP_TZ(:filing_dt,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'),
+                    TO_TIMESTAMP_TZ(:trigger_dts,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'))
                 """,
                 event_id=event_id,
                 corp_num=corp_num,
@@ -1195,6 +1197,46 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             cursor = con.cursor()
             event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num,
                                          filing_dt=filing_dt, event_type=event_type)
+            Business.update_corp_state(cursor, event_id, corp_num, corp_state)
+            return event_id
+
+        return None
+
+    @classmethod
+    def add_involuntary_dissolution_warning_event(cls, con, corp_num, batch_processing) -> int:
+        """Add involuntary dissolution warning event. This handles D1 and D2 dissolution stages."""
+        if (dissolution_step := batch_processing.get('step')) and \
+                dissolution_step not in ['WARNING_LEVEL_1', 'WARNING_LEVEL_2']:
+            return None
+
+        if not (dissolution_meta_data := batch_processing.get('metaData')) \
+                or not (last_modified := batch_processing.get('lastModified')) \
+                or not (trigger_date := batch_processing.get('triggerDate')):
+            return None
+
+        event_type = None
+        corp_state = None
+        if dissolution_meta_data.get('overdueARs'):
+            if dissolution_step == 'WARNING_LEVEL_1':
+                event_type = 'SYSD1'
+                corp_state = Business.CorpStateTypes.D1_NO_AR.value
+            elif dissolution_step == 'WARNING_LEVEL_2':
+                event_type = 'SYSD2'
+                corp_state = Business.CorpStateTypes.D2_NO_AR.value
+        elif dissolution_meta_data.get('overdueTransition'):
+            if dissolution_step == 'WARNING_LEVEL_1':
+                event_type = 'SYST1'
+                corp_state = Business.CorpStateTypes.D1_NO_TR.value
+            elif dissolution_step == 'WARNING_LEVEL_2':
+                event_type = 'SYST2'
+                corp_state = Business.CorpStateTypes.D2_NO_TR.value
+
+        if event_type:
+            cursor = con.cursor()
+            event_id = Filing._get_event_id(  # pylint: disable=protected-access
+                cursor=cursor, corp_num=corp_num, filing_dt=last_modified,
+                event_type=event_type, trigger_dt=trigger_date
+            )
             Business.update_corp_state(cursor, event_id, corp_num, corp_state)
             return event_id
 

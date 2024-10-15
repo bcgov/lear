@@ -208,6 +208,8 @@ class InternalBusinessInfo(Resource):
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def patch(legal_type, identifier):
         """Update the business corp state."""
+        from colin_api.models.filing import Filing  # pylint: disable=import-outside-toplevel
+
         try:
             if legal_type not in [x.value for x in Business.TypeCodes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
@@ -233,7 +235,7 @@ class InternalBusinessInfo(Resource):
                 con.begin()
 
                 # create event and update corp state
-                event_id = Business.add_involuntary_dissolution_warning_event(con, identifier, json_data)
+                event_id = Filing.add_involuntary_dissolution_warning_event(con, identifier, json_data)
                 return jsonify({
                     'batchProcessing': {
                         'colinIds': [event_id]
@@ -241,7 +243,7 @@ class InternalBusinessInfo(Resource):
                 }), HTTPStatus.CREATED
 
             except Exception as db_err:
-                current_app.logger.error('failed to file - rolling back partial db changes.')
+                current_app.logger.error('failed to update - rolling back partial db changes.')
                 if con:
                     con.rollback()
                 raise db_err

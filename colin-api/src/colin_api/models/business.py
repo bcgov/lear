@@ -486,49 +486,6 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             raise err
 
     @classmethod
-    def add_involuntary_dissolution_warning_event(cls, con, corp_num, batch_processing) -> int:
-        """Add involuntary dissolution warning event. This handles D1 and D2 dissolution stages."""
-        from colin_api.models.filing import Filing  # pylint: disable=import-outside-toplevel
-
-        if (dissolution_step := batch_processing.get("step")) and \
-            dissolution_step not in ['WARNING_LEVEL_1', 'WARNING_LEVEL_2']:
-            return None
-
-        if not (dissolution_meta_data := batch_processing.get('metaData')) \
-            or not (last_modified := batch_processing.get('lastModified')) \
-            or not (trigger_date := batch_processing.get('triggerDate')):
-            return None
-
-        event_type = None
-        corp_state = None
-        if dissolution_meta_data.get('overdueARs'):
-            if dissolution_step == 'WARNING_LEVEL_1':
-                event_type = 'SYSD1'
-                corp_state = Business.CorpStateTypes.D1_NO_AR.value
-            elif dissolution_step == 'WARNING_LEVEL_2':
-                event_type = 'SYSD2'
-                corp_state = Business.CorpStateTypes.D2_NO_AR.value
-        elif dissolution_meta_data.get('overdueTransition'):
-            if dissolution_step == 'WARNING_LEVEL_1':
-                event_type = 'SYST1'
-                corp_state = Business.CorpStateTypes.D1_NO_TR.value
-            elif dissolution_step == 'WARNING_LEVEL_2':
-                event_type = 'SYST2'
-                corp_state = Business.CorpStateTypes.D2_NO_TR.value
-
-        if event_type:
-            cursor = con.cursor()
-            event_id = Filing._get_event_id(  # pylint: disable=protected-access
-                cursor=cursor, corp_num=corp_num, filing_dt=last_modified,
-                event_type=event_type, trigger_dt=trigger_date
-            )
-            Business.update_corp_state(cursor, event_id, corp_num, corp_state)
-            return event_id
-
-        return None
-
-
-    @classmethod
     def update_corporation(cls, cursor, corp_num: str, date: str = None, annual_report: bool = False,
                            last_ar_filed_dt: str = None):
         # pylint: disable=too-many-arguments

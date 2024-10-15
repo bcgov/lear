@@ -120,10 +120,10 @@ def send_batch_processing(app: Flask, token: str, batch_processing: dict, batch_
     if legal_type and identifier:
         requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
         req = requests.patch(f'{app.config["COLIN_URL"]}/internal/{legal_type}/{identifier}',
-                            headers={'Content-Type': 'application/json',
-                                     'Authorization': 'Bearer ' + token},
-                            json=batch_processing,
-                            timeout=requests_timeout)
+                             headers={'Content-Type': 'application/json',
+                                      'Authorization': 'Bearer ' + token},
+                             json=batch_processing,
+                             timeout=requests_timeout)
 
     if not req or req.status_code != 201:
         app.logger.error(f'Batch processing {batch_processing_id} not created in colin {identifier}.')
@@ -146,6 +146,7 @@ def update_colin_id(app: Flask, token: dict, filing_id: str, colin_ids: list):
         return False
     return True
 
+
 def update_batch_processing_colin_id(app: Flask, token: dict, batch_processing_id: str, colin_ids: list):
     """Update the colin_id in the batch processing table."""
     requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
@@ -156,7 +157,8 @@ def update_batch_processing_colin_id(app: Flask, token: dict, batch_processing_i
         timeout=requests_timeout
     )
     if not req or req.status_code != 202:
-        app.logger.error(f'Failed to update colin id in legal db for batch processing {batch_processing_id} {req.status_code}')
+        app.logger.error(f'Failed to update colin id in legal db for batch '
+                         f'processing {batch_processing_id} {req.status_code}')
         return False
     return True
 
@@ -192,6 +194,7 @@ def get_bearer_token(app):
     except Exception:  # noqa: B902
         return None
 
+
 def update_filings(app: Flask, token: dict):
     """Get filings that haven't been synced with colin and send them to the colin-api."""
     page = 1
@@ -200,7 +203,7 @@ def update_filings(app: Flask, token: dict):
     corps_with_failed_filing = []
 
     while ((pending_filings is None or page <= math.ceil(pending_filings/limit)) and
-        (results := get_filings(app, token, page, limit))):
+           (results := get_filings(app, token, page, limit))):
         page += 1
         pending_filings = results.get('total')
         if not (filings := results.get('filings')):
@@ -212,7 +215,7 @@ def update_filings(app: Flask, token: dict):
             if identifier in corps_with_failed_filing:
                 # pylint: disable=no-member; false positive
                 app.logger.debug(f'Skipping filing {filing_id} for'
-                                            f' {filing["filing"]["business"]["identifier"]}.')
+                                 f' {filing["filing"]["business"]["identifier"]}.')
             else:
                 colin_ids = send_filing(app, token, filing, filing_id)
                 update = None
@@ -249,8 +252,7 @@ def update_batch_processings(app: Flask, token: dict):
             identifier = batch_processing['businessIdentifier']
             if identifier in corps_with_failed_batch_processing:
                 # pylint: disable=no-member; false positive
-                app.logger.debug(f'Skipping batch processing {batch_processing_id} for'
-                                 f' {batch_processing['businessIdentifier']}.')
+                app.logger.debug(f'Skipping batch processing {batch_processing_id} for {identifier}.')
             else:
                 colin_ids = send_batch_processing(app, token, batch_processing, batch_processing_id)
                 update = None
@@ -264,6 +266,7 @@ def update_batch_processings(app: Flask, token: dict):
                     corps_with_failed_batch_processing.append(batch_processing['businessIdentifier'])
                     # pylint: disable=no-member; false positive
                     app.logger.error(f'Failed to update batch processing {batch_processing_id} with colin event id.')
+
 
 def run():
     """Run the job to update filings and batch processings."""
