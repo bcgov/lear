@@ -463,7 +463,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     # pylint: disable=too-many-arguments
     def _get_event_id(cls, cursor, corp_num: str, filing_dt: str,
-                      event_type: str = 'FILE', trigger_dt: str = 'NULL') -> str:
+                      event_type: str = 'FILE', trigger_dt: str = '') -> str:
         """Get next event ID for filing.
 
         :param cursor: oracle cursor

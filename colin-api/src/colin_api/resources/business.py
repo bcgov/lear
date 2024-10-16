@@ -218,8 +218,6 @@ class InternalBusinessInfo(Resource):
             if not json_data:
                 return jsonify({'message': 'No input data provided'}), HTTPStatus.BAD_REQUEST
 
-            json_data = json_data.get('batchProcessing', None)
-
             # ensure that the business in the batch processing matches the business in the URL
             if identifier != json_data['businessIdentifier']:
                 return jsonify(
@@ -236,6 +234,7 @@ class InternalBusinessInfo(Resource):
 
                 # create event and update corp state
                 event_id = Filing.add_involuntary_dissolution_warning_event(con, identifier, json_data)
+                con.commit()
                 return jsonify({
                     'batchProcessing': {
                         'colinIds': [event_id]

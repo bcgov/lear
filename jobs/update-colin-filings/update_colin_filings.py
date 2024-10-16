@@ -219,7 +219,7 @@ def update_filings(app: Flask, token: dict):
             else:
                 colin_ids = send_filing(app, token, filing, filing_id)
                 update = None
-                if colin_ids:
+                if colin_ids and any(colin_ids):
                     update = update_colin_id(app, token, filing_id, colin_ids)
                 if update:
                     # pylint: disable=no-member; false positive
@@ -256,7 +256,7 @@ def update_batch_processings(app: Flask, token: dict):
             else:
                 colin_ids = send_batch_processing(app, token, batch_processing, batch_processing_id)
                 update = None
-                if colin_ids:
+                if any(colin_ids):
                     update = update_batch_processing_colin_id(app, token, batch_processing_id, colin_ids)
                 if update:
                     # pylint: disable=no-member; false positive
