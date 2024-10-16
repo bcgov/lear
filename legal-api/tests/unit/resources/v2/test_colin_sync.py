@@ -24,10 +24,12 @@ from registry_schemas.example_data import (
     INCORPORATION_FILING_TEMPLATE,
 )
 
-from legal_api.models import Business, Filing
+from legal_api.models import Batch, BatchProcessing, Business, Filing
 from legal_api.services.authz import COLIN_SVC_ROLE
 from tests.unit.services.utils import create_header
 from tests.unit.models import (
+    factory_batch,
+    factory_batch_processing,
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
@@ -79,6 +81,48 @@ def test_get_internal_filings(session, client, jwt):
     assert filings[0]['filingId'] == filing1.id
 
 
+@pytest.mark.parametrize(
+        'test_name,step,event_id,expected', [
+            ("D1_NOT_SYNCED", BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1, None, True),
+            ("D1_ALREADY_SYNCED", BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1, 12345, False),
+            ("D2_NOT_SYNCED", BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2, None, True),
+            ("D2_ALREADY_SYNCED", BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2, 12345, False),
+            ("D3_NOT_SYNCED", BatchProcessing.BatchProcessingStep.DISSOLUTION, None, False),
+            ("D3_ALREADY_SYNCED", BatchProcessing.BatchProcessingStep.DISSOLUTION, 12345, False),
+        ]
+)
+def test_get_internal_batch_processings(session, client, jwt, test_name, step, event_id, expected):
+    """Assert that the internal batch processings get endpoint returns all eligible batch processings."""
+    from legal_api.models.colin_event_id import ColinEventId
+
+    # Setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    batch = factory_batch(status=Batch.BatchStatus.PROCESSING)
+    batch_processing = factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=business.identifier,
+        step=step
+    )
+    if event_id:
+        colin_event_id = ColinEventId()
+        colin_event_id.colin_event_id = event_id
+        colin_event_id.batch_processing_id = batch_processing.id
+        colin_event_id.batch_processing_step = batch_processing.step
+        colin_event_id.save()
+
+    # Test
+    rv = client.get('/api/v2/businesses/internal/batch_processings',
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))   
+    assert rv.status_code == HTTPStatus.OK 
+    batch_processings = rv.json.get("batch_processings")
+    if expected:
+        assert len(batch_processings) == 1
+    else:
+        assert len(batch_processings) == 0
+
+
 @pytest.mark.parametrize('identifier, base_filing, corrected_filing, colin_id', [
     ('BC1234567', CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE, 1234),
     ('BC1234568', CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE, None),
@@ -128,6 +172,36 @@ def test_patch_internal_filings(session, client, jwt):
     assert colin_id in ColinEventId.get_by_filing_id(filing.id)
     assert rv.json['filing']['header']['filingId'] == filing.id
     assert colin_id in rv.json['filing']['header']['colinIds']
+
+
+def test_patch_internal_batch_processing(session, client, jwt):
+    """Assert that the internal batch processing patch endpoint updates the colin_event_id."""
+    from legal_api.models.colin_event_id import ColinEventId
+    
+    # Setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    batch = factory_batch(status=Batch.BatchStatus.PROCESSING)
+    batch_processing = factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=business.identifier,
+        step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1
+    )
+    colin_id = 1234
+
+    # Make request
+    rv = client.patch(f'/api/v2/businesses/internal/batch_processings/{batch_processing.id}',
+                      json={'colinIds': [colin_id]},
+                      headers=create_header(jwt, [COLIN_SVC_ROLE])
+                      )
+
+    # test result
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    batch_processing = BatchProcessing.find_by_id(batch_processing.id)
+    assert colin_id in ColinEventId.get_by_batch_processing_id(batch_processing.id)
+    assert rv.json['id'] == batch_processing.id
+    assert colin_id in rv.json['colinIds']
 
 
 def test_get_colin_id(session, client, jwt):
