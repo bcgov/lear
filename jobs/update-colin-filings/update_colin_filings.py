@@ -127,7 +127,6 @@ def send_batch_processing(app: Flask, token: str, batch_processing: dict, batch_
 
     if not req or req.status_code != 201:
         app.logger.error(f'Batch processing {batch_processing_id} not created in colin {identifier}.')
-        # raise Exception
         return None
     return req.json()['batchProcessing']['colinIds']
 
@@ -256,7 +255,7 @@ def update_batch_processings(app: Flask, token: dict):
             else:
                 colin_ids = send_batch_processing(app, token, batch_processing, batch_processing_id)
                 update = None
-                if any(colin_ids):
+                if colin_ids and any(colin_ids):
                     update = update_batch_processing_colin_id(app, token, batch_processing_id, colin_ids)
                 if update:
                     # pylint: disable=no-member; false positive
