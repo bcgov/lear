@@ -4,7 +4,7 @@
 
 # Application Name
 
-Versioning Extension Module for SQLAlchemy
+SQLAlchemy Versioning library (LEAR Version)
 
 ## Technology Stack Used
 
