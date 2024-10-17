@@ -22,6 +22,7 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
+from sql_versioning import Versioned
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
@@ -50,7 +51,7 @@ from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; 
 from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
-class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
+class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
     """This class manages all of the base data about a business.
 
     A business is base form of any entity that can interact directly

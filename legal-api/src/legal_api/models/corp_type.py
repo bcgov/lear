@@ -20,7 +20,6 @@ from .db import db
 class CorpType(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the corp type."""
 
-    __versioned__ = {}
     __tablename__ = 'corp_types'
 
     corp_type_cd = db.Column('corp_type_cd', db.String(5), primary_key=True)

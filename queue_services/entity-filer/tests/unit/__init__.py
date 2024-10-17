@@ -14,16 +14,18 @@
 """The Unit Tests and the helper routines."""
 import base64
 import uuid
+from datetime import datetime
 
 from datedelta import datedelta
-from datetime import datetime
 from dateutil.parser import parse
 from freezegun import freeze_time
-from sqlalchemy_continuum import versioning_manager
+
+from legal_api.models import Batch, BatchProcessing, Filing, Resolution, ShareClass, ShareSeries, db
+from legal_api.models.colin_event_id import ColinEventId
+from legal_api.models.db import versioning_manager
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
-from legal_api.models import db, Batch, BatchProcessing, Filing, Resolution, ShareClass, ShareSeries
-from legal_api.models.colin_event_id import ColinEventId
+
 
 AR_FILING = {
     'filing': {

@@ -17,13 +17,14 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
+from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
 from .db import db  # noqa: I001
 from .party import Party  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
-class PartyRole(db.Model):
+class PartyRole(db.Model, Versioned):
     """Class that manages data for party roles related to a business."""
 
     class RoleTypes(Enum):

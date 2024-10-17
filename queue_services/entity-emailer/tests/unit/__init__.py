@@ -19,6 +19,7 @@ from random import randrange
 from unittest.mock import Mock
 
 from legal_api.models import Batch, Business, Filing, Furnishing, Party, PartyRole, RegistrationBootstrap, User
+from legal_api.models.db import versioning_manager
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
@@ -43,7 +44,6 @@ from registry_schemas.example_data import (
     REGISTRATION,
     RESTORATION,
 )
-from sqlalchemy_continuum import versioning_manager
 
 from tests import EPOCH_DATETIME
 

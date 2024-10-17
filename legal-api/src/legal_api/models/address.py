@@ -16,11 +16,12 @@
 Currently this only provides API versioning information
 """
 import pycountry
+from sql_versioning import Versioned
 
 from .db import db
 
 
-class Address(db.Model):  # pylint: disable=too-many-instance-attributes
+class Address(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages all of the business addresses.
 
     Every business is required to have 2 addresses on record, DELIVERY and MAILING.

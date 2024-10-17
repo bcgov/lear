@@ -15,6 +15,7 @@
 
 from http import HTTPStatus
 
+from sql_versioning import Versioned
 from sqlalchemy import event
 
 from legal_api.exceptions import BusinessException
@@ -22,7 +23,7 @@ from legal_api.exceptions import BusinessException
 from .db import db
 
 
-class ShareSeries(db.Model):  # pylint: disable=too-many-instance-attributes
+class ShareSeries(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages the share series."""
 
     __versioned__ = {}
