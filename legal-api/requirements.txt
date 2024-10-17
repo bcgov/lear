@@ -60,5 +60,4 @@ reportlab==3.6.12
 html-sanitizer==2.4.1
 lxml==5.2.2
 git+https://github.com/bcgov/business-schemas.git@2.18.31#egg=registry_schemas
-# git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
-git+https://github.com/chenhongjing/lear.git@22827-sql-versioning#egg=sql-versioning&subdirectory=python/common/sql-versioning
+git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
