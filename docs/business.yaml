@@ -4649,8 +4649,10 @@ components:
           - foreignJurisdiction
           - authorization
           - nameRequest
+          - contactPoint
           - offices
           - parties
+          - shareStructure
           properties:
             business:
               $ref: '#/components/schemas/Business'
@@ -4687,7 +4689,6 @@ components:
               type: object
               required:
               - files
-              - date
               properties:
                 files:
                   type: array
