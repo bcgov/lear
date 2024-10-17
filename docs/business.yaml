@@ -4654,9 +4654,6 @@ components:
           - parties
           - shareStructure
           properties:
-            isApproved:
-              type: boolean
-              description: 'Continuation In Authorization has been approved.'
             business:
               $ref: '#/components/schemas/Business'
             foreignJurisdiction:
