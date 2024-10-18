@@ -4639,7 +4639,7 @@ components:
     Continuation_in:
       type: object
       title: Continuation In Filing
-      description: Represents the filing for a foreign corporation applying to “continue in” to BC. To do so, authorization must have been received from the foreign jurisdiction. Authorization is typically in the form of a letter. The authorization must be sent to the registry as a precondition to this transaction.
+      description: Represents the filing for a foreign corporation applying to “continue in” to BC. To do so, user must first submit a Continuation Authorization and have it approved by BC Registries before filing a Continuation Application. Authorization is typically in the form of a letter. The authorization must be reviewed and approved prior to complete filing. Once the authorization is approved by registries staff, user can continue with submitting continuation In filing.
       required:
         - continuationIn
       properties:
