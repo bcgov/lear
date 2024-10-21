@@ -15,7 +15,6 @@
 
 The ColinEventId class and Schema are held in this module.
 """
-from legal_api.models import BatchProcessing
 
 from .db import db
 
@@ -27,11 +26,6 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
 
     colin_event_id = db.Column('colin_event_id', db.Integer, unique=True, primary_key=True)
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    batch_processing_id = db.Column('batch_processing_id', db.Integer, db.ForeignKey('batch_processing.id'))
-    batch_processing_step = db.Column('batch_processing_step', db.Enum(BatchProcessing.BatchProcessingStep))
-
-    # relationships
-    batch_processing = db.relationship('BatchProcessing', lazy='select', uselist=False)
 
     def save(self):
         """Save the object to the database immediately."""
@@ -53,13 +47,3 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
         colin_event_id_obj =\
             db.session.query(ColinEventId).filter(ColinEventId.colin_event_id == colin_id).one_or_none()
         return colin_event_id_obj
-
-    @staticmethod
-    def get_by_batch_processing_id(batch_processing_id):
-        """Get the list of colin_event_ids linked to the given batch_processing_id."""
-        colin_event_id_objs = db.session.query(ColinEventId). \
-            filter(ColinEventId.batch_processing_id == batch_processing_id).all()
-        id_list = []
-        for obj in colin_event_id_objs:
-            id_list.append(obj.colin_event_id)
-        return id_list
