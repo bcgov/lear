@@ -203,3 +203,38 @@ def test_versioning_query(db, session):
     
     assert result
     assert result.name == 'old'
+
+
+def test_versioning_rollback(db, session):
+    """Test rollback."""
+    user1 = User(name='test1')
+    session.add(user1)
+    session.commit()
+    
+    user_version = version_class(User)
+    results_txn1 = session.query(Transaction).all()
+    results_user1 = session.query(User).all()
+    results_version1 = session.query(user_version).all()
+
+    assert len(results_txn1) == 1
+    assert len(results_user1) == 1
+    assert len(results_version1) == 1
+    
+    try:
+        user2 = User(name='test2')
+        session.add(user2)
+        session.flush()
+        raise Exception('an error')
+    except Exception:
+        session.rollback()
+
+    results_txn2 = session.query(Transaction).all()
+    results_user2 = session.query(User).all()
+    results_version2 = session.query(user_version).all()
+
+    assert len(results_txn2) == 1
+    assert len(results_user2) == 1
+    assert len(results_version2) == 1
+    assert results_txn1[0] == results_txn2[0]
+    assert results_user1[0] == results_user2[0]
+    assert results_version1[0] == results_version2[0]
