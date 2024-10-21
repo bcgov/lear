@@ -39,11 +39,11 @@ from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
+from legal_api.models.db import init_db, versioning_manager
 from legal_api.services import Flags
 from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
-from sqlalchemy_continuum import versioning_manager
 
 from entity_filer import config
 from entity_filer.filing_meta import FilingMeta, json_serial
@@ -83,7 +83,7 @@ gcp_queue = GcpQueue()
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
-db.init_app(FLASK_APP)
+init_db(FLASK_APP)
 gcp_queue.init_app(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):

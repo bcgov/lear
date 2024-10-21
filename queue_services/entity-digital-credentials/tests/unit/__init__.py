@@ -14,7 +14,7 @@
 """The Unit Tests and the helper routines."""
 
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, Filing
-from sqlalchemy_continuum import versioning_manager
+from legal_api.models.db import versioning_manager
 
 
 def create_business(identifier):

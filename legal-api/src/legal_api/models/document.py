@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from enum import Enum
 
+from sql_versioning import Versioned
 from sqlalchemy import desc
 
 from .db import db
@@ -36,7 +37,7 @@ class DocumentType(Enum):
     DIRECTOR_AFFIDAVIT = 'director_affidavit'
 
 
-class Document(db.Model):
+class Document(db.Model, Versioned):
     """This is the model for a document."""
 
     __versioned__ = {}

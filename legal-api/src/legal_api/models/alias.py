@@ -16,10 +16,12 @@ from __future__ import annotations
 
 from enum import Enum
 
+from sql_versioning import Versioned
+
 from .db import db
 
 
-class Alias(db.Model):  # pylint: disable=too-many-instance-attributes
+class Alias(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
     """This class manages the aliases."""
 
     class AliasType(Enum):

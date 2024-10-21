@@ -25,6 +25,7 @@ from registry_schemas.flask import SchemaServices  # noqa: I001
 
 from legal_api import config, models
 from legal_api.models import db
+from legal_api.models.db import init_db
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import digital_credentials, flags, queue
@@ -54,7 +55,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
             send_default_pii=False
         )
 
-    db.init_app(app)
+    init_db(app)
     rsbc_schemas.init_app(app)
     flags.init_app(app)
     queue.init_app(app)
