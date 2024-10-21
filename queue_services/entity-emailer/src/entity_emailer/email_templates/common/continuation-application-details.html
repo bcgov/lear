@@ -1,18 +1,18 @@
 <div class="continuation-application-details">
   <p class="title-message bold">Your Continuation Application Details</p>
   <div>
+    <div class="name bold">Previous Jurisdiction:</div>
+    <div class="value">{{ foreign_jurisdiction }}</div>
+  </div>
+  [[16px.html]]
+  <div>
     <div class="name bold">Identifying Number in Foreign Jurisdiction:</div>
     <div class="value">{{ filing.foreignJurisdiction.identifier }}</div>
   </div>
   [[16px.html]]
   <div>
-    <div class="name bold">Name in Foreign Jurisdiction:</div>
+    <div class="name bold">Name in Previous Jurisdiction:</div>
     <div class="value">{{ filing.foreignJurisdiction.legalName }}</div>
-  </div>
-  [[16px.html]]
-  <div>
-    <div class="name bold">Foreign Jurisdiction:</div>
-    <div class="value">{{ foreign_jurisdiction }}</div>
   </div>
 
   {% if filing.business %}
