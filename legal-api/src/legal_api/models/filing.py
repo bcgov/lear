@@ -24,7 +24,7 @@ from sqlalchemy.orm import backref
 from legal_api.exceptions import BusinessException
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.schemas import rsbc_schemas
-from legal_api.utils.util import build_schema_error_response
+from legal_api.utils.util import build_schema_error_response, print_execution_time
 
 from .db import db  # noqa: I001
 
@@ -861,6 +861,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
+    @print_execution_time
     def get_filings_by_status(business_id: int, status: list, after_date: date = None):
         """Return the filings with statuses in the status array input."""
         query = db.session.query(Filing). \

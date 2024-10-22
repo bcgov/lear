@@ -14,10 +14,12 @@
 
 """Service to check warnings for a business."""
 from legal_api.models import Business
+from legal_api.utils.util import print_execution_time
 
 from .business import check_business
 
 
+@print_execution_time
 def check_warnings(business: Business) -> list:
     """Check warnings for a business."""
     result = []

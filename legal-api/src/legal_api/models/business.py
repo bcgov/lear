@@ -32,6 +32,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.utils.util import print_execution_time
 
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
@@ -633,6 +634,7 @@ class Business(db.Model):  # pylint: disable=too-many-instance-attributes,disabl
         return business
 
     @classmethod
+    @print_execution_time
     def find_by_identifier(cls, identifier: str = None):
         """Return a Business by the id assigned by the Registrar."""
         business = None

@@ -28,6 +28,7 @@ from urllib3.util.retry import Retry
 
 from legal_api.models import Business, Filing, PartyRole, User
 from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.utils.util import print_execution_time
 
 
 cache = Cache()
@@ -62,7 +63,7 @@ class BusinessRequirement(str, Enum):
     NOT_EXIST = 'NOT_EXIST'
     NO_RESTRICTION = 'NO_RESTRICTION'
 
-
+@print_execution_time
 def _call_auth_api(path: str, token: str) -> Response:
     """Return the auth api response for the given endpoint path."""
     if not token:
@@ -82,6 +83,7 @@ def _call_auth_api(path: str, token: str) -> Response:
         http.mount('http://', HTTPAdapter(max_retries=retries))
         resp = http.get(url=auth_url, headers=headers)
         current_app.logger.debug(f'Auth get {path} response status: {str(resp.status_code)}')
+        current_app.logger.info(f'GET {path} took {resp.elapsed.total_seconds()} s')
         return resp
 
     except (exceptions.ConnectionError,  # pylint: disable=broad-except
@@ -515,6 +517,7 @@ def is_allowed(business: Business,
     return False
 
 
+@print_execution_time
 def get_allowable_actions(jwt: JwtManager, business: Business):
     """Get allowable actions."""
     is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
@@ -823,6 +826,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business):
     return not any(f.effective_date and f.effective_date > now for f in paid_filings)
 
 
+@print_execution_time
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
     """Get allowed type of filing types for the current user."""
     user_role = 'general'

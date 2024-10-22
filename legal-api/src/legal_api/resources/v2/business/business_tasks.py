@@ -28,6 +28,7 @@ from legal_api.models import Business, Filing
 from legal_api.services import check_warnings, namex
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.utils.auth import jwt
+from legal_api.utils.util import print_execution_time
 
 from .bp import bp
 
@@ -77,6 +78,7 @@ def get_tasks(identifier):
     return jsonify(tasks=rv)
 
 
+@print_execution_time
 def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 extra
     """
     Return all current pending tasks to do.
@@ -122,10 +124,14 @@ def construct_task_list(business):  # pylint: disable=too-many-locals; only 2 ex
                     'Authorization': f'Bearer {jwt.get_token_auth_header()}',
                     'Content-Type': 'application/json'
                 }
+
+                url = f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}'
                 pay_response = requests.get(
-                    url=f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}',
+                    url=url,
                     headers=headers
                 )
+                current_app.logger.info(f'POST {url} took {pay_response.elapsed.total_seconds()} s')
+
                 pay_details = {
                     'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
                     'paymentMethod': pay_response.json().get('paymentMethod', '')
@@ -186,7 +192,7 @@ def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  #
     }
     return todo
 
-
+@print_execution_time
 def create_incorporate_nr_todo(name_request, order, enabled):
     """Return a to-do JSON object."""
     todo = {
