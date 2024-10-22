@@ -188,7 +188,7 @@ def search_businesses():
                 'draftStatus': draft_dao.status
             }
 
-            if (draft_dao.status in [Filing.Status.PAID.value, Filing.Status.APPROVED.value] and
+            if (draft_dao.status == Filing.Status.PAID.value and
                     draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
                 draft['effectiveDate'] = draft_dao.effective_date.isoformat()
 

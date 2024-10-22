@@ -682,6 +682,7 @@ def test_payment_failed(session, client, jwt):
     assert rv.json.get('errors')
 
 
+@pytest.mark.skip(reason='no more support for v1 endpoints')
 def test_update_draft_ar(session, client, jwt):
     """Assert that a valid filing can be updated to a paid filing."""
     import copy
@@ -879,6 +880,7 @@ def test_deleting_filings_deletion_locked(session, client, jwt, legal_type, dele
         assert rv.status_code == HTTPStatus.OK
 
 
+@pytest.mark.skip(reason='no more support for v1 endpoints')
 def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     """Assert that a valid filing can NOT be updated once it has been paid."""
     import copy
@@ -905,6 +907,7 @@ def test_update_block_ar_update_to_a_paid_filing(session, client, jwt):
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
+@pytest.mark.skip(reason='no more support for v1 endpoints')
 def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     """Assert that updating a missing filing fails."""
     import copy

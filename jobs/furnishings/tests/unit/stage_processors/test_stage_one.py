@@ -329,3 +329,16 @@ async def test_process_paper_letters(app, session, sftpserver, sftpconnection, t
                 with sftpconnection as sftpclient:
                     uploaded_files = sftpclient.listdir(storage_directory)
                     assert len(uploaded_files) == 1
+
+                    # Fetch the updated furnishing
+                    updated_furnishing = Furnishing.find_by_id(mail_furnishing.id)
+
+                    # Assert the status is updated correctly
+                    assert updated_furnishing.status == Furnishing.FurnishingStatus.PROCESSED
+
+                    # Assert the processed_date is set
+                    assert updated_furnishing.processed_date is not None
+
+                    # Assert the correct note is added based on the entity type
+                    expected_note = 'SFTP of BC batch letter was a success' if entity_type == Business.LegalTypes.COMP.value else 'SFTP of XPRO batch letter was a success'
+                    assert expected_note in updated_furnishing.notes

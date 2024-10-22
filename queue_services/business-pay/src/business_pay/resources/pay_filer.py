@@ -40,7 +40,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from datetime import timezone
 from http import HTTPStatus
-from typing import List, Optional
+from typing import Optional
 
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
@@ -51,8 +51,7 @@ from business_pay.services import create_email_msg
 from business_pay.services import verify_gcp_jwt
 from business_pay.services import gcp_queue
 from business_pay.services import queue
-from business_pay.database import Filing, Review, ReviewStatus
-from business_pay.database import db
+from business_pay.database import Filing
 
 bp = Blueprint("worker", __name__)
 
@@ -68,9 +67,7 @@ async def worker():
     1. Get cloud event
     2. Get filing and payment information
     3. Update model
-    4. a or b
-        a. Create a staff review if required else execute b.
-        b. Publish to filer Q, if the filing is not a FED (Effective date > now())
+    4. Publish to filer Q, if the filing is not a FED (Effective date > now())
     5. Publish to email Q
 
     Decisions on returning a 2xx or failing value to
@@ -92,7 +89,6 @@ async def worker():
 
     # 1. Get cloud event
     # ##
-    raw_data = request.data
     if not (ce := gcp_queue.get_simple_cloud_event(request,
                                                    wrapped=True)) \
             and not isinstance(ce, SimpleCloudEvent):
@@ -149,14 +145,9 @@ async def worker():
     filing.status = Filing.Status.PAID
     filing.save()
 
-    staff_review_required = ["continuationIn"]
-    if filing.filing_type in staff_review_required:
-        # 4.a. Create staff review for the filing
-        create_staff_review(filing)
-    else:
-        # 4.b. Publish to filer Q, if the filing is not a FED (Effective date > now())
-        # ##
-        publish_to_filer(filing, payment_token)
+    # 4. Publish to filer Q, if the filing is not a FED (Effective date > now())
+    # ##
+    publish_to_filer(filing, payment_token)
 
     # None of these should bail as the filing has been marked PAID
     # 5. Publish to email Q
@@ -165,41 +156,6 @@ async def worker():
 
     logger.info(f"completed ce: {str(ce)}")
     return {}, HTTPStatus.OK
-
-
-def create_staff_review(filing: Filing):
-    """Create staff review for the filing."""
-    filing_data = filing.filing_json["filing"][filing.filing_type]
-
-    review = Review()
-    review.filing_id = filing.id
-    review.nr_number = filing_data.get("nameRequest", {}).get("nrNumber")
-    review.identifier = filing_data.get(
-        "foreignJurisdiction", {}).get("identifier")
-    review.status = ReviewStatus.AWAITING_REVIEW
-    review.completing_party = get_completing_party(filing_data["parties"])
-    review.submission_date = datetime.now(timezone.utc)
-    review.creation_date = datetime.now(timezone.utc)
-    review.save()
-
-    filing.status = Filing.Status.AWAITING_REVIEW.value
-    filing.save()
-
-
-def get_completing_party(parties: List):
-    """Return the full name of the party."""
-    for party in parties:
-        for role in party.get("roles", []):
-            if role["roleType"] == "Completing Party":
-                names = []
-                names.append(party["officer"]["firstName"])
-
-                if middle_name := party["officer"].get("middleName"):
-                    names.append(middle_name)
-
-                names.append(party["officer"]["lastName"])
-                return " ".join(names).strip()
-    return None
 
 
 @dataclass

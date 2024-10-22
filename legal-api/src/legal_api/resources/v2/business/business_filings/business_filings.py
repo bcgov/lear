@@ -16,6 +16,7 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 import copy
+from contextlib import suppress
 from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
@@ -50,11 +51,9 @@ from legal_api.models import (
     db,
 )
 from legal_api.models.colin_event_id import ColinEventId
-from legal_api.schemas import rsbc_schemas
 from legal_api.services import (
     STAFF_ROLE,
     SYSTEM_ROLE,
-    DocumentMetaService,
     MinioService,
     RegistrationBootstrapService,
     authorized,
@@ -67,7 +66,6 @@ from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.utils.util import build_schema_error_response
 
 from ..bp import bp
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
@@ -112,20 +110,23 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
                    identifier,
                    filing_id: Optional[int] = None):
     """Modify an incomplete filing for the business."""
+    business, filing = ListFilingResource.get_business_and_filing(identifier, filing_id)
+
     # basic checks
-    business = Business.find_by_identifier(identifier)
-    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing_id, request, business)
+    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing, request, business)
     if err_msg:
         return jsonify({'errors': [err_msg, ]}), err_code
-    json_input = request.get_json()
+    json_input = copy.deepcopy(request.get_json())  # used for validation
+    ListFilingResource.modify_filing_json(json_input, filing, for_validation=True)
 
     # check authorization
-    response, response_code = ListFilingResource.check_authorization(identifier, json_input, business, filing_id)
+    response, response_code = ListFilingResource.check_authorization(identifier, json_input, business, filing)
     if response:
         return response, response_code
 
     # get header params
-    payment_account_id = request.headers.get('account-id', request.headers.get('accountId', None))
+    payment_account_id = request.headers.get('account-id',
+                                             request.headers.get('accountId', None))
 
     if not query.draft \
             and not ListFilingResource.is_historical_colin_filing(json_input) \
@@ -144,7 +145,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
     # save filing, if it's draft only then bail
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     try:
-        business, filing, err_msg, err_code = ListFilingResource.save_filing(request, identifier, user, filing_id)
+        business, filing, err_msg, err_code = ListFilingResource.save_filing(request, identifier, user, filing)
         if err_msg or query.draft:
             reply = filing.json if filing else json_input
             reply['errors'] = [err_msg, ]
@@ -153,10 +154,9 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
     except Exception as err:
         print(err)
 
-    if filing.in_change_requested_status:
-        # resubmit filing
-        ListFilingResource.resubmit_filing_for_review(filing)
-        ListFilingResource.check_and_update_nr(filing)
+    if (Filing.FILINGS[filing.filing_type].get('staffApprovalRequired', False)
+            and filing.status in [Filing.Status.DRAFT.value, Filing.Status.CHANGE_REQUESTED.value]):
+        ListFilingResource.submit_filing_for_review(filing)
         response = {'isPaymentActionRequired': False}
     else:
         # complete filing
@@ -189,22 +189,20 @@ def delete_filings(identifier, filing_id=None):
                         _('You are not authorized to delete a filing for:') + identifier}), \
             HTTPStatus.UNAUTHORIZED
 
-    if identifier.startswith('T'):
-        filing = Filing.get_temp_reg_filing(identifier, filing_id)
-    else:
-        filing = Business.get_filing_by_id(identifier, filing_id)
-
+    business, filing = ListFilingResource.get_business_and_filing(identifier, filing_id)
     if not filing:
         return jsonify({'message': _('Filing Not Found.')}), HTTPStatus.NOT_FOUND
 
-    if filing.locked:  # should not be deleted
-        return ListFilingResource.create_deletion_locked_response(identifier, filing)
+    err_message, err_code = ListFilingResource.is_filing_locked_from_deletion(business, filing)
+    if err_code:
+        return jsonify({'message': _(err_message)}), err_code
 
-    try:
-        ListFilingResource.delete_from_minio(filing)
-        filing.delete()
-    except BusinessException as err:
-        return jsonify({'errors': [{'error': err.error}, ]}), err.status_code
+    filing_type = filing.filing_type
+    filing_json = filing.filing_json
+    filing.delete()
+
+    with suppress(Exception):
+        ListFilingResource.delete_from_minio(filing_type, filing_json)
 
     if identifier.startswith('T'):
         bootstrap = RegistrationBootstrap.find_by_identifier(identifier)
@@ -285,9 +283,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             return legal_api.reports.get_pdf(rv.storage, report_type)
 
         filing_json = rv.json
-        if documents := DocumentMetaService().get_documents(filing_json):
-            filing_json['filing']['documents'] = documents
-
         if rv.status == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
         elif (rv.status in [Filing.Status.CHANGE_REQUESTED.value,
@@ -367,24 +362,24 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return True
 
     @staticmethod
-    def create_deletion_locked_response(identifier, filing):
-        """Create a filing that draft that cannot be deleted."""
-        business = Business.find_by_identifier(identifier)
-        err_message = 'This filing cannot be deleted.'
-        err_code = HTTPStatus.FORBIDDEN
-        if (filing.status == Filing.Status.DRAFT.value and
-                filing.filing_type == 'alteration' and
+    def is_filing_locked_from_deletion(business, filing: Filing):
+        """Check if a filing has locked from deletion."""
+        err_message = None
+        err_code = None
+        if filing.status != Filing.Status.DRAFT.value:
+            err_message = 'This filing cannot be deleted.'
+            err_code = HTTPStatus.FORBIDDEN
+        elif filing.deletion_locked:
+            if (filing.filing_type == 'alteration' and
                 business.legal_type in [lt.value for lt in (Business.LIMITED_COMPANIES +
                                                             Business.UNLIMITED_COMPANIES)]):
-            err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
-            err_code = HTTPStatus.UNAUTHORIZED
-        elif filing.status in [Filing.Status.DRAFT.value, Filing.Status.PENDING.value]:
-            err_message = 'This filing cannot be deleted at this moment.'
-            err_code = HTTPStatus.UNAUTHORIZED
+                err_message = 'You must complete this alteration filing to become a BC Benefit Company.'
+                err_code = HTTPStatus.UNAUTHORIZED
+            else:
+                err_message = 'This filing cannot be deleted at this moment.'
+                err_code = HTTPStatus.UNAUTHORIZED
 
-        return jsonify({
-            'message': _(err_message)
-        }), err_code
+        return err_message, err_code
 
     @staticmethod
     def check_and_update_nr(filing):
@@ -433,7 +428,22 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return None, None
 
     @staticmethod
-    def put_basic_checks(identifier, filing_id, client_request, business) -> Tuple[dict, int]:
+    def get_business_and_filing(identifier, filing_id=None) -> Tuple[Optional[Business], Optional[Filing]]:
+        """Retrieve business and filing."""
+        business = None
+        filing = None
+        if filing_id:
+            if identifier.startswith('T'):
+                filing = Filing.get_temp_reg_filing(identifier, filing_id)
+            else:
+                business = Business.find_by_identifier(identifier)
+                filing = Business.get_filing_by_id(identifier, filing_id)
+        else:
+            business = Business.find_by_identifier(identifier)
+        return business, filing
+
+    @staticmethod
+    def put_basic_checks(identifier, filing, client_request, business) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if not json_input:
@@ -441,7 +451,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                      f'No filing json data in body of post for {identifier}.'},
                     HTTPStatus.BAD_REQUEST)
 
-        if filing_id and client_request.method != 'PUT':  # checked since we're overlaying routes
+        if filing and client_request.method != 'PUT':  # checked since we're overlaying routes
             return ({'message':
                      f'Illegal to attempt to create a duplicate filing for {identifier}.'},
                     HTTPStatus.FORBIDDEN)
@@ -453,12 +463,15 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES and business is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
+        if client_request.method == 'PUT' and not filing:
+            return {'message': f'{identifier} no filings found'}, HTTPStatus.NOT_FOUND
+
         return None, None
 
     @staticmethod
     def check_authorization(identifier, filing_json: dict,
                             business: Business,
-                            filing_id: int = None) -> Tuple[dict, int]:
+                            filing: Filing = None) -> Tuple[dict, int]:
         """Assert that the user can access the business."""
         filing_type = filing_json['filing']['header'].get('name')
         filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
@@ -470,7 +483,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             filing_json['filing'][filing_type]['nameRequest'].get('legalType')
 
         if not authorized(identifier, jwt, action=['edit']) or \
-                not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing_id):
+                not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
             return jsonify({'message':
                             f'You are not authorized to submit a filing for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED
@@ -531,7 +544,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     def save_filing(client_request: LocalProxy,  # pylint: disable=too-many-return-statements,too-many-branches
                     business_identifier: str,
                     user: User,
-                    filing_id: int) -> Tuple[Union[Business, RegistrationBootstrap], Filing, dict, int]:
+                    filing: Filing = None) -> Tuple[Union[Business, RegistrationBootstrap], Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
@@ -546,10 +559,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         }
         """
         json_input = client_request.get_json()
-        if not json_input:
-            return None, None, {'message':
-                                f'No filing json data in body of post for {business_identifier}.'}, \
-                HTTPStatus.BAD_REQUEST
+        ListFilingResource.modify_filing_json(json_input, filing)
 
         if business_identifier.startswith('T'):
             # bootstrap filing
@@ -558,16 +568,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             if not bootstrap:
                 return None, None, {'message':
                                     f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
-            if client_request.method == 'PUT':
-                rv = db.session.query(Filing). \
-                    filter(Filing.temp_reg == business_identifier). \
-                    filter(Filing.id == filing_id). \
-                    one_or_none()
-                if not rv:
-                    return None, None, {'message':
-                                        f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
-                filing = rv
-            else:
+            if not filing:
                 filing = Filing()
                 filing.temp_reg = bootstrap.identifier
                 if not json_input['filing'].get('business'):
@@ -578,20 +579,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             # regular filing for a business
             business = Business.find_by_identifier(business_identifier)
             if not business:
-                return None, None, {'message':
-                                    f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
+                return None, None, {'message': f'{business_identifier} not found'}, HTTPStatus.NOT_FOUND
 
-            if client_request.method == 'PUT':
-                rv = db.session.query(Business, Filing). \
-                    filter(Business.id == Filing.business_id). \
-                    filter(Business.identifier == business_identifier). \
-                    filter(Filing.id == filing_id). \
-                    one_or_none()
-                if not rv:
-                    return None, None, {'message':
-                                        f'{business_identifier} no filings found'}, HTTPStatus.NOT_FOUND
-                filing = rv[1]
-            else:
+            if not filing:
                 filing = Filing()
                 filing.business_id = business.id
 
@@ -603,7 +593,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 err_msg, err_code = ListFilingResource._save_colin_event_ids(filing, business)
                 if err_code:
                     return None, None, err_msg, err_code
-            elif not filing.in_change_requested_status:
+            else:
                 filing.filing_date = datetime.datetime.utcnow()
 
             # for any legal type, set effective date as set in json; otherwise leave as default
@@ -643,23 +633,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if resolution_content := filing_json['filing'].get('correction', {}).get('resolution', None):
             filing_json['filing']['correction']['resolution'] = Sanitizer().sanitize(resolution_content)
         return filing_json
-
-    @staticmethod
-    def validate_filing_json(client_request: LocalProxy) -> Tuple[dict, int]:
-        """Assert that the json is a valid filing.
-
-        Returns: {
-            dict: a dict, success message or array of errors
-            int: the HTTPStatus error code
-        }
-        """
-        valid, err = rsbc_schemas.validate(client_request.get_json(), 'filing')
-
-        if valid:
-            return {'message': 'Filing is valid'}, HTTPStatus.OK
-
-        errors = build_schema_error_response(err)
-        return errors, HTTPStatus.BAD_REQUEST
 
     @staticmethod
     def get_filing_types(business: Business, filing_json: dict):  # pylint: disable=too-many-branches
@@ -909,45 +882,50 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return is_future_effective
 
     @staticmethod
-    def delete_from_minio(filing):
+    def delete_from_minio(filing_type: str, filing_json: dict):
         """Delete file from minio."""
-        if (filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name')
-                and (cooperative := filing.filing_json
+        if (filing_type == Filing.FILINGS['incorporationApplication'].get('name')
+                and (cooperative := filing_json
                      .get('filing', {})
                      .get('incorporationApplication', {})
                      .get('cooperative', None))) or \
-            (filing.filing_type == Filing.FILINGS['alteration'].get('name')
-                and (cooperative := filing.filing_json
+            (filing_type == Filing.FILINGS['alteration'].get('name')
+                and (cooperative := filing_json
                      .get('filing', {})
                      .get('alteration', {}))):
             if rules_file_key := cooperative.get('rulesFileKey', None):
                 MinioService.delete_file(rules_file_key)
             if memorandum_file_key := cooperative.get('memorandumFileKey', None):
                 MinioService.delete_file(memorandum_file_key)
-        elif filing.filing_type == Filing.FILINGS['dissolution'].get('name') \
-                and (affidavit_file_key := filing.filing_json
+        elif filing_type == Filing.FILINGS['dissolution'].get('name') \
+                and (affidavit_file_key := filing_json
                      .get('filing', {})
                      .get('dissolution', {})
                      .get('affidavitFileKey', None)):
             MinioService.delete_file(affidavit_file_key)
-        elif filing.filing_type == Filing.FILINGS['courtOrder'].get('name') \
-                and (file_key := filing.filing_json
+        elif filing_type == Filing.FILINGS['courtOrder'].get('name') \
+                and (file_key := filing_json
                      .get('filing', {})
                      .get('courtOrder', {})
                      .get('fileKey', None)):
             MinioService.delete_file(file_key)
-        elif filing.filing_type == Filing.FILINGS['continuationIn'].get('name'):
-            continuation_in = filing.filing_json.get('filing', {}).get('continuationIn', {})
+        elif filing_type == Filing.FILINGS['continuationIn'].get('name'):
+            ListFilingResource.delete_continuation_in_files(filing_json)
 
-            # Delete affidavit file
-            if affidavit_file_key := continuation_in.get('foreignJurisdiction', {}).get('affidavitFileKey', None):
-                MinioService.delete_file(affidavit_file_key)
+    @staticmethod
+    def delete_continuation_in_files(filing_json: dict):
+        """Delete continuation in files from minio."""
+        continuation_in = filing_json.get('filing', {}).get('continuationIn', {})
 
-            # Delete authorization file(s)
-            authorization_files = continuation_in.get('authorization', {}).get('files', [])
-            for file in authorization_files:
-                if auth_file_key := file.get('fileKey', None):
-                    MinioService.delete_file(auth_file_key)
+        # Delete affidavit file
+        if affidavit_file_key := continuation_in.get('foreignJurisdiction', {}).get('affidavitFileKey', None):
+            MinioService.delete_file(affidavit_file_key)
+
+        # Delete authorization file(s)
+        authorization_files = continuation_in.get('authorization', {}).get('files', [])
+        for file in authorization_files:
+            if auth_file_key := file.get('fileKey', None):
+                MinioService.delete_file(auth_file_key)
 
     @staticmethod
     def details_for_invoice(business_identifier: str, corp_type: str):
@@ -963,36 +941,58 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         ]
 
     @staticmethod
-    def resubmit_filing_for_review(filing: Filing):
-        """Resubmit filing for review."""
-        review = Review.get_review(filing.id)
-        review.status = ReviewStatus.RESUBMITTED
-        review.nr_number = filing.filing_json['filing'][filing.filing_type].get('nameRequest', {}).get('nrNumber')
-        review.identifier = filing.filing_json['filing'][filing.filing_type].get(
-            'foreignJurisdiction', {}).get('identifier')
-        review.completing_party = ListFilingResource.get_completing_party(
-            filing.filing_json['filing'][filing.filing_type].get('parties', []))
-        review.submission_date = datetime.datetime.utcnow()
+    def modify_filing_json(filing_json, filing: Filing = None, for_validation=False):
+        """Modify filing json values if needed."""
+        filing_type = filing_json['filing']['header']['name']
+        if filing_type == Filing.FILINGS['continuationIn'].get('name'):
+            if for_validation and (not filing or
+                                   filing.status in [Filing.Status.DRAFT.value,
+                                                     Filing.Status.CHANGE_REQUESTED.value]):
+                # certifiedBy is a common header, which is required field as per schema
+                # its not required for authorization (and cannot make it optional in schema only for continuationIn)
+                filing_json['filing']['header']['certifiedBy'] = 'submission for review'
 
-        review_result = ReviewResult.get_last_review_result(filing.id)
-        review_result.submission_date = review.submission_date
-        review.review_results.append(review_result)
-        review.save()
+            if filing and filing.status == Filing.Status.APPROVED.value:
+                filing_json['filing'][filing_type]['isApproved'] = True
 
-        filing.resubmit_filing_to_awaiting_review(review.submission_date)
+                # Once approved, user cannot change continuation in authorization details
+                if expro_business := filing.filing_json['filing'][filing_type].get('business'):
+                    filing_json['filing'][filing_type]['business'] = expro_business
+                filing_json['filing'][filing_type]['authorization'] = \
+                    filing.filing_json['filing'][filing_type]['authorization']
+                filing_json['filing'][filing_type]['nameRequest'] = \
+                    filing.filing_json['filing'][filing_type]['nameRequest']
+                filing_json['filing'][filing_type]['foreignJurisdiction'] = \
+                    filing.filing_json['filing'][filing_type]['foreignJurisdiction']
 
     @staticmethod
-    def get_completing_party(parties: list):
-        """Get full name of the completing party."""
-        for party in parties:
-            for role in party.get('roles', []):
-                if role['roleType'] == 'Completing Party':
-                    names = []
-                    names.append(party['officer']['firstName'])
+    def submit_filing_for_review(filing: Filing):
+        """Submit filing for review."""
+        filing_data = filing.filing_json['filing'][filing.filing_type]
+        submission_date = datetime.datetime.utcnow()
+        if filing.status == Filing.Status.DRAFT.value:
+            review = Review()
+            review.filing_id = filing.id
+            review.status = ReviewStatus.AWAITING_REVIEW
+            review.creation_date = submission_date
+        else:
+            review = Review.get_review(filing.id)
+            review.status = ReviewStatus.RESUBMITTED
 
-                    if middle_name := party['officer'].get('middleName', party['officer'].get('middleInitial')):
-                        names.append(middle_name)
+            review_result = ReviewResult.get_last_review_result(filing.id)
+            review_result.submission_date = submission_date  # track when did user responded to this change request
+            review.review_results.append(review_result)
 
-                    names.append(party['officer']['lastName'])
-                    return ' '.join(names).strip()
-        return None
+        review.nr_number = filing_data.get('nameRequest', {}).get('nrNumber')
+        review.identifier = filing_data.get('foreignJurisdiction', {}).get('identifier')
+        review.contact_email = filing_data.get('contactPoint', {}).get('email')
+        review.submission_date = submission_date
+        review.save()
+
+        filing.submit_filing_to_awaiting_review(submission_date)
+
+        # emailer notification
+        queue.publish_json(
+            {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
+            current_app.config.get('NATS_EMAILER_SUBJECT')
+        )

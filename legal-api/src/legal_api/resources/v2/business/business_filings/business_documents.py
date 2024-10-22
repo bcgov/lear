@@ -106,10 +106,6 @@ def _get_receipt(business: Business, filing: Filing, token):
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
             Filing.Status.PAID,
-            Filing.Status.AWAITING_REVIEW,
-            Filing.Status.CHANGE_REQUESTED,
-            Filing.Status.APPROVED,
-            Filing.Status.REJECTED,
     ):
         return {}, HTTPStatus.BAD_REQUEST
 

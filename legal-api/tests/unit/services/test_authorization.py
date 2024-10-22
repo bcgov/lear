@@ -27,11 +27,23 @@ import jwt as pyjwt
 import pytest
 from unittest.mock import patch, PropertyMock, MagicMock
 from flask import jsonify
-from registry_schemas.example_data import AGM_EXTENSION, AGM_LOCATION_CHANGE, ALTERATION_FILING_TEMPLATE, ANNUAL_REPORT, \
-    CORRECTION_AR, CHANGE_OF_REGISTRATION_TEMPLATE, RESTORATION, FILING_TEMPLATE, DISSOLUTION, PUT_BACK_ON, \
-    CONTINUATION_IN, CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
+from registry_schemas.example_data import (
+    AGM_EXTENSION,
+    AGM_LOCATION_CHANGE,
+    ALTERATION_FILING_TEMPLATE,
+    ANNUAL_REPORT,
+    CHANGE_OF_REGISTRATION_TEMPLATE,
+    CONSENT_CONTINUATION_OUT,
+    CONTINUATION_IN,
+    CONTINUATION_OUT,
+    CORRECTION_AR,
+    DISSOLUTION,
+    FILING_TEMPLATE,
+    PUT_BACK_ON,
+    RESTORATION,
+)
 
-from legal_api.models import Address, Filing, AmalgamatingBusiness
+from legal_api.models import Address, Filing
 from legal_api.models.business import Business, PartyRole, User
 
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, PUBLIC_USER, \
@@ -146,6 +158,7 @@ class FilingKey(str, Enum):
     AMALGAMATION_REGULAR = 'AMALGAMATION_REGULAR'
     AMALGAMATION_VERTICAL = 'AMALGAMATION_VERTICAL'
     AMALGAMATION_HORIZONTAL = 'AMALGAMATION_HORIZONTAL'
+    NOTICE_OF_WITHDRAWAL = 'NOTICE_OF_WITHDRAWAL'
 
 
 EXPECTED_DATA = {
@@ -219,7 +232,8 @@ EXPECTED_DATA = {
     FilingKey.PUT_BACK_ON: {'displayName': 'Correction - Put Back On', 'feeCode': 'NOFEE', 'name': 'putBackOn'},
     FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application (Regular)', 'feeCode': 'AMALR'},
     FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamationApplication', 'type': 'vertical', 'displayName': 'Amalgamation Application Short-form (Vertical)', 'feeCode': 'AMALV'},
-    FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Amalgamation Application Short-form (Horizontal)', 'feeCode': 'AMALH'}
+    FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Amalgamation Application Short-form (Horizontal)', 'feeCode': 'AMALH'},
+    FilingKey.NOTICE_OF_WITHDRAWAL: {'displayName': 'Notice of Withdrawal', 'feeCode': 'NWITH', 'name': 'noticeOfWithdrawal'}
 }
 
 EXPECTED_DATA_CONT_IN = {
@@ -297,7 +311,9 @@ EXPECTED_DATA_CONT_IN = {
                                       'displayName': 'Amalgamation Application Short-form (Vertical)', 'feeCode': None},
     FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal',
                                         'displayName': 'Amalgamation Application Short-form (Horizontal)',
-                                        'feeCode': None}
+                                        'feeCode': None},
+    FilingKey.NOTICE_OF_WITHDRAWAL: {'displayName': 'Notice of Withdrawal', 'feeCode': 'NWITH',
+                                     'name': 'noticeOfWithdrawal'}
 }
 
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()
@@ -527,13 +543,14 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'changeOfDirectors', 'consentContinuationOut', 'continuationOut', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'transition',
-          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
+          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
           {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'changeOfAddress',
           'changeOfDirectors', 'continuationIn', 'consentContinuationOut', 'continuationOut', 'correction',
           'courtOrder', {'dissolution': ['voluntary', 'administrative']}, 'registrarsNotation', 'registrarsOrder',
-          'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}]),
+          'transition', {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']},
+          'noticeOfWithdrawal']),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
@@ -1677,7 +1694,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
         # active business - general user
         ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         BLOCKER_FILING_STATUSES, expected_lookup([ FilingKey.TRANSITION, ])),
+         BLOCKER_FILING_STATUSES, expected_lookup([FilingKey.TRANSITION, ])),
         ('general_user_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'general', [BASIC_USER],
          BLOCKER_FILING_STATUSES,
          expected_lookup_continue_in_corps([FilingKey.TRANSITION, ])),
@@ -1938,7 +1955,13 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                              filing_sub_type=filing_sub_type,
                                              is_future_effective=is_fed)
                     allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
-                    assert allowed_filing_types == expected
+
+                    current_expected = expected.copy()
+                    if username == 'staff' and filing_status == Filing.Status.PAID.value:
+                        notice_of_withdrawal = expected_lookup([FilingKey.NOTICE_OF_WITHDRAWAL])[0]
+                        if notice_of_withdrawal not in current_expected:
+                            current_expected.append(notice_of_withdrawal)
+                    assert allowed_filing_types == current_expected
 
 
 @pytest.mark.parametrize(
@@ -2431,17 +2454,17 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                                               filing_status=filing_status,
                                               filing_dict=filing_dict,
                                               filing_type=filing_type)
-            filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing.id)
+            filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing)
             assert filing_types == expected
 
 
 @pytest.mark.parametrize('filing_status, expected', [
     (Filing.Status.DRAFT.value, True),
     (Filing.Status.CHANGE_REQUESTED.value, True),
+    (Filing.Status.APPROVED.value, True),
     (Filing.Status.PENDING.value, False),
     (Filing.Status.PAID.value, False),
     (Filing.Status.AWAITING_REVIEW.value, False),
-    (Filing.Status.APPROVED.value, False),
     (Filing.Status.REJECTED.value, False),
     (Filing.Status.COMPLETED.value, False),
     (Filing.Status.CORRECTED.value, False),
@@ -2468,7 +2491,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                                           filing_type=filing_type)
         filing.save()
 
-        filing_types = is_allowed(None, Business.State.ACTIVE, filing_type, 'CBEN', jwt, None, filing.id)
+        filing_types = is_allowed(None, Business.State.ACTIVE, filing_type, 'CBEN', jwt, None, filing)
         assert filing_types == expected
 
 
@@ -2673,6 +2696,173 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                 mock_in_dissolution.return_value = True
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
+
+
+@pytest.mark.parametrize(
+    'test_name,state,legal_types,username,roles,blocker_status,expected',
+    [
+        # active business - staff user
+        ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE], None,
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.SPECIAL_RESOLUTION])),
+        ('staff_active_corps',
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], None,
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION,
+                          ])),
+        ('staff_active_corps_with_FED',
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'FUTURE_EFFECTIVE',
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION,
+                          FilingKey.NOTICE_OF_WITHDRAWAL
+                          ])),
+        ('staff_active_corps_business_frozen',
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'FROZEN',
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION,
+                          ])),
+        ('staff_active_corps_with_draft_filing',
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'DRAFT',
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION
+                          ])),
+        ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE],
+         None,
+         expected_lookup([
+             FilingKey.ADMN_FRZE,
+             FilingKey.ALTERATION,
+             FilingKey.AR_CORPS,
+             FilingKey.COA_CORPS,
+             FilingKey.COD_CORPS,
+             FilingKey.CORRCTN,
+             FilingKey.COURT_ORDER,
+             FilingKey.ADM_DISS,
+             FilingKey.REGISTRARS_NOTATION,
+             FilingKey.REGISTRARS_ORDER,
+             FilingKey.TRANSITION])),
+        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], None, []),
+        ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE], None,
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.CONV_FIRMS,
+                          FilingKey.CORRCTN_FIRMS,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS_FIRMS,
+                          FilingKey.ADM_DISS_FIRMS,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER])),
+
+        # active business - general user
+        ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], None,
+         expected_lookup([FilingKey.AR_CP,
+                          FilingKey.COA_CP,
+                          FilingKey.COD_CP,
+                          FilingKey.SPECIAL_RESOLUTION])),
+        ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], None,
+         expected_lookup([
+             FilingKey.ALTERATION,
+             FilingKey.AR_CORPS,
+             FilingKey.COA_CORPS,
+             FilingKey.COD_CORPS,
+             FilingKey.TRANSITION])),
+        ('general_user_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'general', [BASIC_USER],
+         None,
+         expected_lookup([FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.TRANSITION])),
+        ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], None, []),
+        ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], None,
+         expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
+                          FilingKey.VOL_DISS_FIRMS])),
+
+        # historical business - staff user
+        ('staff_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], None,
+         expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.PUT_BACK_ON,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.RESTRN_FULL_CORPS,
+                          FilingKey.RESTRN_LTD_CORPS])),
+        ('staff_historical_continue_in_corps', Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'], 'staff',
+         [STAFF_ROLE], None,
+         expected_lookup([FilingKey.COURT_ORDER,
+                          FilingKey.PUT_BACK_ON,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.RESTRN_FULL_CORPS,
+                          FilingKey.RESTRN_LTD_CORPS])),
+
+        # historical business - general user
+        ('general_user_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
+         [BASIC_USER], None, []),
+        ('general_user_historical_continue_in_corps', Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'],
+         'general', [BASIC_USER], None, []),
+    ]
+)
+def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
+                                              roles, blocker_status, expected):
+    """Assert that get allowed returns valid filings for notice of withdrawal."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        for legal_type in legal_types:
+            identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+            business = factory_business(identifier=identifier,
+                                        entity_type=legal_type,
+                                        state=state)
+
+            if blocker_status == 'FROZEN':
+                business = factory_business(identifier=identifier,
+                                            entity_type=legal_type,
+                                            state=state,
+                                            admin_freeze=True)
+            elif blocker_status == 'DRAFT':
+                create_incomplete_filing(business=business,
+                                         filing_name='unknownFiling',
+                                         filing_status='DRAFT')
+            elif blocker_status == 'FUTURE_EFFECTIVE':
+                create_incomplete_filing(business=business,
+                                         filing_name='unknownFiling',
+                                         filing_status='PAID',
+                                         is_future_effective=True)
+
+            allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            assert allowed_filing_types == expected
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))

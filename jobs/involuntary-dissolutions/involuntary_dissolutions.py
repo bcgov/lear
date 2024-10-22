@@ -215,6 +215,33 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
         app.logger.error(err)
 
 
+def _check_stage_1_furnishing_entries(furnishings):
+    """Check furnishing entries - 2 scenarios.
+
+    1. if email processed, and mail processed or queued(FF) (after 5 business days still not in GS).
+    2. only available to send mail out, and it's processed.
+    """
+    email_processed = any(
+            furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
+            and furnishing.status == Furnishing.FurnishingStatus.PROCESSED
+            for furnishing in furnishings
+        )
+
+    expected_mail_status = [Furnishing.FurnishingStatus.PROCESSED]
+    # if SFTP function is off, we expect the mail status will be QUEUED or PROCESSED
+    if flags.is_on('disable-dissolution-sftp-bcmail'):
+        expected_mail_status.append(Furnishing.FurnishingStatus.QUEUED)
+
+    mail_processed = any(
+        (furnishing.furnishing_type == Furnishing.FurnishingType.MAIL)
+        and (furnishing.status in expected_mail_status)
+        for furnishing in furnishings
+    )
+    email_exists = any(furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL for furnishing in furnishings)
+    return (email_exists and email_processed and mail_processed) \
+        or (not email_exists and mail_processed)
+
+
 def stage_2_process(app: Flask):
     """Update batch processing data for previously created in_progress batches."""
     batch_processings = (
@@ -239,16 +266,13 @@ def stage_2_process(app: Flask):
     stage_2_delay = timedelta(days=app.config.get('STAGE_2_DELAY'))
 
     for batch_processing in batch_processings:
-        # Check if email or letter furnishing entry has been completed. If not, do not transition to stage 2.
         furnishings = Furnishing.find_by(
             batch_id=batch_processing.batch_id,
             business_id=batch_processing.business_id
         )
-        furnishing_entry_completed = any(
-            furnishing.furnishing_type in (Furnishing.FurnishingType.EMAIL, Furnishing.FurnishingType.MAIL)
-            and furnishing.status == Furnishing.FurnishingStatus.PROCESSED
-            for furnishing in furnishings
-        )
+
+        furnishing_entry_completed = _check_stage_1_furnishing_entries(furnishings)
+
         if not furnishing_entry_completed:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.ERROR
             batch_processing.notes = 'stage 1 email or letter has not been sent'

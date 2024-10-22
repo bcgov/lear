@@ -52,6 +52,7 @@ class BusinessBlocker(str, Enum):
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
     IN_DISSOLUTION = 'IN_DISSOLUTION'
+    FILING_WITHDRAWAL = 'FILING_WITHDRAWAL'
 
 
 class BusinessRequirement(str, Enum):
@@ -314,6 +315,12 @@ def get_allowable_filings_dict():
                             'business': [BusinessBlocker.DEFAULT]
                         }
                     }
+                },
+                'noticeOfWithdrawal': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.FILING_WITHDRAWAL]
+                    }
                 }
             },
             Business.State.HISTORICAL: {
@@ -481,17 +488,17 @@ def is_allowed(business: Business,
                legal_type: str,
                jwt: JwtManager,
                sub_filing_type: str = None,
-               filing_id: int = None):
+               filing: Filing = None):
     """Is allowed to do filing."""
     is_ignore_draft_blockers = False
 
-    if filing_id:
-        if filing := Filing.find_by_id(filing_id):
-            if filing.status not in [Filing.Status.DRAFT.value, Filing.Status.CHANGE_REQUESTED.value]:
-                return False  # common for all filings
-
-            if filing.status == Filing.Status.DRAFT.value:
-                is_ignore_draft_blockers = True
+    if filing:
+        if filing.status not in [Filing.Status.DRAFT.value,
+                                 Filing.Status.CHANGE_REQUESTED.value,
+                                 Filing.Status.APPROVED.value]:
+            return False  # common for all filings
+        else:
+            is_ignore_draft_blockers = True
 
     # Special case: handiling authorization for amalgamation application
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
@@ -648,7 +655,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.DRAFT_PENDING: False,
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
         BusinessBlocker.AMALGAMATING_BUSINESS: False,
-        BusinessBlocker.IN_DISSOLUTION: False
+        BusinessBlocker.IN_DISSOLUTION: False,
+        BusinessBlocker.FILING_WITHDRAWAL: False
     }
 
     if not business:
@@ -671,6 +679,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
 
+    if has_notice_of_withdrawal_filing_blocker(business):
+        business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
+
     return business_blocker_checks
 
 
@@ -685,7 +696,10 @@ def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = Fals
                        Filing.Status.ERROR.value,
                        Filing.Status.PAID.value]
     if not is_ignore_draft_blockers:
-        filing_statuses.append(Filing.Status.DRAFT.value)
+        filing_statuses.extend([Filing.Status.DRAFT.value,
+                                Filing.Status.AWAITING_REVIEW.value,
+                                Filing.Status.CHANGE_REQUESTED.value,
+                                Filing.Status.APPROVED.value])
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
     if any(blocker_filing_matches):
         return True
@@ -789,6 +803,24 @@ def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
     warning_types = list(set(warning_types))
     warning_matches = any(x for x in warning_types if x in blocker_warning_filings)
     return warning_matches
+
+
+def has_notice_of_withdrawal_filing_blocker(business: Business):
+    """Check if there are any blockers specific to Notice of Withdrawal."""
+    if business.admin_freeze:
+        return True
+
+    filing_statuses = [Filing.Status.DRAFT.value,
+                       Filing.Status.PENDING.value,
+                       Filing.Status.PENDING_CORRECTION.value,
+                       Filing.Status.ERROR.value]
+    blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
+    if any(blocker_filing_matches):
+        return True
+
+    now = datetime.now(timezone.utc)
+    paid_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
+    return not any(f.effective_date and f.effective_date > now for f in paid_filings)
 
 
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):

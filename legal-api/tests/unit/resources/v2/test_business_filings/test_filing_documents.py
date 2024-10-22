@@ -19,16 +19,12 @@ Test-Suite to ensure that the /businesses/_id_/filings LEDGER SEARCH endpoint is
 import copy
 import json
 import re
-from datetime import date, datetime
+from datetime import datetime
 from http import HTTPStatus
-from typing import Final, Tuple
 
-import datedelta
 import pytest
-from dateutil.parser import parse
 from flask import current_app
 from registry_schemas.example_data import (
-    ALTERATION_FILING_TEMPLATE,
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
     AMALGAMATION_APPLICATION,
@@ -44,29 +40,20 @@ from registry_schemas.example_data import (
     COURT_ORDER,
     DISSOLUTION,
     FILING_HEADER,
-    FILING_TEMPLATE,
     FIRMS_CONVERSION,
-    INCORPORATION_FILING_TEMPLATE,
     REGISTRATION,
     RESTORATION,
     SPECIAL_RESOLUTION,
-    TRANSITION_FILING_TEMPLATE,
 )
 from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION, CONTINUATION_IN
 
-from legal_api.core import Filing, FilingMeta, FILINGS
-from legal_api.models import Business, Comment, Filing as FilingStorage, RegistrationBootstrap, UserRoles
-from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from legal_api.utils.legislation_datetime import LegislationDatetime
-from tests import api_v2, integration_payment
-from tests.unit.core.test_filing_ledger import load_ledger
+from legal_api.core import Filing
+from legal_api.models import Business, RegistrationBootstrap
+from legal_api.services.authz import STAFF_ROLE
 from tests.unit.models import (  # noqa:E501,I001
     factory_business,
-    factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
-    factory_user,
 )
 from tests.unit.services.utils import create_header, helper_create_jwt
 
@@ -159,6 +146,7 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
 MOCK_NOTICE_OF_WITHDRAWAL = {}
 MOCK_NOTICE_OF_WITHDRAWAL['courtOrder'] = copy.deepcopy(COURT_ORDER)
 MOCK_NOTICE_OF_WITHDRAWAL['filingId'] = '123456'
+
 
 @pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
     ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
@@ -1210,167 +1198,167 @@ MOCK_NOTICE_OF_WITHDRAWAL['filingId'] = '123456'
                     }
       },
      HTTPStatus.OK, None
-    ),
+     ),
     ('bc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.COMP.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('ben_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('cc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('ulc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('c_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('ccc_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.CCC_CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('cben_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('cul_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.ULC_CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-25'
-    ),
+     ),
     ('bc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.COMP.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    ),
+     ),
     ('ben_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    ),
+     ),
     ('cc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    ),
+     ),
     ('ulc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    ),
+     ),
     ('c_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    ),
+     ),
     ('ccc_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.CCC_CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    ),
+     ),
     ('cben_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    ),
+     ),
     ('cul_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.ULC_CONTINUE_IN.value,
      'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                'legalFilings': [
-                    {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                ]
-                } 
-     },
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
+                    ]
+                    }
+      },
      HTTPStatus.OK, '2024-09-26'
-    )
+     )
 ])
 def test_document_list_for_various_filing_states(session, mocker, client, jwt,
                                                  test_name,
@@ -1413,7 +1401,7 @@ def test_document_list_for_various_filing_states(session, mocker, client, jwt,
             affidavit_file_key = meta_data['continuationIn']['affidavitFileKey']
             expected_msg['documents']['staticDocuments'] = [
                 {
-                    'name': 'Director Affidavit',
+                    'name': 'Unlimited Liability Corporation Information',
                     'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{affidavit_file_key}'
                 }
             ]
@@ -1501,38 +1489,6 @@ def filer_action(filing_name, filing_json, meta_data, business):
      ),
     ('cben_ci_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
-                    ]}},
-     HTTPStatus.OK
-     ),
-    ('cben_ci_awaiting_review', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, Filing.Status.AWAITING_REVIEW,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
-                    ]}},
-     HTTPStatus.OK
-     ),
-    ('cben_ci_change_requested', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, Filing.Status.CHANGE_REQUESTED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
-                    ]}},
-     HTTPStatus.OK
-     ),
-    ('cben_ci_approved', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, Filing.Status.APPROVED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},
-                    ]}},
-     HTTPStatus.OK
-     ),
-    ('cben_ci_rejected', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, Filing.Status.REJECTED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/continuationIn'},

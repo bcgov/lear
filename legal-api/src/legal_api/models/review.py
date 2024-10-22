@@ -15,9 +15,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import timezone
 from enum import auto
-from operator import and_
 from typing import List
 
 from legal_api.utils.base import BaseEnum
@@ -25,7 +23,6 @@ from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
-from .filing import Filing
 
 
 class ReviewStatus(BaseEnum):
@@ -46,7 +43,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     id = db.Column(db.Integer, primary_key=True)
     nr_number = db.Column('nr_number', db.String(15))
     identifier = db.Column('identifier', db.String(50))
-    completing_party = db.Column('completing_party', db.String(150))
+    contact_email = db.Column('contact_email', db.String(150))
     status = db.Column('status', db.Enum(ReviewStatus), nullable=False)
     submission_date = db.Column('submission_date',
                                 db.DateTime(timezone=True),
@@ -85,8 +82,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def get_paginated_reviews(cls, review_filter, mapped_sort_by_column):
         """Return filtered, sorted and paginated reviews."""
-        query = db.session.query(Review, Filing.effective_date). \
-            join(Filing, Filing.id == Review.filing_id)
+        query = db.session.query(Review)
 
         if review_filter.start_date:
             start_date = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
@@ -96,27 +92,16 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             end_date = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
                                         (review_filter.end_date), datetime.max.time())
             query = query.filter(Review.submission_date <= end_date)
-        if review_filter.start_effective_date:
-            start_date_fed = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
-                                              (review_filter.start_effective_date), datetime.min.time())
-            query = query.filter(and_(Filing.effective_date > datetime.now(timezone.utc),
-                                      Filing.effective_date >= start_date_fed))
-        if review_filter.end_effective_date:
-            end_date_fed = datetime.combine(LegislationDatetime.as_utc_timezone_from_legislation_date_str
-                                            (review_filter.end_effective_date), datetime.max.time())
-            query = query.filter(and_(Filing.effective_date > datetime.now(timezone.utc),
-                                      Filing.effective_date <= end_date_fed))
         if review_filter.nr_number:
             query = query.filter(Review.nr_number.ilike(f'%{review_filter.nr_number}%'))
         if review_filter.identifier:
             query = query.filter(Review.identifier.ilike(f'%{review_filter.identifier}%'))
-        if review_filter.completing_party:
-            query = query.filter(Review.completing_party.ilike(f'%{review_filter.completing_party}%'))
+        if review_filter.contact_email:
+            query = query.filter(Review.contact_email.ilike(f'%{review_filter.contact_email}%'))
         if review_filter.status:
             query = query.filter(Review.status.in_(review_filter.status))
         if review_filter.submitted_sort_by:
-            column = Filing.__table__.columns[mapped_sort_by_column] if mapped_sort_by_column == 'effective_date'\
-                else Review.__table__.columns[mapped_sort_by_column]
+            column = Review.__table__.columns[mapped_sort_by_column]
             query = query.order_by(column.desc() if review_filter.submitted_sort_order == 'true' else column.asc())
         else:
             query = query.order_by(Review.creation_date.asc())
@@ -124,31 +109,18 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         pagination = query.paginate(per_page=review_filter.limit, page=review_filter.page)
         results = pagination.items
         total_count = pagination.total
-        result = Review.build_reviews(results)
+
+        reviews_list = [
+            review.json for review in results
+        ]
 
         reviews = {
-            'reviews': result,
+            'reviews': reviews_list,
             'page': review_filter.page,
             'limit': review_filter.limit,
             'total': total_count
         }
         return reviews
-
-    @classmethod
-    def build_reviews(cls, results):
-        """Return reviews with appended future effective date."""
-        result = []
-
-        for review, effective_date in results:
-            future_effective_date = ''
-            if effective_date > datetime.now(timezone.utc):
-                future_effective_date = effective_date.isoformat()
-
-            result.append({
-                **review.json,
-                'futureEffectiveDate': future_effective_date
-            })
-        return result
 
     @property
     def json(self) -> dict:
@@ -157,7 +129,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
             'id': self.id,
             'nrNumber': self.nr_number,
             'identifier': self.identifier,
-            'completingParty': self.completing_party,
+            'contactEmail': self.contact_email,
             'status': self.status.name,
             'submissionDate': self.submission_date.isoformat(),
             'creationDate': self.creation_date.isoformat(),
@@ -172,11 +144,9 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
         status: List[str] = field()
         start_date: str = ''
         end_date: str = ''
-        start_effective_date: str = ''
-        end_effective_date: str = ''
         nr_number: str = ''
         identifier: str = ''
-        completing_party: str = ''
+        contact_email: str = ''
         submitted_sort_by: str = ''
         submitted_sort_order: bool = ''
         page: int = 1

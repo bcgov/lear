@@ -126,6 +126,7 @@ class StageOneProcessor:
         for furnishing in furnishings_list:
             furnishing.notes = furnishing_notes
             furnishing.status = funishing_status
+            furnishing.processed_date = datetime.utcnow()
             furnishing.save()
 
     def process_paper_letters(self):
@@ -163,7 +164,7 @@ class StageOneProcessor:
                 with self._bcmail_sftp_connection as client:
                     resp = self.upload_to_sftp(client, self._xpro_letters, filename)
                 self.update_notes_and_status(
-                    self._bc_mail_furnishings,
+                    self._xpro_mail_furnishings,
                     Furnishing.FurnishingStatus.PROCESSED,
                     'SFTP of XPRO batch letter was a success.'
                 )
