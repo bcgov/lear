@@ -17,6 +17,8 @@
 A simple decorator to add the options method to a Request Class.
 """
 # from functools import wraps
+import time
+import functools
 
 
 def cors_preflight(methods: str = 'GET'):
@@ -47,3 +49,15 @@ def build_schema_error_response(errors):
             })
         formatted_errors.append({'path': '/'.join(error.path), 'error': error.message, 'context': validation_errors})
     return formatted_errors
+
+
+def print_execution_time(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        elapsed_time = (end_time - start_time) 
+        print(f"Function '{func.__name__}' took {elapsed_time:.6f} s to execute")
+        return result
+    return wrapper

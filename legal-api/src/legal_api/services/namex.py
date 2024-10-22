@@ -22,6 +22,7 @@ import requests
 from flask import current_app
 
 from legal_api.services.bootstrap import AccountService
+from legal_api.utils.util import print_execution_time
 
 from ..models import Filing
 from .utils import get_str
@@ -50,6 +51,7 @@ class NameXService():
         NRO_UPDATING = 'NRO_UPDATING'
 
     @staticmethod
+    @print_execution_time
     def query_nr_number(identifier: str):
         """Return a JSON object with name request information."""
         namex_url = current_app.config.get('NAMEX_SVC_URL')
@@ -57,10 +59,13 @@ class NameXService():
         token = AccountService.get_bearer_token()
 
         # Perform proxy call using the inputted identifier (e.g. NR 1234567)
-        nr_response = requests.get(namex_url + 'requests/' + identifier, headers={
+        url = namex_url + 'requests/' + identifier
+        nr_response = requests.get(url, headers={
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
         })
+
+        current_app.logger.info(f'GET {url} took {nr_response.elapsed.total_seconds()} s')
 
         return nr_response
 
@@ -122,6 +127,7 @@ class NameXService():
         return update_nr_response
 
     @staticmethod
+    @print_execution_time
     def validate_nr(nr_json):
         """Provide validation info based on a name request response payload."""
         # Initial validation result state

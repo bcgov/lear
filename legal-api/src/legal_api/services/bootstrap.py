@@ -26,6 +26,7 @@ from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
 from sqlalchemy.orm.exc import FlushError  # noqa: I001
 
 from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
+from legal_api.utils.util import print_execution_time
 
 
 class RegistrationBootstrapService:
@@ -130,6 +131,8 @@ class AccountService:
                             headers={'content-type': 'application/x-www-form-urlencoded'},
                             auth=(client_id, client_secret),
                             timeout=cls.timeout)
+        
+        current_app.logger.info(f'POST {token_url} took {res.elapsed.total_seconds()} s')
 
         try:
             return res.json().get('access_token')
@@ -261,6 +264,7 @@ class AccountService:
         return HTTPStatus.OK
 
     @classmethod
+    @print_execution_time
     def get_account_by_affiliated_identifier(cls, identifier: str):
         """Return the account affiliated to the business."""
         token = cls.get_bearer_token()
@@ -270,6 +274,7 @@ class AccountService:
         res = requests.get(url,
                            headers={**cls.CONTENT_TYPE_JSON,
                                     'Authorization': cls.BEARER + token})
+        current_app.logger.info(f'GET {url} took {res.elapsed.total_seconds()} s')
         try:
             return res.json()
         except Exception:  # noqa B902; pylint: disable=W0703;

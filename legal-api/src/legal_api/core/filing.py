@@ -32,6 +32,7 @@ from legal_api.models import UserRoles
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
 from legal_api.services.authz import has_roles  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
+from legal_api.utils.util import print_execution_time
 
 from .constants import REDACTED_STAFF_SUBMITTER
 
@@ -306,6 +307,7 @@ class Filing:
         return filings
 
     @staticmethod
+    @print_execution_time
     def get_most_recent_filing_json(business_id: str, filing_type: str = None, jwt: JwtManager = None):
         """Return the most recent filing json."""
         if storage := FilingStorage.get_most_recent_legal_filing(business_id, filing_type):

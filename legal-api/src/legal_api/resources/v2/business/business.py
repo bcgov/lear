@@ -36,6 +36,7 @@ from legal_api.services import (  # noqa: I001;
 )  # noqa: I001;
 from legal_api.services.authz import get_allowable_actions, get_allowed
 from legal_api.utils.auth import jwt
+from legal_api.utils.util import print_execution_time
 
 from .bp import bp
 
