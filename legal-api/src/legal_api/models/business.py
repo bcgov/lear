@@ -22,7 +22,7 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
-from sql_versioning import Versioned, version_class
+from sql_versioning import Versioned
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
@@ -37,7 +37,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .db import db  # noqa: I001
+from .db import db, VersioningProxy # noqa: I001
 from .party import Party
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
 
@@ -689,7 +689,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         alternate_names = []
 
         # Fetch aliases and related filings in a single query
-        alias_version = version_class(Alias)
+        alias_version = VersioningProxy.version_class(Alias)
         filing_alias = aliased(Filing)
         aliases_query = db.session.query(
             alias_version.alias,

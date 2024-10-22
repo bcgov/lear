@@ -18,12 +18,12 @@ Currently this only provides API versioning information
 
 from enum import auto
 
-from sql_versioning import Versioned, version_class
+from sql_versioning import Versioned
 from sqlalchemy import or_
 # from sqlalchemy_continuum import version_class
 
 from ..utils.base import BaseEnum
-from .db import db
+from .db import db, VersioningProxy
 
 
 class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -62,7 +62,7 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
     def get_revision(cls, transaction_id, amalgamation_id):
         """Get amalgamating businesses for the given transaction id."""
         # pylint: disable=singleton-comparison;
-        amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+        amalgamating_businesses_version = VersioningProxy.version_class(AmalgamatingBusiness)
         amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
             .filter(amalgamating_businesses_version.transaction_id <= transaction_id) \
             .filter(amalgamating_businesses_version.operation_type == 0) \
@@ -84,7 +84,7 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
 
         In this case T1 is involved in 2 amalgamation
         """
-        amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+        amalgamating_businesses_version = VersioningProxy.version_class(AmalgamatingBusiness)
         amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
             .filter(amalgamating_businesses_version.operation_type == 0) \
             .filter(amalgamating_businesses_version.business_id == business_id) \
