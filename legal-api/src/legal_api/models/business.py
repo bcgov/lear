@@ -22,12 +22,12 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
-from sql_versioning import Versioned
+from sql_versioning import Versioned, version_class
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql import and_, exists, func, not_, text
-from sqlalchemy_continuum import version_class
+# from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
