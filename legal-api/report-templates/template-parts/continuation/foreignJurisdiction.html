@@ -1,34 +1,33 @@
 <div class="no-page-break">
     <div class="separator mt-4"></div>
-    <div class="section-title mt-4">Previous Foreign Jurisdiction Information</div>
+    <div class="section-title mt-4">Previous Jurisdiction Information</div>
     <table class="section-data nr-name-table mt-4" role="presentation">
         <tr>
-            <td class="bold">Identifying Number in Foreign Jurisdiction:</td>
-            <td>
-                {{foreignJurisdiction.identifier}}
+            <td class="col-50">
+                <div>
+                    <span class="section-sub-title">Business Name in Previous Jurisdiction</span>
+                </div>
+                <div class="pt-2">{{foreignJurisdiction.legalName}}</div>
+                <div class="pt-6">
+                    <span class="section-sub-title">Date of Incorporation, Continuation or Amalgamation</span>
+                </div>
+                <div class="pt-2">{{foreignJurisdiction.incorporationDate}}</div>
             </td>
-        </tr>
-        <tr>
-            <td class="bold pt-2">Name in Foreign Jurisdiction:</td>
-            <td class="pt-2">
-                {{foreignJurisdiction.legalName}}
-            </td>
-        </tr>
-        <tr>
-            <td class="bold pt-2">Foreign Jurisdiction:</td>
-            <td class="pt-2">
-                {% if foreignJurisdiction.region %}
-                {{foreignJurisdiction.region}}
-                {% else %}
-                {{foreignJurisdiction.country}}
-                {% endif %}
-                
-            </td>
-        </tr>
-        <tr>
-            <td class="bold pt-2">Date of Incorporation, Continuation, or Amalgamation in Foreign Jurisdiction:</td>
-            <td class="pt-2">
-                {{foreignJurisdiction.incorporationDate}}
+            <td class="col-50">
+                <div>
+                    <span class="section-sub-title">Identifying Number</span>
+                </div>
+                <div class="pt-2">{{foreignJurisdiction.identifier}}</div>
+                <div class="pt-6">
+                    <span class="section-sub-title">Previous Jurisdiction</span>
+                </div>
+                <div class="pt-2">
+                    {% if foreignJurisdiction.region %}
+                        {{foreignJurisdiction.region}}
+                    {% else %}
+                        {{foreignJurisdiction.country}}
+                    {% endif %}
+                </div>
             </td>
         </tr>
     </table>
