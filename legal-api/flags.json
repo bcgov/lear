@@ -11,17 +11,22 @@
             "exclude-accounts": []
         },
         "db-versioning": {
-            "legal-api": false,
-            "emailer": false,
-            "filer": false,
-            "entity-bn": false,
-            "digital-credentials": false,
-            "dissolutions-job": false,
-            "furnishings-job": false,
-            "emailer-reminder-job": false,
-            "future-effective-job": false,
-            "update-colin-filings-job": false,
-            "update-legal-filings-job": false
+            "initialize-old-versioning": true,
+            "initialize-new-versioning": false,
+            "enable-new-versioning": {
+                "legal-api": true,
+                "legal-api-versioning-class": true,
+                "emailer": false,
+                "filer": false,
+                "entity-bn": false,
+                "digital-credentials": false,
+                "dissolutions-job": false,
+                "furnishings-job": false,
+                "emailer-reminder-job": false,
+                "future-effective-job": false,
+                "update-colin-filings-job": false,
+                "update-legal-filings-job": false
+            }
         }
     }
 }

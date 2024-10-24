@@ -99,7 +99,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
-            .filter(amalgamation_version.operation_type == 1) \
+            .filter(amalgamation_version.operation_type == 0) \
             .filter(amalgamation_version.business_id == business_id) \
             .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
                         amalgamation_version.end_transaction_id > transaction_id)) \
