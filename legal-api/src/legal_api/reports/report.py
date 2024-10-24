@@ -967,8 +967,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         region = None
         if region_code and region_code.upper() != 'FEDERAL':
             region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-            filing['foreignJurisdiction']['region'] = region.name.upper() if region_code else ''
-        filing['foreignJurisdiction']['country'] = country.name.upper()
+            filing['foreignJurisdiction']['region'] = region.name if region_code else ''
+        filing['foreignJurisdiction']['country'] = country.name
 
         # format incorporation date
         incorp_date = \
