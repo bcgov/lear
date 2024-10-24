@@ -25,7 +25,7 @@ from jinja2 import Template
 from legal_api.services import NameXService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from entity_emailer.email_processors import get_entity_dashboard_url, substitute_template_parts
+from entity_emailer.email_processors import substitute_template_parts
 
 
 class Option(Enum):
@@ -63,7 +63,7 @@ def __get_instruction_group(legal_type):
     return ''
 
 
-def process(email_info: dict, option, token: str) -> dict:  # pylint: disable-msg=too-many-locals
+def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-locals
     """
     Build the email for Name Request notification.
 
@@ -95,10 +95,6 @@ def process(email_info: dict, option, token: str) -> dict:  # pylint: disable-ms
             legal_name = n_item['name']
             break
 
-    name_request_type = ''
-    if nr_data['request_action_cd']:
-        name_request_type = nr_data['request_action_cd']
-
     name_request_url = current_app.config.get('NAME_REQUEST_URL')
     decide_business_url = current_app.config.get('DECIDE_BUSINESS_URL')
     corp_online_url = current_app.config.get('COLIN_URL')
@@ -124,13 +120,11 @@ def process(email_info: dict, option, token: str) -> dict:  # pylint: disable-ms
         expiration_date=expiration_date,
         legal_name=legal_name,
         refund_value=refund_value,
-        name_request_type=name_request_type,
         name_request_url=name_request_url,
         decide_business_url=decide_business_url,
         corp_online_url=corp_online_url,
         form_page_url=form_page_url,
-        societies_url=societies_url,
-        entity_dashboard_url=get_entity_dashboard_url(nr_number, token),
+        societies_url=societies_url
     )
 
     # get recipients
@@ -145,16 +139,12 @@ def process(email_info: dict, option, token: str) -> dict:  # pylint: disable-ms
         Option.UPGRADE.value: 'Confirmation of Upgrade',
         Option.REFUND.value: 'Refund request confirmation'
     }
-    if option in [Option.BEFORE_EXPIRY.value, Option.EXPIRED.value]:
-        subject = f'{nr_number} - Name Request {subjects[option]}'
-    else:
-        subject = f'{nr_number} - {subjects[option]}'
 
     return {
         'recipients': recipients,
         'requestBy': 'BCRegistries@gov.bc.ca',
         'content': {
-            'subject': subject,
+            'subject': f'{nr_number} - {subjects[option]}',
             'body': f'{html_out}',
             'attachments': []
         }

@@ -306,24 +306,19 @@ default_names_array = [{'name': default_legal_name, 'state': 'NE'}]
 
 
 @pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value',
-                         'expected_legal_name', 'names', 'nr_type'], [
-    ('before-expiry', 'NR 1234567', 'Name Request Expiring Soon', '2021-07-20T00:00:00+00:00', None,
-     'TEST2 Company Name', [{'name': 'TEST Company Name', 'state': 'NE'},
-                            {'name': 'TEST2 Company Name', 'state': 'APPROVED'}], 'NEW'),
-    ('before-expiry', 'NR 1234567', 'Name Request Expiring Soon', '2021-07-20T00:00:00+00:00', None,
-     'TEST3 Company Name', [{'name': 'TEST3 Company Name', 'state': 'CONDITION'},
-                            {'name': 'TEST4 Company Name', 'state': 'NE'}], 'MVE'),
-    ('expired', 'NR 1234567', 'Name Request Expired', None, None, 'TEST4 Company Name',
-        [{'name': 'TEST5 Company Name', 'state': 'NE'}, {'name': 'TEST4 Company Name', 'state': 'APPROVED'}], 'NEW'),
-    ('expired', 'NR 1234567', 'Name Request Expired', None, None, 'TEST5 Company Name',
-        [{'name': 'TEST6 Company Name', 'state': 'NE'}, {'name': 'TEST5 Company Name', 'state': 'APPROVED'}], 'MVE'),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array,
-     'NEW'),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array, 'NEW'),
-    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None, default_names_array, 'NEW')
+                         'expected_legal_name', 'names'], [
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST2 Company Name',
+        [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
+    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST3 Company Name',
+        [{'name': 'TEST3 Company Name', 'state': 'CONDITION'}, {'name': 'TEST4 Company Name', 'state': 'NE'}]),
+    ('expired', 'NR 1234567', 'Expired', None, None, 'TEST4 Company Name',
+        [{'name': 'TEST5 Company Name', 'state': 'NE'}, {'name': 'TEST4 Company Name', 'state': 'APPROVED'}]),
+    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array),
+    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
+    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None, default_names_array)
 ])
 def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value,
-                         expected_legal_name, names, nr_type):
+                         expected_legal_name, names):
     """Assert that the nr notification can be processed."""
     nr_json = {
         'expirationDate': expiration_date,
@@ -331,8 +326,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
         'legalType': 'BC',
         'applicants': {
             'emailAddress': 'test@test.com'
-        },
-        'request_action_cd': nr_type
+        }
     }
     nr_response = MockResponse(nr_json, 200)
     token = 'token'
@@ -373,14 +367,10 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
                     exp_date_tz = LegislationDatetime.as_legislation_timezone(exp_date)
                     assert_expiration_date = LegislationDatetime.format_as_report_string(exp_date_tz)
                     assert assert_expiration_date in call_args[0][0]['content']['body']
-                    if nr_type == 'MVE':
-                        assert 'Complete your application' in call_args[0][0]['content']['body']
 
                 if option == nr_notification.Option.EXPIRED.value:
                     assert nr_number in call_args[0][0]['content']['body']
                     assert expected_legal_name in call_args[0][0]['content']['body']
-                    if nr_type == 'MVE':
-                        assert 'approved name is no longer reserved' in call_args[0][0]['content']['body']
 
 
 def test_nr_receipt_notification(app, session):
