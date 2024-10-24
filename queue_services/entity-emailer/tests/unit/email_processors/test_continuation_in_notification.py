@@ -55,7 +55,6 @@ def test_continuation_in_notification(app, session, mocker, status):
         if status == Filing.Status.APPROVED.value:
             assert email['content']['subject'] == 'Authorization Approved'
             assert 'Results of your Continuation Authorization' in email['content']['body']
-        
         elif status == Filing.Status.AWAITING_REVIEW.value:
             assert email['content']['subject'] == 'Authorization Documents Received'
             assert 'We have received your Continuation Authorization documents' in email['content']['body']
