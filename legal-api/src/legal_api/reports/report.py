@@ -282,7 +282,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         elif self._report_key in ['certificateOfNameChange', 'certificateOfNameCorrection']:
             self._format_name_change_data(filing)
         elif self._report_key == 'certificateOfRestoration':
-            self._format_certificate_of_restoration_data(filing)
+            self._certificate_of_restorationformat__data(filing)
         elif self._report_key == 'restoration':
             self._format_restoration_data(filing)
         elif self._report_key == 'letterOfConsent':
@@ -947,6 +947,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # set expro business
         if filing['continuationIn'].get('business'):
             filing['exproBusiness'] = filing['continuationIn']['business']
+            # format founding date
+            founding_date_str = filing['exproBusiness']['foundingDate']
+            founding_date_datetime = datetime.fromisoformat(founding_date_str)
+            founding_date = LegislationDatetime.as_legislation_timezone(founding_date_datetime)
+            filing['exproBusiness']['formattedFoundingDate'] = founding_date.strftime(OUTPUT_DATE_FORMAT)
 
         filing['authorization'] = filing['continuationIn'].get('authorization')
         filing['foreignJurisdiction'] = filing['continuationIn'].get('foreignJurisdiction')
