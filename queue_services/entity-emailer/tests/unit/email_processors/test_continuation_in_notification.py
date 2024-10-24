@@ -23,6 +23,7 @@ from tests.unit import prep_continuation_in_filing
 
 @pytest.mark.parametrize('status', [
     (Filing.Status.APPROVED.value),
+    (Filing.Status.AWAITING_REVIEW.value),
     (Filing.Status.CHANGE_REQUESTED.value),
     (Filing.Status.COMPLETED.value),
     (Filing.Status.PAID.value),
@@ -52,28 +53,32 @@ def test_continuation_in_notification(app, session, mocker, status):
 
         # spot check email content based on status
         if status == Filing.Status.APPROVED.value:
-            assert email['content']['subject'] == 'Results of your Filing from the Business Registry'
-            assert 'your business has been continued in' in email['content']['body']
+            assert email['content']['subject'] == 'Authorization Approved'
+            assert 'Results of your Continuation Authorization' in email['content']['body']
+        
+        elif status == Filing.Status.AWAITING_REVIEW.value:
+            assert email['content']['subject'] == 'Authorization Documents Received'
+            assert 'We have received your Continuation Authorization documents' in email['content']['body']
 
         elif status == Filing.Status.CHANGE_REQUESTED.value:
-            assert email['content']['subject'] == 'Change Requested from the Business Registry'
-            assert 'resubmit your application' in email['content']['body']
+            assert email['content']['subject'] == 'Changes Needed to Authorization'
+            assert 'Make changes to your Continuation Authorization' in email['content']['body']
 
         elif status == Filing.Status.COMPLETED.value:
-            assert email['content']['subject'] == 'Continuation Documents from the Business Registry'
-            assert 'have successfully registered' in email['content']['body']
+            assert email['content']['subject'] == 'Successful Continuation into B.C.'
+            assert 'Your business has successfully continued into B.C.' in email['content']['body']
             assert mock_get_pdfs.call_args[0][2]['identifier'] == 'C1234567'
 
         elif status == Filing.Status.PAID.value:
             assert email['content']['subject'] == \
-                'HAULER MEDIA INC. - Confirmation of Filing from the Business Registry'
+                'HAULER MEDIA INC. - Continuation Application Received'
             assert 'Receipt' in email['content']['body']
             assert 'comp_party@email.com' in email['recipients']
 
         elif status == Filing.Status.REJECTED.value:
-            assert email['content']['subject'] == 'Results of your Filing from the Business Registry'
+            assert email['content']['subject'] == 'Authorization Rejected'
             assert 'rejected' in email['content']['body']
 
         elif status == 'RESUBMITTED':
-            assert email['content']['subject'] == 'Confirmation of Filing from the Business Registry'
+            assert email['content']['subject'] == 'Authorization Updates Received'
             assert 'your updated' in email['content']['body']
