@@ -22,7 +22,7 @@ from enum import auto
 from sql_versioning import Versioned
 from sqlalchemy import or_
 
-from .db import db, VersioningProxy  # noqa: I001   
+from .db import db, VersioningProxy  # noqa: I001
 from ..utils.base import BaseEnum
 
 
