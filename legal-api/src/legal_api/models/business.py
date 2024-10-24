@@ -689,7 +689,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         alternate_names = []
 
         # Fetch aliases and related filings in a single query
-        alias_version = VersioningProxy.version_class(Alias)
+        alias_version = VersioningProxy.version_class(db.session(), Alias)
         filing_alias = aliased(Filing)
         aliases_query = db.session.query(
             alias_version.alias,

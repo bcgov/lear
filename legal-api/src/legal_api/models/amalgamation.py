@@ -83,7 +83,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
     def get_revision_by_id(cls, transaction_id, amalgamation_id):
         """Get amalgamation for the given id."""
         # pylint: disable=singleton-comparison;
-        amalgamation_version = VersioningProxy.version_class(Amalgamation)
+        amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
             .filter(amalgamation_version.operation_type == 0) \
@@ -97,10 +97,10 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
     def get_revision(cls, transaction_id, business_id):
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
-        amalgamation_version = VersioningProxy.version_class(Amalgamation)
+        amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
-            .filter(amalgamation_version.operation_type == 0) \
+            .filter(amalgamation_version.operation_type == 1) \
             .filter(amalgamation_version.business_id == business_id) \
             .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
                         amalgamation_version.end_transaction_id > transaction_id)) \
