@@ -208,14 +208,20 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # assign subject
     legal_name = business.get('legalName', None)
-    if status in [Filing.Status.APPROVED.value, Filing.Status.REJECTED.value]:
-        subject = 'Results of your Filing from the Business Registry'
+    if status == Filing.Status.APPROVED.value:
+        subject = 'Authorization Approved'
+    if status == Filing.Status.REJECTED.value:
+        subject = 'Authorization Rejected'
+    elif status == Filing.Status.AWAITING_REVIEW.value:
+        subject = 'Authorization Documents Received'
     elif status == Filing.Status.CHANGE_REQUESTED.value:
-        subject = 'Change Requested from the Business Registry'
+        subject = 'Changes Needed to Authorization'
+    elif status == 'RESUBMITTED':
+        subject = 'Authorization Updates Received'
     elif status == Filing.Status.COMPLETED.value:
-        subject = 'Continuation Documents from the Business Registry'
-    elif status in [Filing.Status.PAID.value, 'RESUBMITTED']:
-        subject = 'Confirmation of Filing from the Business Registry'
+        subject = 'Successful Continuation into B.C.'
+    elif status == Filing.Status.PAID.value:
+        subject = 'Continuation Application Received'
 
     subject = f'{legal_name} - {subject}' if legal_name else subject
 
