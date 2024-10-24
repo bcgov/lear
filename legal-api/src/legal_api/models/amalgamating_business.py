@@ -20,10 +20,9 @@ from enum import auto
 
 from sql_versioning import Versioned
 from sqlalchemy import or_
-# from sqlalchemy_continuum import version_class
 
+from .db import db, VersioningProxy  # noqa: I001
 from ..utils.base import BaseEnum
-from .db import db, VersioningProxy
 
 
 class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes

@@ -27,7 +27,6 @@ from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql import and_, exists, func, not_, text
-# from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -37,7 +36,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .db import db, VersioningProxy # noqa: I001
+from .db import db, VersioningProxy  # noqa: I001
 from .party import Party
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
 
