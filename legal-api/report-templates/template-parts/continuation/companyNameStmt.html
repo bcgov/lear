@@ -1,0 +1,25 @@
+{% if nameRequest.nrNumber%}
+<div class="no-page-break">
+    <div class="section-data mt-4">
+        <span class="bold">Name of Company: {{nameRequest.legalName}}</span>
+    </div>
+</div>
+
+<div class="no-page-break">
+    {% if listOfTranslations|length > 0 %}
+        <div class="section-data mt-4">
+            <div>
+                <span class="bold">Translation(s) of Company Name:</span>
+            </div>
+            <table class="name-translation-table" role="presentation">
+                {% for translation in listOfTranslations %}
+                    <tr>
+                        <td class="pt-2">&bull;</td>
+                        <td class="pt-2">{{translation.name|upper}}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% endif %}
+</div>
+{% endif %}
