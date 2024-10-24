@@ -1,0 +1,24 @@
+<div class="no-page-break">
+    <table class="section-data nr-name-table mt-4" role="presentation">
+        <tr>
+            <td class="bold col-33">Name Reservation Number:</td>
+            <td>
+                {% if not nameRequest.nrNumber %}
+                N/A
+                {% else %}
+                {{nameRequest.nrNumber}}
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td class="bold pt-2">Name Reserved:</td>
+            <td class="pt-2">
+                {% if not nameRequest.nrNumber %}
+                The company is to be continued into B.C. with a name created by adding "{{numberedLegalNameSuffix}}" after the incorporation number.
+                {% else %}
+                {{nameRequest.legalName}}
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
