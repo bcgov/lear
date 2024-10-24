@@ -94,9 +94,9 @@ def process(email_info: dict, option, token: str) -> dict:  # pylint: disable-ms
         if n_item['state'] in ('APPROVED', 'CONDITION'):
             legal_name = n_item['name']
             break
-    
+
     name_request_type = ''
-    if nr_data['request_action_cd'] :
+    if nr_data['request_action_cd']:
         name_request_type = nr_data['request_action_cd']
 
     name_request_url = current_app.config.get('NAME_REQUEST_URL')
@@ -145,7 +145,6 @@ def process(email_info: dict, option, token: str) -> dict:  # pylint: disable-ms
         Option.UPGRADE.value: 'Confirmation of Upgrade',
         Option.REFUND.value: 'Refund request confirmation'
     }
-    
     if option in [Option.BEFORE_EXPIRY.value, Option.EXPIRED.value]:
         subject = f'{nr_number} - Name Request {subjects[option]}'
     else:

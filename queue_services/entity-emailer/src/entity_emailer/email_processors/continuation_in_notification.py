@@ -216,7 +216,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         subject = 'Authorization Documents Received'
     elif status == Filing.Status.CHANGE_REQUESTED.value:
         subject = 'Changes Needed to Authorization'
-    elif status =='RESUBMITTED':
+    elif status == 'RESUBMITTED':
         subject = 'Authorization Updates Received'
     elif status == Filing.Status.COMPLETED.value:
         subject = 'Successful Continuation into B.C.'
