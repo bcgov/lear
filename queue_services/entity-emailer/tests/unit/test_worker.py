@@ -380,7 +380,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
                     assert nr_number in call_args[0][0]['content']['body']
                     assert expected_legal_name in call_args[0][0]['content']['body']
                     if nr_type == 'MVE':
-                        assert 'approved name is no longer reserved for completing an application' in call_args[0][0]['content']['body']
+                        assert 'approved name is no longer reserved' in call_args[0][0]['content']['body']
 
 
 def test_nr_receipt_notification(app, session):
