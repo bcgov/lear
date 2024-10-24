@@ -11,6 +11,16 @@ Finish completing an application with this name before it expires. If you are no
 
 ---
 
+{% if name_request_type == 'MVE' %}
+# Option 1: Complete your application
+
+Follow these steps to complete your application using this business name:
+
+1. Make sure you have your authorization documents ready
+2. Visit [My Business Registry] ({{ entity_dashboard_url }})
+3. Submit the authorization documents by starting a continuation application using this name request
+4. Once your authorization has been approved, complete your continuation application
+{% else %}
 # Option 1: Finish completing an application
 
 Follow these steps to complete the application using the approved name:
@@ -21,6 +31,7 @@ Follow these steps to complete the application using the approved name:
 4. Complete the application with this name by following the instructions
 
 If you don't have a BC Registries Account, [create one here]({{ decide_business_url }})
+{% endif %}
 
 ---
 

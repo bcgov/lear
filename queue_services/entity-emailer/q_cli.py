@@ -40,6 +40,7 @@ from entity_queue_common.service_utils import error_cb, logger, signal_handler
 affiliation_type: Final = 'bc.registry.affiliation'
 dissolution_type: Final = 'bc.registry.dissolution'
 bn: Final = 'businessNumber'
+nr_notification: Final = 'bc.registry.names.request'
 
 
 async def run(loop, email_info):  # pylint: disable=too-many-locals
@@ -90,7 +91,7 @@ async def run(loop, email_info):  # pylint: disable=too-many-locals
                                     functools.partial(signal_handler, sig_loop=loop, sig_nc=nc, task=close)
                                     )
 
-        if email_info['type'] in [affiliation_type, dissolution_type]:
+        if email_info['type'] in [affiliation_type, dissolution_type, nr_notification]:
             payload = email_info
         else:
             payload = {'email': email_info}
@@ -122,7 +123,7 @@ if __name__ == '__main__':
             identifier = arg
         elif opt in ('-n', '--name'):
             name = arg
-    if not etype or (etype not in [affiliation_type, dissolution_type, bn] and not all([fid, etype, option])):
+    if not etype or (etype not in [affiliation_type, dissolution_type, bn, nr_notification] and not all([fid, etype, option])):
         print('q_cli.py -f <filing_id> -t <email_type> -o <option> -i <identifier>')
         sys.exit()
     elif etype and etype in [affiliation_type] and not all([fid, etype]):
@@ -132,6 +133,8 @@ if __name__ == '__main__':
         print('q_cli.py -f <furnishing_id> -t <email_type> -i <identifier> -n <furnishing_name>')
     elif etype and etype in [bn] and not all([etype, identifier]):
         print('q_cli.py -t <email_type> -i <identifier>')
+    elif etype and etype in [nr_notification] and not all([etype, identifier, option]):
+        print('q_cli.py -t <email_type> -i <identifier> -o <option>')
 
     if etype in [affiliation_type]:
         msg_id = str(uuid.uuid4())
@@ -159,6 +162,20 @@ if __name__ == '__main__':
                         'datacontenttype': 'application/json',
                         'identifier': identifier,
                         'data': {'furnishing': {'type':'INVOLUNTARY_DISSOLUTION', 'furnishingId': fid, 'furnishingName': name}},
+                     }
+    elif etype in [nr_notification]:
+        msg_id = str(uuid.uuid4())
+        source = f'/requests/{identifier}'
+        time = datetime.utcfromtimestamp(time.time()).replace(tzinfo=timezone.utc).isoformat()
+        email_info = {
+                        'specversion': '1.x-wip',
+                        'type': etype,
+                        'source': source,
+                        'id': msg_id,
+                        'time': time,
+                        'datacontenttype': 'application/json',
+                        'identifier': identifier,
+                        'data': {'request': {'nrNum': identifier, 'option': option}},
                      }
     else:
         email_info = {'filingId': fid, 'type': etype, 'option': option, 'identifier': identifier}

@@ -136,7 +136,7 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                                      nr_notification.Option.UPGRADE.value,
                                      nr_notification.Option.REFUND.value
                                      ]:
-                email = nr_notification.process(email_msg, option)
+                email = nr_notification.process(email_msg, option, token)
             else:
                 email = name_request.process(email_msg)
             send_email(email, token)
