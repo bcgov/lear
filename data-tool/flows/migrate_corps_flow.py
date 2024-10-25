@@ -1,9 +1,26 @@
+import os
+import sys
+
+# Prefect 3 dependencies requires SQLAlchemy 2.x so we load what Prefect 3 needs by default.
+# We override SqlAlchemy in this flow to use SQLAlchemy 1.4.44 which is still required by
+# legal api dependencies.
+# Add SQLAlchemy 1.4.44 to path - do this before any other imports
+sqlalchemy_path = os.getenv('SQLALCHEMY_PATH')
+if sqlalchemy_path:
+    print(f'Using SQLAlchemy from: {sqlalchemy_path}')
+    sys.path.insert(0, sqlalchemy_path)
+    from sqlalchemy import __version__, create_engine, engine, text
+    from sqlalchemy.exc import InvalidRequestError
+    print(f'SQLAlchemy version: {__version__}')
+
+
 import pandas as pd
 import prefect
-from legal_api.models import Business, Comment
-from prefect import task, Flow, unmapped, flow, allow_failure
-from prefect.task_runners import ConcurrentTaskRunner, SequentialTaskRunner
-from prefect_dask import DaskTaskRunner
+from legal_api.models import db
+from legal_api.models.db import init_db
+from legal_api.models import Business
+from prefect import flow, task, serve
+
 
 from config import get_named_config
 from flows.corps.corp_queries import get_unprocessed_corps_query
@@ -12,40 +29,61 @@ from corps.filing_data_cleaning_utils import clean_offices_data, clean_corp_part
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
 from custom_filer.corps_filer import process_filing
 from common.custom_exceptions import CustomException, CustomUnsupportedTypeException
-from flows.corps.lear_data_utils import populate_filing_json_from_lear, get_colin_event, populate_filing
+from flows.corps.lear_data_utils import populate_filing_json_from_lear, populate_filing
 from corps.filing_json_factory_service import FilingJsonFactoryService
-from corps.filing_data_utils import get_is_paper_only, get_previous_event_ids, \
+from corps.filing_data_utils import get_previous_event_ids, \
     get_processed_event_ids, get_event_info_to_retrieve, is_in_lear
-from sqlalchemy.exc import InvalidRequestError
-from sqlalchemy import create_engine, engine, text
-from legal_api.models import db
 from flask import Flask
+from datetime import timedelta
 
 
 
-@task(name='init_colin')
+@task(
+    name="colin_init",
+    # retries=3,
+    # retry_delay_seconds=60,
+    log_prints=True
+)
 def colin_init(config):
+    print("Initializing COLIN connection")
     engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
     return engine
 
 
-@task(name='init_lear')
+@task(
+    name="lear_init",
+    # retries=3,
+    # retry_delay_seconds=60,
+    log_prints=True
+)
 def lear_init(config):
+    print("Initializing LEAR connection")
     FLASK_APP = Flask('init_lear')
     FLASK_APP.config.from_object(config)
-    db.init_app(FLASK_APP)
+    init_db(FLASK_APP)
     FLASK_APP.app_context().push()
     return FLASK_APP, db
 
 
-@task
+@task(
+    name="get_config",
+    # retries=3,
+    # retry_delay_seconds=60,
+    log_prints=True
+)
 def get_config():
     config = get_named_config()
     return config
 
 
-@task(name='get_unprocessed_corps')
+@task(
+    name="get_unprocessed_corps",
+    # retries=3,
+    # retry_delay_seconds=60,
+    log_prints=True
+)
 def get_unprocessed_corps(config, db_engine: engine):
+    print("Getting unprocessed corporations")
     logger = prefect.get_run_logger()
     query = get_unprocessed_corps_query(config.DATA_LOAD_ENV)
     sql_text = text(query)
@@ -65,14 +103,21 @@ def get_unprocessed_corps(config, db_engine: engine):
     return raw_data_dict
 
 
-@task(name='get_event_filing_data')
+@task(
+    name="get_event_filing_data",
+    # retries=3,
+    # retry_delay_seconds=60,
+    # cache_key_fn=task_input_hash,
+    # cache_expiration=timedelta(minutes=30),  # Shorter expiration for data freshness
+    log_prints=True
+)
 def get_event_filing_data(config, colin_db_engine: engine, unprocessed_corp_dict: dict):
     logger = prefect.get_run_logger()
+    corp_num = unprocessed_corp_dict.get('corp_num')
+    print(f"Starting event filing data processing for corp: {corp_num}")
     status_service = ProcessingStatusService(config.DATA_LOAD_ENV, colin_db_engine)
     event_filing_service = EventFilingService(colin_db_engine, config)
-    corp_num = unprocessed_corp_dict.get('corp_num')
     corp_name = ''
-    # print(f'get event filing data for {corp_num}')
 
     try:
         event_ids = unprocessed_corp_dict.get('event_ids')
@@ -130,14 +175,21 @@ def get_event_filing_data(config, colin_db_engine: engine, unprocessed_corp_dict
                                           last_error=error_msg)
         raise CustomException(error_msg_minimal)
 
+    print(f"Completed event filing data processing for corp: {corp_num}")
     return unprocessed_corp_dict
 
 
-@task(name='clean_event_filing_data')
+@task(
+    name="clean_event_filing_data",
+    # retries=3,
+    # retry_delay_seconds=60,
+    log_prints=True
+)
 def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_dict: dict):
     logger = prefect.get_run_logger()
+    corp_num = event_filing_data_dict.get('corp_num')
+    print(f"Starting data cleaning for corp: {corp_num}")
     status_service = ProcessingStatusService(config.DATA_LOAD_ENV, colin_db_engine)
-    corp_num = event_filing_data_dict['corp_num']
     corp_name = ''
     event_id = None
     event_filing_type = None
@@ -167,14 +219,21 @@ def clean_event_filing_data(config, colin_db_engine: engine, event_filing_data_d
                                           last_error=error_msg)
         raise CustomException(error_msg_minimal)
 
+    print(f"Completed data cleaning for corp: {corp_num}")
     return event_filing_data_dict
 
 
-@task(name='transform_event_filing_data')
+@task(
+    name="transform_event_filing_data",
+    # retries=3,
+    # retry_delay_seconds=60,
+    log_prints=True
+)
 def transform_event_filing_data(config, colin_db_engine: engine, event_filing_data_dict: dict):
     logger = prefect.get_run_logger()
+    corp_num = event_filing_data_dict.get('corp_num')
+    print(f"Starting data transformation for corp: {corp_num}")
     status_service = ProcessingStatusService(config.DATA_LOAD_ENV, colin_db_engine)
-    corp_num = event_filing_data_dict['corp_num']
     corp_name = ''
     event_id = None
     event_filing_type = None
@@ -205,14 +264,21 @@ def transform_event_filing_data(config, colin_db_engine: engine, event_filing_da
                                           last_error=error_msg)
         raise CustomException(error_msg_minimal)
 
+    print(f"Completed data transformation for corp: {corp_num}")
     return event_filing_data_dict
 
 
-@task(name='load_event_filing_data')
+@task(
+    name="load_event_filing",
+    # retries=3,
+    # retry_delay_seconds=60,
+    log_prints=True
+)
 def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, event_filing_data_dict: dict):
     logger = prefect.get_run_logger()
+    corp_num = event_filing_data_dict.get('corp_num')
+    print(f"Starting data load for corp: {corp_num}")
     status_service = ProcessingStatusService(config.DATA_LOAD_ENV, colin_db_engine)
-    corp_num = event_filing_data_dict['corp_num']
     corp_type = event_filing_data_dict['corp_type_cd']
     filings_count = event_filing_data_dict['cnt']
     corp_name = ''
@@ -265,6 +331,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                                                           filings_count=filings_count,
                                                           processed_status=ProcessingStatuses.COMPLETED,
                                                           last_processed_event_id=event_id)
+                        print(f"Completed data load for corp: {corp_num}")
                     else:
                         status_service.update_flow_status(flow_name='corps-flow',
                                                           corp_num=corp_num,
@@ -324,9 +391,12 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
 
 
 
-# @flow(name="Corps-Migrate-ETL", task_runner=ConcurrentTaskRunner())
-# @flow(name="Corps-Migrate-ETL", task_runner=DaskTaskRunner())
-@flow(name="Corps-Migrate-ETL", task_runner=SequentialTaskRunner())
+@flow(
+    name="Corps-Migrate-ETL",
+    description="Migrate corporation data through ETL process",
+    version="1.0",
+    log_prints=True
+)
 def migrate_flow():
     # setup
     config = get_config()
@@ -334,30 +404,76 @@ def migrate_flow():
     FLASK_APP, db_lear = lear_init(config)
 
     unprocessed_corps = get_unprocessed_corps(config, db_colin_engine)
+    print(f"Found {len(unprocessed_corps)} corps to process")
 
-    # get event/filing related data for each corp
-    event_filing_data = get_event_filing_data.map(unmapped(config),
-                                                  colin_db_engine=unmapped(db_colin_engine),
-                                                  unprocessed_corp_dict=unprocessed_corps)
+    # Submit all event filing tasks in parallel
+    event_filing_futures = []
+    for corp in unprocessed_corps:
+        future = get_event_filing_data.submit(
+            config=config,
+            colin_db_engine=db_colin_engine,
+            unprocessed_corp_dict=corp
+        )
+        event_filing_futures.append(future)
 
-    # clean/validate filings for a given business
-    cleaned_event_filing_data = clean_event_filing_data.map(unmapped(config),
-                                                            unmapped(db_colin_engine),
-                                                            event_filing_data)
+    # Process results and submit cleaning tasks
+    clean_futures = []
+    for future in event_filing_futures:
+        data = future.result()  # Wait for result
+        if data:
+            clean_future = clean_event_filing_data.submit(
+                config=config,
+                colin_db_engine=db_colin_engine,
+                event_filing_data_dict=data
+            )
+            clean_futures.append(clean_future)
 
-    # transform data to appropriate format in preparation for data loading into LEAR
-    transformed_event_filing_data = transform_event_filing_data.map(unmapped(config),
-                                                                    unmapped(db_colin_engine),
-                                                                    cleaned_event_filing_data)
+    # Process cleaning results and submit transform tasks
+    transform_futures = []
+    for future in clean_futures:
+        data = future.result()  # Wait for result
+        if data:
+            transform_future = transform_event_filing_data.submit(
+                config=config,
+                colin_db_engine=db_colin_engine,
+                event_filing_data_dict=data
+            )
+            transform_futures.append(transform_future)
 
-    # load all filings for a given business sequentially
-    # if a filing fails, flag business as failed indicating which filing it failed at
-    loaded_event_filing_data = load_event_filing_data.map(unmapped(config),
-                                                          unmapped(FLASK_APP),
-                                                          unmapped(db_colin_engine),
-                                                          unmapped(db_lear),
-                                                          transformed_event_filing_data)
+    # Process transform results and submit load tasks
+    load_futures = []
+    for future in transform_futures:
+        data = future.result()  # Wait for result
+        if data:
+            load_future = load_event_filing_data.submit(
+                config=config,
+                app=FLASK_APP,
+                colin_db_engine=db_colin_engine,
+                db_lear=db_lear,
+                event_filing_data_dict=data
+            )
+            load_futures.append(load_future)
+
+    # Wait for all loads to complete
+    results = [future.result() for future in load_futures]
+
+    # Summarize results
+    successful = sum(1 for r in results if r is not None)
+    failed = len(results) - successful
+    print(f"Processing complete. Successful: {successful}, Failed: {failed}")
 
 
 if __name__ == "__main__":
     migrate_flow()
+
+
+# if __name__ == "__main__":
+#     # Create deployment with schedule
+#     deployment = migrate_flow.to_deployment(
+#         name="corps-migration",
+#         interval=timedelta(seconds=15),  # Run every 15 seconds
+#         tags=["corps-migration"]
+#     )
+
+#     # Start serving the deployment
+#     serve(deployment)

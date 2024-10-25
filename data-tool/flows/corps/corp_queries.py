@@ -31,7 +31,7 @@ def get_unprocessed_corps_query(data_load_env: str):
                    and ((cp.processed_status is null or cp.processed_status not in ('PROCESSING', 'COMPLETED', 'FAILED', 'PARTIAL'))
                    or (cp.processed_status = 'COMPLETED' and cp.last_processed_event_id <> tbl_fe.last_event_id))
             order by tbl_fe.first_event_id
-            limit 50
+            limit 5
             ;
         """
     return query

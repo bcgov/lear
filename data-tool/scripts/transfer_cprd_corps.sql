@@ -1,8 +1,11 @@
-connect cprd_pg;
-
-vset transfer.threads=8
+vset cli.settings.ignore_errors=false
+vset cli.settings.transfer_threads=8
 vset format.date=YYYY-MM-dd'T'hh:mm:ss'Z'
 vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
+
+connect cprd_pg;
+
+learn schema public;
 
 -- corporation
 transfer public.corporation from cprd using
