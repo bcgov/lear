@@ -26,8 +26,6 @@
             <label class="lbl-business-name">
                {% if business.legalName %}
                   {{ business.legalName }}
-               {% elif nameRequest.legalName %}
-                  {{ nameRequest.legalName }}
                {% else %}
                   {{numberedDescription}}
           {% endif %}

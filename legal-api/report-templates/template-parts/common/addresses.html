@@ -1,11 +1,6 @@
 {% if business.legalType not in ['GP', 'SP'] %}
 <div class="no-page-break">
-   {% if header.name == 'continuationIn' and not business.legalType in ['BEN', 'CBEN', 'CC', 'CCC', 'ULC', 'CUL'] 
-      and not nameRequest.nrNumber %}
-   <!-- Do not render the separator -->
-   {% else %}
-      <div class="separator mt-4"></div>
-   {% endif %}
+   <div class="separator mt-4"></div>
    <div class="section-title mt-4">Registered Office Information</div>
    <div class="section-data mt-4">
       <table class="section-data-table" role="presentation">
