@@ -26,9 +26,12 @@
             <label class="lbl-business-name">
                {% if business.legalName %}
                   {{ business.legalName }}
+               {% elif nameRequest.legalName %}
+                  {{ nameRequest.legalName }}
                {% else %}
                   {{numberedDescription}}
-          {% endif %}
+               {% endif %}
+
             </label>
          </div>
       </div>
@@ -45,7 +48,7 @@
       <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
       <div class="container pt-2">
          [[common/statement.html]]
-         [[continuation/companyNameStmt.html]]
+         [[incorporation-application/benefitCompanyStmt.html]]
          [[common/addresses.html]]
          [[common/directors.html]]
          [[common/shareStructure.html]]

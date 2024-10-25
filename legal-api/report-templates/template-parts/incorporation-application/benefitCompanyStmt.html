@@ -1,10 +1,12 @@
 <div class="no-page-break">
     <div class="section-data mt-4">
         <span class="bold">Name of Company:</span>
-        {% if not nameRequest.nrNumber%}
-            A company name using the Incorporation Number will be provided on the Recognition Date and Time.
+        {% if business.legalName %}
+            <span class="bold">{{ business.legalName }}</span>
+        {% elif nameRequest.nrNumber %}
+            <span class="bold">{{ nameRequest.legalName }}</span>
         {% else %}
-            <span class="bold">{{nameRequest.legalName}}</span>
+            A company name using the Incorporation Number will be provided on the Recognition Date and Time.
         {% endif %}
     </div>
 </div>
@@ -26,3 +28,4 @@
         </div>
     {% endif %}
 </div>
+

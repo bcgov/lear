@@ -157,7 +157,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/footerMOCS',
             'common/directors',
             'continuation/authorization',
-            'continuation/companyNameStmt',
             'continuation/effectiveDate',
             'continuation/exproRegistrationInBc',
             'continuation/foreignJurisdiction',
