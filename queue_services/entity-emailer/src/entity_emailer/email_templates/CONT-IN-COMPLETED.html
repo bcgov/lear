@@ -18,19 +18,32 @@
 
           <div class="container">
             <p class="title-message bold">
-              <span>You have successfully registered your business with BC Business Registry.<span>
+              <span>Your business has successfully continued into B.C.<span>
             </p>
 
             [[business-information.html]]
 
             <p>The following documents are attached to this email:</p>
+
+            {% if header.isFutureEffective %}
+            <!-- scenario 1 -->
             <ul class="outputs">
-                <li>Notice of Articles</li>
-                <li>Certificate of Continuation</li>
+              <li>Notice of Articles</li>
+              <li>Certificate of Continuation</li>
             </ul>
+            {% else %}
+            <ul class="outputs">
+              <li>Continuation Application</li>
+              <li>Notice of Articles</li>
+              <li>Certificate of Continuation</li>
+              <li>Receipt</li>
+            </ul>
+            {% endif %}
 
             [[whitespace-16px.html]]
-            [[business-dashboard-link.html]]
+            <p class="business-dashboard-link">
+              These documents are also available through your <a href="{{ entity_dashboard_url }}">My Business Registry</a>.
+            </p>
 
             [[whitespace-16px.html]]
             [[cra-notice.html]]
