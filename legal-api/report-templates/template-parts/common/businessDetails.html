@@ -327,11 +327,9 @@
         {% if business.legalType in ['SP', 'GP'] %}
             <span> | Registration #{{business.identifier}}</span>
         {% else %}
-            {% if header.name == 'continuationIn' %}
-               <span> | Continuation #{{business.identifier}}</span>
-            {% elif header.name != 'incorporationApplication' %}
-               <!-- not required for incorporationApplication -->
-               <span> | Incorporation #{{business.identifier}}</span>
+           {% if header.name != 'incorporationApplication' %}
+             <!-- not required for incorporationApplication -->
+             <span> | Incorporation #{{business.identifier}}</span>
            {% endif %}
         {% endif %}
     {% endif %}
