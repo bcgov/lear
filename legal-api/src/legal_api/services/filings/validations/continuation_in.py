@@ -179,7 +179,7 @@ def validate_founding_date(filing_json: dict, filing_type: str) -> list:
     """Validate the founding date of the EXPRO business in the filing JSON."""
     msg = []
     founding_date_path = f'/filing/{filing_type}/business/foundingDate'
-    
+
     if filing_json['filing'][filing_type].get('business'):
         # Check if founding date exists
         founding_date = filing_json['filing'][filing_type]['business']['foundingDate']
