@@ -34,7 +34,6 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_mailing_address,
 )
 from legal_api.services.utils import get_bool, get_str
-from legal_api.utils.datetime import datetime as dt
 
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
@@ -51,7 +50,6 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return msg  # Cannot continue validation without legal_type
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
-    msg.extend(validate_founding_date(filing_json, filing_type))
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type))
     msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
@@ -161,10 +159,12 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
     msg = []
     business_identifier_path = f'/filing/{filing_type}/business/identifier'
     business_legal_name_path = f'/filing/{filing_type}/business/legalName'
+    business_founding_date_path = f'/filing/{filing_type}/business/foundingDate'
 
     if filing_json['filing'][filing_type].get('business'):
         identifier = filing_json['filing'][filing_type]['business']['identifier']
         legal_name = filing_json['filing'][filing_type]['business']['legalName']
+        founding_date = filing_json['filing'][filing_type]['business']['foundingDate']
         response = colin.query_business(identifier)
         response_json = response.json()
         if response.status_code != HTTPStatus.OK:
@@ -173,36 +173,7 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
         elif legal_name != response_json['business']['legalName']:
             msg.append({'error': 'Legal name does not match with company legal name from Colin.',
                         'path': business_legal_name_path})
-    return msg
-
-def validate_founding_date(filing_json: dict, filing_type: str) -> list:
-    """Validate the founding date of the EXPRO business in the filing JSON."""
-    msg = []
-    founding_date_path = f'/filing/{filing_type}/business/foundingDate'
-
-    if filing_json['filing'][filing_type].get('business'):
-        # Check if founding date exists
-        founding_date = filing_json['filing'][filing_type]['business']['foundingDate']
-        if not founding_date:
-            msg.append({
-                'error': 'Founding date is missing.',
-                'path': founding_date_path
-            })
-            return msg
-
-        try:
-            # Check the founding date is in valid format
-            founding_date_formatted = dt.fromisoformat(founding_date)
-
-            # Check if the date is today or before
-            if founding_date_formatted > dt.now():
-                msg.append({
-                    'error': 'Founding date cannot be in the future.',
-                    'path': founding_date_path
-                })
-        except ValueError:
-            msg.append({
-                'error': f'{founding_date} is an invalid ISO format for founding date.',
-                'path': founding_date_path
-            })
+        elif founding_date != response_json['business']['foundingDate']:
+            msg.append({'error': 'Founding date does not match with founding date from Colin.',
+                        'path': business_founding_date_path})
     return msg
