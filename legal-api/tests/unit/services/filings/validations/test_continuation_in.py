@@ -22,6 +22,7 @@ from registry_schemas.example_data import CONTINUATION_IN
 from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
+from legal_api.services.filings.validations.continuation_in import validate_business_in_colin
 
 from tests.unit.services.filings.validations import lists_are_equal
 
@@ -728,6 +729,37 @@ def test_validate_business_in_colin(mocker, app, session):
 
     err = validate(None, filing)
     assert err.code == HTTPStatus.BAD_REQUEST
+
+
+def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session):
+    """Assert continuation EXPRO business with founding date mismatch."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    
+    # Add the EXPRO business data to simulate a mismatch in founding date
+    filing['filing']['continuationIn']['business'] = {
+        'identifier': 'A0077779',
+        'legalName': 'Test Company Inc.',
+        'foundingDate': '2009-07-23T07:00:00.000+00:00'
+    }
+
+    mocker.patch('legal_api.services.colin.query_business', return_value=mocker.Mock(
+        status_code=HTTPStatus.OK,
+        json=lambda: {
+            'business': {
+                'identifier': 'A0077779',
+                'legalName': 'Test Company Inc.',
+                # Different founding date to trigger validation error
+                'foundingDate': '2010-01-01T00:00:00.000+00:00'
+            }
+        }
+    ))
+
+    err = validate_business_in_colin(filing, 'continuationIn')
+    assert err[0]['error'] == 'Founding date does not match with founding date from Colin.'
+    assert err[0]['path'] == '/filing/continuationIn/business/foundingDate'
 
 
 @pytest.mark.parametrize(
