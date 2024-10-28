@@ -24,27 +24,28 @@
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-            {% if nameRequest.legalName %}
-               {{ nameRequest.legalName }}
-            {% else %}
-               {{ numberedDescription }}
-            {% endif %}
+               {% if business.legalName %}
+                  {{ business.legalName }}
+               {% elif nameRequest.legalName %}
+                  {{ nameRequest.legalName }}
+               {% else %}
+                  {{numberedDescription}}
+               {% endif %}
             </label>
          </div>
       </div>
       [[common/businessDetails.html]]
 
       <div class="section-header mt-5 pt-4">CONTINUATION APPLICATION</div>
-      <div class="container pt-4">
-         [[incorporation-application/nameRequest.html]]
+      <div class="container pt-2">
+         [[continuation/nameRequest.html]]
          [[continuation/effectiveDate.html]]
          [[continuation/foreignJurisdiction.html]]
          [[continuation/exproRegistrationInBc.html]]
          [[continuation/authorization.html]]
-         [[incorporation-application/completingParty.html]]
       </div>
       <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
-      <div class="container pt-4">
+      <div class="container pt-2">
          [[common/statement.html]]
          [[incorporation-application/benefitCompanyStmt.html]]
          [[common/addresses.html]]

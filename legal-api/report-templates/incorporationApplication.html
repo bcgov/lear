@@ -24,11 +24,13 @@
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-            {% if nameRequest.legalName %}
-               {{ nameRequest.legalName }}
-            {% else %}
-               {{ numberedDescription }}
-            {% endif %}
+               {% if business.legalName %}
+                  {{ business.legalName }}
+               {% elif nameRequest.legalName %}
+                  {{ nameRequest.legalName }}
+               {% else %}
+                  {{numberedDescription}}
+               {% endif %}
             </label>
          </div>
       </div>

@@ -160,6 +160,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'continuation/effectiveDate',
             'continuation/exproRegistrationInBc',
             'continuation/foreignJurisdiction',
+            'continuation/nameRequest',
             'common/completingParty',
             'correction/businessDetails',
             'correction/addresses',
@@ -946,6 +947,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # set expro business
         if filing['continuationIn'].get('business'):
             filing['exproBusiness'] = filing['continuationIn']['business']
+            # format founding date
+            founding_date_str = filing['exproBusiness']['foundingDate']
+            founding_date_datetime = datetime.fromisoformat(founding_date_str)
+            founding_date = LegislationDatetime.as_legislation_timezone(founding_date_datetime)
+            filing['exproBusiness']['formattedFoundingDate'] = founding_date.strftime(OUTPUT_DATE_FORMAT)
 
         filing['authorization'] = filing['continuationIn'].get('authorization')
         filing['foreignJurisdiction'] = filing['continuationIn'].get('foreignJurisdiction')
@@ -960,8 +966,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         region = None
         if region_code and region_code.upper() != 'FEDERAL':
             region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-            filing['foreignJurisdiction']['region'] = region.name.upper() if region_code else ''
-        filing['foreignJurisdiction']['country'] = country.name.upper()
+            filing['foreignJurisdiction']['region'] = region.name if region_code else ''
+        filing['foreignJurisdiction']['country'] = country.name
 
         # format incorporation date
         incorp_date = \
