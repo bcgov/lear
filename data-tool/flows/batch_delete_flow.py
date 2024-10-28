@@ -14,7 +14,8 @@ SELECT COUNT(*) FROM businesses
 
 identifiers_query = """
 SELECT id, identifier FROM businesses
--- WHERE legal_type IN ('BC', 'ULC', 'CC')
+WHERE legal_type IN ('BC', 'ULC', 'CC')
+AND legal_name LIKE '% - IMPORT_TEST'
 LIMIT :batch_size
 """
 
