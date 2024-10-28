@@ -163,8 +163,8 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
 
     if filing_json['filing'][filing_type].get('business'):
         identifier = filing_json['filing'][filing_type]['business']['identifier']
-        legal_name = filing_json['filing'][filing_type]['business']['legalName']
-        founding_date = filing_json['filing'][filing_type]['business']['foundingDate']
+        legal_name = filing_json['filing'][filing_type]['business'].get('legalName')
+        founding_date = filing_json['filing'][filing_type]['business'].get('foundingDate')
         response = colin.query_business(identifier)
         response_json = response.json()
         if response.status_code != HTTPStatus.OK:
