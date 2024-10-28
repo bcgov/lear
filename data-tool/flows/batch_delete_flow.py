@@ -375,7 +375,7 @@ def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = '
         cnt = results.rowcount
         print(f'Delete {cnt} rows from {table_name}')
     else:
-        print(f'Skip deleting {table_name} table due to empty list')
+        print(f'Skip deleting {table_name} due to empty ID list')
 
 
 @task
