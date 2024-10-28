@@ -100,6 +100,20 @@ class _Config():  # pylint: disable=too-few-public-methods
         "max_overflow": int(DATABASE_MAX_OVERFLOW)
     }
 
+    # POSTGRESQL AUTH DB
+    DB_USER_AUTH = os.getenv('DATABASE_USERNAME_AUTH', '')
+    DB_PASSWORD_AUTH = os.getenv('DATABASE_PASSWORD_AUTH', '')
+    DB_NAME_AUTH = os.getenv('DATABASE_NAME_AUTH', '')
+    DB_HOST_AUTH = os.getenv('DATABASE_HOST_AUTH', '')
+    DB_PORT_AUTH = os.getenv('DATABASE_PORT_AUTH', '5432')
+    SQLALCHEMY_DATABASE_URI_AUTH = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
+        user=DB_USER_AUTH,
+        password=DB_PASSWORD_AUTH,
+        host=DB_HOST_AUTH,
+        port=int(DB_PORT_AUTH),
+        name=DB_NAME_AUTH,
+    )
+
     # service accounts
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'https://')
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
@@ -108,6 +122,12 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
     ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
+
+    # batch delete flow
+    BATCHES = int(os.getenv('BATCHES', sys.maxsize))
+    BATCH_SIZE = int(os.getenv('BATCH_SIZE', 300))
+    DELETE_AUTH_RECORDS = os.getenv('DELETE_AUTH_RECORDS').lower() == 'true'
+    DELETE_COLIN_RECORDS = os.getenv('DELETE_COLIN_RECORDS').lower() == 'true'
 
     TESTING = False
     DEBUG = False
