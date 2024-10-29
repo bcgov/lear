@@ -753,7 +753,7 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.',
                 # Different founding date to trigger validation error
-                'foundingDate': '2010-01-01T00:00:00.000+00:00'
+                'foundingDate': '2010-01-01T18:00:00-00:00'
             }
         }
     ))
