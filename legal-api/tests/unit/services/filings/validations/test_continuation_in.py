@@ -23,7 +23,7 @@ from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction
-from legal_api.utils.datetime import datetime as dt
+from legal_api.utils.datetime import datetime as dt, timedelta
 
 from tests.unit.services.filings.validations import lists_are_equal
 
@@ -766,7 +766,7 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
 def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
     """Assert that an error is raised if the incorporation date is set to a future date."""
     # Prepare a filing JSON with a future incorporation date
-    future_date = (dt.now() + dt(days=1)).isoformat()  # Set date to tomorrow
+    future_date = (dt.now() + timedelta(days=1)).isoformat()  # Set date to tomorrow
     filing = {
         'filing': {
             'continuationIn': {
