@@ -22,7 +22,8 @@ from registry_schemas.example_data import CONTINUATION_IN
 from legal_api.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
-from legal_api.services.filings.validations.continuation_in import validate_business_in_colin
+from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction
+from legal_api.utils.datetime import datetime as dt
 
 from tests.unit.services.filings.validations import lists_are_equal
 
@@ -760,6 +761,41 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
     err = validate_business_in_colin(filing, 'continuationIn')
     assert err[0]['error'] == 'Founding date does not match with founding date from Colin.'
     assert err[0]['path'] == '/filing/continuationIn/business/foundingDate'
+
+
+def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
+    """Assert that an error is raised if the incorporation date is set to a future date."""
+    # Prepare a filing JSON with a future incorporation date
+    future_date = (dt.now() + dt(days=1)).isoformat()  # Set date to tomorrow
+    filing = {
+        'filing': {
+            'continuationIn': {
+                'foreignJurisdiction': {
+                    'country': 'USA',
+                    'region': 'WA',
+                    'incorporationDate': future_date
+                }
+            },
+            'header': {
+                'name': 'continuationIn',
+                'date': '2019-04-08',
+                'certifiedBy': 'full name',
+                'email': 'no_one@never.get',
+                'filingId': 1
+            }
+        }
+    }
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_foreign_jurisdiction', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+
+    # Run the validation function
+    err = _validate_foreign_jurisdiction(filing, 'continuationIn', 'CCC')
+
+    # Assert that the error list contains the appropriate error for future incorporation date
+    assert len(err) == 1
+    assert err[0]['error'] == 'Incorporation date cannot be in the future.'
+    assert err[0]['path'] == '/filing/continuationIn/foreignJurisdiction/incorporationDate'
 
 
 @pytest.mark.parametrize(
