@@ -500,8 +500,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             if 'addressType' in member_mailing_address:
                 del member_mailing_address['addressType']
             member['mailingAddress'] = member_mailing_address
-        else:
-            if party_revision.delivery_address:
+        elif party_revision.delivery_address_id:
                 member['mailingAddress'] = member['deliveryAddress']
 
         if is_ia_or_after:
