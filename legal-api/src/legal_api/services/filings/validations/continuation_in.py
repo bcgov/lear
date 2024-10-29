@@ -200,11 +200,7 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
                     'path': business_founding_date_path
                 })
             else:
-                # Truncate both dates to "YYYY-MM-DDTHH:MM:SS" for comparison
-                founding_date_truncated = dt.fromisoformat(founding_date).replace(tzinfo=None)
-                colin_founding_date_truncated = dt.fromisoformat(response_json['business']['foundingDate']).replace(tzinfo=None)
-
-                if founding_date_truncated != colin_founding_date_truncated:
+                if dt.fromisoformat(founding_date) !=  dt.fromisoformat(response_json['business']['foundingDate']):
                     msg.append({
                         'error': 'Founding date does not match with founding date from Colin.',
                         'path': business_founding_date_path
