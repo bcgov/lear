@@ -1,0 +1,11 @@
+cx-Oracle==8.3.0
+greenlet==3.1.1
+pandas==2.0.3
+python-dateutil==2.9.0.post0
+python-dotenv==1.0.1
+pytz==2024.2
+six==1.16.0
+SQLAlchemy==2.0.36
+tqdm==4.66.5
+typing_extensions==4.12.2
+tzdata==2024.2
