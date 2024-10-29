@@ -15,7 +15,7 @@ SELECT COUNT(*) FROM businesses
 identifiers_query = """
 SELECT id, identifier FROM businesses
 WHERE legal_type IN ('BC', 'ULC', 'CC')
-AND legal_name LIKE '% - IMPORT_TEST'
+AND legal_name LIKE '%' || :corp_name_suffix
 LIMIT :batch_size
 """
 
@@ -85,7 +85,11 @@ def auth_init(config):
 @task
 def get_selected_corps(db_engine: Engine, config):
     with db_engine.connect() as conn:
-        results = conn.execute(text(identifiers_query), {'batch_size': config.BATCH_SIZE})
+        results = conn.execute(text(identifiers_query), {
+            'batch_size': config.BATCH_SIZE,
+            'corp_name_suffix': config.CORP_NAME_SUFFIX
+            })
+
         rows = results.fetchall()
 
         if not rows:

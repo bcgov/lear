@@ -52,7 +52,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     """
 
     DATA_LOAD_ENV = os.getenv('DATA_LOAD_ENV', '')
-    CORP_NAME_PREFIX = os.getenv('CORP_NAME_PREFIX', '')
+    CORP_NAME_SUFFIX = os.getenv('CORP_NAME_SUFFIX', '')
     UPDATE_ENTITY = os.getenv('UPDATE_ENTITY', 'False') == 'True'
     AFFILIATE_ENTITY = os.getenv('AFFILIATE_ENTITY', 'False') == 'True'
     AFFILIATE_ENTITY_ACCOUNT_ID = os.getenv('AFFILIATE_ENTITY_ACCOUNT_ID')
