@@ -130,7 +130,7 @@ def _create_version(session, target, operation_type):
     if existing_version:
         # Update the existing version
         session.execute(
-            update(VersionClass).
+            update(VersionClass.__table__).
             where(and_(
                 VersionClass.id == target.id,
                 VersionClass.transaction_id == transaction_id
@@ -139,11 +139,11 @@ def _create_version(session, target, operation_type):
         )
     else:
         # Insert a new version
-        session.execute(insert(VersionClass).values(new_version_data))
+        session.execute(insert(VersionClass.__table__).values(new_version_data))
 
     # Close any open versions
     session.execute(
-        update(VersionClass).
+        update(VersionClass.__table__).
         where(and_(
             VersionClass.id == target.id,
             VersionClass.end_transaction_id.is_(None),
