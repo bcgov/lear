@@ -57,7 +57,7 @@ urllib3==1.26.11
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.12
-html-sanitizer==2.4.1
+html-sanitizer==2.4.2
 lxml==5.2.2
 numpy==1.24.3
 pandas==2.0.3
