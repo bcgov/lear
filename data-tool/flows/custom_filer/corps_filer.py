@@ -31,9 +31,14 @@ from typing import Dict
 from flask import Flask
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
+from legal_api.models.db import versioning_manager
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.services.bootstrap import AccountService
-from sqlalchemy_continuum import versioning_manager
+import sqlalchemy_continuum
+
+# Add this line to print the version of sqlalchemy-continuum
+print(f"SQLAlchemy-Continuum version: {sqlalchemy_continuum.__version__}")
+
 
 from .filing_meta import FilingMeta, json_serial
 from .filing_processors import incorporation_filing, registration, change_of_registration, dissolution, conversion, \
