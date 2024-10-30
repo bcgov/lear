@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Continuation In filing."""
-import pytz
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
@@ -201,8 +200,7 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
                     'path': business_founding_date_path
                 })
             else:
-                utc = pytz.timezone('UTC')
-                if dt.fromisoformat(founding_date).astimezone(utc).date() != dt.fromisoformat(response_json['business']['foundingDate']).astimezone(utc).date():
+                if dt.fromisoformat(founding_date).date() != dt.fromisoformat(response_json['business']['foundingDate']).date():
                     msg.append({
                         'error': 'Founding date does not match with founding date from Colin.',
                         'path': business_founding_date_path
