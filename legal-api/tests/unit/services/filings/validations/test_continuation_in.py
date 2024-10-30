@@ -774,7 +774,7 @@ def test_validate_business_in_colin_founding_date_match(mocker, app, session):
     filing['filing']['continuationIn']['business'] = {
         'identifier': 'A0077779',
         'legalName': 'Test Company Inc.',
-        'foundingDate': '2009-07-23T07:00:00.000+00:00'
+        'foundingDate': '2009-07-23T18:31:24-00:00'
     }
 
     mocker.patch('legal_api.services.colin.query_business', return_value=mocker.Mock(
