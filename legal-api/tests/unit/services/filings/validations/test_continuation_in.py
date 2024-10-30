@@ -753,7 +753,7 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.',
                 # Different founding date to trigger validation error
-                'foundingDate': '2010-01-01T18:00:00-00:00'
+                'foundingDate': '2010-01-01T18:21:13-00:00'
             }
         }
     ))
@@ -761,6 +761,35 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
     err = validate_business_in_colin(filing, 'continuationIn')
     assert err[0]['error'] == 'Founding date does not match with founding date from Colin.'
     assert err[0]['path'] == '/filing/continuationIn/business/foundingDate'
+
+
+def test_validate_business_in_colin_founding_date_match(mocker, app, session):
+    """Assert continuation EXPRO business with matching founding date."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    
+    # Add the EXPRO business data with a matching founding date
+    filing['filing']['continuationIn']['business'] = {
+        'identifier': 'A0077779',
+        'legalName': 'Test Company Inc.',
+        'foundingDate': '2009-07-23T18:31:24-00:00'
+    }
+
+    mocker.patch('legal_api.services.colin.query_business', return_value=mocker.Mock(
+        status_code=HTTPStatus.OK,
+        json=lambda: {
+            'business': {
+                'identifier': 'A0077779',
+                'legalName': 'Test Company Inc.',
+                'foundingDate': '2009-07-23T18:31:24-00:00'
+            }
+        }
+    ))
+
+    err = validate_business_in_colin(filing, 'continuationIn')
+    assert len(err) == 0
 
 
 def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
