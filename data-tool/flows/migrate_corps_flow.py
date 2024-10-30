@@ -455,12 +455,8 @@ def migrate_flow():
             load_futures.append(load_future)
 
     # Wait for all loads to complete
-    results = [future.result() for future in load_futures]
-
-    # Summarize results
-    successful = sum(1 for r in results if r is not None)
-    failed = len(results) - successful
-    print(f"Processing complete. Successful: {successful}, Failed: {failed}")
+    for future in load_futures:
+        future.result()
 
 
 if __name__ == "__main__":
