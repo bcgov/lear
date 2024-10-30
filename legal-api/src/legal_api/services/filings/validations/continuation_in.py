@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Continuation In filing."""
+import pytz
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
@@ -35,7 +36,6 @@ from legal_api.services.filings.validations.incorporation_application import (
 )
 from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
-import pytz
 
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
