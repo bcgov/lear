@@ -33,7 +33,7 @@ flask-jwt-oidc==0.3.0
 flask-restx==0.5.1  # Earlier version that works with Flask 2.0.x
 google-auth==2.29.0
 gunicorn==20.1.0
-idna==2.10
+idna==3.7
 itsdangerous>=2.0.0
 jsonschema==4.19.0
 launchdarkly-server-sdk==7.1.0
