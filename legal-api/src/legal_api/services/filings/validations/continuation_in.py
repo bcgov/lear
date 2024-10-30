@@ -35,6 +35,7 @@ from legal_api.services.filings.validations.incorporation_application import (
 )
 from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
+import pytz
 
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
@@ -200,13 +201,10 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
                     'path': business_founding_date_path
                 })
             else:
-                if dt.fromisoformat(founding_date) != dt.fromisoformat(response_json['business']['foundingDate']):
+                utc = pytz.timezone('UTC')
+                if dt.fromisoformat(founding_date).astimezone(utc).date() != dt.fromisoformat(response_json['business']['foundingDate']).astimezone(utc).date():
                     msg.append({
-                        'error': (
-                            f"Founding date does not match with founding date from Colin. "
-                            f"Filing founding_date: {founding_date}, "
-                            f"Colin API founding_date: {response_json['business']['foundingDate']}"
-                        ),
-                    'path': business_founding_date_path
+                        'error': 'Founding date does not match with founding date from Colin.',
+                        'path': business_founding_date_path
                     })
     return msg
