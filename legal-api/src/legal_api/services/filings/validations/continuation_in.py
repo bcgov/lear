@@ -192,7 +192,7 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
         elif legal_name != response_json['business']['legalName']:
             msg.append({'error': 'Legal name does not match with company legal name from Colin.',
                         'path': business_legal_name_path})
-        elif founding_date != response_json['business']['founding_date']:
+        elif founding_date != response_json['business']['foundingDate']:
             msg.append({'error': 'Founding date does not match with founding date from Colin.',
                         'path': business_founding_date_path})
 
