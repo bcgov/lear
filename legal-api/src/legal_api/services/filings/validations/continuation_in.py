@@ -202,7 +202,11 @@ def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
             else:
                 if dt.fromisoformat(founding_date) != dt.fromisoformat(response_json['business']['foundingDate']):
                     msg.append({
-                        'error': 'Founding date does not match with founding date from Colin.',
-                        'path': business_founding_date_path
+                        'error': (
+                            f"Founding date does not match with founding date from Colin. "
+                            f"Filing founding_date: {founding_date}, "
+                            f"Colin API founding_date: {response_json['business']['foundingDate']}"
+                        ),
+                    'path': business_founding_date_path
                     })
     return msg
