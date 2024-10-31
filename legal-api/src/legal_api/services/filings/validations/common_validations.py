@@ -196,6 +196,29 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
 
     return None
 
+def validate_pdf_no_page_size(file_key: str, file_key_path: str) -> Optional[list]:
+    """Validate the PDF file."""
+    msg = []
+    try:
+        file = MinioService.get_file(file_key)
+        open_pdf_file = io.BytesIO(file.data)
+        pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+
+        file_info = MinioService.get_file_info(file_key)
+        if file_info.size > 30000000:
+            msg.append({'error': _('File exceeds maximum size.'), 'path': file_key_path})
+
+        if pdf_reader.isEncrypted:
+            msg.append({'error': _('File must be unencrypted.'), 'path': file_key_path})
+
+    except Exception:
+        msg.append({'error': _('Invalid file.'), 'path': file_key_path})
+
+    if msg:
+        return msg
+
+    return None
+
 
 def validate_parties_names(filing_json: dict, filing_type: str) -> list:
     """Validate the parties name for COLIN sync."""
