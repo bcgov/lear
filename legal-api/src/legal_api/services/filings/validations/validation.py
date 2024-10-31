@@ -54,9 +54,9 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
              filing_json: Dict,
              account_id=None) -> Error:
     """Validate the filing JSON."""
-    # err = validate_against_schema(filing_json)
-    # if err:
-    #     return err
+    err = validate_against_schema(filing_json)
+    if err:
+        return err
 
     err = None
 
