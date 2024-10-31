@@ -196,6 +196,7 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
 
     return None
 
+
 def validate_pdf_no_page_size(file_key: str, file_key_path: str) -> Optional[list]:
     """Validate the PDF file."""
     msg = []
