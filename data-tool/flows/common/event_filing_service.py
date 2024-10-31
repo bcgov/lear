@@ -190,8 +190,8 @@ class EventFilingService:
                 event_filing_data_dict['target_lear_filing_type'] = None
 
             corp_name = event_filing_data_dict['cn_corp_name']
-            if (corp_name_prefix := self.config.CORP_NAME_PREFIX):
-                corp_name = f'{corp_name}{corp_name_prefix}'
+            if (corp_name_suffix := self.config.CORP_NAME_SUFFIX):
+                corp_name = f'{corp_name}{corp_name_suffix}'
             event_filing_data_dict['cn_corp_name'] = corp_name
 
             # get corp party data

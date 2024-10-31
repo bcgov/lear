@@ -78,8 +78,8 @@ def clean_corp_data(config, filing_data: dict):
     # corp_name_mapping_dict = get_custom_corp_names()
     #
     # if corp_name := corp_name_mapping_dict.get(corp_num):
-    #     corp_name_prefix = config.CORP_NAME_PREFIX
-    #     corp_name = f'{corp_name}{corp_name_prefix}'
+    #     corp_name_suffix = config.CORP_NAME_SUFFIX
+    #     corp_name = f'{corp_name}{corp_name_suffix}'
     #     filing_data['curr_corp_name'] = corp_name
     #     filing_data['cn_corp_name'] = corp_name
 
