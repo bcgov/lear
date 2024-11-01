@@ -127,7 +127,7 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
           ((region := foreign_jurisdiction.get('region')) and region == 'AB')):
         affidavit_file_key_path = f'{foreign_jurisdiction_path}/affidavitFileKey'
         if file_key := foreign_jurisdiction.get('affidavitFileKey'):
-            if err := validate_pdf(file_key, affidavit_file_key_path):
+            if err := validate_pdf(file_key, affidavit_file_key_path, False):
                 msg.extend(err)
         else:
             msg.append({'error': 'Affidavit from the directors is required.', 'path': affidavit_file_key_path})
@@ -157,7 +157,7 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str) 
     for index, file in enumerate(filing_json['filing'][filing_type]['authorization']['files']):
         file_key = file['fileKey']
         file_key_path = f'{authorization_path}/files/{index}/fileKey'
-        if err := validate_pdf(file_key, file_key_path):
+        if err := validate_pdf(file_key, file_key_path, False):
             msg.extend(err)
 
     return msg

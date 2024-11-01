@@ -168,7 +168,7 @@ def validate_court_order(court_order_path, court_order):
     return None
 
 
-def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
+def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> Optional[list]:
     """Validate the PDF file."""
     msg = []
     try:
@@ -176,10 +176,11 @@ def validate_pdf(file_key: str, file_key_path: str) -> Optional[list]:
         open_pdf_file = io.BytesIO(file.data)
         pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
 
-        # Check that all pages in the pdf are letter size and able to be processed.
-        if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
-            msg.append({'error': _('Document must be set to fit onto 8.5” x 11” letter-size paper.'),
-                        'path': file_key_path})
+        if verify_paper_size:
+            # Check that all pages in the pdf are letter size and able to be processed.
+            if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
+                msg.append({'error': _('Document must be set to fit onto 8.5” x 11” letter-size paper.'),
+                            'path': file_key_path})
 
         file_info = MinioService.get_file_info(file_key)
         if file_info.size > 30000000:
