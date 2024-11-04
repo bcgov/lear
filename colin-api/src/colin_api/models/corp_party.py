@@ -483,7 +483,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         last_nme=party['officer']['lastName'],
                         middle_nme=party['officer'].get('middleInitial', ''),
                         first_nme=party['officer']['firstName'],
-                        email=party['officer']['email']
+                        email=party['officer'].get('email', '')
                     )
                 else:
                     cursor.execute(
@@ -493,7 +493,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         last_nme=party['officer']['lastName'],
                         middle_nme=party['officer'].get('middleInitial', ''),
                         first_nme=party['officer']['firstName'],
-                        email=party['officer']['email']
+                        email=party['officer'].get('email', '')
                     )
             else:
                 date_format = '%Y-%m-%d'

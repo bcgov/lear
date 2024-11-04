@@ -81,10 +81,7 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
     colin_events = None
     legal_url = application.config['LEGAL_API_URL'] + '/businesses'
     colin_url = application.config['COLIN_URL']
-    corp_types = [Business.TypeCodes.COOP.value, Business.TypeCodes.BC_COMP.value,
-                  Business.TypeCodes.ULC_COMP.value, Business.TypeCodes.CCC_COMP.value]
-    no_corp_num_prefix_in_colin = [Business.TypeCodes.BC_COMP.value, Business.TypeCodes.ULC_COMP.value,
-                                   Business.TypeCodes.CCC_COMP.value]
+    corp_types = [Business.TypeCodes.COOP.value]
 
     # get max colin event_id from legal
     response = requests.get(f'{legal_url}/internal/filings/colin_id',
@@ -114,8 +111,6 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
                                             timeout=AccountService.timeout)
                     event_info = dict(response.json())
                     events = event_info.get('events')
-                    if corp_type in no_corp_num_prefix_in_colin:
-                        append_corp_num_prefixes(events, 'BC')
                     if colin_events:
                         colin_events.get('events').extend(events)
                     else:
@@ -159,13 +154,6 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
     return id_list
 
 
-def append_corp_num_prefixes(events, corp_num_prefix):
-    """Append corp num prefix to Colin corp num to make Lear compatible."""
-    for event in events:
-        event['corp_num'] = corp_num_prefix + event['corp_num']
-
-
-# pylint: disable=redefined-outer-name
 def get_filing(event_info: dict = None, application: Flask = None, token: dict = None):
     """Get filing created by previous event."""
     # call the colin api for the filing

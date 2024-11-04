@@ -601,7 +601,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     event_id=filing.event_id,
                     filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date,
-                    filing_date=filing.filing_date
+                    filing_date=filing.filing_date[:10]
                 )
             elif filing_type_code in ['NOCAD', 'CRBIN', 'TRANS',
                                       'BEINC', 'ICORP', 'ICORU', 'ICORC',
@@ -1529,7 +1529,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             else:
                 # strip prefix BC
                 if identifier.startswith('BC'):
-                    identifier = identifier[-7:]
+                    identifier = identifier[2:]
                 corp_involved.corp_num = identifier
 
                 if amalgamating_business['role'] in ['holding', 'primary']:
