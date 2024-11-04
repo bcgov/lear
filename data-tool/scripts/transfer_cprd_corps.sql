@@ -7,6 +7,58 @@ connect cprd_pg;
 
 learn schema public;
 
+
+-- disable triggers
+ALTER TABLE corporation DISABLE TRIGGER ALL;
+ALTER TABLE corp_name DISABLE TRIGGER ALL;
+ALTER TABLE corp_state DISABLE TRIGGER ALL;
+ALTER TABLE event DISABLE TRIGGER ALL;
+ALTER TABLE filing DISABLE TRIGGER ALL;
+ALTER TABLE filing_user DISABLE TRIGGER ALL;
+ALTER TABLE office DISABLE TRIGGER ALL;
+ALTER TABLE address DISABLE TRIGGER ALL;
+ALTER TABLE corp_comments DISABLE TRIGGER ALL;
+ALTER TABLE ledger_text DISABLE TRIGGER ALL;
+ALTER TABLE corp_party DISABLE TRIGGER ALL;
+ALTER TABLE corp_party_relationship DISABLE TRIGGER ALL;
+ALTER TABLE offices_held DISABLE TRIGGER ALL;
+ALTER TABLE completing_party DISABLE TRIGGER ALL;
+ALTER TABLE submitting_party DISABLE TRIGGER ALL;
+ALTER TABLE corp_flag DISABLE TRIGGER ALL;
+ALTER TABLE cont_out DISABLE TRIGGER ALL;
+ALTER TABLE conv_event DISABLE TRIGGER ALL;
+ALTER TABLE conv_ledger DISABLE TRIGGER ALL;
+ALTER TABLE corp_involved_amalgamating DISABLE TRIGGER ALL;
+ALTER TABLE corp_involved_cont_in DISABLE TRIGGER ALL;
+ALTER TABLE corp_restriction DISABLE TRIGGER ALL;
+ALTER TABLE correction DISABLE TRIGGER ALL;
+ALTER TABLE jurisdiction DISABLE TRIGGER ALL;
+ALTER TABLE resolution DISABLE TRIGGER ALL;
+ALTER TABLE share_series DISABLE TRIGGER ALL;
+ALTER TABLE share_struct DISABLE TRIGGER ALL;
+ALTER TABLE share_struct_cls DISABLE TRIGGER ALL;
+ALTER TABLE notification DISABLE TRIGGER ALL;
+ALTER TABLE notification_resend DISABLE TRIGGER ALL;
+ALTER TABLE party_notification DISABLE TRIGGER ALL;
+
+
+-- alter tables
+alter table corporation alter column send_ar_ind type integer using send_ar_ind::integer;
+alter table filing
+   alter column arrangement_ind type integer using arrangement_ind::integer,
+   alter column court_appr_ind type integer using court_appr_ind::integer;
+alter table share_struct_cls
+   alter column max_share_ind type integer using max_share_ind::integer,
+   alter column spec_rights_ind type integer using spec_rights_ind::integer,
+   alter column par_value_ind type integer using par_value_ind::integer;
+alter table conv_event alter report_corp_ind type integer using report_corp_ind::integer;
+alter table corp_involved_amalgamating alter adopted_corp_ind type integer using adopted_corp_ind::integer;
+alter table corp_restriction alter restriction_ind type integer using restriction_ind::integer;
+alter table share_series
+   alter column max_share_ind type integer using max_share_ind::integer,
+   alter column spec_right_ind type integer using spec_right_ind::integer;
+
+
 -- corporation
 transfer public.corporation from cprd using
 select case
@@ -174,15 +226,15 @@ where o.corp_num = c.corp_num
 order by c.corp_num, start_event_id;
 
 
-vset transfer.threads=3
+vset cli.settings.transfer_threads=3
 -- address
 transfer public.address from cprd using
 select distinct ADDR_ID,
                 PROVINCE,
                 COUNTRY_TYP_CD,
-                POSTAL_CD,
+                replace(POSTAL_CD, CHR(0), '') as POSTAL_CD,
                 ADDR_LINE_1,
-                ADDR_LINE_2,
+                replace(ADDR_LINE_2, CHR(0), '') as ADDR_LINE_2,
                 ADDR_LINE_3,
                 CITY
 from (select a.*
@@ -256,7 +308,7 @@ from (select a.*
 order by addr_id;
 
 
-vset transfer.threads=8
+vset cli.settings.transfer_threads=8
 -- corp_comments
 transfer public.corp_comments from cprd using
 select cc.comment_dts,
@@ -687,7 +739,7 @@ select case
            else c.CORP_NUM
        end CORP_NUM,
        ssc.SHARE_CLASS_ID,
-       ssc.CLASS_NME,
+       replace(ssc.CLASS_NME, CHR(0), '') as CLASS_NME,
        ssc.CURRENCY_TYP_CD,
        case ssc.MAX_SHARE_IND
            when 'N' then 0
@@ -816,3 +868,54 @@ where cp.CORP_PARTY_ID = pn.party_id
   -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num;
+
+
+-- alter tables
+alter table corporation alter column send_ar_ind type boolean using send_ar_ind::boolean;
+alter table filing
+   alter column arrangement_ind type boolean using arrangement_ind::boolean,
+   alter column court_appr_ind type boolean using court_appr_ind::boolean;
+alter table share_struct_cls
+   alter column max_share_ind type boolean using max_share_ind::boolean,
+   alter column spec_rights_ind type boolean using spec_rights_ind::boolean,
+   alter column par_value_ind type boolean using par_value_ind::boolean;
+alter table conv_event alter report_corp_ind type boolean using report_corp_ind::boolean;
+alter table corp_involved_amalgamating alter adopted_corp_ind type boolean using adopted_corp_ind::boolean;
+alter table corp_restriction alter restriction_ind type boolean using restriction_ind::boolean;
+alter table share_series
+   alter column max_share_ind type boolean using max_share_ind::boolean,
+   alter column spec_right_ind type boolean using spec_right_ind::boolean;
+
+
+-- enable triggers
+ALTER TABLE corporation ENABLE TRIGGER ALL;
+ALTER TABLE corp_name ENABLE TRIGGER ALL;
+ALTER TABLE corp_state ENABLE TRIGGER ALL;
+ALTER TABLE event ENABLE TRIGGER ALL;
+ALTER TABLE filing ENABLE TRIGGER ALL;
+ALTER TABLE filing_user ENABLE TRIGGER ALL;
+ALTER TABLE office ENABLE TRIGGER ALL;
+ALTER TABLE address ENABLE TRIGGER ALL;
+ALTER TABLE corp_comments ENABLE TRIGGER ALL;
+ALTER TABLE ledger_text ENABLE TRIGGER ALL;
+ALTER TABLE corp_party ENABLE TRIGGER ALL;
+ALTER TABLE corp_party_relationship ENABLE TRIGGER ALL;
+ALTER TABLE offices_held ENABLE TRIGGER ALL;
+ALTER TABLE completing_party ENABLE TRIGGER ALL;
+ALTER TABLE submitting_party ENABLE TRIGGER ALL;
+ALTER TABLE corp_flag ENABLE TRIGGER ALL;
+ALTER TABLE cont_out ENABLE TRIGGER ALL;
+ALTER TABLE conv_event ENABLE TRIGGER ALL;
+ALTER TABLE conv_ledger ENABLE TRIGGER ALL;
+ALTER TABLE corp_involved_amalgamating ENABLE TRIGGER ALL;
+ALTER TABLE corp_involved_cont_in ENABLE TRIGGER ALL;
+ALTER TABLE corp_restriction ENABLE TRIGGER ALL;
+ALTER TABLE correction ENABLE TRIGGER ALL;
+ALTER TABLE jurisdiction ENABLE TRIGGER ALL;
+ALTER TABLE resolution ENABLE TRIGGER ALL;
+ALTER TABLE share_series ENABLE TRIGGER ALL;
+ALTER TABLE share_struct ENABLE TRIGGER ALL;
+ALTER TABLE share_struct_cls ENABLE TRIGGER ALL;
+ALTER TABLE notification ENABLE TRIGGER ALL;
+ALTER TABLE notification_resend ENABLE TRIGGER ALL;
+ALTER TABLE party_notification ENABLE TRIGGER ALL;
