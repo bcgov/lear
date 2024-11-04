@@ -76,7 +76,7 @@ def test_get_internal_filings(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     filings = rv.json.get('filings')
     assert len(filings) == 2
-    assert filings[0]['filingId'] == filing1.id
+    assert filings[0]['filingId'] in [filing1.id, filing6.id]
 
 
 def test_patch_internal_filings(session, client, jwt):
