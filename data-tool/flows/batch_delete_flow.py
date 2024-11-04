@@ -409,8 +409,14 @@ def batch_delete_flow():
         lear_engine = lear_init(config)
         auth_engine = auth_init(config)
 
-        # get total number of businesses, batches
+        # get total number of businesses
         total = count_corp_num(lear_engine, config)
+
+        # validate batch config
+        if config.BATCHES <= 0:
+            raise ValueError('BATCHES must be explicitly set to a positive integer')
+        if config.BATCH_SIZE <= 0:
+            raise ValueError('BATCH_SIZE must be explicitly set to a positive integer')
         batch_size = config.BATCH_SIZE
         batches = min(math.ceil(total/batch_size), config.BATCHES)
 
@@ -433,7 +439,7 @@ def batch_delete_flow():
                 db_futures.append(
                     auth_delete.submit(auth_engine, identifiers)
                 )
-            if config.DELETE_COLIN_RECORDS:
+            if config.DELETE_CORP_PREOCESSING_RECORDS:
                 db_futures.append(
                     colin_delete.submit(config, colin_engine, identifiers)
                 )

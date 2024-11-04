@@ -124,10 +124,13 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
 
     # batch delete flow
-    BATCHES = int(os.getenv('BATCHES', sys.maxsize))
-    BATCH_SIZE = int(os.getenv('BATCH_SIZE', 300))
+    BATCHES = os.getenv('BATCHES')
+    BATCHES = int(BATCHES) if BATCHES.isnumeric() else 0
+    BATCH_SIZE = os.getenv('BATCH_SIZE')
+    BATCH_SIZE = int(BATCH_SIZE) if BATCH_SIZE.isnumeric() else 0
+
     DELETE_AUTH_RECORDS = os.getenv('DELETE_AUTH_RECORDS').lower() == 'true'
-    DELETE_COLIN_RECORDS = os.getenv('DELETE_COLIN_RECORDS').lower() == 'true'
+    DELETE_CORP_PREOCESSING_RECORDS = os.getenv('DELETE_CORP_PREOCESSING_RECORDS').lower() == 'true'
 
     TESTING = False
     DEBUG = False
