@@ -16,7 +16,6 @@
 This module is the API for the Legal Entity system.
 """
 import logging
-import math
 import os
 
 import requests
@@ -60,16 +59,16 @@ def register_shellcontext(app):
     app.shell_context_processor(shell_context)
 
 
-def get_filings(app: Flask, token, page, limit):
+def get_filings(app: Flask, token, limit, offset):
     """Get a filing with filing_id."""
     requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
-    req = requests.get(f'{app.config["LEGAL_API_URL"]}/businesses/internal/filings?page={page}&limit={limit}',
+    req = requests.get(f'{app.config["LEGAL_API_URL"]}/businesses/internal/filings?offset={offset}&limit={limit}',
                        headers={'Authorization': 'Bearer ' + token},
                        timeout=requests_timeout)
     if not req or req.status_code != 200:
         app.logger.error(f'Failed to collect filings from legal-api. {req} {req.json()} {req.status_code}')
         raise Exception  # pylint: disable=broad-exception-raised
-    return req.json()
+    return req.json().get('filings')
 
 
 def send_filing(app: Flask, token: str, filing: dict, filing_id: str):
@@ -148,26 +147,19 @@ def run():
     """Get filings that haven't been synced with colin and send them to the colin-api."""
     application = create_app()
     corps_with_failed_filing = []
+    failed_to_sync = 0
+    limit = 50
     with application.app_context():
         try:
             # get updater-job token
             token = get_bearer_token(application)
-
-            page = 1
-            limit = 50
-            pending_filings = None
-            while ((pending_filings is None or page <= math.ceil(pending_filings/limit)) and
-                   (results := get_filings(application, token, page, limit))):
-                page += 1
-                pending_filings = results.get('total')
-                if not (filings := results.get('filings')):
-                    # pylint: disable=no-member; false positive
-                    application.logger.debug('No completed filings to send to colin.')
+            while (filings := get_filings(application, token, limit, failed_to_sync)):
                 for filing in filings:
                     filing_id = filing['filingId']
                     identifier = filing['filing']['business']['identifier']
                     if identifier in corps_with_failed_filing:
                         # pylint: disable=no-member; false positive
+                        failed_to_sync += 1
                         application.logger.debug(f'Skipping filing {filing_id} for'
                                                  f' {filing["filing"]["business"]["identifier"]}.')
                     else:
@@ -178,11 +170,12 @@ def run():
                         if update:
                             # pylint: disable=no-member; false positive
                             application.logger.debug(f'Successfully updated filing {filing_id}')
-                            pending_filings -= 1
                         else:
+                            failed_to_sync += 1
                             corps_with_failed_filing.append(filing['filing']['business']['identifier'])
                             # pylint: disable=no-member; false positive
                             application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
+            application.logger.debug('No more filings to send to colin.')
 
         except Exception as err:  # noqa: B902
             # pylint: disable=no-member; false positive

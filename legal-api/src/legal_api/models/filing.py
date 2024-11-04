@@ -998,10 +998,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing.first()
 
     @staticmethod
-    def get_completed_filings_for_colin(page=1, limit=20):
-        """Return the filings with statuses in the status array input."""
+    def get_completed_filings_for_colin(limit=20, offset=0):
+        """Return the filings based on limit and offset."""
         from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
-        excluded_filings = ['adminFreeze', 'courtOrder', 'registrarsNotation', 'registrarsOrder']
+        excluded_filings = ['lear_epoch', 'adminFreeze', 'courtOrder', 'registrarsNotation', 'registrarsOrder']
         excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
         filings = db.session.query(Filing).join(Business). \
             filter(
@@ -1010,15 +1010,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
-            ).order_by(Filing.filing_date).paginate(per_page=limit, page=page)
+            ).order_by(Filing.effective_date).limit(limit).offset(offset).all()
 
-        return {
-            'page': page,
-            'limit': limit,
-            'filings': filings.items,
-            'pages': filings.pages,
-            'total': filings.total
-        }
+        return filings
 
     @staticmethod
     def get_future_effective_filing_ids() -> List[int]:

@@ -867,7 +867,7 @@ class InternalFilings(Resource):
 
         if status is None:
             pending_filings = Filing.get_completed_filings_for_colin()
-            for filing in pending_filings.get('filings'):
+            for filing in pending_filings:
                 filing_json = filing.filing_json
                 business = Business.find_by_internal_id(filing.business_id)
                 if filing_json and filing.filing_type != 'lear_epoch' and \

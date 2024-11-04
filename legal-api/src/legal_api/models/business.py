@@ -665,7 +665,11 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             Business.LegalTypes.SOLE_PROP.value,
             Business.LegalTypes.PARTNERSHIP.value,
         ]
-        businesses = cls.query.filter(~Business.legal_type.in_(no_tax_id_types)).filter_by(tax_id=None).all()
+        businesses = (db.session.query(Business.identifier)
+                      .filter(
+                          ~Business.legal_type.in_(no_tax_id_types),
+                          Business.tax_id == None)  # pylint: disable=singleton-comparison # noqa: E711;
+                      .all())
         return businesses
 
     @classmethod

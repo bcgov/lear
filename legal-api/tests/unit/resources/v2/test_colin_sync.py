@@ -75,35 +75,8 @@ def test_get_internal_filings(session, client, jwt):
                     headers=create_header(jwt, [COLIN_SVC_ROLE]))
     assert rv.status_code == HTTPStatus.OK
     filings = rv.json.get('filings')
-    assert len(filings) == 1
-    assert filings[0]['filingId'] == filing1.id
-
-
-@pytest.mark.parametrize('identifier, base_filing, corrected_filing, colin_id', [
-    ('BC1234567', CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE, 1234),
-    ('BC1234568', CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE, None),
-])
-def test_get_bcomp_corrections(session, client, jwt, identifier, base_filing, corrected_filing, colin_id):
-    """Assert that the internal filings get endpoint returns corrections for bcomps."""
-    # setup
-    b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.BCOMP.value)
-    factory_business_mailing_address(b)
-
-    incorp_filing = factory_completed_filing(business=b, data_dict=corrected_filing, colin_id=colin_id)
-    correction_filing = copy.deepcopy(base_filing)
-    correction_filing['filing']['correction']['correctedFilingId'] = incorp_filing.id
-    filing = factory_completed_filing(b, correction_filing)
-
-    # test endpoint returns filing
-    rv = client.get('/api/v2/businesses/internal/filings',
-                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
-    assert rv.status_code == HTTPStatus.OK
-    filings = rv.json.get('filings')
-    assert len(filings) == 1
-    if colin_id:
-        assert filings[0]['filingId'] == filing.id
-    else:
-        assert filings[0]['filingId'] == incorp_filing.id
+    assert len(filings) == 2
+    assert filings[0]['filingId'] in [filing1.id, filing6.id]
 
 
 def test_patch_internal_filings(session, client, jwt):

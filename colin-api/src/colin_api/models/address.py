@@ -168,15 +168,13 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                                 :delivery_instructions)
                             """,
                            addr_id=addr_id,
-                           province=address_info['addressRegion'].upper(),
+                           province=(address_info.get('addressRegion') or '').upper(),
                            country_typ_cd=country_typ_cd,
                            postal_cd=address_info['postalCode'].upper(),
                            addr_line_1=address_info['streetAddress'].upper(),
-                           addr_line_2=address_info['streetAddressAdditional'].upper()
-                           if 'streetAddressAdditional' in address_info.keys() else '',
+                           addr_line_2=(address_info.get('streetAddressAdditional') or '').upper(),
                            city=address_info['addressCity'].upper(),
-                           delivery_instructions=address_info['deliveryInstructions'].upper()
-                           if 'deliveryInstructions' in address_info.keys() else ''
+                           delivery_instructions=(address_info.get('deliveryInstructions') or '').upper()
                            )
         except Exception as err:
             current_app.logger.error(f'Error in address: failed to insert new address: {address_info}')

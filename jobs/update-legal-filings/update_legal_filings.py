@@ -47,31 +47,31 @@ CONTENT_TYPE_JSON = 'application/json'
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(config.CONFIGURATION[run_mode])
+    application = Flask(__name__)
+    application.config.from_object(config.CONFIGURATION[run_mode])
     # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
+    if application.config.get('SENTRY_DSN', None):
         sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
+            dsn=application.config.get('SENTRY_DSN'),
             integrations=[SENTRY_LOGGING]
         )
 
-    register_shellcontext(app)
+    register_shellcontext(application)
 
     # Static class load the variables while importing the class for the first time,
     # By then config is not loaded, so it never get the config value
-    AccountService.timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
+    AccountService.timeout = int(application.config.get('ACCOUNT_SVC_TIMEOUT'))
 
-    return app
+    return application
 
 
-def register_shellcontext(app):
+def register_shellcontext(application):
     """Register shell context objects."""
     def shell_context():
         """Shell context objects."""
-        return {'app': app}
+        return {'app': application}
 
-    app.shell_context_processor(shell_context)
+    application.shell_context_processor(shell_context)
 
 
 def check_for_manual_filings(application: Flask = None, token: dict = None):
@@ -81,10 +81,7 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
     colin_events = None
     legal_url = application.config['LEGAL_API_URL'] + '/businesses'
     colin_url = application.config['COLIN_URL']
-    corp_types = [Business.TypeCodes.COOP.value, Business.TypeCodes.BC_COMP.value,
-                  Business.TypeCodes.ULC_COMP.value, Business.TypeCodes.CCC_COMP.value]
-    no_corp_num_prefix_in_colin = [Business.TypeCodes.BC_COMP.value, Business.TypeCodes.ULC_COMP.value,
-                                   Business.TypeCodes.CCC_COMP.value]
+    corp_types = [Business.TypeCodes.COOP.value]
 
     # get max colin event_id from legal
     response = requests.get(f'{legal_url}/internal/filings/colin_id',
@@ -114,8 +111,6 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
                                             timeout=AccountService.timeout)
                     event_info = dict(response.json())
                     events = event_info.get('events')
-                    if corp_type in no_corp_num_prefix_in_colin:
-                        append_corp_num_prefixes(events, 'BC')
                     if colin_events:
                         colin_events.get('events').extend(events)
                     else:
@@ -159,13 +154,6 @@ def check_for_manual_filings(application: Flask = None, token: dict = None):
     return id_list
 
 
-def append_corp_num_prefixes(events, corp_num_prefix):
-    """Append corp num prefix to Colin corp num to make Lear compatible."""
-    for event in events:
-        event['corp_num'] = corp_num_prefix + event['corp_num']
-
-
-# pylint: disable=redefined-outer-name
 def get_filing(event_info: dict = None, application: Flask = None, token: dict = None):
     """Get filing created by previous event."""
     # call the colin api for the filing
@@ -369,9 +357,9 @@ async def update_business_nos(application, qsm):  # pylint: disable=redefined-ou
 
 
 if __name__ == '__main__':
-    application = create_app()
-    with application.app_context():
-        update_filings(application)
+    app = create_app()
+    with app.app_context():
+        update_filings(app)
         event_loop = asyncio.get_event_loop()
-        qsm = QueueService(app=application, loop=event_loop)
-        event_loop.run_until_complete(update_business_nos(application, qsm))
+        qsm = QueueService(app=app, loop=event_loop)
+        event_loop.run_until_complete(update_business_nos(app, qsm))

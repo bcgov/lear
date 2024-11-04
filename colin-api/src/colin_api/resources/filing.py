@@ -175,31 +175,13 @@ class FilingInfo(Resource):
 
                 filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier)
 
-                # return the completed filing data
-                completed_filing = Filing()
-                # get business info again - could have changed since filings were applied
-                completed_filing.business = Business.find_by_identifier(identifier, con=con)
-                completed_filing.body = {}
-                for filing_info in filings_added:
-                    sub_filing = Filing()
-                    sub_filing.business = completed_filing.business
-                    sub_filing.filing_type = filing_info['filing_type']
-                    sub_filing.filing_sub_type = filing_info['filing_sub_type']
-                    sub_filing.event_id = filing_info['event_id']
-                    sub_filing = Filing.get_filing(filing=sub_filing, con=con)
-
-                    if completed_filing.header:
-                        completed_filing.header['colinIds'].append(sub_filing.event_id)
-                        # annual report is the only filing with sub filings underneath it
-                        if sub_filing.filing_type == 'annualReport':
-                            completed_filing.header['name'] = 'annualReport'
-                    else:
-                        completed_filing.header = sub_filing.header
-                    completed_filing.body.update({sub_filing.filing_type: sub_filing.body})
-
                 # success! commit the db changes
                 con.commit()
-                return jsonify(completed_filing.as_dict()), HTTPStatus.CREATED
+                return jsonify({
+                    'filing': {
+                        'header': {'colinIds': [filing['event_id'] for filing in filings_added]}
+                    }
+                }), HTTPStatus.CREATED
 
             except Exception as db_err:
                 current_app.logger.error('failed to file - rolling back partial db changes.')
