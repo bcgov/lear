@@ -97,6 +97,11 @@ run-corps-migration: ## Run migration flow
 	FLASK_ENV=development && \
 	python flows/migrate_corps_flow.py
 
+run-corps-delete: ## Run delete flow
+	. $(VENV_DIR)/bin/activate && \
+	python flows/batch_delete_flow.py
+
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
