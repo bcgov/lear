@@ -112,20 +112,16 @@
             </td>
          {% elif header.name in ['continuationIn', 'incorporationApplication', 'restoration'] %}
             <td class="col-33">
-               {% if header.status == 'COMPLETED' %}
                <div class="bold">Incorporation Number:</div>
-               {% endif %}
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Recognition Date and Time:</div>
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
-               {% if header.status == 'COMPLETED' %}
-                  {% if business.identifier.startswith('T') %}
-                     <div>Pending</div>
-                  {% else %}
-                     <div>{{business.identifier}}</div>
-                  {% endif %}
+               {% if business.identifier.startswith('T') %}
+                  <div>Pending</div>
+               {% else %}
+                  <div>{{business.identifier}}</div>
                {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{recognition_date_time}}</div>
