@@ -451,7 +451,8 @@ def batch_delete_flow():
             print(f'👷 Having {rest} businesses left...')
             cnt += 1
 
-        print(f'🌰 Complete {cnt} rounds, delete {total} businesses.')
+        total_left = count_corp_num(lear_engine, config)
+        print(f'🌰 Complete {cnt} rounds, delete {total-total_left} businesses.')
     except Exception as e:
         raise e
 
