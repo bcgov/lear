@@ -75,7 +75,7 @@ def test_get_internal_filings(session, client, jwt):
                     headers=create_header(jwt, [COLIN_SVC_ROLE]))
     assert rv.status_code == HTTPStatus.OK
     filings = rv.json.get('filings')
-    assert len(filings) == 1
+    assert len(filings) == 2
     assert filings[0]['filingId'] == filing1.id
 
 
