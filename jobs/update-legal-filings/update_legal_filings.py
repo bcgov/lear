@@ -47,31 +47,31 @@ CONTENT_TYPE_JSON = 'application/json'
 
 def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(config.CONFIGURATION[run_mode])
+    application = Flask(__name__)
+    application.config.from_object(config.CONFIGURATION[run_mode])
     # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
+    if application.config.get('SENTRY_DSN', None):
         sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
+            dsn=application.config.get('SENTRY_DSN'),
             integrations=[SENTRY_LOGGING]
         )
 
-    register_shellcontext(app)
+    register_shellcontext(application)
 
     # Static class load the variables while importing the class for the first time,
     # By then config is not loaded, so it never get the config value
-    AccountService.timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
+    AccountService.timeout = int(application.config.get('ACCOUNT_SVC_TIMEOUT'))
 
-    return app
+    return application
 
 
-def register_shellcontext(app):
+def register_shellcontext(application):
     """Register shell context objects."""
     def shell_context():
         """Shell context objects."""
-        return {'app': app}
+        return {'app': application}
 
-    app.shell_context_processor(shell_context)
+    application.shell_context_processor(shell_context)
 
 
 def check_for_manual_filings(application: Flask = None, token: dict = None):
@@ -357,9 +357,9 @@ async def update_business_nos(application, qsm):  # pylint: disable=redefined-ou
 
 
 if __name__ == '__main__':
-    application = create_app()
-    with application.app_context():
-        update_filings(application)
+    app = create_app()
+    with app.app_context():
+        update_filings(app)
         event_loop = asyncio.get_event_loop()
-        qsm = QueueService(app=application, loop=event_loop)
-        event_loop.run_until_complete(update_business_nos(application, qsm))
+        qsm = QueueService(app=app, loop=event_loop)
+        event_loop.run_until_complete(update_business_nos(app, qsm))

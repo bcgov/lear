@@ -16,7 +16,6 @@
 This module is the API for the Legal Entity system.
 """
 import logging
-import math
 import os
 
 import requests
