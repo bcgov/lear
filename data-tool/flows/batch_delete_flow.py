@@ -290,12 +290,13 @@ def auth_delete(db_engine: Engine, identifiers: list):
 @task
 def colin_delete(config, db_engine: Engine, identifiers: list):
     with db_engine.connect() as conn:
-        plan = execute_query(conn, {
-            'source': 'corp_processing',
-            'params': {'corp_num': identifiers, 'environment': [config.DATA_LOAD_ENV]}
-        })
+        with replica_role(conn):
+            plan = execute_query(conn, {
+                'source': 'corp_processing',
+                'params': {'corp_num': identifiers, 'environment': [config.DATA_LOAD_ENV]}
+            })
 
-        delete_by_ids(conn, 'corp_processing', plan['corp_processing'])
+            delete_by_ids(conn, 'corp_processing', plan['corp_processing'])
 
 
 @task(persist_result=False)
