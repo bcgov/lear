@@ -439,7 +439,7 @@ def batch_delete_flow():
                 db_futures.append(
                     auth_delete.submit(auth_engine, identifiers)
                 )
-            if config.DELETE_CORP_PREOCESSING_RECORDS:
+            if config.DELETE_CORP_PROCESSING_RECORDS:
                 db_futures.append(
                     colin_delete.submit(config, colin_engine, identifiers)
                 )

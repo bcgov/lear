@@ -130,7 +130,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     BATCH_SIZE = int(BATCH_SIZE) if BATCH_SIZE.isnumeric() else 0
 
     DELETE_AUTH_RECORDS = os.getenv('DELETE_AUTH_RECORDS').lower() == 'true'
-    DELETE_CORP_PREOCESSING_RECORDS = os.getenv('DELETE_CORP_PREOCESSING_RECORDS').lower() == 'true'
+    DELETE_CORP_PROCESSING_RECORDS = os.getenv('DELETE_CORP_PROCESSING_RECORDS').lower() == 'true'
 
     TESTING = False
     DEBUG = False
