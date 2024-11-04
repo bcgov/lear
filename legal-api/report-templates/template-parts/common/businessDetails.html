@@ -62,7 +62,11 @@
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
-               <div>{{business.identifier}}</div>
+               {% if business.identifier.startswith('T') %}
+                  <div>Pending</div>
+               {% else %}
+                  <div>{{business.identifier}}</div>
+               {% endif %}
                <div class="pt-2">{{effective_date_time}}</div>
                <div class="pt-2">{{recognition_date_time}}</div>
                <div class="pt-2">{{report_date_time}}</div>
@@ -117,7 +121,11 @@
             </td>
             <td>
                {% if header.status == 'COMPLETED' %}
-               <div>{{business.identifier}}</div>
+                  {% if business.identifier.startswith('T') %}
+                     <div>Pending</div>
+                  {% else %}
+                     <div>{{business.identifier}}</div>
+                  {% endif %}
                {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{recognition_date_time}}</div>
@@ -131,7 +139,11 @@
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
-               <div>{{business.identifier}}</div>
+               {% if business.identifier.startswith('T') %}
+                  <div>Pending</div>
+               {% else %}
+                  <div>{{business.identifier}}</div>
+               {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">
                   {% if taxId is defined and taxId|length > 9 %}
