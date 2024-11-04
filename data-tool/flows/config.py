@@ -52,7 +52,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     """
 
     DATA_LOAD_ENV = os.getenv('DATA_LOAD_ENV', '')
-    CORP_NAME_PREFIX = os.getenv('CORP_NAME_PREFIX', '')
+    CORP_NAME_SUFFIX = os.getenv('CORP_NAME_SUFFIX', '')
     UPDATE_ENTITY = os.getenv('UPDATE_ENTITY', 'False') == 'True'
     AFFILIATE_ENTITY = os.getenv('AFFILIATE_ENTITY', 'False') == 'True'
     AFFILIATE_ENTITY_ACCOUNT_ID = os.getenv('AFFILIATE_ENTITY_ACCOUNT_ID')
@@ -100,6 +100,20 @@ class _Config():  # pylint: disable=too-few-public-methods
         "max_overflow": int(DATABASE_MAX_OVERFLOW)
     }
 
+    # POSTGRESQL AUTH DB
+    DB_USER_AUTH = os.getenv('DATABASE_USERNAME_AUTH', '')
+    DB_PASSWORD_AUTH = os.getenv('DATABASE_PASSWORD_AUTH', '')
+    DB_NAME_AUTH = os.getenv('DATABASE_NAME_AUTH', '')
+    DB_HOST_AUTH = os.getenv('DATABASE_HOST_AUTH', '')
+    DB_PORT_AUTH = os.getenv('DATABASE_PORT_AUTH', '5432')
+    SQLALCHEMY_DATABASE_URI_AUTH = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
+        user=DB_USER_AUTH,
+        password=DB_PASSWORD_AUTH,
+        host=DB_HOST_AUTH,
+        port=int(DB_PORT_AUTH),
+        name=DB_NAME_AUTH,
+    )
+
     # service accounts
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'https://')
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
@@ -108,6 +122,15 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
     ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
+
+    # batch delete flow
+    BATCHES = os.getenv('BATCHES')
+    BATCHES = int(BATCHES) if BATCHES.isnumeric() else 0
+    BATCH_SIZE = os.getenv('BATCH_SIZE')
+    BATCH_SIZE = int(BATCH_SIZE) if BATCH_SIZE.isnumeric() else 0
+
+    DELETE_AUTH_RECORDS = os.getenv('DELETE_AUTH_RECORDS').lower() == 'true'
+    DELETE_CORP_PROCESSING_RECORDS = os.getenv('DELETE_CORP_PROCESSING_RECORDS').lower() == 'true'
 
     TESTING = False
     DEBUG = False
