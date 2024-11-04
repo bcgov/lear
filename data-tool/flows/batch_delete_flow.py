@@ -10,6 +10,8 @@ from sqlalchemy.engine import Engine
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
+WHERE legal_type IN ('BC', 'ULC', 'CC')
+AND legal_name LIKE '%' || :corp_name_suffix
 """
 
 identifiers_query = """
@@ -178,11 +180,15 @@ def lear_delete(db_engine: Engine, business_ids: list):
                     'columns': ['colin_event_id'],
                     'params': {'filing_id': filing_ids},
                 },
-                # there're some Comment records saved by legal-api directly instead of filer
-                # should ignore them (assume that it won't be populated with migrated data)
                 {
                     'source': 'comments',
                     'params': {'filing_id': filing_ids},
+                },
+                # there're some Comment records saved by legal-api directly instead of filer
+                # some of them are linked via business_id
+                {
+                    'source': 'comments',
+                    'params': {'business_id': business_ids},
                 },
                 {
                     'source': 'consent_continuation_outs',
@@ -385,9 +391,12 @@ def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = '
 
 
 @task
-def count_corp_num(engine: Engine):
+def count_corp_num(engine: Engine, config):
     with engine.connect() as conn:
-        res = conn.execute(text(businesses_cnt_query)).scalar()
+        res = conn.execute(text(businesses_cnt_query), {
+            'batch_size': config.BATCH_SIZE,
+            'corp_name_suffix': config.CORP_NAME_SUFFIX
+            }).scalar()
         return res
 
 
@@ -401,7 +410,7 @@ def batch_delete_flow():
         auth_engine = auth_init(config)
 
         # get total number of businesses, batches
-        total = count_corp_num(lear_engine)
+        total = count_corp_num(lear_engine, config)
         batch_size = config.BATCH_SIZE
         batches = min(math.ceil(total/batch_size), config.BATCHES)
 
@@ -432,7 +441,7 @@ def batch_delete_flow():
             wait(db_futures)
 
             print(f'🌟 Complete round {cnt}')
-            rest = count_corp_num(lear_engine)
+            rest = count_corp_num(lear_engine, config)
             print(f'👷 Having {rest} businesses left...')
             cnt += 1
 
