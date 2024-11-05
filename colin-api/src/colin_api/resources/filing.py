@@ -158,9 +158,9 @@ class FilingInfo(Resource):
                     in ['administrative', 'involuntary']
                 ):
                     if legal_type == Business.TypeCodes.COOP.value:
-                        raise Exception(
+                        raise Exception(  # pylint: disable=broad-exception-raised
                             f'{filing_sub_type} dissolution of COOP is not implemented!'
-                        )  # pylint: disable=broad-exception-raised
+                        )
 
                     filing_dt = convert_to_pacific_time(json_data['header']['date'])
                     if filing_sub_type == 'administrative':

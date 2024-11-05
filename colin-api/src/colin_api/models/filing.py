@@ -550,9 +550,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return None
 
     @classmethod
-    def _insert_filing(cls, cursor, filing,
+    def _insert_filing(cls, cursor, filing,  # pylint: disable=too-many-statements, too-many-arguments;
                        ar_date: str = None, agm_date: str = None,
-                       filing_type_code: str = None):  # pylint: disable=too-many-statements;
+                       filing_type_code: str = None):
         """Add record to FILING."""
         try:
             insert_stmnt = (
@@ -1786,7 +1786,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return filing.event_id
 
     @classmethod
-    def _process_director_correction(cls, cursor, business: dict, filing: Filing, corp_num: str, filing_type_code: str):
+    def _process_director_correction(cls, cursor,  # pylint: disable=too-many-arguments;
+                                     business: dict, filing: Filing,
+                                     corp_num: str, filing_type_code: str):
         """Process director correction."""
         # create new event record, return event ID
         filing.event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing.filing_date)
@@ -1890,7 +1892,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_sub_type': None})
 
             if not filings_added:  # if no filing created
-                raise Exception(f'No filing created for this correction identifier:{corp_num}.')
+                raise Exception(  # pylint: disable=broad-exception-raised
+                    f'No filing created for this correction identifier:{corp_num}.'
+                )
 
             return filings_added
 
