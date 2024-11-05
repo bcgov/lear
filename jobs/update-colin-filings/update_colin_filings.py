@@ -79,21 +79,22 @@ def send_filing(app: Flask, token: str, filing: dict, filing_id: str):
     identifier = filing['filing']['business'].get('identifier', None)
     legal_type = filing['filing']['business'].get('legalType', None)
 
-    req = None
+    response = None
     if legal_type and identifier and filing_type:
         requests_timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
-        req = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}',
-                            headers={'Content-Type': 'application/json',
-                                     'Authorization': 'Bearer ' + token},
-                            json=filing,
-                            timeout=requests_timeout)
+        response = requests.post(f'{app.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}',
+                                 headers={'Content-Type': 'application/json',
+                                          'Authorization': 'Bearer ' + token},
+                                 json=filing,
+                                 timeout=requests_timeout)
 
-    if not req or req.status_code != 201:
+    if not response or response.status_code != 201:
         app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')
+        app.logger.error(f"colin-api: {response.json()['error']}")
         # raise Exception
         return None
     # if it's an AR containing multiple filings it will have multiple colinIds
-    return req.json()['filing']['header']['colinIds']
+    return response.json()['filing']['header']['colinIds']
 
 
 def update_colin_id(app: Flask, token: dict, filing_id: str, colin_ids: list):

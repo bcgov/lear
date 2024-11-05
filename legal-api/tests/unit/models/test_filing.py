@@ -526,7 +526,7 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
         assert rv[0].status == status
 
 
-def test_get_internal_filings(session, client, jwt):
+def test_get_completed_filings_for_colin(session, client, jwt):
     """Assert that the get_completed_filings_for_colin returns completed filings with no colin ids set."""
     from legal_api.models import Filing
     from legal_api.models.colin_event_id import ColinEventId

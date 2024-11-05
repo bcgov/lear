@@ -70,6 +70,14 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
         INVOLUNTARY_DISSOLUTION_NO_TR = 'HDT'
         LIMITED_RESTORATION = 'LRS'
         VOLUNTARY_DISSOLUTION = 'HDV'
+    CORPS = [TypeCodes.BCOMP.value,
+             TypeCodes.BC_COMP.value,
+             TypeCodes.ULC_COMP.value,
+             TypeCodes.CCC_COMP.value,
+             TypeCodes.BCOMP_CONTINUE_IN.value,
+             TypeCodes.CONTINUE_IN.value,
+             TypeCodes.ULC_CONTINUE_IN.value,
+             TypeCodes.CCC_CONTINUE_IN.value]
 
     NUMBERED_CORP_NAME_SUFFIX = {
         TypeCodes.BCOMP.value: 'B.C. LTD.',
@@ -422,6 +430,27 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 """
                 insert into resolution(corp_num, start_event_id, resolution_dt)
                 values (:corp_num, :event_id, TO_DATE(:res_date, 'YYYY-mm-dd'))
+                """,
+                corp_num=corp_num,
+                event_id=event_id,
+                res_date=resolution_date
+            )
+
+        except Exception as err:
+            current_app.logger.error('Error inserting resolution.')
+            raise err
+
+    @classmethod
+    def end_resolution(cls, cursor, corp_num: str, event_id: str, resolution_date: str):
+        """End resolution entry for a company."""
+        try:
+            cursor.execute(
+                """
+                UPDATE resolution set end_event_id = :event_id
+                WHERE
+                    corp_num = :corp_num AND
+                    end_event_id is null AND
+                    resolution_dt = TO_DATE(:res_date, 'YYYY-mm-dd')
                 """,
                 corp_num=corp_num,
                 event_id=event_id,

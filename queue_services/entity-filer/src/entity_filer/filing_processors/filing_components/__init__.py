@@ -49,12 +49,12 @@ def create_address(address_info: Dict, address_type: str) -> Address:
     db_address_type = address_type.replace('Address', '')
 
     address = Address(street=address_info.get('streetAddress'),
-                      street_additional=address_info.get('streetAddressAdditional'),
+                      street_additional=address_info.get('streetAddressAdditional') or '',
                       city=address_info.get('addressCity'),
                       region=address_info.get('addressRegion'),
                       country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
                       postal_code=address_info.get('postalCode'),
-                      delivery_instructions=address_info.get('deliveryInstructions'),
+                      delivery_instructions=address_info.get('deliveryInstructions') or '',
                       address_type=db_address_type
                       )
     return address
@@ -63,12 +63,12 @@ def create_address(address_info: Dict, address_type: str) -> Address:
 def update_address(address: Address, new_info: dict) -> Address:
     """Update address with new info."""
     address.street = new_info.get('streetAddress')
-    address.street_additional = new_info.get('streetAddressAdditional')
+    address.street_additional = new_info.get('streetAddressAdditional') or ''
     address.city = new_info.get('addressCity')
     address.region = new_info.get('addressRegion')
     address.country = pycountry.countries.search_fuzzy(new_info.get('addressCountry'))[0].alpha_2
     address.postal_code = new_info.get('postalCode')
-    address.delivery_instructions = new_info.get('deliveryInstructions')
+    address.delivery_instructions = new_info.get('deliveryInstructions') or ''
 
     return address
 
@@ -108,8 +108,8 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
             middle_initial=middle_initial.upper(),
             title=party_info.get('title', '').upper(),
             organization_name=party_info['officer'].get('organizationName', '').upper(),
-            email=party_info['officer'].get('email'),
-            identifier=party_info['officer'].get('identifier'),
+            email=party_info['officer'].get('email') or '',
+            identifier=party_info['officer'].get('identifier') or '',
             party_type=party_info['officer'].get('partyType')
         )
 
