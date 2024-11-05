@@ -22,12 +22,11 @@ psql -h localhost -p 5432 -U postgres -d colin-mig-corps-test -f <lear-repo-base
 register driver Oracle oracle.jdbc.OracleDriver jdbc:oracle:thin:@<host>:<port>:<db> "port=1521"
 connection cprd -d Oracle -u <some_user> -p <some_password> -h <host_name> -P <port> -D <database_name>
 ```
-5. Register PostgreSQL driver and extract target db in  `~/.DbSchema/cli/init.sql`
+6. Register PostgreSQL driver and extract target db in  `~/.DbSchema/cli/init.sql`
 ```
 register driver PostgreSql org.postgresql.Driver jdbc:postgresql://<host>:<port>/<db> "port=5432"
 connection cprd_pg -d PostgreSql -u postgres -p <some_password> -h localhost -P <port> -D colin-mig-corps-test
 ```
-6. (No longer required) ~~Disable triggers in target extract db using sql snippet found in `misc_extract_corps_queries.sql`~~
 7. Transfer data `dbschemacli <lear-repo-base-path>/data-tool/scripts/transfer_cprd_corps.sql`
 8. Successful output will look something like following:
 ```
@@ -47,7 +46,6 @@ Transfer using 4 thread(s) filing_user ...                          5 rows in 00
 Transfer using 4 thread(s) office ...                               5 rows in 00:01. Reader waited 00:00, writer 00:04.
 ...
 ```
-8. (No longer required) ~~Re-enable triggers in target extract db using sql snippet found in `misc_extract_corps_queries.sql`~~
 9. Re-index target extract db.
 10. Use "count overview" SQL snippet in `misc_extract_corps_queries.sql` to verify the db changes.
 
