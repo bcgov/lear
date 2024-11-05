@@ -71,17 +71,8 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
     return err
 
 
-def update_share_structure_correction(business: Business, share_structure: Dict) -> Optional[List]:
-    """Manage the share structure for a business.
-
-    Assumption: The structure has already been validated, upon submission.
-
-    Other errors are recorded and will be managed out of band.
-    """
-    if not business or not share_structure:
-        # if nothing is passed in, we don't care and it's not an error
-        return None
-
+def update_resolution_dates_correction(business: Business, share_structure: Dict) -> List:
+    """Correct resolution dates by adding or removing."""
     err = []
 
     inclusion_entries = []
@@ -119,6 +110,22 @@ def update_share_structure_correction(business: Business, share_structure: Dict)
                 )
     else:
         business.resolutions = []
+
+    return err
+
+
+def update_share_structure_correction(business: Business, share_structure: Dict) -> Optional[List]:
+    """Manage the share structure for a business.
+
+    Assumption: The structure has already been validated, upon submission.
+
+    Other errors are recorded and will be managed out of band.
+    """
+    if not business or not share_structure:
+        # if nothing is passed in, we don't care and it's not an error
+        return None
+
+    err = update_resolution_dates_correction(business, share_structure)
 
     if share_classes := share_structure.get('shareClasses'):
         # Entries in json and not in db

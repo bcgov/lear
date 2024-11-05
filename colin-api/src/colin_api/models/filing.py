@@ -1841,7 +1841,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return filing.event_id
 
     @classmethod
-    def add_correction_filings(cls, con, filing: Filing) -> int:
+    def add_correction_filings(cls, con, filing: Filing) -> list:
         """Create correction filings."""
         try:
             filings_added = []
@@ -1857,7 +1857,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             if legal_type in Business.CORPS:
                 sub_type = 'CORPS'
             else:
-                raise Exception('Correction is only implemented for CORPS')  # pylint: disable=broad-exception-raised
+                raise GenericException('Correction is only implemented for CORPS')
 
             if filing.body.get('nameChanged') or filing.body.get('nameTranslationsChanged'):
                 filing_type_code = Filing.FILING_TYPES[filing.filing_type][f'{sub_type}_NAME']
