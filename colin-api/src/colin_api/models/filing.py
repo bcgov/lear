@@ -1857,7 +1857,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             if legal_type in Business.CORPS:
                 sub_type = 'CORPS'
             else:
-                raise GenericException('Correction is only implemented for CORPS')
+                raise GenericException(
+                    'Correction is only implemented for CORPS',
+                    HTTPStatus.NOT_IMPLEMENTED)
 
             if filing.body.get('nameChanged') or filing.body.get('nameTranslationsChanged'):
                 filing_type_code = Filing.FILING_TYPES[filing.filing_type][f'{sub_type}_NAME']
@@ -1892,8 +1894,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_sub_type': None})
 
             if not filings_added:  # if no filing created
-                raise Exception(  # pylint: disable=broad-exception-raised
-                    f'No filing created for this correction identifier:{corp_num}.'
+                raise GenericException(  # pylint: disable=broad-exception-raised
+                    f'No filing created for this correction identifier:{corp_num}.',
+                    HTTPStatus.NOT_IMPLEMENTED
                 )
 
             return filings_added
