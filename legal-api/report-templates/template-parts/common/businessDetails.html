@@ -62,7 +62,7 @@
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
-               {% if business.identifier.startswith('T') %}
+               {% if not business.identifier or business.identifier.startswith('T') %}
                   <div>Pending</div>
                {% else %}
                   <div>{{business.identifier}}</div>
@@ -118,7 +118,7 @@
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
-               {% if business.identifier.startswith('T') %}
+               {% if not business.identifier or business.identifier.startswith('T') %}
                   <div>Pending</div>
                {% else %}
                   <div>{{business.identifier}}</div>
@@ -135,7 +135,7 @@
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
-               {% if business.identifier.startswith('T') %}
+               {% if not business.identifier or business.identifier.startswith('T') %}
                   <div>Pending</div>
                {% else %}
                   <div>{{business.identifier}}</div>
