@@ -201,14 +201,14 @@ def update_business_share_class(share_classes: list, business: Business, exclusi
 
 def update_share_class(share_class: ShareClass, share_class_info: dict):
     """Update share class instance in db."""
-    share_class.name = share_class_info.get('name')
-    share_class.priority = share_class_info.get('priority')
-    share_class.max_share_flag = share_class_info.get('hasMaximumShares')
+    share_class.name = share_class_info['name']
+    share_class.priority = share_class_info['priority']
+    share_class.max_share_flag = share_class_info['hasMaximumShares']
     share_class.max_shares = share_class_info.get('maxNumberOfShares', None)
-    share_class.par_value_flag = share_class_info.get('hasParValue')
+    share_class.par_value_flag = share_class_info['hasParValue']
     share_class.par_value = share_class_info.get('parValue', None)
     share_class.currency = share_class_info.get('currency', None)
-    share_class.special_rights_flag = share_class_info.get('hasRightsOrRestrictions')
+    share_class.special_rights_flag = share_class_info['hasRightsOrRestrictions']
 
     # array of ids for share series instance from db
     share_class_series_ids = []
@@ -233,8 +233,8 @@ def update_share_class(share_class: ShareClass, share_class_info: dict):
 
 def update_share_series(series_info: dict, series: ShareSeries):
     """Update share series."""
-    series.name = series_info.get('name')
-    series.priority = series_info.get('priority')
-    series.max_share_flag = series_info.get('hasMaximumShares')
+    series.name = series_info['name']
+    series.priority = series_info['priority']
+    series.max_share_flag = series_info['hasMaximumShares']
     series.max_shares = series_info.get('maxNumberOfShares', None)
-    series.special_rights_flag = series_info.get('hasRightsOrRestrictions')
+    series.special_rights_flag = series_info['hasRightsOrRestrictions']
