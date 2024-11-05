@@ -68,8 +68,8 @@ ALTER TABLE party_notification ENABLE TRIGGER ALL;
 
 
 -- count overview
-select (select count(*) from event)       as events,
-       (select count(*) from corporation) as corps,
+select (select count(*) from corporation) as corps,
+	(select count(*) from event)       as events,
        (select count(*) from corp_name) as corp_names,
        (select count(*) from corp_state) as corp_states,
        (select count(*) from filing)      as filings,
@@ -93,9 +93,9 @@ select (select count(*) from event)       as events,
        (select count(*) from correction) as corrections,
        (select count(*) from jurisdiction) as jurisdiction,
        (select count(*) from resolution) as resolutions,
-       (select count(*) from share_series) as share_series,
        (select count(*) from share_struct) as share_structs,
        (select count(*) from share_struct_cls) as share_structs_cls,
+       (select count(*) from share_series) as share_series,
        (select count(*) from notification) as notifications,
        (select count(*) from notification_resend) as notification_resends,
        (select count(*) from party_notification) as party_notifications
