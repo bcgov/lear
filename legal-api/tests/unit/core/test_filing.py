@@ -179,9 +179,9 @@ def test_set_effective(session):
 
         filing.storage.set_processed(legal_type)
 
-        # assert that the effective date is the payment date
+        # assert that the effective date is now, instead of the payment date
         assert filing._storage.effective_date
-        assert filing._storage.effective_date.replace(tzinfo=None) == payment_date.replace(tzinfo=None)
+        assert filing._storage.effective_date.replace(tzinfo=None) == now.replace(tzinfo=None)
         assert not filing.is_future_effective
 
         future_date = now + datedelta.DAY
