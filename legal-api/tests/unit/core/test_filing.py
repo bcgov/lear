@@ -187,6 +187,7 @@ def test_set_effective(session):
         future_date = now + datedelta.DAY
         alt_payment_date  = now
         filing._storage.skip_status_listener = True
+        filing._storage.effective_date = now + datedelta.DAY
         filing._storage.payment_completion_date = alt_payment_date
         filing._storage.save()
 
