@@ -740,9 +740,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             self.effective_date = self.payment_completion_date
 
     def effective_date_can_be_before_payment_completion_date(self, business_type):
-        """For AR or COD filings on CP or BEN then the effective date can be before the payment date."""
+        """For AR or COD filings then the effective date can be before the payment date."""
         return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
-                                    Filing.FILINGS['changeOfDirectors'].get('name')) and business_type in {'CP', 'BEN'}
+                                    Filing.FILINGS['changeOfDirectors'].get('name'))
 
     @staticmethod
     def _raise_default_lock_exception():
