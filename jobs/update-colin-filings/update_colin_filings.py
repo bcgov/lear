@@ -90,8 +90,8 @@ def send_filing(app: Flask, token: str, filing: dict, filing_id: str):
 
     if not response or response.status_code != 201:
         app.logger.error(f'Filing {filing_id} not created in colin {identifier}.')
-        app.logger.error(f"colin-api: {response.json()['error']}")
-        # raise Exception
+        if response and (colin_error := response.json().get('error')):
+            app.logger.error(f"colin-api: {colin_error}")
         return None
     # if it's an AR containing multiple filings it will have multiple colinIds
     return response.json()['filing']['header']['colinIds']
