@@ -337,7 +337,13 @@
         {% else %}
            {% if header.name != 'incorporationApplication' %}
              <!-- not required for incorporationApplication -->
-             <span> | Incorporation #{{business.identifier}}</span>
+             <span> | Incorporation #
+               {% if not business or business.identifier.startswith('T') %}
+                  Pending
+               {% else %}
+                  {{business.identifier}}
+               {% endif %}
+            </span>
            {% endif %}
         {% endif %}
     {% endif %}
