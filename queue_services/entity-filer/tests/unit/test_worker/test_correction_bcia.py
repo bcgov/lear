@@ -29,7 +29,7 @@ from registry_schemas.example_data import (
 
 from entity_filer.worker import process_filing
 from tests.unit import create_alias, create_entity, create_filing, create_office, create_office_address, create_party, \
-    create_party_role, factory_completed_filing
+    create_party_role, create_share_class, factory_completed_filing
 
 CONTACT_POINT = {
     'email': 'no_one@never.get',
@@ -578,24 +578,29 @@ async def test_worker_director_name_and_address_change(app, session, mocker, tes
         ('bc_update_existing_resolution_dates', 'BC'),
         ('bc_update_with_new_resolution_dates', 'BC'),
         ('bc_delete_resolution_dates', 'BC'),
+        ('bc_delete_all_resolution_dates', 'BC'),
         ('ben_add_resolution_dates', 'BEN'),
         ('ben_update_existing_resolution_dates', 'BEN'),
         ('ben_update_with_new_resolution_dates', 'BEN'),
         ('ben_delete_resolution_dates', 'BEN'),
+        ('ben_delete_all_resolution_dates', 'BEN'),
         ('cc_add_resolution_dates', 'CC'),
         ('cc_update_existing_resolution_dates', 'CC'),
         ('cc_update_with_new_resolution_dates', 'CC'),
         ('cc_delete_resolution_dates', 'CC'),
+        ('cc_delete_all_resolution_dates', 'CC'),
         ('ulc_add_resolution_dates', 'ULC'),
         ('ulc_update_existing_resolution_dates', 'ULC'),
         ('ulc_update_with_new_resolution_dates', 'ULC'),
         ('ulc_delete_resolution_dates', 'ULC'),
+        ('ulc_delete_all_resolution_dates', 'ULC'),
     ]
 )
 async def test_worker_resolution_dates_change(app, session, mocker, test_name, legal_type):
     """Assert the worker processes the court order correctly."""
     identifier = 'BC1234567'
     business = create_entity(identifier, legal_type, 'Test Entity')
+    create_share_class(business, include_resolution_date=True)
     business_id = business.id
 
     resolution_dates_json1 = BC_CORRECTION['filing']['correction']['shareStructure']['resolutionDates'][0]
@@ -608,12 +613,16 @@ async def test_worker_resolution_dates_change(app, session, mocker, test_name, l
 
     filing['filing']['correction']['contactPoint'] = CONTACT_POINT
 
+    existing_resolution_date = business.resolutions[0].resolution_date.strftime('%Y-%m-%d')
+    filing['filing']['correction']['shareStructure']['resolutionDates'].insert(0, existing_resolution_date)
+
     if 'add_resolution_dates' in test_name:
         new_resolution_dates = '2022-09-01'
         filing['filing']['correction']['shareStructure']['resolutionDates'].append(new_resolution_dates)
-
-    if 'delete_resolution_dates' in test_name:
+    elif 'delete_resolution_dates' in test_name:
         del filing['filing']['correction']['shareStructure']['resolutionDates'][0]
+    elif 'delete_all_resolution_dates' in test_name:
+        filing['filing']['correction']['shareStructure']['resolutionDates'] = []
 
     del filing['filing']['correction']['nameRequest']
 
@@ -623,7 +632,7 @@ async def test_worker_resolution_dates_change(app, session, mocker, test_name, l
     if 'update_existing_resolution_dates' in test_name or 'update_with_new_resolution_dates' in test_name:
         updated_resolution_dates = '2022-09-01'
         if 'update_existing_resolution_dates' in test_name:
-            filing['filing']['correction']['shareStructure']['resolutionDates'][1] = updated_resolution_dates
+            filing['filing']['correction']['shareStructure']['resolutionDates'][0] = updated_resolution_dates
         else:
             filing['filing']['correction']['shareStructure']['resolutionDates'] = [updated_resolution_dates]
         payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -648,26 +657,31 @@ async def test_worker_resolution_dates_change(app, session, mocker, test_name, l
 
     resolution_dates = [res.resolution_date for res in business.resolutions.all()]
     if 'add_resolution_dates' in test_name:
-        assert len(business.resolutions.all()) == 3
-        assert resolution_dates[0] == parse(resolution_dates_json1).date()
-        assert resolution_dates[1] == parse(resolution_dates_json2).date()
-        assert resolution_dates[2] == parse(new_resolution_dates).date()
+        assert len(resolution_dates) == 4
+        assert parse(existing_resolution_date).date() in resolution_dates
+        assert parse(resolution_dates_json1).date() in resolution_dates
+        assert parse(resolution_dates_json2).date() in resolution_dates
+        assert parse(new_resolution_dates).date() in resolution_dates
 
-    if 'update_existing_resolution_dates' in test_name:
-        assert len(business.share_classes.all()) == 2
+    elif 'update_existing_resolution_dates' in test_name:
+        assert len(resolution_dates) == 3
         assert parse(resolution_dates_json1).date() in resolution_dates
         assert parse(updated_resolution_dates).date() in resolution_dates
-        assert parse(resolution_dates_json2).date() not in resolution_dates
+        assert parse(existing_resolution_date).date() not in resolution_dates
 
-    if 'update_with_new_resolution_dates' in test_name:
-        assert len(business.resolutions.all()) == 1
+    elif 'update_with_new_resolution_dates' in test_name:
+        assert len(resolution_dates) == 1
         assert parse(updated_resolution_dates).date() in resolution_dates
         assert parse(resolution_dates_json1).date() not in resolution_dates
         assert parse(resolution_dates_json2).date() not in resolution_dates
 
-    if 'delete_resolution_dates' in test_name:
-        assert len(business.resolutions.all()) == 1
-        assert resolution_dates[0] == parse(resolution_dates_json2).date()
+    elif 'delete_resolution_dates' in test_name:
+        assert len(resolution_dates) == 2
+        assert parse(resolution_dates_json1).date() in resolution_dates
+        assert parse(resolution_dates_json2).date() in resolution_dates
+
+    elif 'delete_all_resolution_dates' in test_name:
+        assert len(resolution_dates) == 0
 
 
 @pytest.mark.asyncio
@@ -696,12 +710,16 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
     """Assert the worker processes the court order correctly."""
     identifier = 'BC1234567'
     business = create_entity(identifier, legal_type, 'Test Entity')
+    create_share_class(business)
     business_id = business.id
 
     share_class_json1 = BC_CORRECTION['filing']['correction']['shareStructure']['shareClasses'][0]
     share_class_json2 = BC_CORRECTION['filing']['correction']['shareStructure']['shareClasses'][1]
 
     filing = copy.deepcopy(BC_CORRECTION)
+    del filing['filing']['correction']['shareStructure']['shareClasses'][0]['id']
+    existing_share_class = business.share_classes[0]
+    filing['filing']['correction']['shareStructure']['shareClasses'].insert(0, existing_share_class.json)
 
     corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
@@ -715,6 +733,7 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
         filing['filing']['correction']['shareStructure']['shareClasses'].append(new_share_class_json)
 
     if 'delete_share_class' in test_name:
+        del filing['filing']['correction']['shareStructure']['shareClasses'][0]
         del filing['filing']['correction']['shareStructure']['shareClasses'][0]
 
     del filing['filing']['correction']['nameRequest']
@@ -742,7 +761,7 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
             }
         ]
         updated_share_class = {
-            'id': share_class_json1['id'],
+            'id': existing_share_class.id,
             'name': 'Updated Share Class',
             'priority': 1,
             'hasMaximumShares': True,
@@ -778,17 +797,17 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
     business = Business.find_by_internal_id(business_id)
 
     if 'add_share_class' in test_name:
-        assert len(business.share_classes.all()) == 3
-        assert business.share_classes.all()[0].name == 'Share Class 1'
-        assert business.share_classes.all()[1].name == 'Share Class 2'
-        assert business.share_classes.all()[2].name == 'New Share Class'
+        assert len(business.share_classes.all()) == 4
+        assert business.share_classes.all()[1].name == 'Share Class 1'
+        assert business.share_classes.all()[2].name == 'Share Class 2'
+        assert business.share_classes.all()[3].name == 'New Share Class'
 
     if 'update_existing_share_class' in test_name:
-        assert len(business.share_classes.all()) == 2
+        assert len(business.share_classes.all()) == 3
         assert business.share_classes.all()[0].name == updated_share_class['name']
         assert business.share_classes.all()[0].special_rights_flag == updated_share_class['hasRightsOrRestrictions']
-        assert business.share_classes.all()[1].name == share_class_json2['name']
-        assert [item.json for item in business.share_classes.all()[1].series] == share_class_json2['series']
+        assert business.share_classes.all()[1].name == share_class_json1['name']
+        assert business.share_classes.all()[2].name == share_class_json2['name']
 
     if 'update_with_new_share_class' in test_name:
         assert len(business.share_classes.all()) == 1

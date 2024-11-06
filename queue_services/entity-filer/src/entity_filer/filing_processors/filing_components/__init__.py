@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Dict
 
 import pycountry
-from legal_api.models import Address, Business, Office, Party, PartyRole, ShareClass, ShareSeries
+from legal_api.models import Address, Office, Party, PartyRole
 
 from entity_filer.filing_processors.filing_components import (
     aliases,
@@ -48,27 +48,28 @@ def create_address(address_info: Dict, address_type: str) -> Address:
 
     db_address_type = address_type.replace('Address', '')
 
-    address = Address(street=address_info.get('streetAddress'),
-                      street_additional=address_info.get('streetAddressAdditional'),
-                      city=address_info.get('addressCity'),
-                      region=address_info.get('addressRegion'),
-                      country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
-                      postal_code=address_info.get('postalCode'),
-                      delivery_instructions=address_info.get('deliveryInstructions'),
-                      address_type=db_address_type
-                      )
+    address = Address(
+        street=address_info.get('streetAddress') or '',
+        street_additional=address_info.get('streetAddressAdditional') or '',
+        city=address_info.get('addressCity') or '',
+        region=address_info.get('addressRegion') or '',
+        country=pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2,
+        postal_code=address_info.get('postalCode') or '',
+        delivery_instructions=address_info.get('deliveryInstructions') or '',
+        address_type=db_address_type
+    )
     return address
 
 
 def update_address(address: Address, new_info: dict) -> Address:
     """Update address with new info."""
-    address.street = new_info.get('streetAddress')
-    address.street_additional = new_info.get('streetAddressAdditional')
-    address.city = new_info.get('addressCity')
-    address.region = new_info.get('addressRegion')
+    address.street = new_info.get('streetAddress') or ''
+    address.street_additional = new_info.get('streetAddressAdditional') or ''
+    address.city = new_info.get('addressCity') or ''
+    address.region = new_info.get('addressRegion') or ''
     address.country = pycountry.countries.search_fuzzy(new_info.get('addressCountry'))[0].alpha_2
-    address.postal_code = new_info.get('postalCode')
-    address.delivery_instructions = new_info.get('deliveryInstructions')
+    address.postal_code = new_info.get('postalCode') or ''
+    address.delivery_instructions = new_info.get('deliveryInstructions') or ''
 
     return address
 
@@ -108,8 +109,8 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
             middle_initial=middle_initial.upper(),
             title=party_info.get('title', '').upper(),
             organization_name=party_info['officer'].get('organizationName', '').upper(),
-            email=party_info['officer'].get('email'),
-            identifier=party_info['officer'].get('identifier'),
+            email=party_info['officer'].get('email') or '',
+            identifier=party_info['officer'].get('identifier') or '',
             party_type=party_info['officer'].get('partyType')
         )
 
@@ -157,29 +158,3 @@ def update_director(director: PartyRole, new_info: dict) -> PartyRole:
     director.cessation_date = new_info.get('cessationDate')
 
     return director
-
-
-def create_share_class(share_class_info: dict) -> ShareClass:
-    """Create a new share class and associated series."""
-    share_class = ShareClass(
-        name=share_class_info['name'],
-        priority=share_class_info['priority'],
-        max_share_flag=share_class_info['hasMaximumShares'],
-        max_shares=share_class_info.get('maxNumberOfShares', None),
-        par_value_flag=share_class_info['hasParValue'],
-        par_value=share_class_info.get('parValue', None),
-        currency=share_class_info.get('currency', None),
-        special_rights_flag=share_class_info['hasRightsOrRestrictions']
-    )
-    share_class.series = []
-    for series in share_class_info['series']:
-        share_series = ShareSeries(
-            name=series['name'],
-            priority=series['priority'],
-            max_share_flag=series['hasMaximumShares'],
-            max_shares=series.get('maxNumberOfShares', None),
-            special_rights_flag=series['hasRightsOrRestrictions']
-        )
-        share_class.series.append(share_series)
-
-    return share_class

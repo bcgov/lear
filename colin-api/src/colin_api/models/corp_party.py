@@ -410,18 +410,18 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     and upper(trim(first_nme))=upper(:first_name) and upper(trim(last_nme))=upper(:last_name)
                     and (upper(trim(middle_nme))=upper(:middle_initial) or middle_nme is null)
                     """
-                first_name = officer.get('prevFirstName') or officer['firstName']
-                last_name = officer.get('prevLastName') or officer['lastName']
-                middle_initial = officer.get('prevMiddleInitial', '') or officer.get('middleInitial', '')
+                first_name = officer.get('prevFirstName') or officer.get('firstName')
+                last_name = officer.get('prevLastName') or officer.get('lastName')
+                middle_initial = officer.get('prevMiddleInitial') or officer.get('middleInitial')
 
                 cursor.execute(
                     query,
                     event_id=event_id,
                     cessation_date=director.get('cessationDate', ''),
                     corp_num=corp_num,
-                    first_name=first_name.strip(),
-                    last_name=last_name.strip(),
-                    middle_initial=middle_initial.strip()
+                    first_name=(first_name or '').strip(),
+                    last_name=(last_name or '').strip(),
+                    middle_initial=(middle_initial or '').strip()
                 )
             if cursor.rowcount < 1:
                 current_app.logger.error(f'Could not find director {officer}')
@@ -480,9 +480,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         completing_party_update_query,
                         event_id=party['prev_event_id'],
                         mailing_addr_id=mailing_addr_id,
-                        last_nme=party['officer']['lastName'],
+                        last_nme=party['officer'].get('lastName', ''),
                         middle_nme=party['officer'].get('middleInitial', ''),
-                        first_nme=party['officer']['firstName'],
+                        first_nme=party['officer'].get('firstName', ''),
                         email=party['officer'].get('email', '')
                     )
                 else:
@@ -490,9 +490,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         completing_party_query,
                         event_id=event_id,
                         mailing_addr_id=mailing_addr_id,
-                        last_nme=party['officer']['lastName'],
+                        last_nme=party['officer'].get('lastName', ''),
                         middle_nme=party['officer'].get('middleInitial', ''),
-                        first_nme=party['officer']['firstName'],
+                        first_nme=party['officer'].get('firstName', ''),
                         email=party['officer'].get('email', '')
                     )
             else:
@@ -541,9 +541,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         office_notification_dt=(
                             str(datetime.datetime.strptime(party['officeNotificationDt'], date_format))[:10]
                             if party.get('officeNotificationDt') else None),
-                        last_nme=party['officer']['lastName'],
+                        last_nme=party['officer'].get('lastName', ''),
                         middle_nme=party['officer'].get('middleInitial', ''),
-                        first_nme=party['officer']['firstName'],
+                        first_nme=party['officer'].get('firstName', ''),
                         bus_company_num=business['business'].get('businessNumber', None),
                         business_name=party['officer'].get('orgName', ''),
                         prev_party_id=party['prev_id']
@@ -568,9 +568,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         office_notification_dt=(
                             str(datetime.datetime.strptime(party['officeNotificationDt'], date_format))[:10]
                             if party.get('officeNotificationDt') else None),
-                        last_nme=party['officer']['lastName'],
+                        last_nme=party['officer'].get('lastName', ''),
                         middle_nme=party['officer'].get('middleInitial', ''),
-                        first_nme=party['officer']['firstName'],
+                        first_nme=party['officer'].get('firstName', ''),
                         bus_company_num=business['business'].get('businessNumber', None),
                         business_name=party['officer'].get('orgName', '')
                     )
@@ -583,19 +583,19 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     def compare_parties(cls, party: Party, officer_json: Dict):
         """Compare corp party with json, return true if their names are equal."""
         if officer_json.get('prevFirstName') or officer_json.get('prevLastName') or officer_json.get('prevOrgName'):
-            first_name = officer_json.get('prevFirstName', '')
-            middle_name = officer_json.get('prevMiddleInitial', '')
-            last_name = officer_json.get('prevLastName', '')
-            org_name = officer_json.get('prevOrgName', '')
+            first_name = (officer_json.get('prevFirstName') or '')
+            middle_name = (officer_json.get('prevMiddleInitial') or '')
+            last_name = (officer_json.get('prevLastName') or '')
+            org_name = (officer_json.get('prevOrgName') or '')
         else:
-            first_name = officer_json.get('firstName', '')
-            middle_name = officer_json.get('middleInitial', '')
-            last_name = officer_json.get('lastName', '')
-            org_name = officer_json.get('orgName', '')
-        if party.officer.get('firstName', '').strip().upper() == first_name.strip().upper() \
-                and party.officer.get('middleInitial', '').strip().upper() == middle_name.strip().upper() \
-                and party.officer.get('lastName', '').strip().upper() == last_name.strip().upper() \
-                and party.officer.get('orgName', '').strip().upper() == org_name.strip().upper():
+            first_name = (officer_json.get('firstName') or '')
+            middle_name = (officer_json.get('middleInitial') or '')
+            last_name = (officer_json.get('lastName') or '')
+            org_name = (officer_json.get('orgName') or '')
+        if ((party.officer.get('firstName') or '').strip().upper() == first_name.strip().upper() and
+                (party.officer.get('middleInitial') or '').strip().upper() == middle_name.strip().upper() and
+                (party.officer.get('lastName') or '').strip().upper() == last_name.strip().upper() and
+                (party.officer.get('orgName') or '').strip().upper() == org_name.strip().upper()):
             return True
         return False
 

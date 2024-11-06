@@ -53,7 +53,7 @@ def compare_addresses(business_address: dict, filing_address: dict):
                 pycountry.countries.search_fuzzy(filing_address.get('addressCountry'))[0].alpha_2
             assert business_address[key] == 'CA'
         elif key not in ('addressType', 'id'):
-            assert business_address.get(key) == filing_address.get(key)
+            assert business_address.get(key) == (filing_address.get(key) or '')
 
 
 def active_ceased_lists(filing):

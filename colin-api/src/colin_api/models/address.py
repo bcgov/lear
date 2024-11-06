@@ -170,10 +170,10 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                            addr_id=addr_id,
                            province=(address_info.get('addressRegion') or '').upper(),
                            country_typ_cd=country_typ_cd,
-                           postal_cd=address_info['postalCode'].upper(),
-                           addr_line_1=address_info['streetAddress'].upper(),
+                           postal_cd=(address_info.get('postalCode') or '').upper(),
+                           addr_line_1=(address_info.get('streetAddress') or '').upper(),
                            addr_line_2=(address_info.get('streetAddressAdditional') or '').upper(),
-                           city=address_info['addressCity'].upper(),
+                           city=(address_info.get('addressCity') or '').upper(),
                            delivery_instructions=(address_info.get('deliveryInstructions') or '').upper()
                            )
         except Exception as err:

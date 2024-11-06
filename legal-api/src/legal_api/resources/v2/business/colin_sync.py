@@ -19,15 +19,24 @@ from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
+from sqlalchemy import or_
+from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import (
+    Address,
+    Alias,
     AmalgamatingBusiness,
     Amalgamation,
     BatchProcessing,
     Business,
     Filing,
+    Office,
+    Party,
     PartyRole,
+    Resolution,
+    ShareClass,
+    ShareSeries,
     UserRoles,
     db,
 )
@@ -53,6 +62,7 @@ def get_completed_filings_for_colin():
         business = Business.find_by_internal_id(filing.business_id)
         if filing_json := filing.filing_json:
             filing_json['filingId'] = filing.id
+            filing_json['filing']['header']['source'] = Filing.Source.LEAR.value
             filing_json['filing']['header']['date'] = filing.filing_date.isoformat()
             filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
             if not filing_json['filing'].get('business'):
@@ -68,6 +78,8 @@ def get_completed_filings_for_colin():
             elif not filing_json['filing']['business'].get('legalName'):
                 filing_json['filing']['business']['legalName'] = business.legal_name
 
+            if filing.filing_type == 'correction' and business.legal_type != Business.LegalTypes.COOP.value:
+                set_correction_flags(filing_json, filing)
             elif (filing.filing_type == 'amalgamationApplication' and
                     filing_json['filing']['amalgamationApplication']['type'] in [
                         Amalgamation.AmalgamationTypes.horizontal.name,
@@ -86,6 +98,129 @@ def get_completed_filings_for_colin():
 
             filings.append(filing_json)
     return jsonify({'filings': filings}), HTTPStatus.OK
+
+
+def set_correction_flags(filing_json, filing: Filing):
+    """Set what section changed in this correction."""
+    if filing.meta_data.get('toLegalName'):
+        filing_json['filing']['correction']['nameChanged'] = True
+
+    if has_alias_changed(filing):
+        filing_json['filing']['correction']['nameTranslationsChanged'] = True
+
+    if has_office_changed(filing):
+        filing_json['filing']['correction']['officeChanged'] = True
+
+    if has_party_changed(filing):
+        filing_json['filing']['correction']['partyChanged'] = True
+
+    if has_resolution_changed(filing):
+        filing_json['filing']['correction']['resolutionChanged'] = True
+
+    if has_share_changed(filing):
+        filing_json['filing']['correction']['shareChanged'] = True
+
+
+def has_alias_changed(filing) -> bool:
+    """Has alias changed in the given filing."""
+    alias_version = version_class(Alias)
+    aliases_query = (db.session.query(alias_version)
+                     .filter(or_(alias_version.transaction_id == filing.transaction_id,
+                                 alias_version.end_transaction_id == filing.transaction_id))
+                     .filter(alias_version.business_id == filing.business_id)
+                     .exists())
+    return db.session.query(aliases_query).scalar()
+
+
+def has_office_changed(filing) -> bool:
+    """Has office changed in the given filing."""
+    offices = db.session.query(Office).filter(Office.business_id == filing.business_id).all()
+
+    address_version = version_class(Address)
+    addresses_query = (db.session.query(address_version)
+                       .filter(or_(address_version.transaction_id == filing.transaction_id,
+                                   address_version.end_transaction_id == filing.transaction_id))
+                       .filter(address_version.office_id.in_([office.id for office in offices]))
+                       .filter(address_version.address_type.in_(['mailing', 'delivery']))
+                       .exists())
+    return db.session.query(addresses_query).scalar()
+
+
+def has_party_changed(filing: Filing) -> bool:
+    """Has party changed in the given filing."""
+    party_role_version = version_class(PartyRole)
+    party_roles_query = (db.session.query(party_role_version)
+                         .filter(or_(party_role_version.transaction_id == filing.transaction_id,
+                                     party_role_version.end_transaction_id == filing.transaction_id))
+                         .filter(party_role_version.business_id == filing.business_id)
+                         .filter(party_role_version.role == PartyRole.RoleTypes.DIRECTOR.value)
+                         .exists())
+    if db.session.query(party_roles_query).scalar():  # Has new party added/deleted by setting cessation_date
+        return True
+
+    # Has existing party modified
+    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+                                                                          filing.business_id,
+                                                                          role=PartyRole.RoleTypes.DIRECTOR.value)
+
+    party_version = version_class(Party)
+    for party_role in party_roles:
+        parties_query = (db.session.query(party_version)
+                         .filter(or_(party_version.transaction_id == filing.transaction_id,
+                                     party_version.end_transaction_id == filing.transaction_id))
+                         .filter(party_version.id == party_role['id'])
+                         .exists())
+        if db.session.query(parties_query).scalar():  # Modified party
+            return True
+
+        party = VersionedBusinessDetailsService.get_party_revision(filing.transaction_id, party_role['id'])
+        address_version = version_class(Address)
+        # Has party delivery/mailing address modified
+        address_query = (db.session.query(address_version)
+                         .filter(or_(address_version.transaction_id == filing.transaction_id,
+                                     address_version.end_transaction_id == filing.transaction_id))
+                         .filter(address_version.id.in_([party.delivery_address_id, party.mailing_address_id]))
+                         .exists())
+        if db.session.query(address_query).scalar():  # Modified party delivery/mailing address
+            return True
+
+    return False
+
+
+def has_resolution_changed(filing: Filing) -> bool:
+    """Has resolution changed in the given filing."""
+    resolution_version = version_class(Resolution)
+    resolution_query = (db.session.query(resolution_version)
+                        .filter(or_(resolution_version.transaction_id == filing.transaction_id,
+                                    resolution_version.end_transaction_id == filing.transaction_id))
+                        .filter(resolution_version.business_id == filing.business_id)
+                        .exists())
+    return db.session.query(resolution_query).scalar()
+
+
+def has_share_changed(filing: Filing) -> bool:
+    """Has share changed in the given filing."""
+    share_class_version = version_class(ShareClass)
+    share_class_query = (db.session.query(share_class_version)
+                         .filter(or_(share_class_version.transaction_id == filing.transaction_id,
+                                     share_class_version.end_transaction_id == filing.transaction_id))
+                         .filter(share_class_version.business_id == filing.business_id)
+                         .exists())
+    if db.session.query(share_class_query).scalar():
+        return True
+
+    share_classes = VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, filing.business_id)
+    series_version = version_class(ShareSeries)
+    share_series_query = (db.session.query(series_version)
+                          .filter(or_(series_version.transaction_id == filing.transaction_id,
+                                      series_version.end_transaction_id == filing.transaction_id))
+                          .filter(series_version.share_class_id.in_(
+                              [share_class['id'] for share_class in share_classes]))
+                          .exists())
+    if db.session.query(share_series_query).scalar():
+        return True
+
+    return False
 
 
 def set_from_primary_or_holding_business_data(filing_json, filing: Filing):

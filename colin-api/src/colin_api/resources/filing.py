@@ -158,7 +158,9 @@ class FilingInfo(Resource):
                     in ['administrative', 'involuntary']
                 ):
                     if legal_type == Business.TypeCodes.COOP.value:
-                        raise Exception('Not implemented!')  # pylint: disable=broad-exception-raised
+                        raise GenericException(
+                            f'{filing_sub_type} dissolution of COOP is not implemented!',
+                            HTTPStatus.NOT_IMPLEMENTED)
 
                     filing_dt = convert_to_pacific_time(json_data['header']['date'])
                     if filing_sub_type == 'administrative':
@@ -192,9 +194,10 @@ class FilingInfo(Resource):
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception
             current_app.logger.error(err.with_traceback(None))
-            return jsonify(
-                {'message': f'Error when trying to file for business {identifier}'}
-            ), HTTPStatus.INTERNAL_SERVER_ERROR
+            return jsonify({
+                'message': f'Error when trying to file for business {identifier}',
+                'error': str(err)
+            }), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     def _add_filings(con, json_data: dict, filing_list: list, identifier: str) -> list:
@@ -216,10 +219,13 @@ class FilingInfo(Resource):
             else:
                 filing.business = Business.find_by_identifier(identifier, con=con)
             # add the new filing
-            event_id = Filing.add_filing(con, filing)
-            filings_added.append({'event_id': event_id,
-                                  'filing_type': filing_type,
-                                  'filing_sub_type': filing.filing_sub_type})
+            if filing_type == 'correction':
+                filings_added.extend(Filing.add_correction_filings(con, filing))
+            else:
+                event_id = Filing.add_filing(con, filing)
+                filings_added.append({'event_id': event_id,
+                                      'filing_type': filing_type,
+                                      'filing_sub_type': filing.filing_sub_type})
         return filings_added
 
 

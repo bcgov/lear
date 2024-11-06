@@ -1026,25 +1026,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         corp_type = CorpType.find_by_id(legal_type)
         return corp_type.full_desc if corp_type else None
 
-    def _has_change(self, old_value, new_value):
-        """Check to fix the hole in diff.
-
-        example:
-            old_value: None and new_value: ''
-            In reality there is no change but diff track it as a change
-        """
-        has_change = True  # assume that in all other cases diff has a valid change
-        if isinstance(old_value, str) and new_value is None:
-            has_change = old_value != ''
-        elif isinstance(new_value, str) and old_value is None:
-            has_change = new_value != ''
-        elif isinstance(old_value, bool) and new_value is None:
-            has_change = old_value is True
-        elif isinstance(new_value, bool) and old_value is None:
-            has_change = new_value is True
-
-        return has_change
-
     def _format_correction_data(self, filing):
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
