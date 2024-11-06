@@ -108,6 +108,10 @@ def update_colin_id(app: Flask, token: dict, filing_id: str, colin_ids: list):
     )
     if not req or req.status_code != 202:
         app.logger.error(f'Failed to update colin id in legal db for filing {filing_id} {req.status_code}')
+        app.logger.error(
+            f"""ATTENTION - MANUAL ACTION REQUIRED:
+            Successfully created a filing in COLIN but failed to insert colin_event_ids in LEAR.
+            update colin_event_ids table with, filing {filing_id} and colin ids {colin_ids}""")
         return False
     return True
 
@@ -149,6 +153,7 @@ def run():
     application = create_app()
     corps_with_failed_filing = []
     failed_to_sync = 0
+    success = 0
     limit = 50
     with application.app_context():
         try:
@@ -171,12 +176,14 @@ def run():
                         if update:
                             # pylint: disable=no-member; false positive
                             application.logger.debug(f'Successfully updated filing {filing_id}')
+                            success += 1
                         else:
                             failed_to_sync += 1
                             corps_with_failed_filing.append(filing['filing']['business']['identifier'])
                             # pylint: disable=no-member; false positive
                             application.logger.error(f'Failed to update filing {filing_id} with colin event id.')
             application.logger.debug('No more filings to send to colin.')
+            application.logger.debug(f'Success: {success}, Failed: {failed_to_sync}')
 
         except Exception as err:  # noqa: B902
             # pylint: disable=no-member; false positive
