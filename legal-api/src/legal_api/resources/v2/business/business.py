@@ -34,7 +34,7 @@ from legal_api.services import (  # noqa: I001;
     RegistrationBootstrapService,
     check_warnings,
 )  # noqa: I001;
-from legal_api.services.authz import get_allowable_actions, get_allowed
+from legal_api.services.authz import get_allowable_actions, get_allowed, get_could_files
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -64,6 +64,7 @@ def get_businesses(identifier: str):
         business_json = business.json(slim=True)
         # need to add the alternateNames array here because it is not a part of slim JSON
         business_json['alternateNames'] = business.get_alternate_names()
+
         return jsonify(business=business_json)
 
     warnings = check_warnings(business)
@@ -75,6 +76,10 @@ def get_businesses(identifier: str):
     business.allowable_actions = allowable_actions
 
     business_json = business.json()
+
+    could_file = get_could_files(jwt, business)
+    business_json['couldFile'] = could_file
+
     recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
     if recent_filing_json:
         business_json['submitter'] = recent_filing_json['filing']['header']['submitter']

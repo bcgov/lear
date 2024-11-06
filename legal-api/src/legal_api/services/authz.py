@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=too-many-lines
 """This manages all of the authentication and authorization service."""
 from datetime import datetime, timezone
 from enum import Enum
@@ -53,6 +55,19 @@ class BusinessBlocker(str, Enum):
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
     IN_DISSOLUTION = 'IN_DISSOLUTION'
     FILING_WITHDRAWAL = 'FILING_WITHDRAWAL'
+
+
+class BusinessConditionalBlocker():
+    """Define the conditional checks."""
+
+    def sp_gp_missing_required_business_info(self, business, blocker_checks):
+        """If business is GP or SP enforce missing required info otherwise skip."""
+        if business.legal_type in (Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP):
+            checks = {
+                'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO]
+            }
+            return has_blocker_warning_filing(business.warnings, checks)
+        return False
 
 
 class BusinessRequirement(str, Enum):
@@ -171,7 +186,7 @@ def get_allowable_filings_dict():
                     'regular': {
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'business': [BusinessBlocker.DEFAULT,
+                            'business': [BusinessBlocker.BUSINESS_FROZEN,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
@@ -181,7 +196,7 @@ def get_allowable_filings_dict():
                     'vertical': {
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'business': [BusinessBlocker.DEFAULT,
+                            'business': [BusinessBlocker.BUSINESS_FROZEN,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
@@ -220,12 +235,11 @@ def get_allowable_filings_dict():
                 'changeOfRegistration': {
                     'legalTypes': ['SP', 'GP'],
                     'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
                 'continuationIn': {
-                    'legalTypes': ['C', 'CBEN', 'CUL', 'CCC'],
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
                 },
@@ -248,8 +262,8 @@ def get_allowable_filings_dict():
                 'correction': {
                     'legalTypes': ['CP', 'BEN', 'SP', 'GP', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
-                        'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.DEFAULT],
+                        'conditionalChecks': [BusinessConditionalBlocker.sp_gp_missing_required_business_info]
                     }
                 },
                 'courtOrder': {
@@ -259,7 +273,7 @@ def get_allowable_filings_dict():
                     'voluntary': {
                         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                            'conditionalChecks': [BusinessConditionalBlocker.sp_gp_missing_required_business_info],
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION]
@@ -268,7 +282,7 @@ def get_allowable_filings_dict():
                     'administrative': {
                         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                            'conditionalChecks': [BusinessConditionalBlocker.sp_gp_missing_required_business_info],
                             'business': [BusinessBlocker.DRAFT_PENDING]
                         }
                     }
@@ -319,7 +333,7 @@ def get_allowable_filings_dict():
                 'noticeOfWithdrawal': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.FILING_WITHDRAWAL]
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.FILING_WITHDRAWAL]
                     }
                 }
             },
@@ -329,6 +343,10 @@ def get_allowable_filings_dict():
                 },
                 'putBackOn': {
                     'legalTypes': ['SP', 'GP', 'BEN', 'CP', 'BC', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'invalidStateFilings': ['amalgamationApplication', 'administrative'],
+                    },
+                    'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_ADMINISTRATIVE]
                 },
                 'registrarsNotation': {
                     'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
@@ -340,14 +358,14 @@ def get_allowable_filings_dict():
                     'fullRestoration': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'invalidStateFilings': ['continuationOut'],
+                            'invalidStateFilings': ['continuationOut', 'continuationIn'],
                             'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
                         }
                     },
                     'limitedRestoration': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'invalidStateFilings': ['continuationOut'],
+                            'invalidStateFilings': ['continuationOut', 'continuationIn'],
                             'business': [BusinessBlocker.AMALGAMATING_BUSINESS]
                         }
                     }
@@ -381,7 +399,7 @@ def get_allowable_filings_dict():
                     'regular': {
                         'legalTypes': ['BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'business': [BusinessBlocker.DEFAULT,
+                            'business': [BusinessBlocker.BUSINESS_FROZEN,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION],
                             'futureEffectiveFilings': [filing_types_compact.DISSOLUTION_VOLUNTARY,
@@ -441,7 +459,7 @@ def get_allowable_filings_dict():
                     }
                 },
                 'continuationIn': {
-                    'legalTypes': ['C', 'CBEN', 'CUL', 'CCC'],
+                    'legalTypes': ['BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
                 },
@@ -449,7 +467,7 @@ def get_allowable_filings_dict():
                     'voluntary': {
                         'legalTypes': ['CP', 'BC', 'BEN', 'CC', 'ULC', 'SP', 'GP', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
-                            'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                            'conditionalChecks': [BusinessConditionalBlocker.sp_gp_missing_required_business_info],
                             'business': [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION]
@@ -515,6 +533,22 @@ def is_allowed(business: Business,
     return False
 
 
+def get_could_files(jwt: JwtManager, business: Business):
+    """Get allowable actions."""
+    is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
+    if is_competent_authority:
+        allowed_filings = []
+    else:
+        allowed_filings = get_could_file(business, business.state, business.legal_type, jwt)
+
+    result = {
+        'filing': {
+            'filingTypes': allowed_filings
+        }
+    }
+    return result
+
+
 def get_allowable_actions(jwt: JwtManager, business: Business):
     """Get allowable actions."""
     is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
@@ -535,6 +569,65 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         'viewAll': is_competent_authority
     }
     return result
+
+
+def get_could_file(business: Business,
+                   state: Business.State,
+                   legal_type: str,
+                   jwt: JwtManager):
+    """Get allowed type of filing types for the current user."""
+    # importing here to avoid circular dependencies
+    # pylint: disable=import-outside-toplevel
+    from legal_api.core.meta import FilingMeta
+
+    user_role = 'general'
+    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+        user_role = 'staff'
+
+    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})
+    could_filing_types = []
+
+    for allowable_filing_key, allowable_filing_value in allowable_filings.items():
+        # skip if business does not exist and filing is not required
+        # skip if this filing does not need to be returned for existing businesses
+
+        business_status = allowable_filing_value.get('businessRequirement', BusinessRequirement.EXIST)
+
+        if business_status != BusinessRequirement.NO_RESTRICTION and \
+                bool(business) ^ (business_status == BusinessRequirement.EXIST):
+            continue
+
+        allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
+
+        if allowable_filing_legal_types:
+            is_allowable = legal_type in allowable_filing_legal_types
+            allowable_filing_type = {'name': allowable_filing_key,
+                                     'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key),
+                                     'feeCode': Filing.get_fee_code(legal_type, allowable_filing_key)}
+            could_filing_types = add_allowable_filing_type(is_allowable,
+                                                           could_filing_types,
+                                                           allowable_filing_type)
+            continue
+
+        filing_sub_type_items = \
+            filter(lambda x: isinstance(x[1], dict) and legal_type in
+                   x[1].get('legalTypes', []), allowable_filing_value.items())
+
+        for filing_sub_type_item_key, _ in filing_sub_type_items:
+
+            allowable_filing_sub_type = {'name': allowable_filing_key,
+                                         'type': filing_sub_type_item_key,
+                                         'displayName': FilingMeta.get_display_name(legal_type,
+                                                                                    allowable_filing_key,
+                                                                                    filing_sub_type_item_key),
+                                         'feeCode': Filing.get_fee_code(legal_type,
+                                                                        allowable_filing_key,
+                                                                        filing_sub_type_item_key)}
+            could_filing_types = add_allowable_filing_type(True,
+                                                           could_filing_types,
+                                                           allowable_filing_sub_type)
+
+    return could_filing_types
 
 
 def get_allowed_filings(business: Business,
@@ -631,6 +724,11 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
 
     if has_blocker_warning_filing(business.warnings, blocker_checks):
         return True
+
+    conditional_checks = blocker_checks.get('conditionalChecks', [])
+    for conditional_function in conditional_checks:
+        if conditional_function(business, blocker_checks):
+            return True
 
     return False
 
