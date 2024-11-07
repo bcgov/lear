@@ -15,6 +15,7 @@
 
 These endpoint are reqired as long as we sync to colin.
 """
+import copy
 from http import HTTPStatus
 
 from flask import current_app, jsonify, request
@@ -60,43 +61,54 @@ def get_completed_filings_for_colin():
     pending_filings = Filing.get_completed_filings_for_colin(limit, offset)
     for filing in pending_filings:
         business = Business.find_by_internal_id(filing.business_id)
-        if filing_json := filing.filing_json:
-            filing_json['filingId'] = filing.id
-            filing_json['filing']['header']['source'] = Filing.Source.LEAR.value
-            filing_json['filing']['header']['date'] = filing.filing_date.isoformat()
-            filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
-            if not filing_json['filing'].get('business'):
-                # ideally filing should have transaction_id once completed.
-                # found some filing in DEV (with missing transaction_id), adding this check to avoid exception
-                if filing.transaction_id:
-                    business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
-                        filing.transaction_id, business.id)
-                    filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
-                        business_revision, business.json())
-                else:
-                    filing_json['filing']['business'] = business.json()
-            elif not filing_json['filing']['business'].get('legalName'):
-                filing_json['filing']['business']['legalName'] = business.legal_name
 
-            if filing.filing_type == 'correction' and business.legal_type != Business.LegalTypes.COOP.value:
+        filing_json = copy.deepcopy(filing.filing_json)
+        filing_json['filingId'] = filing.id
+        filing_json['filing']['header']['source'] = Filing.Source.LEAR.value
+        filing_json['filing']['header']['date'] = filing.filing_date.isoformat()
+        filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
+
+        if not filing_json['filing'].get('business'):
+            if filing.transaction_id:
+                business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
+                    filing.transaction_id, business.id)
+                filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
+                    business_revision, business.json())
+            else:
+                # should never happen unless its a test data created directly in db.
+                # found some filing in DEV, adding this check to avoid exception
+                filing_json['filing']['business'] = business.json()
+        elif not filing_json['filing']['business'].get('legalName'):
+            filing_json['filing']['business']['legalName'] = business.legal_name
+
+        if filing.filing_type == 'correction' and business.legal_type != Business.LegalTypes.COOP.value:
+            try:
                 set_correction_flags(filing_json, filing)
-            elif (filing.filing_type == 'amalgamationApplication' and
-                    filing_json['filing']['amalgamationApplication']['type'] in [
-                        Amalgamation.AmalgamationTypes.horizontal.name,
-                        Amalgamation.AmalgamationTypes.vertical.name]):
-                try:
-                    set_from_primary_or_holding_business_data(filing_json, filing)
-                except Exception as ex:  # noqa: B902
-                    current_app.logger.info(ex)
-                    continue  # do not break this function because of one filing
-            elif (filing.filing_type == 'dissolution' and
-                  filing.filing_sub_type == 'involuntary'):
-                batch_processings = BatchProcessing.find_by(filing_id=filing.id)
-                if not batch_processings:
-                    continue  # skip filing for missing batch processing info
-                filing_json['filing']['dissolution']['metaData'] = batch_processings[0].meta_data
+            except Exception as ex:  # noqa: B902
+                current_app.logger.error(f'correction: filingId={filing.id}, error: {str(ex)}')
+                # to skip this filing and block subsequent filing from syncing in update-colin-filings
+                filing_json['filing']['header']['name'] = None
 
-            filings.append(filing_json)
+        elif (filing.filing_type == 'amalgamationApplication' and
+              filing_json['filing']['amalgamationApplication']['type'] in [
+                  Amalgamation.AmalgamationTypes.horizontal.name,
+                  Amalgamation.AmalgamationTypes.vertical.name]):
+            try:
+                set_from_primary_or_holding_business_data(filing_json, filing)
+            except Exception as ex:  # noqa: B902
+                current_app.logger.error(f'amalgamation: filingId={filing.id}, error: {str(ex)}')
+                # to skip this filing and block subsequent filing from syncing in update-colin-filings
+                filing_json['filing']['header']['name'] = None
+
+        elif (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary'):
+            if batch_processings := BatchProcessing.find_by(filing_id=filing.id):
+                filing_json['filing']['dissolution']['metaData'] = batch_processings[0].meta_data
+            else:
+                current_app.logger.error(f'dissolution: filingId={filing.id}, missing batch processing info')
+                # to skip this filing and block subsequent filing from syncing in update-colin-filings
+                filing_json['filing']['header']['name'] = None
+
+        filings.append(filing_json)
     return jsonify({'filings': filings}), HTTPStatus.OK
 
 
