@@ -1011,7 +1011,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
                 Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
-            ).order_by(Filing.effective_date, Filing.id).limit(limit).offset(offset).all()
+            ).order_by(Filing.transaction_id).limit(limit).offset(offset).all()
 
         return filings
 
