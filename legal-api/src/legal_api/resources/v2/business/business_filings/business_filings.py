@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+# pylint: disable=too-many-lines
 import copy
 from contextlib import suppress
 from datetime import datetime as _datetime
@@ -635,7 +636,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return filing_json
 
     @staticmethod
-    def get_filing_types(business: Business, filing_json: dict):  # pylint: disable=too-many-branches
+    def get_filing_types(business: Business,  # pylint: disable=too-many-branches,too-many-locals,too-many-statements
+                         filing_json: dict):
         """Get the filing type fee codes for the filing.
 
         Returns: {
