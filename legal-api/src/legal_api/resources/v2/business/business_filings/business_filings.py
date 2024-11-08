@@ -636,7 +636,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return filing_json
 
     @staticmethod
-    def get_filing_types(business: Business,  # pylint: disable=too-many-branches,too-many-locals,too-many-statements
+    def get_filing_types(business: Business,  # pylint: disable=too-many-branches
                          filing_json: dict):
         """Get the filing type fee codes for the filing.
 
@@ -662,35 +662,10 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 'waiveFees': waive_fees_flag
             })
         elif filing_type == 'dissolution':
-            dissolution_type = filing_json['filing']['dissolution']['dissolutionType']
-            if dissolution_type == 'voluntary':
-                filing_type_code = Filing.FILINGS.get('dissolution', {}).get(dissolution_type).get('codes', {}) \
-                    .get(legal_type)
-                filing_types.append({
-                    'filingTypeCode': filing_type_code,
-                    'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
-                    'priority': priority_flag,
-                    'waiveFees': waive_fees_flag
-                })
-                if legal_type == Business.LegalTypes.COOP.value:
-                    filing_type_code =\
-                        Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
-                    filing_types.append({
-                        'filingTypeCode': filing_type_code,
-                        'priority': priority_flag,
-                        'waiveFees': waive_fees_flag
-                    })
-                    filing_type_code =\
-                        Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
-                    filing_types.append({
-                        'filingTypeCode': filing_type_code,
-                        'waiveFees': waive_fees_flag
-                    })
-            elif dissolution_type == 'administrative':
-                filing_types.append({
-                    'filingTypeCode': 'NOFEE',
-                    'waiveFees': waive_fees_flag
-                })
+            filing_types.extend(ListFilingResource.get_filing_types_for_dissolution(filing_json,
+                                                                                    legal_type,
+                                                                                    priority_flag,
+                                                                                    waive_fees_flag))
         elif filing_type in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn', 'adminFreeze']:
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
@@ -743,6 +718,41 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                             'priority': priority,
                             'waiveFees': waive_fees_flag
                         })
+        return filing_types
+
+    @staticmethod
+    def get_filing_types_for_dissolution(filing_json: dict, legal_type: str, priority_flag, waive_fees_flag) -> list:
+        """Get the dissolution filing type fee code."""
+        filing_types = []
+        dissolution_type = filing_json['filing']['dissolution']['dissolutionType']
+        if dissolution_type == 'voluntary':
+            filing_type_code = Filing.FILINGS.get('dissolution', {}).get(dissolution_type).get('codes', {}) \
+                .get(legal_type)
+            filing_types.append({
+                'filingTypeCode': filing_type_code,
+                'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
+                'priority': priority_flag,
+                'waiveFees': waive_fees_flag
+            })
+            if legal_type == Business.LegalTypes.COOP.value:
+                filing_type_code =\
+                    Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                filing_types.append({
+                    'filingTypeCode': filing_type_code,
+                    'priority': priority_flag,
+                    'waiveFees': waive_fees_flag
+                })
+                filing_type_code =\
+                    Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                filing_types.append({
+                    'filingTypeCode': filing_type_code,
+                    'waiveFees': waive_fees_flag
+                })
+        elif dissolution_type == 'administrative':
+            filing_types.append({
+                'filingTypeCode': 'NOFEE',
+                'waiveFees': waive_fees_flag
+            })
         return filing_types
 
     @staticmethod
