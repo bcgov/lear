@@ -711,7 +711,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                         })
         return filing_types
 
-    @ staticmethod
+    @staticmethod
     def get_filing_types_for_cod(filing_json: dict, legal_type: str, filing_type_code: str) -> str:
         """Get the change of director filing type fee code."""
         free = True
@@ -735,7 +735,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         return filing_type_code
 
-    @ staticmethod
+    @staticmethod
     def get_filing_types_for_dissolution(filing_json: dict, legal_type: str, priority_flag, waive_fees_flag) -> list:
         """Get the dissolution filing type fee code."""
         filing_types = []
