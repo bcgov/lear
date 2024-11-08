@@ -147,11 +147,6 @@ tag: push ## tag image
 run: ## Run the project in local
 	. venv/bin/activate && python -m flask run -p 5000
 
-db:
-	. venv/bin/activate && python -m flask db init
-	. venv/bin/activate && python -m flask db migrate
-	. venv/bin/activate && python -m flask db upgrade
-
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
