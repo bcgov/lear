@@ -49,7 +49,7 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.add(self)
         db.session.commit()
 
-    @ classmethod
+    @classmethod
     def get_review_results(cls, review_id) -> List[ReviewResult]:
         """Return review results by the review id."""
         review_results = None
@@ -59,7 +59,7 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
                               all())
         return review_results
 
-    @ classmethod
+    @classmethod
     def get_last_review_result(cls, filing_id) -> ReviewResult:
         """Return the last review result by the filing id."""
         review_result = None
