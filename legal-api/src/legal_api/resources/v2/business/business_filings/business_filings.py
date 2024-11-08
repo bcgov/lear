@@ -636,8 +636,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return filing_json
 
     @staticmethod
-    def get_filing_types(business: Business,  # pylint: disable=too-many-branches
-                         filing_json: dict):
+    def get_filing_types(business: Business, filing_json: dict):  # pylint: disable=too-many-branches
         """Get the filing type fee codes for the filing.
 
         Returns: {
@@ -684,21 +683,13 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
                 # check if changeOfDirectors is a free filing
                 if k == 'changeOfDirectors':
-                    free = True
-                    free_changes = ['nameChanged', 'addressChanged']
-                    for director in filing_json['filing'][k].get('directors'):
-                        # if changes other than name/address change then this is not a free filing
-                        if not all(change in free_changes for change in director.get('actions', [])):
-                            free = False
-                            break
-                    filing_type_code = Filing.FILINGS[k].get('free', {}).get('codes', {}).get(legal_type)\
-                        if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
-                elif (k == 'alteration' and
-                      (new_legal_type := filing_json['filing'][k].get('business', {}).get('legalType'))):
-                    alteration_type = f'{business.legal_type}_TO_{new_legal_type}'
-                    filing_type_code = (Filing.FILINGS
-                                        .get(k, {}).get('codes', {})
-                                        .get(alteration_type, filing_type_code))
+                    filing_type_code = ListFilingResource.get_filing_types_for_cod(filing_json,
+                                                                                   legal_type,
+                                                                                   filing_type_code)
+                elif k == 'alteration':
+                    filing_type_code = ListFilingResource.get_filing_code_for_alteration(business,
+                                                                                         filing_json,
+                                                                                         filing_type_code)
 
                 # check if priority handled in parent filing
                 if k in ['changeOfDirectors', 'changeOfAddress']:
@@ -720,30 +711,51 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                         })
         return filing_types
 
+    @ staticmethod
+    def get_filing_types_for_cod(filing_json: dict, legal_type: str, filing_type_code: str) -> str:
+        """Get the change of director filing type fee code."""
+        free = True
+        free_changes = ['nameChanged', 'addressChanged']
+        for director in filing_json['filing']['changeOfDirectors'].get('directors'):
+            # if changes other than name/address change then this is not a free filing
+            if not all(change in free_changes for change in director.get('actions', [])):
+                free = False
+                break
+        if free:
+            filing_type_code = Filing.FILINGS['changeOfDirectors']['free']['codes'].get(legal_type)
+
+        return filing_type_code
+
     @staticmethod
+    def get_filing_code_for_alteration(business: Business, filing_json: dict, filing_type_code: str) -> str:
+        """Override fee code if type change (BC -> ULC) has specific fee code."""
+        if new_legal_type := filing_json['filing']['alteration'].get('business', {}).get('legalType'):
+            alteration_type = f'{business.legal_type}_TO_{new_legal_type}'
+            filing_type_code = Filing.FILINGS['alteration']['codes'].get(alteration_type, filing_type_code)
+
+        return filing_type_code
+
+    @ staticmethod
     def get_filing_types_for_dissolution(filing_json: dict, legal_type: str, priority_flag, waive_fees_flag) -> list:
         """Get the dissolution filing type fee code."""
         filing_types = []
         dissolution_type = filing_json['filing']['dissolution']['dissolutionType']
         if dissolution_type == 'voluntary':
-            filing_type_code = Filing.FILINGS.get('dissolution', {}).get(dissolution_type).get('codes', {}) \
-                .get(legal_type)
+            filing_type_code = Filing.FILINGS['dissolution'][dissolution_type]['codes'].get(legal_type)
             filing_types.append({
                 'filingTypeCode': filing_type_code,
                 'futureEffective': ListFilingResource.is_future_effective_filing(filing_json),
                 'priority': priority_flag,
                 'waiveFees': waive_fees_flag
             })
-            if legal_type == Business.LegalTypes.COOP.value:
-                filing_type_code =\
-                    Filing.FILINGS.get('specialResolution', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+            if legal_type == Business.LegalTypes.COOP.value:  # additional fee code for CP
+                filing_type_code = Filing.FILINGS['specialResolution']['codes'].get(legal_type)
                 filing_types.append({
                     'filingTypeCode': filing_type_code,
                     'priority': priority_flag,
                     'waiveFees': waive_fees_flag
                 })
-                filing_type_code =\
-                    Filing.FILINGS.get('affidavit', {}).get('codes', {}).get(Business.LegalTypes.COOP.value)
+                filing_type_code = Filing.FILINGS['affidavit']['codes'].get(legal_type)
                 filing_types.append({
                     'filingTypeCode': filing_type_code,
                     'waiveFees': waive_fees_flag
