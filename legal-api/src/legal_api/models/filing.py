@@ -112,7 +112,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'C': 'ALTER',
                 'CBEN': 'ALTER',
                 'CUL': 'ALTER',
-                'CCC': 'ALTER'
+                'CCC': 'ALTER',
+                'BC_TO_ULC': 'NOALU'
             }
         },
         'amalgamationApplication': {

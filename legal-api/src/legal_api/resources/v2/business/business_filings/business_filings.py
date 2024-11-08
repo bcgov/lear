@@ -716,6 +716,12 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                             break
                     filing_type_code = Filing.FILINGS[k].get('free', {}).get('codes', {}).get(legal_type)\
                         if free else Filing.FILINGS[k].get('codes', {}).get(legal_type)
+                elif (k == 'alteration' and
+                      (new_legal_type := filing_json['filing'][k].get('business', {}).get('legalType'))):
+                    alteration_type = f'{business.legal_type}_TO_{new_legal_type}'
+                    filing_type_code = (Filing.FILINGS
+                                        .get(k, {}).get('codes', {})
+                                        .get(alteration_type, filing_type_code))
 
                 # check if priority handled in parent filing
                 if k in ['changeOfDirectors', 'changeOfAddress']:
