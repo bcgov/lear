@@ -173,7 +173,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'numberedDescription': 'Numbered Unlimited Liability Company'
         },
         LegalTypes.BC_CCC: {
-            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY',
+            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
             'numberedDescription': 'Numbered Community Contribution Company'
         }
     }
