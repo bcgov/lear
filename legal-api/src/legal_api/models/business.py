@@ -806,7 +806,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             numbered_legal_name_prefix = identifier[1:]
         else:
             numbered_legal_name_prefix = identifier[2:]
-        print("in business", numbered_legal_name_prefix, numbered_legal_name_suffix)
         return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
 
     @classmethod
