@@ -115,11 +115,13 @@ def _get_receipt(business: Business, filing: Filing, token):
 
     headers = {'Authorization': 'Bearer ' + token}
 
+    corp_name = _get_corp_name(business, filing.storage)
+
     url = f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.storage.payment_token}/receipts'
     receipt = requests.post(
         url,
         json={
-            'corpName': business.legal_name if business else filing.storage.temp_reg,
+            'corpName': corp_name,
             'filingDateTime': LegislationDatetime.format_as_report_string(filing.storage.filing_date),
             'effectiveDateTime': effective_date if effective_date else '',
             'filingIdentifier': str(filing.id),
@@ -132,3 +134,22 @@ def _get_receipt(business: Business, filing: Filing, token):
         current_app.logger.error('Failed to get receipt pdf for filing: %s', filing.id)
 
     return receipt.content, receipt.status_code
+
+
+def _get_corp_name(business, filing):
+    """Get the corp name for the filing."""
+    if business:
+        return business.legal_name
+
+    name_request = (filing.filing_json
+                    .get('filing')
+                    .get(filing.filing_type)
+                    .get('nameRequest', {}))
+    if name_request.get('legalName'):
+        return name_request.get('legalName')
+
+    legal_type = name_request.get('legalType')
+    if legal_type:
+        return Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+
+    return ''
