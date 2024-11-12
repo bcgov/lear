@@ -173,7 +173,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'numberedDescription': 'Numbered Unlimited Liability Company'
         },
         LegalTypes.BC_CCC: {
-            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
+            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY',
             'numberedDescription': 'Numbered Community Contribution Company'
         }
     }
@@ -806,6 +806,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             numbered_legal_name_prefix = identifier[1:]
         else:
             numbered_legal_name_prefix = identifier[2:]
+        print("in business", numbered_legal_name_prefix, numbered_legal_name_suffix)
         return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
 
     @classmethod
