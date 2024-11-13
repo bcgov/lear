@@ -54,7 +54,7 @@ def _get_pdfs(
     if status == Filing.Status.PAID.value:
         # add filing pdf
         if legal_type not in ['SP', 'GP']:
-            filing_pdf_type = 'voluntaryDissolution'
+            filing_pdf_type = 'dissolution'
             filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
             if filing_pdf_encoded:
                 pdfs.append(
