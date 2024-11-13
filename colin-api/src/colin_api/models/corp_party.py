@@ -102,7 +102,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             'firstName': (row.get('first_nme', '') or '').strip(),
             'lastName': (row.get('last_nme', '') or '').strip(),
             'middleInitial': (row.get('middle_nme', '') or '').strip(),
-            'orgName': (row.get('business_nme', '') or '').strip()
+            'organizationName': (row.get('business_nme', '') or '').strip()
         }
         return officer_obj
 
@@ -165,7 +165,10 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
 
         grouped_list = []
         role_func = (lambda x:  # pylint: disable=unnecessary-lambda-assignment; # noqa: E731;
-                     x.officer['firstName'] + x.officer['middleInitial'] + x.officer['lastName'] + x.officer['orgName'])
+                     x.officer['firstName'] +
+                     x.officer['middleInitial'] +
+                     x.officer['lastName'] +
+                     x.officer['organizationName'])
 
         # CORP_PARTIES are stored as a separate row per Role, and need to be grouped to return a list of
         # Role(s) within each Party object. First the rows are grouped in-memory by party/organization name
@@ -395,14 +398,14 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         )
         try:
             officer = director['officer']
-            if officer.get('orgName'):
+            if officer.get('organizationName'):
                 query = query + ' and upper(trim(business_nme))=upper(:business_name)'
                 cursor.execute(
                     query,
                     event_id=event_id,
                     cessation_date=director.get('cessationDate', ''),
                     corp_num=corp_num,
-                    business_name=officer['orgName']
+                    business_name=officer['organizationName']
                 )
             else:
                 query = query + \
@@ -412,7 +415,9 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                     """
                 first_name = officer.get('prevFirstName') or officer.get('firstName')
                 last_name = officer.get('prevLastName') or officer.get('lastName')
-                middle_initial = officer.get('prevMiddleInitial') or officer.get('middleInitial')
+                middle_initial = (officer.get('prevMiddleInitial') or
+                                  officer.get('middleInitial') or
+                                  officer.get('middleName'))
 
                 cursor.execute(
                     query,
@@ -481,7 +486,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         event_id=party['prev_event_id'],
                         mailing_addr_id=mailing_addr_id,
                         last_nme=party['officer'].get('lastName', ''),
-                        middle_nme=party['officer'].get('middleInitial', ''),
+                        middle_nme=(party['officer'].get('middleInitial') or
+                                    party['officer'].get('middleName')) or '',
                         first_nme=party['officer'].get('firstName', ''),
                         email=party['officer'].get('email', '')
                     )
@@ -491,7 +497,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                         event_id=event_id,
                         mailing_addr_id=mailing_addr_id,
                         last_nme=party['officer'].get('lastName', ''),
-                        middle_nme=party['officer'].get('middleInitial', ''),
+                        middle_nme=(party['officer'].get('middleInitial') or
+                                    party['officer'].get('middleName')) or '',
                         first_nme=party['officer'].get('firstName', ''),
                         email=party['officer'].get('email', '')
                     )
@@ -542,10 +549,11 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                             str(datetime.datetime.strptime(party['officeNotificationDt'], date_format))[:10]
                             if party.get('officeNotificationDt') else None),
                         last_nme=party['officer'].get('lastName', ''),
-                        middle_nme=party['officer'].get('middleInitial', ''),
+                        middle_nme=(party['officer'].get('middleInitial') or
+                                    party['officer'].get('middleName')) or '',
                         first_nme=party['officer'].get('firstName', ''),
-                        bus_company_num=business['business'].get('businessNumber', None),
-                        business_name=party['officer'].get('orgName', ''),
+                        bus_company_num=None,
+                        business_name=party['officer'].get('organizationName', ''),
                         prev_party_id=party['prev_id']
                     )
                 else:
@@ -569,10 +577,11 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
                             str(datetime.datetime.strptime(party['officeNotificationDt'], date_format))[:10]
                             if party.get('officeNotificationDt') else None),
                         last_nme=party['officer'].get('lastName', ''),
-                        middle_nme=party['officer'].get('middleInitial', ''),
+                        middle_nme=(party['officer'].get('middleInitial') or
+                                    party['officer'].get('middleName')) or '',
                         first_nme=party['officer'].get('firstName', ''),
-                        bus_company_num=business['business'].get('businessNumber', None),
-                        business_name=party['officer'].get('orgName', '')
+                        bus_company_num=None,
+                        business_name=party['officer'].get('organizationName', '')
                     )
 
         except Exception as err:
@@ -582,20 +591,22 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     @classmethod
     def compare_parties(cls, party: Party, officer_json: Dict):
         """Compare corp party with json, return true if their names are equal."""
-        if officer_json.get('prevFirstName') or officer_json.get('prevLastName') or officer_json.get('prevOrgName'):
+        if (officer_json.get('prevFirstName') or
+            officer_json.get('prevLastName') or
+                officer_json.get('prevOrganizationName')):
             first_name = (officer_json.get('prevFirstName') or '')
             middle_name = (officer_json.get('prevMiddleInitial') or '')
             last_name = (officer_json.get('prevLastName') or '')
-            org_name = (officer_json.get('prevOrgName') or '')
+            org_name = (officer_json.get('prevOrganizationName') or '')
         else:
             first_name = (officer_json.get('firstName') or '')
             middle_name = (officer_json.get('middleInitial') or '')
             last_name = (officer_json.get('lastName') or '')
-            org_name = (officer_json.get('orgName') or '')
+            org_name = (officer_json.get('organizationName') or '')
         if ((party.officer.get('firstName') or '').strip().upper() == first_name.strip().upper() and
                 (party.officer.get('middleInitial') or '').strip().upper() == middle_name.strip().upper() and
                 (party.officer.get('lastName') or '').strip().upper() == last_name.strip().upper() and
-                (party.officer.get('orgName') or '').strip().upper() == org_name.strip().upper()):
+                (party.officer.get('organizationName') or '').strip().upper() == org_name.strip().upper()):
             return True
         return False
 
