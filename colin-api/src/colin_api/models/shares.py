@@ -261,12 +261,16 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             """
         )
         try:
+            currency = class_dict.get('currency', '')
+            if currency and currency not in ('CAD', 'USD', 'GBP', 'EUR', 'JPY'):
+                currency = 'OTH'
+
             cursor.execute(
                 query,
                 corp_num=corp_num,
                 class_id=class_id,
                 event_id=event_id,
-                currency=class_dict.get('currency', ''),
+                currency=currency,
                 has_max_share='N' if class_dict['hasMaximumShares'] else 'Y',
                 qty=class_dict['maxNumberOfShares'],
                 has_spec_rights='Y' if class_dict['hasRightsOrRestrictions'] else 'N',
