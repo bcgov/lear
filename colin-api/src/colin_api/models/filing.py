@@ -1361,7 +1361,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
             # Freeze all entities except CP if 'enable-bc-ccc-ulc' flag is on else just freeze BEN
             is_frozen_condition = (
-                flags.is_on('enable-bc-ccc-ulc') and 
+                flags.is_on('enable-bc-ccc-ulc') and
                 business['business']['legalType'] != Business.TypeCodes.COOP.value
             )
 
