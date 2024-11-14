@@ -45,6 +45,7 @@ from colin_api.models import (  # noqa: I001
     ShareObject,  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
+from colin_api.services import flags
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
 
 
@@ -1358,8 +1359,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                 Business.TypeCodes.BCOMP_CONTINUE_IN.value,
                                             ])
 
-            # Freeze BEN/CBEN entity
-            if (is_new_ben or is_new_cben or is_alteration_to_ben_or_cben):
+            # Freeze all entities except CP if 'enable-bc-ccc-ulc' flag is on else just freeze BEN
+            is_frozen_condition = (
+                flags.is_on('enable-bc-ccc-ulc') and 
+                business['business']['legalType'] != Business.TypeCodes.COOP.value
+            )
+
+            is_new_or_altered_ben = is_new_ben or is_new_cben or is_alteration_to_ben_or_cben
+
+            if is_frozen_condition or is_new_or_altered_ben:
                 Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
 
             return filing.event_id
