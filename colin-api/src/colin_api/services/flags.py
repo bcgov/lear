@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
+from flask import current_app
 from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
 from ldclient.config import Config  # noqa: I005
 from ldclient.impl.integrations.files.file_data_source import _FileDataSource
@@ -78,3 +79,53 @@ class Flags():  # pylint: disable=too-few-public-methods
             client = ldclient_get()
 
             app.extensions['featureflags'] = client
+
+    def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
+        """Destroy all objects created by this extension."""
+        client = current_app.extensions['featureflags']
+        client.close()
+
+    def _get_client(self):
+        try:
+            client = current_app.extensions['featureflags']
+        except KeyError:
+            try:
+                self.init_app(current_app)
+                client = current_app.extensions['featureflags']
+            except KeyError:
+                client = None
+
+        return client
+
+    @staticmethod
+    def _get_anonymous_user():
+        return {
+            'key': 'anonymous'
+        }
+
+    def is_on(self, flag: str) -> bool:
+        """Assert that the flag is set for this user."""
+        client = self._get_client()
+
+        flag_user = self._get_anonymous_user()
+
+        try:
+            flag_val = bool(client.variation(flag, flag_user, None))
+            return flag_val
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.error(
+                'Unable to read flags: %s' % repr(err), exc_info=True)  # pylint: disable=consider-using-f-string
+            return False
+
+    def value(self, flag: str) -> bool:
+        """Retrieve the value  of the (flag, user) tuple."""
+        client = self._get_client()
+
+        flag_user = self._get_anonymous_user()
+
+        try:
+            return client.variation(flag, flag_user, None)
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            current_app.logger.error(
+                'Unable to read flags: %s' % repr(err), exc_info=True)  # pylint: disable=consider-using-f-string
+            return False
