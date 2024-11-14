@@ -1,12 +1,11 @@
 import math
 from contextlib import contextmanager
 
-from config import get_named_config
+from common.init_utils import auth_init, colin_init, get_config, lear_init
 from prefect import flow, task
 from prefect.futures import wait
-from sqlalchemy import Connection, create_engine, exc, text
+from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
-
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
@@ -34,54 +33,6 @@ def replica_role(conn: Connection):
         raise e
     finally:
         conn.execute(text("SET session_replication_role = 'origin';"))
-
-
-@task
-def get_config():
-    config = get_named_config()
-    return config
-
-@task
-def check_db_connection(db_engine: Engine):
-    with db_engine.connect() as conn:
-        res = conn.execute(text('SELECT current_database()')).scalar()
-        if not res:
-            raise ValueError("Failed to retrieve the current database name.")
-        print(f'✅ Connected to database: {res}')
-
-
-
-@task
-def colin_init(config):
-    try:
-        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
-        check_db_connection(engine)
-        return engine
-    except Exception as e:
-        raise Exception('Failed to create engine for COLIN DB') from e
-
-
-@task
-def lear_init(config):
-    try:
-        engine = create_engine(
-            config.SQLALCHEMY_DATABASE_URI,
-            **config.SQLALCHEMY_ENGINE_OPTIONS
-        )
-        check_db_connection(engine)
-        return engine
-    except Exception as e:
-        raise Exception('Failed to create engine for LEAR DB') from e
-
-
-@task
-def auth_init(config):
-    try:
-        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_AUTH)
-        check_db_connection(engine)
-        return engine
-    except Exception as e:
-        raise Exception('Failed to create engine for AUTH DB') from e
 
 
 @task
