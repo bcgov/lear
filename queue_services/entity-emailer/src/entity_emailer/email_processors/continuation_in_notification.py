@@ -67,7 +67,9 @@ def _get_pdfs(
             attach_order += 1
 
         # add receipt
-        corp_name = filing.filing_json['filing']['continuationIn']['nameRequest'].get('legalName', 'Numbered Company')
+        if not (corp_name := business.get('legalName')):
+            legal_type = business.get('legalType')
+            corp_name = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
 
         # Debugging logger for #24361, will have another PR before closing the ticket to remove it
         current_app.logger.debug(
