@@ -123,6 +123,10 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
     """Process the email contained in the submission."""
     if not flask_app:
         raise QueueException('Flask App not available.')
+    
+    ############## Debugging logger for #24361, will remove later ############
+    flask_app.logger.debug(f"\U0001F4D2 email_msg: {email_msg}")
+    ##########################################################################
 
     with flask_app.app_context():
         logger.debug('Attempting to process email: %s', email_msg)
