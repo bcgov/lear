@@ -95,7 +95,7 @@ def _get_pdfs(
         )
         if receipt.status_code != HTTPStatus.CREATED:
             ##################### Debugging logger for #24361, will remove later ###############################
-            current_app.logger.debug(f"\U0001F4D2 - Error getting receipt, when paid Response: {receipt.text}")
+            current_app.logger.debug(f"\U0001F4D2 - Error getting receipt, when PAID Response: {receipt.text}")
             ####################################################################################################
             logger.error('Failed to get receipt pdf for filing: %s', filing.id)
         else:
@@ -126,6 +126,20 @@ def _get_pdfs(
             attach_order += 1
 
     elif status == Filing.Status.COMPLETED.value:
+        # add filing pdf
+        filing_pdf_type = 'continuationIn'
+        filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+        if filing_pdf_encoded:
+            pdfs.append(
+                {
+                    'fileName': 'Continuation Application.pdf',
+                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': str(attach_order)
+                }
+            )
+            attach_order += 1
+        
         # add certificate of continuation
         certificate_pdf_type = 'certificateOfContinuation'
         certificate_encoded = get_filing_document(business['identifier'], filing.id, certificate_pdf_type, token)
@@ -148,6 +162,37 @@ def _get_pdfs(
                 {
                     'fileName': 'Notice of Articles.pdf',
                     'fileBytes': noa_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': str(attach_order)
+                }
+            )
+            attach_order += 1
+
+        # add receipt
+        corp_name = business.get('legalName')
+
+        receipt = requests.post(
+            f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+            json={
+                'corpName': corp_name if corp_name else '',
+                'filingDateTime': filing_date_time,
+                'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
+                'filingIdentifier': str(filing.id),
+                'businessNumber': business.get('taxId', '')
+            },
+            headers=headers
+        )
+        if receipt.status_code != HTTPStatus.CREATED:
+            ##################### Debugging logger for #24361, will remove later ###############################
+            current_app.logger.debug(f"\U0001F4D2 - Error getting receipt, when COMPLETED Response: {receipt.text}")
+            ####################################################################################################
+            logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+        else:
+            receipt_encoded = base64.b64encode(receipt.content)
+            pdfs.append(
+                {
+                    'fileName': 'Receipt.pdf',
+                    'fileBytes': receipt_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': str(attach_order)
                 }
