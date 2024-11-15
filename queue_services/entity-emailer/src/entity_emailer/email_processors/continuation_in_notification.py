@@ -70,18 +70,6 @@ def _get_pdfs(
         if not (corp_name := business.get('legalName')):  # pylint: disable=superfluous-parens
             legal_type = business.get('legalType')
             corp_name = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
-        # Debugging logger for #24361, will have another PR before closing the ticket to remove it
-        current_app.logger.debug(
-            f'\U0001F4D2 - Business: {business}\n'
-            f"""\U0001F4D2 - Payload to get receipt: json:
-                corpName: {corp_name},
-                filingDateTime: {filing_date_time},
-                effectiveDateTime: {effective_date if effective_date != filing_date_time else ''},
-                filingIdentifier: {str(filing.id)},
-                businessNumber: {business.get('taxId', '')}
-            """
-            )
-        # debugging logger end
 
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
@@ -95,9 +83,6 @@ def _get_pdfs(
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            # Debugging logger for #24361, will have another PR before closing the ticket to remove it
-            current_app.logger.debug(f'\U0001F4D2 - Error getting receipt, when PAID Response: {receipt.text}')
-            # debugging logger end
             logger.error('Failed to get receipt pdf for filing: %s', filing.id)
         else:
             receipt_encoded = base64.b64encode(receipt.content)
