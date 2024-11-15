@@ -67,13 +67,13 @@ def _get_pdfs(
             attach_order += 1
 
         # add receipt
-        corp_name = business.get('legalName')
+        corp_name = filing.filing_json['filing']['continuationIn']['nameRequest'].get('legalName', 'Numbered Company')
 
         # Debugging logger for #24361, will remove later
         current_app.logger.debug(
             f'\U0001F4D2 - Business: {business}\n'
             f"""\U0001F4D2 - Payload to get receipt: json:
-                corpName: {corp_name if corp_name else ''},
+                corpName: {corp_name},
                 filingDateTime: {filing_date_time},
                 effectiveDateTime: {effective_date if effective_date != filing_date_time else ''},
                 filingIdentifier: {str(filing.id)},
@@ -85,7 +85,7 @@ def _get_pdfs(
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
-                'corpName': corp_name if corp_name else '',
+                'corpName': corp_name,
                 'filingDateTime': filing_date_time,
                 'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
                 'filingIdentifier': str(filing.id),
@@ -174,7 +174,7 @@ def _get_pdfs(
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={
-                'corpName': corp_name if corp_name else '',
+                'corpName': corp_name,
                 'filingDateTime': filing_date_time,
                 'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
                 'filingIdentifier': str(filing.id),
