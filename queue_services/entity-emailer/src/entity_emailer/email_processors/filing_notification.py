@@ -79,12 +79,11 @@ def _get_pdfs(
                 }
             )
             attach_order += 1
+
         # add receipt pdf
-        if filing.filing_type == 'incorporationApplication':
-            corp_name = filing.filing_json['filing']['incorporationApplication']['nameRequest'].get(
-                'legalName', 'Numbered Company')
-        else:
-            corp_name = business.get('legalName')
+        if not (corp_name := business.get('legalName')):  # pylint: disable=superfluous-parens
+            legal_type = business.get('legalType')
+            corp_name = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
 
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
