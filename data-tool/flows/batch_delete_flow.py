@@ -39,7 +39,7 @@ def replica_role(conn: Connection):
 def get_selected_corps(db_engine: Engine, config):
     with db_engine.connect() as conn:
         results = conn.execute(text(identifiers_query), {
-            'batch_size': config.BATCH_SIZE,
+            'batch_size': config.DELETE_BATCH_SIZE,
             'corp_name_suffix': config.CORP_NAME_SUFFIX
             })
 
@@ -345,7 +345,7 @@ def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = '
 def count_corp_num(engine: Engine, config):
     with engine.connect() as conn:
         res = conn.execute(text(businesses_cnt_query), {
-            'batch_size': config.BATCH_SIZE,
+            'batch_size': config.DELETE_BATCH_SIZE,
             'corp_name_suffix': config.CORP_NAME_SUFFIX
             }).scalar()
         return res
@@ -364,12 +364,12 @@ def batch_delete_flow():
         total = count_corp_num(lear_engine, config)
 
         # validate batch config
-        if config.BATCHES <= 0:
-            raise ValueError('BATCHES must be explicitly set to a positive integer')
-        if config.BATCH_SIZE <= 0:
-            raise ValueError('BATCH_SIZE must be explicitly set to a positive integer')
-        batch_size = config.BATCH_SIZE
-        batches = min(math.ceil(total/batch_size), config.BATCHES)
+        if config.DELETE_BATCHES <= 0:
+            raise ValueError('DELETE_BATCHES must be explicitly set to a positive integer')
+        if config.DELETE_BATCH_SIZE <= 0:
+            raise ValueError('DELETE_BATCH_SIZE must be explicitly set to a positive integer')
+        batch_size = config.DELETE_BATCH_SIZE
+        batches = min(math.ceil(total/batch_size), config.DELETE_BATCHES)
 
         print(f'👷 Going to delete {total} businesses with batch size of {batch_size}...')
         print(f"👷 Auth delete {'enabled' if config.DELETE_AUTH_RECORDS else 'disabled'}.")

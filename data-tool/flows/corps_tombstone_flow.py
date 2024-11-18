@@ -18,7 +18,7 @@ def get_unprocessed_corps(config, colin_engine: Engine) -> list:
     query = get_unprocessed_corps_query(
         'local',
         config.DATA_LOAD_ENV,
-        config.BATCH_SIZE
+        config.TOMBSTONE_BATCH_SIZE
     )
     sql_text = text(query)
 
@@ -183,12 +183,12 @@ def tombstone_flow():
 
         total = get_unprocessed_count(config, colin_engine)
 
-        if config.BATCHES <= 0:
-            raise ValueError('BATCHES must be explicitly set to a positive integer')
-        if config.BATCH_SIZE <= 0:
-            raise ValueError('BATCH_SIZE must be explicitly set to a positive integer')
-        batch_size = config.BATCH_SIZE
-        batches = min(math.ceil(total/batch_size), config.BATCHES)
+        if config.TOMBSTONE_BATCHES <= 0:
+            raise ValueError('TOMBSTONE_BATCHES must be explicitly set to a positive integer')
+        if config.TOMBSTONE_BATCH_SIZE <= 0:
+            raise ValueError('TOMBSTONE_BATCH_SIZE must be explicitly set to a positive integer')
+        batch_size = config.TOMBSTONE_BATCH_SIZE
+        batches = min(math.ceil(total/batch_size), config.TOMBSTONE_BATCHES)
 
         print(f'👷 Going to migrate {total} corps with batch size of {batch_size}')
         
