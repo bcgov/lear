@@ -101,6 +101,10 @@ run-corps-delete: ## Run delete flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/batch_delete_flow.py
 
+run-tombstone-migration: ## Run corp tombstone migration flow
+	. $(VENV_DIR)/bin/activate && \
+	python flows/corps_tombstone_flow.py
+
 
 #################################################################################
 # Self Documenting Commands                                                     #

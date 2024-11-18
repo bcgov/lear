@@ -675,7 +675,8 @@ create table if not exists corp_state
     end_event_id   numeric(9)
         constraint fk_corp_state_end_event
             references event (event_id),
-    state_type_cd  varchar(3)
+    state_type_cd  varchar(3),
+    op_state_type_cd varchar(3)
 );
 
 alter table corp_state

@@ -1,12 +1,11 @@
 import math
 from contextlib import contextmanager
 
-from config import get_named_config
+from common.init_utils import auth_init, colin_init, get_config, lear_init
 from prefect import flow, task
 from prefect.futures import wait
-from sqlalchemy import Connection, create_engine, exc, text
+from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
-
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
@@ -37,58 +36,10 @@ def replica_role(conn: Connection):
 
 
 @task
-def get_config():
-    config = get_named_config()
-    return config
-
-@task
-def check_db_connection(db_engine: Engine):
-    with db_engine.connect() as conn:
-        res = conn.execute(text('SELECT current_database()')).scalar()
-        if not res:
-            raise ValueError("Failed to retrieve the current database name.")
-        print(f'✅ Connected to database: {res}')
-
-
-
-@task
-def colin_init(config):
-    try:
-        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
-        check_db_connection(engine)
-        return engine
-    except Exception as e:
-        raise Exception('Failed to create engine for COLIN DB') from e
-
-
-@task
-def lear_init(config):
-    try:
-        engine = create_engine(
-            config.SQLALCHEMY_DATABASE_URI,
-            **config.SQLALCHEMY_ENGINE_OPTIONS
-        )
-        check_db_connection(engine)
-        return engine
-    except Exception as e:
-        raise Exception('Failed to create engine for LEAR DB') from e
-
-
-@task
-def auth_init(config):
-    try:
-        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_AUTH)
-        check_db_connection(engine)
-        return engine
-    except Exception as e:
-        raise Exception('Failed to create engine for AUTH DB') from e
-
-
-@task
 def get_selected_corps(db_engine: Engine, config):
     with db_engine.connect() as conn:
         results = conn.execute(text(identifiers_query), {
-            'batch_size': config.BATCH_SIZE,
+            'batch_size': config.DELETE_BATCH_SIZE,
             'corp_name_suffix': config.CORP_NAME_SUFFIX
             })
 
@@ -394,7 +345,7 @@ def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = '
 def count_corp_num(engine: Engine, config):
     with engine.connect() as conn:
         res = conn.execute(text(businesses_cnt_query), {
-            'batch_size': config.BATCH_SIZE,
+            'batch_size': config.DELETE_BATCH_SIZE,
             'corp_name_suffix': config.CORP_NAME_SUFFIX
             }).scalar()
         return res
@@ -413,12 +364,12 @@ def batch_delete_flow():
         total = count_corp_num(lear_engine, config)
 
         # validate batch config
-        if config.BATCHES <= 0:
-            raise ValueError('BATCHES must be explicitly set to a positive integer')
-        if config.BATCH_SIZE <= 0:
-            raise ValueError('BATCH_SIZE must be explicitly set to a positive integer')
-        batch_size = config.BATCH_SIZE
-        batches = min(math.ceil(total/batch_size), config.BATCHES)
+        if config.DELETE_BATCHES <= 0:
+            raise ValueError('DELETE_BATCHES must be explicitly set to a positive integer')
+        if config.DELETE_BATCH_SIZE <= 0:
+            raise ValueError('DELETE_BATCH_SIZE must be explicitly set to a positive integer')
+        batch_size = config.DELETE_BATCH_SIZE
+        batches = min(math.ceil(total/batch_size), config.DELETE_BATCHES)
 
         print(f'👷 Going to delete {total} businesses with batch size of {batch_size}...')
         print(f"👷 Auth delete {'enabled' if config.DELETE_AUTH_RECORDS else 'disabled'}.")
