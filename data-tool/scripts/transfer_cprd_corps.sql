@@ -58,7 +58,7 @@ alter table share_series
    alter column max_share_ind type integer using max_share_ind::integer,
    alter column spec_right_ind type integer using spec_right_ind::integer;
 
-
+-- TODO: unmap Q* type
 -- corporation
 transfer public.corporation from cprd using
 select case
