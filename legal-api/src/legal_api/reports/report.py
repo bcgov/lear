@@ -174,7 +174,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'change-of-registration/nature-of-business',
             'change-of-registration/addresses',
             'change-of-registration/proprietor',
-            'change-of-registration/completingParty',
             'change-of-registration/partner',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
