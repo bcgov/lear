@@ -16,11 +16,11 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num = 'BC0046540' -- one share class with multiple series
 --    and c.corp_num = 'BC0673578' -- lots of translations
 --    and c.corp_num = 'BC0566856' -- single quotes in share structure (format issue - solved)
-    and c.corp_num = 'BC0326163' -- double quotes in corp name, no share structure, city in street additional of party's address
+--    and c.corp_num = 'BC0326163' -- double quotes in corp name, no share structure, city in street additional of party's address
 --    and c.corp_num = 'BC0395512' -- long RG, RC addresses
 --    and c.corp_num = 'BC0043406' -- lots of directors
 --    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637') -- TODO: re-migrate issue (can be solved by adding tracking)
-    and c.corp_type_cd in ('BC', 'ULC', 'CC')
+    and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
     and cs.end_event_id is null
     and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
     limit {batch_size}
