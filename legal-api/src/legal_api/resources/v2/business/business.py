@@ -226,12 +226,12 @@ def get_allowable_for_business_type(business_type: str, business_state: str):
 
     bs_state = getattr(Business.State, business_state, False)
     if not bs_state:
-        return {'message': babel('Invalid business state.')}, 400
+        return {'message': babel('Invalid business state.')}, HTTPStatus.BAD_REQUEST
 
     try:
         _ = Business.LegalTypes(business_type)
     except ValueError:
-        return {'message': babel('Invalid business type.')}, 400
+        return {'message': babel('Invalid business type.')}, HTTPStatus.BAD_REQUEST
 
     could_file = get_could_files(jwt, business_type, business_state)
 
