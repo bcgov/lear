@@ -77,9 +77,6 @@ def get_businesses(identifier: str):
 
     business_json = business.json()
 
-    could_file = get_could_files(jwt, business)
-    business_json['couldFile'] = could_file
-
     recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
     if recent_filing_json:
         business_json['submitter'] = recent_filing_json['filing']['header']['submitter']
@@ -217,3 +214,18 @@ def search_businesses():
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@bp.route('/allowable/<string:business_type>/<string:business_state>', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def get_allowable_for_business_type(business_type: str, business_state: str):
+    """Return a JSON object with information about what a user could theoretically file for a business type."""
+    business_state = business_state.upper()
+    business_type = business_type.upper()
+    if business_type.startswith('T'):
+        return {'message': babel('No information on temp registrations.')}, 200
+
+    could_file = get_could_files(jwt, business_type, business_state)
+
+    return jsonify(couldFile=could_file)

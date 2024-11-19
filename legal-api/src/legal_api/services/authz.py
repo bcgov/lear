@@ -517,13 +517,13 @@ def is_allowed(business: Business,
     return False
 
 
-def get_could_files(jwt: JwtManager, business: Business):
+def get_could_files(jwt: JwtManager, business_type: str, business_state: str):
     """Get allowable actions."""
     is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
     if is_competent_authority:
         allowed_filings = []
     else:
-        allowed_filings = get_could_file(business, business.state, business.legal_type, jwt)
+        allowed_filings = get_could_file(business_type, business_state, jwt)
 
     result = {
         'filing': {
@@ -555,9 +555,8 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
     return result
 
 
-def get_could_file(business: Business,
-                   state: Business.State,
-                   legal_type: str,
+def get_could_file(legal_type: str,
+                   state: str,
                    jwt: JwtManager):
     """Get allowed type of filing types for the current user."""
     # importing here to avoid circular dependencies
@@ -568,26 +567,18 @@ def get_could_file(business: Business,
     if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = 'staff'
 
-    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})
+    bs_state = getattr(Business.State, state, '')
+
+    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(bs_state, {})
     could_filing_types = []
 
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
-        # skip if business does not exist and filing is not required
-        # skip if this filing does not need to be returned for existing businesses
-
-        business_status = allowable_filing_value.get('businessRequirement', BusinessRequirement.EXIST)
-
-        if business_status != BusinessRequirement.NO_RESTRICTION and \
-                bool(business) ^ (business_status == BusinessRequirement.EXIST):
-            continue
-
         allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
 
         if allowable_filing_legal_types:
             is_allowable = legal_type in allowable_filing_legal_types
             allowable_filing_type = {'name': allowable_filing_key,
-                                     'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key),
-                                     'feeCode': Filing.get_fee_code(legal_type, allowable_filing_key)}
+                                     'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key)}
             could_filing_types = add_allowable_filing_type(is_allowable,
                                                            could_filing_types,
                                                            allowable_filing_type)
@@ -603,10 +594,7 @@ def get_could_file(business: Business,
                                          'type': filing_sub_type_item_key,
                                          'displayName': FilingMeta.get_display_name(legal_type,
                                                                                     allowable_filing_key,
-                                                                                    filing_sub_type_item_key),
-                                         'feeCode': Filing.get_fee_code(legal_type,
-                                                                        allowable_filing_key,
-                                                                        filing_sub_type_item_key)}
+                                                                                    filing_sub_type_item_key)}
             could_filing_types = add_allowable_filing_type(True,
                                                            could_filing_types,
                                                            allowable_filing_sub_type)

@@ -544,3 +544,119 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
                      json={},
                      headers=create_header(jwt, [SYSTEM_ROLE]))
     assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_get_could_file(session, client, jwt):
+    """Assert that the cold file is returned."""
+    identifier = 'BC0000001'
+    rv = client.get(f'/api/v2/businesses/allowable/BC/ACTIVE',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    
+    expected = [
+        {
+            "displayName": "Admin Freeze",
+            "name": "adminFreeze"
+        },
+        {
+            "displayName": "Request for AGM Extension",
+            "name": "agmExtension"
+        },
+        {
+            "displayName": "AGM Location Change",
+            "name": "agmLocationChange"
+        },
+        {
+            "displayName": "Alteration",
+            "name": "alteration"
+        },
+        {
+            "displayName": "Amalgamation Application (Regular)",
+            "name": "amalgamationApplication",
+            "type": "regular"
+        },
+        {
+            "displayName": "Amalgamation Application Short-form (Vertical)",
+            "name": "amalgamationApplication",
+            "type": "vertical"
+        },
+        {
+            "displayName": "Amalgamation Application Short-form (Horizontal)",
+            "name": "amalgamationApplication",
+            "type": "horizontal"
+        },
+        {
+            "displayName": "Annual Report",
+            "name": "annualReport"
+        },
+        {
+            "displayName": "Address Change",
+            "name": "changeOfAddress"
+        },
+        {
+            "displayName": "Director Change",
+            "name": "changeOfDirectors"
+        },
+        {
+            "displayName": "6-Month Consent to Continue Out",
+            "name": "consentContinuationOut"
+        },
+        {
+            "displayName": "Continuation Out",
+            "name": "continuationOut"
+        },
+        {
+            "displayName": "Register Correction Application",
+            "name": "correction"
+        },
+        {
+            "displayName": "Court Order",
+            "name": "courtOrder"
+        },
+        {
+            "displayName": "Voluntary Dissolution",
+            "name": "dissolution",
+            "type": "voluntary"
+        },
+        {
+            "displayName": "Administrative Dissolution",
+            "name": "dissolution",
+            "type": "administrative"
+        },
+        {
+            "displayName": "BC Limited Company Incorporation Application",
+            "name": "incorporationApplication"
+        },
+        {
+            "displayName": "Registrar's Notation",
+            "name": "registrarsNotation"
+        },
+        {
+            "displayName": "Registrar's Order",
+            "name": "registrarsOrder"
+        },
+        {
+            "displayName": "Transition Application",
+            "name": "transition"
+        },
+        {
+            "displayName": "Limited Restoration Extension Application",
+            "name": "restoration",
+            "type": "limitedRestorationExtension"
+        },
+        {
+            "displayName": "Conversion to Full Restoration Application",
+            "name": "restoration",
+            "type": "limitedRestorationToFull"
+        },
+        {
+            "displayName": "Notice of Withdrawal",
+            "name": "noticeOfWithdrawal"
+        }
+    ]
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['couldFile']
+    assert rv.json['couldFile']['filing']
+    assert rv.json['couldFile']['filing']['filingTypes']
+    assert len(rv.json['couldFile']['filing']['filingTypes']) > 0
+    assert rv.json['couldFile']['filing']['filingTypes'] == expected
