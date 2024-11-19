@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=too-many-lines
 """This manages all of the authentication and authorization service."""
 from datetime import datetime, timezone
 from enum import Enum
@@ -515,6 +517,22 @@ def is_allowed(business: Business,
     return False
 
 
+def get_could_files(jwt: JwtManager, business_type: str, business_state: str):
+    """Get allowable actions."""
+    is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
+    if is_competent_authority:
+        allowed_filings = []
+    else:
+        allowed_filings = get_could_file(business_type, business_state, jwt)
+
+    result = {
+        'filing': {
+            'filingTypes': allowed_filings
+        }
+    }
+    return result
+
+
 def get_allowable_actions(jwt: JwtManager, business: Business):
     """Get allowable actions."""
     is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
@@ -535,6 +553,53 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         'viewAll': is_competent_authority
     }
     return result
+
+
+def get_could_file(legal_type: str,
+                   state: str,
+                   jwt: JwtManager):
+    """Get allowed type of filing types for the current user."""
+    # importing here to avoid circular dependencies
+    # pylint: disable=import-outside-toplevel
+    from legal_api.core.meta import FilingMeta
+
+    user_role = 'general'
+    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+        user_role = 'staff'
+
+    bs_state = getattr(Business.State, state, '')
+
+    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(bs_state, {})
+    could_filing_types = []
+
+    for allowable_filing_key, allowable_filing_value in allowable_filings.items():
+        allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
+
+        if allowable_filing_legal_types:
+            is_allowable = legal_type in allowable_filing_legal_types
+            allowable_filing_type = {'name': allowable_filing_key,
+                                     'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key)}
+            could_filing_types = add_allowable_filing_type(is_allowable,
+                                                           could_filing_types,
+                                                           allowable_filing_type)
+            continue
+
+        filing_sub_type_items = \
+            filter(lambda x: isinstance(x[1], dict) and legal_type in
+                   x[1].get('legalTypes', []), allowable_filing_value.items())
+
+        for filing_sub_type_item_key, _ in filing_sub_type_items:
+
+            allowable_filing_sub_type = {'name': allowable_filing_key,
+                                         'type': filing_sub_type_item_key,
+                                         'displayName': FilingMeta.get_display_name(legal_type,
+                                                                                    allowable_filing_key,
+                                                                                    filing_sub_type_item_key)}
+            could_filing_types = add_allowable_filing_type(True,
+                                                           could_filing_types,
+                                                           allowable_filing_sub_type)
+
+    return could_filing_types
 
 
 def get_allowed_filings(business: Business,
