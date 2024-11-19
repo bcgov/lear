@@ -189,7 +189,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'restoration-application/expiry',
             'registration/nameRequest',
             'registration/addresses',
-            'registration/completingParty',
             'registration/party',
             'registration-statement/party',
             'registration-statement/business-info',
