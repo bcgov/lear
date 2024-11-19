@@ -21,10 +21,9 @@ from enum import auto
 
 from sql_versioning import Versioned
 from sqlalchemy import or_
-from sqlalchemy_continuum import version_class
 
 from ..utils.base import BaseEnum
-from .db import db
+from .db import db, VersioningProxy  # noqa: I001
 
 
 class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -83,7 +82,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
     def get_revision_by_id(cls, transaction_id, amalgamation_id):
         """Get amalgamation for the given id."""
         # pylint: disable=singleton-comparison;
-        amalgamation_version = version_class(Amalgamation)
+        amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
             .filter(amalgamation_version.operation_type == 0) \
@@ -97,7 +96,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
     def get_revision(cls, transaction_id, business_id):
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
-        amalgamation_version = version_class(Amalgamation)
+        amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
             .filter(amalgamation_version.operation_type == 0) \
