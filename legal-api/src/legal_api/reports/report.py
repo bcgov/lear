@@ -162,7 +162,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'continuation/exproRegistrationInBc',
             'continuation/foreignJurisdiction',
             'continuation/nameRequest',
-            'common/completingParty',
             'correction/businessDetails',
             'correction/addresses',
             'correction/associateType',
