@@ -223,7 +223,7 @@ def get_allowable_for_business_type(business_type: str, business_state: str):
     """Return a JSON object with information about what a user could theoretically file for a business type."""
     business_state = business_state.upper()
     business_type = business_type.upper()
-    
+
     bs_state = getattr(Business.State, business_state, False)
     bs_type = getattr(Business.LegalTypes, business_type, False)
     if not bs_state or not bs_type:
