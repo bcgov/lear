@@ -225,6 +225,11 @@ def get_allowable_for_business_type(business_type: str, business_state: str):
     business_type = business_type.upper()
     if business_type.startswith('T'):
         return {'message': babel('No information on temp registrations.')}, 200
+    
+    bs_state = getattr(Business.State, business_state, False)
+    bs_type = getattr(Business.LegalTypes, business_type, False)
+    if not bs_state or not bs_type:
+        return {'message': babel('Invalid business type or state.')}, 400
 
     could_file = get_could_files(jwt, business_type, business_state)
 
