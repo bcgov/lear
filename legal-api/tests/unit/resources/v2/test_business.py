@@ -549,7 +549,7 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
 def test_get_could_file(session, client, jwt):
     """Assert that the cold file is returned."""
     identifier = 'BC0000001'
-    rv = client.get(f'/api/v2/businesses/allowable/BC/ACTIVE',
+    rv = client.get('/api/v2/businesses/allowable/BC/ACTIVE',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
     
     expected = [
