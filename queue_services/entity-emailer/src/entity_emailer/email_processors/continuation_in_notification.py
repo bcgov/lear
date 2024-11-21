@@ -67,7 +67,10 @@ def _get_pdfs(
             attach_order += 1
 
         # add receipt
-        corp_name = business.get('legalName')
+        if not (corp_name := business.get('legalName')):  # pylint: disable=superfluous-parens
+            legal_type = business.get('legalType')
+            corp_name = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+
         receipt = requests.post(
             f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
             json={

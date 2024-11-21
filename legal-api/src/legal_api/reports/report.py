@@ -91,24 +91,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'templateVars': self._get_template_data()
         }
 
-        current_app.logger.info(
-            f'Sending report request - Filing: {self._filing.id}, Type: {self._report_key}'
-        )
-        start_time = datetime.now()
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
-        request_duration = (datetime.now() - start_time).total_seconds()
 
         if response.status_code != HTTPStatus.OK:
-            current_app.logger.error(
-                f'Report error - Filing: {self._filing.id}, Duration: {request_duration * 1000:.0f}ms, '
-                f'Status: {response.status_code}, Content: {str(response.content)}, '
-                f'Time: {datetime.now().isoformat()}'
-            )
             return jsonify(message=str(response.content)), response.status_code
-
-        current_app.logger.info(
-            f'Report success - Filing: {self._filing.id}, Duration: {request_duration * 1000:.0f}ms'
-        )
 
         return current_app.response_class(
             response=response.content,
@@ -176,7 +162,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'continuation/exproRegistrationInBc',
             'continuation/foreignJurisdiction',
             'continuation/nameRequest',
-            'common/completingParty',
             'correction/businessDetails',
             'correction/addresses',
             'correction/associateType',
@@ -188,7 +173,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'change-of-registration/nature-of-business',
             'change-of-registration/addresses',
             'change-of-registration/proprietor',
-            'change-of-registration/completingParty',
             'change-of-registration/partner',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
@@ -204,7 +188,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'restoration-application/expiry',
             'registration/nameRequest',
             'registration/addresses',
-            'registration/completingParty',
             'registration/party',
             'registration-statement/party',
             'registration-statement/business-info',
