@@ -1,7 +1,10 @@
 import math
+from collections import defaultdict
 from contextlib import contextmanager
+from http import HTTPStatus
 
-from common.init_utils import auth_init, colin_init, get_config, lear_init
+import requests
+from common.init_utils import colin_init, get_config, lear_init
 from prefect import flow, task
 from prefect.futures import wait
 from sqlalchemy import Connection, text
@@ -31,8 +34,6 @@ def replica_role(conn: Connection):
         conn.rollback()
         print(f'DB operations rollback due to error:\n {e}')
         raise e
-    finally:
-        conn.execute(text("SET session_replication_role = 'origin';"))
 
 
 @task
@@ -53,14 +54,99 @@ def get_selected_corps(db_engine: Engine, config):
 
 
 @task
-def lear_delete(db_engine: Engine, business_ids: list):
-    with db_engine.connect() as conn:
-        with replica_role(conn):
-            # filing, transaction
+def lear_delete_non_versioned(conn: Connection, business_ids: list):
+    # first query
+    query_plans_one = [
+        {
+            'source': 'offices',
+            'params': {'business_id': business_ids},
+        },
+        {
+            'source': 'addresses',
+            'params': {'business_id': business_ids},
+        },
+        {
+            'source': 'party_roles',
+            'columns': ['id', 'party_id'],
+            'params': {'business_id': business_ids},
+            'targets': ['party_roles', 'parties']
+        },
+        {
+            'source': 'share_classes',
+            'params': {'business_id': business_ids},
+        },
+        {
+            'source': 'aliases',
+            'params': {'business_id': business_ids},
+        },
+        {
+            'source': 'resolutions',
+            'params': {'business_id': business_ids},
+        },
+    ]
+
+    query_futures_one = []
+    for plan in query_plans_one:
+        query_futures_one.append(
+            execute_query.submit(conn, plan)
+        )
+    
+    results_one = {}
+    for future in query_futures_one:
+        result = future.result()
+        results_one.update(result)
+
+    # second second
+    query_plans_two = [
+        {
+            'source': 'addresses',
+            'params': {'office_id': results_one['offices']},
+        },
+        {
+            'source': 'parties',
+            'columns': ['delivery_address_id', 'mailing_address_id'],
+            'params': {'id': results_one['parties']},
+            'targets': ['addresses', 'addresses'],
+        },
+        {
+            'source': 'share_series',
+            'params': {'share_class_id': results_one['share_classes']},
+        },
+    ]
+
+    query_futures_two = []
+    for plan in query_plans_two:
+        query_futures_two.append(
+            execute_query.submit(conn, plan)
+        )
+    
+    delete_futures = []
+    # delete for first query results
+    for table, ids in results_one.items():
+        delete_futures.append(
+            execute_delete_plan.submit(conn, table, ids)
+        )
+    # delete for second query results
+    for future in query_futures_two:
+        delete_plans = future.result()
+        for table, ids in delete_plans.items():
+            delete_futures.append(
+                execute_delete_plan.submit(conn, table, ids)
+            )
+
+    wait(delete_futures)
+    succeeded = sum(1 for f in delete_futures if f.state.is_completed())
+    failed = len(delete_futures) - succeeded
+    print(f'Lear delete (non-versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
+
+
+@task
+def lear_delete_versioned(conn: Connection, business_ids: list):
+    # filing, transaction
             filings_transaction_future = execute_query.submit(conn, {
                 'source': 'filings',
                 'columns': ['id', 'transaction_id'],
-                'params': {'transaction_id': 'IS NOT NULL', 'business_id': business_ids},
+                'params': {'business_id': business_ids},
                 'targets': ['filings', 'transaction'],
             })
 
@@ -176,7 +262,17 @@ def lear_delete(db_engine: Engine, business_ids: list):
             wait(delete_futures)
             succeeded = sum(1 for f in delete_futures if f.state.is_completed())
             failed = len(delete_futures) - succeeded
-            print(f'Lear delete complete for this round. Succeeded: {succeeded}. Failed: {failed}')
+            print(f'Lear delete (versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
+
+
+@task
+def lear_delete(db_engine: Engine, business_ids: list):
+    with db_engine.connect() as conn:
+        with replica_role(conn):
+            # no overlaps between versioned & non-versioned records
+            versioned = lear_delete_versioned.submit(conn, business_ids)
+            non_versioned = lear_delete_non_versioned.submit(conn, business_ids)
+            wait([versioned, non_versioned])
 
 
 @task
@@ -256,6 +352,83 @@ def colin_delete(config, db_engine: Engine, identifiers: list):
             delete_by_ids(conn, 'corp_processing', plan['corp_processing'])
 
 
+@task
+def auth_api_delete(config, identifiers: list):
+    auth_svc_url = config.AUTH_SVC_URL
+    account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
+    token_url = config.ACCOUNT_SVC_AUTH_URL
+    client_id = config.ACCOUNT_SVC_CLIENT_ID
+    client_secret = config.ACCOUNT_SVC_CLIENT_SECRET
+    timeout = config.ACCOUNT_SVC_TIMEOUT
+
+    data = 'grant_type=client_credentials'
+    res = requests.post(url=token_url,
+                        data=data,
+                        headers={'content-type': 'application/x-www-form-urlencoded'},
+                        auth=(client_id, client_secret),
+                        timeout=timeout)
+    try:
+        token = res.json().get('access_token')
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        }
+
+        delete_affiliation(identifiers, auth_svc_url, account_id, headers, timeout)
+        delete_entities(identifiers, auth_svc_url, headers, timeout)
+    except Exception as e:
+        print(f'❌ Error deleting affiliations/entities via AUTH API: {repr(e)}')
+        raise e
+
+
+@task
+def delete_affiliation(identifiers: list, url, account_id, headers, timeout=None):
+    affiliate_url = f'{url}/orgs/{account_id}/affiliations'
+
+    succeeded, failed, skipped = 0, 0, 0
+    for id in identifiers:
+        res = requests.delete(
+            url=f'{affiliate_url}/{id}',
+            headers=headers,
+            timeout=timeout
+        )
+
+        if res.status_code == HTTPStatus.OK:
+            succeeded += 1
+        elif res.status_code == HTTPStatus.NOT_FOUND:
+            skipped += 1
+        else:
+            failed += 1
+
+    print(f'👷 Auth affiliation delete complete for this round. Succeeded: {succeeded}. Failed: {failed}. Skipped: {skipped}')
+
+
+@task
+def delete_entities(identifiers: list, auth_svc_url, headers, timeout=None):
+    account_svc_entity_url = f'{auth_svc_url}/entities'
+
+    succeeded, failed, skipped = 0, 0, 0
+    for id in identifiers:
+        res = requests.delete(
+            url=f'{account_svc_entity_url}/{id}',
+            headers=headers,
+            timeout=timeout
+        )
+
+        if res.status_code == HTTPStatus.NO_CONTENT:
+            succeeded += 1
+        elif res.status_code == HTTPStatus.NOT_FOUND:
+            skipped += 1
+        else:
+            failed += 1
+
+    print(f'👷 Auth entity delete complete for this round. Succeeded: {succeeded}. Failed: {failed}. Skipped: {skipped}')        
+
+
+def filter_none(values: list) -> list:
+    return [v for v in values if v is not None]
+
+
 @task(persist_result=False)
 def execute_query(conn: Connection, template: dict) -> dict:
     """Executes a query based on a structured template.
@@ -298,7 +471,7 @@ def execute_query(conn: Connection, template: dict) -> dict:
                     query += f' AND {k} {v}'
                 else:
                     # now only consider str and int in the list
-                    v_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), v))
+                    v_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), filter_none(v)))
                     query += f' AND {k} IN ({v_str})'
 
     results = conn.execute(text(query))
@@ -309,13 +482,14 @@ def execute_query(conn: Connection, template: dict) -> dict:
         ret = {t: [] for t in targets}
     else:   
         cols = zip(*rows)
-        ret = {}
+        ret = defaultdict(list)
         for t, c in zip(targets, cols):
             c = list(c)
             # if source table is version table and has records, will generate plan for origin table
+            # update value of key without overriding
             if (origin := (t.rsplit('_version', 1)[0])) != t:
-                ret[origin] = c
-            ret[t] = c
+                ret[origin].extend(c)
+            ret[t].extend(c)
     
     return ret
 
@@ -331,7 +505,7 @@ def execute_delete_plan(conn: Connection, table: str, ids: list):
 @task(persist_result=False)
 def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = 'id'):
     if ids:
-        ids_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), ids))
+        ids_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), filter_none(ids)))
         query_str = f'DELETE FROM {table_name} WHERE {id_name} IN ({ids_str})'
         query = text(query_str)
         results = conn.execute(query, {'ids': ids})
@@ -358,7 +532,8 @@ def batch_delete_flow():
         config = get_config()
         colin_engine = colin_init(config)
         lear_engine = lear_init(config)
-        auth_engine = auth_init(config)
+        # use AUTH API for now
+        # auth_engine = auth_init(config)
 
         # get total number of businesses
         total = count_corp_num(lear_engine, config)
@@ -382,20 +557,20 @@ def batch_delete_flow():
                 break
             print(f'🚀 Running round {cnt} to delete {len(business_ids)} busiesses...')
 
-            db_futures = []
-            db_futures.append(
+            futures = []
+            futures.append(
                 lear_delete.submit(lear_engine, business_ids)
             )
             if config.DELETE_AUTH_RECORDS:
-                db_futures.append(
-                    auth_delete.submit(auth_engine, identifiers)
+                futures.append(
+                    auth_api_delete.submit(config, identifiers)
                 )
             if config.DELETE_CORP_PROCESSING_RECORDS:
-                db_futures.append(
+                futures.append(
                     colin_delete.submit(config, colin_engine, identifiers)
                 )
 
-            wait(db_futures)
+            wait(futures)
 
             print(f'🌟 Complete round {cnt}')
             rest = count_corp_num(lear_engine, config)
