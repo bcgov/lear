@@ -21,7 +21,6 @@ from http import HTTPStatus
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_
-from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import (
@@ -42,6 +41,7 @@ from legal_api.models import (
     db,
 )
 from legal_api.models.colin_event_id import ColinEventId
+from legal_api.models.db import VersioningProxy
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -137,7 +137,7 @@ def set_correction_flags(filing_json, filing: Filing):
 
 def has_alias_changed(filing) -> bool:
     """Has alias changed in the given filing."""
-    alias_version = version_class(Alias)
+    alias_version = VersioningProxy.version_class(db.session(), Alias)
     aliases_query = (db.session.query(alias_version)
                      .filter(or_(alias_version.transaction_id == filing.transaction_id,
                                  alias_version.end_transaction_id == filing.transaction_id))
@@ -150,7 +150,7 @@ def has_office_changed(filing) -> bool:
     """Has office changed in the given filing."""
     offices = db.session.query(Office).filter(Office.business_id == filing.business_id).all()
 
-    address_version = version_class(Address)
+    address_version = VersioningProxy.version_class(db.session(), Address)
     addresses_query = (db.session.query(address_version)
                        .filter(or_(address_version.transaction_id == filing.transaction_id,
                                    address_version.end_transaction_id == filing.transaction_id))
@@ -162,7 +162,7 @@ def has_office_changed(filing) -> bool:
 
 def has_party_changed(filing: Filing) -> bool:
     """Has party changed in the given filing."""
-    party_role_version = version_class(PartyRole)
+    party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
     party_roles_query = (db.session.query(party_role_version)
                          .filter(or_(party_role_version.transaction_id == filing.transaction_id,
                                      party_role_version.end_transaction_id == filing.transaction_id))
@@ -177,7 +177,7 @@ def has_party_changed(filing: Filing) -> bool:
                                                                           filing.business_id,
                                                                           role=PartyRole.RoleTypes.DIRECTOR.value)
 
-    party_version = version_class(Party)
+    party_version = VersioningProxy.version_class(db.session(), Party)
     for party_role in party_roles:
         parties_query = (db.session.query(party_version)
                          .filter(or_(party_version.transaction_id == filing.transaction_id,
@@ -188,7 +188,7 @@ def has_party_changed(filing: Filing) -> bool:
             return True
 
         party = VersionedBusinessDetailsService.get_party_revision(filing.transaction_id, party_role['id'])
-        address_version = version_class(Address)
+        address_version = VersioningProxy.version_class(db.session(), Address)
         # Has party delivery/mailing address modified
         address_query = (db.session.query(address_version)
                          .filter(or_(address_version.transaction_id == filing.transaction_id,
@@ -203,7 +203,7 @@ def has_party_changed(filing: Filing) -> bool:
 
 def has_resolution_changed(filing: Filing) -> bool:
     """Has resolution changed in the given filing."""
-    resolution_version = version_class(Resolution)
+    resolution_version = VersioningProxy.version_class(db.session(), Resolution)
     resolution_query = (db.session.query(resolution_version)
                         .filter(or_(resolution_version.transaction_id == filing.transaction_id,
                                     resolution_version.end_transaction_id == filing.transaction_id))
@@ -214,7 +214,7 @@ def has_resolution_changed(filing: Filing) -> bool:
 
 def has_share_changed(filing: Filing) -> bool:
     """Has share changed in the given filing."""
-    share_class_version = version_class(ShareClass)
+    share_class_version = VersioningProxy.version_class(db.session(), ShareClass)
     share_class_query = (db.session.query(share_class_version)
                          .filter(or_(share_class_version.transaction_id == filing.transaction_id,
                                      share_class_version.end_transaction_id == filing.transaction_id))
@@ -224,7 +224,7 @@ def has_share_changed(filing: Filing) -> bool:
         return True
 
     share_classes = VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, filing.business_id)
-    series_version = version_class(ShareSeries)
+    series_version = VersioningProxy.version_class(db.session(), ShareSeries)
     share_series_query = (db.session.query(series_version)
                           .filter(or_(series_version.transaction_id == filing.transaction_id,
                                       series_version.end_transaction_id == filing.transaction_id))

@@ -41,7 +41,7 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import db  # noqa:I001
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -249,8 +249,7 @@ def test_alteration_name_change(session):
 
 def update_business_legal_name(business, legal_name):
     """Update business legal name."""
-    uow = versioning_manager.unit_of_work(db.session)
-    uow.create_transaction(db.session)
+    VersioningProxy.get_transaction_id(db.session())
     business.legal_name = legal_name
     business.save()
 

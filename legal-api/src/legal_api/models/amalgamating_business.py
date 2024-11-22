@@ -20,10 +20,9 @@ from enum import auto
 
 from sql_versioning import Versioned
 from sqlalchemy import or_
-from sqlalchemy_continuum import version_class
 
 from ..utils.base import BaseEnum
-from .db import db
+from .db import db, VersioningProxy  # noqa: I001
 
 
 class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -62,7 +61,7 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
     def get_revision(cls, transaction_id, amalgamation_id):
         """Get amalgamating businesses for the given transaction id."""
         # pylint: disable=singleton-comparison;
-        amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+        amalgamating_businesses_version = VersioningProxy.version_class(db.session(), AmalgamatingBusiness)
         amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
             .filter(amalgamating_businesses_version.transaction_id <= transaction_id) \
             .filter(amalgamating_businesses_version.operation_type == 0) \
@@ -92,9 +91,10 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
                 .filter(AmalgamatingBusiness.business_id == business_id) \
                 .all()
         else:
-            amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+            amalgamating_businesses_version = VersioningProxy.version_class(db.session(), AmalgamatingBusiness)
             amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
                 .filter(amalgamating_businesses_version.operation_type == 0) \
                 .filter(amalgamating_businesses_version.business_id == business_id) \
                 .order_by(amalgamating_businesses_version.transaction_id).all()
+
         return amalgamating_businesses
