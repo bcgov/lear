@@ -39,7 +39,7 @@ from sqlalchemy.exc import DataError
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Filing, User
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
 from tests.unit.models import (
@@ -109,8 +109,7 @@ def test_filing_orm_delete_blocked_if_completed(session):
     """Assert that attempting to delete a filing will raise a BusinessException."""
     from legal_api.exceptions import BusinessException
 
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    transaction_id = VersioningProxy.get_transaction_id(session())
 
     b = factory_business('CP1234567')
 
@@ -120,7 +119,7 @@ def test_filing_orm_delete_blocked_if_completed(session):
     filing.filing_json = ANNUAL_REPORT
     filing.payment_token = 'a token'
     filing.payment_completion_date = datetime.datetime.utcnow()
-    filing.transaction_id = transaction.id
+    filing.transaction_id = transaction_id
     filing.save()
 
     with pytest.raises(BusinessException) as excinfo:
@@ -332,15 +331,14 @@ def test_get_filing_by_payment_token(session):
 
 def test_get_filings_by_status(session):
     """Assert that a filing can be retrieved by status."""
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    transaction_id = VersioningProxy.get_transaction_id(session())
     business = factory_business('CP1234567')
     payment_token = '1000'
     filing = Filing()
     filing.business_id = business.id
     filing.filing_json = ANNUAL_REPORT
     filing.payment_token = payment_token
-    filing.transaction_id = transaction.id
+    filing.transaction_id = transaction_id
     filing.payment_completion_date = datetime.datetime.utcnow()
     filing.save()
 
@@ -359,7 +357,7 @@ def test_get_filings_by_status__default_order(session):
     # setup
     base_filing = copy.deepcopy(FILING_HEADER)
     base_filing['specialResolution'] = SPECIAL_RESOLUTION
-    uow = versioning_manager.unit_of_work(session)
+    transaction_id = VersioningProxy.get_transaction_id(session())
     business = factory_business('CP1234567')
 
     completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
@@ -369,7 +367,6 @@ def test_get_filings_by_status__default_order(session):
     file_counter = -1
     with freeze_time(completion_date):
         for i in range(0, 5):
-            transaction = uow.create_transaction(session)
             payment_token = str(i)
             effective_date = f'200{i}-04-15T00:00:00+00:00'
 
@@ -380,7 +377,7 @@ def test_get_filings_by_status__default_order(session):
             filing.filing_json = base_filing
             filing.effective_date = datetime.datetime.fromisoformat(effective_date)
             filing.payment_token = payment_token
-            filing.transaction_id = transaction.id
+            filing.transaction_id = transaction_id
             filing.payment_completion_date = completion_date
             filing.save()
 
@@ -401,8 +398,7 @@ def test_get_filings_by_status__default_order(session):
 def test_get_most_recent_filing_by_legal_type_in_json(session):
     """Assert that the most recent legal filing can be retrieved."""
     business = factory_business('CP1234567')
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    transaction_id = VersioningProxy.get_transaction_id(session())
 
     for i in range(1, 5):
         effective_date = f'200{i}-07-01T00:00:00+00:00'
@@ -419,7 +415,7 @@ def test_get_most_recent_filing_by_legal_type_in_json(session):
         filing.filing_json = base_filing
         filing.effective_date = datetime.datetime.fromisoformat(effective_date)
         filing.payment_token = 'token'
-        filing.transaction_id = transaction.id
+        filing.transaction_id = transaction_id
         filing.payment_completion_date = completion_date
         filing.save()
 
@@ -435,8 +431,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     Create 3 filings, find the 2 one by the type only.
     """
     business = factory_business('CP1234567')
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    transaction_id = VersioningProxy.get_transaction_id(session())
 
     # filing 1
     effective_date = '2001-07-01T00:00:00+00:00'
@@ -449,7 +444,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     filing1.filing_json = base_filing
     filing1.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing1.payment_token = 'token'
-    filing1.transaction_id = transaction.id
+    filing1.transaction_id = transaction_id
     filing1.payment_completion_date = completion_date
     filing1.save()
 
@@ -466,7 +461,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     filing2.filing_json = base_filing
     filing2.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing2.payment_token = 'token'
-    filing2.transaction_id = transaction.id
+    filing2.transaction_id = transaction_id
     filing2.payment_completion_date = completion_date
     filing2.save()
 
@@ -481,7 +476,7 @@ def test_get_most_recent_filing_by_legal_type_db_field(session):
     filing3.filing_json = base_filing
     filing3.effective_date = datetime.datetime.fromisoformat(effective_date)
     filing3.payment_token = 'token'
-    filing3.transaction_id = transaction.id
+    filing3.transaction_id = transaction_id
     filing3.payment_completion_date = completion_date
     filing3.save()
 
@@ -501,8 +496,7 @@ TEST_FILING_GO_LIVE_DATE = [
 def test_get_filings_by_status_before_go_live_date(session, test_type, days, expected, status):
     """Assert that a filing can be retrieved by status."""
     import copy
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
+    transaction_id = VersioningProxy.get_transaction_id(session())
     business = factory_business('CP1234567')
     payment_token = '1000'
     ar = copy.deepcopy(ANNUAL_REPORT)
@@ -515,7 +509,7 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
     filing.business_id = business.id
     filing.filing_json = ar
     filing.payment_token = payment_token
-    filing.transaction_id = transaction.id
+    filing.transaction_id = transaction_id
     filing.payment_completion_date = datetime.datetime.utcnow()
     filing.save()
 

@@ -42,7 +42,7 @@ from legal_api.models import (
     db,
 )
 from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -160,8 +160,7 @@ def factory_business(identifier,
                         no_dissolution=no_dissolution)
 
     # Versioning business
-    uow = versioning_manager.unit_of_work(db.session)
-    uow.create_transaction(db.session)
+    VersioningProxy.get_transaction_id(db.session())
 
     business.save()
     return business
@@ -245,9 +244,8 @@ def factory_completed_filing(business,
             filing._filing_sub_type = filing_sub_type
         filing.save()
 
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(db.session())
+        filing.transaction_id = transaction_id
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date
@@ -287,9 +285,8 @@ def factory_epoch_filing(business, filing_date=FROZEN_DATETIME):
     """Create an error filing."""
     filing = Filing()
     filing.business_id = business.id
-    uow = versioning_manager.unit_of_work(db.session)
-    transaction = uow.create_transaction(db.session)
-    filing.transaction_id = transaction.id
+    transaction_id = VersioningProxy.get_transaction_id(db.session())
+    filing.transaction_id = transaction_id
     filing.filing_date = filing_date
     filing.filing_json = {'filing': {'header': {'name': 'lear_epoch'}}}
     filing.save()
