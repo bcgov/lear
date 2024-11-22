@@ -79,7 +79,10 @@ def company_name_validation(filing, business: Business):
 
     new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
     if get_str(filing, '/filing/alteration/nameRequest/nrNumber'):
-        accepted_request_types = ['CCR', 'CCP', 'BEC', 'BECR', 'BECV', 'CCV', 'UC', 'ULCB', 'ULBE']
+        accepted_request_types = [
+            'BEC', 'CCC', 'CCP', 'CCR', 'CUL',  # name change types
+            'BECV', 'CCV', 'UC', 'BECR', 'BECC', 'ULCB', 'ULBE'  # conversion types
+        ]
         msg.extend(validate_name_request(filing,
                                          new_legal_type or business.legal_type,
                                          'alteration',
@@ -104,6 +107,16 @@ def type_change_validation(filing, business: Business):
     msg = []
     legal_type_path: Final = '/filing/alteration/business/legalType'
     new_legal_type = get_str(filing, legal_type_path)
+
+    # valid type changes:
+    # BEN -> BC
+    # BEN -> CCC
+    # BC -> BEN
+    # BC -> ULC
+    # BC -> CCC
+    # ULC -> BEN
+    # ULC -> BC
+
     valid_type_changes = {
         Business.LegalTypes.COOP.value: [Business.LegalTypes.COOP.value],
         Business.LegalTypes.BCOMP.value: [Business.LegalTypes.BCOMP.value,
@@ -132,9 +145,10 @@ def type_change_validation(filing, business: Business):
 
     errors = {
         Business.LegalTypes.COOP.value: 'Cannot change the business type of a Cooperative Association.',
-        Business.LegalTypes.BCOMP.value: 'BC Benefit Company can only change to BC Limited Company.',
-        Business.LegalTypes.COMP.value: ("""BC Limited Company can only change to
-                                         BC Benefit Company or BC Unlimited Liability Company."""),
+        Business.LegalTypes.BCOMP.value: ("""BC Benefit Company can only change to BC Limited Company or
+                                          BC Community Contribution Company."""),
+        Business.LegalTypes.COMP.value: ("""BC Limited Company can only change to BC Benefit Company or
+                                         BC Unlimited Liability Company or BC Community Contribution Company."""),
         Business.LegalTypes.BC_CCC.value: 'Cannot change the business type of a BC Community Contribution Company.',
         Business.LegalTypes.BC_ULC_COMPANY.value: ("""BC Unlimited Liability Company can only change to
                                                    BC Benefit Company or BC Limited Company.""")
