@@ -12,7 +12,7 @@
         },
         "db-versioning": {
             "legal-api": true,
-            "emailer": false,
+            "emailer": true,
             "filer": false,
             "entity-bn": false,
             "digital-credentials": false,
