@@ -245,7 +245,8 @@ def format_filings_data(data: dict) -> list[dict]:
             'colinFilingInfo': {
                 'eventType': x['e_event_type_cd'],
                 'filingType': x['f_filing_type_cd']
-            }
+            },
+            'isLedgerPlaceholder': True,
         }
 
         filing = copy.deepcopy(FILING)
