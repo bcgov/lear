@@ -99,7 +99,6 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
                 .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
                             amalgamation_version.end_transaction_id > transaction_id)) \
                 .order_by(amalgamation_version.transaction_id).one_or_none()
-
         return amalgamation
 
     @classmethod
