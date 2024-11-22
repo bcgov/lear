@@ -12,7 +12,7 @@
             "exclude-accounts": []
         },
         "db-versioning": {
-            "legal-api": false,
+            "legal-api": true,
             "emailer": false,
             "filer": false,
             "entity-bn": false,
