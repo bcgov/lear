@@ -15,3 +15,6 @@
 
 This module is the service worker for sending emails about entity related events.
 """
+from legal_api.models.db import setup_versioning
+
+setup_versioning()

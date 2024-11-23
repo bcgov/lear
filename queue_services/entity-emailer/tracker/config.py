@@ -58,7 +58,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     """
 
     # PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
-
+    SERVICE_NAME = 'tracker'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # POSTGRESQL
