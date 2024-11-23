@@ -414,11 +414,11 @@ def get_filings_query(corp_num):
             f.nr_num               as f_nr_num,
             to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
             --- filing user
-            u.user_id              as u_user_id,
+            upper(u.user_id)              as u_user_id,
             u.last_name            as u_last_name,
             u.first_name           as u_first_name,
             u.middle_name          as u_middle_name,
-            concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')) as u_full_name,
+            upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),''))) as u_full_name,
             u.email_addr           as u_email_addr,
             u.role_typ_cd          as u_role_typ_cd
         from event e
