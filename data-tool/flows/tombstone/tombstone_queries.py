@@ -22,6 +22,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637') -- TODO: re-migrate issue (can be solved by adding tracking)
 --    and c.corp_num = 'BC0870626' -- lots of filings - IA, CoDs, ARs
 --    and c.corp_num in ('BC0068889', 'BC0441359') -- test users mapping
+--    and c.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
     and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
     and cs.end_event_id is null
     and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
@@ -51,7 +52,7 @@ def get_corp_users_query(corp_nums: list):
     corp_nums_str = ', '.join([f"'{x}'" for x in corp_nums])
     query = f"""
     select
-        u.user_id as u_user_id,
+        upper(u.user_id) as u_user_id,
         string_agg(e.event_type_cd || '_' || coalesce(f.filing_type_cd, 'NULL'), ', ') as event_file_types,
         to_char(
             min(e.event_timerstamp::timestamp at time zone 'UTC'),
@@ -60,7 +61,7 @@ def get_corp_users_query(corp_nums: list):
         u.last_name as u_last_name,
         u.first_name as u_first_name,
         u.middle_name as u_middle_name,
-        concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')) as u_full_name,
+        upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),''))) as u_full_name,
 --        u.email_addr as u_email_addr,
         min(case when u.email_addr is not null then u.email_addr else null end) as u_email_addr, -- first non-NULL email e.g. BC0883637
         u.role_typ_cd as u_role_typ_cd

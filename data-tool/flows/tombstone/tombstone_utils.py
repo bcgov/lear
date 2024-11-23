@@ -231,10 +231,11 @@ def format_filings_data(data: dict) -> list[dict]:
     idx = 0
     for x in filings_data:
         event_file_type = x['event_file_type']
-        # TODO: build a new complete filing event mapper
+        # TODO: build a new complete filing event mapper (WIP)
         filing_type, filing_subtype = get_target_filing_type(event_file_type)
         # skip the unsupported ones
         if not filing_type:
+            print(f'❗ Skip event filing type: {event_file_type}')
             continue
 
         effective_date = x['f_effective_dt_str']
@@ -268,11 +269,12 @@ def format_filings_data(data: dict) -> list[dict]:
         formatted_filings.append(filing)
 
         # update business info based on filing
-        if key := LEAR_FILING_BUSINESS_UPDATE_MAPPING.get(filing_type):
-            business_update_dict = {
-                **business_update_dict,
-                key: effective_date,
-            }
+        if keys := LEAR_FILING_BUSINESS_UPDATE_MAPPING.get(filing_type):
+            if filing_type in ['putBackOn', 'restoration']:
+                value = None
+            else:
+                value = effective_date
+            business_update_dict.update({k: value for k in keys})
         # save state filing index
         if filing_type in LEAR_STATE_FILINGS:
             last_state_filing_idx = idx
