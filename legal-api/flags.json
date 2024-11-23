@@ -13,6 +13,7 @@
         "db-versioning": {
             "legal-api": true,
             "emailer": true,
+            "tracker": true,
             "filer": false,
             "entity-bn": false,
             "digital-credentials": false,
