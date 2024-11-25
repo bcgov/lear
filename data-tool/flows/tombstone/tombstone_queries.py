@@ -52,25 +52,42 @@ def get_corp_users_query(corp_nums: list):
     corp_nums_str = ', '.join([f"'{x}'" for x in corp_nums])
     query = f"""
     select
-        upper(u.user_id) as u_user_id,
-        string_agg(e.event_type_cd || '_' || coalesce(f.filing_type_cd, 'NULL'), ', ') as event_file_types,
+        u_user_id,
+        u_full_name,
+        string_agg(event_type_cd || '_' || coalesce(filing_type_cd, 'NULL'), ',') as event_file_types,
+        u_first_name,
+        u_middle_name,
+        u_last_name,
         to_char(
-            min(e.event_timerstamp::timestamp at time zone 'UTC'),
+            min(event_timerstamp::timestamp at time zone 'UTC'),
             'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         ) as earliest_event_dt_str,
+        min(u_email_addr) as u_email_addr,
+        u_role_typ_cd
+    from (
+    select
+        upper(u.user_id) as u_user_id,
         u.last_name as u_last_name,
         u.first_name as u_first_name,
         u.middle_name as u_middle_name,
-        upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),''))) as u_full_name,
---        u.email_addr as u_email_addr,
-        min(case when u.email_addr is not null then u.email_addr else null end) as u_email_addr, -- first non-NULL email e.g. BC0883637
+        e.event_type_cd,
+        f.filing_type_cd,
+        e.event_timerstamp,
+        case
+            when u.first_name is null and u.middle_name is null and u.last_name is null then null
+            else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
+        end as u_full_name,
+        u.email_addr as u_email_addr,
         u.role_typ_cd as u_role_typ_cd
     from event e
             left outer join filing f on e.event_id = f.event_id
             left outer join filing_user u on u.event_id = e.event_id
     where 1 = 1
-    and e.corp_num in ({corp_nums_str})
-    group by u.user_id, u.last_name, u.first_name, u.middle_name, u.role_typ_cd
+--        and e.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
+        and e.corp_num in ({corp_nums_str})
+    ) sub
+    group by sub.u_user_id, sub.u_full_name, sub.u_first_name, sub.u_middle_name, sub.u_last_name, sub.u_role_typ_cd
+    order by sub.u_user_id;
     """
     return query
 
@@ -418,7 +435,10 @@ def get_filings_query(corp_num):
             u.last_name            as u_last_name,
             u.first_name           as u_first_name,
             u.middle_name          as u_middle_name,
-            upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),''))) as u_full_name,
+            case
+                when u.first_name is null and u.middle_name is null and u.last_name is null then null
+                else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
+            end as u_full_name,
             u.email_addr           as u_email_addr,
             u.role_typ_cd          as u_role_typ_cd
         from event e

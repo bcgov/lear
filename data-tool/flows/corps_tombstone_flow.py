@@ -14,6 +14,7 @@ from tombstone.tombstone_queries import (get_corp_snapshot_filings_queries,
 from tombstone.tombstone_utils import (build_epoch_filing, format_users_data,
                                        formatted_data_cleanup,
                                        get_data_formatters, load_data,
+                                       unsupported_event_file_types,
                                        update_data)
 
 
@@ -70,6 +71,7 @@ def load_corp_users(lear_engine: Engine, users_data: list) -> dict:
     with lear_engine.connect() as conn:
         try:
             for user in users_data:
+                # TODO: distinguish users of the same username but different roles
                 username = user['username']
                 user_id = load_data(conn, 'users', user, 'username')
                 users_mapper[username] = user_id
@@ -310,6 +312,7 @@ def tombstone_flow():
             migrated_cnt += succeeded
 
         print(f'🌰 Complete {cnt} rounds, migrate {migrated_cnt} corps.')
+        print(f"🌰 All unsupport event file types: {', '.join(unsupported_event_file_types)}")
 
     except Exception as e:
         raise e

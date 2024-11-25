@@ -13,6 +13,9 @@ from tombstone.tombstone_mappings import (EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_STATE_FILINGS)
 
 
+unsupported_event_file_types = set()
+
+
 def format_business_data(data: dict) -> dict:
     business_data = data['businesses'][0]
     # Note: only ACT or HIS
@@ -236,6 +239,7 @@ def format_filings_data(data: dict) -> list[dict]:
         # skip the unsupported ones
         if not filing_type:
             print(f'❗ Skip event filing type: {event_file_type}')
+            unsupported_event_file_types.add(event_file_type)
             continue
 
         effective_date = x['f_effective_dt_str']
@@ -252,8 +256,9 @@ def format_filings_data(data: dict) -> list[dict]:
 
         filing = copy.deepcopy(FILING)
 
+        # make it None if no valid value
         if not (user_id := x['u_user_id']):
-            user_id = x['u_full_name']
+            user_id = x['u_full_name'] if x['u_full_name'] else None
 
         filing = {
             **filing,
@@ -300,6 +305,10 @@ def format_users_data(users_data: list) -> list:
         
         if not (username := x['u_user_id']):
             username = x['u_full_name']
+
+        # skip if both u_user_id and u_full_name is empty
+        if not username:
+            continue
 
         user = {
             **user,
