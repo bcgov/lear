@@ -14,7 +14,7 @@
             "legal-api": true,
             "emailer": false,
             "filer": false,
-            "entity-bn": false,
+            "entity-bn": true,
             "digital-credentials": false,
             "dissolutions-job": false,
             "furnishings-job": false,
