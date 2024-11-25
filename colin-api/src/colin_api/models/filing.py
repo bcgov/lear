@@ -1655,9 +1655,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                 cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
                             )
                             changed_dirs.append(director)
-                            Party.end_director_by_name(
-                                cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
-                            )
                             found_match = True
                     if not found_match:
                         raise GenericException(
