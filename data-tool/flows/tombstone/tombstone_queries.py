@@ -10,7 +10,6 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
         and cp.environment = '{environment}'
     where 1 = 1
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
---    and cs.state_type_cd = 'ACT'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
 --    and c.corp_num = 'BC0046540' -- one share class with multiple series
@@ -26,6 +25,8 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
     and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
     and cs.end_event_id is null
     and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
+--    and cs.state_type_cd = 'ACT'
+--    order by random()
     limit {batch_size}
     """
     return query

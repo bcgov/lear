@@ -8,7 +8,7 @@ class EventFilings(str, Enum):
     # AGM Location Change
     FILE_AGMLC = 'FILE_AGMLC'
 
-    # TODO: Alteration
+    # TODO: Alteration (Some need further confirmation)
     FILE_NOALA = 'FILE_NOALA'
     FILE_NOALB = 'FILE_NOALB'
     FILE_NOALU = 'FILE_NOALU'
@@ -63,7 +63,7 @@ class EventFilings(str, Enum):
     FILE_CONTU = 'FILE_CONTU'
     FILE_CONTC = 'FILE_CONTC'
 
-    # TODO: Correction
+    # TODO: Correction (Some need further confirmation)
     FILE_CO_AR = 'FILE_CO_AR'
     FILE_CO_BC = 'FILE_CO_BC'
     FILE_CO_DI = 'FILE_CO_DI'
@@ -141,7 +141,23 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AGMDT: 'agmExtension',
     EventFilings.FILE_AGMLC: 'agmLocationChange',
 
-    # TODO: Alteration
+    # TODO: Alteration (Some need further confirmation)
+    EventFilings.FILE_NOALA: 'alteration',
+    EventFilings.FILE_NOALB: 'alteration',
+    EventFilings.FILE_NOALU: 'alteration',
+    EventFilings.FILE_NOALC: 'alteration',
+    EventFilings.FILE_AM_PF: 'alteration',
+    EventFilings.FILE_AM_PO: 'alteration',
+    EventFilings.FILE_AM_TR: 'alteration',
+    EventFilings.FILE_AM_AR: 'alteration',
+    EventFilings.FILE_AM_BC: 'alteration',
+    EventFilings.FILE_AM_DI: 'alteration',
+    EventFilings.FILE_AM_DO: 'alteration',
+    EventFilings.FILE_AM_LI: 'alteration',
+    EventFilings.FILE_AM_RM: 'alteration',
+    EventFilings.FILE_AM_RR: 'alteration',
+    EventFilings.FILE_AM_SS: 'alteration',
+
     # TODO: Amalgamation Out Consent - unsupported
     # TODO: Amalgamation Out - unsupported
 
@@ -170,7 +186,19 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CONTU: 'continuationIn',
     EventFilings.FILE_CONTC: 'continuationIn',
 
-    # TODO: Correction
+    # TODO: Correction (Some need further confirmation)
+    EventFilings.FILE_CO_AR: 'correction',
+    EventFilings.FILE_CO_BC: 'correction',
+    EventFilings.FILE_CO_DI: 'correction',
+    EventFilings.FILE_CO_DO: 'correction',
+    EventFilings.FILE_CO_LI: 'correction',
+    EventFilings.FILE_CO_PF: 'correction',
+    EventFilings.FILE_CO_PO: 'correction',
+    EventFilings.FILE_CO_RM: 'correction',
+    EventFilings.FILE_CO_RR: 'correction',
+    EventFilings.FILE_CO_SS: 'correction',
+    EventFilings.FILE_CO_TR: 'correction',
+    EventFilings.FILE_CORRT: 'correction',
 
     EventFilings.FILE_COURT: 'courtOrder',
 
