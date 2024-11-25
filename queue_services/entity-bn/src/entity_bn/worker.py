@@ -35,6 +35,7 @@ from flask import Flask
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business
+from legal_api.models.db import setup_versioning
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
@@ -52,6 +53,7 @@ from entity_bn.exceptions import BNException, BNRetryExceededException
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)  # pragma: no cover
 FLASK_APP.config.from_object(APP_CONFIG)
+setup_versioning()
 db.init_app(FLASK_APP)
 
 
