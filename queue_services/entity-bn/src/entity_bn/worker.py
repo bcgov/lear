@@ -36,6 +36,7 @@ from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business
 from legal_api.models.db import setup_versioning
+from legal_api.services.flags import Flags
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
@@ -50,12 +51,15 @@ from entity_bn.bn_processors import (  # noqa: I001
 from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
+flags = Flags() # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)  # pragma: no cover
 FLASK_APP.config.from_object(APP_CONFIG)
 setup_versioning()
 db.init_app(FLASK_APP)
 
+if FLASK_APP.config.get('LD_SDK_KEY', None):
+    flags.init_app(FLASK_APP)
 
 async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
     """Process CRA request."""
