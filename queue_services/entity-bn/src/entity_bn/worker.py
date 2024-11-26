@@ -32,10 +32,9 @@ from typing import Dict
 import nats
 from entity_queue_common.service_utils import QueueException, logger
 from flask import Flask
-from legal_api import db
+from legal_api import init_db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business
-from legal_api.models.db import setup_versioning
 from legal_api.services.flags import Flags
 from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
@@ -55,8 +54,7 @@ flags = Flags() # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)  # pragma: no cover
 FLASK_APP.config.from_object(APP_CONFIG)
-setup_versioning()
-db.init_app(FLASK_APP)
+init_db(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):
     flags.init_app(FLASK_APP)
