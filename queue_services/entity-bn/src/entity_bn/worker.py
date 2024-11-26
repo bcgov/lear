@@ -50,7 +50,7 @@ from entity_bn.bn_processors import (  # noqa: I001
 from entity_bn.exceptions import BNException, BNRetryExceededException
 
 
-flags = Flags() # pylint: disable=invalid-name
+flags = Flags()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)  # pragma: no cover
 FLASK_APP.config.from_object(APP_CONFIG)
@@ -58,6 +58,7 @@ init_db(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):
     flags.init_app(FLASK_APP)
+
 
 async def process_event(msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
     """Process CRA request."""

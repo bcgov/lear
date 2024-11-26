@@ -19,10 +19,10 @@ from http import HTTPStatus
 import dpath
 from flask import current_app
 from legal_api.models import Address, Business, Filing, Party, PartyRole, RequestTracker, db
+from legal_api.models.db import VersioningProxy
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from sqlalchemy import and_, func
-from legal_api.models.db import VersioningProxy
 
 from entity_bn.bn_processors import (
     bn_note,
