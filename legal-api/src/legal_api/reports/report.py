@@ -240,6 +240,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return '{}.html'.format(file_name)
 
     def _get_template_data(self):
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
         if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement', 'correctedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
@@ -258,6 +260,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
+
+        try:
+            filing['enable_new_ben_statements'] = flags.is_on('enable-new-ben-statements')
+        except Exception as err:
+            current_app.logger.error('Error checking feature flag: %s', repr(err))
+            filing['enable_new_ben_statements'] = False
+
         return filing
 
     def _format_par_value(self, filing):
