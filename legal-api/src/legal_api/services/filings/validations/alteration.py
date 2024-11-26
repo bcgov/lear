@@ -108,14 +108,14 @@ def type_change_validation(filing, business: Business):
     legal_type_path: Final = '/filing/alteration/business/legalType'
     new_legal_type = get_str(filing, legal_type_path)
 
-    # valid type changes:
-    # BEN -> BC
-    # BEN -> CCC
-    # BC -> BEN
-    # BC -> ULC
-    # BC -> CCC
-    # ULC -> BEN
-    # ULC -> BC
+    # Valid type changes
+    # BEN -> BC (BECR)
+    # BEN -> CCC (BECC)
+    # BC -> BEN (BECV)
+    # BC -> ULC (UC)
+    # BC -> CCC (CCV)
+    # ULC -> BEN (ULBE)
+    # ULC -> BC (ULCB)
 
     valid_type_changes = {
         Business.LegalTypes.COOP.value: [Business.LegalTypes.COOP.value],

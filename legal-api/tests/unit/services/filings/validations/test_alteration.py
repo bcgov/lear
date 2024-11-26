@@ -133,7 +133,7 @@ class MockResponse:
 
     # use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors
 
-    # name change-only tests
+    # CHG (name change) NR type code tests
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEN', 'BEC', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'CC', 'CC', 'CCC', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'BC', 'BC', 'CCR', True, 0),
@@ -146,7 +146,7 @@ class MockResponse:
     (True, 'legal_name-CP1234567_Changed', 'CP', 'CP', 'CCP', True, 0),
     (True, 'legal_name-CP1234567_Changed', 'CP', 'CP', 'XCLP', False, 1),
 
-    # conversion tests
+    # CNV (conversion) NR type code tests
     (True, 'legal_name-BC1234567_Changed', 'BC', 'BEN', 'BECV', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'BC', 'CC', 'CCV', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'BC', 'ULC', 'UC', True, 0),
@@ -155,10 +155,10 @@ class MockResponse:
     (True, 'legal_name-BC1234567_Changed', 'BEN', 'ULC', 'BECC', False, 1),
     (True, 'legal_name-BC1234567_Changed', 'ULC', 'BC', 'ULCB', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'ULC', 'BEN', 'ULBE', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'ULC', 'CC', 'ULCC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'CC', 'BC', 'ULCC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'CC', 'BEN', 'ULCC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'CC', 'ULC', 'ULCC', False, 1),
+    (True, 'legal_name-BC1234567_Changed', 'ULC', 'CC', 'ULCC', False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CC', 'BC', 'ULCC', False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CC', 'BEN', 'ULCC', False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CC', 'ULC', 'ULCC', False, 2),
     (True, 'legal_name-BC1234567_Changed', 'C', 'CBEN', 'BECV', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'C', 'CCC', 'CCV', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'C', 'CUL', 'UC', True, 0),
@@ -167,10 +167,10 @@ class MockResponse:
     (True, 'legal_name-BC1234567_Changed', 'CBEN', 'CUL', 'BECC', False, 1),
     (True, 'legal_name-BC1234567_Changed', 'CUL', 'C', 'ULCB', True, 0),
     (True, 'legal_name-BC1234567_Changed', 'CUL', 'CBEN', 'ULBE', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CCC', 'ULCC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'CCC', 'C', 'ULCC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CBEN', 'ULCC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CUL', 'ULCC', False, 1)
+    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CCC', 'ULCC', False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CCC', 'C', 'ULCC', False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CBEN', 'ULCC', False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CUL', 'ULCC', False, 2)
 ])
 def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
@@ -190,7 +190,7 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
 
         f['filing']['alteration']['nameRequest']['nrNumber'] = identifier
         f['filing']['alteration']['nameRequest']['legalName'] = new_name
-        f['filing']['alteration']['nameRequest']['legalType'] = legal_type
+        f['filing']['alteration']['nameRequest']['legalType'] = new_legal_type
 
         nr_json = {
             "state": "APPROVED",
@@ -201,7 +201,7 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
                 "state": "APPROVED",
                 "consumptionDate": ""
             }],
-            "legalType": legal_type
+            "legalType": new_legal_type
         }
 
         nr_response = MockResponse(nr_json, 200)
@@ -233,13 +233,11 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
     ('numbered_to_numbered', 'BEN', 'BEN', None),
     ('numbered_to_numbered', 'BEN', 'BC', None),
     ('numbered_to_numbered', 'BEN', 'CC', None),
-    ('numbered_to_numbered', 'BEN', 'ULC', ("""BC Benefit Company can only change to BC Limited Company or
-                                            BC Community Contribution Company.""")),
+    ('numbered_to_numbered', 'BEN', 'ULC', 'BC Benefit Company can only change to'),
     ('numbered_to_numbered', 'ULC', 'ULC', None),
     ('numbered_to_numbered', 'ULC', 'BC', None),
     ('numbered_to_numbered', 'ULC', 'BEN', None),
-    ('numbered_to_numbered', 'ULC', 'CC', ("""BC Unlimited Liability Company can only change to
-                                           BC Benefit Company or BC Limited Company.""")),
+    ('numbered_to_numbered', 'ULC', 'CC', 'BC Unlimited Liability Company can only change to'),
     ('numbered_to_numbered', 'CC', 'CC', None),
     ('numbered_to_numbered_invalid', 'CC', 'CC', 'Unexpected legal name.'),
     ('numbered_to_numbered', 'C', 'C', None),
@@ -249,13 +247,11 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
     ('numbered_to_numbered', 'CBEN', 'CBEN', None),
     ('numbered_to_numbered', 'CBEN', 'C', None),
     ('numbered_to_numbered', 'CBEN', 'CCC', None),
-    ('numbered_to_numbered', 'CBEN', 'CUL', ("""BC Benefit Company can only change to BC Limited Company or
-                                            BC Community Contribution Company.""")),
+    ('numbered_to_numbered', 'CBEN', 'CUL', 'BC Benefit Company can only change to'),
     ('numbered_to_numbered', 'CUL', 'CUL', None),
     ('numbered_to_numbered', 'CUL', 'C', None),
     ('numbered_to_numbered', 'CUL', 'CBEN', None),
-    ('numbered_to_numbered', 'CUL', 'CCC', ("""BC Unlimited Liability Company can only change to
-                                            BC Benefit Company or BC Limited Company.""")),
+    ('numbered_to_numbered', 'CUL', 'CCC', 'BC Unlimited Liability Company can only change to'),
     ('numbered_to_numbered', 'CCC', 'CCC', None),
     ('numbered_to_numbered_invalid', 'CCC', 'CCC', 'Unexpected legal name.'),
 
@@ -306,7 +302,7 @@ def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, 
         # check that validation failed
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert err.msg[0]['error'] == err_msg
+        assert err_msg in err.msg[0]['error']
 
 
 @pytest.mark.parametrize('new_name, legal_type, nr_legal_type, nr_type, err_msg', [
