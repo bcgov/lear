@@ -80,8 +80,9 @@ class EventFilings(str, Enum):
     # Court Order
     FILE_COURT = 'FILE_COURT'
 
-    # Delay of Dissolution - unsupported
-    FILE_DISDE = 'FILE_DISDE'
+    # TODO: Delay of Dissolution - unsupported (need confirmation)
+    DISD1_DISDE = 'DISD1_DISDE'
+    DISD2_DISDE = 'DISD2_DISDE'
 
     # Dissolution
     ## voluntary
@@ -89,7 +90,7 @@ class EventFilings(str, Enum):
     FILE_DISLV = 'FILE_DISLV'
     FILE_ADVDS = 'FILE_ADVDS'
     ## admin
-    FILE_DISLC = 'FILE_DISLC'
+    DISLC_NULL = 'DISLC_NULL'
     FILE_ADCOL = 'FILE_ADCOL'
     # involuntary
     SYSDF_NULL = 'SYSDF_NULL'
@@ -202,13 +203,15 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_COURT: 'courtOrder',
 
-    EventFilings.FILE_DISDE: 'delayOfDissolution',  # unsupported
+    # TODO: Delay of Dissolution - unsupported (need confirmation)
+    EventFilings.DISD1_DISDE: 'delayOfDissolution',
+    EventFilings.DISD2_DISDE: 'delayOfDissolution',
 
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
     EventFilings.FILE_DISLV: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
-    EventFilings.FILE_ADVDS: ['dissolution', 'administrative'],
-    EventFilings.FILE_ADVDS: ['dissolution', 'administrative'],
+    EventFilings.DISLC_NULL: ['dissolution', 'administrative'],
+    EventFilings.FILE_ADCOL: ['dissolution', 'administrative'],
     EventFilings.SYSDF_NULL: ['dissolution', 'involuntary'],
     EventFilings.SYSDT_NULL: ['dissolution', 'involuntary'],
 
