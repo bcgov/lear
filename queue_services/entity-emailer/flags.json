@@ -1,8 +1,7 @@
 {
     "flagValues": {
-        "disable-specific-service-provider": true
-    },
-    "db-versioning": {
+        "disable-specific-service-provider": true,
+        "db-versioning": {
             "legal-api": true,
             "emailer": true,
             "filer": false,
@@ -15,4 +14,5 @@
             "update-colin-filings-job": false,
             "update-legal-filings-job": false
         }
+    }
 }
