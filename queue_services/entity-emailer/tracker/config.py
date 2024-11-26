@@ -60,7 +60,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     # PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
     
     # used to identify versioning flag
-    SERVICE_NAME = 'tracker'
+    SERVICE_NAME = 'emailer'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # POSTGRESQL
