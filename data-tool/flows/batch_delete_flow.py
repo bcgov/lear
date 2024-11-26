@@ -12,13 +12,15 @@ from sqlalchemy.engine import Engine
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
-WHERE legal_type IN ('BC', 'ULC', 'CC')
+WHERE 1 = 1
+AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 AND legal_name LIKE '%' || :corp_name_suffix
 """
 
 identifiers_query = """
 SELECT id, identifier FROM businesses
-WHERE legal_type IN ('BC', 'ULC', 'CC')
+WHERE 1 = 1 
+AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 AND legal_name LIKE '%' || :corp_name_suffix
 LIMIT :batch_size
 """

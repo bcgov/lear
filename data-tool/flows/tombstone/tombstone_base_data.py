@@ -132,6 +132,53 @@ RESOLUTION = {
 }
 
 
+# ======== filing ========
+USER = {
+    'username': None,
+    'firstname': None,
+    'middlename': None,
+    'lastname': None,
+    'email': None,
+    'creation_date': None
+}
+
+FILING_JSON = {
+    'filing': {
+        'header': {}
+    }
+}
+
+FILING = {
+    'filing_date': None,  # timestamptz
+    'filing_json': FILING_JSON,
+    'filing_type': None,
+    'filing_sub_type': None,
+    'status': 'COMPLETED',
+    'completion_date': None,  # timestamptz
+    'effective_date': None,  # timestamptz
+    'meta_data': None,
+    # default values for now
+    'paper_only': True,
+    'source': 'COLIN',
+    'colin_only': False,
+    'deletion_locked': False,
+    # FK
+    'business_id': None,
+    'transaction_id': None,
+    'submitter_id': None,
+    # others
+    'submitter_roles': None,
+}
+
+FILING_COMBINED = {
+    'filings': [FILING],
+    'update_business_info': {
+        # business info to update
+    },
+    'state_filing_index': -1
+}
+
+
 # ======== tombstone example ========
 TOMBSTONE = {
     'businesses': BUSINESS,
@@ -139,5 +186,10 @@ TOMBSTONE = {
     'parties': [PARTY],
     'share_classes': [SHARE_CLASSES],
     'aliases': [ALIAS],
-    'resolutions': [RESOLUTION]
+    'resolutions': [RESOLUTION],
+    'filings': [FILING],
+    'updates': {
+        'businesses': BUSINESS,
+        'state_filing_index': -1
+    }
 }

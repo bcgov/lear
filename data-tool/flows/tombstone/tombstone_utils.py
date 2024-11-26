@@ -1,8 +1,19 @@
-from datetime import datetime, timezone
-from tombstone.tombstone_base_data import ALIAS, OFFICE, PARTY, PARTY_ROLE, RESOLUTION, SHARE_CLASSES
 import copy
+import json
+from datetime import datetime, timezone
+
 import pandas as pd
+import pytz
 from sqlalchemy import Connection, text
+from tombstone.tombstone_base_data import (ALIAS, FILING, OFFICE, PARTY,
+                                           PARTY_ROLE, RESOLUTION,
+                                           SHARE_CLASSES, USER)
+from tombstone.tombstone_mappings import (EVENT_FILING_LEAR_TARGET_MAPPING,
+                                          LEAR_FILING_BUSINESS_UPDATE_MAPPING,
+                                          LEAR_STATE_FILINGS)
+
+
+unsupported_event_file_types = set()
 
 
 def format_business_data(data: dict) -> dict:
@@ -11,16 +22,19 @@ def format_business_data(data: dict) -> dict:
     state = business_data['state']
     business_data['state'] = 'ACTIVE' if state == 'ACT' else 'HISTORICAL'
 
+    if not (last_ar_date := business_data['last_ar_date']):
+        last_ar_date = business_data['founding_date']
+    
+    last_ar_year = int(last_ar_date.split('-')[0])
+
     formatted_business = {
         **business_data,
+        'last_ar_date': last_ar_date,
+        'last_ar_year': last_ar_year,
         'fiscal_year_end_date': business_data['founding_date'],
         'last_ledger_timestamp': business_data['founding_date'],
         'last_modified': datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
     }
-
-    if (last_ar_date := business_data['last_ar_date']):
-        last_ar_year = int(last_ar_date.split('-')[0])
-        formatted_business['last_ar_year'] = last_ar_year
 
     return formatted_business
 
@@ -210,22 +224,169 @@ def format_resolutions_data(data: dict) -> list[dict]:
     return formatted_resolutions
 
 
-def get_snapshot_data_formatters() -> dict:
+def format_filings_data(data: dict) -> list[dict]:
+    # filing info in business
+    business_update_dict = {}
+
+    filings_data = data['filings']
+    formatted_filings = []
+    last_state_filing_idx = -1
+    idx = 0
+    for x in filings_data:
+        event_file_type = x['event_file_type']
+        # TODO: build a new complete filing event mapper (WIP)
+        filing_type, filing_subtype = get_target_filing_type(event_file_type)
+        # skip the unsupported ones
+        if not filing_type:
+            print(f'❗ Skip event filing type: {event_file_type}')
+            unsupported_event_file_types.add(event_file_type)
+            continue
+
+        effective_date = x['f_effective_dt_str']
+        if not effective_date:
+            effective_date = x['e_event_dt_str']
+
+        meta_data = {
+            'colinFilingInfo': {
+                'eventType': x['e_event_type_cd'],
+                'filingType': x['f_filing_type_cd']
+            },
+            'isLedgerPlaceholder': True,
+        }
+
+        filing = copy.deepcopy(FILING)
+
+        # make it None if no valid value
+        if not (user_id := x['u_user_id']):
+            user_id = x['u_full_name'] if x['u_full_name'] else None
+
+        filing = {
+            **filing,
+            'filing_date': effective_date,
+            'filing_type': filing_type,
+            'filing_sub_type': filing_subtype,
+            'completion_date': effective_date,
+            'effective_date': effective_date,
+            'meta_data': meta_data,
+            'submitter_id': user_id  # will be updated to real user_id when loading data into db
+        }
+
+        formatted_filings.append(filing)
+
+        # update business info based on filing
+        if keys := LEAR_FILING_BUSINESS_UPDATE_MAPPING.get(filing_type):
+            if filing_type in ['putBackOn', 'restoration']:
+                value = None
+            else:
+                value = effective_date
+            business_update_dict.update({k: value for k in keys})
+        # save state filing index
+        if filing_type in LEAR_STATE_FILINGS:
+            last_state_filing_idx = idx
+        
+        idx += 1
+
+    return {
+        'filings': formatted_filings,
+        'update_business_info': business_update_dict,
+        'state_filing_index': last_state_filing_idx
+    }
+
+
+def format_users_data(users_data: list) -> list:
+    formatted_users = []
+
+    for x in users_data:
+        user = copy.deepcopy(USER)
+        event_file_types = x['event_file_types'].split(',')
+        # skip users if all event_file_type is unsupported
+        if not any(get_target_filing_type(ef)[0] for ef in event_file_types):
+            continue
+        
+        if not (username := x['u_user_id']):
+            username = x['u_full_name']
+
+        # skip if both u_user_id and u_full_name is empty
+        if not username:
+            continue
+
+        user = {
+            **user,
+            'username': username,
+            'firstname': x['u_first_name'],
+            'middlename': x['u_middle_name'],
+            'lastname': x['u_last_name'],
+            'email': x['u_email_addr'],
+            'creation_date': x['earliest_event_dt_str']
+        }
+
+        formatted_users.append(user)
+
+    return formatted_users
+
+
+def formatted_data_cleanup(data: dict) -> dict:
+    filings_business = data['filings']
+    data['updates'] = {
+        'businesses': filings_business['update_business_info'],
+        'state_filing_index': filings_business['state_filing_index']
+    }
+    data['filings'] = filings_business['filings']
+
+    return data
+
+
+
+def get_data_formatters() -> dict:
     ret = {
         'businesses': format_business_data,
         'offices': format_offices_data,
         'parties': format_parties_data,
         'share_classes': format_share_classes_data,
         'aliases': format_aliases_data,
-        'resolutions': format_resolutions_data
+        'resolutions': format_resolutions_data,
+        'filings': format_filings_data
     }
     return ret
 
 
+def get_target_filing_type(event_file_type: str) -> tuple[str, str]:
+    filing_type, filing_subtype = None, None
+    if value := EVENT_FILING_LEAR_TARGET_MAPPING.get(event_file_type):
+        if isinstance(value, list):
+            filing_type, filing_subtype = value[0], value[1]
+        else:
+            filing_type = value
 
-def load_data(conn: Connection, table_name: str, data: dict) -> int:
+    return filing_type, filing_subtype
+
+
+def build_epoch_filing(business_id: int) -> dict:
+    now = datetime.utcnow().replace(tzinfo=pytz.UTC)
+    filing = copy.deepcopy(FILING)
+    filing = {
+        **filing,
+        'filing_type': 'lear_tombstone',
+        'business_id': business_id,
+        'filing_date': now.isoformat(),
+        'completion_date': now.isoformat(),
+        'effective_date': now.isoformat(),
+        'status': 'TOMBSTONE'
+    }
+    return filing
+
+
+def load_data(conn: Connection, table_name: str, data: dict, conflict_column: str=None) -> int:
     columns = ', '.join(data.keys())
     values = ', '.join([format_value(v) for v in data.values()])
+
+    if conflict_column:
+        conflict_value = format_value(data[conflict_column])
+        check_query = f"select id from {table_name} where {conflict_column} = {conflict_value}"
+        check_result = conn.execute(text(check_query)).scalar()
+        if check_result:
+            return check_result
+
     query = f"""insert into {table_name} ({columns}) values ({values}) returning id"""
 
     result = conn.execute(text(query))
@@ -234,11 +395,23 @@ def load_data(conn: Connection, table_name: str, data: dict) -> int:
     return id
 
 
+def update_data(conn: Connection, table_name: str, data: dict, id: int) -> bool:
+    update_pairs = [f'{k} = {format_value(v)}' for k, v in data.items()]
+    update_pairs_str = ', '.join(update_pairs)
+    query = f"""update {table_name} set {update_pairs_str} where id={id}"""
+
+    result = conn.execute(text(query))
+
+    return result.rowcount > 0
+
+
 def format_value(value) -> str:
     if value is None:
         return 'NULL'
     elif isinstance(value, (int, float)):
         return str(value)
+    elif isinstance(value, dict):
+        return f"'{json.dumps(value)}'"
     else:
         # Note: handle single quote issue
         value = str(value).replace("'", "''")
