@@ -38,7 +38,7 @@ from legal_api.models import (
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService
+from legal_api.services import Flags, MinioService, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -46,6 +46,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 
+flags = Flags()
 
 class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     # TODO review pylint warning and alter as required
@@ -240,7 +241,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return '{}.html'.format(file_name)
 
     def _get_template_data(self):
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
 
         if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement', 'correctedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
