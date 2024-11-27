@@ -259,11 +259,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
 
-        try:
-            filing['enable_new_ben_statements'] = flags.is_on('enable-new-ben-statements')
-        except Exception as err:
-            current_app.logger.error('Error checking feature flag: %s', repr(err))
-            filing['enable_new_ben_statements'] = False
+        filing['enable_new_ben_statements'] = flags.is_on('enable-new-ben-statements')
 
         return filing
 
