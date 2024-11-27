@@ -240,7 +240,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return '{}.html'.format(file_name)
 
     def _get_template_data(self):
-
         if self._report_key in ['noticeOfArticles', 'amendedRegistrationStatement', 'correctedRegistrationStatement']:
             filing = VersionedBusinessDetailsService.get_company_details_revision(self._filing.id, self._business.id)
             self._format_noa_data(filing)
