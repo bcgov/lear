@@ -177,7 +177,7 @@ class NrTypeMap(Resource):
             ('BERE', Business.LegalTypes.BCOMP.value, RequestActions.REH.value),
             ('BERE', Business.LegalTypes.BCOMP.value, RequestActions.REN.value),
             ('BECV', Business.LegalTypes.BCOMP.value, RequestActions.CNV.value),
-            ('ULBC', Business.LegalTypes.BCOMP.value, RequestActions.CNV.value)
+            ('ULBE', Business.LegalTypes.BCOMP.value, RequestActions.CNV.value)
         ]
 
         rv = []
