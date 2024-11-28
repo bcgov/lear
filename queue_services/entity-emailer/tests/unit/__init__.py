@@ -19,7 +19,7 @@ from random import randrange
 from unittest.mock import Mock
 
 from legal_api.models import Batch, Business, Filing, Furnishing, Party, PartyRole, RegistrationBootstrap, User
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
@@ -127,9 +127,8 @@ def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None)
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED', 'bn']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -193,9 +192,8 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -471,9 +469,8 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
 
     filing.save()
     if status == 'COMPLETED':
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
 
     return filing
@@ -493,9 +490,8 @@ def prep_incorporation_correction_filing(session, business, original_filing_id, 
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -600,9 +596,8 @@ def prep_cp_special_resolution_correction_filing(session, business, original_fil
     filing._meta_data = {'correction': {'uploadNewRules': True, 'toLegalName': True}}
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -628,9 +623,8 @@ def prep_cp_special_resolution_correction_upload_memorandum_filing(session, busi
     filing._meta_data = {'correction': {'uploadNewMemorandum': True}}
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -663,9 +657,8 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in [Filing.Status.COMPLETED.value, 'bn']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -691,9 +684,8 @@ def prep_continuation_in_filing(session, identifier, payment_id, option):
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in [Filing.Status.COMPLETED.value, 'bn']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
