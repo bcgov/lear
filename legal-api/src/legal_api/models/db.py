@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Create SQLAlchenmy and Schema managers.
+"""Create SQLAlchemy and Schema managers.
 
 These will get initialized by the application using the models
 """
@@ -267,7 +267,7 @@ class VersioningProxy:
 
 @debug
 def setup_versioning():
-    """Set up and initialize versioining switching.
+    """Set up and initialize versioning switching.
 
     :return: None
     """
@@ -287,7 +287,7 @@ def setup_versioning():
 
 
 # TODO: enable versioning switching
-# it should be called before data model initialzed, otherwise, old versioning doesn't work properly
+# it should be called before data model initialized, otherwise, old versioning doesn't work properly
 setup_versioning()
 
 # make_versioned(user_cls=None, manager=versioning_manager)

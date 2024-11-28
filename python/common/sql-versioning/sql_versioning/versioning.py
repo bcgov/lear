@@ -50,7 +50,7 @@ def _is_obj_modified(obj):
 def _is_session_modified(session):
     """Check if the session contains modified versioned objects.
     
-    :param session: The database sesseion instance.
+    :param session: The database session instance.
     :return: True if the session contains modified versioned objects, otherwise False.
     """
     for obj in versioned_objects(session):
