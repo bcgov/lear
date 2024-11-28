@@ -38,7 +38,7 @@ from legal_api.models import (
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService
+from legal_api.services import MinioService, VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -258,6 +258,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
+
+        filing['enable_new_ben_statements'] = flags.is_on('enable-new-ben-statements')
+
         return filing
 
     def _format_par_value(self, filing):
