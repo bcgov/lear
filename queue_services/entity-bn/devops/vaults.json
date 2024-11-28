@@ -29,7 +29,8 @@
         "vault": "entity",
         "application": [
             "entity-service-account",
-            "sentry"
+            "sentry",
+            "launchdarkly"
         ]
     }
 ]
