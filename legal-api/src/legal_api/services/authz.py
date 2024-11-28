@@ -263,7 +263,6 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                             'business': [BusinessBlocker.DEFAULT,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION]
                         }
                     },
@@ -373,7 +372,9 @@ def get_allowable_filings_dict():
                 'alteration': {
                     'legalTypes': ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.IN_DISSOLUTION],
+                        'business': [BusinessBlocker.DEFAULT,
+                                     BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                     BusinessBlocker.IN_DISSOLUTION],
                         'invalidStateFilings': ['restoration.limitedRestoration',
                                                 'restoration.limitedRestorationExtension']
                     }
@@ -471,7 +472,8 @@ def get_allowable_filings_dict():
                 'specialResolution': {
                     'legalTypes': ['CP'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.DEFAULT,
+                                     BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
                 'transition': {
