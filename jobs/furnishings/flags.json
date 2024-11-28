@@ -10,7 +10,7 @@
             "entity-bn": false,
             "digital-credentials": false,
             "dissolutions-job": false,
-            "furnishings-job": false,
+            "furnishings-job": true,
             "emailer-reminder-job": false,
             "future-effective-job": false,
             "update-colin-filings-job": false,
