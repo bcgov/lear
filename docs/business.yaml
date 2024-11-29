@@ -6733,11 +6733,11 @@ components:
         maxNumberOfShares:
           type: number
           title: 'Maximum number of shares in the class. '
-          description: The maximum number of shares that a corporation can issue to the investors called authorized shares.
+          description: 'The maximum number of shares that a corporation can issue to the investors called authorized shares. If hasMaximumShares is false, set this field to null.'
         parValue:
           type: number
           title: 'Initial value of each share. '
-          description: 'The value of a single common share as set by a corporation''s charter. '
+          description: 'The value of a single common share as set by a corporation''s charter. If hasParValue is false, set this field to null.'
         currency:
           type: string
           description: The currency in which the Share is traded on the Exchange.
