@@ -10,8 +10,7 @@
             "furnishings-job": false,
             "emailer-reminder-job": false,
             "future-effective-job": false,
-            "update-colin-filings-job": false,
-            "update-legal-filings-job": false
+            "update-colin-filings-job": false
         }
     }
 }
