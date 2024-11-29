@@ -6737,7 +6737,7 @@ components:
         parValue:
           type: number
           title: 'Initial value of each share. '
-          description: 'The value of a single common share as set by a corporation''s charter. If hasMaximumShares is false, set this field to null.'
+          description: 'The value of a single common share as set by a corporation''s charter. If hasParValue is false, set this field to null.'
         currency:
           type: string
           description: The currency in which the Share is traded on the Exchange.
