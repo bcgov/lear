@@ -18,6 +18,7 @@ These endpoint are reqired as long as we sync to colin.
 import copy
 from http import HTTPStatus
 
+from datetime import datetime
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_
@@ -289,6 +290,9 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
     business_dates = [item.resolution_date.isoformat() for item in primary_or_holding_business.resolutions]
     if business_dates:
+        formatted_dates = [
+            datetime.strptime(date, '%Y-%m-%d').strftime('%B %-d, %Y').replace(' 0', ' ') for date in business_dates
+        ]
         amalgamation_filing['shareStructure']['resolutionDates'] = business_dates
 
 

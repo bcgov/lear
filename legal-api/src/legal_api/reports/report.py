@@ -488,6 +488,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['offices']['recordsOffice']['mailingAddress'])
         if filing.get('shareStructure', {}).get('shareClasses', None):
             filing['shareClasses'] = filing['shareStructure']['shareClasses']
+            dates = filing['shareStructure'].get('resolutionDates', [])
+            formatted_dates = [
+                datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y').replace(' 0', ' ') for date in dates
+            ]
+            filing['resolutions'] = formatted_dates
 
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
@@ -674,7 +679,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             dates = filing['alteration']['shareStructure'].get('resolutionDates', [])
             formatted_dates = [
-                datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y') for date in dates
+                datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y').replace(' 0', ' ') for date in dates
             ]
             filing['resolutions'] = formatted_dates
 
@@ -1141,7 +1146,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
         filing['shareClasses'] = filing.get('correction').get('shareStructure', {}).get('shareClasses')
-        filing['resolutions'] = filing.get('correction').get('shareStructure', {}).get('resolutionDates', [])
+        dates = filing['correction']['shareStructure'].get('resolutionDates', [])
+        formatted_dates = [
+            datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y').replace(' 0', ' ') for date in dates
+        ]
+        filing['resolutions'] = formatted_dates
         filing['newShareClasses'] = []
         if filing.get('shareClasses'):
             prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
