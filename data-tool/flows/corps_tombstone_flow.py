@@ -3,6 +3,7 @@ from datetime import datetime
 
 from common.init_utils import colin_init, get_config, lear_init
 from common.query_utils import convert_result_set_to_dict
+from common.auth_service import AuthService
 from prefect import flow, task
 from prefect.futures import wait
 from sqlalchemy import Connection, text
@@ -137,7 +138,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
                 mailing_address_id = address_id
             else:
                 delivery_address_id = address_id
-        
+
         party['parties']['mailing_address_id'] = mailing_address_id
         party['parties']['delivery_address_id'] = delivery_address_id
 
@@ -147,7 +148,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
             party_role['business_id'] = business_id
             party_role['party_id'] = party_id
             load_data(conn, 'party_roles', party_role)
-    
+
     for share_class in tombstone_data['share_classes']:
         share_class['share_classes']['business_id'] = business_id
         share_class_id = load_data(conn, 'share_classes', share_class['share_classes'])
@@ -155,11 +156,11 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
         for share_series in share_class['share_series']:
             share_series['share_class_id'] = share_class_id
             load_data(conn, 'share_series', share_series)
-    
+
     for alias in tombstone_data['aliases']:
         alias['business_id'] = business_id
         load_data(conn, 'aliases', alias)
-    
+
     for resolution in tombstone_data['resolutions']:
         resolution['business_id'] = business_id
         load_data(conn, 'resolutions', resolution)
@@ -196,6 +197,31 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         update_data(conn, 'businesses', update_business_data, business_id)
 
 
+@task(name='3.3-Update-Auth-Task')
+def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
+    """Create auth entity and affiliate as required."""
+    # TODO affiliation to an account does not need to happen.  only entity creation in auth is req'd.
+    #  used for testing purposes to see how things look in entity dashboard - remove when done testing
+    if config.AFFILIATE_ENTITY:
+        business_data = tombstone_data['businesses']
+        account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
+        AuthService.create_affiliation(
+            config=config,
+            account=account_id,
+            business_registration=business_data['identifier'],
+            business_name=business_data['legal_name'],
+            corp_type_code=business_data['legal_type']
+        )
+    if config.UPDATE_ENTITY:
+        business_data = tombstone_data['businesses']
+        AuthService.create_entity(
+            config=config,
+            business_registration=business_data['identifier'],
+            business_name=business_data['legal_name'],
+            corp_type_code=business_data['legal_type']
+        )
+
+
 @task(name='1-Migrate-Corp-Users-Task')
 def migrate_corp_users(colin_engine: Engine, lear_engine: Engine, corp_nums: list) -> dict:
     try:
@@ -216,20 +242,20 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
     """Get tombstone data - corp snapshot and placeholder filings."""
     try:
         # TODO: get filings data
-        print(f'👷 Start collecting corp snapshot and filings data for {corp_num}...')  
+        print(f'👷 Start collecting corp snapshot and filings data for {corp_num}...')
         raw_data = get_snapshot_filings_data(config, colin_engine, corp_num)
         # print(f'raw data: {raw_data}')
         clean_data = clean_snapshot_filings_data(raw_data)
         # print(f'clean data: {clean_data}')
-        print(f'👷 Complete collecting corp snapshot and filings data for {corp_num}!')  
+        print(f'👷 Complete collecting corp snapshot and filings data for {corp_num}!')
         return corp_num, clean_data
     except Exception as e:
         print(f'❌ Error collecting corp snapshot and filings data for {corp_num}: {repr(e)}')
         return corp_num, None
 
 
-@task(name='3-Corp-Tombstone-Migrate-Task-Aync')
-def migrate_tombstone(lear_engine: Engine, corp_num: str, clean_data: dict, users_mapper: dict) -> str:
+@task(name='3-Corp-Tombstone-Migrate-Task-Async')
+def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: dict, users_mapper: dict) -> str:
     """Migrate tombstone data - corp snapshot and placeholder filings."""
     # TODO: update corp_processing status (succeeded & failed)
     # TODO: determine the time to update some business values based off filing info
@@ -239,6 +265,7 @@ def migrate_tombstone(lear_engine: Engine, corp_num: str, clean_data: dict, user
         try:
             business_id = load_corp_snapshot(lear_conn, clean_data)
             load_placeholder_filings(lear_conn, clean_data, business_id, users_mapper)
+            update_auth(lear_conn, config, corp_num, clean_data)
             transaction.commit()
         except Exception as e:
             transaction.rollback()
@@ -271,7 +298,7 @@ def tombstone_flow():
         batches = min(math.ceil(total/batch_size), config.TOMBSTONE_BATCHES)
 
         print(f'👷 Going to migrate {total} corps with batch size of {batch_size}')
-        
+
         cnt = 0
         migrated_cnt = 0
         while cnt < batches:
@@ -285,7 +312,7 @@ def tombstone_flow():
             if users_mapper is None:
                 print(f'❗ Skip populating user info for corps in this round due to user migration error.')
                 users_mapper = {}
-            
+
             data_futures = []
             for corp_num in corp_nums:
                 data_futures.append(
@@ -298,7 +325,7 @@ def tombstone_flow():
                 corp_num, clean_data = f.result()
                 if clean_data:
                     corp_futures.append(
-                        migrate_tombstone.submit(lear_engine, corp_num, clean_data, users_mapper)
+                        migrate_tombstone.submit(config, lear_engine, corp_num, clean_data, users_mapper)
                     )
                 else:
                     skipped += 1
