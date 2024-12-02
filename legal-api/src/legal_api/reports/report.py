@@ -672,7 +672,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._filing.transaction_id, self._business.id)
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
-            filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
+            dates = filing['alteration']['shareStructure'].get('resolutionDates', [])
+            formatted_dates = [
+                datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y') for date in dates
+            ]
+            filing['resolutions'] = formatted_dates
 
         to_legal_name = None
         if self._filing.status == 'COMPLETED':
