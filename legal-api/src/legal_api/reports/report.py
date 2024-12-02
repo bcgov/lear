@@ -490,7 +490,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['shareClasses'] = filing['shareStructure']['shareClasses']
             dates = filing['shareStructure'].get('resolutionDates', [])
             formatted_dates = [
-                datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y').replace(' 0', ' ') for date in dates
+                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
             ]
             filing['resolutions'] = formatted_dates
 
@@ -679,7 +679,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             dates = filing['alteration']['shareStructure'].get('resolutionDates', [])
             formatted_dates = [
-                datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y').replace(' 0', ' ') for date in dates
+                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
             ]
             filing['resolutions'] = formatted_dates
 
@@ -1148,7 +1148,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['shareClasses'] = filing.get('correction').get('shareStructure', {}).get('shareClasses')
         dates = filing['correction']['shareStructure'].get('resolutionDates', [])
         formatted_dates = [
-            datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y').replace(' 0', ' ') for date in dates
+            datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
         ]
         filing['resolutions'] = formatted_dates
         filing['newShareClasses'] = []
