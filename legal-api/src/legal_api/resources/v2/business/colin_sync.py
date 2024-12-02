@@ -293,7 +293,7 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
         formatted_dates = [
             datetime.strptime(date, '%Y-%m-%d').strftime('%B %-d, %Y').replace(' 0', ' ') for date in business_dates
         ]
-        amalgamation_filing['shareStructure']['resolutionDates'] = business_dates
+        amalgamation_filing['shareStructure']['resolutionDates'] = formatted_dates
 
 
 @bp.route('/internal/filings/<int:filing_id>', methods=['PATCH'])
