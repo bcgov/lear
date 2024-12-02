@@ -18,7 +18,6 @@ These endpoint are reqired as long as we sync to colin.
 import copy
 from http import HTTPStatus
 
-from datetime import datetime
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_
