@@ -20,8 +20,7 @@
             "dissolutions-job": false,
             "furnishings-job": true,
             "emailer-reminder-job": false,
-            "update-colin-filings-job": false,
-            "update-legal-filings-job": false
+            "update-colin-filings-job": false
         }
     }
 }
