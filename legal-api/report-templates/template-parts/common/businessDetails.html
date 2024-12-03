@@ -58,7 +58,9 @@
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Issued Date and Time:</div>
-               <div class="bold pt-2">Recognition Date and Time:</div>
+               {% if header.isFutureEffective or header.status == 'COMPLETED' %}
+                  <div class="bold pt-2">Recognition Date and Time:</div>
+               {% endif %}
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
@@ -70,7 +72,7 @@
                <div class="pt-2">{{effective_date_time}}</div>
                {% if header.isFutureEffective %}
                   <div class="pt-2">{{effective_date_time}}</div>
-               {% else %}
+               {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
@@ -118,7 +120,9 @@
             <td class="col-33">
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               <div class="bold pt-2">Recognition Date and Time:</div>
+               {% if header.isFutureEffective or header.status == 'COMPLETED' %}
+                  <div class="bold pt-2">Recognition Date and Time:</div>
+               {% endif %}
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
@@ -132,8 +136,6 @@
                   <div class="pt-2">{{effective_date_time}}</div> 
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
-               {% else %}
-                  <div class="pt-2"><br></div>
                {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
             </td>
@@ -206,7 +208,9 @@
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               <div class="bold pt-2">Address Effective Date and Time:</div>
+               {% if header.status == 'COMPLETED' %}
+                  <div class="bold pt-2">Address Effective Date and Time:</div>
+               {% endif %}
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
@@ -214,8 +218,6 @@
                <div class="pt-2">{{filing_date_time}}</div>
                {% if header.status == 'COMPLETED' %}
                   <div class="pt-2">{{effective_date_time}}</div>
-               {% else %}
-                  <div class="pt-2"><br></div>
                {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
             </td>
@@ -223,7 +225,9 @@
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               <div class="bold pt-2">Director Change Date:</div>
+               {% if header.status == 'COMPLETED' %}
+                  <div class="bold pt-2">Director Change Date:</div>
+               {% endif %}
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
@@ -231,8 +235,6 @@
                <div class="pt-2">{{filing_date_time}}</div>
                {% if header.status == 'COMPLETED' %}
                   <div class="pt-2">{{effective_date}}</div>
-               {% else %}
-                  <div class="pt-2"><br></div>
                {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
             </td>
@@ -274,13 +276,17 @@
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               <div class="bold pt-2">Alteration Date and Time:</div>
+               {% if header.isFutureEffective or header.status == 'COMPLETED' %}
+                  <div class="bold pt-2">Alteration Date and Time:</div>
+               {% endif %}
                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
-               <div class="pt-2">{{effective_date_time}}</div>
+               {% if header.isFutureEffective or header.status == 'COMPLETED' %}
+                  <div class="pt-2">{{effective_date_time}}</div>
+               {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
             </td>
           {% elif header.name == 'dissolution' %}
@@ -296,7 +302,7 @@
                <div class="bold pt-2">Registration Date:</div>
                {% endif %}
                <div class="bold pt-2">Filed Date and Time:</div>
-               {% if business.legalType not in ['CP', 'SP', 'GP'] %}
+               {% if business.legalType not in ['CP', 'SP', 'GP'] and header.status == 'COMPLETED' %}
                   <div class="bold pt-2">Effective Date and Time:</div>
                {% endif %}
                {% if business.legalType in ['GP', 'SP'] %}
@@ -312,8 +318,6 @@
                <div class="pt-2">{{filing_date_time}}</div>
                {% if business.legalType not in ['CP', 'SP', 'GP'] and header.status == 'COMPLETED' %}
                   <div class="pt-2">{{effective_date_time}}</div>
-               {% else %}
-                  <div class="pt-2"><br></div>
                {% endif %}
                {% if business.legalType in ['GP', 'SP'] %}
                    {% if taxId is defined and taxId|length > 9 %}
