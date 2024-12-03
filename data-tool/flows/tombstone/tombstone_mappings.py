@@ -87,11 +87,13 @@ class EventFilings(str, Enum):
     # Dissolution
     ## voluntary
     FILE_ADVD2 = 'FILE_ADVD2'
-    FILE_DISLV = 'FILE_DISLV'
     FILE_ADVDS = 'FILE_ADVDS'
+    DISLV_NULL = 'DISLV_NULL'
     ## admin
     DISLC_NULL = 'DISLC_NULL'
     FILE_ADCOL = 'FILE_ADCOL'
+    SYSDA_NULL = 'SYSDA_NULL'
+    SYSDS_NULL = 'SYSDS_NULL'
     # involuntary
     SYSDF_NULL = 'SYSDF_NULL'
     SYSDT_NULL = 'SYSDT_NULL'
@@ -100,7 +102,7 @@ class EventFilings(str, Enum):
     FILE_ICORP = 'FILE_ICORP'
     FILE_ICORU = 'FILE_ICORU'
     FILE_ICORC = 'FILE_ICORC'
-    CONVICORP_NULL = 'CONVICORP_NULL'
+    CONVICORP_NULL = 'CONVICORP_NULL'  # TODO: may need to be removed
 
     # TODO: Ledger - unsupported
     # TODO: Liquidation - unsupported
@@ -130,7 +132,9 @@ class EventFilings(str, Enum):
     FILE_TRANP = 'FILE_TRANP'
 
     # TODO:
-    # Other COLIN events: CONV*, Adim Corp (ADCORP, BNUPD, ADMIN), XPRO filing
+    # Other COLIN events:
+    # CONV*, Adim Corp (ADCORP, BNUPD, ADMIN), XPRO filing
+    # SYSDL, SYST
 
 
     @classmethod
@@ -208,10 +212,12 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.DISD2_DISDE: 'delayOfDissolution',
 
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
-    EventFilings.FILE_DISLV: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
+    EventFilings.DISLV_NULL: ['dissolution', 'voluntary'],
     EventFilings.DISLC_NULL: ['dissolution', 'administrative'],
     EventFilings.FILE_ADCOL: ['dissolution', 'administrative'],
+    EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
+    EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDF_NULL: ['dissolution', 'involuntary'],
     EventFilings.SYSDT_NULL: ['dissolution', 'involuntary'],
 

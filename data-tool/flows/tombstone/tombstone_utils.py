@@ -5,13 +5,12 @@ from datetime import datetime, timezone
 import pandas as pd
 import pytz
 from sqlalchemy import Connection, text
-from tombstone.tombstone_base_data import (ALIAS, FILING, OFFICE, PARTY,
-                                           PARTY_ROLE, RESOLUTION,
+from tombstone.tombstone_base_data import (ALIAS, FILING, FILING_JSON, OFFICE,
+                                           PARTY, PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
                                           LEAR_STATE_FILINGS)
-
 
 unsupported_event_file_types = set()
 
@@ -246,13 +245,8 @@ def format_filings_data(data: dict) -> list[dict]:
         if not effective_date:
             effective_date = x['e_event_dt_str']
 
-        meta_data = {
-            'colinFilingInfo': {
-                'eventType': x['e_event_type_cd'],
-                'filingType': x['f_filing_type_cd']
-            },
-            'isLedgerPlaceholder': True,
-        }
+        filing_json, meta_data = build_filing_json_meta_data(filing_type, filing_subtype,
+                                                             effective_date, x)
 
         filing = copy.deepcopy(FILING)
 
@@ -267,6 +261,7 @@ def format_filings_data(data: dict) -> list[dict]:
             'filing_sub_type': filing_subtype,
             'completion_date': effective_date,
             'effective_date': effective_date,
+            'filing_json': filing_json,
             'meta_data': meta_data,
             'submitter_id': user_id  # will be updated to real user_id when loading data into db
         }
@@ -359,6 +354,35 @@ def get_target_filing_type(event_file_type: str) -> tuple[str, str]:
             filing_type = value
 
     return filing_type, filing_subtype
+
+
+def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective_date: str, data: dict) -> tuple[dict, dict]:
+    filing_json = copy.deepcopy(FILING_JSON)
+    filing_json['filing'][filing_type] = {}
+
+    meta_data = {
+        'colinFilingInfo': {
+            'eventType': data['e_event_type_cd'],
+            'filingType': data['f_filing_type_cd']
+        },
+        'isLedgerPlaceholder': True,
+    }
+
+    if filing_type == 'annualReport':
+        meta_data['annualReport'] = {
+            'annualReportFilingYear': int(effective_date[:4]),
+        }
+    elif filing_type == 'dissolution':
+        meta_data['dissolution'] = {
+            'dissolutionType': filing_subtype,
+        }
+        filing_json['filing']['dissolution'] = {
+            'dissolutionType': filing_subtype,
+            'dissolutionDate': effective_date[:10],
+        }
+    # TODO: populate meta_data for correction to display correct filing name
+
+    return filing_json, meta_data
 
 
 def build_epoch_filing(business_id: int) -> dict:
