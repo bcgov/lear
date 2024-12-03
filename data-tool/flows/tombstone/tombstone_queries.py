@@ -24,6 +24,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num = 'BC0002567' -- lots of filings - IA, ARs, transition, COD
 --    and c.corp_num in ('BC0068889', 'BC0441359') -- test users mapping
 --    and c.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
+--    and c.corp_num in ('BC0472301', 'BC0649417', 'BC0808085', 'BC0803411', 'BC0756111', 'BC0511226', 'BC0833000', 'BC0343855', 'BC0149266') -- dissolution
     and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
     and cs.end_event_id is null
     and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
@@ -452,7 +453,7 @@ def get_filings_query(corp_num):
 --          and e.corp_num = 'BC0068889'
 --          and e.corp_num = 'BC0449924'  -- AR, ADCORP
 --        and e.trigger_dts is not null
-        order by e.event_id
+        order by e.event_timerstamp
         ;
     """
     return query
