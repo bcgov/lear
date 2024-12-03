@@ -32,10 +32,12 @@ class Office:
         'RC': 'recordsOffice',
         'LQ': 'liquidationOffice',
         'DS': 'custodialOffice',
+        'HD': 'headOffice',
         'registeredOffice': 'RG',
         'recordsOffice': 'RC',
         'liquidationOffice': 'LQ',
-        'custodialOffice': 'DS'
+        'custodialOffice': 'DS',
+        'headOffice': 'HD',
     }
 
     delivery_address = None

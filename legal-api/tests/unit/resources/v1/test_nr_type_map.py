@@ -35,7 +35,8 @@ BC_RESULTS = [
     {'nrTypeCd': 'RCR', 'entityTypeCd': 'BC', 'requestActionCd': 'REST'},
     {'nrTypeCd': 'RCR', 'entityTypeCd': 'BC', 'requestActionCd': 'REH'},
     {'nrTypeCd': 'RCR', 'entityTypeCd': 'BC', 'requestActionCd': 'REN'},
-    {'nrTypeCd': 'BECR', 'entityTypeCd': 'BC', 'requestActionCd': 'CNV'}
+    {'nrTypeCd': 'BECR', 'entityTypeCd': 'BC', 'requestActionCd': 'CNV'},
+    {'nrTypeCd': 'ULCB', 'entityTypeCd': 'BC', 'requestActionCd': 'CNV'}
 ]
 
 NEW_RESULTS = [
@@ -68,7 +69,7 @@ CR_BC_NEW_RESULTS = [
 
 
 @pytest.mark.parametrize('params, results, num_results', [
-    ('', None, 89),  # no parameters (all results)
+    ('', None, 92),  # no parameters (all results)
     ('?nrTypeCd=CR', CR_RESULTS, None),  # NR Type Code "CR" only
     ('?entityTypeCd=BC', BC_RESULTS, None),  # Entity Type Code "BC" only
     ('?requestActionCd=NEW', NEW_RESULTS, None),  # Request Action Code "NEW" only

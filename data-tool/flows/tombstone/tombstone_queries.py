@@ -10,9 +10,8 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
         and cp.environment = '{environment}'
     where 1 = 1
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
---    and cs.state_type_cd = 'ACT'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
---    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids
+--    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
 --    and c.corp_num = 'BC0046540' -- one share class with multiple series
 --    and c.corp_num = 'BC0673578' -- lots of translations
 --    and c.corp_num = 'BC0566856' -- single quotes in share structure (format issue - solved)
@@ -20,9 +19,16 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num = 'BC0395512' -- long RG, RC addresses
 --    and c.corp_num = 'BC0043406' -- lots of directors
 --    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637') -- TODO: re-migrate issue (can be solved by adding tracking)
+--    and c.corp_num = 'BC0870626' -- lots of filings - IA, CoDs, ARs
+--    and c.corp_num = 'BC0004969' -- lots of filings - IA, ARs, transition, alteration, COD, COA
+--    and c.corp_num = 'BC0002567' -- lots of filings - IA, ARs, transition, COD
+--    and c.corp_num in ('BC0068889', 'BC0441359') -- test users mapping
+--    and c.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
     and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
     and cs.end_event_id is null
     and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
+--    and cs.state_type_cd = 'ACT'
+--    order by random()
     limit {batch_size}
     """
     return query
@@ -41,6 +47,50 @@ def get_total_unprocessed_count_query(flow_name, environment):
     where 1 = 1
     and cs.end_event_id is null
     and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
+    """
+    return query
+
+
+def get_corp_users_query(corp_nums: list):
+    corp_nums_str = ', '.join([f"'{x}'" for x in corp_nums])
+    query = f"""
+    select
+        u_user_id,
+        u_full_name,
+        string_agg(event_type_cd || '_' || coalesce(filing_type_cd, 'NULL'), ',') as event_file_types,
+        u_first_name,
+        u_middle_name,
+        u_last_name,
+        to_char(
+            min(event_timerstamp::timestamp at time zone 'UTC'),
+            'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        ) as earliest_event_dt_str,
+        min(u_email_addr) as u_email_addr,
+        u_role_typ_cd
+    from (
+    select
+        upper(u.user_id) as u_user_id,
+        u.last_name as u_last_name,
+        u.first_name as u_first_name,
+        u.middle_name as u_middle_name,
+        e.event_type_cd,
+        f.filing_type_cd,
+        e.event_timerstamp,
+        case
+            when u.first_name is null and u.middle_name is null and u.last_name is null then null
+            else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
+        end as u_full_name,
+        u.email_addr as u_email_addr,
+        u.role_typ_cd as u_role_typ_cd
+    from event e
+            left outer join filing f on e.event_id = f.event_id
+            left outer join filing_user u on u.event_id = e.event_id
+    where 1 = 1
+--        and e.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
+        and e.corp_num in ({corp_nums_str})
+    ) sub
+    group by sub.u_user_id, sub.u_full_name, sub.u_first_name, sub.u_middle_name, sub.u_last_name, sub.u_role_typ_cd
+    order by sub.u_user_id;
     """
     return query
 
@@ -374,19 +424,33 @@ def get_filings_query(corp_num):
             e.event_type_cd        as e_event_type_cd,
             to_char(e.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
             e.trigger_dts::timestamp at time zone 'UTC' as e_trigger_dt,
+            e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') as event_file_type,
             -- filing
             f.event_id             as f_event_id,
             f.filing_type_cd       as f_filing_type_cd,
             to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
             f.withdrawn_event_id   as f_withdrawn_event_id,
---          paper only now -> f_ods_type (   
+--          paper only now -> f_ods_type
             f.nr_num               as f_nr_num,
-            to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str
+            to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
+            --- filing user
+            upper(u.user_id)              as u_user_id,
+            u.last_name            as u_last_name,
+            u.first_name           as u_first_name,
+            u.middle_name          as u_middle_name,
+            case
+                when u.first_name is null and u.middle_name is null and u.last_name is null then null
+                else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
+            end as u_full_name,
+            u.email_addr           as u_email_addr,
+            u.role_typ_cd          as u_role_typ_cd
         from event e
                  left outer join filing f on e.event_id = f.event_id
+                 left outer join filing_user u on u.event_id = e.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'
+--          and e.corp_num = 'BC0449924'  -- AR, ADCORP
 --        and e.trigger_dts is not null
         order by e.event_id
         ;
@@ -394,14 +458,15 @@ def get_filings_query(corp_num):
     return query
 
 
-def get_corp_snapshot_queries(config, corp_num):
+def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
         'offices': get_offices_and_addresses_query(corp_num),
         'parties': get_parties_and_addresses_query(corp_num),
         'share_classes': get_share_classes_share_series_query(corp_num),
         'aliases': get_aliases_query(corp_num),
-        'resolutions': get_resolutions_query(corp_num)
+        'resolutions': get_resolutions_query(corp_num),
+        'filings': get_filings_query(corp_num)
     }
 
     return queries

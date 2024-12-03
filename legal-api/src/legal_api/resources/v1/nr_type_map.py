@@ -76,6 +76,8 @@ class NrTypeMap(Resource):
             ('RCR', Business.LegalTypes.COMP.value, RequestActions.REST.value),
             ('RCR', Business.LegalTypes.COMP.value, RequestActions.REH.value),
             ('RCR', Business.LegalTypes.COMP.value, RequestActions.REN.value),
+            ('BECR', Business.LegalTypes.COMP.value, RequestActions.CNV.value),
+            ('ULCB', Business.LegalTypes.COMP.value, RequestActions.CNV.value),
             # ('XCR', Business.LegalTypes.XPRO_CORPORATION.value, RequestActions.NEW_AML.value),
             # ('XCR', Business.LegalTypes.XPRO_CORPORATION.value, RequestActions.NEW.value),
             # ('XCR', Business.LegalTypes.XPRO_CORPORATION.value, RequestActions.AML.value),
@@ -137,20 +139,21 @@ class NrTypeMap(Resource):
             ('CC', Business.LegalTypes.BC_CCC.value, RequestActions.NEW_AML.value),
             ('CC', Business.LegalTypes.BC_CCC.value, RequestActions.NEW.value),
             ('CC', Business.LegalTypes.BC_CCC.value, RequestActions.AML.value),
-            ('CCV', Business.LegalTypes.BC_CCC.value, RequestActions.CNV.value),
             ('CCC', Business.LegalTypes.BC_CCC.value, RequestActions.CHG.value),
             ('CCCT', Business.LegalTypes.BC_CCC.value, RequestActions.MVE.value),
             ('RCC', Business.LegalTypes.BC_CCC.value, RequestActions.REST.value),
             ('RCC', Business.LegalTypes.BC_CCC.value, RequestActions.REH.value),
             ('RCC', Business.LegalTypes.BC_CCC.value, RequestActions.REN.value),
+            ('CCV', Business.LegalTypes.BC_CCC.value, RequestActions.CNV.value),
+            ('BECC', Business.LegalTypes.BC_CCC.value, RequestActions.CNV.value),
             ('UL', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.NEW.value),
             ('UL', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.AML.value),
-            ('UC', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.CNV.value),
             ('CUL', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.CHG.value),
             ('ULCT', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.MVE.value),
             ('RUL', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.REST.value),
             ('RUL', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.REH.value),
             ('RUL', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.REN.value),
+            ('UC', Business.LegalTypes.BC_ULC_COMPANY.value, RequestActions.CNV.value),
             # ('UA', Business.LegalTypes.XPRO_UNLIMITED_LIABILITY_COMPANY.value, RequestActions.AS.value),
             # ('XUL', Business.LegalTypes.XPRO_UNLIMITED_LIABILITY_COMPANY.value, RequestActions.NEW_AML.value),
             # ('XUL', Business.LegalTypes.XPRO_UNLIMITED_LIABILITY_COMPANY.value, RequestActions.NEW.value),
@@ -174,7 +177,7 @@ class NrTypeMap(Resource):
             ('BERE', Business.LegalTypes.BCOMP.value, RequestActions.REH.value),
             ('BERE', Business.LegalTypes.BCOMP.value, RequestActions.REN.value),
             ('BECV', Business.LegalTypes.BCOMP.value, RequestActions.CNV.value),
-            ('BECR', Business.LegalTypes.COMP.value, RequestActions.CNV.value)
+            ('ULBE', Business.LegalTypes.BCOMP.value, RequestActions.CNV.value)
         ]
 
         rv = []
