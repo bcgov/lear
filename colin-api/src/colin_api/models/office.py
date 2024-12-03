@@ -37,7 +37,7 @@ class Office:
         'recordsOffice': 'RC',
         'liquidationOffice': 'LQ',
         'custodialOffice': 'DS',
-        'headOffice' : 'HD',
+        'headOffice': 'HD',
     }
 
     delivery_address = None
