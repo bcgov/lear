@@ -21,7 +21,7 @@ import requests
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from flask import Flask
 from legal_api import init_db
-from legal_api.models import Business, Filing, db # noqa: I001
+from legal_api.models import Business, Filing, db  # noqa: I001
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.flags import Flags
 from legal_api.services.queue import QueueService
@@ -31,6 +31,8 @@ from sqlalchemy.sql.expression import text  # noqa: I001
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
+
+
 # noqa: I003
 
 setup_logging(
