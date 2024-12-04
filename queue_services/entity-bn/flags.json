@@ -2,13 +2,13 @@
     "flagValues": {
         "db-versioning": {
             "legal-api": true,
-            "emailer": false,
+            "emailer": true,
             "filer": false,
             "entity-bn": true,
             "digital-credentials": false,
             "dissolutions-job": false,
             "furnishings-job": false,
-            "emailer-reminder-job": false
+            "emailer-reminder-job": true
         }
     }
 }

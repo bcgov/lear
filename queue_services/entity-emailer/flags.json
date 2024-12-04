@@ -5,11 +5,11 @@
             "legal-api": true,
             "emailer": true,
             "filer": false,
-            "entity-bn": false,
+            "entity-bn": true,
             "digital-credentials": false,
             "dissolutions-job": false,
             "furnishings-job": false,
-            "emailer-reminder-job": false
+            "emailer-reminder-job": true
         }
     }
 }
