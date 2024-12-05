@@ -245,7 +245,6 @@ def migrate_corp_users(colin_engine: Engine, lear_engine: Engine, corp_nums: lis
 def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str, dict]:
     """Get tombstone data - corp snapshot and placeholder filings."""
     try:
-        # TODO: get filings data
         print(f'👷 Start collecting corp snapshot and filings data for {corp_num}...')
         raw_data = get_snapshot_filings_data(config, colin_engine, corp_num)
         # print(f'raw data: {raw_data}')
@@ -273,9 +272,9 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
             transaction.commit()
         except Exception as e:
             transaction.rollback()
-            raise e
+            return corp_num, e
     print(f'✅ Complete migrating {corp_num}!')
-    return corp_num
+    return corp_num, None
 
 
 @flow(
@@ -349,8 +348,8 @@ def tombstone_flow():
             wait(corp_futures)
 
             for f in corp_futures:
-                corp_num = f.result()
-                if corp_num:
+                corp_num, e = f.result()
+                if not e:
                     processing_service.update_corp_status(
                         flow_run_id,
                         corp_num,
@@ -362,7 +361,7 @@ def tombstone_flow():
                         flow_run_id,
                         corp_num,
                         ProcessingStatuses.FAILED,
-                        error="Migration failed"
+                        error=f"Migration failed - {repr(e)}"
                     )
 
             succeeded = sum(1 for f in corp_futures if f.state.is_completed())

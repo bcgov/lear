@@ -24,7 +24,16 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num = 'BC0002567' -- lots of filings - IA, ARs, transition, COD
 --    and c.corp_num in ('BC0068889', 'BC0441359') -- test users mapping
 --    and c.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
---    and c.corp_num in ('BC0472301', 'BC0649417', 'BC0808085', 'BC0803411', 'BC0756111', 'BC0511226', 'BC0833000', 'BC0343855', 'BC0149266') -- dissolution
+
+--    and c.corp_num in (
+--        'BC0472301', 'BC0649417', 'BC0808085', 'BC0803411', 'BC0511226', 'BC0833000', 'BC0343855', 'BC0149266', -- dissolution
+--        'BC0548839', 'BC0541207', 'BC0462424', 'BC0021973', -- restoration
+--        'BC0034290', -- legacy other
+--        'BC0207097', 'BC0693625', 'BC0754041', 'BC0072008', 'BC0355241', 'BC0642237', 'BC0555891', 'BC0308683', -- correction
+--        'BC0688906', 'BC0870100', 'BC0267106', 'BC0873461', -- alteration
+--        'BC0536998', 'BC0574096', 'BC0663523' -- new mappings of CoA, CoD
+--    )
+
     and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
     and cs.end_event_id is null
 --    and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
@@ -103,20 +112,22 @@ def get_business_query(corp_num, suffix):
     select
         c.corp_num as identifier,
         -- legal_name: current corp_name (latest)
-        (
-            select corp_name
-            from corp_name
-            where 1 = 1
-    --		  and corp_num = 'BC0684912' 
-    --        and corp_num = 'BC0000621' 
-    --        and corp_num = 'BC0088913' 
-    --        and corp_num = 'BC0008045'
-    --        and corp_num = 'BC0006574'
-    --        and corp_num = 'BC0049194'
-            and corp_num = '{corp_num}'
-            and end_event_id is null
-            and corp_name_typ_cd in ('CO', 'NB')
-        ) || '{suffix if suffix else ''}' as legal_name,
+        coalesce(
+            (
+                select corp_name
+                from corp_name
+                where 1 = 1
+        --		  and corp_num = 'BC0684912' 
+        --        and corp_num = 'BC0000621' 
+        --        and corp_num = 'BC0088913' 
+        --        and corp_num = 'BC0008045'
+        --        and corp_num = 'BC0006574'
+        --        and corp_num = 'BC0049194'
+                and corp_num = '{corp_num}'
+                and end_event_id is null
+                and corp_name_typ_cd in ('CO', 'NB')
+            ), ''
+        )  || '{suffix if suffix else ''}' as legal_name,
         corp_type_cd as legal_type,
     -- founding_date
         to_char(
@@ -426,7 +437,7 @@ def get_filings_query(corp_num):
             e.corp_num             as e_corp_num,
             e.event_type_cd        as e_event_type_cd,
             to_char(e.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
-            e.trigger_dts::timestamp at time zone 'UTC' as e_trigger_dt,
+            to_char(e.trigger_dts::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_trigger_dt_str,
             e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') as event_file_type,
             -- filing
             f.event_id             as f_event_id,

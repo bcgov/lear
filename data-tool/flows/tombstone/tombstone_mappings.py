@@ -8,23 +8,17 @@ class EventFilings(str, Enum):
     # AGM Location Change
     FILE_AGMLC = 'FILE_AGMLC'
 
-    # TODO: Alteration (Some need further confirmation)
+    # Alteration
     FILE_NOALA = 'FILE_NOALA'
     FILE_NOALB = 'FILE_NOALB'
     FILE_NOALU = 'FILE_NOALU'
     FILE_NOALC = 'FILE_NOALC'
-    FILE_AM_PF = 'FILE_AM_PF'
-    FILE_AM_PO = 'FILE_AM_PO'
-    FILE_AM_TR = 'FILE_AM_TR'
-    FILE_AM_AR = 'FILE_AM_AR'
     FILE_AM_BC = 'FILE_AM_BC'
-    FILE_AM_DI = 'FILE_AM_DI'
-    FILE_AM_DO = 'FILE_AM_DO'
     FILE_AM_LI = 'FILE_AM_LI'
     FILE_AM_RM = 'FILE_AM_RM'
-    FILE_AM_RR = 'FILE_AM_RR'
     FILE_AM_SS = 'FILE_AM_SS'
 
+    # TODO: FILE_AM_AR = 'FILE_AM_AR'
     # TODO: Amalgamation Out Consent - unsupported
     # TODO: Amalgamation Out - unsupported
 
@@ -48,9 +42,12 @@ class EventFilings(str, Enum):
     FILE_APTRA = 'FILE_APTRA'
     FILE_NOERA = 'FILE_NOERA'
     FILE_NOCAD = 'FILE_NOCAD'
+    FILE_AM_DO = 'FILE_AM_DO'
+    FILE_AM_RR = 'FILE_AM_RR'
 
     # Change of Directors
     FILE_NOCDR = 'FILE_NOCDR'
+    FILE_AM_DI = 'FILE_AM_DI'
 
     # Consent Continuation Out
     FILE_CONTO = 'FILE_CONTO'
@@ -63,7 +60,7 @@ class EventFilings(str, Enum):
     FILE_CONTU = 'FILE_CONTU'
     FILE_CONTC = 'FILE_CONTC'
 
-    # TODO: Correction (Some need further confirmation)
+    # Correction
     FILE_CO_AR = 'FILE_CO_AR'
     FILE_CO_BC = 'FILE_CO_BC'
     FILE_CO_DI = 'FILE_CO_DI'
@@ -91,7 +88,6 @@ class EventFilings(str, Enum):
     DISLV_NULL = 'DISLV_NULL'
     ## admin
     DISLC_NULL = 'DISLC_NULL'
-    FILE_ADCOL = 'FILE_ADCOL'
     SYSDA_NULL = 'SYSDA_NULL'
     SYSDS_NULL = 'SYSDS_NULL'
     # involuntary
@@ -105,7 +101,14 @@ class EventFilings(str, Enum):
     CONVICORP_NULL = 'CONVICORP_NULL'  # TODO: may need to be removed
 
     # TODO: Ledger - unsupported
+
+    # TODO: Legacy Other - unsupported
+    FILE_AM_PF = 'FILE_AM_PF'
+    FILE_AM_PO = 'FILE_AM_PO'
+    FILE_AM_TR = 'FILE_AM_TR'
+
     # TODO: Liquidation - unsupported
+    # FILE_ADCOL = 'FILE_ADCOL'
 
     # Notice of Withdrawal
     FILE_NWITH = 'FILE_NWITH'
@@ -121,11 +124,10 @@ class EventFilings(str, Enum):
     FILE_RESTF = 'FILE_RESTF'
     FILE_RESXL = 'FILE_RESXL'
     FILE_RESXF = 'FILE_RESXF'
-    FILE_RUSTF = 'FILE_RUSTF'
     FILE_RUSTL = 'FILE_RUSTL'
+    FILE_RUSTF = 'FILE_RUSTF'
     FILE_RUSXL = 'FILE_RUSXL'
     FILE_RUSXF = 'FILE_RUSXF'
-
 
     # Transition
     FILE_TRANS = 'FILE_TRANS'
@@ -135,6 +137,7 @@ class EventFilings(str, Enum):
     # Other COLIN events:
     # CONV*, Adim Corp (ADCORP, BNUPD, ADMIN), XPRO filing
     # SYSDL, SYST
+    # more legacyOther filings
 
 
     @classmethod
@@ -146,21 +149,13 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AGMDT: 'agmExtension',
     EventFilings.FILE_AGMLC: 'agmLocationChange',
 
-    # TODO: Alteration (Some need further confirmation)
     EventFilings.FILE_NOALA: 'alteration',
     EventFilings.FILE_NOALB: 'alteration',
     EventFilings.FILE_NOALU: 'alteration',
     EventFilings.FILE_NOALC: 'alteration',
-    EventFilings.FILE_AM_PF: 'alteration',
-    EventFilings.FILE_AM_PO: 'alteration',
-    EventFilings.FILE_AM_TR: 'alteration',
-    EventFilings.FILE_AM_AR: 'alteration',
     EventFilings.FILE_AM_BC: 'alteration',
-    EventFilings.FILE_AM_DI: 'alteration',
-    EventFilings.FILE_AM_DO: 'alteration',
     EventFilings.FILE_AM_LI: 'alteration',
     EventFilings.FILE_AM_RM: 'alteration',
-    EventFilings.FILE_AM_RR: 'alteration',
     EventFilings.FILE_AM_SS: 'alteration',
 
     # TODO: Amalgamation Out Consent - unsupported
@@ -181,8 +176,11 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_APTRA: 'changeOfAddress',
     EventFilings.FILE_NOERA: 'changeOfAddress',
     EventFilings.FILE_NOCAD: 'changeOfAddress',
+    EventFilings.FILE_AM_DO: 'changeOfAddress',
+    EventFilings.FILE_AM_RR: 'changeOfAddress',
 
     EventFilings.FILE_NOCDR: 'changeOfDirectors',
+    EventFilings.FILE_AM_DI: 'changeOfDirectors',
 
     EventFilings.FILE_CONTO: 'consentContinuationOut',
     EventFilings.FILE_COUTI: 'continuationOut',
@@ -191,7 +189,6 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CONTU: 'continuationIn',
     EventFilings.FILE_CONTC: 'continuationIn',
 
-    # TODO: Correction (Some need further confirmation)
     EventFilings.FILE_CO_AR: 'correction',
     EventFilings.FILE_CO_BC: 'correction',
     EventFilings.FILE_CO_DI: 'correction',
@@ -215,7 +212,6 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
     EventFilings.DISLV_NULL: ['dissolution', 'voluntary'],
     EventFilings.DISLC_NULL: ['dissolution', 'administrative'],
-    EventFilings.FILE_ADCOL: ['dissolution', 'administrative'],
     EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDF_NULL: ['dissolution', 'involuntary'],
@@ -227,6 +223,11 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.CONVICORP_NULL: 'incorporationApplication',
 
     # TODO: Ledger - unsupported
+    # TODO: Legacy Other - unsupported
+    EventFilings.FILE_AM_PF: 'legacyOther',
+    EventFilings.FILE_AM_PO: 'legacyOther',
+    EventFilings.FILE_AM_TR: 'legacyOther',
+
     # TODO: Liquidation - unsupported
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
@@ -238,8 +239,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_RESTF: ['restoration', 'fullRestoration'],
     EventFilings.FILE_RESXL: ['restoration', 'limitedRestorationExtension'],
     EventFilings.FILE_RESXF: ['restoration', 'limitedRestorationToFull'],
-    EventFilings.FILE_RUSTF: ['restoration', 'fullRestoration'],
     EventFilings.FILE_RUSTL: ['restoration', 'limitedRestoration'],
+    EventFilings.FILE_RUSTF: ['restoration', 'fullRestoration'],
     EventFilings.FILE_RUSXL: ['restoration', 'limitedRestorationExtension'],
     EventFilings.FILE_RUSXF: ['restoration', 'limitedRestorationToFull'],
 
@@ -254,10 +255,10 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'changeOfDirectors': ['last_cod_date'],
     'agmExtension': ['last_agm_date'],
     # TODO: 'dissolution_date' - Amalgamating business, continuation out
+    # TODO: 'continuation_out_date' - continuation out
     'dissolution': ['dissolution_date'],
     'putBackOn': ['dissolution_date'],
-    'restoration': ['dissolution_date'],
-    # TODO: 'restoration_expiry_date' - limited restoration, limited restoration extension
+    'restoration': ['dissolution_date', 'restoration_expiry_date'],
 }
 
 

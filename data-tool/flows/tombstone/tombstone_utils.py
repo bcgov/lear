@@ -244,6 +244,7 @@ def format_filings_data(data: dict) -> list[dict]:
         effective_date = x['f_effective_dt_str']
         if not effective_date:
             effective_date = x['e_event_dt_str']
+        trigger_date = x['e_trigger_dt_str']
 
         filing_json, meta_data = build_filing_json_meta_data(filing_type, filing_subtype,
                                                              effective_date, x)
@@ -269,12 +270,10 @@ def format_filings_data(data: dict) -> list[dict]:
         formatted_filings.append(filing)
 
         # update business info based on filing
-        if keys := LEAR_FILING_BUSINESS_UPDATE_MAPPING.get(filing_type):
-            if filing_type in ['putBackOn', 'restoration']:
-                value = None
-            else:
-                value = effective_date
-            business_update_dict.update({k: value for k in keys})
+        keys = LEAR_FILING_BUSINESS_UPDATE_MAPPING.get(filing_type, [])
+        for k in keys:
+            business_update_dict[k] = get_business_update_value(k, effective_date, trigger_date,
+                                                                filing_type, filing_subtype)
         # save state filing index
         if filing_type in LEAR_STATE_FILINGS:
             last_state_filing_idx = idx
@@ -356,6 +355,21 @@ def get_target_filing_type(event_file_type: str) -> tuple[str, str]:
     return filing_type, filing_subtype
 
 
+def get_business_update_value(key: str, effective_date: str, trigger_date: str, filing_type: str, filing_subtype: str) -> str:
+    if filing_type == 'putBackOn':
+        value = None
+    elif filing_type == 'restoration':
+        if key == 'restoration_expiry_date' and\
+            filing_subtype in ['limitedRestoration', 'limitedRestorationExtension']:
+            value = trigger_date
+        else:
+            value = None
+    else:
+        value = effective_date
+
+    return value
+
+
 def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective_date: str, data: dict) -> tuple[dict, dict]:
     filing_json = copy.deepcopy(FILING_JSON)
     filing_json['filing'][filing_type] = {}
@@ -373,12 +387,27 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
             'annualReportFilingYear': int(effective_date[:4]),
         }
     elif filing_type == 'dissolution':
+        dissolution_date = effective_date[:10]
         meta_data['dissolution'] = {
             'dissolutionType': filing_subtype,
+            'dissolutionDate':  dissolution_date,
         }
         filing_json['filing']['dissolution'] = {
             'dissolutionType': filing_subtype,
-            'dissolutionDate': effective_date[:10],
+            'dissolutionDate':  dissolution_date,
+        }
+    elif filing_type == 'restoration':
+        if filing_subtype in ['limitedRestoration', 'limitedRestorationExtension']:
+            expiry_date = data['e_trigger_dt_str'][:10]
+            meta_data['restoration'] = {
+                'expiry': expiry_date,
+            }
+            filing_json['filing']['restoration'] = {
+                'expiry': expiry_date,
+            }
+        filing_json['filing']['restoration'] = {
+            **filing_json['filing']['restoration'],
+            'type': filing_subtype,
         }
     # TODO: populate meta_data for correction to display correct filing name
 
