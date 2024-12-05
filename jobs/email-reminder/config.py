@@ -44,6 +44,8 @@ def get_named_config(config_name: str = 'production'):
 class _Config(object):  # pylint: disable=too-few-public-methods
     """Base class configuration."""
 
+    # used to identify versioning flag
+    SERVICE_NAME = 'emailer-reminder-job'
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SEND_OUTSTANDING_BCOMPS = os.getenv('SEND_OUTSTANDING_BCOMPS', None)
