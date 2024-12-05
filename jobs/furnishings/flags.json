@@ -5,14 +5,14 @@
         "disable-dissolution-sftp-bclaws": false,
         "db-versioning": {
             "legal-api": true,
-            "emailer": false,
+            "emailer": true,
             "filer": false,
-            "entity-bn": false,
+            "entity-bn": true,
             "digital-credentials": false,
             "dissolutions-job": false,
             "furnishings-job": true,
-            "emailer-reminder-job": false,
-            "update-legal-filings-job": false
+            "emailer-reminder-job": true,
+            "future-effective-job": false
         }
     }
 }
