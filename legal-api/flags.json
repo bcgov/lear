@@ -17,7 +17,7 @@
             "filer": false,
             "entity-bn": true,
             "digital-credentials": false,
-            "dissolutions-job": false,
+            "dissolutions-job": true,
             "furnishings-job": true,
             "emailer-reminder-job": true
         }
