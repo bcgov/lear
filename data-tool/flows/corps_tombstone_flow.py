@@ -342,16 +342,29 @@ def tombstone_flow():
                     corp_futures.append(
                         migrate_tombstone.submit(config, lear_engine, corp_num, clean_data, users_mapper)
                     )
+                else:
+                    skipped += 1
+                    print(f'❗ Skip migrating {corp_num} due to data collection error.')
+
+            wait(corp_futures)
+
+            for f in corp_futures:
+                corp_num = f.result()
+                if corp_num:
                     processing_service.update_corp_status(
                         flow_run_id,
                         corp_num,
                         ProcessingStatuses.COMPLETED
                     )
                 else:
-                    skipped += 1
-                    print(f'❗ Skip migrating {corp_num} due to data collection error.')
+                    # Handle error case if needed
+                    processing_service.update_corp_status(
+                        flow_run_id,
+                        corp_num,
+                        ProcessingStatuses.FAILED,
+                        error="Migration failed"
+                    )
 
-            wait(corp_futures)
             succeeded = sum(1 for f in corp_futures if f.state.is_completed())
             failed = len(corp_futures) - succeeded
             print(f'🌟 Complete round {cnt}. Succeeded: {succeeded}. Failed: {failed}. Skip: {skipped}')
