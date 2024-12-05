@@ -9,8 +9,7 @@
             "digital-credentials": false,
             "dissolutions-job": false,
             "furnishings-job": true,
-            "emailer-reminder-job": true,
-            "update-colin-filings-job": false
+            "emailer-reminder-job": true
         }
     }
 }
