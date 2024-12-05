@@ -1,13 +1,16 @@
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from common.init_utils import colin_init, get_config, lear_init
 from common.query_utils import convert_result_set_to_dict
 from common.auth_service import AuthService
-from prefect import flow, task
+from prefect import flow, task, serve
 from prefect.futures import wait
+from prefect.context import get_run_context
 from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
+
+from common.corp_processing_queue_service import CorpProcessingQueueService as CorpProcessingService, ProcessingStatuses
 from tombstone.tombstone_queries import (get_corp_snapshot_filings_queries,
                                          get_corp_users_query,
                                          get_total_unprocessed_count_query,
@@ -20,20 +23,21 @@ from tombstone.tombstone_utils import (build_epoch_filing, format_users_data,
 
 
 @task
-def get_unprocessed_corps(config, colin_engine: Engine) -> list:
-    """Get unprocessed corp numbers."""
-    query = get_unprocessed_corps_query(
-        'local',
-        config.DATA_LOAD_ENV,
-        config.TOMBSTONE_BATCH_SIZE
-    )
-    sql_text = text(query)
+def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps) -> list:
+    """Reserve corps for a given flow run.
 
-    with colin_engine.connect() as conn:
-        rs = conn.execute(sql_text)
-        raw_data_dict = convert_result_set_to_dict(rs)
-        corp_nums = [x.get('corp_num') for x in raw_data_dict]
-        return corp_nums
+    Note that this is not same as claiming them for processing which will be done in some subsequent steps.  This step
+    is done to avoid parallel flows from trying to compete for the same corps.
+    """
+    base_query = get_unprocessed_corps_query(
+        'tombstone-flow',
+        config.DATA_LOAD_ENV,
+        num_corps  # Pass the total number we want to process
+    )
+
+    # reserve corps
+    reserved = processing_service.reserve_for_flow(base_query, flow_run_id)
+    return reserved
 
 
 @task
@@ -200,8 +204,8 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 @task(name='3.3-Update-Auth-Task')
 def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
     """Create auth entity and affiliate as required."""
-    # TODO affiliation to an account does not need to happen.  only entity creation in auth is req'd.
-    #  used for testing purposes to see how things look in entity dashboard - remove when done testing
+    # Note: affiliation to an account does not need to happen.  only entity creation in auth is req'd.
+    #  used for testing purposes to see how things look in entity dashboard
     if config.AFFILIATE_ENTITY:
         business_data = tombstone_data['businesses']
         account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
@@ -287,6 +291,8 @@ def tombstone_flow():
         config = get_config()
         colin_engine = colin_init(config)
         lear_engine = lear_init(config)
+        flow_run_id = get_run_context().flow_run.id
+        processing_service = CorpProcessingService(config.DATA_LOAD_ENV, colin_engine, 'tombstone-flow')
 
         total = get_unprocessed_count(config, colin_engine)
 
@@ -297,12 +303,21 @@ def tombstone_flow():
         batch_size = config.TOMBSTONE_BATCH_SIZE
         batches = min(math.ceil(total/batch_size), config.TOMBSTONE_BATCHES)
 
+        # Calculate max corps to initialize
+        max_corps = min(total, config.TOMBSTONE_BATCHES * config.TOMBSTONE_BATCH_SIZE)
+        print(f'max_corps: {max_corps}')
+        reserved_corps = reserve_unprocessed_corps(config, processing_service, flow_run_id, max_corps)
+        print(f'👷 Reserved {reserved_corps} corps for processing')
         print(f'👷 Going to migrate {total} corps with batch size of {batch_size}')
 
         cnt = 0
         migrated_cnt = 0
         while cnt < batches:
-            corp_nums = get_unprocessed_corps(config, colin_engine)
+            # Claim next batch of reserved corps for current flow
+            corp_nums = processing_service.claim_batch(flow_run_id, batch_size)
+            if not corp_nums:
+                print("No more corps available to claim")
+                break
 
             print(f'👷 Start processing {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
 
@@ -332,6 +347,24 @@ def tombstone_flow():
                     print(f'❗ Skip migrating {corp_num} due to data collection error.')
 
             wait(corp_futures)
+
+            for f in corp_futures:
+                corp_num = f.result()
+                if corp_num:
+                    processing_service.update_corp_status(
+                        flow_run_id,
+                        corp_num,
+                        ProcessingStatuses.COMPLETED
+                    )
+                else:
+                    # Handle error case if needed
+                    processing_service.update_corp_status(
+                        flow_run_id,
+                        corp_num,
+                        ProcessingStatuses.FAILED,
+                        error="Migration failed"
+                    )
+
             succeeded = sum(1 for f in corp_futures if f.state.is_completed())
             failed = len(corp_futures) - succeeded
             print(f'🌟 Complete round {cnt}. Succeeded: {succeeded}. Failed: {failed}. Skip: {skipped}')
@@ -347,3 +380,13 @@ def tombstone_flow():
 
 if __name__ == "__main__":
     tombstone_flow()
+
+    # # Create deployment - only intended to test locally for parallel flows
+    # deployment = tombstone_flow.to_deployment(
+    #     name="tombstone-deployment",
+    #     interval=timedelta(seconds=8),  # Run every x seconds
+    #     tags=["tombstone-migration"]
+    # )
+    #
+    # # Start serving the deployment
+    # serve(deployment)

@@ -94,7 +94,6 @@ class AuthService:
             timeout=cls.get_time_out(config)
         )
 
-        # @TODO delete affiliation and entity record next sprint when affiliation service is updated
         if affiliate.status_code != HTTPStatus.CREATED or entity_record.status_code != HTTPStatus.CREATED:
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
@@ -175,7 +174,6 @@ class AuthService:
     def delete_affiliation(cls, config, account: int, business_registration: str) -> Dict:
         """Affiliate a business to an account.
 
-        @TODO Update this when account affiliation is changed next sprint.
         """
         auth_url = config.AUTH_SVC_URL
         account_svc_entity_url = f'{auth_url}/entities'

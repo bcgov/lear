@@ -629,6 +629,8 @@ create table if not exists corp_processing
     create_date             timestamp with time zone,
     last_modified           timestamp with time zone,
     last_error              varchar(1000),
+    claimed_at              timestamp with time zone,
+    flow_run_id             uuid,
     constraint unq_corp_processing
         unique (corp_num, flow_name, environment)
 );
