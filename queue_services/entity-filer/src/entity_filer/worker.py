@@ -36,10 +36,10 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
-from legal_api import db
+from legal_api import init_db
 from legal_api.core import Filing as FilingCore
-from legal_api.models import Business, Filing
-from legal_api.models.db import init_db, versioning_manager
+from legal_api.models import Business, Filing, db
+from legal_api.models.db import VersioningProxy
 from legal_api.services import Flags
 from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
@@ -224,8 +224,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
         if legal_filings := filing_core_submission.legal_filings():
-            uow = versioning_manager.unit_of_work(db.session)
-            transaction = uow.create_transaction(db.session)
+            VersioningProxy.get_transaction_id(db.session())
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
@@ -334,7 +333,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
-            filing_submission.transaction_id = transaction.id
+            transaction_id = VersioningProxy.get_transaction_id(db.session())
+            filing_submission.transaction_id = transaction_id
 
             business_type = business.legal_type if business else filing_submission['business']['legal_type']
             filing_submission.set_processed(business_type)
