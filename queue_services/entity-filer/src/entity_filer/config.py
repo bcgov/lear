@@ -58,6 +58,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     Used as the base for all the other configurations.
     """
 
+    SERVICE_NAME = 'filer'
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
