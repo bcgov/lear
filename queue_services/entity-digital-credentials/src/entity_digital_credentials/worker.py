@@ -33,7 +33,7 @@ import nats
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import QueueException, logger
 from flask import Flask
-from legal_api import db
+from legal_api import db, init_db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business
 from legal_api.services import digital_credentials, flags
@@ -54,7 +54,7 @@ qsm = QueueServiceManager()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
-db.init_app(FLASK_APP)
+init_db(FLASK_APP)
 
 with FLASK_APP.app_context():  # db require app context
     digital_credentials.init_app(FLASK_APP)
