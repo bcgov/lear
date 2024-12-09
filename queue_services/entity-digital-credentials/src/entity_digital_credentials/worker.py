@@ -33,7 +33,7 @@ import nats
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import QueueException, logger
 from flask import Flask
-from legal_api import db, init_db
+from legal_api import init_db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business
 from legal_api.services import digital_credentials, flags
