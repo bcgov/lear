@@ -15,7 +15,7 @@
             "emailer": true,
             "filer": true,
             "entity-bn": true,
-            "digital-credentials": false,
+            "digital-credentials": true,
             "dissolutions-job": true,
             "furnishings-job": true,
             "emailer-reminder-job": true
