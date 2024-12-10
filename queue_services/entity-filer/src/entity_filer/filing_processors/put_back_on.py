@@ -18,13 +18,14 @@ from typing import Dict
 
 import dpath
 from entity_queue_common.service_utils import QueueException, logger
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, Office, OfficeType, db
 
 from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors import restoration
 from entity_filer.filing_processors.filing_components import filings
 
 
-def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the put back on filing unto the model objects."""
     if not (put_back_on_filing := filing.get('putBackOn')):
         logger.error('Could not find putBackOn in: %s', filing)
@@ -38,6 +39,15 @@ def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: 
         filings.update_filing_court_order(filing_rec, court_order_json)
 
     filing_rec.order_details = put_back_on_filing.get('details')
+
+    restoration.cease_custodian(business)
+
+    custodial_office = (db.session.query(Office).
+                        filter(Office.business_id == business.id).
+                        filter(Office.office_type == OfficeType.CUSTODIAL).
+                        one_or_none())
+    if custodial_office:
+        business.offices.remove(custodial_office)
 
     business.state = Business.State.ACTIVE
     business.dissolution_date = None

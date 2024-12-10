@@ -69,8 +69,11 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     update_offices(business, restoration_filing['offices'])
 
-    parties = restoration_filing['parties']
-    _update_parties(business, parties, filing_rec)
+    cease_custodian(business)
+    update_parties(business,
+                   restoration_filing['parties'],
+                   filing_rec,
+                   False)
 
     filing_rec.approval_type = restoration_filing.get('approvalType')
     if filing_rec.approval_type == 'courtOrder':
@@ -86,13 +89,12 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
             filing_rec.notice_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(notice_date)
 
 
-def _update_parties(business: Business, parties: dict, filing_rec: Filing):
-    """Create applicant party and cease custodian if exist."""
+def cease_custodian(business: Business):
+    """Cease custodian if exist."""
     end_date_time = datetime.utcnow()
-    custodian_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date(),
+    custodian_party_roles = PartyRole.get_party_roles(business.id,
+                                                      end_date_time.date(),
                                                       PartyRole.RoleTypes.CUSTODIAN.value)
     for party_role in custodian_party_roles:
         party_role.cessation_date = end_date_time
         business.party_roles.append(party_role)
-
-    update_parties(business, parties, filing_rec, False)
