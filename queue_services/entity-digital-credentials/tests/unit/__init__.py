@@ -14,7 +14,7 @@
 """The Unit Tests and the helper routines."""
 
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, Filing
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 
 
 def create_business(identifier):
@@ -37,9 +37,8 @@ def create_filing(session,  business_id=None,
     filing._status = filing_status
 
     if filing_status == Filing.Status.COMPLETED.value:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
     if filing_json:
         filing.filing_json = filing_json
     if business_id:
