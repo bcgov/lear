@@ -27,6 +27,9 @@ from legal_api.services.utils import get_str
 def consume_nr(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
     """Update the nr to a consumed state."""
     try:
+        if flags.is_on('disable-nr-check'):
+            return
+
         filing_type = filing_type if filing_type else filing.filing_type
         # skip this if none (nrNumber will not be available for numbered company)
         if nr_num := get_str(filing.filing_json, f'/filing/{filing_type}/nameRequest/nrNumber'):
