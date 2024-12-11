@@ -77,13 +77,16 @@ class Config:  # pylint: disable=too-few-public-methods
 
     Used as the base for all the other configurations.
     """
-
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+
+    FLASK_ENV = os.getenv('FLASK_ENV', 'development')
 
     PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
 
     SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
     SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
+
+    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -135,7 +138,7 @@ class Config:  # pylint: disable=too-few-public-methods
 
     ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
     
-    # pub/sub
+    # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
