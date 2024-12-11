@@ -34,9 +34,11 @@
 """Services used by Business-Pay."""
 from gcp_queue import GcpQueue
 
+from .flags import Flags
 from .gcp_auth import verify_gcp_jwt
 from .queue import QueueService
 
+flags = Flags()
 gcp_queue = GcpQueue()
 queue = QueueService()
 

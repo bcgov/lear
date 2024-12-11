@@ -35,23 +35,20 @@
 """This Module processes simple cloud event messages for possible filing payments.
 """
 import re
+import uuid
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Optional
 
 from flask import Blueprint, current_app, request
-from simple_cloudevent import SimpleCloudEvent
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 from structured_logging import StructuredLogging
 
-from business_pay.services import create_filing_msg
-from business_pay.services import create_email_msg
-from business_pay.services import verify_gcp_jwt
-from business_pay.services import gcp_queue
-from business_pay.services import queue
 from business_pay.database import Filing
+from business_pay.services import (create_email_msg, create_filing_msg, flags,
+                                   gcp_queue, queue, verify_gcp_jwt)
 
 bp = Blueprint("worker", __name__)
 
@@ -174,13 +171,32 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
         logger.debug(
             f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
         if filing.effective_date <= filing.payment_completion_date:
-            filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
-            queue_message = create_filing_msg(filing.id)
-            logger.debug(f"filer queue_message: {queue_message}")
-
             try:
-                # await queue.publish(subject=filer_topic, msg=queue_message)
-                queue.publish_json(subject=filer_topic, payload=queue_message)
+                flag_on = flags.is_on("enable-sandbox")
+                logger.debug(f"enable-sandbox flag on: {flag_on}")
+                # use Pub/Sub if FF on, otherwise NATS
+                if flag_on:
+                    subject = current_app.config.get('BUSINESS_FILER_TOPIC')
+                    data = create_filing_msg(filing.id)
+
+                    ce = SimpleCloudEvent(
+                        id=str(uuid.uuid4()),
+                        source='business-pay',
+                        subject=subject,
+                        time=datetime.now(timezone.utc),
+                        type='filing-message',
+                        data = data
+                    )
+                    gcp_queue.publish(subject, to_queue_message(ce))
+                    logger.debug(
+                        f"Filer pub/sub message: {str(ce)}"
+                    )
+                else:
+                    filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
+                    queue_message = create_filing_msg(filing.id)
+                    logger.debug(f"Filer NATS message: {queue_message}")
+                    # await queue.publish(subject=filer_topic, msg=queue_message)
+                    queue.publish_json(subject=filer_topic, payload=queue_message)
             except Exception as err:
                 logger.debug(
                     f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
