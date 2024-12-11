@@ -18,7 +18,7 @@ Provides all the search and retrieval from the business entity datastore.
 # pylint: disable=too-many-lines
 import copy
 from contextlib import suppress
-from datetime import datetime as _datetime
+from datetime import datetime as _datetime, timezone
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
 
@@ -263,6 +263,37 @@ def patch_filings(identifier, filing_id=None):
         return {'errors': [{'message': err.error}]}, err.status_code
 
     return jsonify(filing.json), HTTPStatus.ACCEPTED
+
+
+@bp.route('/filings/search', methods=['POST'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.staff])
+def get_filing_data():
+    """Return the filing data for a given filing ID."""
+    try:
+        json_input = request.get_json()
+        filing_id = json_input.get('filingId', None)
+
+        if not filing_id:
+            return {'message': 'Expected a filing ID in the request body.'}, HTTPStatus.BAD_REQUEST
+
+        # Query the Filing table to find the filing by the provided filing ID
+        filing_query = db.session.query(Filing).filter(Filing.id == filing_id).first()
+
+        if not filing_query:
+            return {'message': f'Filing with ID {filing_id} not found.'}, HTTPStatus.NOT_FOUND
+
+        filing_data = filing_query.json
+
+        # Optionally, check and include future effective date if available
+        if filing_query.effective_date and filing_query.effective_date > _datetime.now(timezone.utc):
+            filing_data['futureEffectiveDate'] = filing_query.effective_date.isoformat()
+
+        return jsonify(filing_data), HTTPStatus.OK
+
+    except Exception as err:
+        current_app.logger.error('Error retrieving filing data for ID %s: %s', filing_id, err)
+        return {'error': 'Unable to retrieve filing data.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 class ListFilingResource():  # pylint: disable=too-many-public-methods
