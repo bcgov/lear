@@ -812,6 +812,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
         """Return the next value from the sequence."""
         sequence_mapping = {
+            'BC': 'business_identifier_bc',  # only available in sandbox now
+            'C': 'business_identifier_c',  # only available in sandbox now
             'CP': 'business_identifier_coop',
             'FM': 'business_identifier_sp_gp',
         }

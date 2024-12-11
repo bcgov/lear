@@ -129,7 +129,7 @@ class NameXService():
 
         # This is added specifically for the sandbox environment.
         # i.e. NR check should only ever have feature flag disabled for sandbox environment.
-        if flags.is_on('disable-nr-check'):
+        if flags.is_on('enable-sandbox'):
             return {
                 'is_consumable': True,
                 'is_approved': True,
@@ -196,7 +196,7 @@ class NameXService():
 
         # This is added specifically for the sandbox environment.
         # i.e. NR check should only ever have feature flag disabled for sandbox environment.
-        if flags.is_on('disable-nr-check'):
+        if flags.is_on('enable-sandbox'):
             return next((name['name'] for name in nr_json['names']
                          if name['state']
                          in ['APPROVED', 'CONDITION']), None)
