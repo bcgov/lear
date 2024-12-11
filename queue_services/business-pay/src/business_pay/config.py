@@ -134,7 +134,9 @@ class Config:  # pylint: disable=too-few-public-methods
     }
 
     ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
-
+    
+    # pub/sub
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )
@@ -143,8 +145,8 @@ class Config:  # pylint: disable=too-few-public-methods
     )
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
-
     SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
+    BUSINESS_FILER_TOPIC = os.getenv('BUSINESS_FILER_TOPIC', 'business-filer')
 
     NATS_CONNECT_ERROR_COUNT_MAX =  os.getenv("NATS_CONNECT_ERROR_COUNT_MAX", 10)
 
