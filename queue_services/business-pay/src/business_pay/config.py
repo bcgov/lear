@@ -79,8 +79,6 @@ class Config:  # pylint: disable=too-few-public-methods
     """
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    FLASK_ENV = os.getenv('FLASK_ENV', 'development')
-
     PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
 
     SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
