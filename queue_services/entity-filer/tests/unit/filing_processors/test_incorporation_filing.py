@@ -122,7 +122,8 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
             assert memorandum_file_obj
             assert_pdf_contains_text('Filed on ', memorandum_file_obj.read())
 
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+    mock_get_next_corp_num.assert_called_with(
+        filing['filing']['incorporationApplication']['nameRequest']['legalType'], None)
 
 
 @pytest.mark.parametrize('legal_type, filing, legal_name_suffix', [
@@ -167,7 +168,8 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         assert parties[1]['officer']['partyType'] == 'organization'
         assert parties[1]['officer']['organizationName'] == 'Xyz Inc.'
 
-    mock_get_next_corp_num.assert_called_with(filing['filing']['incorporationApplication']['nameRequest']['legalType'])
+    mock_get_next_corp_num.assert_called_with(
+        filing['filing']['incorporationApplication']['nameRequest']['legalType'], None)
 
 
 @pytest.mark.parametrize('test_name,response,expected', [
