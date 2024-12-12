@@ -21,7 +21,7 @@ import pytest
 from legal_api.models import Business, Filing
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import DocumentType
-from legal_api.services.minio import MinioService
+from legal_api.services import Flags, MinioService
 from legal_api.services.bootstrap import AccountService
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
@@ -84,7 +84,7 @@ def test_incorporation_filing_process_with_nr(app, session, minio_server, legal_
         filing_meta = FilingMeta(application_date=effective_date)
 
         # test
-        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -144,7 +144,7 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
         # test
-        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -184,7 +184,7 @@ def test_get_next_corp_num(requests_mock, mocker, app, test_name, response, expe
     with app.app_context():
         requests_mock.post(f'{current_app.config["COLIN_API"]}/BC', json={'corpNum': response})
 
-        corp_num = business_info.get_next_corp_num('BEN')
+        corp_num = business_info.get_next_corp_num('BEN', Flags())
 
     assert corp_num == expected
 
@@ -218,7 +218,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
+    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
 
     # Assertions
     assert business.identifier == corp_num
@@ -258,7 +258,7 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type, le
     filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta=filing_meta)
+    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
 
     # Assertions
     assert business.identifier == corp_num
