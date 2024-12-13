@@ -16,16 +16,31 @@
 # limitations under the License.
 """s2i based launch script to run the service."""
 import asyncio
+import os
 
-from entity_filer.worker import APP_CONFIG, cb_subscription_handler, qsm
+from entity_filer.worker import APP_CONFIG, FLASK_APP, cb_subscription_handler, qsm, flags
+from entity_filer.resources import register_endpoints
+from entity_queue_common.service_utils import logger
+
 
 if __name__ == '__main__':
+    # This flag is added specifically for the sandbox environment.
+    with FLASK_APP.app_context():
+        flag_on = flags.is_on("enable-sandbox")
+    logger.debug(f"enable-sandbox flag on: {flag_on}")
 
-    event_loop = asyncio.get_event_loop()
-    event_loop.run_until_complete(qsm.run(loop=event_loop,
-                                          config=APP_CONFIG,
-                                          callback=cb_subscription_handler))
-    try:
-        event_loop.run_forever()
-    finally:
-        event_loop.close()
+    if flag_on:
+        # GCP Queue
+        register_endpoints(FLASK_APP)
+        server_port = os.environ.get("PORT", "8080")
+        FLASK_APP.run(debug=False, port=server_port, host="0.0.0.0")
+    else:
+        # NATS Queue
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_until_complete(qsm.run(loop=event_loop,
+                                            config=APP_CONFIG,
+                                            callback=cb_subscription_handler))
+        try:
+            event_loop.run_forever()
+        finally:
+            event_loop.close()

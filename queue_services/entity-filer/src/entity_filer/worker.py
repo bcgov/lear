@@ -35,7 +35,7 @@ from entity_queue_common.messages import publish_email_message
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
-from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
+from gcp_queue import SimpleCloudEvent, to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing
@@ -75,11 +75,11 @@ from entity_filer.filing_processors import (
     transition,
 )
 from entity_filer.filing_processors.filing_components import business_profile, name_request
+from entity_filer.services import gcp_queue
 
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 flags = Flags()  # pylint: disable=invalid-name
-gcp_queue = GcpQueue()
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
@@ -211,7 +211,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
         filing_core_submission = FilingCore.find_by_id(filing_msg['filing']['id'])
 
         if not filing_core_submission:
-            raise QueueException
+            raise QueueException('No filing found.')
 
         filing_submission = filing_core_submission.storage
 
@@ -409,27 +409,30 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     level='error'
                 )
 
-            try:
-                await publish_event(business, filing_submission)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                print(err)
-                capture_message(
-                    f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
-                    f'on Queue with error:{err}',
-                    level='error'
-                )
+            # TODO: remove NATS publishing once GCP migration is complete 
+            if not flags.is_on("enable-sandbox"):
+                try:
+                    await publish_event(business, filing_submission)
+                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                    # mark any failure for human review
+                    print(err)
+                    capture_message(
+                        f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
+                        f'on Queue with error:{err}',
+                        level='error'
+                    )
 
-            try:
-                publish_gcp_queue_event(business, filing_submission)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                print(err)
-                capture_message(
-                    f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
-                    f'on Queue with error:{err}',
-                    level='error'
-                )
+            else:
+                try:
+                    publish_gcp_queue_event(business, filing_submission)
+                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                    # mark any failure for human review
+                    print(err)
+                    capture_message(
+                        f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
+                        f'on Queue with error:{err}',
+                        level='error'
+                    )
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
