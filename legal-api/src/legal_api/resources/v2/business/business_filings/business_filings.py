@@ -18,7 +18,7 @@ Provides all the search and retrieval from the business entity datastore.
 # pylint: disable=too-many-lines
 import copy
 from contextlib import suppress
-from datetime import datetime as _datetime, timezone
+from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
 
@@ -286,9 +286,9 @@ def get_fed_filing():
 
         effective_date_str = filing_data['filing']['header'].get('effectiveDate', None)
 
-        effective_date = _datetime.fromisoformat(effective_date_str)
+        effective_date = datetime.datetime.fromisoformat(effective_date_str)
 
-        if effective_date > _datetime.now(timezone.utc):
+        if effective_date > datetime.datetime.utcnow():
             return jsonify(filing_data), HTTPStatus.OK
         else:
             return {'message': 'The filing is not effective in the future.'}, HTTPStatus.FORBIDDEN
