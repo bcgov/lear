@@ -268,8 +268,8 @@ def patch_filings(identifier, filing_id=None):
 @bp.route('/filings/search', methods=['POST'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.staff])
-def get_filing_data():
-    """Return the filing data for a given filing ID."""
+def get_fed_filing():
+    """Return the filing data for a given filing ID if the effective date is in the future."""
     try:
         json_input = request.get_json()
         filing_id = json_input.get('filingId', None)
@@ -277,7 +277,6 @@ def get_filing_data():
         if not filing_id:
             return {'message': 'Expected a filing ID in the request body.'}, HTTPStatus.BAD_REQUEST
 
-        # Query the Filing table to find the filing by the provided filing ID
         filing_query = db.session.query(Filing).filter(Filing.id == filing_id).first()
 
         if not filing_query:
@@ -285,11 +284,14 @@ def get_filing_data():
 
         filing_data = filing_query.json
 
-        # Optionally, check and include future effective date if available
-        if filing_query.effective_date and filing_query.effective_date > _datetime.now(timezone.utc):
-            filing_data['futureEffectiveDate'] = filing_query.effective_date.isoformat()
+        effective_date_str = filing_data['filing']['header'].get('effectiveDate', None)
 
-        return jsonify(filing_data), HTTPStatus.OK
+        effective_date = _datetime.fromisoformat(effective_date_str)
+
+        if effective_date > _datetime.now(timezone.utc):
+            return jsonify(filing_data), HTTPStatus.OK
+        else:
+            return {'message': 'The filing is not effective in the future.'}, HTTPStatus.FORBIDDEN
 
     except Exception as err:
         current_app.logger.error('Error retrieving filing data for ID %s: %s', filing_id, err)
