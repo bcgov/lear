@@ -33,6 +33,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Services used by Entity-Filer."""
 from gcp_queue import GcpQueue
+
 from .gcp_auth import verify_gcp_jwt
+
 
 gcp_queue = GcpQueue()

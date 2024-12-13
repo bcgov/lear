@@ -31,27 +31,27 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""The unique worker functionality for this service is contained here.
-"""
+"""The unique worker functionality for this service is contained here."""
 import asyncio
 import re
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
 
-from flask import Blueprint, request, current_app
+from flask import Blueprint, current_app, request
 from gcp_queue import SimpleCloudEvent
 from structured_logging import StructuredLogging
 
-from entity_filer.worker import process_filing
 from entity_filer.services import gcp_queue, verify_gcp_jwt
+from entity_filer.worker import process_filing
 
 
-bp = Blueprint("worker", __name__)
+bp = Blueprint('worker', __name__)
 logger = StructuredLogging.get_logger()
 loop = asyncio.get_event_loop()
 
-@bp.route("/", methods=("POST",))
+
+@bp.route('/', methods=('POST',))
 def worker():
     """Process the incoming cloud event.
 
@@ -67,14 +67,14 @@ def worker():
     - Filings that cannot be processed are knocked off the Q
     """
     if not request.data:
-        logger.debug(f"No incoming raw msg.")
+        logger.debug('No incoming raw msg.')
         return {}, HTTPStatus.OK
 
     if msg := verify_gcp_jwt(request):
         logger.info(msg)
         return {}, HTTPStatus.FORBIDDEN
 
-    logger.info(f"Incoming raw msg: {str(request.data)}")
+    logger.info(f'Incoming raw msg: {str(request.data)}')
 
     # 1. Get cloud event
     # ##
@@ -84,56 +84,60 @@ def worker():
         #
         # Decision here is to return a 200,
         # so the event is removed from the Queue
-        logger.debug(f"ignoring message, raw payload: {str(ce)}")
+        logger.debug(f'ignoring message, raw payload: {str(ce)}')
         return {}, HTTPStatus.OK
-    logger.info(f"received ce: {str(ce)}")
+    logger.info(f'received ce: {str(ce)}')
 
     # 2. Get filing_message information
     # ##
     if not (filing_message := get_filing_message(ce)):
         # no filing_message info, error off Q
-        logger.debug(f"no filing_message info in: {ce}")
-        return {"error": "no filing info in cloud event"}, HTTPStatus.BAD_REQUEST
-    logger.info(f"Incoming filing_message: {filing_message}")
+        logger.debug(f'no filing_message info in: {ce}')
+        return {'error': 'no filing info in cloud event'}, HTTPStatus.BAD_REQUEST
+    logger.info(f'Incoming filing_message: {filing_message}')
 
     # 3. Process Filing
     # ##
     try:
         loop.run_until_complete(process_filing(filing_message, current_app))
-    except Exception as err:
-        logger.error(f"Error processing filing {filing_message}: {err}")
-        return {"error": f"Unable to process filing: {filing_message}"}, HTTPStatus.BAD_REQUEST
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        logger.error(f'Error processing filing {filing_message}: {err}')
+        return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.BAD_REQUEST
 
-    logger.info(f"completed ce: {str(ce)}")
+    logger.info(f'completed ce: {str(ce)}')
     return {}, HTTPStatus.OK
+
 
 @dataclass
 class FilingMessage:
+    """FilingMessage object from the cloud event."""
+
     id: Optional[str] = None
     status_code: Optional[str] = None
     filing_identifier: Optional[str] = None
     corp_type_code: Optional[str] = None
 
+
 def get_filing_message(ce: SimpleCloudEvent):
     """Return a FilingMessage if enclosed in the cloud event."""
     if (
-        (ce.type == "filingMessage")
+        (ce.type == 'filingMessage')
         and isinstance(ce.data, dict)
-        and (filing_message := ce.data.get("filingMessage", {}))
+        and (filing_message := ce.data.get('filingMessage', {}))
     ):
         # TODO: return FilingMessage instance instead of dict once GCP migration is complete
         return {
-            "filing": {
-                "id": filing_message["filingIdentifier"]
+            'filing': {
+                'id': filing_message['filingIdentifier']
             }
         }
     return None
 
 
 def dict_keys_to_snake_case(d: dict):
-    """Convert the keys of a dict to snake_case"""
-    pattern = re.compile(r"(?<!^)(?=[A-Z])")
+    """Convert the keys of a dict to snake_case."""
+    pattern = re.compile(r'(?<!^)(?=[A-Z])')
     converted = {}
     for k, v in d.items():
-        converted[pattern.sub("_", k).lower()] = v
+        converted[pattern.sub('_', k).lower()] = v
     return converted

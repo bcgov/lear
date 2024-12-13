@@ -409,8 +409,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     level='error'
                 )
 
-            # TODO: remove NATS publishing once GCP migration is complete 
-            if not flags.is_on("enable-sandbox"):
+            # TODO: remove NATS publishing once GCP migration is complete
+            if not flags.is_on('enable-sandbox'):
                 try:
                     await publish_event(business, filing_submission)
                 except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
