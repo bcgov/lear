@@ -116,6 +116,69 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing'][filing_type] == filing_json
 
 
+def test_get_fed_filing_missing_filing_id(session, client, jwt):
+    """Assert that the request fails with a 400 Bad Request if the filing ID is missing."""
+    json_data = {}
+
+    rv = client.post('/api/v2/businesses/filings/search',
+                     json=json_data,
+                     headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json == {'message': 'Expected a filing ID in the request body.'}
+
+
+def test_get_fed_filing_not_found(session, client, jwt):
+    """Assert that the request fails with a 404 Not Found if the filing ID doesn't exist."""
+    json_data = {'filingId': 99999}
+
+    rv = client.post('/api/v2/businesses/filings/search',
+                     json=json_data,
+                     headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': 'Filing with ID 99999 not found.'}
+
+def test_get_fed_filing_not_future_effective_date(session, client, jwt):
+    """Assert that the request returns a 403 Forbidden if the effective date is not in the future."""
+    
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    
+    filing_data = copy.deepcopy(ANNUAL_REPORT)
+    
+    past_effective_date = (datetime.now(timezone.utc) - datedelta.datedelta(days=1)).isoformat()
+    filing_data['filing']['header']['effectiveDate'] = past_effective_date
+    
+    filing = factory_filing(b, filing_data, is_future_effective=False)
+
+    json_data = {'filingId': filing.id}
+
+    rv = client.post('/api/v2/businesses/filings/search',
+                     json=json_data,
+                     headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+    assert rv.json == {'message': 'The filing is not effective in the future.'}
+
+def test_get_fed_filing_future_effective_date(session, client, jwt):
+    """Assert that the request returns a filing if there is a matching FED filing."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filing_data = copy.deepcopy(ANNUAL_REPORT)
+    filing = factory_filing(b, filing_data, is_future_effective=True)
+    json_data = {'filingId': filing.id}
+
+    rv = client.post('/api/v2/businesses/filings/search',
+                     json=json_data,
+                     headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert 'filing' in rv.json
+    assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
+    assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+
+    
 def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
