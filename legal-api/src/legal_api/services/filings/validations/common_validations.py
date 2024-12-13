@@ -18,6 +18,7 @@ from typing import Optional
 
 import pycountry
 import PyPDF2
+from flask import current_app
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -253,6 +254,7 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     # This is added specifically for the sandbox environment.
     # i.e. NR check should only ever have feature flag disabled for sandbox environment.
     if flags.is_on('enable-sandbox'):
+        current_app.logger.debug('Skipping name request validation for Sandbox.')
         return []
 
     nr_path = f'/filing/{filing_type}/nameRequest'
