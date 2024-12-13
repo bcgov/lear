@@ -18,10 +18,9 @@
 import asyncio
 import os
 
-from entity_queue_common.service_utils import logger
-
 from entity_filer.resources import register_endpoints
 from entity_filer.worker import APP_CONFIG, FLASK_APP, cb_subscription_handler, flags, qsm
+from entity_queue_common.service_utils import logger
 
 
 if __name__ == '__main__':
