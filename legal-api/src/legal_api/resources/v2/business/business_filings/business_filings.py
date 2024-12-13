@@ -269,7 +269,7 @@ def patch_filings(identifier, filing_id=None):
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_fed_filing():
-    """Return the filing data for a given filing ID if the effective date is in the future."""
+    """Return a single FED filing."""
     try:
         json_input = request.get_json()
         filing_id = json_input.get('filingId', None)
@@ -284,9 +284,7 @@ def get_fed_filing():
 
         filing_data = filing_query.json
 
-        effective_date_str = filing_data['filing']['header'].get('effectiveDate', None)
-
-        effective_date = datetime.datetime.fromisoformat(effective_date_str)
+        effective_date = datetime.datetime.fromisoformat(filing_data['filing']['header'].get('effectiveDate', None))
 
         if effective_date > datetime.datetime.utcnow():
             return jsonify(filing_data), HTTPStatus.OK
