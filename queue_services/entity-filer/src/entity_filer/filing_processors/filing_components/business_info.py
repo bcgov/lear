@@ -20,7 +20,7 @@ from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 from legal_api.core import BusinessIdentifier, BusinessType
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services import AccountService, NaicsService
+from legal_api.services import AccountService, Flags, NaicsService
 
 
 def set_corp_type(business: Business, business_info: Dict) -> Dict:
@@ -88,32 +88,34 @@ def update_naics_info(business: Business, naics: Dict):
     business.naics_description = naics.get('naicsDescription')
 
 
-def get_next_corp_num(legal_type: str):
+def get_next_corp_num(legal_type: str, flags: Flags):
     """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
-    # this gets called if the new services are generating the Business.identifier.
-    if legal_type in BusinessType:
+    if legal_type in (Business.LegalTypes.BCOMP.value,
+                      Business.LegalTypes.BC_ULC_COMPANY.value,
+                      Business.LegalTypes.BC_CCC.value,
+                      Business.LegalTypes.COMP.value):
+        legal_type = 'BC'
+    elif legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+                        Business.LegalTypes.ULC_CONTINUE_IN.value,
+                        Business.LegalTypes.CCC_CONTINUE_IN.value,
+                        Business.LegalTypes.CONTINUE_IN.value):
+        legal_type = 'C'
+
+    # when lear generating the identifier
+    if (
+        legal_type in (BusinessType.COOPERATIVE, BusinessType.PARTNERSHIP_AND_SOLE_PROP) or
+        (flags.is_on('enable-sandbox') and  # only for sandbox now
+         legal_type in (BusinessType.CORPORATION, BusinessType.CONTINUE_IN))
+    ):
         if business_type := BusinessType.get_enum_by_value(legal_type):
             return BusinessIdentifier.next_identifier(business_type)
         return None
 
-    # legacy Business.Identifier generation
+    # when colin generating the identifier
     try:
-        # TODO: update this to grab the legal 'class' after legal classes have been defined in lear
-        if legal_type in (Business.LegalTypes.BCOMP.value,
-                          Business.LegalTypes.BC_ULC_COMPANY.value,
-                          Business.LegalTypes.BC_CCC.value,
-                          Business.LegalTypes.COMP.value):
-            business_type = 'BC'
-        elif legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-                            Business.LegalTypes.ULC_CONTINUE_IN.value,
-                            Business.LegalTypes.CCC_CONTINUE_IN.value,
-                            Business.LegalTypes.CONTINUE_IN.value):
-            business_type = 'C'
-        else:
-            business_type = legal_type
         token = AccountService.get_bearer_token()
         resp = requests.post(
-            f'{current_app.config["COLIN_API"]}/{business_type}',
+            f'{current_app.config["COLIN_API"]}/{legal_type}',
             headers={**AccountService.CONTENT_TYPE_JSON,
                      'Authorization': AccountService.BEARER + token}
         )
@@ -124,8 +126,7 @@ def get_next_corp_num(legal_type: str):
     if resp.status_code == 200:
         new_corpnum = int(resp.json()['corpNum'])
         if new_corpnum and new_corpnum <= 9999999:
-            # TODO: Fix endpoint
-            return f'{business_type}{new_corpnum:07d}'
+            return f'{legal_type}{new_corpnum:07d}'
     return None
 
 

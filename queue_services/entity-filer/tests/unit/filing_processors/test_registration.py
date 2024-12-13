@@ -84,7 +84,7 @@ def test_registration_process(app, session, legal_type, filing):
 
     # test
     with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta, None)
 
     # Assertions
     assert business.identifier.startswith('FM')
@@ -147,7 +147,7 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
 
     # create business and filing records
     with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
+        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta, None)
         business.save()
         filing_rec.save()
 

@@ -264,13 +264,15 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     business, filing_submission, filing_meta = incorporation_filing.process(business,
                                                                                             filing_core_submission.json,
                                                                                             filing_submission,
-                                                                                            filing_meta)
+                                                                                            filing_meta,
+                                                                                            flags)
 
                 elif filing.get('registration'):
                     business, filing_submission, filing_meta = registration.process(business,
                                                                                     filing_core_submission.json,
                                                                                     filing_submission,
-                                                                                    filing_meta)
+                                                                                    filing_meta,
+                                                                                    flags)
 
                 elif filing.get('conversion'):
                     business, filing_submission = conversion.process(business,
@@ -322,14 +324,16 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         business,
                         filing_core_submission.json,
                         filing_submission,
-                        filing_meta)
+                        filing_meta,
+                        flags)
 
                 elif filing.get('continuationIn'):
                     business, filing_submission, filing_meta = continuation_in.process(
                         business,
                         filing_core_submission.json,
                         filing_submission,
-                        filing_meta)
+                        filing_meta,
+                        flags)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)

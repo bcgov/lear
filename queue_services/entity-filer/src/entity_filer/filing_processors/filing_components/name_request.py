@@ -27,7 +27,7 @@ from legal_api.services.utils import get_str
 def consume_nr(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
     """Update the nr to a consumed state."""
     try:
-        if flags.is_on('disable-nr-check'):
+        if flags.is_on('enable-sandbox'):
             return
 
         filing_type = filing_type if filing_type else filing.filing_type
