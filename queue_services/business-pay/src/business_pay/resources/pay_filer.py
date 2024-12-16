@@ -207,6 +207,10 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
 def publish_to_emailer(filing: Filing):
     """Publish a queue message to entity-emailer once the filing has been marked as PAID."""
     with suppress(Exception):
+        # skip publishing NATS message
+        if flags.is_on("enable-sandbox"):
+            logger.debug("Skip publishing to emailer.")
+            return
         mail_topic = current_app.config["EMAIL_PUBLISH_OPTIONS"]["subject"]
         email_msg = create_email_msg(filing.id, filing.filing_type)
         # await queue.publish(subject=mail_topic, msg=email_msg)
