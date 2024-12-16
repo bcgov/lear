@@ -265,31 +265,18 @@ def patch_filings(identifier, filing_id=None):
     return jsonify(filing.json), HTTPStatus.ACCEPTED
 
 
-@bp.route('/filings/search', methods=['POST'])
+@bp.route('/filings/search/<int:filing_id>', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.staff])
-def get_fed_filing():
-    """Return a single FED filing."""
+def get_single_filing_by_filing_id(filing_id):
+    """Return a single filing by filing ID."""
     try:
-        json_input = request.get_json()
-        filing_id = json_input.get('filingId', None)
-
-        if not filing_id:
-            return {'message': 'Expected a filing ID in the request body.'}, HTTPStatus.BAD_REQUEST
-
-        filing_query = db.session.query(Filing).filter(Filing.id == filing_id).first()
+        filing_query = Filing.find_by_id(filing_id)
 
         if not filing_query:
             return {'message': f'Filing with ID {filing_id} not found.'}, HTTPStatus.NOT_FOUND
 
-        filing_data = filing_query.json
-
-        effective_date = datetime.datetime.fromisoformat(filing_data['filing']['header'].get('effectiveDate', None))
-
-        if effective_date > datetime.datetime.utcnow():
-            return jsonify(filing_data), HTTPStatus.OK
-        else:
-            return {'message': 'The filing is not effective in the future.'}, HTTPStatus.FORBIDDEN
+        return jsonify(filing_query.json), HTTPStatus.OK
 
     except Exception as err:
         current_app.logger.error('Error retrieving filing data for ID %s: %s', filing_id, err)

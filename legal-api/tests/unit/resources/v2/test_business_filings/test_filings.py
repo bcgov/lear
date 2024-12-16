@@ -116,62 +116,26 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing'][filing_type] == filing_json
 
 
-def test_get_fed_filing_missing_filing_id(session, client, jwt):
-    """Assert that the request fails if the filing ID is missing."""
-    json_data = {}
-
-    rv = client.post('/api/v2/businesses/filings/search',
-                     json=json_data,
-                     headers=create_header(jwt, [STAFF_ROLE]))
-
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json == {'message': 'Expected a filing ID in the request body.'}
-
-
-def test_get_fed_filing_not_found(session, client, jwt):
+def test_get_filing_not_found(session, client, jwt):
     """Assert that the request fails if the filing ID doesn't match an existing filing."""
-    json_data = {'filingId': 99999}
-
-    rv = client.post('/api/v2/businesses/filings/search',
-                     json=json_data,
-                     headers=create_header(jwt, [STAFF_ROLE]))
+    rv = client.get('/api/v2/businesses/filings/search/99999',
+                    headers=create_header(jwt, [STAFF_ROLE]))
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': 'Filing with ID 99999 not found.'}
 
-def test_get_fed_filing_not_future_effective_date(session, client, jwt):
-    """Assert that a filing is not returned if the effective date is not in the future."""
-    
+
+def test_get_filing_valid_filing_id(session, client, jwt):
+    """Assert that a valid filing ID returns the correct filing."""
+
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    
+
     filing_data = copy.deepcopy(ANNUAL_REPORT)
-    
-    past_effective_date = (datetime.now(timezone.utc) - datedelta.datedelta(days=1)).isoformat()
-    filing_data['filing']['header']['effectiveDate'] = past_effective_date
-    
-    filing = factory_filing(b, filing_data, is_future_effective=False)
+    filing = factory_filing(b, filing_data)
 
-    json_data = {'filingId': filing.id}
-
-    rv = client.post('/api/v2/businesses/filings/search',
-                     json=json_data,
-                     headers=create_header(jwt, [STAFF_ROLE]))
-
-    assert rv.status_code == HTTPStatus.FORBIDDEN
-    assert rv.json == {'message': 'The filing is not effective in the future.'}
-
-def test_get_fed_filing_future_effective_date(session, client, jwt):
-    """Assert that a filing is returned if the effective date is in the future."""
-    identifier = 'CP7654321'
-    b = factory_business(identifier)
-    filing_data = copy.deepcopy(ANNUAL_REPORT)
-    filing = factory_filing(b, filing_data, is_future_effective=True)
-    json_data = {'filingId': filing.id}
-
-    rv = client.post('/api/v2/businesses/filings/search',
-                     json=json_data,
-                     headers=create_header(jwt, [STAFF_ROLE]))
+    rv = client.get(f'/api/v2/businesses/filings/search/{filing.id}',
+                    headers=create_header(jwt, [STAFF_ROLE]))
 
     assert rv.status_code == HTTPStatus.OK
     assert 'filing' in rv.json
