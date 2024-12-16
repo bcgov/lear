@@ -58,6 +58,7 @@ from legal_api.services import (
     MinioService,
     RegistrationBootstrapService,
     authorized,
+    flags,
     namex,
     queue,
 )
@@ -391,7 +392,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             effective_date = filing.json['filing']['header'].get('effectiveDate', None)
             if effective_date:
                 effective_date = datetime.datetime.fromisoformat(effective_date)
-            if nr_number:
+            if (nr_number and not flags.is_on('enable-sandbox')):
                 nr_response = namex.query_nr_number(nr_number)
                 # If there is an effective date, check if we need to extend the NR expiration
                 if effective_date and namex.is_date_past_expiration(nr_response.json(), effective_date):
