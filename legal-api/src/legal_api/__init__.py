@@ -43,7 +43,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
-    app.logger.debug(app.config)
 
     # Configure Sentry
     if dsn := app.config.get('SENTRY_DSN', None):
