@@ -265,6 +265,24 @@ def patch_filings(identifier, filing_id=None):
     return jsonify(filing.json), HTTPStatus.ACCEPTED
 
 
+@bp.route('/filings/search/<int:filing_id>', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.staff])
+def get_single_filing_by_filing_id(filing_id):
+    """Return a single filing by filing ID."""
+    try:
+        filing_query = Filing.find_by_id(filing_id)
+
+        if not filing_query:
+            return {'message': f'Filing with ID {filing_id} not found.'}, HTTPStatus.NOT_FOUND
+
+        return jsonify(filing_query.json), HTTPStatus.OK
+
+    except Exception as err:
+        current_app.logger.error('Error retrieving filing data for ID %s: %s', filing_id, err)
+        return {'error': 'Unable to retrieve filing data.'}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 class ListFilingResource():  # pylint: disable=too-many-public-methods
     """Business Filings service."""
 
