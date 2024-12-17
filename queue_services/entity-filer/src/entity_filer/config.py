@@ -79,7 +79,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv('DATABASE_NAME', '')
     DB_HOST = os.getenv('DATABASE_HOST', '')
     DB_PORT = os.getenv('DATABASE_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
+        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?unix_sock={DB_UNIX_SOCKET}/.s.PGSQL.5432"
+    else:
+        SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 
     NATS_CONNECTION_OPTIONS = {
         'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
