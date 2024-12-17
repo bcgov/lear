@@ -182,7 +182,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
 async def publish_mras_email(filing: Filing):
     """Publish MRAS email message onto the NATS emailer subject."""
     if flags.is_on('enable-sandbox'):
-            return
+        return
 
     if filing.filing_type in [
         FilingCore.FilingTypes.AMALGAMATIONAPPLICATION,
