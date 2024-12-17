@@ -835,6 +835,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
 
+        if flags.is_on('enable-sandbox'):
+            payload['skipPayment'] = True
+
         if user_jwt.validate_roles([STAFF_ROLE]):
             special_role = UserRoles.staff
         elif user_jwt.validate_roles([SYSTEM_ROLE]):
