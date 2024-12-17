@@ -49,6 +49,12 @@ def create_filing_msg(identifier):
     return filing_msg
 
 
+def create_gcp_filing_msg(identifier):
+    """Create the GCP filing payload."""
+    filing_msg = {"filingMessage": {"filingIdentifier": identifier}}
+    return filing_msg
+
+
 def create_email_msg(identifier, filing_type):
     """Create the email message payload."""
     # TODO change OPTION to use a common Enum
