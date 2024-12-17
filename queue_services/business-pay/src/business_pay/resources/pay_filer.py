@@ -47,8 +47,9 @@ from simple_cloudevent import SimpleCloudEvent, to_queue_message
 from structured_logging import StructuredLogging
 
 from business_pay.database import Filing
-from business_pay.services import (create_email_msg, create_filing_msg, flags,
-                                   gcp_queue, queue, verify_gcp_jwt)
+from business_pay.services import (create_email_msg, create_filing_msg,
+                                   create_gcp_filing_msg, flags, gcp_queue,
+                                   queue, verify_gcp_jwt)
 
 bp = Blueprint("worker", __name__)
 
@@ -176,18 +177,18 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
                 logger.debug(f"enable-sandbox flag on: {flag_on}")
                 # use Pub/Sub if FF on, otherwise NATS
                 if flag_on:
-                    subject = current_app.config.get('BUSINESS_FILER_TOPIC')
-                    data = create_filing_msg(filing.id)
+                    data = create_gcp_filing_msg(filing.id)
 
                     ce = SimpleCloudEvent(
                         id=str(uuid.uuid4()),
-                        source='business-pay',
-                        subject=subject,
+                        source='business_pay',
+                        subject='filing',
                         time=datetime.now(timezone.utc),
-                        type='filing-message',
+                        type='filingMessage',
                         data = data
                     )
-                    gcp_queue.publish(subject, to_queue_message(ce))
+                    topic = current_app.config.get('BUSINESS_FILER_TOPIC')
+                    gcp_queue.publish(topic, to_queue_message(ce))
                     logger.debug(
                         f"Filer pub/sub message: {str(ce)}"
                     )
