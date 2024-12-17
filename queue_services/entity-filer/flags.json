@@ -2,7 +2,6 @@
     "flagValues": {
         "enable-involuntary-dissolution": true,
         "namex-nro-decommissioned": true,
-        "disable-nr-check": false,
-        "enable-sandbox": true
+        "enable-sandbox": false
     }
 }
