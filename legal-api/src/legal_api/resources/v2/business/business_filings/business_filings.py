@@ -128,7 +128,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
     # get header params
     payment_account_id = request.headers.get('account-id',
                                              request.headers.get('accountId', None))
-    current_app.logger.debug(f"\U0001F6A9 -- DEBUG -- draft?: {query.draft}")
+
     if not query.draft \
             and not ListFilingResource.is_historical_colin_filing(json_input) \
             and not ListFilingResource.is_before_epoch_filing(json_input, business):
