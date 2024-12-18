@@ -143,7 +143,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     BUSINESS_EVENTS_TOPIC = os.getenv('BUSINESS_EVENTS_TOPIC', 'business-event-dev')
     BUSINESS_PAY_TOPIC = os.getenv('BUSINESS_PAY_TOPIC', 'business-pay-dev')
     NAMEX_PAY_TOPIC = os.getenv('NAMEX_PAY_TOPIC', 'namex-pay-dev')
-
+    SUB_AUDIENCE = os.getenv('SUB_AUDIENCE', '')
+    SUB_SERVICE_ACCOUNT = os.getenv('SUB_SERVICE_ACCOUNT', '')
     AUDIENCE = os.getenv(
         'AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
     )
