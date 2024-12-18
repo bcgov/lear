@@ -91,9 +91,9 @@ def worker():
     # 2. Get filing_message information
     # ##
     if not (filing_message := get_filing_message(ce)):
-        # no filing_message info, error off Q
+        # no filing_message info, take off Q
         logger.debug(f'no filing_message info in: {ce}')
-        return {'error': 'no filing info in cloud event'}, HTTPStatus.BAD_REQUEST
+        return {'message': 'no filing info in cloud event'}, HTTPStatus.OK
     logger.info(f'Incoming filing_message: {filing_message}')
 
     # 3. Process Filing
@@ -102,7 +102,7 @@ def worker():
         loop.run_until_complete(process_filing(filing_message, current_app))
     except Exception as err:  # pylint: disable=broad-exception-caught
         logger.error(f'Error processing filing {filing_message}: {err}')
-        return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.BAD_REQUEST
+        return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
     logger.info(f'completed ce: {str(ce)}')
     return {}, HTTPStatus.OK
