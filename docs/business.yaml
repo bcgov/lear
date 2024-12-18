@@ -900,11 +900,6 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Can't have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
-                notice-of-withdrawal-failed-invalid-filing-id-response:
-                  summary: Notice of Withdrawal - withdrawn filing cannot be found
-                  value:
-                    errors:
-                      - error: The filing to be withdrawn cannot be found.
                 notice-of-withdrawal-failed-withdrawn-filing-issues-response:
                   summary: Notice of Withdrawal - invalid withdrawn filing
                   value:
@@ -930,6 +925,16 @@ paths:
                   summary: Notice of Withdrawal - Not a staff
                   value:
                     message: You are not authorized to submit a filing for BC1234567.
+        '404':
+          description: Cannot found, when a value cannot be found in the records
+          content:
+            application/json:
+              examples:
+                notice-of-withdrawal-failed-invalid-filing-id-response:
+                  summary: Notice of Withdrawal - withdrawn filing cannot be found
+                  value:
+                    errors:
+                      - error: The filing to be withdrawn cannot be found.
         '422':
           description: UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)
           content:
@@ -1498,6 +1503,27 @@ paths:
                       legalType: BC
                     noticeOfWithdrawal:
                       filingId: 123456
+              notice-of-withdrawal-with-options-request:
+                summary: Notice of Withdrawal Request with Options
+                value:
+                  filing:
+                    header:
+                      name: noticeOfWithdrawal
+                      certifiedBy: Sample Certified Person
+                      email: api.specs@example.com
+                      date: '2024-12-18'
+                      priority: false
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
+                    noticeOfWithdrawal:
+                      filingId: 123456
+                      courtOrder:
+                        fileNumber: "A12345"
+                        effectOfOrder: planOfArrangement
+                        effectOfArrangement: ''
               voluntary-dissolution-request:
                 summary: Voluntary Dissolution Request
                 value:
