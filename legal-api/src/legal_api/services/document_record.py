@@ -21,13 +21,6 @@ from flask_babel import _
 
 import PyPDF2
 
-
-BASE_URL = current_app.config.get('DRS_BASE_URL')
-BASE_HEADERS = {
-    'x-apikey': current_app.config.get('DRS_X_API_KEY'),
-    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID'),
-}
-
 class DocumentRecordService:
     """Document Storage class."""
 
@@ -42,7 +35,8 @@ class DocumentRecordService:
             current_app.logger.debug('No file found in request.')
             return {'data': 'File not provided'}
         current_app.logger.debug(f'Upload file to document record service {file.filename}')
-        url = f'{BASE_URL}documents/{document_class}/{document_type}'
+        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
+        url = f'{DRS_BASE_URL}documents/{document_class}/{document_type}'
 
         # Validate file size and encryption status before submitting to DRS.
         validation_error = DocumentRecordService.validate_pdf(file, request.content_length)
@@ -67,7 +61,8 @@ class DocumentRecordService:
                     'content_type': file.content_type,
                 },
                 headers={
-                    **BASE_HEADERS,
+                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
                     'Content-Type': 'application/pdf'
                 }
             ).json()
@@ -85,12 +80,16 @@ class DocumentRecordService:
     @staticmethod
     def delete_document(document_service_id: str) -> dict:
         """Delete document from Document Record Service."""
-        url = f'{BASE_URL}documents/{document_service_id}'
+        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
+        url = f'{DRS_BASE_URL}documents/{document_service_id}'
 
         try:
             response = requests.patch(
                 url, json={ 'removed': True },
-                headers=BASE_HEADERS
+                headers={
+                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
+                }
             ).json()
             current_app.logger.debug(f'Delete document from document record service {response}')
             return response
