@@ -876,7 +876,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business):
     """Check if there are any blockers specific to Notice of Withdrawal."""
     if business.admin_freeze:
         return True
-    
+
     # Get request method and filing id from request context
     is_update = request.method == 'PUT'
     filing_id = request.view_args.get('filing_id') if is_update else None
