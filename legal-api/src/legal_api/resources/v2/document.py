@@ -20,6 +20,7 @@ from flask_cors import cross_origin
 
 from legal_api.models import Document, Filing
 from legal_api.services.minio import MinioService
+from legal_api.services.document_record import DocumentRecordService
 from legal_api.utils.auth import jwt
 
 
@@ -77,3 +78,19 @@ def get_minio_document(document_key: str):
         return jsonify(
             message=f'Error getting file {document_key}.'
         ), HTTPStatus.INTERNAL_SERVER_ERROR
+
+@bp.route('/<string:document_class>/<string:document_type>', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def upload_document(document_class: str, document_type: str):
+    """Upload document file to Document Record Service."""
+
+    return DocumentRecordService.upload_document(document_class, document_type), HTTPStatus.OK
+
+@bp.route('/drs/<string:document_service_id>', methods=['DELETE'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def delete_document(document_service_id: str):
+    """Delete document file from Document Record Service."""
+
+    return DocumentRecordService.delete_document(document_service_id), HTTPStatus.OK
