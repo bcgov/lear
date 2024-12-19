@@ -504,7 +504,7 @@ def is_allowed(business: Business,
         else:
             is_ignore_draft_blockers = True
 
-    # Special case: handiling authorization for amalgamation application
+    # Special case: handling authorization for amalgamation application
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == 'amalgamationApplication' and legal_type in ['C', 'CBEN', 'CUL', 'CCC']:
         return False
@@ -876,9 +876,25 @@ def has_notice_of_withdrawal_filing_blocker(business: Business):
     """Check if there are any blockers specific to Notice of Withdrawal."""
     if business.admin_freeze:
         return True
+    
+    # Get request method and filing id from request context
+    is_update = request.method == 'PUT'
+    filing_id = request.view_args.get('filing_id') if is_update else None
 
-    filing_statuses = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
+    # Get all draft filings
+    draft_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value])
+
+    if is_update:
+        # For updates: block only if there are drafts other than the current one
+        other_drafts = [f for f in draft_filings if f.id != filing_id]
+        if other_drafts:
+            return True
+    else:
+        # For new filings: block if any draft exists
+        if draft_filings:
+            return True
+
+    filing_statuses = [Filing.Status.PENDING.value,
                        Filing.Status.PENDING_CORRECTION.value,
                        Filing.Status.ERROR.value]
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
