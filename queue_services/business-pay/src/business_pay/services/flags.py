@@ -97,18 +97,11 @@ class Flags():
 
     @staticmethod
     def _get_anonymous_user():
-        return {
-            'key': 'anonymous'
-        }
+        return Context.create('anonymous')
 
     @staticmethod
     def _user_as_key(user):
-        user_json = {
-            'key': user.sub,
-            'firstName': user.firstname,
-            'lastName': user.lastname
-        }
-        return user_json
+        return Context.builder(user.sub).set('firstName', user.firstname).set('lastName', user.lastname).build()
 
     def is_on(self, flag: str, user = None) -> bool:
         """Assert that the flag is set for this user."""
@@ -120,8 +113,7 @@ class Flags():
             flag_user = self._get_anonymous_user()
 
         try:
-            user_context = Context.builder(flag_user).build()
-            return bool(client.variation(flag, user_context, None))
+            return bool(client.variation(flag, flag_user, None))
         except Exception as err:
             current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
             return False
