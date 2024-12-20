@@ -226,6 +226,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
         # convenience flag to set that the envelope is a correction
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
+        # pylint: disable=too-many-nested-blocks;
         if legal_filings := filing_core_submission.legal_filings():
             uow = versioning_manager.unit_of_work(db.session)
             transaction = uow.create_transaction(db.session)
@@ -369,37 +370,41 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 # update affiliation for new business
                 if filing_core_submission.filing_type != FilingCore.FilingTypes.CONVERSION:
-                    business_profile.update_affiliation(business, filing_submission)
+                    business_profile.update_affiliation(business, filing_submission, flags)
 
                 name_request.consume_nr(business, filing_submission, flags=flags)
-                business_profile.update_business_profile(business, filing_submission)
+                business_profile.update_business_profile(business, filing_submission, flags=flags)
                 await publish_mras_email(filing_submission)
             else:
                 # post filing changes to other services
-                for filing_type in filing_meta.legal_filings:
-                    if filing_type in [
-                        FilingCore.FilingTypes.ALTERATION,
-                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                        FilingCore.FilingTypes.CORRECTION,
-                        FilingCore.FilingTypes.DISSOLUTION,
-                        FilingCore.FilingTypes.PUTBACKON,
-                        FilingCore.FilingTypes.RESTORATION
-                    ]:
-                        business_profile.update_entity(business, filing_type)
+                if not flags.is_on('enable-sandbox'):
+                    for filing_type in filing_meta.legal_filings:
+                        if filing_type in [
+                            FilingCore.FilingTypes.ALTERATION,
+                            FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                            FilingCore.FilingTypes.CORRECTION,
+                            FilingCore.FilingTypes.DISSOLUTION,
+                            FilingCore.FilingTypes.PUTBACKON,
+                            FilingCore.FilingTypes.RESTORATION
+                        ]:
+                            business_profile.update_entity(business, filing_type)
 
-                    if filing_type in [
-                        FilingCore.FilingTypes.ALTERATION,
-                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                        FilingCore.FilingTypes.CHANGEOFNAME,
-                        FilingCore.FilingTypes.CORRECTION,
-                        FilingCore.FilingTypes.RESTORATION,
-                    ]:
-                        name_request.consume_nr(business,
-                                                filing_submission,
-                                                filing_type=filing_type,
-                                                flags=flags)
-                        if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
-                            business_profile.update_business_profile(business, filing_submission, filing_type)
+                        if filing_type in [
+                            FilingCore.FilingTypes.ALTERATION,
+                            FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                            FilingCore.FilingTypes.CHANGEOFNAME,
+                            FilingCore.FilingTypes.CORRECTION,
+                            FilingCore.FilingTypes.RESTORATION,
+                        ]:
+                            name_request.consume_nr(business,
+                                                    filing_submission,
+                                                    filing_type=filing_type,
+                                                    flags=flags)
+                            if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
+                                business_profile.update_business_profile(business,
+                                                                         filing_submission,
+                                                                         filing_type,
+                                                                         flags=flags)
 
             # TODO: remove NATS publishing once GCP migration is complete
             if not flags.is_on('enable-sandbox'):
