@@ -144,7 +144,8 @@ class AccountService:
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None,
                            pass_code: str = '',
-                           details: dict = None):
+                           details: dict = None,
+                           flags: any = None):
         """Affiliate a business to an account."""
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
@@ -173,6 +174,13 @@ class AccountService:
         )
 
         # Create an account:business affiliation
+
+        # headers with conditional sandbox override
+        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
+        if flags and flags.is_on('enable-sandbox'):
+            current_app.logger.info('Appending Environment-Override = sandbox header to create affiliation call')
+            headers['Environment-Override'] = 'sandbox'
+
         affiliate_data = {
             'businessIdentifier': business_registration,
             'passCode': pass_code
@@ -181,8 +189,7 @@ class AccountService:
             affiliate_data['entityDetails'] = details
         affiliate = requests.post(
             url=account_svc_affiliate_url,
-            headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+            headers=headers,
             data=json.dumps(affiliate_data),
             timeout=cls.timeout
         )
