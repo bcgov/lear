@@ -746,7 +746,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
 
-    if has_notice_of_withdrawal_filing_blocker(business):
+    if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
 
     return business_blocker_checks
@@ -872,31 +872,16 @@ def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
     return warning_matches
 
 
-def has_notice_of_withdrawal_filing_blocker(business: Business):
+def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_blockers: bool = False):
     """Check if there are any blockers specific to Notice of Withdrawal."""
     if business.admin_freeze:
         return True
 
-    # Get request method and filing id from request context
-    is_update = request.method == 'PUT'
-    filing_id = request.view_args.get('filing_id') if is_update else None
-
-    # Get all draft filings
-    draft_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value])
-
-    if is_update:
-        # For updates: block only if there are drafts other than the current one
-        other_drafts = [f for f in draft_filings if f.id != filing_id]
-        if other_drafts:
-            return True
-    else:
-        # For new filings: block if any draft exists
-        if draft_filings:
-            return True
-
     filing_statuses = [Filing.Status.PENDING.value,
                        Filing.Status.PENDING_CORRECTION.value,
                        Filing.Status.ERROR.value]
+    if not is_ignore_draft_blockers:
+        filing_statuses.append(Filing.Status.DRAFT.value)
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
     if any(blocker_filing_matches):
         return True
