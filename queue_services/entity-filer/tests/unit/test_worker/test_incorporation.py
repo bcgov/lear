@@ -127,7 +127,8 @@ def test_update_affiliation(app, session, legal_type, corp_num):
                                                           business_name=business.legal_name,
                                                           corp_type_code=business.legal_type,
                                                           pass_code = '',
-                                                          details=details)
+                                                          details=details,
+                                                          flags=None)
                     assert first_affiliation_call_args == expected_affiliation_call_args
 
                     first_update_entity_call_args = AccountService.update_entity.call_args_list[0]
