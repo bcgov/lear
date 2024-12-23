@@ -34,6 +34,7 @@
 """The unique worker functionality for this service is contained here."""
 import asyncio
 import re
+import traceback
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Optional
@@ -102,6 +103,7 @@ def worker():
         loop.run_until_complete(process_filing(filing_message, current_app))
     except Exception as err:  # pylint: disable=broad-exception-caught
         logger.error(f'Error processing filing {filing_message}: {err}')
+        logger.debug(traceback.format_exc())
         return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
     logger.info(f'completed ce: {str(ce)}')
