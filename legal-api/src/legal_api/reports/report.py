@@ -174,6 +174,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'change-of-registration/addresses',
             'change-of-registration/proprietor',
             'change-of-registration/partner',
+            'notice-of-withdrawal/recordToBeWithdrawn',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
             'incorporation-application/effectiveDate',
@@ -306,6 +307,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_continuation_in_data(filing)
         elif self._report_key == 'certificateOfContinuation':
             self._format_certificate_of_continuation_in_data(filing)
+        elif self._report_key == 'noticeOfWithdrawal':
+            self._format_notice_of_withdrawal_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -747,6 +750,19 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_certificate_of_amalgamation_data(self, filing):
         self._set_amalgamating_businesses(filing)
+
+    def _format_notice_of_withdrawal_data(self, filing):
+        withdrawn_filing_id = filing['noticeOfWithdrawal']['filingId']
+        withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+        formatted_withdrawn_filing_type = self._format_filing_type(withdrawn_filing.filing_type)
+        filing['withdrawnFilingType'] = formatted_withdrawn_filing_type
+        withdrawn_filing_date = LegislationDatetime.as_legislation_timezone(withdrawn_filing.effective_date)
+        filing['withdrawnFilingEffectiveDate'] = LegislationDatetime.format_as_report_string(withdrawn_filing_date)
+
+    def _format_filing_type(self, filing_type_str: str):
+        if filing_type_str:
+            words = ''.join(' ' + c if c.isupper() else c for c in filing_type_str).split()
+            return ' '.join(word.capitalize() for word in words)
 
     def _set_amalgamating_businesses(self, filing):
         amalgamating_businesses = []
@@ -1460,6 +1476,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfContinuation': {
             'filingDescription': 'Certificate of Continuation',
             'fileName': 'certificateOfContinuation'
+        },
+        'noticeOfWithdrawal': {
+            'filingDescription': 'Notice of Withdrawal',
+            'fileName': 'noticeOfWithdrawal'
         }
     }
 
