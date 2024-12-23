@@ -110,7 +110,8 @@ def _get_receipt(business: Business, filing: Filing, token):
         return {}, HTTPStatus.BAD_REQUEST
 
     effective_date = None
-    if filing.storage.effective_date.date() != filing.storage.filing_date.date() or filing.filing_type == 'noticeOfWithdrawal':
+    if filing.storage.effective_date.date() != filing.storage.filing_date.date() \
+            or filing.filing_type == 'noticeOfWithdrawal':
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
 
     headers = {'Authorization': 'Bearer ' + token}

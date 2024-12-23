@@ -760,9 +760,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['withdrawnFilingEffectiveDate'] = LegislationDatetime.format_as_report_string(withdrawn_filing_date)
 
     def _format_filing_type(self, filing_type_str: str):
-        if filing_type_str:
-            words = ''.join(' ' + c if c.isupper() else c for c in filing_type_str).split()
-            return ' '.join(word.capitalize() for word in words)
+        words = ''.join(' ' + c if c.isupper() else c for c in filing_type_str).split()
+        return ' '.join(word.capitalize() for word in words)
 
     def _set_amalgamating_businesses(self, filing):
         amalgamating_businesses = []
