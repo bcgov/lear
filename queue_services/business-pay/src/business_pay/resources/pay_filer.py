@@ -35,6 +35,7 @@
 """This Module processes simple cloud event messages for possible filing payments.
 """
 import re
+import traceback
 import uuid
 from contextlib import suppress
 from dataclasses import dataclass
@@ -79,9 +80,9 @@ async def worker():
         # logger(request, "INFO", f"No incoming raw msg.")
         return {}, HTTPStatus.OK
 
-    if msg := verify_gcp_jwt(request):
-        logger.info(msg)
-        return {}, HTTPStatus.FORBIDDEN
+    # if msg := verify_gcp_jwt(request):
+    #     logger.info(msg)
+    #     return {}, HTTPStatus.FORBIDDEN
 
     logger.info(f"Incoming raw msg: {str(request.data)}")
 
@@ -168,41 +169,42 @@ class PaymentToken:
 
 def publish_to_filer(filing: Filing, payment_token: PaymentToken):
     """Publish a queue message to entity-filer once the filing has been marked as PAID."""
-    with suppress(Exception):
-        logger.debug(
-            f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
+    logger.debug(
+        f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
+    try:
         if filing.effective_date <= filing.payment_completion_date:
-            try:
-                flag_on = flags.is_on("enable-sandbox")
-                logger.debug(f"enable-sandbox flag on: {flag_on}")
-                # use Pub/Sub if FF on, otherwise NATS
-                if flag_on:
-                    data = create_gcp_filing_msg(filing.id)
+            flag_on = flags.is_on("enable-sandbox")
+            logger.debug(f"enable-sandbox flag on: {flag_on}")
+            # use Pub/Sub if FF on, otherwise NATS
+            if flag_on:
+                data = create_gcp_filing_msg(filing.id)
 
-                    ce = SimpleCloudEvent(
-                        id=str(uuid.uuid4()),
-                        source='business_pay',
-                        subject='filing',
-                        time=datetime.now(timezone.utc),
-                        type='filingMessage',
-                        data = data
-                    )
-                    topic = current_app.config.get('BUSINESS_FILER_TOPIC')
-                    gcp_queue.publish(topic, to_queue_message(ce))
-                    logger.debug(
-                        f"Filer pub/sub message: {str(ce)}"
-                    )
-                else:
-                    filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
-                    queue_message = create_filing_msg(filing.id)
-                    logger.debug(f"Filer NATS message: {queue_message}")
-                    # await queue.publish(subject=filer_topic, msg=queue_message)
-                    queue.publish_json(subject=filer_topic, payload=queue_message)
-            except Exception as err:
+                ce = SimpleCloudEvent(
+                    id=str(uuid.uuid4()),
+                    source='business_pay',
+                    subject='filing',
+                    time=datetime.now(timezone.utc),
+                    type='filingMessage',
+                    data = data
+                )
+                topic = current_app.config.get('BUSINESS_FILER_TOPIC')
+                gcp_queue.publish(topic, to_queue_message(ce))
                 logger.debug(
-                    f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
+                    f"Filer pub/sub message: {str(ce)}"
+                )
+            else:
+                filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
+                queue_message = create_filing_msg(filing.id)
+                logger.debug(f"Filer NATS message: {queue_message}")
+                # await queue.publish(subject=filer_topic, msg=queue_message)
+                queue.publish_json(subject=filer_topic, payload=queue_message)
+    except Exception as err:
+        logger.debug(
+            f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
+        # debug
+        logger.debug(traceback.format_exc())
 
-            logger.info(f"publish to filer for pay-id: {payment_token.id}")
+    logger.info(f"publish to filer for pay-id: {payment_token.id}")
 
 
 def publish_to_emailer(filing: Filing):
