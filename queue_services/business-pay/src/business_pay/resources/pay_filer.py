@@ -80,9 +80,9 @@ async def worker():
         # logger(request, "INFO", f"No incoming raw msg.")
         return {}, HTTPStatus.OK
 
-    # if msg := verify_gcp_jwt(request):
-    #     logger.info(msg)
-    #     return {}, HTTPStatus.FORBIDDEN
+    if msg := verify_gcp_jwt(request):
+        logger.info(msg)
+        return {}, HTTPStatus.FORBIDDEN
 
     logger.info(f"Incoming raw msg: {str(request.data)}")
 
