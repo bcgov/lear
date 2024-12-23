@@ -860,10 +860,12 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token,
                        'Content-Type': 'application/json'}
+            current_app.logger.debug(f'Pay api call - url: {payment_svc_url}, payload: {payload}')
             rv = requests.post(url=payment_svc_url,
                                json=payload,
                                headers=headers,
                                timeout=20.0)
+            current_app.logger.debug(f'Pay api call - result: {rv}')
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
