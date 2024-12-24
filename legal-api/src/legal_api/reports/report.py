@@ -761,7 +761,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_filing_type(self, filing_type_str: str):
         words = ''.join(' ' + c if c.isupper() else c for c in filing_type_str).split()
-        return ' '.join(word.capitalize() for word in words)
+        return ' '.join(word.capitalize() if word != 'agm' else word.upper() for word in words)
 
     def _set_amalgamating_businesses(self, filing):
         amalgamating_businesses = []
