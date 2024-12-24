@@ -76,6 +76,8 @@ class RegistrationBootstrapService:
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None) -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+
         if not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
@@ -83,7 +85,8 @@ class RegistrationBootstrapService:
                                                business_registration=bootstrap.identifier,
                                                business_name=business_name,
                                                corp_type_code=corp_type_code,
-                                               corp_sub_type_code=corp_sub_type_code)
+                                               corp_sub_type_code=corp_sub_type_code,
+                                               flags=flags)
 
         if rv == HTTPStatus.OK:
             return HTTPStatus.OK
