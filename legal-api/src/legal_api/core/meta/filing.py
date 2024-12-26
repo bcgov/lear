@@ -506,6 +506,12 @@ FILINGS: Final = {
             'CCC': 'NWITH'
         }
     },
+    'putBackOff': {
+        'name': 'putBackOff',
+        'title': 'Put Back Off',
+        'displayName': 'Correction - Put Back Off',
+        'code': 'NOFEE'
+    },
     'putBackOn': {
         'name': 'putBackOn',
         'title': 'Put Back On',
