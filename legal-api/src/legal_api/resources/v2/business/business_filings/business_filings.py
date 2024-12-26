@@ -630,14 +630,13 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     @staticmethod
     def _hide_in_ledger(filing: Filing) -> bool:
         """Hide the filing in the ledger."""
-        hide_in_ledger = False
+        hide_in_ledger = str(request.headers.get('hide-in-ledger', None)).lower()
         if (filing.filing_type == 'adminFreeze' or
-            (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary')):
-            hide_in_ledger = True
-        elif (jwt.validate_roles([SYSTEM_ROLE]) and
-              str(request.headers.get('hide-in-ledger', None)).lower() == 'true'):
-            hide_in_ledger = True
-        return hide_in_ledger
+            (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary') or
+                (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == 'true')):
+            return True
+
+        return False
 
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
