@@ -79,14 +79,14 @@ def test_get_future_effective_filing_ids(session, client, jwt):
         ('LIMITED_RESTORATION_EXPIRED', False)
     ]
 )
-def test_get_businesses_expired_limited_restoration(session, client, jwt, test_name, expired):
-    """Assert service returns eligible business excluding business which is in limited restoration status."""
+def test_get_businesses_expired_restoration(session, client, jwt, test_name, expired):
+    """Assert that expired restoration can be fetched."""
     identifier = 'BC1234567'
     business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
     business.restoration_expiry_date = (datetime.now(timezone.utc) +
                                         datedelta.datedelta(days=-1 if expired else 1))
     business.save()
-    rv = client.get('/api/v2/internal/expired_limited_restoration', headers=create_header(jwt, [UserRoles.system]))
+    rv = client.get('/api/v2/internal/expired_restoration', headers=create_header(jwt, [UserRoles.system]))
     if expired:
         assert rv.status_code == HTTPStatus.OK
         assert len(rv.json) == 1

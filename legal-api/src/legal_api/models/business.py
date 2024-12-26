@@ -673,8 +673,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return businesses
 
     @classmethod
-    def get_expired_limited_restoration(cls):
-        """Return all identifier with expired restoration date."""
+    def get_expired_restoration(cls):
+        """Return all identifier with an expired restoration_expiry_date."""
         businesses = (db.session.query(Business.identifier)
                       .filter(Business.restoration_expiry_date <= datetime.utcnow())
                       .all())
