@@ -137,6 +137,7 @@ class FilingInfo(Resource):
                     'courtOrder': json_data.get('courtOrder', None),
                     'dissolution': json_data.get('dissolution', None),
                     'incorporationApplication': json_data.get('incorporationApplication', None),
+                    'putBackOn': json_data.get('putBackOn', None),
                     'registrarsNotation': json_data.get('registrarsNotation', None),
                     'registrarsOrder': json_data.get('registrarsOrder', None),
                     'restoration': json_data.get('restoration', None),
