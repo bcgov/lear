@@ -1448,19 +1448,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                            )
             corp_state = Business.CorpStateTypes.LIMITED_RESTORATION.value
         Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
-        
+
     @classmethod
     def _process_put_back_on(cls, cursor, filing):
         """ Process Put Back On"""
         corp_num = filing.get_corp_num()
-        
+
         Office.end_office(cursor=cursor,
                           event_id=filing.event_id,
                           corp_num=corp_num,
                           office_code=Office.OFFICE_TYPES_CODES['custodialOffice'])
 
         Party.end_current(cursor, filing.event_id, corp_num, 'Custodian')
-        
+
         corp_state = Business.CorpStateTypes.ACTIVE.value  # Active for Put Back On
         Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
 
