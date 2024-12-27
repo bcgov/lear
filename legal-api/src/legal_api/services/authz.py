@@ -279,6 +279,9 @@ def get_allowable_filings_dict():
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
                 },
+                'putBackOff': {
+                    'legalTypes': ['BEN', 'BC', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
+                },
                 'registrarsNotation': {
                     'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
                 },

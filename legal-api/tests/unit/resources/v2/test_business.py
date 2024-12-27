@@ -627,6 +627,10 @@ def test_get_could_file(session, client, jwt):
             "name": "incorporationApplication"
         },
         {
+            "displayName": "Correction - Put Back Off",
+            "name": "putBackOff",
+        },
+        {
             "displayName": "Registrar's Notation",
             "name": "registrarsNotation"
         },

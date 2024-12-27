@@ -73,6 +73,29 @@ def test_get_future_effective_filing_ids(session, client, jwt):
         assert len(rv.json) == 0
 
 
+@pytest.mark.parametrize(
+    'test_name, expired', [
+        ('LIMITED_RESTORATION', True),
+        ('LIMITED_RESTORATION_EXPIRED', False)
+    ]
+)
+def test_get_businesses_expired_restoration(session, client, jwt, test_name, expired):
+    """Assert that expired restoration can be fetched."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
+    business.restoration_expiry_date = (datetime.now(timezone.utc) +
+                                        datedelta.datedelta(days=-1 if expired else 1))
+    business.save()
+    rv = client.get('/api/v2/internal/expired_restoration', headers=create_header(jwt, [UserRoles.system]))
+    if expired:
+        assert rv.status_code == HTTPStatus.OK
+        assert len(rv.json) == 1
+        assert rv.json['identifiers'][0] == identifier
+    else:
+        assert rv.status_code == HTTPStatus.OK
+        assert len(rv.json['identifiers']) == 0
+
+
 def test_update_bn_move(session, client, jwt):
     """Assert that the endpoint updates tax_id."""
     identifier = 'FM0000001'

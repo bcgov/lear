@@ -620,11 +620,23 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
                 if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
+            filing.hide_in_ledger = ListFilingResource._hide_in_ledger(filing)
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
 
         return business or bootstrap, filing, None, None
+
+    @staticmethod
+    def _hide_in_ledger(filing: Filing) -> bool:
+        """Hide the filing in the ledger."""
+        hide_in_ledger = str(request.headers.get('hide-in-ledger', None)).lower()
+        if (filing.filing_type == 'adminFreeze' or
+            (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary') or
+                (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == 'true')):
+            return True
+
+        return False
 
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
@@ -683,7 +695,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                                                                                     legal_type,
                                                                                     priority_flag,
                                                                                     waive_fees_flag))
-        elif filing_type in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn', 'adminFreeze']:
+        elif filing_type in ('adminFreeze', 'courtOrder', 'putBackOff', 'putBackOn',
+                             'registrarsNotation', 'registrarsOrder'):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
                 'filingTypeCode': filing_type_code,

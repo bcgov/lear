@@ -36,6 +36,15 @@ def get_future_effective_filing_ids():
     return jsonify(filing_ids), HTTPStatus.OK
 
 
+@bp.route('/expired_restoration', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.system])
+def get_identifiers_of_expired_restoration():
+    """Return all identifiers (if limited restoration has expired)."""
+    businesses = Business.get_expired_restoration()
+    return jsonify({'identifiers': [business.identifier for business in businesses]}), HTTPStatus.OK
+
+
 @bp.route('/bnmove', methods=['POST'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.system])

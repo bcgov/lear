@@ -448,6 +448,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         # for all the business the fee code remain same as NOFEE (Staff)
         'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'},
         'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
+        'putBackOff': {'name': 'putBackOff', 'title': 'Put Back Off', 'code': 'NOFEE'},
         'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
         'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
         'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'}
@@ -492,6 +493,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'court_order_effect_of_order',
             'court_order_file_number',
             'deletion_locked',
+            'hide_in_ledger',
             'effective_date',
             'order_details',
             'paper_only',
@@ -535,6 +537,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     application_date = db.Column('application_date', db.DateTime(timezone=True))
     notice_date = db.Column('notice_date', db.DateTime(timezone=True))
     resubmission_date = db.Column('resubmission_date', db.DateTime(timezone=True))
+    hide_in_ledger = db.Column('hide_in_ledger', db.Boolean, unique=False, default=False)
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
