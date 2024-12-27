@@ -1451,7 +1451,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     def _process_put_back_on(cls, cursor, filing):
-        """ Process Put Back On"""
+        """Process Put Back On."""
         corp_num = filing.get_corp_num()
 
         Office.end_office(cursor=cursor,
