@@ -112,9 +112,11 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
                    filing_id: Optional[int] = None):
     """Modify an incomplete filing for the business."""
     business, filing = ListFilingResource.get_business_and_filing(identifier, filing_id)
+    current_app.logger.debug(f"\U0001F6A9 - get_business_and_filing: \nbusiness: {business}\nfiling: {filing}")
 
     # basic checks
     err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing, request, business)
+    current_app.logger.debug(f"\U0001F6A9 - put_basic_checks: \err_msg: {err_msg}\nerr_code: {err_code}")
     if err_msg:
         return jsonify({'errors': [err_msg, ]}), err_code
     json_input = copy.deepcopy(request.get_json())  # used for validation
@@ -122,6 +124,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
 
     # check authorization
     response, response_code = ListFilingResource.check_authorization(identifier, json_input, business, filing)
+    current_app.logger.debug(f"\U0001F6A9 - check_authorization: \nresponse: {response}\nresponse_code: {response_code}")
     if response:
         return response, response_code
 
@@ -479,7 +482,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if not filing_type:
             return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
 
-        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES and business is None:
+        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES + [CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] and business is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         if client_request.method == 'PUT' and not filing:
