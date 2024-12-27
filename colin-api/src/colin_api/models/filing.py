@@ -352,6 +352,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         'courtOrder': {
             'type_code_list': ['COURT'],
             Business.TypeCodes.BC_COMP.value: 'COURT'
+        },
+        'putBackOn': {
+            'type_code_list': ['CO_PO'],
+            Business.TypeCodes.BCOMP.value: 'CO_PO',
+            Business.TypeCodes.BC_COMP.value: 'CO_PO',
+            Business.TypeCodes.ULC_COMP.value: 'CO_PO',
+            Business.TypeCodes.CCC_COMP.value: 'CO_PO',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'CO_PO',
+            Business.TypeCodes.CONTINUE_IN.value: 'CO_PO',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'CO_PO',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'CO_PO',
         }
     }
 
@@ -618,7 +629,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'CONTB', 'CONTI', 'CONTU', 'CONTC',
                                       'NOABE', 'NOALE', 'NOALR', 'NOALD',
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
-                                      'CONTO', 'COUTI', 'CO_PO'
+                                      'CONTO', 'COUTI', 'CO_PO',
                                       'AGMDT', 'AGMLC',
                                       'RESTF', 'RESTL', 'RESXL', 'RESXF',
                                       'REGSN', 'REGSO', 'COURT']:
