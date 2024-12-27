@@ -328,6 +328,28 @@
                {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
             </td>
+         {% elif header.name == 'noticeOfWithdrawal' %}
+            <td class="col-33">
+               {% if not business or business.identifier.startswith('T') %}
+                  <div class="bold">Filed Date and Time:</div>
+               {% else %}
+                  <div class="bold">Incorporation Number:</div>
+                  <div class="bold pt-2">Filed Date and Time:</div>
+               {% endif %}
+               <div class="bold pt-2">Recognition Date and Time:</div>
+               <div class="bold pt-2">Retrieved Date and Time:</div>
+            </td>
+            <td>
+               {% if not business or business.identifier.startswith('T') %}
+                  <div>{{ filing_date_time }}</div>
+                  <div class="pt-2">{{ effective_date_time }}</div>
+               {% else %}
+                  <div>{{business.identifier}}</div>
+                  <div class="pt-2">{{ filing_date_time }}</div>
+                  <div class="pt-2">{{ recognition_date_time }}</div>
+               {% endif %}
+               <div class="pt-2">{{ report_date_time }}</div>
+            </td>
          {% endif %}
          {% if reportType != 'summary' %}
          <td class="business-details-registar-td">
@@ -359,8 +381,8 @@
         {% if business.legalType in ['SP', 'GP'] %}
             <span> | Registration #{{business.identifier}}</span>
         {% else %}
-           {% if header.name != 'incorporationApplication' %}
-             <!-- not required for incorporationApplication -->
+           {% if header.name not in ['incorporationApplication', 'noticeOfWithdrawal'] %}
+             <!-- not required for incorporationApplication and noticeOfWithdrawal -->
              <span> | Incorporation #
                {% if not business or business.identifier.startswith('T') %}
                   Pending

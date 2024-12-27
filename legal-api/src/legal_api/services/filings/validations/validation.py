@@ -41,6 +41,7 @@ from .dissolution import DissolutionTypes
 from .dissolution import validate as dissolution_validate
 from .incorporation_application import validate as incorporation_application_validate
 from .notice_of_withdrawal import validate as notice_of_withdrawal_validate
+from .put_back_off import validate as put_back_off_validate
 from .put_back_on import validate as put_back_on_validate
 from .registrars_notation import validate as registrars_notation_validate
 from .registrars_order import validate as registrars_order_validate
@@ -185,6 +186,9 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['noticeOfWithdrawal'].get('name'):
                     err = notice_of_withdrawal_validate(filing_json)
+
+                elif k == Filing.FILINGS['putBackOff'].get('name'):
+                    err = put_back_off_validate(business, filing_json)
 
                 if err:
                     return err

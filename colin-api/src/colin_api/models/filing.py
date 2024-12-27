@@ -1761,6 +1761,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _process_name_translations(cls, cursor, filing: Filing, corp_num: str):
         """Process name translations."""
+        if 'nameTranslations' not in filing.body:
+            return
+
         name_translations = filing.body.get('nameTranslations', [])
         old_translations = CorpName.get_current_by_type(
             cursor=cursor,

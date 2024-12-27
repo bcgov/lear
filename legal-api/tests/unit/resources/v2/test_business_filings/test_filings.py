@@ -116,6 +116,33 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing'][filing_type] == filing_json
 
 
+def test_get_filing_not_found(session, client, jwt):
+    """Assert that the request fails if the filing ID doesn't match an existing filing."""
+    rv = client.get('/api/v2/businesses/filings/search/99999',
+                    headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': 'Filing with ID 99999 not found.'}
+
+
+def test_get_filing_valid_filing_id(session, client, jwt):
+    """Assert that a valid filing ID returns the correct filing."""
+
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+
+    filing_data = copy.deepcopy(ANNUAL_REPORT)
+    filing = factory_filing(b, filing_data)
+
+    rv = client.get(f'/api/v2/businesses/filings/search/{filing.id}',
+                    headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert 'filing' in rv.json
+    assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
+    assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+
+    
 def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'

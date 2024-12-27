@@ -88,6 +88,7 @@ class Filing:
         DISSOLVED = 'dissolved'
         INCORPORATIONAPPLICATION = 'incorporationApplication'
         NOTICEOFWITHDRAWAL = 'noticeOfWithdrawal'
+        PUTBACKOFF = 'putBackOff'
         PUTBACKON = 'putBackOn'
         REGISTRARSNOTATION = 'registrarsNotation'
         REGISTRARSORDER = 'registrarsOrder'
@@ -434,7 +435,7 @@ class Filing:
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
-            'displayLedger': Filing._is_display_ledger(filing_storage),
+            'displayLedger': not filing_storage.hide_in_ledger,
             'commentsCount': filing_storage.comments_count,
             'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
             'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents' if
@@ -458,18 +459,6 @@ class Filing:
         ledger_filing['data']['order'] = court_order_data
 
     @staticmethod
-    def _is_display_ledger(filing: FilingStorage) -> bool:
-        """Return boolean that display the ledger."""
-        # If filing is NOT an admin freeze or involuntary dissolution, we will display it on ledger
-        return not (
-            filing.filing_type == Filing.FilingTypes.ADMIN_FREEZE or
-            (
-                filing.filing_type == Filing.FilingTypes.DISSOLUTION and
-                filing.filing_sub_type == 'involuntary'
-            )
-        )
-
-    @staticmethod
     def get_document_list(business,  # pylint: disable=too-many-locals disable=too-many-branches
                           filing,
                           jwt: JwtManager) -> Optional[dict]:
@@ -477,6 +466,7 @@ class Filing:
         no_output_filings = [
             Filing.FilingTypes.CONVERSION.value,
             Filing.FilingTypes.COURTORDER.value,
+            Filing.FilingTypes.PUTBACKOFF.value,
             Filing.FilingTypes.PUTBACKON.value,
             Filing.FilingTypes.REGISTRARSNOTATION.value,
             Filing.FilingTypes.REGISTRARSORDER.value,
