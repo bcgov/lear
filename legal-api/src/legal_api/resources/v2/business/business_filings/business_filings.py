@@ -687,7 +687,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
             legal_type = filing_json['filing'][filing_type]['nameRequest']['legalType']
         elif business.identifier.startswith('T') and \
-            filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
+                filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
             legal_type = filing_json['filing'].get('business', None).get('legalType')
         else:
             legal_type = business.legal_type
