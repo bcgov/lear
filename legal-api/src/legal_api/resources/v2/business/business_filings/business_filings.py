@@ -479,7 +479,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if not filing_type:
             return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
 
-        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES + [CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] and business is None:
+        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES + [CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] \
+           and business is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         if client_request.method == 'PUT' and not filing:
@@ -847,8 +848,10 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             corp_type = business.legal_type if business.legal_type else \
                 filing.json['filing']['business'].get('legalType')
         # deal with withdrawing a new business filing
-        elif business.identifier.startswith('T') and filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
-            mailing_address, corp_type, legal_name = ListFilingResource._get_address_from_withdrawn_new_business_filing(business, filing)
+        elif business.identifier.startswith('T') and \
+                filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+            mailing_address, corp_type, legal_name = \
+                ListFilingResource._get_address_from_withdrawn_new_business_filing(business, filing)
             business.legal_name = legal_name
         else:
             mailing_address = business.mailing_address.one_or_none()
@@ -1068,7 +1071,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             current_app.config.get('NATS_EMAILER_SUBJECT')
         )
-    
+
     @staticmethod
     def _get_address_from_withdrawn_new_business_filing(business: Business, filing: Filing):
         if filing.filing_type != CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL.value:
@@ -1089,6 +1092,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 legal_name = withdrawn_filing.json['filing'][withdrawn_filing.filing_type]['nameRequest']['legalName']
             except KeyError:
                 legal_name = business.identifier
-            
-            return mailing_address, corp_type, legal_name
 
+            return mailing_address, corp_type, legal_name
+        return None, None, None
