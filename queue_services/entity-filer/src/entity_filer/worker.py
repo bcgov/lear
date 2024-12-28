@@ -338,6 +338,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
             business_type = business.legal_type if business else filing_submission['business']['legal_type']
             filing_submission.set_processed(business_type)
+            business.last_modified = filing_submission.completion_date
 
             filing_submission._meta_data = json.loads(  # pylint: disable=W0212
                 json.dumps(filing_meta.asjson, default=json_serial)

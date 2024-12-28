@@ -293,7 +293,7 @@ def test_good_standing_check_transition_filing(session, test_name, has_no_transi
         restoration_filing.save()
     elif test_name == 'TRANSITION_COMPLETED':
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
-    
+
     check_result = business._has_no_transition_filed_after_restoration()
     assert check_result == has_no_transition_filed
     with patch.object(flags, 'is_on', return_value=True):
@@ -330,6 +330,7 @@ def test_business_json(session):
         'legalName': 'legal_name',
         'legalType': Business.LegalTypes.COOP.value,
         'state': Business.State.ACTIVE.name,
+        'lastModified': EPOCH_DATETIME.isoformat(),
         'taxId': '123456789'
     }
 

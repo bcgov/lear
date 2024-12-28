@@ -536,7 +536,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'inDissolution': self.in_dissolution,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
-            'state': self.state.name if self.state else Business.State.ACTIVE.name
+            'state': self.state.name if self.state else Business.State.ACTIVE.name,
+            'lastModified': self.last_modified.isoformat()
         }
 
         if self.tax_id:
