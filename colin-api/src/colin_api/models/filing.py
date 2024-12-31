@@ -514,6 +514,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 filing_dt=filing_dt,
                 event_type=event_type
             )
+            cursor.execute(
+                """
+                INSERT INTO event_insert (event_id, corp_num, insert_date)
+                VALUES (:event_id, :corp_num, sysdate)
+                """,
+                event_id=event_id,
+                corp_num=corp_num
+            )
         except Exception as err:
             current_app.logger.error('Error in filing: Failed to create new event.')
             raise err
