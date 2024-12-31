@@ -324,7 +324,8 @@ def get_allowable_filings_dict():
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.FILING_WITHDRAWAL]
-                    }
+                    },
+                    'businessRequirement': BusinessRequirement.NO_RESTRICTION
                 }
             },
             Business.State.HISTORICAL: {

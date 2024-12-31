@@ -37,9 +37,11 @@ def validate(filing: Dict) -> Optional[Error]:
         msg.append({'error': babel('Filing Id is required.'), 'path': withdrawn_filing_id_path})
         return msg  # cannot continue validation without the to be withdrawn filing id
 
-    err = validate_withdrawn_filing(withdrawn_filing_id)
-    if err:
-        msg.extend(err)
+    is_not_found, err_msg = validate_withdrawn_filing(withdrawn_filing_id)
+    if is_not_found:
+        return Error(HTTPStatus.NOT_FOUND, err_msg)
+    if err_msg and not is_not_found:
+        msg.extend(err_msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -49,12 +51,14 @@ def validate(filing: Dict) -> Optional[Error]:
 def validate_withdrawn_filing(withdrawn_filing_id: int):
     """Validate the to be withdrawn filing id exists, the filing has a FED, the filing status is PAID."""
     msg = []
+    is_not_found = False
     # check whether the filing ID exists
     withdrawn_filing = db.session.query(Filing). \
         filter(Filing.id == withdrawn_filing_id).one_or_none()
     if not withdrawn_filing:
         msg.append({'error': babel('The filing to be withdrawn cannot be found.')})
-        return msg  # cannot continue if the withdrawn filing doesn't exist
+        is_not_found = True
+        return is_not_found, msg  # cannot continue if the withdrawn filing doesn't exist
 
     # check whether the filing has a Future Effective Date(FED)
     now = dt.utcnow()
@@ -68,5 +72,5 @@ def validate_withdrawn_filing(withdrawn_filing_id: int):
         msg.append({'error': babel('Only paid filings with a future effective date can be withdrawn.')})
 
     if msg:
-        return msg
-    return None
+        return is_not_found, msg
+    return None, None

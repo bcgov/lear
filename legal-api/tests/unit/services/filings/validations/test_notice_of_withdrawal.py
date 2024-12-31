@@ -44,7 +44,7 @@ MISSING_FILING_DICT_MSG = {'error': 'A valid filing is required.'}
             ('EXIST_BUSINESS_SUCCESS', True, Filing.Status.PAID, True, True, None, None),
             ('EXIST_BUSINESS_FAIL_NOT_PAID', True, Filing.Status.PENDING, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_PAID_MSG]),
             ('EXIST_BUSINESS_FAIL_NOT_FED', True, Filing.Status.PAID, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG]),
-            ('EXIST_BUSINESS_FAIL_FILING_NOT_EXIST', False, Filing.Status.PAID, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_EXIST_MSG]),
+            ('EXIST_BUSINESS_FAIL_FILING_NOT_EXIST', False, Filing.Status.PAID, True, True, HTTPStatus.NOT_FOUND, [FILING_NOT_EXIST_MSG]),
             ('EXIST_BUSINESS_FAIL_MISS_FILING_ID', True, Filing.Status.PAID, True, False, HTTPStatus.UNPROCESSABLE_ENTITY, ''),
             ('EXIST_BUSINESS_FAIL_NOT_PAID_NOT_FED', True, Filing.Status.PENDING, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG, FILING_NOT_PAID_MSG])
         ]
