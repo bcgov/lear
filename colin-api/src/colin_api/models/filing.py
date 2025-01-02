@@ -1487,7 +1487,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         corp_state = Business.CorpStateTypes.ACTIVE.value  # Active for Put Back On
         Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
-    
+
     @classmethod
     def _process_put_back_off(cls, cursor, filing):
         """Process Put Back Off."""
