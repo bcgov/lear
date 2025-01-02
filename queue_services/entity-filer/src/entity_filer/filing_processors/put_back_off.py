@@ -42,3 +42,4 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     # change business state to historical
     business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
+    business.restoration_expiry_date = None
