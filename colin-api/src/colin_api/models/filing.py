@@ -363,6 +363,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.CONTINUE_IN.value: 'CO_PO',
             Business.TypeCodes.ULC_CONTINUE_IN.value: 'CO_PO',
             Business.TypeCodes.CCC_CONTINUE_IN.value: 'CO_PO',
+        },
+        'putBackOff': {
+            'type_code_list': ['CO_PF'],
+            Business.TypeCodes.BCOMP.value: 'CO_PF',
+            Business.TypeCodes.BC_COMP.value: 'CO_PF',
+            Business.TypeCodes.ULC_COMP.value: 'CO_PF',
+            Business.TypeCodes.CCC_COMP.value: 'CO_PF',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'CO_PF',
+            Business.TypeCodes.CONTINUE_IN.value: 'CO_PF',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'CO_PF',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'CO_PF',
         }
     }
 
@@ -629,7 +640,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'CONTB', 'CONTI', 'CONTU', 'CONTC',
                                       'NOABE', 'NOALE', 'NOALR', 'NOALD',
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
-                                      'CONTO', 'COUTI', 'CO_PO',
+                                      'CONTO', 'COUTI', 'CO_PO', 'CO_PF',
                                       'AGMDT', 'AGMLC',
                                       'RESTF', 'RESTL', 'RESXL', 'RESXF',
                                       'REGSN', 'REGSO', 'COURT']:
@@ -1224,8 +1235,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
                                           'amalgamationApplication', 'annualReport', 'changeOfAddress',
                                           'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
-                                          'continuationOut', 'courtOrder',
-                                          'dissolution', 'incorporationApplication', 'putBackOn', 'registrarsNotation',
+                                          'continuationOut', 'courtOrder', 'dissolution', 'incorporationApplication',
+                                          'putBackOn', 'putBackOff', 'registrarsNotation',
                                           'registrarsOrder', 'restoration', 'specialResolution', 'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
@@ -1265,6 +1276,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 cls._process_restoration(cursor, filing)
             elif filing.filing_type == 'putBackOn':
                 cls._process_put_back_on(cursor, filing)
+            elif filing.filing_type == 'putBackOff':
+                cls._process_put_back_off(cursor, filing)
             elif filing.filing_type == 'alteration':
                 # alter corp type
                 if (
@@ -1473,6 +1486,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         Party.end_current(cursor, filing.event_id, corp_num, 'Custodian')
 
         corp_state = Business.CorpStateTypes.ACTIVE.value  # Active for Put Back On
+        Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
+    
+    @classmethod
+    def _process_put_back_off(cls, cursor, filing):
+        """Process Put Back Off."""
+        corp_num = filing.get_corp_num()
+
+        corp_state = Business.CorpStateTypes.INVOLUNTARY_DISSOLUTION_NO_AR.value
         Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
 
     @classmethod
