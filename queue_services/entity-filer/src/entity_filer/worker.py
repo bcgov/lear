@@ -221,7 +221,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
         if filing_core_submission.status == Filing.Status.COMPLETED:
             current_app.logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
-                           filing_submission.business_id, filing_submission.id, filing_msg)
+                                       filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
 
         # convenience flag to set that the envelope is a correction
@@ -456,8 +456,8 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except FilingException as err:
         current_app.logger.error('Queue Error - cannot find filing: %s'
-                     '\n\nThis message has been put back on the queue for reprocessing.',
-                     json.dumps(filing_msg), exc_info=True)
+                                 '\n\nThis message has been put back on the queue for reprocessing.',
+                                 json.dumps(filing_msg), exc_info=True)
         raise err  # we don't want to handle the error, so that the message gets put back on the queue
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
