@@ -31,6 +31,7 @@ from entity_filer.filing_processors.filing_components import business_info
 def update_business_profile(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
     """Update business profile."""
     if flags.is_on('enable-sandbox'):
+        current_app.logger.info('Skip updating business profile')
         return
 
     filing_type = filing_type if filing_type else filing.filing_type

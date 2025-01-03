@@ -34,7 +34,7 @@ import nats
 from entity_queue_common.messages import publish_email_message
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
-from flask import Flask
+from flask import Flask, current_app
 from gcp_queue import SimpleCloudEvent, to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
@@ -182,6 +182,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
 async def publish_mras_email(filing: Filing):
     """Publish MRAS email message onto the NATS emailer subject."""
     if flags.is_on('enable-sandbox'):
+        current_app.logger.info('Skip publishing MRAS email')
         return
 
     if filing.filing_type in [

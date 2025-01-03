@@ -28,6 +28,7 @@ def consume_nr(business: Business, filing: Filing, filing_type: str = None, flag
     """Update the nr to a consumed state."""
     try:
         if flags.is_on('enable-sandbox'):
+            current_app.logger.info('Skip consuming NR')
             return
 
         filing_type = filing_type if filing_type else filing.filing_type
