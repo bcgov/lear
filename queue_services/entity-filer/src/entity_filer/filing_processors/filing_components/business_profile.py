@@ -149,7 +149,7 @@ def update_affiliation(business: Business, filing: Filing):
 def update_entity(business: Business, filing_type: str):
     """Update an entity in auth with the latest change."""
     state = None
-    if filing_type in ['dissolution', 'putBackOn', 'restoration']:
+    if filing_type in ['dissolution', 'putBackOn', 'putBackOff', 'restoration']:
         state = business.state.name  # state changed to HISTORICAL/ACTIVE
 
     AccountService.update_entity(
