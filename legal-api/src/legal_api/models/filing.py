@@ -506,7 +506,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'transaction_id',
             'approval_type',
             'application_date',
-            'notice_date'
+            'notice_date',
+            'withdrawal_pending',
+            'withdrawn_id'
         ]
     }
 
@@ -538,6 +540,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     notice_date = db.Column('notice_date', db.DateTime(timezone=True))
     resubmission_date = db.Column('resubmission_date', db.DateTime(timezone=True))
     hide_in_ledger = db.Column('hide_in_ledger', db.Boolean, unique=False, default=False)
+    withdrawal_pending = db.Column('withdrawal_pending', db.Boolean, unique=False, default=False)
+    withdrawn_id = db.Column('withdrawn_id', db.Integer)
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
