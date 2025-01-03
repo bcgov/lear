@@ -100,7 +100,7 @@ def _update_business_profile(business: Business, profile_info: Dict) -> Dict:
 def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
-        current_app.logger(f'Updating affiliation for business {business.identifier}')
+        current_app.logger.info(f'Updating affiliation for business {business.identifier}')
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
 
         pass_code = ''
