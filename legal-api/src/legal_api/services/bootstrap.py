@@ -150,6 +150,7 @@ class AccountService:
                            details: dict = None,
                            flags: any = None):
         """Affiliate a business to an account."""
+        current_app.logger.info(f'Creating affiliation of {business_registration} for {account}')
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
@@ -157,6 +158,7 @@ class AccountService:
         token = cls.get_bearer_token()
 
         if not token:
+            current_app.logger.info('Missing token for affiliation call')
             return HTTPStatus.UNAUTHORIZED
 
         # Create an entity record
@@ -244,6 +246,7 @@ class AccountService:
 
         @TODO Update this when account affiliation is changed next sprint.
         """
+        current_app.logger.info(f'Deleting affiliation of {business_registration} for {account}')
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
