@@ -13,6 +13,7 @@
 # limitations under the License.
 """Manages the type of Business."""
 import json
+import traceback
 from http import HTTPStatus
 from typing import Dict
 
@@ -149,6 +150,7 @@ def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
             raise QueueException
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
         current_app.logger.error(f'Affiliation error for filing:{filing.id}, with err:{err}')
+        current_app.logger.debug(traceback.format_exc())
         sentry_sdk.capture_message(
             f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
             level='error'
