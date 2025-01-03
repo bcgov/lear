@@ -138,7 +138,7 @@ def test_update_affiliation(app, session, legal_type, corp_num):
                     assert first_update_entity_call_args == expected_update_entity_call_args
 
 
-def test_update_affiliation_error(mocker):
+def test_update_affiliation_error(app, session, mocker):
     """Assert that a message is posted to sentry if an error occurs."""
     import sentry_sdk
     filing = Filing(id=1)
