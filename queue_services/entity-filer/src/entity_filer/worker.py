@@ -33,8 +33,8 @@ from typing import Dict
 import nats
 from entity_queue_common.messages import publish_email_message
 from entity_queue_common.service import QueueServiceManager
-from entity_queue_common.service_utils import FilingException, QueueException, logger
-from flask import Flask
+from entity_queue_common.service_utils import FilingException, QueueException
+from flask import Flask, current_app
 from gcp_queue import SimpleCloudEvent, to_queue_message
 from legal_api import db
 from legal_api.core import Filing as FilingCore
@@ -137,7 +137,7 @@ async def publish_event(business: Business, filing: Filing):
         await qsm.service.publish(subject, payload)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
-        logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
+        current_app.logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
 def publish_gcp_queue_event(business: Business, filing: Filing):
@@ -176,12 +176,13 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
 
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
-        logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
+        current_app.logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
 async def publish_mras_email(filing: Filing):
     """Publish MRAS email message onto the NATS emailer subject."""
     if flags.is_on('enable-sandbox'):
+        current_app.logger.info('Skip publishing MRAS email')
         return
 
     if filing.filing_type in [
@@ -219,8 +220,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
         filing_submission = filing_core_submission.storage
 
         if filing_core_submission.status == Filing.Status.COMPLETED:
-            logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
-                           filing_submission.business_id, filing_submission.id, filing_msg)
+            current_app.logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
+                                       filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
 
         # convenience flag to set that the envelope is a correction
@@ -246,7 +247,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
                 elif filing.get('annualReport'):
                     flag_on = flags.is_on('enable-involuntary-dissolution')
-                    logger.debug('enable-involuntary-dissolution flag on: %s', flag_on)
+                    current_app.logger.debug('enable-involuntary-dissolution flag on: %s', flag_on)
                     annual_report.process(business, filing, filing_meta, flag_on)
 
                 elif filing.get('changeOfAddress'):
@@ -446,19 +447,19 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
     try:
-        logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
+        current_app.logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
         filing_msg = json.loads(msg.data.decode('utf-8'))
-        logger.debug('Extracted filing msg: %s', filing_msg)
+        current_app.logger.debug('Extracted filing msg: %s', filing_msg)
         await process_filing(filing_msg, FLASK_APP)
     except OperationalError as err:
-        logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
+        current_app.logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except FilingException as err:
-        logger.error('Queue Error - cannot find filing: %s'
-                     '\n\nThis message has been put back on the queue for reprocessing.',
-                     json.dumps(filing_msg), exc_info=True)
+        current_app.logger.error('Queue Error - cannot find filing: %s'
+                                 '\n\nThis message has been put back on the queue for reprocessing.',
+                                 json.dumps(filing_msg), exc_info=True)
         raise err  # we don't want to handle the error, so that the message gets put back on the queue
     except (QueueException, Exception):  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(filing_msg), level='error')
-        logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)
+        current_app.logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)

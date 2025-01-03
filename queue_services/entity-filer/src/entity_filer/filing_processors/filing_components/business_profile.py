@@ -31,6 +31,7 @@ from entity_filer.filing_processors.filing_components import business_info
 def update_business_profile(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
     """Update business profile."""
     if flags.is_on('enable-sandbox'):
+        current_app.logger.info('Skip updating business profile')
         return
 
     filing_type = filing_type if filing_type else filing.filing_type
@@ -99,6 +100,7 @@ def _update_business_profile(business: Business, profile_info: Dict) -> Dict:
 def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
+        current_app.logger.info('Updating affiliation for business')
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
 
         pass_code = ''
@@ -127,6 +129,7 @@ def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
             deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
+            current_app.logger.error(f'Unable to affiliate business:{business.identifier} for filing:{filing.id}')
             sentry_sdk.capture_message(
                 f'Queue Error: Unable to affiliate business:{business.identifier} for filing:{filing.id}',
                 level='error'
@@ -145,6 +148,7 @@ def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
                 or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK)):
             raise QueueException
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+        current_app.logger.error(f'Affiliation error for filing:{filing.id}, with err:{err}')
         sentry_sdk.capture_message(
             f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
             level='error'

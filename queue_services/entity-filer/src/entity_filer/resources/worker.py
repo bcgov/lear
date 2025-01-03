@@ -41,14 +41,12 @@ from typing import Optional
 
 from flask import Blueprint, current_app, request
 from gcp_queue import SimpleCloudEvent
-from structured_logging import StructuredLogging
 
 from entity_filer.services import gcp_queue, verify_gcp_jwt
 from entity_filer.worker import process_filing
 
 
 bp = Blueprint('worker', __name__)
-logger = StructuredLogging.get_logger()
 loop = asyncio.get_event_loop()
 
 
@@ -68,14 +66,14 @@ def worker():
     - Filings that cannot be processed are knocked off the Q
     """
     if not request.data:
-        logger.debug('No incoming raw msg.')
+        current_app.logger.debug('No incoming raw msg.')
         return {}, HTTPStatus.OK
 
     if msg := verify_gcp_jwt(request):
-        logger.info(msg)
+        current_app.logger.info(msg)
         return {}, HTTPStatus.FORBIDDEN
 
-    logger.info(f'Incoming raw msg: {str(request.data)}')
+    current_app.logger.info(f'Incoming raw msg: {str(request.data)}')
 
     # 1. Get cloud event
     # ##
@@ -85,28 +83,28 @@ def worker():
         #
         # Decision here is to return a 200,
         # so the event is removed from the Queue
-        logger.debug(f'ignoring message, raw payload: {str(ce)}')
+        current_app.logger.debug(f'ignoring message, raw payload: {str(ce)}')
         return {}, HTTPStatus.OK
-    logger.info(f'received ce: {str(ce)}')
+    current_app.logger.info(f'received ce: {str(ce)}')
 
     # 2. Get filing_message information
     # ##
     if not (filing_message := get_filing_message(ce)):
         # no filing_message info, take off Q
-        logger.debug(f'no filing_message info in: {ce}')
+        current_app.logger.debug(f'no filing_message info in: {ce}')
         return {'message': 'no filing info in cloud event'}, HTTPStatus.OK
-    logger.info(f'Incoming filing_message: {filing_message}')
+    current_app.logger.info(f'Incoming filing_message: {filing_message}')
 
     # 3. Process Filing
     # ##
     try:
         loop.run_until_complete(process_filing(filing_message, current_app))
     except Exception as err:  # pylint: disable=broad-exception-caught
-        logger.error(f'Error processing filing {filing_message}: {err}')
-        logger.debug(traceback.format_exc())
+        current_app.logger.error(f'Error processing filing {filing_message}: {err}')
+        current_app.logger.debug(traceback.format_exc())
         return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
-    logger.info(f'completed ce: {str(ce)}')
+    current_app.logger.info(f'completed ce: {str(ce)}')
     return {}, HTTPStatus.OK
 
 

@@ -16,7 +16,8 @@
 from typing import Dict
 
 import dpath
-from entity_queue_common.service_utils import QueueException, logger
+from entity_queue_common.service_utils import QueueException
+from flask import current_app
 from legal_api.models import Business, Filing
 
 from entity_filer.filing_meta import FilingMeta
@@ -25,10 +26,10 @@ from entity_filer.filing_meta import FilingMeta
 def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the admin freeze filing unto the model objects."""
     if not (admin_freeze_filing := filing.get('adminFreeze')):
-        logger.error('Could not find adminFreeze in: %s', filing)
+        current_app.logger.error('Could not find adminFreeze in: %s', filing)
         raise QueueException(f'legal_filing:adminFreeze missing from {filing}')
 
-    logger.debug('processing adminFreeze: %s', filing)
+    current_app.logger.debug('processing adminFreeze: %s', filing)
 
     freeze = bool(dpath.util.get(admin_freeze_filing, '/freeze'))
     business.admin_freeze = freeze
