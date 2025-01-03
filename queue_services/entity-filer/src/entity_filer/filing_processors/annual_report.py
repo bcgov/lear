@@ -16,7 +16,7 @@ import datetime
 from contextlib import suppress
 from typing import Dict
 
-from entity_queue_common.service_utils import logger
+from flask import current_app
 from legal_api.models import BatchProcessing, Business
 from legal_api.services.filings import validations
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
@@ -34,7 +34,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
         ar_date = datetime.date.fromisoformat(ar_date)
     else:
         # should never get here (schema validation should prevent this from making it to the filer)
-        logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
+        current_app.logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
 
     business.last_ar_date = ar_date
     if agm_date and validations.annual_report.requires_agm(business):
