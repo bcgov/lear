@@ -36,7 +36,7 @@ class DocumentRecordService:
             return {'data': 'File not provided'}
         current_app.logger.debug(f'Upload file to document record service {file.filename}')
         DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
-        url = f'{DRS_BASE_URL}documents/{document_class}/{document_type}'
+        url = f'{DRS_BASE_URL}/documents/{document_class}/{document_type}'
 
         # Validate file size and encryption status before submitting to DRS.
         validation_error = DocumentRecordService.validate_pdf(file, request.content_length)
@@ -81,7 +81,7 @@ class DocumentRecordService:
     def delete_document(document_service_id: str) -> dict:
         """Delete document from Document Record Service."""
         DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
-        url = f'{DRS_BASE_URL}documents/{document_service_id}'
+        url = f'{DRS_BASE_URL}/documents/{document_service_id}'
 
         try:
             response = requests.patch(
@@ -95,6 +95,25 @@ class DocumentRecordService:
             return response
         except Exception as e:
             current_app.logger.debug(f'Error on deleting document {e}')
+            return {}
+
+    @staticmethod
+    def get_document(document_class: str, document_service_id: str) -> dict:
+
+        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
+        url = f'{DRS_BASE_URL}/searches/{document_class}?documentServiceId={document_service_id}'
+        try:
+            response = requests.get(
+                url,
+                headers={
+                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
+                }
+            ).json()
+            current_app.logger.debug(f'Get document from document record service {response}')
+            return response[0]
+        except Exception as e:
+            current_app.logger.debug(f'Error on downloading document {e}')
             return {}
 
     @staticmethod

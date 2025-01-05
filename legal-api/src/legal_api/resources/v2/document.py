@@ -94,3 +94,11 @@ def delete_document(document_service_id: str):
     """Delete document file from Document Record Service."""
 
     return DocumentRecordService.delete_document(document_service_id), HTTPStatus.OK
+
+@bp.route('/drs/<string:document_class>/<string:document_service_id>', methods=['GET'])
+@cross_origin(origins='*')
+@jwt.requires_auth
+def get_document(document_class: str, document_service_id: str):
+    """Get document file from Document Record Service."""
+
+    return DocumentRecordService.get_document(document_class, document_service_id), HTTPStatus.OK
