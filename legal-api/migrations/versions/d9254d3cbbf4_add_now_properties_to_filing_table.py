@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
      op.add_column('filings', sa.Column('withdrawn_filing_id', sa.Integer(), nullable=True))
      op.create_foreign_key('filings_withdrawn_filing_id_fkey', 'filings', 'filings', ['withdrawn_filing_id'], ['id'])
-     op.add_column('filings', sa.Column('withdrawal_pending', sa.Boolean(), nullable=True))
+     op.add_column('filings', sa.Column('withdrawal_pending', sa.Boolean(), nullable=False, server_default='False'))
 
 def downgrade():
     op.drop_constraint('filings_withdrawn_filing_id_fkey', 'filings', type_='foreignkey')
