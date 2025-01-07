@@ -174,7 +174,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             'CORPS_NAME': 'CO_BC',  # company name/translated name
             'CORPS_DIRECTOR': 'CO_DI',
             'CORPS_OFFICE': 'CO_RR',  # registered and record offices
-            'CORPS_SHARE': 'CO_SS'
+            'CORPS_SHARE': 'CO_SS',
+            'CORPS_COMMENT_ONLY': 'CO_LI'  # Called local correction (adding a comment only)
         },
         'specialResolution': {
             'type_code_list': ['OTSPE'],
@@ -355,6 +356,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         },
         'putBackOn': {
             'type_code_list': ['CO_PO'],
+            Business.TypeCodes.COOP.value: 'CO_PO',
             Business.TypeCodes.BCOMP.value: 'CO_PO',
             Business.TypeCodes.BC_COMP.value: 'CO_PO',
             Business.TypeCodes.ULC_COMP.value: 'CO_PO',
@@ -366,6 +368,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         },
         'putBackOff': {
             'type_code_list': ['CO_PF'],
+            Business.TypeCodes.COOP.value: 'CO_PF',
             Business.TypeCodes.BCOMP.value: 'CO_PF',
             Business.TypeCodes.BC_COMP.value: 'CO_PF',
             Business.TypeCodes.ULC_COMP.value: 'CO_PF',
@@ -640,7 +643,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     filing_date=filing.filing_date[:10]
                 )
             elif filing_type_code in ['NOCAD', 'TRANS',
-                                      'CO_BC', 'CO_DI', 'CO_RR', 'CO_SS',
+                                      'CO_BC', 'CO_DI', 'CO_RR', 'CO_SS', 'CO_LI',
                                       'BEINC', 'ICORP', 'ICORU', 'ICORC',
                                       'AMLRB', 'AMALR', 'AMLRU', 'AMLRC',
                                       'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
@@ -1906,6 +1909,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return filing.event_id
 
     @classmethod
+    def _process_comment_correction(cls, cursor, filing: Filing, corp_num: str, filing_type_code: str):
+        """Process comment correction."""
+        # create new event record, return event ID
+        filing.event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing.filing_date)
+        cls._insert_filing_user(cursor=cursor, filing=filing)
+        cls._insert_filing(cursor=cursor, filing=filing, filing_type_code=filing_type_code)
+
+        ledger_text = filing.body.get('comment', '')
+        cls._insert_ledger_text(cursor, filing, ledger_text)
+
+        return filing.event_id
+
+    @classmethod
     def add_correction_filings(cls, con, filing: Filing) -> list:
         """Create correction filings."""
         try:
@@ -1958,11 +1974,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
 
-            if not filings_added:  # if no filing created
-                raise GenericException(  # pylint: disable=broad-exception-raised
-                    f'No filing created for this correction identifier:{corp_num}.',
-                    HTTPStatus.NOT_IMPLEMENTED
-                )
+            if not filings_added:  # only comment added
+                filing_type_code = Filing.FILING_TYPES[filing.filing_type][f'{sub_type}_COMMENT_ONLY']
+                event_id = cls._process_comment_correction(cursor, filing, corp_num, filing_type_code)
+
+                filings_added.append({'event_id': event_id,
+                                      'filing_type': filing.filing_type,
+                                      'filing_sub_type': None})
 
             return filings_added
 
