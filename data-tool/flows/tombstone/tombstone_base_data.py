@@ -149,25 +149,29 @@ FILING_JSON = {
 }
 
 FILING = {
-    'filing_date': None,  # timestamptz
-    'filing_json': FILING_JSON,
-    'filing_type': None,
-    'filing_sub_type': None,
-    'status': 'COMPLETED',
-    'completion_date': None,  # timestamptz
-    'effective_date': None,  # timestamptz
-    'meta_data': None,
-    # default values for now
-    'paper_only': True,
-    'source': 'COLIN',
-    'colin_only': False,
-    'deletion_locked': False,
-    # FK
-    'business_id': None,
-    'transaction_id': None,
-    'submitter_id': None,
-    # others
-    'submitter_roles': None,
+    'filings': {
+        'filing_date': None,  # timestamptz
+        'filing_json': FILING_JSON,
+        'filing_type': None,
+        'filing_sub_type': None,
+        'status': 'COMPLETED',
+        'completion_date': None,  # timestamptz
+        'effective_date': None,  # timestamptz
+        'meta_data': None,
+        # default values for now
+        'paper_only': True,
+        'source': 'COLIN',
+        'colin_only': False,
+        'deletion_locked': False,
+        # TODO: new column - hide_in_ledger
+        # FK
+        'business_id': None,
+        'transaction_id': None,
+        'submitter_id': None,
+        # others
+        'submitter_roles': None,
+    },
+    'amalgamations': None  # optional
 }
 
 FILING_COMBINED = {
@@ -175,9 +179,31 @@ FILING_COMBINED = {
     'update_business_info': {
         # business info to update
     },
-    'state_filing_index': -1
+    'state_filing_index': -1,
 }
 
+AMALGAMATION = {
+    'amalgamations': {
+        'amalgamation_date': None,
+        'court_approval': None,
+        'amalgamation_type': None,
+        # FK
+        'business_id': None,
+        'filing_id': None,
+    },
+    'amalgamating_businesses': []
+}
+
+AMALGAMTING_BUSINESS = {
+    'foreign_jurisdiction': None,
+    'foreign_name': None,
+    'foreign_identifier': None,
+    'role': None,
+    'foreign_jurisdiction_region': None,
+    # FK
+    'business_id': None,
+    'amalgamation_id': None,
+}
 
 # ======== tombstone example ========
 TOMBSTONE = {

@@ -85,6 +85,10 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
             'source': 'resolutions',
             'params': {'business_id': business_ids},
         },
+        {
+            'source': 'amalgamations',
+            'params': {'business_id': business_ids},
+        },
     ]
 
     query_futures_one = []
@@ -114,6 +118,10 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
             'source': 'share_series',
             'params': {'share_class_id': results_one['share_classes']},
         },
+        {
+            'source': 'amalgamating_businesses',
+            'params': { 'amalgamation_id': results_one['amalgamations']},
+        }
     ]
 
     query_futures_two = []

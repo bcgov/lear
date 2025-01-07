@@ -32,8 +32,15 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --        'BC0207097', 'BC0693625', 'BC0754041', 'BC0072008', 'BC0355241', 'BC0642237', 'BC0555891', 'BC0308683', -- correction
 --        'BC0688906', 'BC0870100', 'BC0267106', 'BC0873461', -- alteration
 --        'BC0536998', 'BC0574096', 'BC0663523' -- new mappings of CoA, CoD
+        -- TED
+--          'BC0812196',                -- amalg - r (with xpro)
+--          'BC0870100',                -- amalg - v
+--          'BC0747392'                 -- amalg - h
+        -- TING
+--          'BC0593394',                -- amalg - r (with xpro)
+--         'BC0805986', 'BC0561086',   -- amalg - v
+--          'BC0543231', 'BC0358476'    -- amalg - h
 --    )
-
     and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
     and cs.end_event_id is null
 --    and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
@@ -447,6 +454,14 @@ def get_filings_query(corp_num):
 --          paper only now -> f_ods_type
             f.nr_num               as f_nr_num,
             to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
+            -- state filing info
+            (
+                select start_event_id
+                from corp_state
+                where 1 = 1
+                and corp_num = '{corp_num}'
+                and end_event_id is null
+            ) as cs_state_event_id,
             --- filing user
             upper(u.user_id)              as u_user_id,
             u.last_name            as u_last_name,
@@ -472,6 +487,41 @@ def get_filings_query(corp_num):
     return query
 
 
+def get_amalgamation_query(corp_num):
+    query = f"""
+    select
+        e.event_id            as e_event_id,
+        ted_corp_num,
+        ting_corp_num,
+        cs.state_type_cd      as ting_state_type_cd,
+        cs.end_event_id       as ting_state_end_event_id,
+        corp_involve_id,
+        can_jur_typ_cd,
+        adopted_corp_ind,
+        home_juri_num,
+        othr_juri_desc,
+        foreign_nme,
+        -- event
+        e.event_type_cd        as e_event_type_cd,
+        to_char(e.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
+        -- filing
+        f.filing_type_cd       as f_filing_type_cd,
+        to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
+        f.court_appr_ind       as f_court_approval,
+        -- event_file
+        e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') as event_file_type
+    from corp_involved_amalgamating cig
+        left outer join event e on e.event_id = cig.event_id
+        left outer join filing f on e.event_id = f.event_id
+        left outer join corp_state cs on cig.ting_corp_num = cs.corp_num and cs.start_event_id = e.event_id
+    where 1 = 1
+    and cs.end_event_id is null
+    and cig.ted_corp_num = '{corp_num}'
+    order by cig.corp_involve_id;
+    """
+    return query
+
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
@@ -480,7 +530,8 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'share_classes': get_share_classes_share_series_query(corp_num),
         'aliases': get_aliases_query(corp_num),
         'resolutions': get_resolutions_query(corp_num),
-        'filings': get_filings_query(corp_num)
+        'filings': get_filings_query(corp_num),
+        'amalgamations': get_amalgamation_query(corp_num)
     }
 
     return queries

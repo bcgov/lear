@@ -73,7 +73,7 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
         return amalgamating_businesses
 
     @classmethod
-    def get_all_revision(cls, business_id):
+    def get_all_revision(cls, business_id, tombstone=False):
         """
         Get all amalgamating businesses for the given business id.
 
@@ -83,10 +83,18 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
         3. Business T1 is dissolved as part of another amalgamation
 
         In this case T1 is involved in 2 amalgamation
+
+        If tombstone is True, get all non-versioned amalgamating businesses
+        for the given business id. 
         """
-        amalgamating_businesses_version = version_class(AmalgamatingBusiness)
-        amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
-            .filter(amalgamating_businesses_version.operation_type == 0) \
-            .filter(amalgamating_businesses_version.business_id == business_id) \
-            .order_by(amalgamating_businesses_version.transaction_id).all()
+        if tombstone:
+            amalgamating_businesses = db.session.query(AmalgamatingBusiness) \
+            .filter(AmalgamatingBusiness.business_id == business_id) \
+            .all()
+        else:
+            amalgamating_businesses_version = version_class(AmalgamatingBusiness)
+            amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
+                .filter(amalgamating_businesses_version.operation_type == 0) \
+                .filter(amalgamating_businesses_version.business_id == business_id) \
+                .order_by(amalgamating_businesses_version.transaction_id).all()
         return amalgamating_businesses
