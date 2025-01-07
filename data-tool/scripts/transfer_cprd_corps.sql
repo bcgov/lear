@@ -556,7 +556,11 @@ from (select e.event_id, -- SELECT BY EVENT
              case
                  when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
                  else c.CORP_NUM
-             end CORP_NUM,
+             end TED_CORP_NUM,
+             case
+                 when c2.corp_typ_cd in ('BC', 'ULC', 'CC') then 'BC' || c2.corp_num
+                 else c2.corp_num
+             end TING_CORP_NUM,
              ci.CORP_INVOLVE_ID,
              ci.CAN_JUR_TYP_CD,
              case ci.ADOPTED_CORP_IND
@@ -570,10 +574,12 @@ from (select e.event_id, -- SELECT BY EVENT
       from event e
          , CORP_INVOLVED ci
          , corporation c
+        , corporation c2
       where e.event_id = ci.event_id
         and c.corp_num = e.corp_num
-        and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
         and event_typ_cd = 'CONVAMAL'
+        and c2.corp_num = ci.corp_num
         -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5
       UNION ALL
@@ -581,7 +587,11 @@ from (select e.event_id, -- SELECT BY EVENT
              case
                  when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
                  else c.CORP_NUM
-             end CORP_NUM,
+             end TED_CORP_NUM,
+             case
+	              when c2.corp_typ_cd in ('BC', 'ULC', 'CC') then 'BC' || c2.corp_num
+	              else c2.corp_num
+	          end TING_CORP_NUM,
              ci.CORP_INVOLVE_ID,
              ci.CAN_JUR_TYP_CD,
              case ci.ADOPTED_CORP_IND
@@ -595,11 +605,13 @@ from (select e.event_id, -- SELECT BY EVENT
       from event e
          , CORP_INVOLVED ci
          , corporation c
+         , corporation c2
          , filing f
       where e.event_id = ci.event_id
         and c.corp_num = e.corp_num
+        and c2.corp_num = ci.corp_num
         and e.event_id = f.event_id
-        and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
         and filing_typ_cd in ('AMALH', 'AMALV', 'AMALR', 'AMLHU', 'AMLVU', 'AMLRU', 'AMLHC', 'AMLVC', 'AMLRC')
         -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
         -- and rownum <= 5

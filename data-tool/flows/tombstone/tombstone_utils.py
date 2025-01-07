@@ -1,4 +1,5 @@
 import copy
+from decimal import Decimal
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -6,7 +7,7 @@ from decimal import Decimal
 import pandas as pd
 import pytz
 from sqlalchemy import Connection, text
-from tombstone.tombstone_base_data import (ALIAS, FILING, FILING_JSON, OFFICE,
+from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING, FILING_JSON, OFFICE,
                                            PARTY, PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
@@ -231,7 +232,7 @@ def format_filings_data(data: dict) -> list[dict]:
 
     filings_data = data['filings']
     formatted_filings = []
-    last_state_filing_idx = -1
+    state_filing_idx = -1
     idx = 0
     for x in filings_data:
         event_file_type = x['event_file_type']
@@ -251,14 +252,15 @@ def format_filings_data(data: dict) -> list[dict]:
         filing_json, meta_data = build_filing_json_meta_data(filing_type, filing_subtype,
                                                              effective_date, x)
 
-        filing = copy.deepcopy(FILING)
+        filing_body = copy.deepcopy(FILING['filings'])
+        amalgamation = None
 
         # make it None if no valid value
         if not (user_id := x['u_user_id']):
             user_id = x['u_full_name'] if x['u_full_name'] else None
 
-        filing = {
-            **filing,
+        filing_body = {
+            **filing_body,
             'filing_date': effective_date,
             'filing_type': filing_type,
             'filing_sub_type': filing_subtype,
@@ -266,7 +268,15 @@ def format_filings_data(data: dict) -> list[dict]:
             'effective_date': effective_date,
             'filing_json': filing_json,
             'meta_data': meta_data,
-            'submitter_id': user_id  # will be updated to real user_id when loading data into db
+            'submitter_id': user_id,  # will be updated to real user_id when loading data into db
+        }
+
+        if filing_type == 'amalgamationApplication':
+            amalgamation = format_amalgamations_data(data, x['e_event_id'])
+
+        filing = {
+            'filings': filing_body,
+            'amalgamations': amalgamation 
         }
 
         formatted_filings.append(filing)
@@ -277,16 +287,68 @@ def format_filings_data(data: dict) -> list[dict]:
             business_update_dict[k] = get_business_update_value(k, effective_date, trigger_date,
                                                                 filing_type, filing_subtype)
         # save state filing index
-        if filing_type in LEAR_STATE_FILINGS:
-            last_state_filing_idx = idx
+        if filing_type in LEAR_STATE_FILINGS and x['e_event_id'] == x['cs_state_event_id']:
+            state_filing_idx = idx
         
         idx += 1
 
     return {
         'filings': formatted_filings,
         'update_business_info': business_update_dict,
-        'state_filing_index': last_state_filing_idx
+        'state_filing_index': state_filing_idx
     }
+
+
+def format_amalgamations_data(data: dict, event_id: Decimal) -> dict:
+    amalgamations_data = data['amalgamations']
+
+    matched_amalgamations = [
+        item for item in amalgamations_data if item.get('e_event_id') == event_id
+    ]
+
+    if not matched_amalgamations:
+        return None
+
+    formatted_amalgmation = copy.deepcopy(AMALGAMATION)
+    amalgmation_info = matched_amalgamations[0]
+    
+    amalgmation_date = amalgmation_info['f_effective_dt_str']
+    if not amalgmation_date:
+        amalgmation_date = amalgmation_info['e_event_dt_str']
+    formatted_amalgmation['amalgamations']['amalgamation_date'] = amalgmation_date
+    formatted_amalgmation['amalgamations']['court_approval'] = amalgmation_info['f_court_approval']
+
+    event_file_type = amalgmation_info['event_file_type']
+    _, filing_subtype = get_target_filing_type(event_file_type)
+
+    formatted_amalgmation['amalgamations']['amalgamation_type'] = filing_subtype
+    formatted_tings = formatted_amalgmation['amalgamating_businesses']
+    for ting in matched_amalgamations:
+        formatted_tings.append(format_amalgamating_businesses(ting))
+
+    return formatted_amalgmation
+
+
+def format_amalgamating_businesses(ting_data: dict) -> dict:
+    formatted_ting = {}
+    foreign_identifier = ting_data['home_juri_num']
+    role = 'holding' if ting_data['adopted_corp_ind'] else 'amalgamating'
+    if foreign_identifier:
+        formatted_ting = {
+            # TODO: xpro outside CA?
+            'foreign_jurisdiction': 'CA',
+            'foreign_name': ting_data['foreign_nme'],
+            'foreign_identifier': foreign_identifier,
+            'role': role,
+            'foreign_jurisdiction_region': ting_data['can_jur_typ_cd']
+        }
+    else:
+        formatted_ting = {
+            'ting_identifier': ting_data['ting_corp_num'],
+            'role': role,
+        }
+
+    return formatted_ting
 
 
 def format_users_data(users_data: list) -> list:
@@ -379,7 +441,8 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
     meta_data = {
         'colinFilingInfo': {
             'eventType': data['e_event_type_cd'],
-            'filingType': data['f_filing_type_cd']
+            'filingType': data['f_filing_type_cd'],
+            'eventId': int(data['e_event_id'])
         },
         'isLedgerPlaceholder': True,
         'colinDisplayName': get_colin_display_name(data)
@@ -433,7 +496,7 @@ def get_colin_display_name(data: dict) -> str:
 
 def build_epoch_filing(business_id: int) -> dict:
     now = datetime.utcnow().replace(tzinfo=pytz.UTC)
-    filing = copy.deepcopy(FILING)
+    filing = copy.deepcopy(FILING['filings'])
     filing = {
         **filing,
         'filing_type': 'lear_tombstone',
@@ -446,7 +509,7 @@ def build_epoch_filing(business_id: int) -> dict:
     return filing
 
 
-def load_data(conn: Connection, table_name: str, data: dict, conflict_column: str=None) -> int:
+def load_data(conn: Connection, table_name: str, data: dict, conflict_column: str=None, update: bool=False) -> int:
     columns = ', '.join(data.keys())
     values = ', '.join([format_value(v) for v in data.values()])
 
@@ -455,6 +518,8 @@ def load_data(conn: Connection, table_name: str, data: dict, conflict_column: st
         check_query = f"select id from {table_name} where {conflict_column} = {conflict_value}"
         check_result = conn.execute(text(check_query)).scalar()
         if check_result:
+            if update:
+                update_data(conn, table_name, data, check_result)
             return check_result
 
     query = f"""insert into {table_name} ({columns}) values ({values}) returning id"""
