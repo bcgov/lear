@@ -808,6 +808,14 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return filing_types
 
     @staticmethod
+    def link_now_to_withdrawn_filing(filing: Filing):
+        """Add withdrawn filing ID to the NoW and set the withdrawal pending flag to True on the withdrawn filing."""
+        withdrawn_filing_id = filing.filing_json['filing']['noticeOfWithdrawal']['filingId']
+        withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+        withdrawn_filing.withdrawal_pending = True
+        filing.withdrawn_id = withdrawn_filing_id
+
+    @staticmethod
     def create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
                        filing: Filing,
                        filing_types: list,
@@ -902,6 +910,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             if account_info:
                 payload['accountInfo'] = account_info
         try:
+            if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+                ListFilingResource.link_now_to_withdrawn_filing(filing)
+
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token,
                        'Content-Type': 'application/json'}
