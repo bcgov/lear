@@ -813,7 +813,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         withdrawn_filing_id = filing.filing_json['filing']['noticeOfWithdrawal']['filingId']
         withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
         withdrawn_filing.withdrawal_pending = True
-        filing.withdrawn_id = withdrawn_filing_id
+        filing.withdrawn_filing_id = withdrawn_filing_id
 
     @staticmethod
     def create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -910,9 +910,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             if account_info:
                 payload['accountInfo'] = account_info
         try:
-            if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
-                ListFilingResource.link_now_and_withdrawn_filing(filing)
-
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token,
                        'Content-Type': 'application/json'}
@@ -925,6 +922,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
 
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
+            if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+                ListFilingResource.link_now_and_withdrawn_filing(filing)
             pid = rv.json().get('id')
             filing.payment_token = pid
             filing.payment_status_code = rv.json().get('statusCode', '')
