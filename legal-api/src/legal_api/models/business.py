@@ -471,12 +471,12 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
             one_or_none()
         return find_in_batch_processing is not None
-    
+
     @property
     def is_tombstone(self):
         """Return True if it's a tombstone business, otherwise False."""
         tombstone_filing = Filing.get_filings_by_status(self.id, [Filing.Status.TOMBSTONE])
-        return True if tombstone_filing else False
+        return bool(tombstone_filing)
 
     def save(self):
         """Render a Business to the local cache."""

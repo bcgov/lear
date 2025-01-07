@@ -462,7 +462,8 @@ class BusinessDocument:
             amalgamation_application = filings[0]
             business['business']['amalgamatedEntity'] = True
             if (self._epoch_filing_date and amalgamation_application.effective_date < self._epoch_filing_date) or\
-                (self._tombstone_filing_date and amalgamation_application.effective_date < self._tombstone_filing_date):
+                    (self._tombstone_filing_date and
+                     amalgamation_application.effective_date < self._tombstone_filing_date):
                 # imported from COLIN
                 amalgamated_businesses_info = {
                     'legalName': 'Not Available',
