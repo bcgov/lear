@@ -508,7 +508,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'application_date',
             'notice_date',
             'withdrawal_pending',
-            'withdrawn_id'
+            'withdrawn_filing_id'
         ]
     }
 
@@ -541,7 +541,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     resubmission_date = db.Column('resubmission_date', db.DateTime(timezone=True))
     hide_in_ledger = db.Column('hide_in_ledger', db.Boolean, unique=False, default=False)
     withdrawal_pending = db.Column('withdrawal_pending', db.Boolean, unique=False, default=False)
-    withdrawn_id = db.Column('withdrawn_id', db.Integer)
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -565,7 +564,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     review = db.relationship('Review', lazy='dynamic')
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
-    parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
+    parent_filing = db.relationship('Filing',
+                                    remote_side=[id],
+                                    backref=backref('children', uselist=True),
+                                    foreign_keys=[parent_filing_id])
+
+    withdrawn_filing_id = db.Column('withdrawn_filing_id', db.Integer,
+                                    db.ForeignKey('filings.id'))
+    withdrawn_filing = db.relationship('Filing',
+                                       remote_side=[id],
+                                       foreign_keys=[withdrawn_filing_id])
 
     # properties
     @property
