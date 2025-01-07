@@ -85,12 +85,12 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
         In this case T1 is involved in 2 amalgamation
 
         If tombstone is True, get all non-versioned amalgamating businesses
-        for the given business id. 
+        for the given business id.
         """
         if tombstone:
             amalgamating_businesses = db.session.query(AmalgamatingBusiness) \
-            .filter(AmalgamatingBusiness.business_id == business_id) \
-            .all()
+                .filter(AmalgamatingBusiness.business_id == business_id) \
+                .all()
         else:
             amalgamating_businesses_version = version_class(AmalgamatingBusiness)
             amalgamating_businesses = db.session.query(amalgamating_businesses_version) \

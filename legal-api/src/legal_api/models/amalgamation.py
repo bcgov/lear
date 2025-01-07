@@ -88,8 +88,8 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         # pylint: disable=singleton-comparison;
         if tombstone:
             amalgamation = db.session.query(Amalgamation) \
-            .filter(Amalgamation.id == amalgamation_id) \
-            .one_or_none()
+                .filter(Amalgamation.id == amalgamation_id) \
+                .one_or_none()
         else:
             amalgamation_version = version_class(Amalgamation)
             amalgamation = db.session.query(amalgamation_version) \
