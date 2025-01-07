@@ -808,7 +808,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return filing_types
 
     @staticmethod
-    def link_now_to_withdrawn_filing(filing: Filing):
+    def link_now_and_withdrawn_filing(filing: Filing):
         """Add withdrawn filing ID to the NoW and set the withdrawal pending flag to True on the withdrawn filing."""
         withdrawn_filing_id = filing.filing_json['filing']['noticeOfWithdrawal']['filingId']
         withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
@@ -911,7 +911,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 payload['accountInfo'] = account_info
         try:
             if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
-                ListFilingResource.link_now_to_withdrawn_filing(filing)
+                ListFilingResource.link_now_and_withdrawn_filing(filing)
 
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token,
