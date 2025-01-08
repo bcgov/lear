@@ -1684,7 +1684,6 @@ def test_notice_of_withdraw_filing(session, client, jwt, test_name, legal_type, 
     # setup
     withdrawn_filing = {}
     identifier = ''
-    headers = create_header(jwt, [STAFF_ROLE], identifier)
 
     # validate NoW flags set on withdrawn filing
     if is_temp:
