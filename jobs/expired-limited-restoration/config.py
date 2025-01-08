@@ -55,27 +55,6 @@ def get_named_config(config_name: str = 'production'):
 class _Config(object):  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
 
-    NATS_CONNECTION_OPTIONS = {
-        'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
-        'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.worker')
-    }
-    STAN_CONNECTION_OPTIONS = {
-        'cluster_id': os.getenv('NATS_CLUSTER_ID', 'test-cluster'),
-        'client_id': str(random.SystemRandom().getrandbits(0x58)),
-        'ping_interval': 1,
-        'ping_max_out': 5
-    }
-
-    SUBSCRIPTION_OPTIONS = {
-        'subject': os.getenv('NATS_SUBJECT', 'entity.filings'),
-        'queue': os.getenv('NATS_QUEUE', 'filing-worker'),
-        'durable_name': os.getenv('NATS_QUEUE', 'filing-worker') + '_durable'
-    }
-
-    FILER_PUBLISH_OPTIONS = {
-        'subject': os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer')
-    }
-
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     LEGAL_API_URL = os.getenv('LEGAL_API_URL', '')
@@ -106,27 +85,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     DEBUG = True
     TESTING = True
-
-    NATS_CONNECTION_OPTIONS = {
-        'servers': os.getenv('NATS_SERVERS_TEST', '').split(','),
-        'name': os.getenv('NATS_CLIENT_NAME_TEST', '')
-    }
-    STAN_CONNECTION_OPTIONS = {
-        'cluster_id': os.getenv('NATS_CLUSTER_ID_TEST', ''),
-        'client_id': str(random.SystemRandom().getrandbits(0x58)),
-        'ping_interval': 1,
-        'ping_max_out': 5
-    }
-
-    SUBSCRIPTION_OPTIONS = {
-        'subject': os.getenv('NATS_SUBJECT_TEST', ''),
-        'queue': os.getenv('NATS_QUEUE_TEST', ''),
-        'durable_name': os.getenv('NATS_QUEUE_TEST', '') + '_durable'
-    }
-
-    FILER_PUBLISH_OPTIONS = {
-        'subject': os.getenv('NATS_FILER_SUBJECT_TEST', '')
-    }
 
     LEGAL_API_URL = os.getenv('LEGAL_API_URL_TEST', '')
     SENTRY_DSN = os.getenv('SENTRY_DSN_TEST', '')
