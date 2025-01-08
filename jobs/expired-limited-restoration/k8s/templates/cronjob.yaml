@@ -72,31 +72,6 @@ objects:
                       secretKeyRef:
                         name: ${NAME}-${TAG}-secret
                         key: SENTRY_DSN
-                  - name: NATS_SERVERS
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${NAME}-${TAG}-secret
-                        key: NATS_SERVERS
-                  - name: NATS_CLIENT_NAME
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${NAME}-${TAG}-secret
-                        key: NATS_CLIENT_NAME
-                  - name: NATS_CLUSTER_ID
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${NAME}-${TAG}-secret
-                        key: NATS_CLUSTER_ID
-                  - name: NATS_FILER_SUBJECT
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${NAME}-${TAG}-secret
-                        key: NATS_FILER_SUBJECT
-                  - name: NATS_QUEUE
-                    valueFrom:
-                      secretKeyRef:
-                        name: ${NAME}-${TAG}-secret
-                        key: NATS_QUEUE
             restartPolicy: "Never"
             terminationGracePeriodSeconds: 30
             activeDeadlineSeconds: 1600
