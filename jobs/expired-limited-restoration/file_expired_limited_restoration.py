@@ -18,38 +18,19 @@ This module is being used to process businesses with expired limited restoration
 import asyncio
 import logging
 import os
-import random
 from datetime import datetime
 
 import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from dotenv import find_dotenv, load_dotenv
-from entity_queue_common.service import ServiceWorker
 from flask import Flask
-from nats.aio.client import DEFAULT_CONNECT_TIMEOUT
-from nats.aio.client import Client as NATS  # noqa N814; by convention the name is NATS # pylint: disable=unused-import
 from sentry_sdk.integrations.logging import LoggingIntegration  # noqa: I001
-from stan.aio.client import Client as STAN  # noqa N814; by convention the name is STAN
 
 import config  # pylint: disable=import-error
 from utils.logging import setup_logging  # pylint: disable=import-error
 
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
-
-default_nats_options = {
-    'name': 'expired_limited_restoration_job',
-    'servers': os.getenv('NATS_SERVERS', '').split(','),
-    'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT',  # pylint: disable=invalid-envvar-default
-                                 DEFAULT_CONNECT_TIMEOUT)
-}
-
-default_stan_options = {
-    'cluster_id': os.getenv('NATS_CLUSTER_ID'),
-    'client_id': '_' + str(random.SystemRandom().getrandbits(0x58))
-}
-
-subject = os.getenv('NATS_FILER_SUBJECT', '')
 
 # this will load all the envars from a .env file located in the project root
 load_dotenv(find_dotenv())
@@ -157,15 +138,6 @@ def create_put_back_off_filing(app: Flask, identifier: str):
 
 async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
     """Run the methods for processing expired limited restorations."""
-    queue_service = ServiceWorker(
-        loop=loop,
-        nats_connection_options=default_nats_options,
-        stan_connection_options=default_stan_options,
-        config=config.get_named_config('production')
-    )
-
-    await queue_service.connect()
-
     with application.app_context():
         try:
             # 1. get businesses that need to be processed
@@ -183,13 +155,8 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
                     # create putBackOff filing via API
                     filing = create_put_back_off_filing(application, identifier)
                     filing_id = filing['filing']['header']['filingId']
-
-                    # queue the filing for processing
-                    msg = {'filing': {'id': filing_id}}
-                    await queue_service.publish(subject, msg)
                     application.logger.debug(
-                        f'Successfully queued put back off for {identifier}, '
-                        f'put filing {filing_id} on the queue.'
+                        f'Successfully created put back off filing {filing_id} for {identifier}'
                     )
                 except Exception as err:  # pylint: disable=broad-except;  # noqa: B902
                     application.logger.error(f'Error processing business {identifier}: {err}')
