@@ -1680,3 +1680,26 @@ def test_notice_of_withdraw_filing(session, client, jwt, test_name, legal_type, 
     # validate
     assert rv_draft.status_code == HTTPStatus.CREATED
     assert rv_draft.json['filing']['header']['name'] == 'noticeOfWithdrawal'
+
+    # setup
+    withdrawn_filing = {}
+    identifier = ''
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+
+    # validate NoW flags set on withdrawn filing
+    if is_temp:
+        withdrawn_filing = new_business_filing
+        identifier = 'Tb31yQIuBw'
+    else:
+        withdrawn_filing = fe_filing
+        identifier = 'BC1234567'
+
+    withdrawn_filing_id = withdrawn_filing.withdrawn_filing_id
+    withdrawal_pending = withdrawn_filing.withdrawal_pending
+    assert withdrawn_filing_id is None
+    assert withdrawal_pending == True
+
+    # validate NoW flags set on NoW
+    now_filing = (Filing.find_by_id(rv_draft.json['filing']['header']['filingId']))
+    assert now_filing.withdrawn_filing_id == withdrawn_filing.id
+    assert now_filing.withdrawal_pending == False
