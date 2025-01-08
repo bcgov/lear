@@ -198,6 +198,9 @@ def delete_filings(identifier, filing_id=None):
     if err_code:
         return jsonify({'message': _(err_message)}), err_code
 
+    if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+        ListFilingResource.unlink_now_and_withdrawn_filing(filing)
+
     filing_type = filing.filing_type
     filing_json = filing.filing_json
     filing.delete()
@@ -627,6 +630,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
             filing.hide_in_ledger = ListFilingResource._hide_in_ledger(filing)
+
+            if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+                ListFilingResource.link_now_and_withdrawn_filing(filing)
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
@@ -806,6 +812,28 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 'waiveFees': waive_fees_flag
             })
         return filing_types
+
+    @staticmethod
+    def get_withdrawn_filing(filing: Filing) -> Filing:
+        """Get withdrawn filing from NoW filing ID."""
+        withdrawn_filing_id = filing.filing_json['filing']['noticeOfWithdrawal']['filingId']
+        withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+        return withdrawn_filing
+
+    @staticmethod
+    def link_now_and_withdrawn_filing(filing: Filing):
+        """Add withdrawn filing ID to the NoW and set the withdrawal pending flag to True on the withdrawn filing."""
+        withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
+        withdrawn_filing.withdrawal_pending = True
+        withdrawn_filing.save()
+        filing.withdrawn_filing_id = withdrawn_filing.id
+
+    @staticmethod
+    def unlink_now_and_withdrawn_filing(filing: Filing):
+        """Set the withdrawal pending flag to False when a NoW is deleted."""
+        withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
+        withdrawn_filing.withdrawal_pending = False
+        withdrawn_filing.save()
 
     @staticmethod
     def create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
@@ -1077,8 +1105,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     def _get_address_from_withdrawn_new_business_filing(business: Business, filing: Filing):
         if filing.filing_type != CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL.value:
             return None, None, None
-        withdrawn_filing_id = filing.filing_json['filing']['noticeOfWithdrawal']['filingId']
-        withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+        withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
         if withdrawn_filing.filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
             office_type = OfficeType.REGISTERED
             if withdrawn_filing.filing_type == Filing.FILINGS['registration']['name']:
