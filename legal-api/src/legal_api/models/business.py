@@ -511,7 +511,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'lastAddressChangeDate': '',
             'lastDirectorChangeDate': '',
-            'lastModified': self.last_modified.isoformat(),
             'naicsKey': self.naics_key,
             'naicsCode': self.naics_code,
             'naicsDescription': self.naics_description,

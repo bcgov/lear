@@ -863,7 +863,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         q = db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id)
 
         if filing_id:
-            q.filter(Filing.id == filing_id)
+            q = q.filter(Filing.id == filing_id)
 
         filing = q.one_or_none()
         return filing
@@ -908,7 +908,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
             filter(Filing._status == Filing.Status.COMPLETED.value). \
-            order_by(desc(Filing.effective_date)). \
+            order_by(desc(Filing.transaction_id)). \
             all()
         return filings
 
@@ -968,23 +968,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str, filing_sub_type: str = None):
-        """Return the filings of a particular type."""
-        max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
-            filter(Filing._filing_type == filing_type). \
-            filter(Filing.business_id == business_id)
-        if filing_sub_type:
-            max_filing = max_filing.filter(Filing._filing_sub_type == filing_sub_type)
-        max_filing = max_filing.subquery()
+    def get_most_recent_filing(business_id: str, filing_type: str = None, filing_sub_type: str = None):
+        """Return the most recent filing.
 
-        filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
+        filing_type is required, if filing_sub_type is provided, it will be used to filter the query.
+        """
+        query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type == filing_type). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
-        if filing_sub_type:
-            filing = filing.filter(Filing._filing_sub_type == filing_sub_type)
+        if filing_type:
+            query = query.filter(Filing._filing_type == filing_type)
+            if filing_sub_type:
+                query = query.filter(Filing._filing_sub_type == filing_sub_type)
 
-        return filing.one_or_none()
+        query = query.order_by(Filing.transaction_id.desc())
+        return query.first()
 
     @staticmethod
     def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
@@ -1049,15 +1047,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_previous_completed_filing(filing):
         """Return the previous completed filing."""
-        filings = db.session.query(Filing). \
+        query = db.session.query(Filing). \
             filter(Filing.business_id == filing.business_id). \
-            filter(Filing._status == Filing.Status.COMPLETED.value). \
-            filter(Filing.id < filing.id). \
-            filter(Filing.effective_date < filing.effective_date). \
-            order_by(Filing.effective_date.desc()).all()
-        if filings:
-            return filings[0]
-        return None
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+
+        if filing.transaction_id:  # transaction_id will be None for the pending filings (intermediate state)
+            query = query.filter(Filing.transaction_id < filing.transaction_id)
+
+        return query.order_by(Filing.transaction_id.desc()).first()
 
     @staticmethod
     def has_completed_filing(business_id: int, filing_type: str) -> bool:

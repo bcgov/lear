@@ -309,7 +309,7 @@ class Filing:
     @staticmethod
     def get_most_recent_filing_json(business_id: str, filing_type: str = None, jwt: JwtManager = None):
         """Return the most recent filing json."""
-        if storage := FilingStorage.get_most_recent_legal_filing(business_id, filing_type):
+        if storage := FilingStorage.get_most_recent_filing(business_id, filing_type):
             submitter_displayname = REDACTED_STAFF_SUBMITTER
             if (submitter := storage.filing_submitter) \
                 and submitter.username and jwt \
