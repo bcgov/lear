@@ -1,0 +1,17 @@
+[
+    {
+        "vault": "shared",
+        "application": [
+            "nats"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "filings-jobs",
+            "nats-filer",
+            "entity-service-account",
+            "sentry"
+        ]
+    }
+]
