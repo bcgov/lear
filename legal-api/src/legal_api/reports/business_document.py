@@ -332,10 +332,12 @@ class BusinessDocument:
         tombstone = self._business.is_tombstone
         if (amalgamating_businesses := AmalgamatingBusiness.get_all_revision(self._business.id, tombstone)):
             for amalgamating_business in amalgamating_businesses:
-                # must set transaction_id None for tombstone business
-                transaction_id = None if tombstone else amalgamating_business.transaction_id
-                amalgamation = Amalgamation.get_revision_by_id(transaction_id,
-                                                               amalgamating_business.amalgamation_id, tombstone)
+                if tombstone:
+                    amalgamation = Amalgamation.get_revision_by_id(
+                        amalgamating_business.amalgamation_id, tombstone=True)
+                else:
+                    amalgamation = Amalgamation.get_revision_by_id(
+                        amalgamating_business.amalgamation_id, amalgamating_business.transaction_id)
                 filing = Filing.find_by_id(amalgamation.filing_id)
                 state_filing = self._format_state_filing(filing)
                 amalgamation_json = Amalgamation.get_revision_json(filing.transaction_id, filing.business_id, tombstone)
