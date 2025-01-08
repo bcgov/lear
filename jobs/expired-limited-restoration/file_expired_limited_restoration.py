@@ -18,8 +18,8 @@ This module is being used to process businesses with expired limited restoration
 import asyncio
 import logging
 import os
-from datetime import datetime
 import random
+from datetime import datetime
 
 import requests
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
@@ -40,7 +40,8 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.
 default_nats_options = {
     'name': 'expired_limited_restoration_job',
     'servers': os.getenv('NATS_SERVERS', '').split(','),
-    'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT', DEFAULT_CONNECT_TIMEOUT)
+    'connect_timeout': os.getenv('NATS_CONNECT_TIMEOUT',  # pylint: disable=invalid-envvar-default
+                                 DEFAULT_CONNECT_TIMEOUT)
 }
 
 default_stan_options = {
@@ -97,8 +98,7 @@ def get_businesses_to_process(app: Flask):
     """Get list of business identifiers that need processing."""
     timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
     token = get_bearer_token(app, timeout)
-    
-    
+
     response = requests.get(
         f'{app.config["LEGAL_API_URL"]}/internal/expired_restoration',
         headers={
@@ -108,12 +108,11 @@ def get_businesses_to_process(app: Flask):
         timeout=timeout
     )
 
- 
     if not response or response.status_code != 200:
         app.logger.error(f'Failed to get businesses from legal-api.  \
             {response} {response.json()} {response.status_code}')
         raise Exception  # pylint: disable=broad-exception-raised;
-        
+
     return response.json().get('identifiers', [])
 
 
@@ -151,8 +150,8 @@ def create_put_back_off_filing(app: Flask, identifier: str):
     if not response or response.status_code != 201:
         app.logger.error(f'Failed to create filing from legal-api. \
             {response} {response.json()} {response.status_code}')
-        raise Exception
-    
+        raise Exception  # pylint: disable=broad-exception-raised;
+
     return response.json()
 
 
@@ -171,21 +170,20 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
         try:
             # 1. get businesses that need to be processed
             businesses = get_businesses_to_process(application)
-            
+
             if not businesses:
                 application.logger.debug('No businesses to process')
                 return
-                
+
             application.logger.debug(f'Processing {len(businesses)} businesses')
-            
+
             # 2. create put back off filing for each business
             for identifier in businesses:
                 try:
                     # create putBackOff filing via API
                     filing = create_put_back_off_filing(application, identifier)
-                    print(f"Filing content: {filing}") 
                     filing_id = filing['filing']['header']['filingId']
-                    
+
                     # queue the filing for processing
                     msg = {'filing': {'id': filing_id}}
                     await queue_service.publish(subject, msg)
@@ -196,7 +194,7 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
                 except Exception as err:  # pylint: disable=broad-except;  # noqa: B902
                     application.logger.error(f'Error processing business {identifier}: {err}')
                     continue
-        except Exception as err:  # pylint: disable=broad-except;  # noqa: B902            
+        except Exception as err:  # pylint: disable=broad-except;  # noqa: B902
             application.logger.error(f'Job failed: {err}')
 
 
