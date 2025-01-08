@@ -80,7 +80,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         }
 
     @classmethod
-    def get_revision_by_id(cls, transaction_id, amalgamation_id, tombstone=False):
+    def get_revision_by_id(cls, amalgamation_id, transaction_id=None, tombstone=False):
         """Get amalgamation for the given id.
 
         If tombstone is True, get all non-versioned amalgamating for the given id.
