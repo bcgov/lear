@@ -93,7 +93,7 @@ def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, 
     mock_nr_response = MockResponse(temp_nr_response, HTTPStatus.OK)
 
     mocker.patch('legal_api.services.NameXService.query_nr_number', return_value=mock_nr_response)
-    with patch.object(Filing, 'get_most_recent_legal_filing',
+    with patch.object(Filing, 'get_most_recent_filing',
                       return_value=limited_restoration_filing):
         err = validate(business, filing)
 
@@ -180,7 +180,7 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
     elif test_status == 'SUCCESS' and restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
         filing['filing']['restoration']['relationships'] = relationships
 
-    with patch.object(Filing, 'get_most_recent_legal_filing',
+    with patch.object(Filing, 'get_most_recent_filing',
                       return_value=limited_restoration_filing):
         err = validate(business, filing)
 
@@ -231,7 +231,7 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing['filing']['restoration']['type'] = restoration_type
     if delta_date:
         filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
-    with patch.object(Filing, 'get_most_recent_legal_filing',
+    with patch.object(Filing, 'get_most_recent_filing',
                       return_value=limited_restoration_filing):
         err = validate(business, filing)
 
@@ -281,7 +281,7 @@ def test_approval_type(session, test_status, restoration_types, legal_types, app
             filing['filing']['restoration']['applicationDate'] = '2023-03-30'
             filing['filing']['restoration']['noticeDate'] = '2023-03-30'
 
-            with patch.object(Filing, 'get_most_recent_legal_filing',
+            with patch.object(Filing, 'get_most_recent_filing',
                               return_value=limited_restoration_filing):
                 err = validate(business, filing)
 
@@ -337,7 +337,7 @@ def test_restoration_court_orders(session, test_status, restoration_types, legal
             else:
                 del filing['filing']['restoration']['courtOrder']
 
-            with patch.object(Filing, 'get_most_recent_legal_filing',
+            with patch.object(Filing, 'get_most_recent_filing',
                               return_value=limited_restoration_filing):
                 err = validate(business, filing)
 
@@ -394,7 +394,7 @@ def test_restoration_registrar(session, test_status, restoration_types, legal_ty
             if notice_date:
                 filing['filing']['restoration']['noticeDate'] = notice_date
 
-            with patch.object(Filing, 'get_most_recent_legal_filing',
+            with patch.object(Filing, 'get_most_recent_filing',
                               return_value=limited_restoration_filing):
                 err = validate(business, filing)
 

@@ -956,7 +956,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_most_recent_legal_filing(business_id: str, filing_type: str = None, filing_sub_type: str = None):
+    def get_most_recent_filing(business_id: str, filing_type: str = None, filing_sub_type: str = None):
         """Return the most recent filing.
 
         filing_type is required, if filing_sub_type is provided, it will be used to filter the query.
@@ -971,6 +971,33 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         query = query.order_by(Filing.transaction_id.desc())
         return query.first()
+
+    @staticmethod
+    def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
+        """Return the most recent filing containing the legal_filing type."""
+        query = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
+            filter(Filing.business_id == business_id).\
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+        if filing_type:
+            expr = Filing._filing_json[('filing', filing_type)]
+            query = query.filter(or_(Filing._filing_type == filing_type,
+                                     expr.label('legal_filing_type').isnot(None)))
+        max_filing = query.subquery()
+
+        filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._status == Filing.Status.COMPLETED.value). \
+            order_by(Filing.id.desc())
+
+        # As the JSON query is new for most, leaving the debug stmnt
+        # that dumps the query for easier debugging.
+        # current_app.logger.debug(
+        #     str(filing.statement.compile(
+        #         dialect=dialect(),
+        #         compile_kwargs={'literal_binds': True}))
+        # )
+
+        return filing.first()
 
     @staticmethod
     def get_completed_filings_for_colin(limit=20, offset=0):
