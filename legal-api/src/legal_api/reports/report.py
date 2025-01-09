@@ -1167,7 +1167,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
         filing['shareClasses'] = filing.get('correction').get('shareStructure', {}).get('shareClasses')
-        if filing.get('shareClasses'):
+        if filing.get('correction').get('shareClasses'):
             dates = filing['correction']['shareStructure'].get('resolutionDates', [])
             formatted_dates = [
                 datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
