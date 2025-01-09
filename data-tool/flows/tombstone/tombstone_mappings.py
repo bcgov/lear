@@ -283,7 +283,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_DO: 'Amendment - Dissolved Office',
     EventFilings.FILE_AM_RR: 'Amendment - Registered and Records Offices',
 
-    EventFilings.FILE_NOCDR: 'Notice of Change of Directors', # TODO: some has suffix  - Address Change or Name Correction Only
+    EventFilings.FILE_NOCDR: 'Notice of Change of Directors', # dynamically add suffix for some scenarios
     EventFilings.FILE_AM_DI: 'Amendment - Director',
 
     EventFilings.FILE_CONTO: '6 Months Consent to Continue Out',

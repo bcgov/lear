@@ -447,6 +447,7 @@ def get_filings_query(corp_num):
 --          paper only now -> f_ods_type
             f.nr_num               as f_nr_num,
             to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
+            to_char(f.change_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')     as f_change_at_str,
             --- filing user
             upper(u.user_id)              as u_user_id,
             u.last_name            as u_last_name,

@@ -425,6 +425,9 @@ def get_colin_display_name(data: dict) -> str:
         ar_dt = datetime.strptime(ar_dt_str, '%Y-%m-%d %H:%M:%S%z')
         suffix = ar_dt.strftime('%b %d, %Y').upper()
         name = f'{name} - {suffix}'
+    elif event_file_type == EventFilings.FILE_NOCDR.value:
+        if not data['f_change_at_str']:
+            name = f'{name} - Address Change or Name Correction Only'
     return name
 
 
