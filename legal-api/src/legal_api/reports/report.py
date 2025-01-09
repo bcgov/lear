@@ -1174,32 +1174,31 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             ]
             filing['resolutions'] = formatted_dates
             filing['newShareClasses'] = []
-            if filing.get('shareClasses'):
-                prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
-                    prev_completed_filing.transaction_id,
-                    prev_completed_filing.business_id)
-                prev_share_class_ids = [x['id'] for x in prev_share_class_json]
+            prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
+                prev_completed_filing.transaction_id,
+                prev_completed_filing.business_id)
+            prev_share_class_ids = [x['id'] for x in prev_share_class_json]
 
-                share_class_to_edit = []
-                for share_class in filing.get('shareClasses'):
-                    if share_class_id := share_class.get('id'):
-                        if (share_class_id := str(share_class_id)) in prev_share_class_ids:
-                            share_class_to_edit.append(share_class_id)
-                            if self._compare_json(share_class,
-                                                  next((x for x in prev_share_class_json if x['id'] == share_class_id)),
-                                                  ['id', 'series', 'type']):
-                                share_class['changed'] = True
-                                filing['shareClassesChange'] = True
+            share_class_to_edit = []
+            for share_class in filing.get('shareClasses'):
+                if share_class_id := share_class.get('id'):
+                    if (share_class_id := str(share_class_id)) in prev_share_class_ids:
+                        share_class_to_edit.append(share_class_id)
+                        if self._compare_json(share_class,
+                                                next((x for x in prev_share_class_json if x['id'] == share_class_id)),
+                                                ['id', 'series', 'type']):
+                            share_class['changed'] = True
+                            filing['shareClassesChange'] = True
 
-                            self._format_share_series_data(share_class, filing, prev_completed_filing)
-                        else:
-                            del share_class['id']
-                            filing['newShareClasses'].append(share_class)
+                        self._format_share_series_data(share_class, filing, prev_completed_filing)
                     else:
+                        del share_class['id']
                         filing['newShareClasses'].append(share_class)
+                else:
+                    filing['newShareClasses'].append(share_class)
 
-                ceased_share_classes = [s for s in prev_share_class_json if s['id'] not in share_class_to_edit]
-                filing['ceasedShareClasses'] = ceased_share_classes
+            ceased_share_classes = [s for s in prev_share_class_json if s['id'] not in share_class_to_edit]
+            filing['ceasedShareClasses'] = ceased_share_classes
 
     def _format_share_series_data(self, share_class, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
         if share_class.get('series'):
