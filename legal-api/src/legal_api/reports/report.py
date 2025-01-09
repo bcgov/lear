@@ -1079,7 +1079,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
             if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
                 new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
-                                                                    versioned_business.identifier)
+                                                                       versioned_business.identifier)
 
             if new_legal_name and prev_legal_name != new_legal_name:
                 filing['previousLegalName'] = prev_legal_name
@@ -1186,8 +1186,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         if (share_class_id := str(share_class_id)) in prev_share_class_ids:
                             share_class_to_edit.append(share_class_id)
                             if self._compare_json(share_class,
-                                                next((x for x in prev_share_class_json if x['id'] == share_class_id)),
-                                                ['id', 'series', 'type']):
+                                                  next((x for x in prev_share_class_json if x['id'] == share_class_id)),
+                                                  ['id', 'series', 'type']):
                                 share_class['changed'] = True
                                 filing['shareClassesChange'] = True
 
