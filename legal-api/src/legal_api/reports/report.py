@@ -1073,16 +1073,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
-        filing['nameRequest'] = name_request_json
-        prev_legal_name = versioned_business.legal_name
+        if name_request_json:
+            filing['nameRequest'] = name_request_json
+            prev_legal_name = versioned_business.legal_name
 
-        if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
-            new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
-                                                                   versioned_business.identifier)
+            if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
+                new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
+                                                                    versioned_business.identifier)
 
-        if new_legal_name and prev_legal_name != new_legal_name:
-            filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = new_legal_name
+            if new_legal_name and prev_legal_name != new_legal_name:
+                filing['previousLegalName'] = prev_legal_name
+                filing['newLegalName'] = new_legal_name
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
@@ -1166,38 +1167,39 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
         filing['shareClasses'] = filing.get('correction').get('shareStructure', {}).get('shareClasses')
-        dates = filing['correction']['shareStructure'].get('resolutionDates', [])
-        formatted_dates = [
-            datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
-        ]
-        filing['resolutions'] = formatted_dates
-        filing['newShareClasses'] = []
         if filing.get('shareClasses'):
-            prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
-                prev_completed_filing.transaction_id,
-                prev_completed_filing.business_id)
-            prev_share_class_ids = [x['id'] for x in prev_share_class_json]
+            dates = filing['correction']['shareStructure'].get('resolutionDates', [])
+            formatted_dates = [
+                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
+            ]
+            filing['resolutions'] = formatted_dates
+            filing['newShareClasses'] = []
+            if filing.get('shareClasses'):
+                prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
+                    prev_completed_filing.transaction_id,
+                    prev_completed_filing.business_id)
+                prev_share_class_ids = [x['id'] for x in prev_share_class_json]
 
-            share_class_to_edit = []
-            for share_class in filing.get('shareClasses'):
-                if share_class_id := share_class.get('id'):
-                    if (share_class_id := str(share_class_id)) in prev_share_class_ids:
-                        share_class_to_edit.append(share_class_id)
-                        if self._compare_json(share_class,
-                                              next((x for x in prev_share_class_json if x['id'] == share_class_id)),
-                                              ['id', 'series', 'type']):
-                            share_class['changed'] = True
-                            filing['shareClassesChange'] = True
+                share_class_to_edit = []
+                for share_class in filing.get('shareClasses'):
+                    if share_class_id := share_class.get('id'):
+                        if (share_class_id := str(share_class_id)) in prev_share_class_ids:
+                            share_class_to_edit.append(share_class_id)
+                            if self._compare_json(share_class,
+                                                next((x for x in prev_share_class_json if x['id'] == share_class_id)),
+                                                ['id', 'series', 'type']):
+                                share_class['changed'] = True
+                                filing['shareClassesChange'] = True
 
-                        self._format_share_series_data(share_class, filing, prev_completed_filing)
+                            self._format_share_series_data(share_class, filing, prev_completed_filing)
+                        else:
+                            del share_class['id']
+                            filing['newShareClasses'].append(share_class)
                     else:
-                        del share_class['id']
                         filing['newShareClasses'].append(share_class)
-                else:
-                    filing['newShareClasses'].append(share_class)
 
-            ceased_share_classes = [s for s in prev_share_class_json if s['id'] not in share_class_to_edit]
-            filing['ceasedShareClasses'] = ceased_share_classes
+                ceased_share_classes = [s for s in prev_share_class_json if s['id'] not in share_class_to_edit]
+                filing['ceasedShareClasses'] = ceased_share_classes
 
     def _format_share_series_data(self, share_class, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
         if share_class.get('series'):

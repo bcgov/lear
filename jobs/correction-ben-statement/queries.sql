@@ -1,0 +1,17 @@
+-- query to get all businesses (BENs) for Registrar's Notation
+select b.identifier
+from businesses b
+where b.legal_type = 'BEN'
+order by b.identifier asc;
+
+-- query to get all ACTIVE businesses (BENs) for Corrections
+select b.identifier, f.id
+from businesses b join filings f on b.id = f.business_id
+where b.legal_type = 'BEN' and f.filing_type = 'incorporationApplication' and b.state = 'ACTIVE'
+order by b.identifier asc;
+
+-- query to get all ACTIVE businesses (BENs) who have in progress drafts for Corrections
+select distinct b.identifier, f.id, f.filing_type
+from businesses b join filings f on b.id = f.business_id
+where b.legal_type = 'BEN' and b.state = 'ACTIVE' and f.status = 'DRAFT'
+order by b.identifier asc;
