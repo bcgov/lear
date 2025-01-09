@@ -263,7 +263,10 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
 
     # TODO: Amalgamation Out Consent - unsupported
+    # IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted'
     # TODO: Amalgamation Out - unsupported
+    # AMALO: 'Record of Amalgamation'
+
 
     EventFilings.FILE_AMALH: 'Amalgamation Application Short Form (Horizontal)',
     EventFilings.FILE_AMALR: 'Amalgamation Application (Regular)',
@@ -309,6 +312,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_COURT: 'Court Order',
 
     # TODO: Delay of Dissolution - unsupported (need confirmation)
+    # no ledger item in colin
+
     EventFilings.DISD1_DISDE: "Registrar''s Notation - Dissolution or Cancellation Delay",  # has prefix "Registrar's Notation - "
     EventFilings.DISD2_DISDE: "Registrar''s Notation - Dissolution or Cancellation Delay",
 
@@ -332,7 +337,27 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
     EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
-    # TODO: Liquidation - unsupported
+    # TODO: Liquidation - unsupported (need to check if anything missing)
+    # NOLDS: "Notice of Location of Dissolved Company''s Records"
+    # NOCDS: "Notice of Change Respecting Dissolved Company''s Records"
+    # NOTRA: 'Notice of Transfer of Records'
+    # NOAPL: 'Notice of Appointment of Liquidator'
+    # NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office'
+    # NOCEL: 'Notice of Ceasing to Act as Liquidator'
+    # LIQUR: 'Liquidation Report'
+    # LQWOS: 'Notice of Withdrawal Statement of Intent to Liquidate'
+    # NOARM: 'Notice of Appointment of Receiver or Receiver Manager'
+    # NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager'
+    # LQSIN: 'Statement of Intent to Liquidate'
+    # LQSCO: 'Stay of Liquidation - Court Ordered'
+    # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
+    # LQCON: 'Continuance of Liquidation - Court Ordered'
+    # NOCRM: 'Notice of Change of Address of Receiver or Receiver Manager'
+    # ADVLQ: 'Application for Dissolution (Voluntary Liquidation)'
+    # AM_LR: 'Amendment - Liquidation Report'
+    # CO_LR: 'Correction - Liquidation Report'
+    # AM_LQ: 'Amendment - Liquidator'
+    # CO_LQ: 'Correction - Liquidator'
 
     EventFilings.FILE_NWITH: 'Notice of Withdrawal',
 
