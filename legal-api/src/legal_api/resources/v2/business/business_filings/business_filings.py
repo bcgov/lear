@@ -633,6 +633,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
             if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
                 ListFilingResource.link_now_and_withdrawn_filing(filing)
+                if bootstrap:
+                    filing.temp_reg = None
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
