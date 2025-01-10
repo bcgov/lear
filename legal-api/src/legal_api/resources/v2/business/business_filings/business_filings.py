@@ -835,7 +835,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         """Set the withdrawal pending flag to False when a NoW is deleted."""
         withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
         withdrawn_filing.withdrawal_pending = False
-        withdrawn_filing.save()    
+        withdrawn_filing.save()
 
     @staticmethod
     def create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
