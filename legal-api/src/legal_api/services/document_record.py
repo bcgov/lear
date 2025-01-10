@@ -29,7 +29,7 @@ class DocumentRecordService:
     def upload_document(document_class: str, document_type: str) -> dict:
         """Upload document to Docuemtn Record Service."""
         query_params = request.args.to_dict()
-        file = request.files.get('file')
+        file = request.data.get('file')
          # Ensure file exists
         if not file:
             current_app.logger.debug('No file found in request.')
@@ -44,8 +44,6 @@ class DocumentRecordService:
             return {
                 'error': validation_error
             }
-
-        file_content = file.read()
 
         try:
              # Read and encode the file content as base64
@@ -63,7 +61,7 @@ class DocumentRecordService:
                 headers={
                     'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
                     'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
-                    'Content-Type': 'application/pdf'
+                    'Content-Type': file.content_type
                 }
             ).json()
 
@@ -99,7 +97,7 @@ class DocumentRecordService:
 
     @staticmethod
     def get_document(document_class: str, document_service_id: str) -> dict:
-
+        """Get document record from Document Record Service."""
         DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
         url = f'{DRS_BASE_URL}/searches/{document_class}?documentServiceId={document_service_id}'
         try:
@@ -113,7 +111,37 @@ class DocumentRecordService:
             current_app.logger.debug(f'Get document from document record service {response}')
             return response[0]
         except Exception as e:
-            current_app.logger.debug(f'Error on downloading document {e}')
+            current_app.logger.debug(f'Error on getting a document object {e}')
+            return {}
+
+    @staticmethod
+    def download_document(document_class: str, document_service_id: str) -> dict:
+        """Download document from Document Record Service."""
+        doc_object = DocumentRecordService.get_document(document_class, document_service_id)
+
+        response = requests.get(doc_object['documentURL']) # Download file from storage
+        response.raise_for_status()  # Raise an HTTPError for bad responses (4xx and 5xx)
+
+        return response
+
+    @staticmethod
+    def update_business_identifier(business_identifier: str, document_service_id: str):
+        """Update business identifier up on approval."""
+        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
+        url = f'{DRS_BASE_URL}/documents/{document_service_id}'
+
+        try:
+            response = requests.patch(
+                url, json={ 'consumerIdentifer': business_identifier },
+                headers={
+                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
+                }
+            ).json()
+            current_app.logger.debug(f'Update business identifier - {business_identifier}')
+            return response
+        except Exception as e:
+            current_app.logger.debug(f'Error on deleting document {e}')
             return {}
 
     @staticmethod
@@ -122,11 +150,6 @@ class DocumentRecordService:
         msg = []
         try:
             pdf_reader = PyPDF2.PdfFileReader(file)
-
-            # Check that all pages in the pdf are letter size and able to be processed.
-            if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
-                msg.append({'error': _('Document must be set to fit onto 8.5” x 11” letter-size paper.'),
-                            'path': file.filename})
 
             if content_length > 30000000:
                 msg.append({'error': _('File exceeds maximum size.'), 'path': file.filename})

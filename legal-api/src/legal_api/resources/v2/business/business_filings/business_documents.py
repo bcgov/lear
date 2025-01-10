@@ -26,7 +26,7 @@ from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Document, Filing as FilingModel  # noqa: I001
 from legal_api.reports import get_pdf
-from legal_api.services import MinioService, authorized
+from legal_api.services import MinioService, authorized, DocumentRecordService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
@@ -92,6 +92,13 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
             return get_pdf(filing.storage, legal_filing_name)
         elif file_key and (document := Document.find_by_file_key(file_key)):
             if document.filing_id == filing.id:  # make sure the file belongs to this filing
+                if document.file_key.startswith('DS'): # docID from DRS
+                    response = DocumentRecordService.download_document('CORP', document.file_key)
+                    return current_app.response_class(
+                        response=response,
+                        status=HTTPStatus.OK,
+                        mimetype='application/pdf'
+                    )
                 response = MinioService.get_file(document.file_key)
                 return current_app.response_class(
                     response=response.data,
