@@ -1608,8 +1608,8 @@ def test_resubmit_filing_failed(session, client, jwt, filing_status, review_stat
             ('REGULAR-BUSINESS-DISSOLUTION', 'CBEN', 'dissolution', DISSOLUTION, False)
         ]
 )
-def test_notice_of_withdraw_filing(session, client, jwt, test_name, legal_type, filing_type, filing_json, is_temp):
-    """Assert that notice of withdraw for new business filings can be filed"""
+def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type, filing_type, filing_json, is_temp):
+    """Assert that notice of withdrawal for new business filings can be filed"""
     today = datetime.utcnow().date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
@@ -1702,3 +1702,5 @@ def test_notice_of_withdraw_filing(session, client, jwt, test_name, legal_type, 
     now_filing = (Filing.find_by_id(rv_draft.json['filing']['header']['filingId']))
     assert now_filing.withdrawn_filing_id == withdrawn_filing.id
     assert now_filing.withdrawal_pending == False
+    if is_temp:
+        assert now_filing.temp_reg == None

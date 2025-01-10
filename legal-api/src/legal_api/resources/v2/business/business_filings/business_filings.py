@@ -633,7 +633,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
             if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
                 ListFilingResource.link_now_and_withdrawn_filing(filing)
-                if bootstrap:
+                if business_identifier.startswith('T'):
                     filing.temp_reg = None
             filing.save()
         except BusinessException as err:
@@ -835,7 +835,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         """Set the withdrawal pending flag to False when a NoW is deleted."""
         withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
         withdrawn_filing.withdrawal_pending = False
-        withdrawn_filing.save()
+        withdrawn_filing.save()    
 
     @staticmethod
     def create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
