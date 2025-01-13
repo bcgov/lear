@@ -317,6 +317,7 @@ def tombstone_flow():
     """Entry of tombstone pipeline"""
     # TODO: track migration progress + error handling
     # TODO: update unprocessed query + count query
+    # TODO: current pipeline doesn't support migrating TED & TING at the same time, need a better strategy
     try:
         config = get_config()
         colin_engine = colin_init(config)
