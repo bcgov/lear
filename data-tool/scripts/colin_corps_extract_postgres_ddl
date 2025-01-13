@@ -492,8 +492,11 @@ create table if not exists corp_involved_amalgamating
     event_id         numeric(9)  not null
         constraint fk_corp_involved_event
             references event (event_id),
-    corp_num         varchar(10) not null
-        constraint fk_corp_involved_corporation
+    ted_corp_num         varchar(10) not null
+        constraint fk_corp_involved_ted_corporation
+            references corporation (corp_num),
+    ting_corp_num         varchar(10) not null
+        constraint fk_corp_involved_ting_corporation
             references corporation (corp_num),
     corp_involve_id  numeric(9)  not null,
     can_jur_typ_cd   char(2),

@@ -122,7 +122,8 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
     # Note: The business info is partially loaded for businesses table now. And it will be fully
     # updated by the following placeholder historical filings migration. But it depends on the
     # implementation of next step.
-    business_id = load_data(conn, 'businesses', tombstone_data['businesses'])
+    # force to update business info if it exists (used for pre-loaded TING)
+    business_id = load_data(conn, 'businesses', tombstone_data['businesses'], 'identifier', update=True)
 
     for office in tombstone_data['offices']:
         office['offices']['business_id'] = business_id
@@ -172,7 +173,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
     return business_id
 
 
-@task(name='3.2-Placeholder-Historical-Filings-Migrate-Task')
+@task(name='3.2.1-Placeholder-Historical-Filings-Migrate-Task')
 def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id: int, users_mapper: dict):
     """Migrate placeholder historical filings."""
     filings_data = tombstone_data['filings']
@@ -180,7 +181,8 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     state_filing_index = update_info['state_filing_index']
     update_business_data = update_info['businesses']
     # load placeholder filings
-    for i, f in enumerate(filings_data):
+    for i, data in enumerate(filings_data):
+        f = data['filings']
         transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()})
         username = f['submitter_id']
         user_id  = users_mapper.get(username)
@@ -192,6 +194,10 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         if i == state_filing_index:
             update_info['businesses']['state_filing_id'] = filing_id
 
+        # load amalgamation snapshot linked to the current filing
+        if amalgamation_data := data['amalgamations']:
+            load_amalgamation_snapshot(conn, amalgamation_data, business_id, filing_id)
+
     # load epoch filing
     epoch_filing_data = build_epoch_filing(business_id)
     load_data(conn, 'filings', epoch_filing_data)
@@ -199,6 +205,30 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     # load updates for business
     if update_business_data:
         update_data(conn, 'businesses', update_business_data, business_id)
+
+
+@task(name='3.2.2-Amalgamation-Snapshot-Migrate-Task')
+def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, business_id: int, filing_id: int):
+    """Migrate amalgamation snapshot."""
+    amalgamation = amalgamation_data['amalgamations']
+    amalgamation['business_id'] = business_id
+    amalgamation['filing_id'] = filing_id
+    amalgamation_id = load_data(conn, 'amalgamations', amalgamation)
+
+    for ting in amalgamation_data['amalgamating_businesses']:
+        if ting_identifier:= ting.get('ting_identifier'):
+            # if TING exists in db, update state filing info,
+            # if not exist, insert a placeholder with state filing info
+            del ting['ting_identifier']
+            temp_ting = {
+                'identifier': ting_identifier,
+                'state_filing_id': filing_id,
+                'dissolution_date': amalgamation['amalgamation_date']
+            }
+            ting_business_id = load_data(conn, 'businesses', temp_ting, 'identifier', update=True)
+            ting['business_id'] = ting_business_id
+        ting['amalgamation_id'] = amalgamation_id
+        load_data(conn, 'amalgamating_businesses', ting)
 
 
 @task(name='3.3-Update-Auth-Task')
@@ -272,6 +302,7 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
             transaction.commit()
         except Exception as e:
             transaction.rollback()
+            print(f'❌ Error migrating corp snapshot and filings data for {corp_num}: {repr(e)}')
             return corp_num, e
     print(f'✅ Complete migrating {corp_num}!')
     return corp_num, None
@@ -286,6 +317,7 @@ def tombstone_flow():
     """Entry of tombstone pipeline"""
     # TODO: track migration progress + error handling
     # TODO: update unprocessed query + count query
+    # TODO: current pipeline doesn't support migrating TED & TING at the same time, need a better strategy
     try:
         config = get_config()
         colin_engine = colin_init(config)
@@ -346,10 +378,11 @@ def tombstone_flow():
                     print(f'❗ Skip migrating {corp_num} due to data collection error.')
 
             wait(corp_futures)
-
+            succeeded = 0
             for f in corp_futures:
                 corp_num, e = f.result()
                 if not e:
+                    succeeded += 1
                     processing_service.update_corp_status(
                         flow_run_id,
                         corp_num,
@@ -364,8 +397,7 @@ def tombstone_flow():
                         error=f"Migration failed - {repr(e)}"
                     )
 
-            succeeded = sum(1 for f in corp_futures if f.state.is_completed())
-            failed = len(corp_futures) - succeeded
+            failed = len(corp_futures) - succeeded - skipped
             print(f'🌟 Complete round {cnt}. Succeeded: {succeeded}. Failed: {failed}. Skip: {skipped}')
             cnt += 1
             migrated_cnt += succeeded

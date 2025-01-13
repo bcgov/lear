@@ -87,7 +87,7 @@ class CorpProcessingQueueService:
         """
         query = """
         WITH claimable AS (
-            SELECT corp_num
+            SELECT corp_num, id
             FROM corp_processing
             WHERE processed_status = :pending_status
             AND environment = :environment
@@ -103,6 +103,7 @@ class CorpProcessingQueueService:
             last_modified = NOW()
         FROM claimable
         WHERE corp_processing.corp_num = claimable.corp_num
+        AND  corp_processing.id = claimable.id
         RETURNING corp_processing.corp_num, corp_processing.claimed_at
         """
 
