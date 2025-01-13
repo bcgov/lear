@@ -333,14 +333,20 @@ def format_amalgamating_businesses(ting_data: dict) -> dict:
     formatted_ting = {}
     foreign_identifier = ting_data['home_juri_num']
     role = 'holding' if ting_data['adopted_corp_ind'] else 'amalgamating'
+
+    foreign_jurisdiction = 'CA'
+    foreign_jurisdiction_region = ting_data['can_jur_typ_cd']
+    if foreign_jurisdiction_region == 'OT':
+        foreign_jurisdiction = 'US'
+        foreign_jurisdiction_region = ting_data['othr_juri_desc']
+
     if foreign_identifier:
         formatted_ting = {
-            # TODO: xpro outside CA?
-            'foreign_jurisdiction': 'CA',
+            'foreign_jurisdiction': foreign_jurisdiction,
             'foreign_name': ting_data['foreign_nme'],
             'foreign_identifier': foreign_identifier,
             'role': role,
-            'foreign_jurisdiction_region': ting_data['can_jur_typ_cd']
+            'foreign_jurisdiction_region': foreign_jurisdiction_region
         }
     else:
         formatted_ting = {
