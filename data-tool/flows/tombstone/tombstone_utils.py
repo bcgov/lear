@@ -1,6 +1,7 @@
 import copy
 import json
 from datetime import datetime, timezone
+from decimal import Decimal
 
 import pandas as pd
 import pytz
@@ -8,9 +9,10 @@ from sqlalchemy import Connection, text
 from tombstone.tombstone_base_data import (ALIAS, FILING, FILING_JSON, OFFICE,
                                            PARTY, PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
-from tombstone.tombstone_mappings import (EVENT_FILING_LEAR_TARGET_MAPPING,
+from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
+                                          EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
-                                          LEAR_STATE_FILINGS)
+                                          LEAR_STATE_FILINGS, EventFilings)
 
 unsupported_event_file_types = set()
 
@@ -380,6 +382,7 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
             'filingType': data['f_filing_type_cd']
         },
         'isLedgerPlaceholder': True,
+        'colinDisplayName': get_colin_display_name(data)
     }
 
     if filing_type == 'annualReport':
@@ -412,6 +415,20 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
     # TODO: populate meta_data for correction to display correct filing name
 
     return filing_json, meta_data
+
+
+def get_colin_display_name(data: dict) -> str:
+    event_file_type = data['event_file_type']
+    name = EVENT_FILING_DISPLAY_NAME_MAPPING.get(event_file_type)
+    if event_file_type == EventFilings.FILE_ANNBC.value:
+        ar_dt_str = data['f_period_end_dt_str']
+        ar_dt = datetime.strptime(ar_dt_str, '%Y-%m-%d %H:%M:%S%z')
+        suffix = ar_dt.strftime('%b %d, %Y').upper()
+        name = f'{name} - {suffix}'
+    elif event_file_type == EventFilings.FILE_NOCDR.value:
+        if not data['f_change_at_str']:
+            name = f'{name} - Address Change or Name Correction Only'
+    return name
 
 
 def build_epoch_filing(business_id: int) -> dict:

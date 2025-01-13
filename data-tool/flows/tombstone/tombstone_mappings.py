@@ -210,8 +210,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
-    EventFilings.DISLV_NULL: ['dissolution', 'voluntary'],
-    EventFilings.DISLC_NULL: ['dissolution', 'administrative'],
+    EventFilings.DISLV_NULL: ['dissolution', 'voluntary'],  # TODO: re-map
+    EventFilings.DISLC_NULL: ['dissolution', 'administrative'],  # TODO: re-map
     EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDF_NULL: ['dissolution', 'involuntary'],
@@ -220,7 +220,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_ICORP: 'incorporationApplication',
     EventFilings.FILE_ICORU: 'incorporationApplication',
     EventFilings.FILE_ICORC: 'incorporationApplication',
-    EventFilings.CONVICORP_NULL: 'incorporationApplication',
+    EventFilings.CONVICORP_NULL: 'incorporationApplication',  # TODO: re-map
 
     # TODO: Ledger - unsupported
     # TODO: Legacy Other - unsupported
@@ -249,6 +249,135 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 }
 
 
+EVENT_FILING_DISPLAY_NAME_MAPPING = {
+    EventFilings.FILE_AGMDT: 'Notice of Change - AGM Date',
+    EventFilings.FILE_AGMLC: 'Notice of Change - AGM Location',
+
+    EventFilings.FILE_NOALA: 'Notice of Alteration',
+    EventFilings.FILE_NOALB: 'Notice of Alteration from a BC Unlimited Liability Company to Become a BC Company',
+    EventFilings.FILE_NOALU: 'Notice of Alteration from a BC Company to Become a BC Unlimited Liability Company',
+    EventFilings.FILE_NOALC: 'Notice of Alteration from a BC Company to Become a Community Contribution Company',
+    EventFilings.FILE_AM_BC: 'Amendment - Translated Name',
+    EventFilings.FILE_AM_LI: 'Amendment - Ledger Information',
+    EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
+    EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
+
+    # TODO: Amalgamation Out Consent - unsupported
+    # IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted'
+    # TODO: Amalgamation Out - unsupported
+    # AMALO: 'Record of Amalgamation'
+
+
+    EventFilings.FILE_AMALH: 'Amalgamation Application Short Form (Horizontal)',
+    EventFilings.FILE_AMALR: 'Amalgamation Application (Regular)',
+    EventFilings.FILE_AMALV: 'Amalgamation Application Short Form (Vertical)',
+    EventFilings.FILE_AMLHU: 'Amalgamation Application Short Form (Horizontal) for a BC Unlimited Liability Company',
+    EventFilings.FILE_AMLRU: 'Amalgamation Application (Regular) for a BC Unlimited Liability Company',
+    EventFilings.FILE_AMLVU: 'Amalgamation Application Short Form (Vertical) for a BC Unlimited Liability Company',
+    EventFilings.FILE_AMLHC: 'Amalgamation Application Short Form (Horizontal) for a Community Contribution Company',
+    EventFilings.FILE_AMLRC: 'Amalgamation Application (Regular) for a Community Contribution Company',
+    EventFilings.FILE_AMLVC: 'Amalgamation Application Short Form (Vertical) for a Community Contribution Company',
+
+    EventFilings.FILE_ANNBC: 'BC Annual Report',  # has suffix of date, dynamically add it during formatting
+
+    EventFilings.FILE_APTRA: 'Application to Transfer Registered Office',
+    EventFilings.FILE_NOERA: 'Notice of Elimination of Registered Office',
+    EventFilings.FILE_NOCAD: 'Notice of Change of Address',
+    EventFilings.FILE_AM_DO: 'Amendment - Dissolved Office',
+    EventFilings.FILE_AM_RR: 'Amendment - Registered and Records Offices',
+
+    EventFilings.FILE_NOCDR: 'Notice of Change of Directors', # dynamically add suffix for some scenarios
+    EventFilings.FILE_AM_DI: 'Amendment - Director',
+
+    EventFilings.FILE_CONTO: '6 Months Consent to Continue Out',
+    EventFilings.FILE_COUTI: 'Instrument of Continuation Out',
+
+    EventFilings.FILE_CONTI: 'Continuation Application',
+    EventFilings.FILE_CONTU: 'Continuation Application for a BC Unlimited Liability Company',
+    EventFilings.FILE_CONTC: 'Continuation Application for a Community Contribution Company',
+
+    EventFilings.FILE_CO_AR: 'Correction - Annual Report',
+    EventFilings.FILE_CO_BC: 'Correction - BC Company Name/Translated Name',
+    EventFilings.FILE_CO_DI: 'Correction - Director',
+    EventFilings.FILE_CO_DO: 'Correction - Dissolved Office',
+    EventFilings.FILE_CO_LI: 'Correction - Ledger Information',
+    EventFilings.FILE_CO_PF: 'Correction - Put Back Off',
+    EventFilings.FILE_CO_PO: 'Correction - Put Back On',
+    EventFilings.FILE_CO_RM: 'Correction - Receiver or Receiver Manager',
+    EventFilings.FILE_CO_RR: 'Correction - Registered and Records Offices',
+    EventFilings.FILE_CO_SS: 'Correction - Share Structure',
+    EventFilings.FILE_CO_TR: 'Correction - Transition',
+    EventFilings.FILE_CORRT: 'Correction',
+
+    EventFilings.FILE_COURT: 'Court Order',
+
+    # TODO: Delay of Dissolution - unsupported (need confirmation)
+    # no ledger item in colin
+
+    EventFilings.DISD1_DISDE: "Registrar''s Notation - Dissolution or Cancellation Delay",  # has prefix "Registrar's Notation - "
+    EventFilings.DISD2_DISDE: "Registrar''s Notation - Dissolution or Cancellation Delay",
+
+    EventFilings.FILE_ADVD2: 'Application for Dissolution (Voluntary Dissolution)',
+    EventFilings.FILE_ADVDS: 'Application for Dissolution (Voluntary Dissolution)',
+    EventFilings.DISLV_NULL: None,  # TODO: re-map, voluntary - no ledger in colin + status liquidated
+    EventFilings.DISLC_NULL: None,  # TODO: re-map, admin - no ledger in colin + status liquidated
+    EventFilings.SYSDA_NULL: None,  # admin - status Administrative Dissolution
+    EventFilings.SYSDS_NULL: None,  # admin - status Administrative Dissolution
+    EventFilings.SYSDF_NULL: None,  # invol - no ledger in lear & colin
+    EventFilings.SYSDT_NULL: None,  # invol - no ledger in lear & colin
+
+    EventFilings.FILE_ICORP: 'Incorporation Application',
+    EventFilings.FILE_ICORU: 'Incorporation Application for a BC Unlimited Liability Company',
+    EventFilings.FILE_ICORC: 'Incorporation Application for a Community Contribution Company',
+    EventFilings.CONVICORP_NULL: None,  # TODO: re-map
+
+    # TODO: Ledger - unsupported
+    # TODO: Legacy Other - unsupported
+    EventFilings.FILE_AM_PF: 'Amendment - Put Back Off',
+    EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
+    EventFilings.FILE_AM_TR: 'Amendment - Transition',
+
+    # TODO: Liquidation - unsupported (need to check if anything missing)
+    # NOLDS: "Notice of Location of Dissolved Company''s Records"
+    # NOCDS: "Notice of Change Respecting Dissolved Company''s Records"
+    # NOTRA: 'Notice of Transfer of Records'
+    # NOAPL: 'Notice of Appointment of Liquidator'
+    # NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office'
+    # NOCEL: 'Notice of Ceasing to Act as Liquidator'
+    # LIQUR: 'Liquidation Report'
+    # LQWOS: 'Notice of Withdrawal Statement of Intent to Liquidate'
+    # NOARM: 'Notice of Appointment of Receiver or Receiver Manager'
+    # NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager'
+    # LQSIN: 'Statement of Intent to Liquidate'
+    # LQSCO: 'Stay of Liquidation - Court Ordered'
+    # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
+    # LQCON: 'Continuance of Liquidation - Court Ordered'
+    # NOCRM: 'Notice of Change of Address of Receiver or Receiver Manager'
+    # ADVLQ: 'Application for Dissolution (Voluntary Liquidation)'
+    # AM_LR: 'Amendment - Liquidation Report'
+    # CO_LR: 'Correction - Liquidation Report'
+    # AM_LQ: 'Amendment - Liquidator'
+    # CO_LQ: 'Correction - Liquidator'
+
+    EventFilings.FILE_NWITH: 'Notice of Withdrawal',
+
+    EventFilings.FILE_REGSN: "Registrar''s Notation",
+    EventFilings.FILE_REGSO: "Registrar''s Order",
+
+    EventFilings.FILE_RESTL: 'Restoration Application - Limited',
+    EventFilings.FILE_RESTF: 'Restoration Application - Full',
+    EventFilings.FILE_RESXL: 'Restoration Application (Extend Time Limit)',
+    EventFilings.FILE_RESXF: 'Restoration Application (Convert Limited to Full)',
+    EventFilings.FILE_RUSTL: 'Restoration Application - Limited for a BC Unlimited Liability Company',
+    EventFilings.FILE_RUSTF: 'Restoration Application - Full for a BC Unlimited Liability Company',
+    EventFilings.FILE_RUSXL: 'Restoration Application (Extend Time Limit) for a BC Unlimited Liability Company',
+    EventFilings.FILE_RUSXF: 'Restoration Application (Convert Limited to Full) for a BC Unlimited Liability Company',
+
+    EventFilings.FILE_TRANS: 'Transition Application',
+    EventFilings.FILE_TRANP: 'Post Restoration Transition Application',
+}
+
+
 LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'incorporationApplication': ['last_coa_date', 'last_cod_date'],
     'changeOfAddress': ['last_coa_date'],
@@ -272,4 +401,3 @@ LEAR_STATE_FILINGS = [
     # ingore the following since we won't map to them
     # 'dissolved', 'restorationApplication', 'continuedOut'
 ]
-

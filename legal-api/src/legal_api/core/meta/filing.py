@@ -655,6 +655,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     @staticmethod
     def display_name(business: Business, filing: FilingStorage) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
+        # if filing is imported from COLIN and has custom disaply name
+        if filing.meta_data and\
+                (display_name := filing.meta_data.get('colinDisplayName')):
+            return display_name
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
             if not (filing.filing_sub_type and
