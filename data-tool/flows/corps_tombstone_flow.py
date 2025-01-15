@@ -43,7 +43,7 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
 @task
 def get_unprocessed_count(config, colin_engine: Engine) -> int:
     query = get_total_unprocessed_count_query(
-        'local',
+        'tombstone-flow',
         config.DATA_LOAD_ENV
     )
 
@@ -122,8 +122,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
     # Note: The business info is partially loaded for businesses table now. And it will be fully
     # updated by the following placeholder historical filings migration. But it depends on the
     # implementation of next step.
-    # force to update business info if it exists (used for pre-loaded TING)
-    business_id = load_data(conn, 'businesses', tombstone_data['businesses'], 'identifier', update=True)
+    business_id = load_data(conn, 'businesses', tombstone_data['businesses'], 'identifier')
 
     for office in tombstone_data['offices']:
         office['offices']['business_id'] = business_id
@@ -204,7 +203,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 
     # load updates for business
     if update_business_data:
-        update_data(conn, 'businesses', update_business_data, business_id)
+        update_data(conn, 'businesses', update_business_data, 'id', business_id)
 
 
 @task(name='3.2.2-Amalgamation-Snapshot-Migrate-Task')
@@ -217,15 +216,16 @@ def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, busine
 
     for ting in amalgamation_data['amalgamating_businesses']:
         if ting_identifier:= ting.get('ting_identifier'):
-            # if TING exists in db, update state filing info,
-            # if not exist, insert a placeholder with state filing info
+            # TING must exists in db before updating state filing info,
             del ting['ting_identifier']
             temp_ting = {
                 'identifier': ting_identifier,
                 'state_filing_id': filing_id,
                 'dissolution_date': amalgamation['amalgamation_date']
             }
-            ting_business_id = load_data(conn, 'businesses', temp_ting, 'identifier', update=True)
+            ting_business_id = update_data(conn, 'businesses', temp_ting, 'identifier', ting_identifier)
+            if not ting_business_id:
+                raise Exception(f'TING {ting_identifier} does not exist, cannot migrate TED before TING')
             ting['business_id'] = ting_business_id
         ting['amalgamation_id'] = amalgamation_id
         load_data(conn, 'amalgamating_businesses', ting)
@@ -336,7 +336,7 @@ def tombstone_flow():
 
         # Calculate max corps to initialize
         max_corps = min(total, config.TOMBSTONE_BATCHES * config.TOMBSTONE_BATCH_SIZE)
-        print(f'max_corps: {max_corps}')
+        print(f'👷 max_corps: {max_corps}')
         reserved_corps = reserve_unprocessed_corps(config, processing_service, flow_run_id, max_corps)
         print(f'👷 Reserved {reserved_corps} corps for processing')
         print(f'👷 Going to migrate {total} corps with batch size of {batch_size}')
@@ -397,7 +397,7 @@ def tombstone_flow():
                         error=f"Migration failed - {repr(e)}"
                     )
 
-            failed = len(corp_futures) - succeeded - skipped
+            failed = len(corp_futures) - succeeded
             print(f'🌟 Complete round {cnt}. Succeeded: {succeeded}. Failed: {failed}. Skip: {skipped}')
             cnt += 1
             migrated_cnt += succeeded
