@@ -73,8 +73,13 @@ def get_unprocessed_corps_subquery(flow_name, environment):
             """
         }
     ]
-    # change index to select subset of corps
-    # 0: all, 1: TING, 2: TED that linked TINGs are migrated, 3: exclude TING & TED
+    # Note: change index to select subset of corps
+    # [0] all, [1] TING, [2] TED that linked TINGs are migrated, [3] exclude TING & TED
+    # Acceptable order when it comes to the actual migration:
+    # [1]->[2]->[3]
+    # [2]->[1]->[3] (may fetch fewer eligible corps in [2] at the beginning, if so, go to [1] and then go back to [2], repeatedly)
+    # Other usage:
+    # [0] is used for other purposes, e.g. tweak query to select specific corps
     subquery = subqueries[2]
     return subquery['cte'], subquery['where']
 
