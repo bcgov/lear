@@ -118,6 +118,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --        'BC0472301', 'BC0649417', 'BC0808085', 'BC0803411', 'BC0511226', 'BC0833000', 'BC0343855', 'BC0149266', -- dissolution
 --        'BC0548839', 'BC0541207', 'BC0462424', 'BC0021973', -- restoration
 --        'BC0034290', -- legacy other
+--        'C0870179', 'C0870343', 'C0883424', -- continuation in (C, CCC, CUL)
 --        'BC0207097', 'BC0693625', 'BC0754041', 'BC0072008', 'BC0355241', 'BC0642237', 'BC0555891', 'BC0308683', -- correction
 --        'BC0688906', 'BC0870100', 'BC0267106', 'BC0873461', -- alteration
 --        'BC0536998', 'BC0574096', 'BC0663523' -- new mappings of CoA, CoD
@@ -525,6 +526,25 @@ def get_resolutions_query(corp_num):
     return query
 
 
+def get_jurisdictions_query(corp_num):
+    query = f"""
+    select
+        j.corp_num          as j_corp_num,
+        j.start_event_id    as j_start_event_id,
+        j.can_jur_typ_cd    as j_can_jur_typ_cd,
+        j.xpro_typ_cd       as j_xpro_typ_cd,
+        j.home_company_nme  as j_home_company_nme,
+        j.home_juris_num    as j_home_juris_num,
+        to_char(j.home_recogn_dt, 'YYYY-MM-DD') as j_home_recogn_dt,
+        j.othr_juris_desc   as j_othr_juris_desc,
+        j.bc_xpro_num       as j_bc_xpro_num
+    from jurisdiction j
+    where corp_num = '{corp_num}'
+    ;
+    """
+    return query
+
+
 def get_filings_query(corp_num):
     query = f"""
     select                    
@@ -620,6 +640,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'share_classes': get_share_classes_share_series_query(corp_num),
         'aliases': get_aliases_query(corp_num),
         'resolutions': get_resolutions_query(corp_num),
+        'jurisdictions': get_jurisdictions_query(corp_num),
         'filings': get_filings_query(corp_num),
         'amalgamations': get_amalgamation_query(corp_num)
     }
