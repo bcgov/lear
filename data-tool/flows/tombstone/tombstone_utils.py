@@ -316,7 +316,7 @@ def format_amalgamations_data(data: dict, event_id: Decimal) -> dict:
     if not amalgmation_date:
         amalgmation_date = amalgmation_info['e_event_dt_str']
     formatted_amalgmation['amalgamations']['amalgamation_date'] = amalgmation_date
-    formatted_amalgmation['amalgamations']['court_approval'] = amalgmation_info['f_court_approval']
+    formatted_amalgmation['amalgamations']['court_approval'] = bool(amalgmation_info['f_court_approval'])
 
     event_file_type = amalgmation_info['event_file_type']
     _, filing_subtype = get_target_filing_type(event_file_type)

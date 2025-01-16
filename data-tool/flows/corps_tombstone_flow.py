@@ -216,6 +216,7 @@ def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, busine
 
     for ting in amalgamation_data['amalgamating_businesses']:
         if ting_identifier:= ting.get('ting_identifier'):
+            # TODO: avoid update info for withdrawn amalg filing (will handle in NoW work)
             # TING must exists in db before updating state filing info,
             del ting['ting_identifier']
             temp_ting = {

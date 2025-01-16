@@ -592,7 +592,7 @@ def get_amalgamation_query(corp_num):
         -- filing
         f.filing_type_cd       as f_filing_type_cd,
         to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
-        coalesce(f.court_appr_ind, false)       as f_court_approval,
+        f.court_appr_ind       as f_court_approval,
         -- event_file
         e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') as event_file_type
     from corp_involved_amalgamating cig
