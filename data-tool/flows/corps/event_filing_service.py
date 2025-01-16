@@ -7,15 +7,22 @@ from legal_api.core import Filing as FilingCore
 from sqlalchemy import engine, text
 from .corp_queries import get_corp_event_filing_data_query, \
     get_corp_event_filing_corp_party_data_query, \
-    get_corp_event_filing_office_data_query, get_corp_event_names_data_query, get_share_structure_data_query
+    get_corp_event_filing_office_data_query, get_corp_event_names_data_query, \
+    get_share_structure_data_query, get_corp_event_jurisdiction_data_query
 from flows.common.query_utils import convert_result_set_to_dict
 from flows.common.shared_queries import get_corp_comments_data_query
 
 
-class IAEventFilings(str, Enum):
+class NewBusinessEventFilings(str, Enum):
+    # Incorporation Application
     FILE_ICORP = 'FILE_ICORP'
     FILE_ICORU = 'FILE_ICORU'
     FILE_ICORC = 'FILE_ICORC'
+
+    # Continuation In
+    FILE_CONTI = 'FILE_CONTI'
+    FILE_CONTU = 'FILE_CONTU'
+    FILE_CONTC = 'FILE_CONTC'
 
     @classmethod
     def has_value(cls, value):
@@ -31,9 +38,12 @@ class OtherEventFilings(str, Enum):
 
 
 EVENT_FILING_LEAR_TARGET_MAPPING = {
-    IAEventFilings.FILE_ICORP: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
-    IAEventFilings.FILE_ICORU: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
-    IAEventFilings.FILE_ICORC: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
+    NewBusinessEventFilings.FILE_ICORP: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
+    NewBusinessEventFilings.FILE_ICORU: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
+    NewBusinessEventFilings.FILE_ICORC: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
+    NewBusinessEventFilings.FILE_CONTI: FilingCore.FilingTypes.CONTINUATIONIN.value,
+    NewBusinessEventFilings.FILE_CONTU: FilingCore.FilingTypes.CONTINUATIONIN.value,
+    NewBusinessEventFilings.FILE_CONTC: FilingCore.FilingTypes.CONTINUATIONIN.value,
 
     OtherEventFilings.FILE_ANNBC: FilingCore.FilingTypes.ANNUALREPORT.value
 }
@@ -106,6 +116,13 @@ class EventFilingService:
             temp_share_struct_data_dict = convert_result_set_to_dict(rs)
             event_filing_share_structure_data_dict = self.parse_share_struct_data(temp_share_struct_data_dict)
             event_filing_data_dict['share_structure'] = event_filing_share_structure_data_dict
+
+            # get jurisdiction data
+            sql_text = get_corp_event_jurisdiction_data_query(corp_num, event_id)
+            rs = conn.execute(sql_text)
+            event_filing_jurisdiction_data_dict = convert_result_set_to_dict(rs)
+            if len(event_filing_jurisdiction_data_dict) > 0:
+                event_filing_data_dict['jurisdiction'] = event_filing_jurisdiction_data_dict[0]
 
             if prev_event_filing_data:
                 event_filing_data_dict['prev_event_filing_data'] = prev_event_filing_data
@@ -213,7 +230,7 @@ class EventFilingService:
 
 
     def get_event_filing_is_supported(self, event_file_type: str):
-        if IAEventFilings.has_value(event_file_type) or \
+        if NewBusinessEventFilings.has_value(event_file_type) or \
                 OtherEventFilings.has_value(event_file_type):
             return True
 

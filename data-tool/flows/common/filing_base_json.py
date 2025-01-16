@@ -43,6 +43,24 @@ def get_base_change_registration_filing_json(num_parties: int):
     return change_registration_json
 
 
+def get_base_continuation_in_filing_json(num_parties: int, num_corp_names = 0, num_share_classes = 0):
+    continuation_in_json = get_base_continuation_in_json()
+
+    parties = continuation_in_json['filing']['continuationIn']['parties']
+    for x in range(num_parties):
+        parties.append(get_base_party_json())
+
+    name_translations = continuation_in_json['filing']['continuationIn']['nameTranslations']
+    for x in range(num_corp_names):
+        name_translations.append(get_base_name_translation_json())
+
+    share_classes = continuation_in_json['filing']['continuationIn']['shareStructure']['shareClasses']
+    for x in range(num_share_classes):
+        share_classes.append(get_base_share_class_json())
+
+    return continuation_in_json
+
+
 def get_base_correction_filing_json(num_parties: int):
     correction_json = get_base_correction_json()
     parties = correction_json['filing']['correction']['parties']
@@ -275,6 +293,100 @@ def get_base_change_registration_json():
         }
     }
     return change_registration_json
+
+
+def get_base_continuation_in_json():
+    continuation_in_json = {
+        'filing': {
+            'header': {
+                'date': None,
+                'name': 'continuationIn',
+                'certifiedBy': None,
+                'folioNumber': '',
+                'isFutureEffective': False
+            },
+            'business': {
+                'legalType': None,
+                'identifier': None,
+                'foundingDate': None
+            },
+            'continuationIn': {
+                'business': {  # expro data in BC
+                    "foundingDate": None,
+                    "identifier": None,
+                    "legalName": None
+                },
+                'offices': {
+                    'recordsOffice': {
+                        'mailingAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        },
+                        'deliveryAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        }
+                    },
+                    'registeredOffice': {
+                        'mailingAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        },
+                        'deliveryAddress': {
+                            'postalCode': None,
+                            'addressCity': None,
+                            'addressRegion': None,
+                            'streetAddress': None,
+                            'addressCountry': None,
+                            'streetAddressAdditional': None,
+                            'deliveryInstructions': None
+                        }
+                    }
+                },
+                'parties': [],
+                'nameRequest': {
+                    'nrNumber': None,
+                    'legalName': None,
+                    'legalType': None
+                },
+                'contactPoint': {
+                    'email': None
+                },
+                'shareStructure': {
+                    'shareClasses': []
+                },
+                'nameTranslations': [],
+                'foreignJurisdiction': {
+                    "country": None,
+                    "region": None,
+                    "legalName": None,
+                    "identifier": None,
+                    "incorporationDate":None
+                },
+                'courtOrder': {
+                    'fileNumber': None,
+                    'effectOfOrder': None,
+                    'hasPlanOfArrangement': False
+                }
+            }
+        }
+    }
+    return continuation_in_json
 
 
 def get_base_correction_json():

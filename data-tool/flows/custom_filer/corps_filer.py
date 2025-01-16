@@ -42,7 +42,7 @@ print(f"SQLAlchemy-Continuum version: {sqlalchemy_continuum.__version__}")
 
 from .filing_meta import FilingMeta, json_serial
 from .filing_processors import incorporation_filing, registration, change_of_registration, dissolution, conversion, \
-    put_back_on, correction, annual_report
+    put_back_on, continuation_in, correction, annual_report
 from .filing_processors.filing_components import create_comments, update_filing_user
 
 
@@ -104,6 +104,12 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
                                                                                         filing_meta,
                                                                                         filing_data)
 
+            elif filing.get('continuationIn'):
+                business, filing_submission, filing_meta = continuation_in.process(business,
+                                                                                   filing_core_submission.json,
+                                                                                   filing_submission,
+                                                                                   filing_meta)
+
             elif filing.get('annualReport'):
                 annual_report.process(business,
                                       filing,
@@ -150,7 +156,7 @@ def process_filing(config, filing_id: int, event_filing_data_dict: Dict, filing_
         db.session.add(filing_submission)
         db.session.commit()
 
-        if any('incorporationApplication' in x for x in legal_filings):
+        if any('incorporationApplication' in x for x in legal_filings) or any('continuationIn' in x for x in legal_filings):
             filing_submission.business_id = business.id
             db.session.add(filing_submission)
             comments = create_comments(business, event_filing_data_dict)

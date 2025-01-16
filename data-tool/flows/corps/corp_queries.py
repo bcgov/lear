@@ -394,3 +394,23 @@ def get_share_structure_data_query(corp_num: str, event_id: int):
         ;
         """
     return query
+
+
+def get_corp_event_jurisdiction_data_query(corp_num: str, event_id: int):
+    query = f"""
+        select
+            j.corp_num 			as j_corp_num,
+            j.start_event_id 	as j_start_event_id,
+            j.can_jur_typ_cd 	as j_can_jur_typ_cd,
+            j.xpro_typ_cd 		as j_xpro_typ_cd,
+            j.home_company_nme 	as j_home_company_nme,
+            j.home_juris_num 	as j_home_juris_num,
+            to_char(j.home_recogn_dt, 'YYYY-MM-DD') as j_home_recogn_dt,
+            j.othr_juris_desc 	as j_othr_juris_desc,
+            j.bc_xpro_num 		as j_bc_xpro_num
+        from jurisdiction j
+        where corp_num = '{corp_num}'
+        and start_event_id = {event_id}
+        ;
+        """
+    return query

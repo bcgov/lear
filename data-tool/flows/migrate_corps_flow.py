@@ -24,7 +24,7 @@ from prefect import flow, task, serve
 
 from config import get_named_config
 from flows.corps.corp_queries import get_unprocessed_corps_query
-from flows.corps.event_filing_service import EventFilingService, IAEventFilings
+from flows.corps.event_filing_service import EventFilingService, NewBusinessEventFilings
 from corps.filing_data_cleaning_utils import clean_offices_data, clean_corp_party_data, clean_corp_data, clean_event_data
 from common.processing_status_service import ProcessingStatusService, ProcessingStatuses
 from custom_filer.corps_filer import process_filing
@@ -292,7 +292,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
             event_filing_data_arr = event_filing_data_dict['event_filing_data']
             for idx, event_filing_data in enumerate(event_filing_data_arr):
                 filing_data = event_filing_data['data']
-                event_id=filing_data['e_event_id']
+                event_id = filing_data['e_event_id']
                 event_filing_type = filing_data['event_file_type']
 
                 if not event_filing_data['is_supported_type']:
@@ -309,7 +309,7 @@ def load_event_filing_data(config, app: any, colin_db_engine: engine, db_lear, e
                     #     raise CustomException(f'{error_msg}')
 
                     business = None
-                    if not IAEventFilings.has_value(event_filing_type):
+                    if not NewBusinessEventFilings.has_value(event_filing_type):
                         business = Business.find_by_identifier(corp_num)
                     populate_filing_json_from_lear(db, event_filing_data, business)
                     corp_name = filing_data['curr_corp_name']

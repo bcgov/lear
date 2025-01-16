@@ -3,7 +3,7 @@ from datetime import datetime
 from legal_api.models import Party, PartyRole, Business, Office, Address, Filing, User
 from legal_api.models.colin_event_id import ColinEventId
 
-from .event_filing_service import IAEventFilings, OtherEventFilings
+from .event_filing_service import NewBusinessEventFilings, OtherEventFilings
 from flows.common.filing_data_utils import get_is_paper_only, get_effective_date
 
 
@@ -47,7 +47,7 @@ def populate_filing_json_from_lear(db: any, event_filing_data: dict, business: B
     event_filing_type = event_filing_data['data']['event_file_type']
     filing_json = event_filing_data['filing_json']
 
-    if IAEventFilings.has_value(event_filing_type):
+    if NewBusinessEventFilings.has_value(event_filing_type):
         return
 
     # if CorrectionEventFilings.has_value(event_filing_type):

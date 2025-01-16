@@ -1,5 +1,6 @@
 from flows.common.filing_base_json import get_base_dissolution_filing_json, get_base_put_back_on_filing_json, \
-    get_base_correction_filing_json, get_base_ia_filing_json, get_base_share_series_json, get_base_ar_filing_json
+    get_base_continuation_in_filing_json, get_base_correction_filing_json, get_base_ia_filing_json, \
+    get_base_share_series_json, get_base_ar_filing_json
 from .event_filing_service import OtherEventFilings
 from .filing_data_utils import get_certified_by, get_party_role_type, get_party_type, \
     get_street_address, get_street_additional, AddressFormatType, get_effective_date_str, \
@@ -34,8 +35,10 @@ class FilingJsonFactoryService:
 
         if self._target_lear_filing_type == 'incorporationApplication':
             filing_json = self.get_ia_filing_json()
-        if self._target_lear_filing_type == 'annualReport':
+        elif self._target_lear_filing_type == 'annualReport':
             filing_json = self.get_ar_filing_json()
+        elif self._target_lear_filing_type == 'continuationIn':
+            filing_json = self.get_continuation_in_filing_json()
         elif self._target_lear_filing_type == 'correction':
             filing_json = self.get_correction_filing_json()
         elif self._target_lear_filing_type == 'dissolution':
@@ -76,6 +79,23 @@ class FilingJsonFactoryService:
         self.populate_header(filing_root_dict)
         self.populate_business(filing_root_dict)
         self.populate_ar(filing_root_dict)
+        return filing_root_dict
+
+
+    def get_continuation_in_filing_json(self):
+        result = self.build_continuation_in_filing()
+        return result
+
+
+    def build_continuation_in_filing(self):
+        num_parties = len(self._filing_data['corp_parties'])
+        num_corp_names = len(self._filing_data['corp_names'])
+        num_share_classes = len(self._filing_data['share_structure']['share_classes'])
+        filing_root_dict = get_base_continuation_in_filing_json(num_parties, num_corp_names, num_share_classes)
+
+        self.populate_header(filing_root_dict)
+        self.populate_business(filing_root_dict)
+        self.populate_continuation_in(filing_root_dict)
         return filing_root_dict
 
 
@@ -167,6 +187,35 @@ class FilingJsonFactoryService:
         self.populate_directors(ar_dict['directors'])
         ar_dict['nextARDate'] = self._filing_data['f_period_end_dt_str']
         ar_dict['annualReportDate'] = self._filing_data['f_period_end_dt_str']
+
+
+    def populate_continuation_in(self, filing_root_dict: dict):
+        continuation_in_dict = filing_root_dict['filing']['continuationIn']
+        continuation_in_dict['businessType'] = self._filing_data['c_corp_type_cd']
+
+        self.populate_offices(continuation_in_dict)
+        self.populate_parties(continuation_in_dict['parties'])
+        self.populate_name_translations(continuation_in_dict)
+        self.populate_nr(continuation_in_dict)
+
+        if len(continuation_in_dict['shareStructure']['shareClasses']) > 0:
+            self.populate_share_structure(continuation_in_dict)
+        else:
+            del continuation_in_dict['shareStructure']
+
+        if self._filing_data['c_admin_email']:
+            self.populate_contact_point(continuation_in_dict)
+        else:
+            del continuation_in_dict['contactPoint']
+        
+        if filing_data_jurisdiction := self._filing_data['jurisdiction']:
+            continuation_in_dict['business']['foundingDate'] = filing_data_jurisdiction['j_home_recogn_dt']
+            continuation_in_dict['business']['identifier'] = filing_data_jurisdiction['j_home_juris_num']
+            continuation_in_dict['business']['legalName'] = filing_data_jurisdiction['j_home_company_nme']
+            self.populate_foreign_jurisdiction(filing_data_jurisdiction, continuation_in_dict)
+        else:
+            del continuation_in_dict['business']  # expro data in BC
+            del continuation_in_dict['foreignJurisdiction']
 
 
     def populate_correction(self, filing_dict: dict):
@@ -603,3 +652,29 @@ class FilingJsonFactoryService:
 
             series_dict['hasSpecialRights'] = series_data_dict['srs_spec_right_ind']
             share_class_dict['series'].append(series_dict)
+
+
+    def populate_foreign_jurisdiction(self, filing_data_jurisdiction: dict, filing_dict: dict):
+        jurisdiction_dict = filing_dict['foreignJurisdiction']
+
+        jurisdiction_dict['legalName'] = filing_data_jurisdiction['j_home_company_nme']
+        jurisdiction_dict['identifier'] = filing_data_jurisdiction['j_home_juris_num']
+        jurisdiction_dict['incorporationDate'] = filing_data_jurisdiction['j_home_recogn_dt']
+        jurisdiction_dict['country'] = None
+        jurisdiction_dict['region'] = None
+
+        can_jurisdiction_code = filing_data_jurisdiction['j_can_jur_typ_cd']
+        other_jurisdiction_desc = filing_data_jurisdiction['j_othr_juris_desc']
+
+        # when canadian jurisdiction, ignore othr_juris_desc
+        if can_jurisdiction_code != 'OT':
+            jurisdiction_dict['country'] = 'CA'
+            jurisdiction_dict['region'] = 'FEDERAL' if can_jurisdiction_code == 'FD' else can_jurisdiction_code
+        # when other jurisdiction and len(othr_juris_desc) = 2, then othr_juris_desc is country code
+        elif can_jurisdiction_code == 'OT' and len(other_jurisdiction_desc) == 2:
+            jurisdiction_dict['country'] = other_jurisdiction_desc
+        # when other jurisdiction and len(othr_juris_desc) = 6, then othr_juris_desc contains both
+        # region code and country code (like "US, SS"). Ignore any other cases.
+        elif can_jurisdiction_code == 'OT' and len(other_jurisdiction_desc) == 6:
+            jurisdiction_dict['country'] = other_jurisdiction_desc[:2]
+            jurisdiction_dict['region'] = other_jurisdiction_desc[4:]
