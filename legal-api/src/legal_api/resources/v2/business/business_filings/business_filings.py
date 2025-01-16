@@ -307,6 +307,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing_json = rv.json
         if rv.status == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
+        if rv.status == Filing.Status.WITHDRAWN.value:
+            withdrawn_filing = Filing.get_notice_of_withdrawal(filing_json['filing']['header']['filingId'])
+            filing_json['filing']['noticeOfWithdrawal'] = withdrawn_filing.json
         elif (rv.status in [Filing.Status.CHANGE_REQUESTED.value,
                             Filing.Status.APPROVED.value,
                             Filing.Status.REJECTED.value] and
