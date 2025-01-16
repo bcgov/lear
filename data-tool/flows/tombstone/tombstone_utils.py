@@ -316,7 +316,7 @@ def format_amalgamations_data(data: dict, event_id: Decimal) -> dict:
     if not amalgmation_date:
         amalgmation_date = amalgmation_info['e_event_dt_str']
     formatted_amalgmation['amalgamations']['amalgamation_date'] = amalgmation_date
-    formatted_amalgmation['amalgamations']['court_approval'] = amalgmation_info['f_court_approval']
+    formatted_amalgmation['amalgamations']['court_approval'] = bool(amalgmation_info['f_court_approval'])
 
     event_file_type = amalgmation_info['event_file_type']
     _, filing_subtype = get_target_filing_type(event_file_type)
@@ -331,16 +331,20 @@ def format_amalgamations_data(data: dict, event_id: Decimal) -> dict:
 
 def format_amalgamating_businesses(ting_data: dict) -> dict:
     formatted_ting = {}
-    foreign_identifier = ting_data['home_juri_num']
     role = 'holding' if ting_data['adopted_corp_ind'] else 'amalgamating'
 
-    foreign_jurisdiction = 'CA'
-    foreign_jurisdiction_region = ting_data['can_jur_typ_cd']
-    if foreign_jurisdiction_region == 'OT':
-        foreign_jurisdiction = 'US'
-        foreign_jurisdiction_region = ting_data['othr_juri_desc']
+    foreign_identifier = None
+    if not (ting_data['ting_corp_num'].startswith('BC') or\
+            ting_data['ting_corp_num'].startswith('Q') or\
+            ting_data['ting_corp_num'].startswith('C')):
+        foreign_identifier = ting_data['ting_corp_num']
 
     if foreign_identifier:
+        foreign_jurisdiction = 'CA'
+        foreign_jurisdiction_region = ting_data['can_jur_typ_cd']
+        if foreign_jurisdiction_region == 'OT':
+            foreign_jurisdiction = 'US'
+            foreign_jurisdiction_region = ting_data['othr_juri_desc']
         formatted_ting = {
             'foreign_jurisdiction': foreign_jurisdiction,
             'foreign_name': ting_data['foreign_nme'],
@@ -515,7 +519,7 @@ def build_epoch_filing(business_id: int) -> dict:
     return filing
 
 
-def load_data(conn: Connection, table_name: str, data: dict, conflict_column: str=None, update: bool=False) -> int:
+def load_data(conn: Connection, table_name: str, data: dict, conflict_column: str=None) -> int:
     columns = ', '.join(data.keys())
     values = ', '.join([format_value(v) for v in data.values()])
 
@@ -524,8 +528,6 @@ def load_data(conn: Connection, table_name: str, data: dict, conflict_column: st
         check_query = f"select id from {table_name} where {conflict_column} = {conflict_value}"
         check_result = conn.execute(text(check_query)).scalar()
         if check_result:
-            if update:
-                update_data(conn, table_name, data, check_result)
             return check_result
 
     query = f"""insert into {table_name} ({columns}) values ({values}) returning id"""
@@ -536,14 +538,15 @@ def load_data(conn: Connection, table_name: str, data: dict, conflict_column: st
     return id
 
 
-def update_data(conn: Connection, table_name: str, data: dict, id: int) -> bool:
+def update_data(conn: Connection, table_name: str, data: dict, column: str, value: any) -> int:
     update_pairs = [f'{k} = {format_value(v)}' for k, v in data.items()]
     update_pairs_str = ', '.join(update_pairs)
-    query = f"""update {table_name} set {update_pairs_str} where id={id}"""
+    query = f"""update {table_name} set {update_pairs_str} where {column}={format_value(value)} returning id"""
 
     result = conn.execute(text(query))
+    id = result.scalar()
 
-    return result.rowcount > 0
+    return id
 
 
 def format_value(value) -> str:

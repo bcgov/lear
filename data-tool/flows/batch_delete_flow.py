@@ -482,7 +482,10 @@ def execute_query(conn: Connection, template: dict) -> dict:
                 else:
                     # now only consider str and int in the list
                     v_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), filter_none(v)))
-                    query += f' AND {k} IN ({v_str})'
+                    if v_str:
+                        query += f' AND {k} IN ({v_str})'
+                    else:
+                        query += ' AND 1 != 1'
 
     results = conn.execute(text(query))
 
@@ -514,8 +517,9 @@ def execute_delete_plan(conn: Connection, table: str, ids: list):
 
 @task(persist_result=False)
 def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = 'id'):
+    ids = filter_none(ids)
     if ids:
-        ids_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), filter_none(ids)))
+        ids_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), ids))
         query_str = f'DELETE FROM {table_name} WHERE {id_name} IN ({ids_str})'
         query = text(query_str)
         results = conn.execute(query, {'ids': ids})

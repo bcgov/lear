@@ -1,5 +1,93 @@
+
+def get_unprocessed_corps_subquery(flow_name, environment):
+    subqueries = [
+        {
+            'name': 'default(all corps)',
+            'cte': '',
+            'where': ''
+        },
+        {
+            'name':'TING',
+            'cte': """
+                    with ting_corps as (
+                        select distinct ting_corp_num
+                        from corp_involved_amalgamating
+                    ),
+                    ted_corps as (
+                        select distinct ted_corp_num
+                        from corp_involved_amalgamating
+                    )
+            """,
+            'where': """
+                    and exists (
+                        select 1 from ting_corps t where t.ting_corp_num = c.corp_num
+                    )
+                    and not exists (
+                        select 1 from ted_corps t where t.ted_corp_num = c.corp_num
+                    )
+            """
+        },
+        {
+            'name':'TED that all its TINGs(XP excluded) have been migrated',
+            'cte': f"""
+                with t2 as (
+                    select distinct cia1.ted_corp_num
+                    from corp_involved_amalgamating cia1
+                    where not exists (
+                        select 1
+                        from corp_involved_amalgamating cia2
+                        left join corp_processing cp
+                            on cia2.ting_corp_num = cp.corp_num
+                            and cp.flow_name = '{flow_name}'
+                            and cp.environment = '{environment}'
+                            and cp.processed_status = 'COMPLETED'
+                        where cia2.ted_corp_num = cia1.ted_corp_num
+                        and (cia2.ting_corp_num like 'BC%' or cia2.ting_corp_num like 'Q%' or cia2.ting_corp_num like 'C%')
+                        and cp.corp_num is null
+                    )
+                )
+            """,
+            'where': """
+                and exists (
+                    select 1 from t2 where c.corp_num = t2.ted_corp_num
+                ) 
+            """
+        },
+        {
+            'name':'Other corps, non-TING and non-TED',
+            'cte': """
+                with t3 as (
+                    select ting_corp_num as corp_num
+                    from corp_involved_amalgamating
+                    union
+                    select ted_corp_num as corp_num
+                    from corp_involved_amalgamating
+                )
+            """,
+            'where': """
+                and not exists (
+                    select 1
+                    from t3
+                    where t3.corp_num = c.corp_num
+                )
+            """
+        }
+    ]
+    # Note: change index to select subset of corps
+    # [0] all, [1] TING, [2] TED that linked TINGs are migrated, [3] exclude TING & TED
+    # Acceptable order when it comes to the actual migration:
+    # [1]->[2]->[3]
+    # [2]->[1]->[3] (may fetch fewer eligible corps in [2] at the beginning, if so, go to [1] and then go back to [2], repeatedly)
+    # Other usage:
+    # [0] is used for other purposes, e.g. tweak query to select specific corps
+    subquery = subqueries[2]
+    return subquery['cte'], subquery['where']
+
 def get_unprocessed_corps_query(flow_name, environment, batch_size):
+    cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
+
     query = f"""
+    {cte_clause}
     select c.corp_num, c.corp_type_cd, cs.state_type_cd, cp.flow_name, cp.processed_status, cp.last_processed_event_id, cp.failed_event_id, cp.failed_event_file_type
     from corporation c
     left outer join corp_state cs
@@ -9,6 +97,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
+    {where_clause}
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
@@ -18,7 +107,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num = 'BC0326163' -- double quotes in corp name, no share structure, city in street additional of party's address
 --    and c.corp_num = 'BC0395512' -- long RG, RC addresses
 --    and c.corp_num = 'BC0043406' -- lots of directors
---    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637') -- TODO: re-migrate issue (can be solved by adding tracking)
+--    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637')
 --    and c.corp_num = 'BC0870626' -- lots of filings - IA, CoDs, ARs
 --      and c.corp_num = 'BC0004969' -- lots of filings - IA, ARs, transition, alteration, COD, COA
 --    and c.corp_num = 'BC0002567' -- lots of filings - IA, ARs, transition, COD
@@ -173,7 +262,7 @@ def get_business_query(corp_num, suffix):
             else false
         end admin_freeze
     from corporation c
-    left outer join event e on e.corp_num = c.corp_num and e.event_type_cd = 'CONVICORP' -- need to add other event like CONVAMAL, CONVCIN...
+    left outer join event e on e.corp_num = c.corp_num and e.event_type_cd IN ('CONVICORP', 'CONVAMAL') -- need to add other event like CONVCIN...
     where 1 = 1
     --and c.corp_num = 'BC0684912' -- state - ACT
     --and c.corp_num = 'BC0000621' -- state - HLD
