@@ -387,6 +387,7 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'changeOfAddress': ['last_coa_date'],
     'changeOfDirectors': ['last_cod_date'],
     'agmExtension': ['last_agm_date'],
+    'amalgamationApplication': ['last_coa_date', 'last_cod_date'],
     # TODO: 'dissolution_date' - Amalgamating business, continuation out
     # TODO: 'continuation_out_date' - continuation out
     'dissolution': ['dissolution_date'],
