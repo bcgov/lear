@@ -1,8 +1,8 @@
 
 def get_unprocessed_corps_subquery(flow_name, environment):
-    SUBQUERIES = [
+    subqueries = [
         {
-            'name': 'default(empty)',
+            'name': 'default(all corps)',
             'cte': '',
             'where': ''
         },
@@ -17,7 +17,7 @@ def get_unprocessed_corps_subquery(flow_name, environment):
                         select distinct ted_corp_num
                         from corp_involved_amalgamating
                     )
-                    """,
+            """,
             'where': """
                     and exists (
                         select 1 from ting_corps t where t.ting_corp_num = c.corp_num
@@ -25,7 +25,7 @@ def get_unprocessed_corps_subquery(flow_name, environment):
                     and not exists (
                         select 1 from ted_corps t where t.ted_corp_num = c.corp_num
                     )
-                    """
+            """
         },
         {
             'name':'TED that all its TINGs(XP excluded) have been migrated',
@@ -74,7 +74,8 @@ def get_unprocessed_corps_subquery(flow_name, environment):
         }
     ]
     # change index to select subset of corps
-    subquery = SUBQUERIES[2]
+    # 0: all, 1: TING, 2: TED that linked TINGs are migrated, 3: exclude TING & TED
+    subquery = subqueries[2]
     return subquery['cte'], subquery['where']
 
 def get_unprocessed_corps_query(flow_name, environment, batch_size):
