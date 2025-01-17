@@ -550,6 +550,11 @@ class BusinessDocument:
                     'business_id': jurisdiction.business_id,
                     'filing_id': jurisdiction.filing_id,
                     }
+            
+            # expro_legal_name is NULL for all COLIN imports
+            if continuation_in_filing.source == Filing.Source.COLIN.value:
+                jurisdiction_info['expro_legal_name'] = 'Not Available'
+
             continuation_in_info['foreignJurisdiction'] = jurisdiction_info
             business['continuationIn'] = continuation_in_info
 
