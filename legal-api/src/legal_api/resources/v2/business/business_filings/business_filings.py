@@ -308,7 +308,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if rv.status == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
         if rv.status == Filing.Status.WITHDRAWN.value:
-            now_filing = Filing.get_notice_of_withdrawal(filing_json['filing']['header']['filingId'])
+            now_filing = ListFilingResource.get_notice_of_withdrawal(filing_json['filing']['header']['filingId'])
             filing_json['filing']['noticeOfWithdrawal'] = now_filing.json
         elif (rv.status in [Filing.Status.CHANGE_REQUESTED.value,
                             Filing.Status.APPROVED.value,
@@ -466,6 +466,16 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         else:
             business = Business.find_by_identifier(identifier)
         return business, filing
+    
+    @staticmethod
+    def get_notice_of_withdrawal(filing_id: str = None):
+        """Return a NoW by the withdrawn filing id."""
+        filing = None
+        q = db.session.query(Filing). \
+            filter(Filing.withdrawn_filing_id == filing_id)
+
+        filing = q.one_or_none()
+        return filing
 
     @staticmethod
     def put_basic_checks(identifier, filing, client_request, business) -> Tuple[dict, int]:

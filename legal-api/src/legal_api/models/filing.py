@@ -859,14 +859,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filing = cls.query.filter_by(id=filing_id).one_or_none()
         return filing
 
-    @classmethod
-    def get_notice_of_withdrawal(cls, filing_id: str = None):
-        """Return a NoW by the withdrawn filing id."""
-        filing = None
-        if filing_id:
-            filing = cls.query.filter_by(withdrawn_filing_id=filing_id).one_or_none()
-        return filing
-
     @staticmethod
     def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
         """Return a Filing by it's payment token."""
