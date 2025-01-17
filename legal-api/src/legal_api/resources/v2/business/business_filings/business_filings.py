@@ -470,11 +470,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_notice_of_withdrawal(filing_id: str = None):
         """Return a NoW by the withdrawn filing id."""
-        filing = None
-        q = db.session.query(Filing). \
-            filter(Filing.withdrawn_filing_id == filing_id)
+        filing = db.session.query(Filing). \
+            filter(Filing.withdrawn_filing_id == filing_id).one_or_none()
 
-        filing = q.one_or_none()
         return filing
 
     @staticmethod
