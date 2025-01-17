@@ -466,7 +466,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         else:
             business = Business.find_by_identifier(identifier)
         return business, filing
-    
+
     @staticmethod
     def get_notice_of_withdrawal(filing_id: str = None):
         """Return a NoW by the withdrawn filing id."""
