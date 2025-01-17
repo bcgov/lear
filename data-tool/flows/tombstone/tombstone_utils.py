@@ -243,6 +243,7 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
     formatted_jurisdiction['legal_name'] = jurisdiction_info['j_home_company_nme']
     formatted_jurisdiction['identifier'] = jurisdiction_info['j_home_juris_num']
     formatted_jurisdiction['incorporation_date'] = jurisdiction_info['j_home_recogn_dt']
+    formatted_jurisdiction['expro_identifier'] = jurisdiction_info['j_bc_xpro_num']
     formatted_jurisdiction['country'] = None
     formatted_jurisdiction['region'] = None
 

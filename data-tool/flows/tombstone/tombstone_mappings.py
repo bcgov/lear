@@ -390,6 +390,7 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'amalgamationApplication': ['last_coa_date', 'last_cod_date'],
     # TODO: 'dissolution_date' - Amalgamating business, continuation out
     # TODO: 'continuation_out_date' - continuation out
+    'continuationIn': ['last_coa_date', 'last_cod_date'],
     'dissolution': ['dissolution_date'],
     'putBackOn': ['dissolution_date'],
     'restoration': ['dissolution_date', 'restoration_expiry_date'],
