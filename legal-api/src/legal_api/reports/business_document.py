@@ -552,7 +552,7 @@ class BusinessDocument:
                     }
             
             # Imported from COLIN
-            if continuation_in_filing.source == Filing.Source.COLIN.value:
+            if self._business.is_tombstone:
                 jurisdiction_info['expro_identifier'] = 'Not Available'
                 jurisdiction_info['expro_legal_name'] = 'Not Available'
 
