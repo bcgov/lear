@@ -7,7 +7,8 @@ from decimal import Decimal
 import pandas as pd
 import pytz
 from sqlalchemy import Connection, text
-from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING, FILING_JSON, OFFICE,
+from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING, FILING_JSON, 
+                                           JURISDICTION, OFFICE,
                                            PARTY, PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
@@ -226,6 +227,45 @@ def format_resolutions_data(data: dict) -> list[dict]:
     return formatted_resolutions
 
 
+def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
+    jurisdictions_data = data['jurisdictions']
+
+    matched_jurisdictions = [
+        item for item in jurisdictions_data if item.get('j_start_event_id') == event_id
+    ]
+
+    if not matched_jurisdictions:
+        return None
+    
+    formatted_jurisdiction = copy.deepcopy(JURISDICTION)
+    jurisdiction_info = matched_jurisdictions[0]
+
+    formatted_jurisdiction['legal_name'] = jurisdiction_info['j_home_company_nme']
+    formatted_jurisdiction['identifier'] = jurisdiction_info['j_home_juris_num']
+    formatted_jurisdiction['incorporation_date'] = jurisdiction_info['j_home_recogn_dt']
+    formatted_jurisdiction['expro_identifier'] = jurisdiction_info['j_bc_xpro_num']
+    formatted_jurisdiction['country'] = None
+    formatted_jurisdiction['region'] = None
+
+    can_jurisdiction_code = jurisdiction_info['j_can_jur_typ_cd']
+    other_jurisdiction_desc = jurisdiction_info['j_othr_juris_desc']
+
+    # when canadian jurisdiction, ignore othr_juris_desc
+    if can_jurisdiction_code != 'OT':
+        formatted_jurisdiction['country'] = 'CA'
+        formatted_jurisdiction['region'] = 'FEDERAL' if can_jurisdiction_code == 'FD' else can_jurisdiction_code
+    # when other jurisdiction and len(othr_juris_desc) = 2, then othr_juris_desc is country code
+    elif can_jurisdiction_code == 'OT' and len(other_jurisdiction_desc) == 2:
+        formatted_jurisdiction['country'] = other_jurisdiction_desc
+    # when other jurisdiction and len(othr_juris_desc) = 6, then othr_juris_desc contains both
+    # region code and country code (like "US, SS"). Ignore any other cases.
+    elif can_jurisdiction_code == 'OT' and len(other_jurisdiction_desc) == 6:
+        formatted_jurisdiction['country'] = other_jurisdiction_desc[:2]
+        formatted_jurisdiction['region'] = other_jurisdiction_desc[4:]
+
+    return formatted_jurisdiction
+
+
 def format_filings_data(data: dict) -> list[dict]:
     # filing info in business
     business_update_dict = {}
@@ -253,6 +293,7 @@ def format_filings_data(data: dict) -> list[dict]:
                                                              effective_date, x)
 
         filing_body = copy.deepcopy(FILING['filings'])
+        jurisdiction = None
         amalgamation = None
 
         # make it None if no valid value
@@ -271,12 +312,16 @@ def format_filings_data(data: dict) -> list[dict]:
             'submitter_id': user_id,  # will be updated to real user_id when loading data into db
         }
 
+        if filing_type == 'continuationIn':
+            jurisdiction = format_jurisdictions_data(data, x['e_event_id'])
+
         if filing_type == 'amalgamationApplication':
             amalgamation = format_amalgamations_data(data, x['e_event_id'])
 
         filing = {
             'filings': filing_body,
-            'amalgamations': amalgamation 
+            'jurisdiction': jurisdiction,
+            'amalgamations': amalgamation
         }
 
         formatted_filings.append(filing)

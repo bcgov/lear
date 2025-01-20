@@ -132,6 +132,19 @@ RESOLUTION = {
 }
 
 
+# ======== jurisdiction ========
+JURISDICTION = {
+    'country': None,
+    'region': None,
+    'identifier': None,
+    'legal_name': None,
+    'tax_id': None,
+    'incorporation_date': None,  # date
+    'expro_identifier': None,
+    'expro_legal_name': None,
+}
+
+
 # ======== filing ========
 USER = {
     'username': None,
@@ -171,6 +184,7 @@ FILING = {
         # others
         'submitter_roles': None,
     },
+    'jurisdiction': None,  # optional
     'amalgamations': None  # optional
 }
 

@@ -192,6 +192,11 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 
         if i == state_filing_index:
             update_info['businesses']['state_filing_id'] = filing_id
+        
+        if jurisdiction := data['jurisdiction']:
+            jurisdiction['business_id'] = business_id
+            jurisdiction['filing_id'] = filing_id
+            load_data(conn, 'jurisdictions', jurisdiction)
 
         # load amalgamation snapshot linked to the current filing
         if amalgamation_data := data['amalgamations']:
