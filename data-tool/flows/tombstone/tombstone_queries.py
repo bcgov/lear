@@ -80,7 +80,7 @@ def get_unprocessed_corps_subquery(flow_name, environment):
     # [2]->[1]->[3] (may fetch fewer eligible corps in [2] at the beginning, if so, go to [1] and then go back to [2], repeatedly)
     # Other usage:
     # [0] is used for other purposes, e.g. tweak query to select specific corps
-    subquery = subqueries[2]
+    subquery = subqueries[3]
     return subquery['cte'], subquery['where']
 
 def get_unprocessed_corps_query(flow_name, environment, batch_size):
