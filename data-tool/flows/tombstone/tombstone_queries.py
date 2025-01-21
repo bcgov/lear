@@ -131,7 +131,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --         'BC0805986', 'BC0561086',   -- amalg - v
 --          'BC0543231', 'BC0358476'    -- amalg - h
 --    )
-    and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
+    and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
     and cs.end_event_id is null
 --    and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
       and cp.processed_status is null
