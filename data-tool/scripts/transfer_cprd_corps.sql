@@ -66,10 +66,7 @@ select case
            else c.CORP_NUM
        end CORP_NUM,
        CORP_FROZEN_TYP_CD as corp_frozen_type_cd,
-       case
-           when c.CORP_TYP_CD in ('QA', 'QB', 'QC', 'QD', 'QE') then 'BC'
-           else c.CORP_TYP_CD
-       end CORP_TYPE_CD,
+       CORP_TYP_CD as CORP_TYPE_CD,
        RECOGNITION_DTS,
        BN_9,
        bn_15,
@@ -460,7 +457,7 @@ where e.event_id = sp.event_id
   and c.corp_num = e.corp_num
   and corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
   -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-  -- and rownum <= 5
+    -- and rownum <= 5
 order by e.event_id;
 
 
