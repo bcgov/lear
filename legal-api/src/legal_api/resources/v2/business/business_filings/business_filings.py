@@ -371,7 +371,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         filings = CoreFiling.ledger(business.id,
                                     jwt=user_jwt,
-                                    statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value],
+                                    statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value,
+                                              Filing.Status.WITHDRAWN.value],
                                     start=ledger_start,
                                     size=ledger_size,
                                     effective_date=effective_date)
