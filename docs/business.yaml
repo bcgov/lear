@@ -6361,10 +6361,10 @@ components:
               $ref: '#/components/schemas/Court_order'
             hasTakenEffect:
               type: boolean
-              title: One of the terms of arrangement have taken effect
+              title: One of the terms of arrangement for the FED filing have taken effect
             partOfPoa:
               type: boolean
-              title: Is part of a Plan of Arrangement
+              title: FED filing is part of a Plan of Arrangement
       x-examples:
         Example 1:
           noticeOfWithdrawal:
