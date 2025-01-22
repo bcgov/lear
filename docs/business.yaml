@@ -1523,6 +1523,8 @@ paths:
                       courtOrder:
                         fileNumber: "A12345"
                         effectOfOrder: planOfArrangement
+                      hasTakenEffect: false
+                      partOfPoa: false
               voluntary-dissolution-request:
                 summary: Voluntary Dissolution Request
                 value:
@@ -6355,6 +6357,12 @@ components:
               title: ID for the future effective filing
             courtOrder:
               $ref: '#/components/schemas/Court_order'
+            hasTakenEffect:
+              type: boolean
+              title: One of the terms of arrangement have taken effect
+            partOfPoa:
+              type: boolean
+              title: Is part of a Plan of Arrangement
       x-examples:
         Example 1:
           noticeOfWithdrawal:

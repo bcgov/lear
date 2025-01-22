@@ -141,12 +141,11 @@ ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION = copy.deepcopy(ALTERATION)
 ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['memorandumInResolution'] = True
 ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION['rulesInResolution'] = True
 
-# a mock notice of withdrawal filing, since its schema is not ready yet
-# may need to delete this and change variables in the test cases in the future
 MOCK_NOTICE_OF_WITHDRAWAL = {}
 MOCK_NOTICE_OF_WITHDRAWAL['courtOrder'] = copy.deepcopy(COURT_ORDER)
 MOCK_NOTICE_OF_WITHDRAWAL['filingId'] = '123456'
-
+MOCK_NOTICE_OF_WITHDRAWAL['hasTakenEffect'] = False
+MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
 
 @pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
     ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
