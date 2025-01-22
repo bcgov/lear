@@ -726,6 +726,8 @@ paths:
                         submitter: 'mocked submitter'
                       noticeOfWithdrawal:
                         filingId: 123456
+                        hasTakenEffect: false
+                        partOfPoa: false
                 voluntary-dissolution-success-response:
                   summary: Voluntary Dissolution Response
                   value:
