@@ -487,6 +487,10 @@ class Filing:
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         base_url = base_url[:base_url.find('/api')]
         identifier = business.identifier if business else filing.storage.temp_reg
+        if not identifier and filing.storage.withdrawn_filing_id:
+            withdrawn_filing = Filing.find_by_id(filing.storage.withdrawn_filing_id)
+            identifier = withdrawn_filing.storage.temp_reg
+
         doc_url = url_for('API2.get_documents', **{'identifier': identifier,
                                                    'filing_id': filing.id,
                                                    'legal_filing_name': None})
