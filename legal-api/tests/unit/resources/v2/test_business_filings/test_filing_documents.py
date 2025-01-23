@@ -1627,3 +1627,61 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
 
     assert rv.status_code == HTTPStatus.CREATED
     assert requests_mock.called_once
+
+
+@pytest.mark.parametrize('test_name, temp_identifier, identifier, entity_type, expected_msg, expected_http_code', [
+    ('now_ia_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP.value,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/noticeOfWithdrawal'},
+                    ]}},
+     HTTPStatus.OK
+     )
+])
+def test_temp_document_list_for_now(mocker, session, client, jwt,
+                                                      test_name,
+                                                      temp_identifier,
+                                                      identifier,
+                                                      entity_type,
+                                                      expected_msg, expected_http_code):
+    """Test document list based on filing states with temp identifier."""
+    # Setup
+
+    withdrawn_filing_json = copy.deepcopy(FILING_HEADER)
+    withdrawn_filing_json['filing']['header']['name'] = 'incorporationApplication'
+    withdrawn_filing_json['filing']['business']['legalType'] = entity_type
+    withdrawn_filing_json['filing']['incorporationApplication'] = INCORPORATION
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'noticeOfWithdrawal'
+    filing_json['filing']['business']['legalType'] = entity_type
+    filing_json['filing']['noticeOfWithdrawal'] = MOCK_NOTICE_OF_WITHDRAWAL
+
+    filing_date = datetime.utcnow()
+
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = temp_identifier
+    temp_reg.save()
+
+    business = None
+    withdrawn_filing = factory_filing(business, withdrawn_filing_json, filing_date=filing_date)
+    withdrawn_filing.temp_reg = temp_identifier
+    withdrawn_filing.save()
+    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing.skip_status_listener = True
+    filing._status = Filing.Status.PAID
+    filing._payment_completion_date = '2017-10-01'
+    filing.temp_reg = None
+    filing.withdrawn_filing_id = withdrawn_filing.id
+    filing.save()
+
+    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
+    rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
+
+    # remove the filing ID
+    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+
+    assert rv.status_code == expected_http_code
+    assert rv_data == expected

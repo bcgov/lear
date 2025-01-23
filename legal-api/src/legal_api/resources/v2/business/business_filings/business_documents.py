@@ -64,7 +64,7 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
         ), HTTPStatus.NOT_FOUND
 
     filing = Filing.find_by_id(filing_id)
-    if filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
+    if not filing or filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
         filing = Filing.get(identifier, filing_id)
 
     if not filing:
