@@ -25,8 +25,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_foreign_jurisdiction,
     validate_name_request,
     validate_parties_names,
-    validate_pdf,
     validate_share_structure,
+    validate_file_on_drs
 )
 from legal_api.services.filings.validations.incorporation_application import (
     validate_incorporation_effective_date,
@@ -35,6 +35,7 @@ from legal_api.services.filings.validations.incorporation_application import (
 )
 from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
+from legal_api.constants import DocumentClassEnum
 
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
@@ -51,6 +52,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return msg  # Cannot continue validation without legal_type
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
+    msg.extend(validate_continuation_in_authorization(filing_json, filing_type))
     msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
 
@@ -125,7 +127,10 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
           foreign_jurisdiction['country'] == 'CA' and
           ((region := foreign_jurisdiction.get('region')) and region == 'AB')):
         affidavit_file_key_path = f'{foreign_jurisdiction_path}/affidavitFileKey'
-        if not foreign_jurisdiction.get('affidavitFileKey'):
+        if file_key := foreign_jurisdiction.get('affidavitFileKey'):
+            if err := validate_file_on_drs(DocumentClassEnum.CORP, file_key, affidavit_file_key_path):
+                msg.extend(err)
+        else:
             msg.append({'error': 'Affidavit from the directors is required.', 'path': affidavit_file_key_path})
     try:
         # Check the incorporation date is in valid format
@@ -153,7 +158,7 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str) 
     for index, file in enumerate(filing_json['filing'][filing_type]['authorization']['files']):
         file_key = file['fileKey']
         file_key_path = f'{authorization_path}/files/{index}/fileKey'
-        if err := validate_pdf(file_key, file_key_path, False):
+        if err := validate_file_on_drs(DocumentClassEnum.CORP, file_key, file_key_path):
             msg.extend(err)
 
     return msg

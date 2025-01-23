@@ -18,8 +18,9 @@ from typing import Optional
 import requests
 from flask import current_app, request
 from flask_babel import _
-
 import PyPDF2
+
+from legal_api.constants import DocumentTypeEnum
 
 class DocumentRecordService:
     """Document Storage class."""
@@ -39,7 +40,7 @@ class DocumentRecordService:
         url = f'{DRS_BASE_URL}/documents/{document_class}/{document_type}'
 
         # Validate file size and encryption status before submitting to DRS.
-        validation_error = DocumentRecordService.validate_pdf(file, request.content_length)
+        validation_error = DocumentRecordService.validate_pdf(file, request.content_length, document_type)
         if validation_error:
             return {
                 'error': validation_error
@@ -145,12 +146,21 @@ class DocumentRecordService:
             return {}
 
     @staticmethod
-    def validate_pdf(file, content_length) -> Optional[list]:
+    def validate_pdf(file, content_length, document_type) -> Optional[list]:
         """Validate the PDF file."""
         msg = []
+        verify_paper_size = document_type in [
+            DocumentTypeEnum.CNTO,
+            DocumentTypeEnum.DIRECTOR_AFFIDAVIT
+        ]
+
         try:
             pdf_reader = PyPDF2.PdfFileReader(file)
-
+            if verify_paper_size:
+                # Check that all pages in the pdf are letter size and able to be processed.
+                if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
+                    msg.append({'error': _('Document must be set to fit onto 8.5” x 11” letter-size paper.'),
+                                'path': file.filename})                
             if content_length > 30000000:
                 msg.append({'error': _('File exceeds maximum size.'), 'path': file.filename})
 
