@@ -1629,8 +1629,8 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
     assert requests_mock.called_once
 
 
-@pytest.mark.parametrize('test_name, temp_identifier, identifier, entity_type, expected_msg, expected_http_code', [
-    ('now_ia_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP.value,
+@pytest.mark.parametrize('test_name, temp_identifier, entity_type, expected_msg, expected_http_code', [
+    ('now_ia_paid', 'Tb31yQIuBw', Business.LegalTypes.BCOMP.value,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
                     'legalFilings': [
                         {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/noticeOfWithdrawal'},
@@ -1641,10 +1641,9 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
 def test_temp_document_list_for_now(mocker, session, client, jwt,
                                                       test_name,
                                                       temp_identifier,
-                                                      identifier,
                                                       entity_type,
                                                       expected_msg, expected_http_code):
-    """Test document list based on filing states with temp identifier."""
+    """Test document list for noticeOfWithdrawal states with temp identifier."""
     # Setup
 
     withdrawn_filing_json = copy.deepcopy(FILING_HEADER)
