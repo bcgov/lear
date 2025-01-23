@@ -726,6 +726,8 @@ paths:
                         submitter: 'mocked submitter'
                       noticeOfWithdrawal:
                         filingId: 123456
+                        hasTakenEffect: false
+                        partOfPoa: false
                 voluntary-dissolution-success-response:
                   summary: Voluntary Dissolution Response
                   value:
@@ -1523,6 +1525,8 @@ paths:
                       courtOrder:
                         fileNumber: "A12345"
                         effectOfOrder: planOfArrangement
+                      hasTakenEffect: false
+                      partOfPoa: false
               voluntary-dissolution-request:
                 summary: Voluntary Dissolution Request
                 value:
@@ -6355,6 +6359,12 @@ components:
               title: ID for the future effective filing
             courtOrder:
               $ref: '#/components/schemas/Court_order'
+            hasTakenEffect:
+              type: boolean
+              title: One of the terms of arrangement for the FED filing have taken effect
+            partOfPoa:
+              type: boolean
+              title: FED filing is part of a Plan of Arrangement
       x-examples:
         Example 1:
           noticeOfWithdrawal:
