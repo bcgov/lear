@@ -318,10 +318,13 @@ def format_filings_data(data: dict) -> list[dict]:
         if filing_type == 'amalgamationApplication':
             amalgamation = format_amalgamations_data(data, x['e_event_id'])
 
+        comments = format_filing_comments_data(data, x['e_event_id'])
+
         filing = {
             'filings': filing_body,
             'jurisdiction': jurisdiction,
-            'amalgamations': amalgamation
+            'amalgamations': amalgamation,
+            'comments': comments
         }
 
         formatted_filings.append(filing)
@@ -406,14 +409,66 @@ def format_amalgamating_businesses(ting_data: dict) -> dict:
     return formatted_ting
 
 
+def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
+    filing_comments_data = data['filing_comments']
+
+    matched_filing_comments = [
+        item for item in filing_comments_data if item.get('e_event_id') == event_id
+    ]
+
+    if not matched_filing_comments:
+        return None
+    
+    formatted_filing_comments = []
+    for x in matched_filing_comments:
+        if c := x['lt_notation']:
+            timestamp = x['lt_ledger_text_dts_str']
+            # Note that only a small number of lt_user_id is BCOMPS,
+            # others are None
+            # TODO: investigate BCOMPS related stuff
+            staff_id = x['lt_user_id']
+        else:
+            c = x['cl_ledger_desc']
+            timestamp = None
+            staff_id = None
+        comment = {
+            'comment': c,
+            'timestamp': timestamp,
+            'staff_id': staff_id,  # will be updated to real staff_id when loading data into db
+        }
+
+        formatted_filing_comments.append(comment)
+
+    return formatted_filing_comments
+
+
+def format_business_comments_data(data: dict) -> list:
+    business_comments_data = data['business_comments']
+    formatted_business_comments = []
+    
+    for x in business_comments_data:
+        c = x['cc_comments'] if x['cc_comments'] else x['cc_accession_comments']
+        if not (staff_id := x['cc_user_id']):
+            staff_id = x['cc_full_name'] if x['cc_full_name'] else None
+        comment = {
+            'comment': c,
+            'timestamp': x['cc_comments_dts_str'],
+            'staff_id': staff_id,  # will be updated to real staff_id when loading data into db
+        }
+        formatted_business_comments.append(comment)
+
+    return formatted_business_comments
+
+
 def format_users_data(users_data: list) -> list:
     formatted_users = []
 
     for x in users_data:
         user = copy.deepcopy(USER)
         event_file_types = x['event_file_types'].split(',')
-        # skip users if all event_file_type is unsupported
-        if not any(get_target_filing_type(ef)[0] for ef in event_file_types):
+        # skip users if all event_file_type is unsupported or not users for staff comments
+        if not any(get_target_filing_type(ef)[0] for ef in event_file_types)\
+                and not any (ef == 'STAFF_COMMENT' for ef in event_file_types):
             continue
         
         if not (username := x['u_user_id']):
@@ -458,7 +513,8 @@ def get_data_formatters() -> dict:
         'share_classes': format_share_classes_data,
         'aliases': format_aliases_data,
         'resolutions': format_resolutions_data,
-        'filings': format_filings_data
+        'filings': format_filings_data,
+        'comments': format_business_comments_data,  # only for business level, filing level will be formatted ith filings
     }
     return ret
 

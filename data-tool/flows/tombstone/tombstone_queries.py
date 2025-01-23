@@ -171,32 +171,50 @@ def get_corp_users_query(corp_nums: list):
         u_middle_name,
         u_last_name,
         to_char(
-            min(event_timerstamp::timestamp at time zone 'UTC'),
+            min(u_timestamp::timestamp at time zone 'UTC'),
             'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         ) as earliest_event_dt_str,
         min(u_email_addr) as u_email_addr,
         u_role_typ_cd
     from (
-    select
-        upper(u.user_id) as u_user_id,
-        u.last_name as u_last_name,
-        u.first_name as u_first_name,
-        u.middle_name as u_middle_name,
-        e.event_type_cd,
-        f.filing_type_cd,
-        e.event_timerstamp,
-        case
-            when u.first_name is null and u.middle_name is null and u.last_name is null then null
-            else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
-        end as u_full_name,
-        u.email_addr as u_email_addr,
-        u.role_typ_cd as u_role_typ_cd
-    from event e
-            left outer join filing f on e.event_id = f.event_id
-            left outer join filing_user u on u.event_id = e.event_id
-    where 1 = 1
---        and e.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
-        and e.corp_num in ({corp_nums_str})
+        select
+            upper(u.user_id) as u_user_id,
+            u.last_name as u_last_name,
+            u.first_name as u_first_name,
+            u.middle_name as u_middle_name,
+            e.event_type_cd,
+            f.filing_type_cd,
+            e.event_timerstamp as u_timestamp,
+            case
+                when u.first_name is null and u.middle_name is null and u.last_name is null then null
+                else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
+            end as u_full_name,
+            u.email_addr as u_email_addr,
+            u.role_typ_cd as u_role_typ_cd
+        from event e
+                left outer join filing f on e.event_id = f.event_id
+                left outer join filing_user u on u.event_id = e.event_id
+        where 1 = 1
+    --        and e.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
+            and e.corp_num in ({corp_nums_str})
+        union
+        -- staff comment at business level
+        select
+            upper(cc.user_id) as u_user_id,
+            cc.last_nme as u_last_name,
+            cc.first_nme as u_first_name,
+            cc.middle_nme as u_middle_name,
+            'STAFF' as event_type_cd, -- placeholder
+            'COMMENT' as filing_type_cd, -- placeholder
+            comment_dts as u_timestamp,
+            case
+                when cc.first_nme is null and cc.middle_nme is null and cc.last_nme is null then null
+                else upper(concat_ws('_', nullif(trim(cc.first_nme),''), nullif(trim(cc.middle_nme),''), nullif(trim(cc.last_nme),'')))
+            end as u_full_name,
+            null as u_email_addr,
+            null as u_role_typ_cd
+        from corp_comments cc
+        where cc.corp_num in ({corp_nums_str})
     ) sub
     group by sub.u_user_id, sub.u_full_name, sub.u_first_name, sub.u_middle_name, sub.u_last_name, sub.u_role_typ_cd
     order by sub.u_user_id;
@@ -632,6 +650,62 @@ def get_amalgamation_query(corp_num):
     return query
 
 
+def get_business_comments_query(corp_num):
+    query = f"""
+    select 
+        to_char(
+            cc.comment_dts::timestamp at time zone 'UTC',
+            'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                       as cc_comments_dts_str,
+        cc.comments             as cc_comments,
+        cc.accession_comments   as cc_accession_comments,
+        upper(cc.user_id)       as cc_user_id,
+        cc.first_nme            as cc_first_name,
+        cc.last_nme             as cc_last_name,
+        cc.middle_nme           as cc_middle_name,
+        case
+            when cc.first_nme is null and cc.middle_nme is null and cc.last_nme is null then null
+            else upper(concat_ws('_', nullif(trim(cc.first_nme),''), nullif(trim(cc.middle_nme),''), nullif(trim(cc.last_nme),'')))
+        end                     as cc_full_name
+    from corp_comments cc
+    where corp_num = '{corp_num}';
+    """
+    return query
+
+
+def get_filing_comments_query(corp_num):
+    query = f"""
+    select
+        e.event_id              as e_event_id,
+        to_char(
+                lt.ledger_text_dts::timestamp at time zone 'UTC',
+                'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                       as lt_ledger_text_dts_str,
+        lt.user_id              as lt_user_id,
+        trim(lt.notation)             as lt_notation,
+        null                    as cl_ledger_desc
+    from  event e
+        join ledger_text lt on e.event_id = lt.event_id
+        join corporation c on e.corp_num = c.corp_num and c.corp_num = '{corp_num}'
+    where
+        nullif(trim(lt.notation), '') is not null
+    union
+    select
+        e.event_id        as e_event_id,
+        null              as lt_ledger_text_dts_str,
+        null              as lt_user_id,
+        null               as lt_notation,
+        trim(cl.ledger_desc) as cl_ledger_desc
+    from event e
+        join conv_ledger cl on e.event_id = cl.event_id
+        join corporation c on e.corp_num = c.corp_num and c.corp_num = '{corp_num}'
+    where
+        nullif(trim(cl.ledger_desc), '') is not null
+    ;
+    """
+    return query
+
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
@@ -642,7 +716,9 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'resolutions': get_resolutions_query(corp_num),
         'jurisdictions': get_jurisdictions_query(corp_num),
         'filings': get_filings_query(corp_num),
-        'amalgamations': get_amalgamation_query(corp_num)
+        'amalgamations': get_amalgamation_query(corp_num),
+        'business_comments': get_business_comments_query(corp_num),
+        'filing_comments': get_filing_comments_query(corp_num)
     }
 
     return queries
