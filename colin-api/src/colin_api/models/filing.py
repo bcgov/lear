@@ -1403,8 +1403,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # call to legal-api to check if business exists in lear
             response = LegalApiService.query_business(bc_identifier)
 
-            # Freeze all entities if found in LEAR and if 'enable-bc-ccc-ulc' flag is on else just freeze BEN
-            # exclude CP at all times
+            # Check business exists in lear
+            # If found in LEAR, freeze entities except CP if 'enable-bc-ccc-ulc' flag is on else just freeze BEN
             if response.status_code == HTTPStatus.OK:
                 is_frozen_condition = (
                     flags.is_on('enable-bc-ccc-ulc') and
