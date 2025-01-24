@@ -864,21 +864,15 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return a filing by the temp id and filing id (if applicable)."""
         # fetch temp filing
         q = db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id)
-
         if filing_id:
             filing = db.session.query(Filing).filter(Filing.id == filing_id).one_or_none()
             if filing:
                 # Special case for NoW
                 is_now_filing = filing.filing_type == 'noticeOfWithdrawal'
                 temp_filing_id = q.one_or_none().id
-
-                # Confirm that the NoW filing ID belongs to the temp identifier
                 if is_now_filing and filing.withdrawn_filing_id == temp_filing_id:
                     return filing
-
-            # Filter for specific filing by id if it's not a NoW
             return q.filter(Filing.id == filing_id).one_or_none()
-
         return q.one_or_none()
 
     @staticmethod
