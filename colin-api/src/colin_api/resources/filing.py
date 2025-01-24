@@ -118,7 +118,7 @@ class FilingInfo(Resource):
                 ), HTTPStatus.BAD_REQUEST
 
             # setting this for lear business check as identifier is converted from lear to colin below
-            bc_identifier = identifier
+            lear_identifier = identifier
 
             # convert identifier if BC legal_type
             identifier = Business.get_colin_identifier(identifier, legal_type)
@@ -180,7 +180,7 @@ class FilingInfo(Resource):
                         }
                     }), HTTPStatus.CREATED
 
-                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier, bc_identifier)
+                filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier, lear_identifier)
 
                 # success! commit the db changes
                 con.commit()
@@ -205,7 +205,7 @@ class FilingInfo(Resource):
             }), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
-    def _add_filings(con, json_data: dict, filing_list: list, identifier: str, bc_identifier: str) -> list:
+    def _add_filings(con, json_data: dict, filing_list: list, identifier: str, lear_identifier: str) -> list:
         """Process all parts of the filing."""
         filings_added = []
         for filing_type in filing_list:
@@ -227,7 +227,7 @@ class FilingInfo(Resource):
             if filing_type == 'correction':
                 filings_added.extend(Filing.add_correction_filings(con, filing))
             else:
-                event_id = Filing.add_filing(con, filing, bc_identifier)
+                event_id = Filing.add_filing(con, filing, lear_identifier)
                 filings_added.append({'event_id': event_id,
                                       'filing_type': filing_type,
                                       'filing_sub_type': filing.filing_sub_type})

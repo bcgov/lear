@@ -28,15 +28,17 @@ class LegalApiService():
         """Return a JSON object with business information."""
         timeout = int(current_app.config.get('ACCOUNT_SVC_TIMEOUT'))
         legal_api_url = current_app.config.get('LEGAL_API_URL')
-
         token = AccountService.get_bearer_token()
 
-        # Perform proxy call using the input identifier (e.g. BC 123456)
-        response = requests.get(legal_api_url + '/businesses/' + identifier,
-                                headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
-                                timeout=timeout
-                                )
         try:
-            return response
-        except Exception:  # pylint: disable=broad-except
-            return None
+            # Perform proxy call using the input identifier (e.g. BC 123456)
+            response = requests.get(legal_api_url + '/businesses/' + identifier,
+                                    headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
+                                    timeout=timeout
+                                    )
+            # If the status code is 200 or 404, return the response
+            if response.status_code in (200, 404):
+                return response
+        except requests.exceptions.RequestException as err:
+            current_app.logger.error(err, exc_info=True)
+            return None, str(err)

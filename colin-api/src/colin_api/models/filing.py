@@ -1241,7 +1241,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
-    def add_filing(cls, con, filing: Filing, bc_identifier: str) -> int:
+    def add_filing(cls, con, filing: Filing, lear_identifier: str) -> int:
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
@@ -1396,14 +1396,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                 Business.TypeCodes.BCOMP.value,
                                                 Business.TypeCodes.BCOMP_CONTINUE_IN.value,
                                             ])
+            is_business_in_lear = cls.is_business_in_lear(lear_identifier)
 
             # Freeze all entities except CP if business exists in lear and
             # 'enable-bc-ccc-ulc' flag is on else just freeze BEN
             is_frozen_condition = (
-                cls.is_business_in_lear(bc_identifier) and
                 flags.is_on('enable-bc-ccc-ulc') and
-                business['business']['legalType'] != Business.TypeCodes.COOP.value
+                business['business']['legalType'] != Business.TypeCodes.COOP.value and
+                is_business_in_lear
             )
+
+            current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
 
             is_new_or_altered_ben = is_new_ben or is_new_cben or is_alteration_to_ben_or_cben
 
@@ -1418,9 +1421,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             raise err
 
     @classmethod
-    def is_business_in_lear(cls, bc_identifier: str) -> bool:
+    def is_business_in_lear(cls, lear_identifier: str) -> bool:
         """Check if business is in lear."""
-        response = LegalApiService.query_business(bc_identifier)
+        response = LegalApiService.query_business(lear_identifier)
 
         if response.status_code == HTTPStatus.OK:
             return True
