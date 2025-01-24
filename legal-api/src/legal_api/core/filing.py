@@ -273,7 +273,7 @@ class Filing:
     def get(identifier, filing_id=None) -> Optional[Filing]:
         """Return a Filing domain by the id."""
         if identifier.startswith('T'):
-            storage = FilingStorage.get_temp_reg_filing(identifier)
+            storage = FilingStorage.get_temp_reg_filing(identifier, filing_id)
         else:
             storage = Business.get_filing_by_id(identifier, filing_id)
 

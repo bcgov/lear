@@ -1764,3 +1764,16 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
     assert now_filing.withdrawal_pending == False
     if is_temp:
         assert now_filing.temp_reg == None
+
+    # update and save notice of withdrawal draft filing
+    now_json_data['filing']['header']['certifiedBy'] = 'test123'
+
+    rv_draft = client.put(f'/api/v2/businesses/{identifier}/filings/{now_filing.id}?draft=true',
+                     json=now_json_data,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+    
+    # validate
+    assert rv_draft.status_code == HTTPStatus.ACCEPTED
+    assert rv_draft.json['filing']['header']['certifiedBy'] == 'test123'
+
+
