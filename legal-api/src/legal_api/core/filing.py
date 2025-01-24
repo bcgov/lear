@@ -285,6 +285,18 @@ class Filing:
         return None
 
     @staticmethod
+    def get_by_withdrawn_filing_id(filing_id, withdrawn_filing_id, filing_type: str = None) -> Optional[Filing]:
+        """Return a Filing domain by the id, withdrawn_filing_id and filing_type."""
+        storage = FilingStorage.get_temp_reg_filing_by_withdrawn_filing(filing_id, withdrawn_filing_id, filing_type)
+
+        if storage:
+            filing = Filing()
+            filing._storage = storage  # pylint: disable=protected-access
+            return filing
+
+        return None
+
+    @staticmethod
     def find_by_id(filing_id) -> Optional[Filing]:
         """Return a Filing domain by the id."""
         # TODO sleuth out the decorator issue

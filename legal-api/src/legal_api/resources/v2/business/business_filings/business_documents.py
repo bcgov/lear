@@ -64,9 +64,13 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
             message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
         ), HTTPStatus.NOT_FOUND
 
-    filing = Filing.find_by_id(filing_id)
-    if not filing or filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
-        filing = Filing.get(identifier, filing_id)
+    filing = Filing.get(identifier, filing_id)
+    if filing and identifier.startswith('T') and filing.id != filing_id:
+        original_now_filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
+                                                                withdrawn_filing_id=filing.id,
+                                                                filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL)
+        if original_now_filing:
+            filing = original_now_filing
 
     if not filing:
         return jsonify(

@@ -871,6 +871,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
+    def get_temp_reg_filing_by_withdrawn_filing(filing_id: str, withdrawn_filing_id: str, filing_type: str = None):
+        """Return an temp reg Filing by withdrawn filing."""
+        q = db.session.query(Filing). \
+            filter(Filing.withdrawn_filing_id == withdrawn_filing_id). \
+            filter(Filing.id == filing_id)
+
+        if filing_type:
+            q = q.filter(Filing._filing_type == filing_type)
+
+        filing = q.one_or_none()
+        return filing
+
+    @staticmethod
     def get_filing_by_payment_token(token: str):
         """Return a Filing by it's payment token."""
         filing = db.session.query(Filing). \
