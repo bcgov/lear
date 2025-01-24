@@ -42,3 +42,4 @@ class LegalApiService():
         except requests.exceptions.RequestException as err:
             current_app.logger.error(err, exc_info=True)
             return None, str(err)
+        return None
