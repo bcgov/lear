@@ -45,6 +45,7 @@ DOCUMENTS_BASE_ROUTE: Final = '/<string:identifier>/filings/<int:filing_id>/docu
 @cross_origin(origin='*')
 @jwt.requires_auth
 def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None, file_key: str = None):
+    # pylint: disable=too-many-branches
     """Return a JSON object with meta information about the Service."""
     # basic checks
     if not authorized(identifier, jwt, ['view', ]):
