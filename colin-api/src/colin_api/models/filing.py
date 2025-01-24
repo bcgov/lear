@@ -46,6 +46,7 @@ from colin_api.models import (  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
 from colin_api.services import flags
+from colin_api.services.legal import LegalApiService
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
 
 
@@ -1240,7 +1241,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
-    def add_filing(cls, con, filing: Filing) -> int:
+    def add_filing(cls, con, filing: Filing, lear_identifier: str) -> int:
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
@@ -1395,12 +1396,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                 Business.TypeCodes.BCOMP.value,
                                                 Business.TypeCodes.BCOMP_CONTINUE_IN.value,
                                             ])
+            is_business_in_lear = cls.is_business_in_lear(lear_identifier)
+            current_app.logger.debug(f'Business {lear_identifier}, is_business_in_lear:{is_business_in_lear}')
 
-            # Freeze all entities except CP if 'enable-bc-ccc-ulc' flag is on else just freeze BEN
+            # Freeze all entities except CP if business exists in lear and
+            # 'enable-bc-ccc-ulc' flag is on else just freeze BEN
             is_frozen_condition = (
                 flags.is_on('enable-bc-ccc-ulc') and
-                business['business']['legalType'] != Business.TypeCodes.COOP.value
+                business['business']['legalType'] != Business.TypeCodes.COOP.value and
+                is_business_in_lear
             )
+            current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
 
             is_new_or_altered_ben = is_new_ben or is_new_cben or is_alteration_to_ben_or_cben
 
@@ -1413,6 +1419,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
             raise err
+
+    @classmethod
+    def is_business_in_lear(cls, lear_identifier: str) -> bool:
+        """Check if business is in lear."""
+        response = LegalApiService.query_business(lear_identifier)
+
+        if response.status_code == HTTPStatus.OK:
+            return True
+        return False
 
     @classmethod
     def _get_last_ar_filed_date(cls, header: dict, business: dict):
