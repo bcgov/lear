@@ -41,7 +41,6 @@ class LegalApiService():
                 return response
             response.raise_for_status()
 
-        except requests.exceptions.RequestException as e:
-            # Log the error and raise an exception up the chain
-            current_app.logger.error(f'Request failed: {e}, URL: {legal_api_url}')
-            raise Exception(f'Request failed: {e}, URL: {legal_api_url}') from e
+        except Exception as err:  # pylint: disable=broad-except:
+            current_app.logger.error(err, exc_info=True)
+            raise  # re-throw the exception after logging
