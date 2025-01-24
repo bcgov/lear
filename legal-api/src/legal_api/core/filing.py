@@ -37,7 +37,7 @@ from .constants import REDACTED_STAFF_SUBMITTER
 
 
 # @dataclass(init=False, repr=False)
-class Filing:
+class Filing:  # pylint: disable=too-many-public-methods
     """Domain class for Filings."""
 
     class Status(str, Enum):
