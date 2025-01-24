@@ -39,7 +39,9 @@ class LegalApiService():
             # If the status code is 200 or 404, return the response
             if response.status_code in (200, 404):
                 return response
-        except requests.exceptions.RequestException as err:
-            current_app.logger.error(err, exc_info=True)
-            return None, str(err)
-        return None
+            response.raise_for_status()
+
+        except requests.exceptions.RequestException as e:
+            # Log the error and raise an exception up the chain
+            current_app.logger.error(f'Request failed: {e}, URL: {legal_api_url}')
+            raise Exception(f'Request failed: {e}, URL: {legal_api_url}') from e

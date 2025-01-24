@@ -1397,6 +1397,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                 Business.TypeCodes.BCOMP_CONTINUE_IN.value,
                                             ])
             is_business_in_lear = cls.is_business_in_lear(lear_identifier)
+            current_app.logger.debug(f'Business {lear_identifier}, is_business_in_lear:{is_business_in_lear}')
 
             # Freeze all entities except CP if business exists in lear and
             # 'enable-bc-ccc-ulc' flag is on else just freeze BEN
@@ -1405,7 +1406,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 business['business']['legalType'] != Business.TypeCodes.COOP.value and
                 is_business_in_lear
             )
-
             current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
 
             is_new_or_altered_ben = is_new_ben or is_new_cben or is_alteration_to_ben_or_cben
