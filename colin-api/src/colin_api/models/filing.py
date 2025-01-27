@@ -1396,15 +1396,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                 Business.TypeCodes.BCOMP.value,
                                                 Business.TypeCodes.BCOMP_CONTINUE_IN.value,
                                             ])
-            is_business_in_lear = cls.is_business_in_lear(lear_identifier)
-            current_app.logger.debug(f'Business {lear_identifier}, is_business_in_lear:{is_business_in_lear}')
 
             # Freeze all entities except CP if business exists in lear and
             # 'enable-bc-ccc-ulc' flag is on else just freeze BEN
             is_frozen_condition = (
                 flags.is_on('enable-bc-ccc-ulc') and
                 business['business']['legalType'] != Business.TypeCodes.COOP.value and
-                is_business_in_lear
+                cls.is_business_in_lear(lear_identifier)
             )
             current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
 
@@ -1423,7 +1421,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def is_business_in_lear(cls, lear_identifier: str) -> bool:
         """Check if business is in lear."""
-        response = LegalApiService.query_business(lear_identifier)
+        response = LegalApiService.query_business(lear_identifier, slim=True)
 
         if response.status_code == HTTPStatus.OK:
             return True
