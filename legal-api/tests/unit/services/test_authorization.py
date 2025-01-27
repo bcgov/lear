@@ -22,6 +22,7 @@ import copy
 from datetime import datetime as _datetime
 from enum import Enum
 from http import HTTPStatus
+from typing import Union
 import jwt as pyjwt
 
 import pytest
@@ -3048,7 +3049,7 @@ def test_is_self_registered_owner_operator_false_when_no_registration_filing(app
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business('SP', Business.State.ACTIVE)
 
-    assert is_self_registered_owner_operator(business, user) is False
+    assert is_self_registered_owner_operator(user, business) is False
 
 
 def test_is_self_registered_owner_operator_false_when_no_proprietors(app, session):
@@ -3125,7 +3126,7 @@ def test_is_self_registered_owner_operator_false_when_parties_not_matching(app, 
     business = create_business('SP', Business.State.ACTIVE)
     completing_party_role = create_party_role(
         PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user('1')
+        **create_test_user(suffix='1')
     )
     filing = factory_completed_filing(
         business=business,
@@ -3138,7 +3139,7 @@ def test_is_self_registered_owner_operator_false_when_parties_not_matching(app, 
 
     proprietor_party_role = create_party_role(
         PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user('2')
+        **create_test_user(suffix='2')
     )
     proprietor_party_role.business_id = business.id
     proprietor_party_role.save()
@@ -3151,7 +3152,7 @@ def test_is_self_registered_owner_operator_false_when_user_not_matching(app, ses
     business = create_business('SP', Business.State.ACTIVE)
     completing_party_role = create_party_role(
         PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user('2')
+        **create_test_user(suffix='2')
     )
     filing = factory_completed_filing(
         business=business,
@@ -3164,7 +3165,7 @@ def test_is_self_registered_owner_operator_false_when_user_not_matching(app, ses
 
     proprietor_party_role = create_party_role(
         PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user('2')
+        **create_test_user(suffix='2')
     )
     proprietor_party_role.business_id = business.id
     proprietor_party_role.save()
@@ -3177,7 +3178,7 @@ def test_is_self_registered_owner_operator_false_when_proprietor_uses_middle_nam
     business = create_business('SP', Business.State.ACTIVE)
     completing_party_role = create_party_role(
         PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user(first_name='TEST', last_name='USER')
+        **create_test_user(first_name='TEST', last_name='USER', default_middle=False)
     )
     filing = factory_completed_filing(
         business=business,
@@ -3190,7 +3191,7 @@ def test_is_self_registered_owner_operator_false_when_proprietor_uses_middle_nam
 
     proprietor_party_role = create_party_role(
         PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user(first_name='TEST', middle_initial='TU', last_name='USER')
+        **create_test_user()
     )
     proprietor_party_role.business_id = business.id
     proprietor_party_role.save()
@@ -3203,7 +3204,7 @@ def test_is_self_registered_owner_operator_true_when_proprietor_and_user_uses_mi
     business = create_business('SP', Business.State.ACTIVE)
     completing_party_role = create_party_role(
         PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user(first_name='TEST TU', last_name='USER')
+        **create_test_user(first_name='TEST TU', last_name='USER', default_middle=False)
     )
     filing = factory_completed_filing(
         business=business,
@@ -3229,7 +3230,7 @@ def test_is_self_registered_owner_operator_true(app, session):
     business = create_business('SP', Business.State.ACTIVE)
     completing_party_role = create_party_role(
         PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user(first_name='TEST', last_name='USER')
+        **create_test_user(first_name='TEST', last_name='USER', default_middle=False)
     )
     filing = factory_completed_filing(
         business=business,
@@ -3242,7 +3243,7 @@ def test_is_self_registered_owner_operator_true(app, session):
 
     proprietor_party_role = create_party_role(
         PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user(first_name='TEST', last_name='USER')
+        **create_test_user(first_name='TEST', last_name='USER', default_middle=False)
     )
     proprietor_party_role.business_id = business.id
     proprietor_party_role.save()
@@ -3321,17 +3322,15 @@ def create_party_role(role=PartyRole.RoleTypes.COMPLETING_PARTY,
     return party_role
 
 
-def create_test_user(suffix=''):
-    return {
-        'first_name': f'TEST{suffix}',
-        'last_name': f'USER{suffix}',
-        'middle_initial': f'TU{suffix}'
-    }
+def create_test_user(first_name: Union[str, None] = None, last_name: Union[str, None] = None,
+                     middle_initial: Union[str, None] = None, suffix: Union[str, None] = '',
+                     default_first: bool = True, default_last: bool = True, default_middle: bool = True):
+    first = first_name or ('TEST' if default_first else None)
+    last = last_name or ('USER' if default_last else None)
+    middle = middle_initial or ('TU' if default_middle else None)
 
-
-def create_test_user(first_name=None, last_name=None, middle_initial=None):
     return {
-        'first_name': first_name,
-        'last_name': last_name,
-        'middle_initial': middle_initial
+        'first_name': f'{first}{suffix}' if first else None,
+        'last_name': f'{last}{suffix}' if last else None,
+        'middle_initial': f'{middle}{suffix}' if middle else None,
     }

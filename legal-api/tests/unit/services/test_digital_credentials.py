@@ -11,9 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for the Minio service.
+"""Tests for the Digital Credentials service.
 
-Test suite to ensure that the Digital Credentials service are working as expected.
+Test suite to ensure that the Digital Credentials service is working as expected.
 """
 from unittest.mock import MagicMock
 

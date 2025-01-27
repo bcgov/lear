@@ -929,7 +929,7 @@ def add_allowable_filing_type(is_allowable: bool = False,
 
 
 def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
-    """Return True if the business is allowed to have/view a digital business card."""
+    """Return True if the business is allowed to have/view digital credentials."""
     if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
         return False
 
@@ -948,7 +948,7 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
 
 
 def is_self_registered_owner_operator(business, user):
-    """Return True if the user is the owner operator of the business."""
+    """Return True if the user is the self-registered owner operator of the business."""
     if not (registration_filing := get_registration_filing(business)):
         return False
 
