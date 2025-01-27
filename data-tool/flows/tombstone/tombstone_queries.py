@@ -553,7 +553,9 @@ def get_jurisdictions_query(corp_num):
         j.xpro_typ_cd       as j_xpro_typ_cd,
         j.home_company_nme  as j_home_company_nme,
         j.home_juris_num    as j_home_juris_num,
-        to_char(j.home_recogn_dt, 'YYYY-MM-DD') as j_home_recogn_dt,
+        to_char(
+            j.home_recogn_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                   as j_home_recogn_dt,
         j.othr_juris_desc   as j_othr_juris_desc,
         j.bc_xpro_num       as j_bc_xpro_num
     from jurisdiction j
