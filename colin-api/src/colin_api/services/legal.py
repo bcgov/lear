@@ -24,15 +24,23 @@ class LegalApiService():
     """Provides service to call the legal-api."""
 
     @staticmethod
-    def query_business(identifier: str):
-        """Return a JSON object with business information."""
+    def query_business(identifier: str, slim: bool = False):
+        """Return a JSON object with business information.
+
+        Args:
+            identifier (str): The business identifier
+            slim (bool, optional): If True, requests minimal business data. Defaults to False.
+        """
         timeout = int(current_app.config.get('ACCOUNT_SVC_TIMEOUT'))
         legal_api_url = current_app.config.get('LEGAL_API_URL')
         token = AccountService.get_bearer_token()
 
         try:
+            url = f'{legal_api_url}/businesses/{identifier}'
+            if slim:
+                url += '?slim=true'
             # Perform proxy call using the input identifier (e.g. BC 123456)
-            response = requests.get(legal_api_url + '/businesses/' + identifier,
+            response = requests.get(url,
                                     headers={'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
                                     timeout=timeout
                                     )
