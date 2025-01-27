@@ -29,6 +29,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from legal_api.models import Business, Filing, PartyRole, User
+from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.services.warnings.business.business_checks import WarningType
 
 
@@ -937,14 +938,14 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
         return False
 
     is_staff = jwt.contains_role([STAFF_ROLE])
+    if is_staff:
+        # Staff do not have digital credentials
+        return False
 
-    is_sole_prop = business and business.legal_type == Business.LegalTypes.SOLE_PROP.value
+    digital_credentials_rules = DigitalCredentialsRulesService()
 
-    is_login_source_bcsc = user.login_source == 'BCSC'
-
-    is_owner_operator = is_self_registered_owner_operator(business, user)
-
-    return is_login_source_bcsc and is_sole_prop and is_owner_operator and not is_staff
+    return (digital_credentials_rules.has_general_access(user) and
+            digital_credentials_rules.has_specific_access(user, business))
 
 
 def is_self_registered_owner_operator(business, user):

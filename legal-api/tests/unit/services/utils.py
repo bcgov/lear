@@ -11,11 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Data for the JWT tokens."""
+"""Utility functions for tests."""
+
+import random
+from datetime import datetime
 from typing import List
-
-
-STAFF_ROLE = 'staff'
+from tests.unit.models import factory_business
 
 
 def helper_create_jwt(jwt_manager, roles: List[str] = [], username: str = 'test-user'):
@@ -48,3 +49,13 @@ def create_header(jwt_manager, roles: List[str] = [], username: str = 'test-user
     token = helper_create_jwt(jwt_manager, roles=roles, username=username)
     headers = {**kwargs, **{'Authorization': 'Bearer ' + token}}
     return headers
+
+
+def create_business(legal_type, state):
+    """Create a business."""
+    identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+    business = factory_business(identifier=identifier,
+                                entity_type=legal_type,
+                                state=state,
+                                founding_date=datetime.now())
+    return business
