@@ -538,14 +538,23 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
 def get_colin_display_name(data: dict) -> str:
     event_file_type = data['event_file_type']
     name = EVENT_FILING_DISPLAY_NAME_MAPPING.get(event_file_type)
+
+    # Annual Report
     if event_file_type == EventFilings.FILE_ANNBC.value:
         ar_dt_str = data['f_period_end_dt_str']
         ar_dt = datetime.strptime(ar_dt_str, '%Y-%m-%d %H:%M:%S%z')
         suffix = ar_dt.strftime('%b %d, %Y').upper()
         name = f'{name} - {suffix}'
+    
+    # Change of Directors
     elif event_file_type == EventFilings.FILE_NOCDR.value:
         if not data['f_change_at_str']:
             name = f'{name} - Address Change or Name Correction Only'
+    
+    # Conversion Ledger
+    elif event_file_type == EventFilings.FILE_CONVL.value:
+        name = data['cl_ledger_title_txt']
+
     return name
 
 
