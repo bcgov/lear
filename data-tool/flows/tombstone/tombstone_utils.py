@@ -25,10 +25,11 @@ def format_business_data(data: dict) -> dict:
     state = business_data['state']
     business_data['state'] = 'ACTIVE' if state == 'ACT' else 'HISTORICAL'
 
-    if not (last_ar_date := business_data['last_ar_date']):
-        last_ar_date = business_data['founding_date']
-    
-    last_ar_year = int(last_ar_date.split('-')[0])
+    if last_ar_date := business_data['last_ar_date']:
+        last_ar_year = int(last_ar_date.split('-')[0])
+    else:
+        last_ar_date = None
+        last_ar_year = None
 
     formatted_business = {
         **business_data,
