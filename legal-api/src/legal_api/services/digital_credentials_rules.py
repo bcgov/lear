@@ -75,8 +75,15 @@ class DigitalCredentialsRulesService:
             'last_name': last_name,
         }
 
+    def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
+        return self.has_general_access(user) and self.has_specific_access(user, business)
+
     def has_general_access(self, user: User) -> bool:
         """Return Ture if general access rules are met."""
+        if not user:
+            logging.debug('No user is provided.')
+            return False
+
         is_login_source_bcsc = user.login_source == 'BCSC'
         if not is_login_source_bcsc:
             logging.debug('User is not logged in with BCSC.')
