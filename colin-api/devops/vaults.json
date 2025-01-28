@@ -6,7 +6,8 @@
             "test-oracle",
             "sentry",
             "jwt",
-            "launchdarkly"
+            "launchdarkly",
+            "entity-service-account"
         ]
     }
 ]
