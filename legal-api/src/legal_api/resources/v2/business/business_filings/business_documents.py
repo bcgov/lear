@@ -151,15 +151,15 @@ def _get_corp_name(business, filing):
     if business:
         return business.legal_name
 
-    name_request = (filing.filing_json
-                    .get('filing')
-                    .get(filing.filing_type)
-                    .get('nameRequest', {}))
-    if name_request.get('legalName'):
-        return name_request.get('legalName')
+    filing_json = filing.filing_json.get('filing', {})
+    name_request = filing_json.get(filing.filing_type, {}).get('nameRequest', {})
 
-    legal_type = name_request.get('legalType')
+    legal_name = name_request.get('legalName') or filing_json.get('business', {}).get('legalName')
+    if legal_name:
+        return legal_name
+
+    legal_type = name_request.get('legalType') or filing_json.get('business', {}).get('legal_type')
     if legal_type:
-        return Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+        return Business.BUSINESSES.get(legal_type, {}).get('numberedDescription', '')
 
     return ''
