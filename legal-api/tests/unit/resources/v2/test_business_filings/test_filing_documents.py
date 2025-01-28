@@ -725,6 +725,17 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
       },
      HTTPStatus.OK, '2017-10-01'
      ),
+    ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value,
+     'incorporationApplication', INCORPORATION, None, None, Filing.Status.WITHDRAWN,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'incorporationApplication':
+                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
+                    ]
+                    }
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
     ('bc_annual_report_completed', 'BC7654321', Business.LegalTypes.COMP.value,
      'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
@@ -1462,6 +1473,14 @@ def filer_action(filing_name, filing_json, meta_data, business):
 @pytest.mark.parametrize('test_name, temp_identifier, identifier, entity_type, filing_name, legal_filing, status, expected_msg, expected_http_code', [
     ('ben_ia_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, Filing.Status.PAID,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
+                    'legalFilings': [
+                        {'incorporationApplication': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/incorporationApplication'},
+                    ]}},
+     HTTPStatus.OK
+     ),
+    ('ben_ia_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP.value,
+     'incorporationApplication', INCORPORATION, Filing.Status.WITHDRAWN,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/receipt',
                     'legalFilings': [
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/Tb31yQIuBw/filings/1/documents/incorporationApplication'},

@@ -66,11 +66,11 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
 
     filing = Filing.get(identifier, filing_id)
     if filing and identifier.startswith('T') and filing.id != filing_id:
-        original_now_filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
+        withdrawn_filnig = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
                                                                 withdrawn_filing_id=filing.id,
                                                                 filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL)
-        if original_now_filing:
-            filing = original_now_filing
+        if withdrawn_filnig:
+            filing = withdrawn_filnig
 
     if not filing:
         return jsonify(
@@ -115,6 +115,7 @@ def _get_receipt(business: Business, filing: Filing, token):
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
             Filing.Status.PAID,
+            Filing.Status.WITHDRAWN
     ):
         return {}, HTTPStatus.BAD_REQUEST
 

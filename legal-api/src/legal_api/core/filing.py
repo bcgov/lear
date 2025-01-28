@@ -524,15 +524,15 @@ class Filing:  # pylint: disable=too-many-public-methods
         if filing.storage and filing.storage.payment_completion_date:
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
-        no_legal_filings_in_paid_status = [
+        no_legal_filings_in_paid_withdrawn_status = [
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
-        if filing.status == Filing.Status.PAID and \
-            not (filing.filing_type in no_legal_filings_in_paid_status
+        if filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) and \
+            not (filing.filing_type in no_legal_filings_in_paid_withdrawn_status
                  or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
                      business.legal_type in [
                          Business.LegalTypes.SOLE_PROP.value,
