@@ -20,7 +20,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003;
 from legal_api.errors import Error
 from legal_api.models import Filing
 from legal_api.models.db import db  # noqa: I001
-from legal_api.services.utils import get_int
+from legal_api.services.utils import get_bool, get_int
 from legal_api.utils.datetime import datetime as dt
 
 
@@ -31,11 +31,21 @@ def validate(filing: Dict) -> Optional[Error]:
 
     msg = []
 
-    withdrawn_filing_id_path: Final = '/filing/noticeOfWithdrawal/filingId'
+    base_path: Final = '/filing/noticeOfWithdrawal'
+
+    withdrawn_filing_id_path: Final = f'{base_path}/filingId'
     withdrawn_filing_id = get_int(filing, withdrawn_filing_id_path)
+
+    has_taken_effect = get_bool(filing, f'{base_path}/hasTakenEffect')
+    part_of_poa = get_bool(filing, f'{base_path}/partOfPoa')
+
     if not withdrawn_filing_id:
         msg.append({'error': babel('Filing Id is required.'), 'path': withdrawn_filing_id_path})
         return msg  # cannot continue validation without the to be withdrawn filing id
+
+    if has_taken_effect and part_of_poa:
+        msg.append({'error': babel('Cannot file a Notice of Withdrawal as the filing has a POA in effect.')})
+        return Error(HTTPStatus.BAD_REQUEST, msg)  # cannot continue validation if the filing has a POA in effect
 
     is_not_found, err_msg = validate_withdrawn_filing(withdrawn_filing_id)
     if is_not_found:
