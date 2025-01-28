@@ -66,11 +66,11 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
 
     filing = Filing.get(identifier, filing_id)
     if filing and identifier.startswith('T') and filing.id != filing_id:
-        withdrawn_filnig = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
+        withdrawn_filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
                                                              withdrawn_filing_id=filing.id,
                                                              filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL)
-        if withdrawn_filnig:
-            filing = withdrawn_filnig
+        if withdrawn_filing:
+            filing = withdrawn_filing
 
     if not filing:
         return jsonify(
