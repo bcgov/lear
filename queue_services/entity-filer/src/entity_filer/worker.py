@@ -199,7 +199,8 @@ async def publish_mras_email(filing: Filing):
             )
 
 
-async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
+async def process_filing(filing_msg: Dict,
+                         flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements, R0914
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
@@ -400,7 +401,10 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
                             business_profile.update_business_profile(business, filing_submission, filing_type)
 
-            if not is_system_filed_correction:
+            # This will be True only in the case where filing is filed by Jupyter notebook for BEN corrections
+            is_system_filed_correction = is_correction and is_system_filed_filing(filing_submission)
+
+            if not is_system_filed_correction(filing_submission):
                 try:
                     await publish_email_message(
                         qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
@@ -435,16 +439,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 )
 
 
-# This will be True only in the case where filing is filed by Jupyter notebook for BEN corrections
-def is_system_filed_correction(filing_submission, filing_type) -> bool:
+def is_system_filed_filing(filing_submission) -> bool:
     """Check if filing is filed by system.
 
     Filing filed using Jupyter Notebook will have 'certified_by' field = 'system'.
 
     """
-    is_correction = filing_type == FilingCore.FilingTypes.CORRECTION
     certified_by = filing_submission.json['filing']['header']['certifiedBy']
-    return is_correction and certified_by == 'system' and certified_by is not None
+    return certified_by == 'system' if certified_by else False
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
