@@ -861,11 +861,36 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     @staticmethod
     def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
-        """Return a Filing by it's payment token."""
-        q = db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id)
+        """Return a filing by the temp id and filing id (if applicable)."""
+        if not filing_id:
+            return db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id).one_or_none()
 
-        if filing_id:
-            q = q.filter(Filing.id == filing_id)
+        return (
+            db.session.query(Filing).filter(
+                db.or_(
+                    db.and_(
+                        Filing.id == filing_id,
+                        Filing.temp_reg == temp_reg_id
+                    ),
+                    db.and_(  # special case for NoW
+                        Filing.id == filing_id,
+                        Filing._filing_type == 'noticeOfWithdrawal',
+                        Filing.withdrawn_filing_id == db.session.query(Filing.id)
+                        .filter(Filing.temp_reg == temp_reg_id)
+                        .scalar_subquery()
+                    )
+                )
+            ).one_or_none())
+
+    @staticmethod
+    def get_temp_reg_filing_by_withdrawn_filing(filing_id: str, withdrawn_filing_id: str, filing_type: str = None):
+        """Return an temp reg Filing by withdrawn filing."""
+        q = db.session.query(Filing). \
+            filter(Filing.withdrawn_filing_id == withdrawn_filing_id). \
+            filter(Filing.id == filing_id)
+
+        if filing_type:
+            q = q.filter(Filing._filing_type == filing_type)
 
         filing = q.one_or_none()
         return filing
