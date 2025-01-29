@@ -400,9 +400,6 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
                             business_profile.update_business_profile(business, filing_submission, filing_type)
 
-            # This will be True only in the case where filing is filed by Jupyter notebook for BEN corrections
-            is_system_filed_correction = is_correction and is_system_filed_filing(filing_submission)
-            
             if not is_system_filed_correction:
                 try:
                     await publish_email_message(
@@ -437,15 +434,17 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     level='error'
                 )
 
-              
-def is_system_filed_filing(filing_submission) -> bool:
+
+# This will be True only in the case where filing is filed by Jupyter notebook for BEN corrections
+def is_system_filed_correction(filing_submission, filing_type) -> bool:
     """Check if filing is filed by system.
-    
+
     Filing filed using Jupyter Notebook will have 'certified_by' field = 'system'.
-    
+
     """
+    is_correction = filing_type == FilingCore.FilingTypes.CORRECTION
     certified_by = filing_submission.json['filing']['header']['certifiedBy']
-    return certified_by == 'system' if certified_by else False
+    return is_correction and certified_by == 'system' and certified_by is not None
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
