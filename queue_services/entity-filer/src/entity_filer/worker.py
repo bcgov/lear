@@ -404,7 +404,7 @@ async def process_filing(filing_msg: Dict,
             # This will be True only in the case where filing is filed by Jupyter notebook for BEN corrections
             is_system_filed_correction = is_correction and is_system_filed_filing(filing_submission)
 
-            if not is_system_filed_correction(filing_submission):
+            if not is_system_filed_correction:
                 try:
                     await publish_email_message(
                         qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)

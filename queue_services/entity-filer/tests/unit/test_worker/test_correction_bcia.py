@@ -856,7 +856,7 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
         assert [item.json for item in business.share_classes.all()[0].series] == share_class_json2['series']
         
 
-async def test_correction_ben_statement(app, mocker):
+async def test_correction_ben_statement(app, session, mocker):
     """Assert the worker process calls the BEN correction statement correctly."""
     
     identifier = 'BC1234567'
