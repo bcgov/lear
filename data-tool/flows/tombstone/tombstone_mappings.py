@@ -195,7 +195,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CONTU: 'continuationIn',
     EventFilings.FILE_CONTC: 'continuationIn',
 
-    EventFilings.FILE_CONVL: 'conversion',
+    EventFilings.FILE_CONVL: 'conversionLedger',
 
     EventFilings.FILE_CO_AR: 'correction',
     EventFilings.FILE_CO_BC: 'correction',
