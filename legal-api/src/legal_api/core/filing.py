@@ -454,6 +454,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             filing_storage.filing_type not in no_output_filing_types else None,
             'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
             'isFutureEffective': filing.is_future_effective,
+            'withdrawalPending': filing_storage.withdrawal_pending
         }
 
     @staticmethod
