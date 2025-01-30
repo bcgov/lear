@@ -1687,7 +1687,7 @@ def test_temp_document_list_for_now(mocker, session, client, jwt,
     withdrawn_filing.save()
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
-    filing._status = Filing.Status.PAID
+    filing._status = Filing.Status.COMPLETED
     filing._payment_completion_date = '2017-10-01'
     filing.temp_reg = None
     filing.withdrawn_filing_id = withdrawn_filing.id

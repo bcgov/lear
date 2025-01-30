@@ -531,7 +531,9 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
-        if filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) and \
+        if (filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) or
+                (filing.status == Filing.Status.COMPLETED and
+                    filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value)) and \
             not (filing.filing_type in no_legal_filings_in_paid_withdrawn_status
                  or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
                      business.legal_type in [
