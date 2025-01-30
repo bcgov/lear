@@ -62,6 +62,9 @@ class EventFilings(str, Enum):
     FILE_CONTU = 'FILE_CONTU'
     FILE_CONTC = 'FILE_CONTC'
 
+    # Conversion
+    FILE_CONVL = 'FILE_CONVL'
+
     # Correction
     FILE_CO_AR = 'FILE_CO_AR'
     FILE_CO_BC = 'FILE_CO_BC'
@@ -191,6 +194,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CONTI: 'continuationIn',
     EventFilings.FILE_CONTU: 'continuationIn',
     EventFilings.FILE_CONTC: 'continuationIn',
+
+    EventFilings.FILE_CONVL: 'conversionLedger',
 
     EventFilings.FILE_CO_AR: 'correction',
     EventFilings.FILE_CO_BC: 'correction',

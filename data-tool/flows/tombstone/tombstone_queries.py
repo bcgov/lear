@@ -109,7 +109,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num = 'BC0043406' -- lots of directors
 --    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637')
 --    and c.corp_num = 'BC0870626' -- lots of filings - IA, CoDs, ARs
---      and c.corp_num = 'BC0004969' -- lots of filings - IA, ARs, transition, alteration, COD, COA
+--    and c.corp_num = 'BC0004969' -- lots of filings - IA, ARs, transition, alteration, COD, COA
 --    and c.corp_num = 'BC0002567' -- lots of filings - IA, ARs, transition, COD
 --    and c.corp_num in ('BC0068889', 'BC0441359') -- test users mapping
 --    and c.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
@@ -119,6 +119,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --        'BC0548839', 'BC0541207', 'BC0462424', 'BC0021973', -- restoration
 --        'BC0034290', -- legacy other
 --        'C0870179', 'C0870343', 'C0883424', -- continuation in (C, CCC, CUL)
+--        'BC0019921', 'BC0010385', -- conversion ledger
 --        'BC0207097', 'BC0693625', 'BC0754041', 'BC0072008', 'BC0355241', 'BC0642237', 'BC0555891', 'BC0308683', -- correction
 --        'BC0688906', 'BC0870100', 'BC0267106', 'BC0873461', -- alteration
 --        'BC0536998', 'BC0574096', 'BC0663523' -- new mappings of CoA, CoD
@@ -128,7 +129,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --          'BC0747392'                 -- amalg - h
         -- TING
 --          'BC0593394',                -- amalg - r (with xpro)
---         'BC0805986', 'BC0561086',   -- amalg - v
+--          'BC0805986', 'BC0561086',   -- amalg - v
 --          'BC0543231', 'BC0358476'    -- amalg - h
 --    )
     and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
@@ -582,10 +583,13 @@ def get_filings_query(corp_num):
                 else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
             end as u_full_name,
             u.email_addr           as u_email_addr,
-            u.role_typ_cd          as u_role_typ_cd
+            u.role_typ_cd          as u_role_typ_cd,
+            --- conversion ledger
+            cl.ledger_title_txt    as cl_ledger_title_txt
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
+                 left outer join conv_ledger cl on cl.event_id = e.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'
