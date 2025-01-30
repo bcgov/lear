@@ -1687,10 +1687,24 @@ def test_temp_document_list_for_now(mocker, session, client, jwt,
     withdrawn_filing.save()
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
-    filing._status = Filing.Status.COMPLETED
+    filing._status = Filing.Status.PAID
     filing._payment_completion_date = '2017-10-01'
     filing.temp_reg = None
     filing.withdrawn_filing_id = withdrawn_filing.id
+    filing.save()
+
+    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
+    rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
+
+    # remove the filing ID
+    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+
+    assert rv.status_code == expected_http_code
+    assert rv_data == expected
+
+    filing._status = Filing.Status.PAID
     filing.save()
 
     mocker.patch('legal_api.core.filing.has_roles', return_value=True)
