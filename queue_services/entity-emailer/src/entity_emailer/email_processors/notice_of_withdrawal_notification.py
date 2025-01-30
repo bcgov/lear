@@ -21,7 +21,7 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, db
 
 from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
 
@@ -37,3 +37,7 @@ def process(email_info: dict, token: str) -> dict:
     # get template variables from filing
     filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     
+    # company name
+    # date and time of filing NoW
+    # effective date and time for NoW
+    # record to be withdrawn --> withdrawn filing display name
