@@ -25,7 +25,70 @@ from jinja2 import Template
 from legal_api.models import Business, Filing
 from legal_api.core.meta.filing import FilingMeta
 
-from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
+from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts, get_filing_document
+
+
+
+def _get_pdfs(
+        token:str,
+        business: dict,
+        filing: Filing,
+        filing_date_time: str,
+        effective_date: str) -> list:
+    """Get the PDFs for the Notice of Withdrawal output."""
+    pdfs = []
+    attach_order = 1
+    headers = {
+        'Accept': 'application/pdf',
+        'Authorization': f'Bearer {token}'
+    }
+
+    # add filing PDF
+    filing_pdf_type = 'noticeOfWithdrawal'
+    filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+    if filing_pdf_encoded:
+        pdfs.append(
+            {
+                'fileName': 'Notice of Withdrawal.pdf',
+                'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': str(attach_order)
+            }
+        )
+        attach_order += 1
+    
+    # add receipt PDF
+    corp_name = business.get('legalName')
+    if business.get('identifier').startswith('T'):
+        business_data = None
+    else:
+        business_data = Business.find_by_internal_id(filing.business_id)
+    receipt = requests.post(
+        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        json={
+            'corpName': corp_name,
+            'filingDateTime': filing_date_time,
+            'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
+            'filingIdentifier': str(filing.id),
+            'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
+        },
+        headers=headers
+    )
+    if receipt.status_code != HTTPStatus.CREATED:
+        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+    else:
+        receipt_encoded = base64.b64encode(receipt.content)
+        pdfs.append(
+            {
+                'fileName': 'Receipt.pdf',
+                'fileBytes': receipt_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': str(attach_order)
+            }
+        )
+        attach_order += 1
+
+    return pdfs
 
 
 def process(email_info: dict, token: str) -> dict:
@@ -33,14 +96,13 @@ def process(email_info: dict, token: str) -> dict:
     logger.debug('notice_of_withdrawal_notification: %s', email_info)
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
-    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
     # do not process if NoW filing status is not COMPLETED
     if status == Filing.Status.COMPLETED.value:
         # get template variables from filing
         filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
         
         # company name
-        company_name = business['legalName']
+        company_name = business.get('legalName', None)
         # record to be withdrawn --> withdrawn filing display name
         withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
         withdrawn_filing_display_name = FilingMeta.get_display_name(
@@ -55,6 +117,7 @@ def process(email_info: dict, token: str) -> dict:
         # render template with vars
         jnja_template = Template(filled_template, autoescape=True)
         filing_data = (filing.json)['filing'][f'{filing_type}']
+        filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
         html_out = jnja_template.render(
             business=business,
             filing=filing_data,
@@ -70,17 +133,42 @@ def process(email_info: dict, token: str) -> dict:
         )
 
         # get attachments
+        pdfs = _get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
+        # get recipients
+        identifier = filing.filing_json['filing']['business']['identifier']
+        recipients = _get_contacts(identifier, token, withdrawn_filing)
+        recipients = list(set(recipients))
+        recipients = ', '.join(filter(None, recipients)).strip()
+
+        # assign subject
+        subject = 'Notice of Withdrawal Documents from the Business Registry'
+
+        legal_name = business.get('legalName', None)
+        legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
+        subject = f'{legal_name} - {subject}' if legal_name else subject
+
+        return {
+        'recipients': recipients,
+        'requestBy': 'BCRegistries@gov.bc.ca',
+        'content': {
+            'subject': subject,
+            'body': f'{html_out}',
+            'attachments': pdfs
+        }
+    }
+
+    return {}
+
+
+def _get_contacts(identifier, token, withdrawn_filing):
+    recipients = []
+    if identifier.startswith('T'):
+        # get from withdrawn filing
+        filing_type = withdrawn_filing.filing_type
+        recipients.append(withdrawn_filing.filing_json['filing'][filing_type]['contactPoint']['email'])
     else:
-        return {}
-
-
-def _get_pdfs(
-        token:str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
-    """Get the PDFs for the Notice of Withdrawal output."""
-    pdfs = []
+        recipients.append(get_recipient_from_auth(identifier, token))
     
+    return recipients
+
