@@ -1704,7 +1704,7 @@ def test_temp_document_list_for_now(mocker, session, client, jwt,
     assert rv.status_code == expected_http_code
     assert rv_data == expected
 
-    filing._status = Filing.Status.PAID
+    filing._status = Filing.Status.COMPLETED
     filing.save()
 
     mocker.patch('legal_api.core.filing.has_roles', return_value=True)
