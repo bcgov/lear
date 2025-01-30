@@ -117,7 +117,7 @@ def clean_snapshot_filings_data(data: dict) -> dict:
 
 
 @task(name='3.1-Corp-Snapshot-Migrate-Task')
-def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
+def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dict) -> int:
     """Migrate corp snapshot."""
     # Note: The business info is partially loaded for businesses table now. And it will be fully
     # updated by the following placeholder historical filings migration. But it depends on the
@@ -169,6 +169,13 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict) -> int:
         resolution['business_id'] = business_id
         load_data(conn, 'resolutions', resolution)
 
+    for comment in tombstone_data['comments']:
+        comment['business_id'] = business_id
+        username = comment['staff_id']
+        staff_id = users_mapper.get(username)
+        comment['staff_id'] = staff_id
+        load_data(conn, 'comments', comment)
+
     return business_id
 
 
@@ -201,6 +208,15 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         # load amalgamation snapshot linked to the current filing
         if amalgamation_data := data['amalgamations']:
             load_amalgamation_snapshot(conn, amalgamation_data, business_id, filing_id)
+
+        if comments_data := data['comments']:
+            for comment in comments_data:
+                comment['business_id'] = business_id
+                comment['filing_id'] = filing_id
+                username = comment['staff_id']
+                staff_id = users_mapper.get(username)
+                comment['staff_id'] = staff_id
+                load_data(conn, 'comments', comment)
 
     # load epoch filing
     epoch_filing_data = build_epoch_filing(business_id)
@@ -302,7 +318,7 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
     with lear_engine.connect() as lear_conn:
         transaction = lear_conn.begin()
         try:
-            business_id = load_corp_snapshot(lear_conn, clean_data)
+            business_id = load_corp_snapshot(lear_conn, clean_data, users_mapper)
             load_placeholder_filings(lear_conn, clean_data, business_id, users_mapper)
             update_auth(lear_conn, config, corp_num, clean_data)
             transaction.commit()
