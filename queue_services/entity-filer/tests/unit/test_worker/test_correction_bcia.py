@@ -228,13 +228,7 @@ BC_CORRECTION_SHORT = {
             'details': 'First correction',
             'correctedFilingId': '123456',
             'correctedFilingType': 'incorporationApplication',
-            'comment': f'''Correction for Incorporation Application filed on 2025-01-01 \n
-                        BC benefit company statement contained in notice of articles as required under section 
-                        51.992 of the Business Corporations Act corrected from “This company is a benefit company 
-                        and, as such, has purposes that include conducting its business in a responsible and 
-                        sustainable manner and promoting one or more public benefits” to 
-                        “This company is a benefit company and, as such, is committed to conducting its business in 
-                        a responsible and sustainable manner and promoting one or more public benefits”.'''
+            'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system'
         }
     }
 }
@@ -884,7 +878,6 @@ async def test_correction_ben_statement(app, session, mocker):
     await process_filing(filing_msg, app)
     
     final_filing = Filing.find_by_id(filing_id)
-    business = Business.find_by_internal_id(business_id)
 
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1
