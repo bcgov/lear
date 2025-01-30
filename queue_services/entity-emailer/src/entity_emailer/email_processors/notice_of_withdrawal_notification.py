@@ -14,6 +14,7 @@
 """Email processing rules and actions for Notice of Withdrawal notifications"""
 import base64
 import re
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -21,7 +22,8 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing, db
+from legal_api.models import Business, Filing
+from legal_api.core.meta.filing import FilingMeta
 
 from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
 
@@ -31,13 +33,54 @@ def process(email_info: dict, token: str) -> dict:
     logger.debug('notice_of_withdrawal_notification: %s', email_info)
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
+    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
     # do not process if NoW filing status is not COMPLETED
-    if status is not Filing.Status.COMPLETED:
+    if status == Filing.Status.COMPLETED.value:
+        # get template variables from filing
+        filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+        
+        # company name
+        company_name = business['legalName']
+        # record to be withdrawn --> withdrawn filing display name
+        withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
+        withdrawn_filing_display_name = FilingMeta.get_display_name(
+            business['legalType'],
+            withdrawn_filing.filing_type,
+            withdrawn_filing.filing_sub_type
+        )
+        template = Path(
+            f'{current_app.config.get("TEMPLATE_PATH")}/NOW-COMPLETED.html'
+        ).read_text()
+        filled_template = substitute_template_parts(template)
+        # render template with vars
+        jnja_template = Template(filled_template, autoescape=True)
+        filing_data = (filing.json)['filing'][f'{filing_type}']
+        html_out = jnja_template.render(
+            business=business,
+            filing=filing_data,
+            header=(filing.json)['filing']['header'],
+            company_name=company_name,
+            filing_date_time=leg_tmz_filing_date,
+            effective_date_time=leg_tmz_effective_date,
+            withdrawnFilingType=withdrawn_filing_display_name,
+            entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
+            (filing.json)['filing']['business'].get('identifier', ''),
+            email_header=filing_name.upper(),
+            filing_type=filing_type
+        )
+
+        # get attachments
+
+    else:
         return {}
-    # get template variables from filing
-    filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+
+
+def _get_pdfs(
+        token:str,
+        business: dict,
+        filing: Filing,
+        filing_date_time: str,
+        effective_date: str) -> list:
+    """Get the PDFs for the Notice of Withdrawal output."""
+    pdfs = []
     
-    # company name
-    # date and time of filing NoW
-    # effective date and time for NoW
-    # record to be withdrawn --> withdrawn filing display name
