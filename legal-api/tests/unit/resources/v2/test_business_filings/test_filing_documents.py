@@ -1703,3 +1703,17 @@ def test_temp_document_list_for_now(mocker, session, client, jwt,
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
+
+    filing._status = Filing.Status.COMPLETED
+    filing.save()
+
+    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
+    rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
+
+    # remove the filing ID
+    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+
+    assert rv.status_code == expected_http_code
+    assert rv_data == expected

@@ -79,7 +79,8 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
         ), HTTPStatus.NOT_FOUND
 
     if not legal_filing_name and not file_key:
-        if identifier.startswith('T') and filing.status == Filing.Status.COMPLETED:
+        if identifier.startswith('T') and filing.status == Filing.Status.COMPLETED and \
+                filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
             return {'documents': {}}, HTTPStatus.OK
         return _get_document_list(business, filing)
 
