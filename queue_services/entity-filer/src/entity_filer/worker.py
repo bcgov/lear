@@ -199,8 +199,8 @@ async def publish_mras_email(filing: Filing):
             )
 
 
-async def process_filing(filing_msg: Dict,
-                         flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements, too-many-locals
+async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+                         flask_app: Flask):
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
