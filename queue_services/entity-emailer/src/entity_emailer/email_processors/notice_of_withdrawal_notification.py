@@ -68,7 +68,7 @@ def _get_pdfs(
         json={
             'corpName': corp_name,
             'filingDateTime': filing_date_time,
-            'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
+            'effectiveDateTime': effective_date if effective_date else '',
             'filingIdentifier': str(filing.id),
             'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
         },
@@ -101,8 +101,11 @@ def process(email_info: dict, token: str) -> dict:
         # get template variables from filing
         filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
         
-        # company name
-        company_name = business.get('legalName', None)
+        # display company name only for existing businesses
+        if business.get('identifier').startswith('T'):
+            company_name = None
+        else:
+            company_name = business.get('legalName')
         # record to be withdrawn --> withdrawn filing display name
         withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
         withdrawn_filing_display_name = FilingMeta.get_display_name(

@@ -25,19 +25,21 @@
                     [[20px.html]]
                     [[divider.html]]
                     [[20px.html]]
-                    <p class="now-filing-info-title">Company Name:</p>
-                    <p class="now-filing-info">{{ company_name }}</p>  
-                    [[16px.html]]
+                    {% if company_name %}
+                        <p class="now-filing-info-title">Company Name:</p>
+                        <p>{{ company_name }}</p>  
+                        [[16px.html]]
+                    {% endif %}
                     <p class="now-filing-info-title">Date and Time of Filing:</p>
-                    <p class="now-filing-info">{{ filing_date_time}}</p>
+                    <p>{{ filing_date_time}}</p>
 
                     [[16px.html]]
                     <p class="now-filing-info-title">Effective Date and Time:</p>
-                    <p class="now-filing-info">{{ effective_date_time}}</p>
+                    <p>{{ effective_date_time}}</p>
 
                     [[16px.html]]
                     <p class="now-filing-info-title">Record to be Withdrawn:</p>
-                    <p class="now-filing-info">{{ withdrawnFilingType }}</p>
+                    <p>{{ withdrawnFilingType }}</p>
                     [[20px.html]]
                     [[divider.html]]
                     [[20px.html]]
@@ -48,11 +50,7 @@
                         <li>Receipt</li>
                     </ul>
                     
-                    [[whitespace-16px.html]]
                     [[business-dashboard-link.html]]
-
-                    [[20px.html]]
-                    [[divider.html]]
                     
                     [[20px.html]]
                     [[footer.html]]
