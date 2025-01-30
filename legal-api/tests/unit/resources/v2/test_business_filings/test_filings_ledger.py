@@ -135,6 +135,7 @@ def test_ledger_search(session, client, jwt):
     assert 'submittedDate' in alteration
     assert 'submitter' in alteration
     assert 'displayLedger' in alteration
+    assert 'withdrawalPending' in alteration
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
