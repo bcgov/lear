@@ -32,68 +32,6 @@ from entity_emailer.email_processors import (
 )
 
 
-def _get_pdfs(
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
-    """Get the PDFs for the Notice of Withdrawal output."""
-    pdfs = []
-    attach_order = 1
-    headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
-    }
-
-    # add filing PDF
-    filing_pdf_type = 'noticeOfWithdrawal'
-    filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
-    if filing_pdf_encoded:
-        pdfs.append(
-            {
-                'fileName': 'Notice of Withdrawal.pdf',
-                'fileBytes': filing_pdf_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': str(attach_order)
-            }
-        )
-        attach_order += 1
-
-    # add receipt PDF
-    corp_name = business.get('legalName')
-    if business.get('identifier').startswith('T'):
-        business_data = None
-    else:
-        business_data = Business.find_by_internal_id(filing.business_id)
-    receipt = requests.post(
-        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-        json={
-            'corpName': corp_name,
-            'filingDateTime': filing_date_time,
-            'effectiveDateTime': effective_date if effective_date else '',
-            'filingIdentifier': str(filing.id),
-            'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
-        },
-        headers=headers
-    )
-    if receipt.status_code != HTTPStatus.CREATED:
-        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
-    else:
-        receipt_encoded = base64.b64encode(receipt.content)
-        pdfs.append(
-            {
-                'fileName': 'Receipt.pdf',
-                'fileBytes': receipt_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': str(attach_order)
-            }
-        )
-        attach_order += 1
-
-    return pdfs
-
-
 def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-locals
     """Build the email for Notice of Withdrawal notification."""
     logger.debug('notice_of_withdrawal_notification: %s', email_info)
@@ -166,6 +104,65 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         }
 
     return {}
+
+
+def _get_pdfs(
+        token: str,
+        business: dict,
+        filing: Filing,
+        filing_date_time: str,
+        effective_date: str) -> list:
+    """Get the PDFs for the Notice of Withdrawal output."""
+    pdfs = []
+    attach_order = 1
+    headers = {
+        'Accept': 'application/pdf',
+        'Authorization': f'Bearer {token}'
+    }
+
+    # add filing PDF
+    filing_pdf_type = 'noticeOfWithdrawal'
+    filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+    if filing_pdf_encoded:
+        pdfs.append(
+            {
+                'fileName': 'Notice of Withdrawal.pdf',
+                'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': str(attach_order)
+            }
+        )
+        attach_order += 1
+
+    # add receipt PDF
+    corp_name = business.get('legalName')
+    if business.get('identifier').startswith('T'):
+        business_data = None
+    else:
+        business_data = Business.find_by_internal_id(filing.business_id)
+    receipt = requests.post(
+        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        json={
+            'corpName': corp_name,
+            'filingDateTime': filing_date_time,
+            'effectiveDateTime': effective_date if effective_date else '',
+            'filingIdentifier': str(filing.id),
+            'businessNumber': business_data.tax_id if business_data and business_data.tax_id else ''
+        }, headers=headers)
+
+    if receipt.status_code != HTTPStatus.CREATED:
+        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+    else:
+        receipt_encoded = base64.b64encode(receipt.content)
+        pdfs.append(
+            {
+                'fileName': 'Receipt.pdf',
+                'fileBytes': receipt_encoded.decode('utf-8'),
+                'fileUrl': '',
+                'attachOrder': str(attach_order)
+            })
+        attach_order += 1
+    return pdfs
 
 
 def _get_contacts(identifier, token, withdrawn_filing):
