@@ -11,26 +11,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Unit Tests for Notice of Withdrawal email processor"""
-import copy
+"""The Unit Tests for Notice of Withdrawal email processor."""
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business, Filing, RegistrationBootstrap
-from tests.unit import create_business, prep_notice_of_withdraw_filing, create_future_effective_filing
-from registry_schemas.example_data import(
-    INCORPORATION,
-    CONTINUATION_IN,
+from legal_api.models import RegistrationBootstrap
+from registry_schemas.example_data import (
+    ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
     CHANGE_OF_ADDRESS,
-    ALTERATION_FILING_TEMPLATE,
-    DISSOLUTION
+    CONTINUATION_IN,
+    DISSOLUTION,
+    INCORPORATION,
 )
 
 from entity_emailer.email_processors import notice_of_withdrawal_notification
+from tests.unit import create_business, create_future_effective_filing, prep_notice_of_withdraw_filing
+
 
 @pytest.mark.parametrize(
-        'status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp',[
+        'status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp', [
             ('COMPLETED', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True),
             ('PAID', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True),
             ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'continuationIn', CONTINUATION_IN, True),
@@ -41,8 +41,9 @@ from entity_emailer.email_processors import notice_of_withdrawal_notification
             ('COMPLETED', '1234567 B.C. INC.', 'CBEN', 'dissolution', DISSOLUTION, False)
         ]
 )
-def test_notice_of_withdrawal_notification(app, session, status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp):
-    """Assert that the notice of withdrawal email processor works as expected"""
+def test_notice_of_withdrawal_notification(
+        app, session, status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp):
+    """Assert that the notice of withdrawal email processor works as expected."""
     business = None
     if is_temp:
         identifier = 'Tb31yQIuBw'
@@ -55,7 +56,8 @@ def test_notice_of_withdrawal_notification(app, session, status, legal_name, leg
 
     business_id = business.id if business else None
     # setup withdrawn filing (FE filing) for NoW
-    fe_filing = create_future_effective_filing(identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json, is_temp, business_id)
+    fe_filing = create_future_effective_filing(
+        identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json, is_temp, business_id)
     now_filing = prep_notice_of_withdraw_filing(identifier, '1', legal_type, legal_name, business_id, fe_filing)
     token = 'token'
 
@@ -73,7 +75,7 @@ def test_notice_of_withdrawal_notification(app, session, status, legal_name, leg
                     assert email['content']['subject'] == 'Notice of Withdrawal filed Successfully'
                 else:
                     assert email['content']['subject'] == f'{legal_name} - Notice of Withdrawal filed Successfully'
-                
+
                 assert 'recipient@email.com' in email['recipients']
                 assert email['content']['body']
                 assert email['content']['attachments'] == []
@@ -82,4 +84,3 @@ def test_notice_of_withdrawal_notification(app, session, status, legal_name, leg
                 assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
                 assert mock_get_pdfs.call_args[0][1]['legalType'] == legal_type
                 assert mock_get_pdfs.call_args[0][2] == now_filing
-

@@ -699,8 +699,14 @@ def prep_continuation_in_filing(session, identifier, payment_id, option):
     return filing
 
 
-def prep_notice_of_withdraw_filing(identifier, payment_id, legal_type, legal_name, business_id, withdrawn_filing:Filing):
-    """Return a new Notice of Withdrawal filing prepped for email notification"""
+def prep_notice_of_withdraw_filing(
+        identifier,
+        payment_id,
+        legal_type,
+        legal_name,
+        business_id,
+        withdrawn_filing):
+    """Return a new Notice of Withdrawal filing prepped for email notification."""
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'noticeOfWithdrawal'
 
@@ -727,7 +733,15 @@ def prep_notice_of_withdraw_filing(identifier, payment_id, legal_type, legal_nam
     return filing
 
 
-def create_future_effective_filing(identifier, legal_type, legal_name, filing_type, filing_json, is_temp, business_id=None):
+def create_future_effective_filing(
+        identifier,
+        legal_type,
+        legal_name,
+        filing_type,
+        filing_json,
+        is_temp,
+        business_id=None):
+    """Create a future effective filing."""
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = filing_type
     future_effective_date = EPOCH_DATETIME + timedelta(days=5)
@@ -748,7 +762,7 @@ def create_future_effective_filing(identifier, legal_type, legal_name, filing_ty
         }
         fe_filing_json = copy.deepcopy(filing_json)
         filing_template['filing'][filing_type] = fe_filing_json
-    
+
     fe_filing = Filing()
     fe_filing.filing_date = EPOCH_DATETIME
     fe_filing.filing_json = filing_template

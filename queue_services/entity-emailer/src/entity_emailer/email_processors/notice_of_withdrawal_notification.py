@@ -11,10 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Email processing rules and actions for Notice of Withdrawal notifications"""
+"""Email processing rules and actions for Notice of Withdrawal notifications."""
 import base64
 import re
-from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -22,15 +21,19 @@ import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing
 from legal_api.core.meta.filing import FilingMeta
+from legal_api.models import Business, Filing
 
-from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts, get_filing_document
-
+from entity_emailer.email_processors import (
+    get_filing_document,
+    get_filing_info,
+    get_recipient_from_auth,
+    substitute_template_parts,
+)
 
 
 def _get_pdfs(
-        token:str,
+        token: str,
         business: dict,
         filing: Filing,
         filing_date_time: str,
@@ -56,7 +59,7 @@ def _get_pdfs(
             }
         )
         attach_order += 1
-    
+
     # add receipt PDF
     corp_name = business.get('legalName')
     if business.get('identifier').startswith('T'):
@@ -91,8 +94,8 @@ def _get_pdfs(
     return pdfs
 
 
-def process(email_info: dict, token: str) -> dict:
-    """Build the email for Notice of Withdrawal notification"""
+def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-locals
+    """Build the email for Notice of Withdrawal notification."""
     logger.debug('notice_of_withdrawal_notification: %s', email_info)
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
@@ -100,7 +103,7 @@ def process(email_info: dict, token: str) -> dict:
     if status == Filing.Status.COMPLETED.value:
         # get template variables from filing
         filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
-        
+
         # display company name only for existing businesses
         if business.get('identifier').startswith('T'):
             company_name = None
@@ -153,14 +156,14 @@ def process(email_info: dict, token: str) -> dict:
             subject = f'{legal_name} - {subject}' if legal_name else subject
 
         return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': pdfs
+            'recipients': recipients,
+            'requestBy': 'BCRegistries@gov.bc.ca',
+            'content': {
+                'subject': subject,
+                'body': f'{html_out}',
+                'attachments': pdfs
+            }
         }
-    }
 
     return {}
 
@@ -179,6 +182,5 @@ def _get_contacts(identifier, token, withdrawn_filing):
                     break
     else:
         recipients.append(get_recipient_from_auth(identifier, token))
-    
-    return recipients
 
+    return recipients
