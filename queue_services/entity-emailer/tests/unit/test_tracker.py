@@ -355,6 +355,14 @@ from . import create_mock_message  # noqa: I003
                  'option': 'COMPLETED',
                  'filingId': '111222335'
              }
+         }),
+         ('noticeOfWithdrawal_COMPLETED_111222335',
+         {
+             'email': {
+                 'type': 'noticeOfWithdrawal',
+                 'option': 'COMPLETED',
+                 'filingId': '111222335'
+             }
          })
     ]
 )
