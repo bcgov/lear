@@ -149,7 +149,8 @@ def process(email_info: dict, token: str) -> dict:
 
         legal_name = business.get('legalName', None)
         legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
-        subject = f'{legal_name} - {subject}' if legal_name else subject
+        if not identifier.startswith('T'):
+            subject = f'{legal_name} - {subject}' if legal_name else subject
 
         return {
         'recipients': recipients,
