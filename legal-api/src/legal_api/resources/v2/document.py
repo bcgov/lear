@@ -13,6 +13,7 @@
 # limitations under the License.
 """Module for handling Minio document operations."""
 
+import re
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, jsonify
@@ -95,10 +96,25 @@ def delete_document(document_service_id: str):
 
     return DocumentRecordService.delete_document(document_service_id), HTTPStatus.OK
 
-@bp.route('/drs/<string:document_class>/<string:document_service_id>', methods=['GET'])
+@bp.route('/drs/<string:document_class>/<string:document_key>', methods=['GET'])
 @cross_origin(origins='*')
 @jwt.requires_auth
-def get_document(document_class: str, document_service_id: str):
-    """Get document file from Document Record Service."""
+def get_document(document_class: str, document_key: str):
+    """Get document file from Minio or Document Record Service."""
+    drs_id_pattern = r"^DS\d{10}$"
 
-    return DocumentRecordService.get_document(document_class, document_service_id), HTTPStatus.OK
+    try:
+        if re.match(drs_id_pattern, document_key):
+            return DocumentRecordService.get_document(document_class, document_key), HTTPStatus.OK
+        else:
+            response = MinioService.get_file(document_key)
+            return current_app.response_class(
+                    response=response.data,
+                    status=response.status,
+                    mimetype='application/pdf'
+                )
+    except Exception as e:
+        current_app.logger.error(f'Error getting file {document_key}: {e}')
+        return jsonify(
+            message=f'Error getting file {document_key}.'
+        ), HTTPStatus.INTERNAL_SERVER_ERROR
