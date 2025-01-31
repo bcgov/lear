@@ -145,7 +145,7 @@ def process(email_info: dict, token: str) -> dict:
         recipients = ', '.join(filter(None, recipients)).strip()
 
         # assign subject
-        subject = 'Notice of Withdrawal Documents from the Business Registry'
+        subject = 'Notice of Withdrawal filed Successfully'
 
         legal_name = business.get('legalName', None)
         legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
@@ -167,9 +167,15 @@ def process(email_info: dict, token: str) -> dict:
 def _get_contacts(identifier, token, withdrawn_filing):
     recipients = []
     if identifier.startswith('T'):
-        # get from withdrawn filing
+        # get from withdrawn filing (FE new business filing)
         filing_type = withdrawn_filing.filing_type
         recipients.append(withdrawn_filing.filing_json['filing'][filing_type]['contactPoint']['email'])
+
+        for party in withdrawn_filing.filing_json['filing'][filing_type]['parties']:
+            for role in party['roles']:
+                if role['roleType'] == 'Completing Party':
+                    recipients.append(party['officer'].get('email'))
+                    break
     else:
         recipients.append(get_recipient_from_auth(identifier, token))
     
