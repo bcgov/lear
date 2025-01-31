@@ -22,7 +22,7 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.services import MinioService, flags, namex
+from legal_api.services import MinioService, flags, namex, DocumentRecordService
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -327,5 +327,14 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
           is_region_for_us_required and
           not pycountry.subdivisions.get(code=f'{country_code}-{region}')):
         msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
+
+    return msg
+
+def validate_file_on_drs(document_class: str, document_service_id: str, path) -> bool:
+    """Validate file existence on DRS"""
+    msg = []
+    doc = DocumentRecordService.get_document(document_class, document_service_id)
+    if not bool(doc.get("documentURL")):
+        msg.append({'error': 'File does not exist on Document Record Service', 'path': path})
 
     return msg

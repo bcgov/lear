@@ -182,6 +182,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     STAGE_1_DELAY = int(os.getenv('STAGE_1_DELAY', '42'))
     STAGE_2_DELAY = int(os.getenv('STAGE_2_DELAY', '30'))
 
+    # Document Record Service Settings
+    DRS_BASE_URL = os.getenv('DRS_BASE_URL', '')
+    DRS_ACCOUNT_ID = os.getenv('DRS_ACCOUNT_ID', '')
+    DRS_X_API_KEY = os.getenv('DRS_X_API_KEY', '')
+
     TESTING = False
     DEBUG = False
 
