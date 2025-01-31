@@ -117,7 +117,7 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing'][filing_type] == filing_json
 
 def test_get_withdrawn_temp_business_filing(session, client, jwt):
-    """Assert that a FE withdrawn temp business returns the filing with the NoW embedded when the status is WITHDRAWN."""
+    """Assert that a withdrawn FE temp business returns the filing with the NoW embedded once available."""
 
     # set-up withdrawn boostrap FE filing
     today = datetime.utcnow().date()
@@ -157,23 +157,26 @@ def test_get_withdrawn_temp_business_filing(session, client, jwt):
     now_filing = factory_filing(None, now_json_data)
     now_filing.withdrawn_filing_id = withdrawn_filing_id
     now_filing.save()
-
-    # fetch filings when withdrawn filing status is PAID
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
-
-    # validate that the NoW is not embedded in the withdrawn filing
-    assert 'noticeOfWithdrawal' not in rv.json['filing']
-
-    # set status to WITHDRAWN
-    new_business_filing._status = Filing.Status.WITHDRAWN.value
+    new_business_filing.withdrawal_pending = True
     new_business_filing.save()
 
-    # fetch filings when withdrawn filing status is WITHDRAWN
+    # fetch filings once the NoW has been submitted
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    # validate that the NoW is now embedded in the withdrawn filing
+    # validate that the NoW is embedded in the withdrawn filing
+    assert 'noticeOfWithdrawal' in rv.json['filing']
+
+    # withdraw bootstrap filing 
+    new_business_filing._status = Filing.Status.WITHDRAWN.value
+    new_business_filing.withdrawal_pending = False
+    new_business_filing.save()
+
+    # fetch filings after the bootstrap filing has been withdrawn
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    # validate that the NoW is still embedded in the withdrawn filing
     assert 'noticeOfWithdrawal' in rv.json['filing']
     assert rv.json['filing']['noticeOfWithdrawal'] is not None
 
