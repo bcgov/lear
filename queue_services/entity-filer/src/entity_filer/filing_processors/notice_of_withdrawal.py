@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the Notice of Withdrawal filing."""
-from typing import Dict
-
 import datetime
+from typing import Dict
 
 from legal_api.models import Filing
 
@@ -34,7 +33,7 @@ def process(
         filings.update_filing_court_order(filing_submission, court_order)
     filing_meta.notice_of_withdrawal = {**filing_meta.notice_of_withdrawal,
                                         'withdrawnDate': datetime.datetime.utcnow()}
-    
+
     withdrawn_filing_id = now_filing.get('filingId')
     withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
 
@@ -43,7 +42,6 @@ def process(
             withdrawn_filing.status == Filing.Status.WITHDRAWN.value:
         return
 
-    withdrawn_filing._status = Filing.Status.WITHDRAWN.value
+    withdrawn_filing._status = Filing.Status.WITHDRAWN.value  # pylint: disable=protected-access
     withdrawn_filing.withdrawal_pending = False
     withdrawn_filing.save_to_session()
-    print('notice of withdrawal', withdrawn_filing.id, withdrawn_filing.status, withdrawn_filing._status)
