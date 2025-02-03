@@ -32,11 +32,9 @@ from tests.unit import create_business, create_future_effective_filing, prep_not
 @pytest.mark.parametrize(
         'status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp', [
             ('COMPLETED', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True),
-            ('PAID', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True),
             ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'continuationIn', CONTINUATION_IN, True),
             ('COMPLETED', 'test business', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True),
             ('COMPLETED', 'test business', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
-            ('PAID', 'test business', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
             ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False),
             ('COMPLETED', '1234567 B.C. INC.', 'CBEN', 'dissolution', DISSOLUTION, False)
         ]
@@ -68,19 +66,17 @@ def test_notice_of_withdrawal_notification(
             email = notice_of_withdrawal_notification.process(
                 {'filingId': now_filing.id, 'type': 'noticeOfWithdrawal', 'option': status}, token
             )
-            if status != 'COMPLETED':
-                assert email == {}
-            else:
-                if is_temp:
-                    assert email['content']['subject'] == 'Notice of Withdrawal filed Successfully'
-                else:
-                    assert email['content']['subject'] == f'{legal_name} - Notice of Withdrawal filed Successfully'
 
-                assert 'recipient@email.com' in email['recipients']
-                assert email['content']['body']
-                assert email['content']['attachments'] == []
-                assert mock_get_pdfs.call_args[0][0] == token
-                assert mock_get_pdfs.call_args[0][1]['identifier'] == identifier
-                assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
-                assert mock_get_pdfs.call_args[0][1]['legalType'] == legal_type
-                assert mock_get_pdfs.call_args[0][2] == now_filing
+            if is_temp:
+                assert email['content']['subject'] == 'Notice of Withdrawal filed Successfully'
+            else:
+                assert email['content']['subject'] == f'{legal_name} - Notice of Withdrawal filed Successfully'
+
+            assert 'recipient@email.com' in email['recipients']
+            assert email['content']['body']
+            assert email['content']['attachments'] == []
+            assert mock_get_pdfs.call_args[0][0] == token
+            assert mock_get_pdfs.call_args[0][1]['identifier'] == identifier
+            assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
+            assert mock_get_pdfs.call_args[0][1]['legalType'] == legal_type
+            assert mock_get_pdfs.call_args[0][2] == now_filing

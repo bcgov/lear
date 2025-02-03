@@ -36,74 +36,71 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     """Build the email for Notice of Withdrawal notification."""
     logger.debug('notice_of_withdrawal_notification: %s', email_info)
     # get template and fill in parts
-    filing_type, status = email_info['type'], email_info['option']
-    # do not process if NoW filing status is not COMPLETED
-    if status == Filing.Status.COMPLETED.value:
-        # get template variables from filing
-        filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+    filing_type = email_info['type']
 
-        # display company name only for existing businesses
-        if business.get('identifier').startswith('T'):
-            company_name = None
-        else:
-            company_name = business.get('legalName')
-        # record to be withdrawn --> withdrawn filing display name
-        withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
-        withdrawn_filing_display_name = FilingMeta.get_display_name(
-            business['legalType'],
-            withdrawn_filing.filing_type,
-            withdrawn_filing.filing_sub_type
-        )
-        template = Path(
-            f'{current_app.config.get("TEMPLATE_PATH")}/NOW-COMPLETED.html'
-        ).read_text()
-        filled_template = substitute_template_parts(template)
-        # render template with vars
-        jnja_template = Template(filled_template, autoescape=True)
-        filing_data = (filing.json)['filing'][f'{filing_type}']
-        filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
-        html_out = jnja_template.render(
-            business=business,
-            filing=filing_data,
-            header=(filing.json)['filing']['header'],
-            company_name=company_name,
-            filing_date_time=leg_tmz_filing_date,
-            effective_date_time=leg_tmz_effective_date,
-            withdrawnFilingType=withdrawn_filing_display_name,
-            entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-            (filing.json)['filing']['business'].get('identifier', ''),
-            email_header=filing_name.upper(),
-            filing_type=filing_type
-        )
+    # get template variables from filing
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
 
-        # get attachments
-        pdfs = _get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
+    # display company name only for existing businesses
+    if business.get('identifier').startswith('T'):
+        company_name = None
+    else:
+        company_name = business.get('legalName')
+    # record to be withdrawn --> withdrawn filing display name
+    withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
+    withdrawn_filing_display_name = FilingMeta.get_display_name(
+        business['legalType'],
+        withdrawn_filing.filing_type,
+        withdrawn_filing.filing_sub_type
+    )
+    template = Path(
+        f'{current_app.config.get("TEMPLATE_PATH")}/NOW-COMPLETED.html'
+    ).read_text()
+    filled_template = substitute_template_parts(template)
+    # render template with vars
+    jnja_template = Template(filled_template, autoescape=True)
+    filing_data = (filing.json)['filing'][f'{filing_type}']
+    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+    html_out = jnja_template.render(
+        business=business,
+        filing=filing_data,
+        header=(filing.json)['filing']['header'],
+        company_name=company_name,
+        filing_date_time=leg_tmz_filing_date,
+        effective_date_time=leg_tmz_effective_date,
+        withdrawnFilingType=withdrawn_filing_display_name,
+        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
+        (filing.json)['filing']['business'].get('identifier', ''),
+        email_header=filing_name.upper(),
+        filing_type=filing_type
+    )
 
-        # get recipients
-        identifier = filing.filing_json['filing']['business']['identifier']
-        recipients = _get_contacts(identifier, token, withdrawn_filing)
-        recipients = list(set(recipients))
-        recipients = ', '.join(filter(None, recipients)).strip()
+    # get attachments
+    pdfs = _get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
-        # assign subject
-        subject = 'Notice of Withdrawal filed Successfully'
+    # get recipients
+    identifier = filing.filing_json['filing']['business']['identifier']
+    recipients = _get_contacts(identifier, token, withdrawn_filing)
+    recipients = list(set(recipients))
+    recipients = ', '.join(filter(None, recipients)).strip()
 
-        legal_name = business.get('legalName', None)
-        legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
-        if not identifier.startswith('T'):
-            subject = f'{legal_name} - {subject}' if legal_name else subject
+    # assign subject
+    subject = 'Notice of Withdrawal filed Successfully'
 
-        return {
-            'recipients': recipients,
-            'requestBy': 'BCRegistries@gov.bc.ca',
-            'content': {
-                'subject': subject,
-                'body': f'{html_out}',
-                'attachments': pdfs
-            }
+    legal_name = business.get('legalName', None)
+    legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
+    if not identifier.startswith('T'):
+        subject = f'{legal_name} - {subject}' if legal_name else subject
+
+    return {
+        'recipients': recipients,
+        'requestBy': 'BCRegistries@gov.bc.ca',
+        'content': {
+            'subject': subject,
+            'body': f'{html_out}',
+            'attachments': pdfs
         }
-
-    return {}
+    }
 
 
 def _get_pdfs(
