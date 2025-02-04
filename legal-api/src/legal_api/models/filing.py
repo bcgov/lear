@@ -939,6 +939,24 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             all()
         return filings
 
+
+    def get_conversion_filings_by_conv_types(business_id: int, filing_types: list):
+        """Return the conversion filings of a particular conv type.
+        
+        Records only exist in some legacy corps imported from COLIN.
+        """
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type == 'conversion'). \
+            filter(
+                Filing._meta_data.op('->')('conversion').op('->>')('convFilingType').in_(filing_types)
+            ). \
+            order_by(desc(Filing.transaction_id)). \
+            all()
+        
+        return filings
+
+
     @staticmethod
     def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
         """Return the filings of particular types and statuses.
