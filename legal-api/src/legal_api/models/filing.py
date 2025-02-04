@@ -942,7 +942,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_conversion_filings_by_conv_types(business_id: int, filing_types: list):
         """Return the conversion filings of a particular conv type.
-        
+
         Records only exist in some legacy corps imported from COLIN.
         """
         filings = db.session.query(Filing). \

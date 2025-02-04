@@ -14,8 +14,8 @@
 """This module holds the data about jurisdiction."""
 from __future__ import annotations
 
-from sqlalchemy import and_, or_
 from sql_versioning import Versioned
+from sqlalchemy import and_, or_
 
 from .db import db
 from .filing import Filing
@@ -67,8 +67,8 @@ class Jurisdiction(db.Model, Versioned):  # pylint: disable=too-many-instance-at
                                     Filing._filing_type == 'continuationIn',
                                     and_(
                                         Filing._filing_type == 'conversion',
-                                        Filing._meta_data.op('->')('conversion'). \
-                                            op('->>')('convFilingType') == 'continuationIn'
+                                        Filing._meta_data.op('->')('conversion').
+                                        op('->>')('convFilingType') == 'continuationIn'
                                     )
                                 )
                             ).
