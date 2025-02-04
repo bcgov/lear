@@ -939,7 +939,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             all()
         return filings
 
-
+    @staticmethod
     def get_conversion_filings_by_conv_types(business_id: int, filing_types: list):
         """Return the conversion filings of a particular conv type.
         
@@ -953,9 +953,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             ). \
             order_by(desc(Filing.transaction_id)). \
             all()
-        
-        return filings
 
+        return filings
 
     @staticmethod
     def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
