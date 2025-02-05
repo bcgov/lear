@@ -10,6 +10,7 @@
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
 # pylint: disable=too-many-lines
+from contextlib import suppress
 import copy
 from datetime import date, datetime, timezone
 from enum import Enum
@@ -768,6 +769,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             error='Filings cannot be changed after the invoice is created.',
             status_code=HTTPStatus.FORBIDDEN
         )
+
+    @property
+    def is_future_effective(self) -> bool:
+        """Return True if the effective date is in the future."""
+        with suppress(AttributeError, TypeError):
+            if self.effective_date > self.payment_completion_date:
+                return True
+        return False
 
     @property
     def is_corrected(self):
