@@ -809,7 +809,7 @@ def test_delete_filing_in_draft(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
 
 def test_delete_draft_now_filing(session, client, jwt):
-    """Assert that a withdrawn FE temp business returns the filing with the NoW embedded once available."""
+    """Assert that when a NoW from a temporary business is deleted, the business is unlinked and not deleted."""
     # set-up withdrawn boostrap FE filing
     today = datetime.utcnow().date()
     future_effective_date = today + timedelta(days=5)
