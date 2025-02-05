@@ -815,7 +815,7 @@ def test_delete_draft_now_filing(session, client, jwt):
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
 
-    identifier = 'Tb31yQIuBw'
+    identifier = 'T1Li6MzdrK'
     headers = create_header(jwt, [STAFF_ROLE], identifier)
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
@@ -823,17 +823,17 @@ def test_delete_draft_now_filing(session, client, jwt):
     json_data = copy.deepcopy(FILING_HEADER)
     json_data['filing']['header']['name'] = 'incorporationApplication'
     del json_data['filing']['business']
-    new_bus_filing_json = copy.deepcopy(INCORPORATION)
-    new_bus_filing_json['nameRequest']['legalType'] = 'BC'
-    json_data['filing']['incorporationApplication'] = new_bus_filing_json
-    new_business_filing = factory_pending_filing(None, json_data)
-    new_business_filing.temp_reg = identifier
-    new_business_filing.effective_date = future_effective_date
-    new_business_filing.payment_completion_date = datetime.utcnow().isoformat()
-    new_business_filing._status = Filing.Status.DRAFT.value
-    new_business_filing.skip_status_listener = True
-    new_business_filing.save()
-    withdrawn_filing_id = new_business_filing.id
+    temp_bus_filing_json = copy.deepcopy(INCORPORATION)
+    temp_bus_filing_json['nameRequest']['legalType'] = 'BEN'
+    json_data['filing']['incorporationApplication'] = temp_bus_filing_json
+    temp_filing = factory_pending_filing(None, json_data)
+    temp_filing.temp_reg = identifier
+    temp_filing.effective_date = future_effective_date
+    temp_filing.payment_completion_date = datetime.utcnow().isoformat()
+    temp_filing._status = Filing.Status.DRAFT.value
+    temp_filing.skip_status_listener = True
+    temp_filing.save()
+    withdrawn_filing_id = temp_filing.id
 
     # set-up notice of withdrawal filing
     now_json_data = copy.deepcopy(FILING_HEADER)
@@ -841,7 +841,7 @@ def test_delete_draft_now_filing(session, client, jwt):
     del now_json_data['filing']['business']
     now_json_data['filing']['business'] = {
         "identifier": identifier,
-        "legalType": 'BC'
+        "legalType": 'BEN'
     }
     now_json_data['filing']['noticeOfWithdrawal'] = copy.deepcopy(SCHEMA_NOTICE_OF_WITHDRAWAL)
     now_json_data['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing_id
@@ -849,8 +849,9 @@ def test_delete_draft_now_filing(session, client, jwt):
     now_filing = factory_filing(None, now_json_data)
     now_filing.withdrawn_filing_id = withdrawn_filing_id
     now_filing.save()
-    new_business_filing.withdrawal_pending = True
-    new_business_filing.save()
+    
+    temp_filing.withdrawal_pending = True
+    temp_filing.save()
 
     rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{now_filing.id}',
                        headers=headers
@@ -858,7 +859,7 @@ def test_delete_draft_now_filing(session, client, jwt):
 
     #validate withdrawl_pending flag is set back to False
     assert rv.status_code == HTTPStatus.OK
-    assert new_business_filing.withdrawal_pending == False
+    assert temp_filing.withdrawal_pending == False
 
 
 def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
