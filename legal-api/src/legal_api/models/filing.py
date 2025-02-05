@@ -288,6 +288,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CCC': 'CRCTN',
             }
         },
+        'courtOrder': {
+            'name': 'courtOrder', 
+            'title': 'Court Order', 
+            'codes': {
+                'BEN': 'COURT',
+                'BC': 'COURT',
+                'ULC': 'COURT',
+                'CC': 'COURT',
+                'C': 'COURT',
+                'CUL': 'COURT',
+                'CCC': 'COURT',
+            }
+        },
         'dissolution': {
             'name': 'dissolution',
             'voluntary': {
@@ -447,7 +460,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
         'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'},
-        'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
         'putBackOff': {'name': 'putBackOff', 'title': 'Put Back Off', 'code': 'NOFEE'},
         'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
         'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
