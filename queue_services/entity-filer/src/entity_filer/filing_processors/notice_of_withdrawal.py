@@ -37,11 +37,6 @@ def process(
     withdrawn_filing_id = now_filing.get('filingId')
     withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
 
-    if not withdrawn_filing or \
-        withdrawn_filing.withdrawal_pending or \
-            withdrawn_filing.status == Filing.Status.WITHDRAWN.value:
-        return
-
     withdrawn_filing._status = Filing.Status.WITHDRAWN.value  # pylint: disable=protected-access
     withdrawn_filing.withdrawal_pending = False
     withdrawn_filing.save_to_session()
