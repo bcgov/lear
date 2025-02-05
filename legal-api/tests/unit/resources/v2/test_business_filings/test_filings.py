@@ -808,6 +808,58 @@ def test_delete_filing_in_draft(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.OK
 
+def test_delete_draft_now_filing(session, client, jwt):
+    """Assert that a withdrawn FE temp business returns the filing with the NoW embedded once available."""
+    # set-up withdrawn boostrap FE filing
+    today = datetime.utcnow().date()
+    future_effective_date = today + timedelta(days=5)
+    future_effective_date = future_effective_date.isoformat()
+
+    identifier = 'Tb31yQIuBw'
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header']['name'] = 'incorporationApplication'
+    del json_data['filing']['business']
+    new_bus_filing_json = copy.deepcopy(INCORPORATION)
+    new_bus_filing_json['nameRequest']['legalType'] = 'BC'
+    json_data['filing']['incorporationApplication'] = new_bus_filing_json
+    new_business_filing = factory_pending_filing(None, json_data)
+    new_business_filing.temp_reg = identifier
+    new_business_filing.effective_date = future_effective_date
+    new_business_filing.payment_completion_date = datetime.utcnow().isoformat()
+    new_business_filing._status = Filing.Status.DRAFT.value
+    new_business_filing.skip_status_listener = True
+    new_business_filing.save()
+    withdrawn_filing_id = new_business_filing.id
+
+    # set-up notice of withdrawal filing
+    now_json_data = copy.deepcopy(FILING_HEADER)
+    now_json_data['filing']['header']['name'] = 'noticeOfWithdrawal'
+    del now_json_data['filing']['business']
+    now_json_data['filing']['business'] = {
+        "identifier": identifier,
+        "legalType": 'BC'
+    }
+    now_json_data['filing']['noticeOfWithdrawal'] = copy.deepcopy(SCHEMA_NOTICE_OF_WITHDRAWAL)
+    now_json_data['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing_id
+    del now_json_data['filing']['header']['filingId']
+    now_filing = factory_filing(None, now_json_data)
+    now_filing.withdrawn_filing_id = withdrawn_filing_id
+    now_filing.save()
+    new_business_filing.withdrawal_pending = True
+    new_business_filing.save()
+
+    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{now_filing.id}',
+                       headers=headers
+                       )
+
+    #validate withdrawl_pending flag is set back to False
+    assert rv.status_code == HTTPStatus.OK
+    assert new_business_filing.withdrawal_pending == False
+
 
 def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
     """Assert that a draft filing can be deleted."""
