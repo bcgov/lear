@@ -849,7 +849,6 @@ def test_delete_draft_now_filing(session, client, jwt):
     now_filing = factory_filing(None, now_json_data)
     now_filing.withdrawn_filing_id = withdrawn_filing_id
     now_filing.save()
-    
     temp_filing.withdrawal_pending = True
     temp_filing.save()
 
@@ -857,9 +856,16 @@ def test_delete_draft_now_filing(session, client, jwt):
                        headers=headers
                        )
 
-    #validate withdrawl_pending flag is set back to False
+    # validate that the withdrawl_pending flag is set back to False
     assert rv.status_code == HTTPStatus.OK
     assert temp_filing.withdrawal_pending == False
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    
+    # validate that no NoW is embedded 
+    assert rv.status_code == HTTPStatus.OK
+    assert 'noticeOfWithdrawal' not in rv.json['filing']
 
 
 def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
