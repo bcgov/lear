@@ -208,7 +208,7 @@ def delete_filings(identifier, filing_id=None):
     with suppress(Exception):
         ListFilingResource.delete_from_minio(filing_type, filing_json)
 
-    if identifier.startswith('T'):
+    if identifier.startswith('T') and filing.filing_type != Filing.FILINGS['noticeOfWithdrawal']['name']:
         bootstrap = RegistrationBootstrap.find_by_identifier(identifier)
         if bootstrap:
             deregister_status = RegistrationBootstrapService.deregister_bootstrap(bootstrap)
