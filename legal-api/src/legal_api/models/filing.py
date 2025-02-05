@@ -10,8 +10,8 @@
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
 # pylint: disable=too-many-lines
-from contextlib import suppress
 import copy
+from contextlib import suppress
 from datetime import date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
