@@ -224,7 +224,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
             return None, None
         if filing_submission.withdrawal_pending:
             logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
-                                filing_submission.business_id, filing_submission.id, filing_msg)
+                           filing_submission.business_id, filing_submission.id, filing_msg)
             raise QueueException
 
         # convenience flag to set that the envelope is a correction
