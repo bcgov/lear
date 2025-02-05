@@ -222,7 +222,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
-        elif filing_submission.withdrawal_pending:
+        if filing_submission.withdrawal_pending:
             logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
                                 filing_submission.business_id, filing_submission.id, filing_msg)
             raise QueueException
