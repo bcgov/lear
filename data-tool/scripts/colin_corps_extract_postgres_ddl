@@ -492,8 +492,11 @@ create table if not exists corp_involved_amalgamating
     event_id         numeric(9)  not null
         constraint fk_corp_involved_event
             references event (event_id),
-    corp_num         varchar(10) not null
-        constraint fk_corp_involved_corporation
+    ted_corp_num         varchar(10) not null
+        constraint fk_corp_involved_ted_corporation
+            references corporation (corp_num),
+    ting_corp_num         varchar(10) not null
+        constraint fk_corp_involved_ting_corporation
             references corporation (corp_num),
     corp_involve_id  numeric(9)  not null,
     can_jur_typ_cd   char(2),
@@ -629,6 +632,8 @@ create table if not exists corp_processing
     create_date             timestamp with time zone,
     last_modified           timestamp with time zone,
     last_error              varchar(1000),
+    claimed_at              timestamp with time zone,
+    flow_run_id             uuid,
     constraint unq_corp_processing
         unique (corp_num, flow_name, environment)
 );
@@ -675,7 +680,8 @@ create table if not exists corp_state
     end_event_id   numeric(9)
         constraint fk_corp_state_end_event
             references event (event_id),
-    state_type_cd  varchar(3)
+    state_type_cd  varchar(3),
+    op_state_type_cd varchar(3)
 );
 
 alter table corp_state

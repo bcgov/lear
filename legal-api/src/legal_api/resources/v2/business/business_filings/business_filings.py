@@ -198,6 +198,9 @@ def delete_filings(identifier, filing_id=None):
     if err_code:
         return jsonify({'message': _(err_message)}), err_code
 
+    if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+        ListFilingResource.unlink_now_and_withdrawn_filing(filing)
+
     filing_type = filing.filing_type
     filing_json = filing.filing_json
     filing.delete()
@@ -265,6 +268,24 @@ def patch_filings(identifier, filing_id=None):
     return jsonify(filing.json), HTTPStatus.ACCEPTED
 
 
+@bp.route('/filings/search/<int:filing_id>', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.staff])
+def get_single_filing_by_filing_id(filing_id):
+    """Return a single filing by filing ID."""
+    try:
+        filing_query = Filing.find_by_id(filing_id)
+
+        if not filing_query:
+            return {'message': f'Filing with ID {filing_id} not found.'}, HTTPStatus.NOT_FOUND
+
+        return jsonify(filing_query.json), HTTPStatus.OK
+
+    except Exception as err:
+        current_app.logger.error('Error retrieving filing data for ID %s: %s', filing_id, err)
+        return {'error': 'Unable to retrieve filing data.'}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 class ListFilingResource():  # pylint: disable=too-many-public-methods
     """Business Filings service."""
 
@@ -286,6 +307,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing_json = rv.json
         if rv.status == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
+        if (rv.status == Filing.Status.WITHDRAWN.value or rv.storage.withdrawal_pending) and identifier.startswith('T'):
+            now_filing = ListFilingResource.get_notice_of_withdrawal(filing_json['filing']['header']['filingId'])
+            filing_json['filing']['noticeOfWithdrawal'] = now_filing.json
         elif (rv.status in [Filing.Status.CHANGE_REQUESTED.value,
                             Filing.Status.APPROVED.value,
                             Filing.Status.REJECTED.value] and
@@ -347,7 +371,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         filings = CoreFiling.ledger(business.id,
                                     jwt=user_jwt,
-                                    statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value],
+                                    statuses=[Filing.Status.COMPLETED.value, Filing.Status.PAID.value,
+                                              Filing.Status.WITHDRAWN.value],
                                     start=ledger_start,
                                     size=ledger_size,
                                     effective_date=effective_date)
@@ -444,6 +469,14 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return business, filing
 
     @staticmethod
+    def get_notice_of_withdrawal(filing_id: str = None):
+        """Return a NoW by the withdrawn filing id."""
+        filing = db.session.query(Filing). \
+            filter(Filing.withdrawn_filing_id == filing_id).one_or_none()
+
+        return filing
+
+    @staticmethod
     def put_basic_checks(identifier, filing, client_request, business) -> Tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
@@ -461,7 +494,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if not filing_type:
             return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
 
-        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES and business is None:
+        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES + [CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] \
+           and business is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
         if client_request.method == 'PUT' and not filing:
@@ -479,9 +513,14 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         # While filing IA business object will be None. Setting default values in that case.
         state = business.state if business else Business.State.ACTIVE
+        if business:
+            legal_type = business.legal_type
+        # for temporary business notice of withdraw, get legalType from filing json
+        elif filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL.value:
+            legal_type = filing_json['filing'].get('business', None).get('legalType')
         # for incorporationApplication and registration, get legalType from nameRequest
-        legal_type = business.legal_type if business else \
-            filing_json['filing'][filing_type]['nameRequest'].get('legalType')
+        else:
+            legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
 
         if not authorized(identifier, jwt, action=['edit']) or \
                 not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
@@ -602,11 +641,28 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['effectiveDate']) \
                 if filing.filing_json['filing']['header'].get('effectiveDate', None) else datetime.datetime.utcnow()
 
+            filing.hide_in_ledger = ListFilingResource._hide_in_ledger(filing)
+
+            if filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+                ListFilingResource.link_now_and_withdrawn_filing(filing)
+                if business_identifier.startswith('T'):
+                    filing.temp_reg = None
             filing.save()
         except BusinessException as err:
             return None, None, {'error': err.error}, err.status_code
 
         return business or bootstrap, filing, None, None
+
+    @staticmethod
+    def _hide_in_ledger(filing: Filing) -> bool:
+        """Hide the filing in the ledger."""
+        hide_in_ledger = str(request.headers.get('hide-in-ledger', None)).lower()
+        if (filing.filing_type == 'adminFreeze' or
+            (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary') or
+                (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == 'true')):
+            return True
+
+        return False
 
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
@@ -650,6 +706,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         if filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
             legal_type = filing_json['filing'][filing_type]['nameRequest']['legalType']
+        elif business.identifier.startswith('T') and \
+                filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
+            legal_type = filing_json['filing'].get('business', None).get('legalType')
         else:
             legal_type = business.legal_type
 
@@ -665,7 +724,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                                                                                     legal_type,
                                                                                     priority_flag,
                                                                                     waive_fees_flag))
-        elif filing_type in ['courtOrder', 'registrarsNotation', 'registrarsOrder', 'putBackOn', 'adminFreeze']:
+        elif filing_type in ('adminFreeze', 'courtOrder', 'putBackOff', 'putBackOn',
+                             'registrarsNotation', 'registrarsOrder'):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
                 'filingTypeCode': filing_type_code,
@@ -768,6 +828,28 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         return filing_types
 
     @staticmethod
+    def get_withdrawn_filing(filing: Filing) -> Filing:
+        """Get withdrawn filing from NoW filing ID."""
+        withdrawn_filing_id = filing.filing_json['filing']['noticeOfWithdrawal']['filingId']
+        withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+        return withdrawn_filing
+
+    @staticmethod
+    def link_now_and_withdrawn_filing(filing: Filing):
+        """Add withdrawn filing ID to the NoW and set the withdrawal pending flag to True on the withdrawn filing."""
+        withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
+        withdrawn_filing.withdrawal_pending = True
+        withdrawn_filing.save()
+        filing.withdrawn_filing_id = withdrawn_filing.id
+
+    @staticmethod
+    def unlink_now_and_withdrawn_filing(filing: Filing):
+        """Set the withdrawal pending flag to False when a NoW is deleted."""
+        withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
+        withdrawn_filing.withdrawal_pending = False
+        withdrawn_filing.save()
+
+    @staticmethod
     def create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
                        filing: Filing,
                        filing_types: list,
@@ -808,6 +890,12 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 mailing_address = business.mailing_address.one_or_none()
             corp_type = business.legal_type if business.legal_type else \
                 filing.json['filing']['business'].get('legalType')
+        # deal with withdrawing a new business filing
+        elif business.identifier.startswith('T') and \
+                filing.filing_type == Filing.FILINGS['noticeOfWithdrawal']['name']:
+            mailing_address, corp_type, legal_name = \
+                ListFilingResource._get_address_from_withdrawn_new_business_filing(business, filing)
+            business.legal_name = legal_name
         else:
             mailing_address = business.mailing_address.one_or_none()
             corp_type = business.legal_type if business.legal_type else \
@@ -1026,3 +1114,26 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             current_app.config.get('NATS_EMAILER_SUBJECT')
         )
+
+    @staticmethod
+    def _get_address_from_withdrawn_new_business_filing(business: Business, filing: Filing):
+        if filing.filing_type != CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL.value:
+            return None, None, None
+        withdrawn_filing = ListFilingResource.get_withdrawn_filing(filing)
+        if withdrawn_filing.filing_type in CoreFiling.NEW_BUSINESS_FILING_TYPES:
+            office_type = OfficeType.REGISTERED
+            if withdrawn_filing.filing_type == Filing.FILINGS['registration']['name']:
+                office_type = OfficeType.BUSINESS
+
+            mailing_address = Address.create_address(
+                withdrawn_filing.json['filing'][withdrawn_filing.filing_type]['offices'][office_type]['mailingAddress'])
+            corp_type = withdrawn_filing.json['filing'][withdrawn_filing.filing_type]['nameRequest'].get(
+                'legalType', Business.LegalTypes.BCOMP.value)
+
+            try:
+                legal_name = withdrawn_filing.json['filing'][withdrawn_filing.filing_type]['nameRequest']['legalName']
+            except KeyError:
+                legal_name = business.identifier
+
+            return mailing_address, corp_type, legal_name
+        return None, None, None

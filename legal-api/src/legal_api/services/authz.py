@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# pylint: disable=too-many-lines
 """This manages all of the authentication and authorization service."""
 from datetime import datetime, timezone
 from enum import Enum
@@ -261,7 +263,6 @@ def get_allowable_filings_dict():
                         'blockerChecks': {
                             'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                             'business': [BusinessBlocker.DEFAULT,
-                                         BusinessBlocker.NOT_IN_GOOD_STANDING,
                                          BusinessBlocker.IN_DISSOLUTION]
                         }
                     },
@@ -277,6 +278,9 @@ def get_allowable_filings_dict():
                     'legalTypes': ['CP', 'BC', 'BEN', 'ULC', 'CC'],
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
+                },
+                'putBackOff': {
+                    'legalTypes': ['BEN', 'BC', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
                 },
                 'registrarsNotation': {
                     'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
@@ -320,7 +324,8 @@ def get_allowable_filings_dict():
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.FILING_WITHDRAWAL]
-                    }
+                    },
+                    'businessRequirement': BusinessRequirement.NO_RESTRICTION
                 }
             },
             Business.State.HISTORICAL: {
@@ -371,7 +376,9 @@ def get_allowable_filings_dict():
                 'alteration': {
                     'legalTypes': ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.IN_DISSOLUTION],
+                        'business': [BusinessBlocker.DEFAULT,
+                                     BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                     BusinessBlocker.IN_DISSOLUTION],
                         'invalidStateFilings': ['restoration.limitedRestoration',
                                                 'restoration.limitedRestorationExtension']
                     }
@@ -469,7 +476,8 @@ def get_allowable_filings_dict():
                 'specialResolution': {
                     'legalTypes': ['CP'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.DEFAULT]
+                        'business': [BusinessBlocker.DEFAULT,
+                                     BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
                 'transition': {
@@ -500,7 +508,7 @@ def is_allowed(business: Business,
         else:
             is_ignore_draft_blockers = True
 
-    # Special case: handiling authorization for amalgamation application
+    # Special case: handling authorization for amalgamation application
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == 'amalgamationApplication' and legal_type in ['C', 'CBEN', 'CUL', 'CCC']:
         return False
@@ -513,6 +521,22 @@ def is_allowed(business: Business,
                 return True
 
     return False
+
+
+def get_could_files(jwt: JwtManager, business_type: str, business_state: str):
+    """Get allowable actions."""
+    is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
+    if is_competent_authority:
+        allowed_filings = []
+    else:
+        allowed_filings = get_could_file(business_type, business_state, jwt)
+
+    result = {
+        'filing': {
+            'filingTypes': allowed_filings
+        }
+    }
+    return result
 
 
 def get_allowable_actions(jwt: JwtManager, business: Business):
@@ -535,6 +559,53 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         'viewAll': is_competent_authority
     }
     return result
+
+
+def get_could_file(legal_type: str,
+                   state: str,
+                   jwt: JwtManager):
+    """Get allowed type of filing types for the current user."""
+    # importing here to avoid circular dependencies
+    # pylint: disable=import-outside-toplevel
+    from legal_api.core.meta import FilingMeta
+
+    user_role = 'general'
+    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+        user_role = 'staff'
+
+    bs_state = getattr(Business.State, state, '')
+
+    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(bs_state, {})
+    could_filing_types = []
+
+    for allowable_filing_key, allowable_filing_value in allowable_filings.items():
+        allowable_filing_legal_types = allowable_filing_value.get('legalTypes', [])
+
+        if allowable_filing_legal_types:
+            is_allowable = legal_type in allowable_filing_legal_types
+            allowable_filing_type = {'name': allowable_filing_key,
+                                     'displayName': FilingMeta.get_display_name(legal_type, allowable_filing_key)}
+            could_filing_types = add_allowable_filing_type(is_allowable,
+                                                           could_filing_types,
+                                                           allowable_filing_type)
+            continue
+
+        filing_sub_type_items = \
+            filter(lambda x: isinstance(x[1], dict) and legal_type in
+                   x[1].get('legalTypes', []), allowable_filing_value.items())
+
+        for filing_sub_type_item_key, _ in filing_sub_type_items:
+
+            allowable_filing_sub_type = {'name': allowable_filing_key,
+                                         'type': filing_sub_type_item_key,
+                                         'displayName': FilingMeta.get_display_name(legal_type,
+                                                                                    allowable_filing_key,
+                                                                                    filing_sub_type_item_key)}
+            could_filing_types = add_allowable_filing_type(True,
+                                                           could_filing_types,
+                                                           allowable_filing_sub_type)
+
+    return could_filing_types
 
 
 def get_allowed_filings(business: Business,
@@ -679,7 +750,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
 
-    if has_notice_of_withdrawal_filing_blocker(business):
+    if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
 
     return business_blocker_checks
@@ -805,15 +876,16 @@ def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
     return warning_matches
 
 
-def has_notice_of_withdrawal_filing_blocker(business: Business):
+def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_blockers: bool = False):
     """Check if there are any blockers specific to Notice of Withdrawal."""
     if business.admin_freeze:
         return True
 
-    filing_statuses = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
+    filing_statuses = [Filing.Status.PENDING.value,
                        Filing.Status.PENDING_CORRECTION.value,
                        Filing.Status.ERROR.value]
+    if not is_ignore_draft_blockers:
+        filing_statuses.append(Filing.Status.DRAFT.value)
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
     if any(blocker_filing_matches):
         return True

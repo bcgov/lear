@@ -6,6 +6,7 @@
         "enable-legal-name-fix": true,
         "disable-nr-check": false,
         "enable-involuntary-dissolution-filter": false,
+        "enable-new-ben-statements": false,
         "involuntary-dissolution-filter": {
             "include-accounts": [],
             "exclude-accounts": []

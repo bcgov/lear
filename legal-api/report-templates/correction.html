@@ -40,9 +40,6 @@
          [[correction/addresses.html]]
 
          [[correction/directors.html]]
-         {% if correction.type == 'CLIENT' %}
-            [[common/completingParty.html]]
-         {% endif %}
 
          {% if shareClasses and (shareClassesChange or newShareClasses or ceasedShareClasses) %}
             [[common/shareStructure.html]]
@@ -53,6 +50,11 @@
          [[correction/associateType.html]]
          [[correction/rulesMemorandum.html]]
          [[correction/resolution.html]]
+      </div>
+      <div class="container business-details-table" >
+         <div class="bold"><span class="details-header-text"> Correction Detail</span><span class="correction-label-added">ADDED</span></div>
+         <div class="pt-2">Correction filed by Registry Staff on {{effective_date_time}}</div>
+         <div class="pt-2 preserve-line-breaks"><span>{{correction.comment}}</span></div>
       </div>
    </body>
 </html>

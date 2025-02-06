@@ -146,7 +146,7 @@ async def find_and_send_ar_reminder(app: Flask, qsm: QueueService):  # pylint: d
                        Business.LegalTypes.ULC_CONTINUE_IN.value,
                        Business.LegalTypes.CCC_CONTINUE_IN.value,]  # entity types to send ar reminder
 
-        if flags.is_on('enable-bc-ccc-ulc'):
+        if flags.is_on('enable-bc-ccc-ulc-email-reminder'):
             legal_types.extend(
                 [Business.LegalTypes.COMP.value,
                  Business.LegalTypes.BC_CCC.value,

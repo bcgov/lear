@@ -593,6 +593,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def business_revision_json(business_revision, business_json):
         """Return the business revision as a json object."""
+        # business_revision for tombstone business will be None
+        # check and skip to return original business_json
+        if not business_revision:
+            return business_json
         business_json['hasRestrictions'] = business_revision.restriction_ind
         business_json['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(
             business_revision.dissolution_date) if business_revision.dissolution_date else None

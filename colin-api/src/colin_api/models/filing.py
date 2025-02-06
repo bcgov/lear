@@ -46,6 +46,7 @@ from colin_api.models import (  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
 from colin_api.services import flags
+from colin_api.services.legal import LegalApiService
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
 
 
@@ -174,7 +175,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             'CORPS_NAME': 'CO_BC',  # company name/translated name
             'CORPS_DIRECTOR': 'CO_DI',
             'CORPS_OFFICE': 'CO_RR',  # registered and record offices
-            'CORPS_SHARE': 'CO_SS'
+            'CORPS_SHARE': 'CO_SS',
+            'CORPS_COMMENT_ONLY': 'CO_LI'  # Called local correction (adding a comment only)
         },
         'specialResolution': {
             'type_code_list': ['OTSPE'],
@@ -352,6 +354,30 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         'courtOrder': {
             'type_code_list': ['COURT'],
             Business.TypeCodes.BC_COMP.value: 'COURT'
+        },
+        'putBackOn': {
+            'type_code_list': ['CO_PO'],
+            Business.TypeCodes.COOP.value: 'CO_PO',
+            Business.TypeCodes.BCOMP.value: 'CO_PO',
+            Business.TypeCodes.BC_COMP.value: 'CO_PO',
+            Business.TypeCodes.ULC_COMP.value: 'CO_PO',
+            Business.TypeCodes.CCC_COMP.value: 'CO_PO',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'CO_PO',
+            Business.TypeCodes.CONTINUE_IN.value: 'CO_PO',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'CO_PO',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'CO_PO',
+        },
+        'putBackOff': {
+            'type_code_list': ['CO_PF'],
+            Business.TypeCodes.COOP.value: 'CO_PF',
+            Business.TypeCodes.BCOMP.value: 'CO_PF',
+            Business.TypeCodes.BC_COMP.value: 'CO_PF',
+            Business.TypeCodes.ULC_COMP.value: 'CO_PF',
+            Business.TypeCodes.CCC_COMP.value: 'CO_PF',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'CO_PF',
+            Business.TypeCodes.CONTINUE_IN.value: 'CO_PF',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'CO_PF',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'CO_PF',
         }
     }
 
@@ -503,6 +529,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 filing_dt=filing_dt,
                 event_type=event_type
             )
+            cursor.execute(
+                """
+                INSERT INTO event_insert (event_id, corp_num, insert_date)
+                VALUES (:event_id, :corp_num, sysdate)
+                """,
+                event_id=event_id,
+                corp_num=corp_num
+            )
         except Exception as err:
             current_app.logger.error('Error in filing: Failed to create new event.')
             raise err
@@ -610,7 +644,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     filing_date=filing.filing_date[:10]
                 )
             elif filing_type_code in ['NOCAD', 'TRANS',
-                                      'CO_BC', 'CO_DI', 'CO_RR', 'CO_SS',
+                                      'CO_BC', 'CO_DI', 'CO_RR', 'CO_SS', 'CO_LI',
                                       'BEINC', 'ICORP', 'ICORU', 'ICORC',
                                       'AMLRB', 'AMALR', 'AMLRU', 'AMLRC',
                                       'AMLHB', 'AMALH', 'AMLHU', 'AMLHC',
@@ -618,7 +652,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'CONTB', 'CONTI', 'CONTU', 'CONTC',
                                       'NOABE', 'NOALE', 'NOALR', 'NOALD',
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
-                                      'CONTO', 'COUTI',
+                                      'CONTO', 'COUTI', 'CO_PO', 'CO_PF',
                                       'AGMDT', 'AGMLC',
                                       'RESTF', 'RESTL', 'RESXL', 'RESXF',
                                       'REGSN', 'REGSO', 'COURT']:
@@ -1207,14 +1241,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
-    def add_filing(cls, con, filing: Filing) -> int:
+    def add_filing(cls, con, filing: Filing, lear_identifier: str) -> int:
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
                                           'amalgamationApplication', 'annualReport', 'changeOfAddress',
                                           'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
-                                          'continuationOut', 'courtOrder',
-                                          'dissolution', 'incorporationApplication', 'registrarsNotation',
+                                          'continuationOut', 'courtOrder', 'dissolution', 'incorporationApplication',
+                                          'putBackOn', 'putBackOff', 'registrarsNotation',
                                           'registrarsOrder', 'restoration', 'specialResolution', 'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
@@ -1252,6 +1286,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 cls._process_continuation_out(cursor, filing)
             elif filing.filing_type == 'restoration':
                 cls._process_restoration(cursor, filing)
+            elif filing.filing_type == 'putBackOn':
+                cls._process_put_back_on(cursor, filing)
+            elif filing.filing_type == 'putBackOff':
+                cls._process_put_back_off(cursor, filing)
             elif filing.filing_type == 'alteration':
                 # alter corp type
                 if (
@@ -1359,11 +1397,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                 Business.TypeCodes.BCOMP_CONTINUE_IN.value,
                                             ])
 
-            # Freeze all entities except CP if 'enable-bc-ccc-ulc' flag is on else just freeze BEN
+            # Freeze all entities except CP if business exists in lear and
+            # 'enable-bc-ccc-ulc' flag is on else just freeze BEN
             is_frozen_condition = (
                 flags.is_on('enable-bc-ccc-ulc') and
-                business['business']['legalType'] != Business.TypeCodes.COOP.value
+                business['business']['legalType'] != Business.TypeCodes.COOP.value and
+                cls.is_business_in_lear(lear_identifier)
             )
+            current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
 
             is_new_or_altered_ben = is_new_ben or is_new_cben or is_alteration_to_ben_or_cben
 
@@ -1376,6 +1417,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
             raise err
+
+    @classmethod
+    def is_business_in_lear(cls, lear_identifier: str) -> bool:
+        """Check if business is in lear."""
+        response = LegalApiService.query_business(lear_identifier, slim=True)
+
+        if response.status_code == HTTPStatus.OK:
+            return True
+        return False
 
     @classmethod
     def _get_last_ar_filed_date(cls, header: dict, business: dict):
@@ -1445,6 +1495,29 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                            trigger_dts=expiry_date
                            )
             corp_state = Business.CorpStateTypes.LIMITED_RESTORATION.value
+        Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
+
+    @classmethod
+    def _process_put_back_on(cls, cursor, filing):
+        """Process Put Back On."""
+        corp_num = filing.get_corp_num()
+
+        Office.end_office(cursor=cursor,
+                          event_id=filing.event_id,
+                          corp_num=corp_num,
+                          office_code=Office.OFFICE_TYPES_CODES['custodialOffice'])
+
+        Party.end_current(cursor, filing.event_id, corp_num, 'Custodian')
+
+        corp_state = Business.CorpStateTypes.ACTIVE.value  # Active for Put Back On
+        Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
+
+    @classmethod
+    def _process_put_back_off(cls, cursor, filing):
+        """Process Put Back Off."""
+        corp_num = filing.get_corp_num()
+
+        corp_state = Business.CorpStateTypes.INVOLUNTARY_DISSOLUTION_NO_AR.value
         Business.update_corp_state(cursor, filing.event_id, corp_num, corp_state)
 
     @classmethod
@@ -1655,9 +1728,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                 cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
                             )
                             changed_dirs.append(director)
-                            Party.end_director_by_name(
-                                cursor=cursor, director=director, event_id=filing.event_id, corp_num=corp_num
-                            )
                             found_match = True
                     if not found_match:
                         raise GenericException(
@@ -1747,6 +1817,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _process_name_translations(cls, cursor, filing: Filing, corp_num: str):
         """Process name translations."""
+        if 'nameTranslations' not in filing.body:
+            return
+
         name_translations = filing.body.get('nameTranslations', [])
         old_translations = CorpName.get_current_by_type(
             cursor=cursor,
@@ -1849,6 +1922,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         return filing.event_id
 
     @classmethod
+    def _process_comment_correction(cls, cursor, filing: Filing, corp_num: str, filing_type_code: str):
+        """Process comment correction."""
+        # create new event record, return event ID
+        filing.event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing.filing_date)
+        cls._insert_filing_user(cursor=cursor, filing=filing)
+        cls._insert_filing(cursor=cursor, filing=filing, filing_type_code=filing_type_code)
+
+        ledger_text = filing.body.get('comment', '')
+        cls._insert_ledger_text(cursor, filing, ledger_text)
+
+        return filing.event_id
+
+    @classmethod
     def add_correction_filings(cls, con, filing: Filing) -> list:
         """Create correction filings."""
         try:
@@ -1901,11 +1987,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
 
-            if not filings_added:  # if no filing created
-                raise GenericException(  # pylint: disable=broad-exception-raised
-                    f'No filing created for this correction identifier:{corp_num}.',
-                    HTTPStatus.NOT_IMPLEMENTED
-                )
+            if not filings_added:  # only comment added
+                filing_type_code = Filing.FILING_TYPES[filing.filing_type][f'{sub_type}_COMMENT_ONLY']
+                event_id = cls._process_comment_correction(cursor, filing, corp_num, filing_type_code)
+
+                filings_added.append({'event_id': event_id,
+                                      'filing_type': filing.filing_type,
+                                      'filing_sub_type': None})
 
             return filings_added
 

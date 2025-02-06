@@ -15,12 +15,14 @@
 """Test-Suite to ensure that the Report class is working as expected."""
 import copy
 from contextlib import suppress
+from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from flask import current_app
 from registry_schemas.example_data import (
+    AGM_LOCATION_CHANGE,
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
@@ -31,6 +33,8 @@ from registry_schemas.example_data import (
     CORRECTION_COMBINED_AR,
     DISSOLUTION,
     FILING_HEADER,
+    NOTICE_OF_WITHDRAWAL,
+    RESTORATION,
     INCORPORATION_FILING_TEMPLATE,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
@@ -40,7 +44,8 @@ from legal_api.models import db  # noqa:I001
 from legal_api.models.db import VersioningProxy
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
-from tests.unit.models import factory_business, factory_completed_filing  # noqa:E501,I001
+from legal_api.utils.legislation_datetime import LegislationDatetime
+from tests.unit.models import factory_business, factory_completed_filing, factory_pending_filing  # noqa:E501,I001
 
 
 def create_report(identifier, entity_type, report_type, filing_type, template):
@@ -292,3 +297,93 @@ def create_alteration_report(filing, business, report_type):
     set_registrar_info(report)
     set_meta_info(report)
     return report
+
+
+@pytest.mark.parametrize(
+        'test_name, identifier, entity_type, filing_template, filing_type, formatted_filing_type',
+        [
+            ('BC agmLocationChange', 'BC1234567', 'BC', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('BC alteration', 'BC1234567', 'BC', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('BC changeOfAddress', 'BC1234567', 'BC', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('BC changeOfDirectors', 'BC1234567', 'BC', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('BC dissolution', 'BC1234567', 'BC', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('BC restoration', 'BC1234567', 'BC', RESTORATION, 'restoration', 'Full Restoration Application'),
+            ('BEN agmLocationChange', 'BC1234567', 'BEN', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('BEN alteration', 'BC1234567', 'BEN', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('BEN changeOfAddress', 'BC1234567', 'BEN', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('BEN changeOfDirectors', 'BC1234567', 'BEN', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('BEN dissolution', 'BC1234567', 'BEN', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('BEN restoration', 'BC1234567', 'BEN', RESTORATION, 'restoration', 'Full Restoration Application'),
+            ('ULC agmLocationChange', 'BC1234567', 'ULC', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('ULC alteration', 'BC1234567', 'ULC', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('ULC changeOfAddress', 'BC1234567', 'ULC', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('ULC changeOfDirectors', 'BC1234567', 'ULC', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('ULC dissolution', 'BC1234567', 'ULC', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('ULC restoration', 'BC1234567', 'ULC', RESTORATION, 'restoration', 'Full Restoration Application'),
+            ('CC agmLocationChange', 'BC1234567', 'CC', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('CC alteration', 'BC1234567', 'CC', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('CC changeOfAddress', 'BC1234567', 'CC', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('CC changeOfDirectors', 'BC1234567', 'CC', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('CC dissolution', 'BC1234567', 'CC', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('CC restoration', 'BC1234567', 'CC', RESTORATION, 'restoration', 'Full Restoration Application'),
+            ('C agmLocationChange', 'C1234567', 'C', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('C alteration', 'C1234567', 'C', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('C changeOfAddress', 'C1234567', 'C', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('C changeOfDirectors', 'C1234567', 'C', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('C dissolution', 'C1234567', 'C', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('C restoration', 'C1234567', 'C', RESTORATION, 'restoration', 'Full Restoration Application'),
+            ('CUL agmLocationChange', 'C1234567', 'CUL', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('CUL alteration', 'C1234567', 'CUL', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('CUL changeOfAddress', 'C1234567', 'CUL', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('CUL changeOfDirectors', 'C1234567', 'CUL', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('CUL dissolution', 'C1234567', 'CUL', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('CUL restoration', 'C1234567', 'CUL', RESTORATION, 'restoration', 'Full Restoration Application'),
+            ('CBEN agmLocationChange', 'C1234567', 'CBEN', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('CBEN alteration', 'C1234567', 'CBEN', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('CBEN changeOfAddress', 'C1234567', 'CBEN', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('CBEN changeOfDirectors', 'C1234567', 'CBEN', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('CBEN dissolution', 'C1234567', 'CBEN', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('CBEN restoration', 'C1234567', 'CBEN', RESTORATION, 'restoration', 'Full Restoration Application'),
+            ('CCC agmLocationChange', 'C1234567', 'CCC', AGM_LOCATION_CHANGE, 'agmLocationChange', 'AGM Location Change'),
+            ('CCC alteration', 'C1234567', 'CCC', ALTERATION_FILING_TEMPLATE, 'alteration', 'Alteration'),
+            ('CCC changeOfAddress', 'C1234567', 'CCC', CHANGE_OF_ADDRESS, 'changeOfAddress', 'Address Change'),
+            ('CCC changeOfDirectors', 'C1234567', 'CCC', CHANGE_OF_DIRECTORS, 'changeOfDirectors', 'Director Change'),
+            ('CCC dissolution', 'C1234567', 'CCC', DISSOLUTION, 'dissolution', 'Voluntary Dissolution'),
+            ('CCC restoration', 'C1234567', 'CCC', RESTORATION, 'restoration', 'Full Restoration Application')
+        ]
+)
+def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_type, filing_template, filing_type, formatted_filing_type):
+    """Test the data passed to NoW report template - existing business"""
+    # create a business
+    test_business = factory_business(identifier=identifier, entity_type=entity_type)
+    
+    # file a FE filing
+    today = datetime.utcnow().date()
+    future_effective_date = today + timedelta(days=5)
+    future_effective_date = future_effective_date.isoformat()
+    withdrawn_json = copy.deepcopy(FILING_HEADER)
+    withdrawn_json['filing']['header']['name'] = filing_type
+    withdrawn_json['filing']['business']['legalType'] = entity_type
+    withdrawn_json['filing'][filing_type] = copy.deepcopy(filing_template)
+    withdrawn_filing = factory_pending_filing(test_business, withdrawn_json)
+    withdrawn_filing.effective_date = future_effective_date
+    withdrawn_filing.payment_completion_date = today.isoformat()
+    withdrawn_filing.save()
+    withdrawn_filing_id = withdrawn_filing.id
+
+    # file a NoW filing
+    now_json = copy.deepcopy(FILING_HEADER)
+    now_json['filing']['header']['name'] = 'noticeOfWithdrawal'
+    now_json['filing']['business']['legalType'] = 'BC'
+    now_json['filing']['noticeOfWithdrawal'] = copy.deepcopy(NOTICE_OF_WITHDRAWAL)
+    now_json['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing_id
+
+    # verify formatted NoW data for report template
+    formatted_now_json = copy.deepcopy(now_json['filing'])
+    report_instance = Report({})
+    expected_withdrawn_filing_effective_date = LegislationDatetime.as_legislation_timezone(withdrawn_filing.effective_date)
+    expected_withdrawn_filing_effective_date = LegislationDatetime.format_as_report_string(expected_withdrawn_filing_effective_date)
+    report_instance._format_notice_of_withdrawal_data(formatted_now_json)
+    assert formatted_now_json['withdrawnFilingType'] ==  formatted_filing_type
+    assert formatted_now_json['withdrawnFilingEffectiveDate'] == expected_withdrawn_filing_effective_date
+    assert formatted_now_json['noticeOfWithdrawal']['filingId'] == withdrawn_filing_id

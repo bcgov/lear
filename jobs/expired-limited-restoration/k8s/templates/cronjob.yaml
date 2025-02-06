@@ -1,0 +1,138 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  labels:
+    name: ${NAME}
+  name: ${NAME}-cronjob
+objects:
+- kind: "CronJob"
+  apiVersion: "batch/v1beta1"
+  metadata:
+    name: "${NAME}-${TAG}"
+    labels:
+      name: ${NAME}
+      environment: ${TAG}
+      role: "${ROLE}"
+  spec:
+    schedule: "${SCHEDULE}"
+    concurrencyPolicy: "Forbid"
+    successfulJobsHistoryLimit: "${{SUCCESS_JOBS_HISTORY_LIMIT}}"
+    failedJobsHistoryLimit: "${{FAILED_JOBS_HISTORY_LIMIT}}"
+    jobTemplate:
+      metadata:
+        labels:
+          name: ${NAME}
+          environment: ${TAG}
+          role: "${ROLE}"
+      spec:
+        backoffLimit: ${{JOB_BACKOFF_LIMIT}}
+        template:
+          metadata:
+            labels:
+              name: ${NAME}
+              environment: ${TAG}
+              role: "${ROLE}"
+          spec:
+            containers:
+              - name: "${NAME}-${TAG}"
+                image: "${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/${NAME}:${TAG}"
+                imagePullPolicy: Always
+                command:
+                  - /bin/sh
+                  - -c
+                  - cd /opt/app-root; ./run.sh
+                env:
+                  - name: COLIN_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${NAME}-${TAG}-secret
+                        key: COLIN_URL
+                  - name: LEGAL_API_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${NAME}-${TAG}-secret
+                        key: LEGAL_API_URL
+                  - name: ACCOUNT_SVC_AUTH_URL
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${NAME}-${TAG}-secret
+                        key: ACCOUNT_SVC_AUTH_URL
+                  - name: ACCOUNT_SVC_CLIENT_ID
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${NAME}-${TAG}-secret
+                        key: ACCOUNT_SVC_CLIENT_ID
+                  - name: ACCOUNT_SVC_CLIENT_SECRET
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${NAME}-${TAG}-secret
+                        key: ACCOUNT_SVC_CLIENT_SECRET
+                  - name: SENTRY_DSN
+                    valueFrom:
+                      secretKeyRef:
+                        name: ${NAME}-${TAG}-secret
+                        key: SENTRY_DSN
+            restartPolicy: "Never"
+            terminationGracePeriodSeconds: 30
+            activeDeadlineSeconds: 1600
+            dnsPolicy: "ClusterFirst"
+parameters:
+  - name: NAME
+    displayName: Name
+    description: The name assigned to all of the OpenShift resources associated to the server instance.
+    required: true
+    value: expired-limited-restoration
+
+  - name: TAG
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
+    value: dev
+    required: true
+
+  - name: ROLE
+    displayName: Role
+    description: Role
+    required: true
+    value: job
+
+  - name: NAMESPACE
+    displayName: Namespace Name
+    description: The base namespace name for the project.
+    required: true
+    value: cc892f
+
+  - name: IMAGE_NAMESPACE
+    displayName: Image Namespace
+    required: true
+    description: The namespace of the OpenShift project containing the imagestream for the application.
+    value: cc892f-tools
+
+  - name: IMAGE_REGISTRY
+    displayName: Image Registry
+    required: true
+    description: The image registry of the OpenShift project.
+    value: image-registry.openshift-image-registry.svc:5000
+
+  - name: "SCHEDULE"
+    displayName: "Cron Schedule"
+    description: "Cron Schedule to Execute the Job (using local cluster system TZ)"
+    value: "59 23 * * *"
+    required: true
+
+  - name: "SUCCESS_JOBS_HISTORY_LIMIT"
+    displayName: "Successful Job History Limit"
+    description: "The number of successful jobs that will be retained"
+    value: "5"
+    required: true
+
+  - name: "FAILED_JOBS_HISTORY_LIMIT"
+    displayName: "Failed Job History Limit"
+    description: "The number of failed jobs that will be retained"
+    value: "2"
+    required: true
+
+  - name: "JOB_BACKOFF_LIMIT"
+    displayName: "Job Backoff Limit"
+    description: "The number of attempts to try for a successful job outcome"
+    value: "0"
+    required: false

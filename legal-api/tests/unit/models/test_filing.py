@@ -554,7 +554,7 @@ def test_get_completed_filings_for_colin(session, client, jwt):
     assert len(filings) == 0
 
 
-def test_get_a_businesses_most_recent_filing_of_a_type(session):
+def test_get_most_recent_filing(session):
     """Assert that the most recent completed filing of a specified type is returned."""
     from legal_api.models import Filing
     from tests.unit.models import factory_completed_filing
@@ -571,7 +571,7 @@ def test_get_a_businesses_most_recent_filing_of_a_type(session):
         filing = factory_completed_filing(b, ar, filing_date)
         filings.append(filing)
     # test
-    filing = Filing.get_a_businesses_most_recent_filing_of_a_type(b.id, Filing.FILINGS['annualReport']['name'])
+    filing = Filing.get_most_recent_filing(b.id, Filing.FILINGS['annualReport']['name'])
 
     # assert that we get the last filing
     assert filings[4] == filing

@@ -122,15 +122,22 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
     ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
+    ACCOUNT_SVC_TIMEOUT = int(ACCOUNT_SVC_TIMEOUT) if ACCOUNT_SVC_TIMEOUT.isnumeric() else None
 
     # batch delete flow
-    BATCHES = os.getenv('BATCHES')
-    BATCHES = int(BATCHES) if BATCHES.isnumeric() else 0
-    BATCH_SIZE = os.getenv('BATCH_SIZE')
-    BATCH_SIZE = int(BATCH_SIZE) if BATCH_SIZE.isnumeric() else 0
+    DELETE_BATCHES = os.getenv('DELETE_BATCHES')
+    DELETE_BATCHES = int(DELETE_BATCHES) if DELETE_BATCHES.isnumeric() else 0
+    DELETE_BATCH_SIZE = os.getenv('DELETE_BATCH_SIZE')
+    DELETE_BATCH_SIZE = int(DELETE_BATCH_SIZE) if DELETE_BATCH_SIZE.isnumeric() else 0
 
     DELETE_AUTH_RECORDS = os.getenv('DELETE_AUTH_RECORDS').lower() == 'true'
     DELETE_CORP_PROCESSING_RECORDS = os.getenv('DELETE_CORP_PROCESSING_RECORDS').lower() == 'true'
+
+    # tombstone flow
+    TOMBSTONE_BATCHES = os.getenv('TOMBSTONE_BATCHES')
+    TOMBSTONE_BATCHES = int(TOMBSTONE_BATCHES) if TOMBSTONE_BATCHES.isnumeric() else 0
+    TOMBSTONE_BATCH_SIZE = os.getenv('TOMBSTONE_BATCH_SIZE')
+    TOMBSTONE_BATCH_SIZE = int(TOMBSTONE_BATCH_SIZE) if TOMBSTONE_BATCH_SIZE.isnumeric() else 0
 
     TESTING = False
     DEBUG = False

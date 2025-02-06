@@ -471,6 +471,12 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             one_or_none()
         return find_in_batch_processing is not None
 
+    @property
+    def is_tombstone(self):
+        """Return True if it's a tombstone business, otherwise False."""
+        tombstone_filing = Filing.get_filings_by_status(self.id, [Filing.Status.TOMBSTONE])
+        return bool(tombstone_filing)
+
     def save(self):
         """Render a Business to the local cache."""
         db.session.add(self)
@@ -510,7 +516,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
             'lastAddressChangeDate': '',
             'lastDirectorChangeDate': '',
-            'lastModified': self.last_modified.isoformat(),
             'naicsKey': self.naics_key,
             'naicsCode': self.naics_code,
             'naicsDescription': self.naics_description,
@@ -535,7 +540,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'inDissolution': self.in_dissolution,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
-            'state': self.state.name if self.state else Business.State.ACTIVE.name
+            'state': self.state.name if self.state else Business.State.ACTIVE.name,
+            'lastModified': self.last_modified.isoformat()
         }
 
         if self.tax_id:
@@ -672,6 +678,14 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return businesses
 
     @classmethod
+    def get_expired_restoration(cls):
+        """Return all identifier with an expired restoration_expiry_date."""
+        businesses = (db.session.query(Business.identifier)
+                      .filter(Business.restoration_expiry_date <= datetime.utcnow())
+                      .all())
+        return businesses
+
+    @classmethod
     def get_filing_by_id(cls, business_identifier: int, filing_id: str):
         """Return the filings for a specific business and filing_id."""
         filing = db.session.query(Business, Filing). \
@@ -770,7 +784,13 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             self.state_filing_id and
             (state_filing := Filing.find_by_id(self.state_filing_id)) and
                 state_filing.is_amalgamation_application):
-            return Amalgamation.get_revision_json(state_filing.transaction_id, state_filing.business_id)
+            if not self.is_tombstone:
+                return Amalgamation.get_revision_json(state_filing.transaction_id, state_filing.business_id)
+            else:
+                return {
+                    'identifier': 'Not Available',
+                    'legalName': 'Not Available'
+                }
 
         return None
 

@@ -22,6 +22,7 @@ info:
     - Consent Continuation Out 
     - Conversion
     - Dissolution
+    - Notice of Withdrawal
     - Registration (Sole Proprietorship, General Partnership)
     - Special Resolution
 
@@ -696,6 +697,37 @@ paths:
                         paymentToken: '12345'
                         status: 'PENDING'
                         submitter: 'mocked submitter'
+                notice-of-withdrawal-success-response:
+                  summary: Notice of Withdrawal Response
+                  value:
+                    filing:
+                      business:
+                        foundingDate: '2023-07-12T17:31:58.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
+                      header:
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: Sample Certified Person
+                        colinIds: []
+                        comments: []
+                        data: '2024-12-18T00:10:47.042797+00:00'
+                        email: api.specs@example.com
+                        filingId: 654321
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: false
+                        name: noticeOfWithdrawal
+                        paymentStatusCode: 'APPROVED'
+                        paymentToken: '12345'
+                        status: 'PENDING'
+                        submitter: 'mocked submitter'
+                      noticeOfWithdrawal:
+                        filingId: 123456
+                        hasTakenEffect: false
+                        partOfPoa: false
                 voluntary-dissolution-success-response:
                   summary: Voluntary Dissolution Response
                   value:
@@ -870,6 +902,12 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: errors:[error:Can't have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                notice-of-withdrawal-failed-withdrawn-filing-issues-response:
+                  summary: Notice of Withdrawal - invalid withdrawn filing
+                  value:
+                    errors:
+                      - error: Only filings with a future effective date can be withdrawn.
+                      - error: Only paid filings with a future effective date can be withdrawn.
                 voluntary-dissolution-failed-missing-filing-name-response:
                   summary: Voluntary Dissolution - Missing Filing Name Response
                   value:
@@ -884,7 +922,21 @@ paths:
                   summary: Consent Continuation Out - Unauthorized Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:You are not authorized to submit a filing for BC1218840. 
+                    rootCause: message:You are not authorized to submit a filing for BC1218840.
+                notice-of-withdrawal-failed-not-staff-response:
+                  summary: Notice of Withdrawal - Not a staff
+                  value:
+                    message: You are not authorized to submit a filing for BC1234567.
+        '404':
+          description: Cannot found, when a value cannot be found in the records
+          content:
+            application/json:
+              examples:
+                notice-of-withdrawal-failed-invalid-filing-id-response:
+                  summary: Notice of Withdrawal - withdrawn filing cannot be found
+                  value:
+                    errors:
+                      - error: The filing to be withdrawn cannot be found.
         '422':
           description: UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)
           content:
@@ -1436,6 +1488,45 @@ paths:
                       courtOrder:
                         fileNumber: '12345'
                         effectOfOrder: planOfArrangement
+              notice-of-withdrawal-request:
+                summary: Notice of Withdrawal Request
+                value:
+                  filing:
+                    header:
+                      name: noticeOfWithdrawal
+                      certifiedBy: Sample Certified Person
+                      email: api.specs@example.com
+                      date: '2024-12-18'
+                      priority: false
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
+                    noticeOfWithdrawal:
+                      filingId: 123456
+              notice-of-withdrawal-with-options-request:
+                summary: Notice of Withdrawal Request with Options
+                value:
+                  filing:
+                    header:
+                      name: noticeOfWithdrawal
+                      certifiedBy: Sample Certified Person
+                      email: api.specs@example.com
+                      date: '2024-12-18'
+                      priority: false
+                    business:
+                      foundingDate: '2023-07-12T17:31:58.000+00:00'
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
+                    noticeOfWithdrawal:
+                      filingId: 123456
+                      courtOrder:
+                        fileNumber: "A12345"
+                        effectOfOrder: planOfArrangement
+                      hasTakenEffect: false
+                      partOfPoa: false
               voluntary-dissolution-request:
                 summary: Voluntary Dissolution Request
                 value:
@@ -5325,6 +5416,7 @@ components:
             - dissolution
             - dissolved
             - incorporationApplication
+            - noticeOfWithdrawal
             - putBackOn
             - registration
             - restoration
@@ -5677,6 +5769,7 @@ components:
                     - $ref: '#/components/schemas/Correction'
                     - $ref: '#/components/schemas/Dissolution'
                     - $ref: '#/components/schemas/Incorporation_application'
+                    - $ref: '#/components/schemas/Notice_of_withdrawal'
                     - $ref: '#/components/schemas/Registrars_notation'
                     - $ref: '#/components/schemas/Registrars_order'
                     - $ref: '#/components/schemas/Registration'
@@ -6248,6 +6341,34 @@ components:
               - DBA
         required:
           - name
+    Notice_of_withdrawal:
+      type: object
+      title: Notice of Withdrawal Filing
+      description: Filing to withdraw future effective filings.
+      required:
+        - noticeOfWithdrawal
+      properties:
+        noticeOfWithdrawal:
+          type: object
+          description: This section contains all the information to withdraw a future effective filing.
+          required:
+            - filingId
+          properties:
+            filingId:
+              type: integer
+              title: ID for the future effective filing
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
+            hasTakenEffect:
+              type: boolean
+              title: One of the terms of arrangement for the FED filing have taken effect
+            partOfPoa:
+              type: boolean
+              title: FED filing is part of a Plan of Arrangement
+      x-examples:
+        Example 1:
+          noticeOfWithdrawal:
+            filingId: 123456
     Office:
       title: Office Schema
       type: object
@@ -6733,11 +6854,11 @@ components:
         maxNumberOfShares:
           type: number
           title: 'Maximum number of shares in the class. '
-          description: The maximum number of shares that a corporation can issue to the investors called authorized shares.
+          description: 'The maximum number of shares that a corporation can issue to the investors called authorized shares. If hasMaximumShares is false, set this field to null.'
         parValue:
           type: number
           title: 'Initial value of each share. '
-          description: 'The value of a single common share as set by a corporation''s charter. '
+          description: 'The value of a single common share as set by a corporation''s charter. If hasParValue is false, set this field to null.'
         currency:
           type: string
           description: The currency in which the Share is traded on the Exchange.

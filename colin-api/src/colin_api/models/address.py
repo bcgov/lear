@@ -155,26 +155,34 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                         WHERE id_typ_cd = 'ADD'
                     """, new_num=addr_id + 1)
 
-            country_typ_cd = pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
             raise err
 
         try:
+            country_typ_cd = pycountry.countries.search_fuzzy(address_info.get('addressCountry'))[0].alpha_2
+
+            province = ''
+            province_state_name = (address_info.get('addressRegion') or '').upper()
+            if country_typ_cd in ('CA', 'US'):
+                province = province_state_name
+                province_state_name = ''
+
             cursor.execute("""
                             INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2,
-                             city, delivery_instructions)
+                             city, delivery_instructions, province_state_name)
                             VALUES (:addr_id, :province, :country_typ_cd, :postal_cd, :addr_line_1, :addr_line_2, :city,
-                                :delivery_instructions)
+                                :delivery_instructions, :province_state_name)
                             """,
                            addr_id=addr_id,
-                           province=(address_info.get('addressRegion') or '').upper(),
+                           province=province,
                            country_typ_cd=country_typ_cd,
                            postal_cd=(address_info.get('postalCode') or '').upper(),
                            addr_line_1=(address_info.get('streetAddress') or '').upper(),
                            addr_line_2=(address_info.get('streetAddressAdditional') or '').upper(),
                            city=(address_info.get('addressCity') or '').upper(),
-                           delivery_instructions=(address_info.get('deliveryInstructions') or '').upper()
+                           delivery_instructions=(address_info.get('deliveryInstructions') or '').upper(),
+                           province_state_name=province_state_name
                            )
         except Exception as err:
             current_app.logger.error(f'Error in address: failed to insert new address: {address_info}')

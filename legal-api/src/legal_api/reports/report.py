@@ -24,7 +24,7 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from legal_api.core.meta.filing import FILINGS
+from legal_api.core.meta.filing import FILINGS, FilingMeta
 from legal_api.models import (
     AmalgamatingBusiness,
     Amalgamation,
@@ -38,7 +38,7 @@ from legal_api.models import (
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService
+from legal_api.services import MinioService, VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -162,7 +162,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'continuation/exproRegistrationInBc',
             'continuation/foreignJurisdiction',
             'continuation/nameRequest',
-            'common/completingParty',
             'correction/businessDetails',
             'correction/addresses',
             'correction/associateType',
@@ -174,8 +173,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'change-of-registration/nature-of-business',
             'change-of-registration/addresses',
             'change-of-registration/proprietor',
-            'change-of-registration/completingParty',
             'change-of-registration/partner',
+            'notice-of-withdrawal/recordToBeWithdrawn',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
             'incorporation-application/effectiveDate',
@@ -190,7 +189,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'restoration-application/expiry',
             'registration/nameRequest',
             'registration/addresses',
-            'registration/completingParty',
             'registration/party',
             'registration-statement/party',
             'registration-statement/business-info',
@@ -261,6 +259,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
+
+        filing['enable_new_ben_statements'] = flags.is_on('enable-new-ben-statements')
+
         return filing
 
     def _format_par_value(self, filing):
@@ -306,6 +307,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_continuation_in_data(filing)
         elif self._report_key == 'certificateOfContinuation':
             self._format_certificate_of_continuation_in_data(filing)
+        elif self._report_key == 'noticeOfWithdrawal':
+            self._format_notice_of_withdrawal_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -350,11 +353,21 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['taxId'] = self._business.tax_id
 
     def _set_description(self, filing):
-        legal_type = (self._filing.filing_json
-                      .get('filing')
-                      .get(self._filing.filing_type)
-                      .get('nameRequest', {})
-                      .get('legalType'))
+        legal_type = None
+        filing_json = self._filing.filing_json.get('filing', {})
+        filing_type = self._filing.filing_type
+
+        # Check for alteration filing type
+        if filing_type == 'alteration':
+            legal_type = filing_json.get('alteration', {}).get('business', {}).get('legalType')
+        else:
+            legal_type = filing_json.get(filing_type, {}).get('nameRequest', {}).get('legalType')
+
+        # Fallback: Check the general business section
+        if not legal_type:
+            legal_type = filing_json.get('business', {}).get('legalType')
+
+        # Final fallback: Check the _business object
         if not legal_type and self._business:
             legal_type = self._business.legal_type
 
@@ -488,6 +501,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing['offices']['recordsOffice']['mailingAddress'])
         if filing.get('shareStructure', {}).get('shareClasses', None):
             filing['shareClasses'] = filing['shareStructure']['shareClasses']
+            dates = filing['shareStructure'].get('resolutionDates', [])
+            formatted_dates = [
+                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
+            ]
+            filing['resolutions'] = formatted_dates
 
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
@@ -672,7 +690,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._filing.transaction_id, self._business.id)
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
-            filing['resolutions'] = filing['alteration']['shareStructure'].get('resolutionDates', [])
+            dates = filing['alteration']['shareStructure'].get('resolutionDates', [])
+            formatted_dates = [
+                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
+            ]
+            filing['resolutions'] = formatted_dates
 
         to_legal_name = None
         if self._filing.status == 'COMPLETED':
@@ -733,6 +755,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_certificate_of_amalgamation_data(self, filing):
         self._set_amalgamating_businesses(filing)
+
+    def _format_notice_of_withdrawal_data(self, filing):
+        withdrawn_filing_id = filing['noticeOfWithdrawal']['filingId']
+        withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+        formatted_withdrawn_filing_type = FilingMeta.get_display_name(
+            withdrawn_filing.filing_json['filing']['business']['legalType'],
+            withdrawn_filing.filing_type,
+            withdrawn_filing.filing_sub_type
+        )
+        filing['withdrawnFilingType'] = formatted_withdrawn_filing_type
+        withdrawn_filing_date = LegislationDatetime.as_legislation_timezone(withdrawn_filing.effective_date)
+        filing['withdrawnFilingEffectiveDate'] = LegislationDatetime.format_as_report_string(withdrawn_filing_date)
 
     def _set_amalgamating_businesses(self, filing):
         amalgamating_businesses = []
@@ -1044,16 +1078,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
-        filing['nameRequest'] = name_request_json
-        prev_legal_name = versioned_business.legal_name
+        if name_request_json:
+            filing['nameRequest'] = name_request_json
+            prev_legal_name = versioned_business.legal_name
 
-        if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
-            new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
-                                                                   versioned_business.identifier)
+            if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
+                new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
+                                                                       versioned_business.identifier)
 
-        if new_legal_name and prev_legal_name != new_legal_name:
-            filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = new_legal_name
+            if new_legal_name and prev_legal_name != new_legal_name:
+                filing['previousLegalName'] = prev_legal_name
+                filing['newLegalName'] = new_legal_name
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
@@ -1136,8 +1171,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['ceasedParties'] = parties_deleted
 
     def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
+        if filing.get('correction').get('shareStructure') is None:
+            return
         filing['shareClasses'] = filing.get('correction').get('shareStructure', {}).get('shareClasses')
-        filing['resolutions'] = filing.get('correction').get('shareStructure', {}).get('resolutionDates', [])
+        dates = filing['correction']['shareStructure'].get('resolutionDates', [])
+        formatted_dates = [
+            datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
+        ]
+        filing['resolutions'] = formatted_dates
         filing['newShareClasses'] = []
         if filing.get('shareClasses'):
             prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
@@ -1442,6 +1483,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfContinuation': {
             'filingDescription': 'Certificate of Continuation',
             'fileName': 'certificateOfContinuation'
+        },
+        'noticeOfWithdrawal': {
+            'filingDescription': 'Notice of Withdrawal',
+            'fileName': 'noticeOfWithdrawal'
         }
     }
 

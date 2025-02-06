@@ -34,7 +34,7 @@ from legal_api.services import (  # noqa: I001;
     RegistrationBootstrapService,
     check_warnings,
 )  # noqa: I001;
-from legal_api.services.authz import get_allowable_actions, get_allowed
+from legal_api.services.authz import get_allowable_actions, get_allowed, get_could_files
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -64,6 +64,7 @@ def get_businesses(identifier: str):
         business_json = business.json(slim=True)
         # need to add the alternateNames array here because it is not a part of slim JSON
         business_json['alternateNames'] = business.get_alternate_names()
+
         return jsonify(business=business_json)
 
     warnings = check_warnings(business)
@@ -75,10 +76,10 @@ def get_businesses(identifier: str):
     business.allowable_actions = allowable_actions
 
     business_json = business.json()
+
     recent_filing_json = CoreFiling.get_most_recent_filing_json(business.id, None, jwt)
     if recent_filing_json:
         business_json['submitter'] = recent_filing_json['filing']['header']['submitter']
-        business_json['lastModified'] = recent_filing_json['filing']['header']['date']
 
     allowed_filings = str(request.args.get('allowed_filings', None)).lower() == 'true'
     if allowed_filings:
@@ -212,3 +213,25 @@ def search_businesses():
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@bp.route('/allowable/<string:business_type>/<string:business_state>', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def get_allowable_for_business_type(business_type: str, business_state: str):
+    """Return a JSON object with information about what a user could theoretically file for a business type."""
+    business_state = business_state.upper()
+    business_type = business_type.upper()
+
+    bs_state = getattr(Business.State, business_state, False)
+    if not bs_state:
+        return {'message': babel('Invalid business state.')}, HTTPStatus.BAD_REQUEST
+
+    try:
+        _ = Business.LegalTypes(business_type)
+    except ValueError:
+        return {'message': babel('Invalid business type.')}, HTTPStatus.BAD_REQUEST
+
+    could_file = get_could_files(jwt, business_type, business_state)
+
+    return jsonify(couldFile=could_file)

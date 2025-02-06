@@ -393,7 +393,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             """
             update corp_party
             set end_event_id=:event_id, cessation_dt=TO_DATE(:cessation_date, 'YYYY-mm-dd')
-            where corp_num=:corp_num
+            where party_typ_cd='DIR' and end_event_id is null and corp_num=:corp_num
             """
         )
         try:

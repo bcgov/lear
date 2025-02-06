@@ -52,6 +52,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         PENDING_CORRECTION = 'PENDING_CORRECTION'
         WITHDRAWN = 'WITHDRAWN'
 
+        TOMBSTONE = 'TOMBSTONE'
+
         # filings with staff review
         APPROVED = 'APPROVED'
         AWAITING_REVIEW = 'AWAITING_REVIEW'
@@ -448,6 +450,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         # for all the business the fee code remain same as NOFEE (Staff)
         'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'},
         'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
+        'putBackOff': {'name': 'putBackOff', 'title': 'Put Back Off', 'code': 'NOFEE'},
         'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
         'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
         'registrarsOrder': {'name': 'registrarsOrder', 'title': 'Registrars Order', 'code': 'NOFEE'}
@@ -492,6 +495,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'court_order_effect_of_order',
             'court_order_file_number',
             'deletion_locked',
+            'hide_in_ledger',
             'effective_date',
             'order_details',
             'paper_only',
@@ -504,7 +508,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'transaction_id',
             'approval_type',
             'application_date',
-            'notice_date'
+            'notice_date',
+            'withdrawal_pending',
+            'withdrawn_filing_id'
         ]
     }
 
@@ -535,6 +541,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     application_date = db.Column('application_date', db.DateTime(timezone=True))
     notice_date = db.Column('notice_date', db.DateTime(timezone=True))
     resubmission_date = db.Column('resubmission_date', db.DateTime(timezone=True))
+    hide_in_ledger = db.Column('hide_in_ledger', db.Boolean, unique=False, default=False)
+    withdrawal_pending = db.Column('withdrawal_pending', db.Boolean, unique=False, default=False)
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -558,7 +566,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     review = db.relationship('Review', lazy='dynamic')
 
     parent_filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'))
-    parent_filing = db.relationship('Filing', remote_side=[id], backref=backref('children'))
+    parent_filing = db.relationship('Filing',
+                                    remote_side=[id],
+                                    backref=backref('children', uselist=True),
+                                    foreign_keys=[parent_filing_id])
+
+    withdrawn_filing_id = db.Column('withdrawn_filing_id', db.Integer,
+                                    db.ForeignKey('filings.id'))
+    withdrawn_filing = db.relationship('Filing',
+                                       remote_side=[id],
+                                       foreign_keys=[withdrawn_filing_id])
 
     # properties
     @property
@@ -844,11 +861,36 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     @staticmethod
     def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
-        """Return a Filing by it's payment token."""
-        q = db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id)
+        """Return a filing by the temp id and filing id (if applicable)."""
+        if not filing_id:
+            return db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id).one_or_none()
 
-        if filing_id:
-            q.filter(Filing.id == filing_id)
+        return (
+            db.session.query(Filing).filter(
+                db.or_(
+                    db.and_(
+                        Filing.id == filing_id,
+                        Filing.temp_reg == temp_reg_id
+                    ),
+                    db.and_(  # special case for NoW
+                        Filing.id == filing_id,
+                        Filing._filing_type == 'noticeOfWithdrawal',
+                        Filing.withdrawn_filing_id == db.session.query(Filing.id)
+                        .filter(Filing.temp_reg == temp_reg_id)
+                        .scalar_subquery()
+                    )
+                )
+            ).one_or_none())
+
+    @staticmethod
+    def get_temp_reg_filing_by_withdrawn_filing(filing_id: str, withdrawn_filing_id: str, filing_type: str = None):
+        """Return an temp reg Filing by withdrawn filing."""
+        q = db.session.query(Filing). \
+            filter(Filing.withdrawn_filing_id == withdrawn_filing_id). \
+            filter(Filing.id == filing_id)
+
+        if filing_type:
+            q = q.filter(Filing._filing_type == filing_type)
 
         filing = q.one_or_none()
         return filing
@@ -893,7 +935,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
             filter(Filing._status == Filing.Status.COMPLETED.value). \
-            order_by(desc(Filing.effective_date)). \
+            order_by(desc(Filing.transaction_id)). \
             all()
         return filings
 
@@ -953,23 +995,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_a_businesses_most_recent_filing_of_a_type(business_id: int, filing_type: str, filing_sub_type: str = None):
-        """Return the filings of a particular type."""
-        max_filing = db.session.query(db.func.max(Filing._filing_date).label('last_filing_date')).\
-            filter(Filing._filing_type == filing_type). \
-            filter(Filing.business_id == business_id)
-        if filing_sub_type:
-            max_filing = max_filing.filter(Filing._filing_sub_type == filing_sub_type)
-        max_filing = max_filing.subquery()
+    def get_most_recent_filing(business_id: str, filing_type: str = None, filing_sub_type: str = None):
+        """Return the most recent filing.
 
-        filing = Filing.query.join(max_filing, Filing._filing_date == max_filing.c.last_filing_date). \
+        filing_type is required, if filing_sub_type is provided, it will be used to filter the query.
+        """
+        query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
-            filter(Filing._filing_type == filing_type). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
-        if filing_sub_type:
-            filing = filing.filter(Filing._filing_sub_type == filing_sub_type)
+        if filing_type:
+            query = query.filter(Filing._filing_type == filing_type)
+            if filing_sub_type:
+                query = query.filter(Filing._filing_sub_type == filing_sub_type)
 
-        return filing.one_or_none()
+        query = query.order_by(Filing.transaction_id.desc())
+        return query.first()
 
     @staticmethod
     def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
@@ -1034,15 +1074,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_previous_completed_filing(filing):
         """Return the previous completed filing."""
-        filings = db.session.query(Filing). \
+        query = db.session.query(Filing). \
             filter(Filing.business_id == filing.business_id). \
-            filter(Filing._status == Filing.Status.COMPLETED.value). \
-            filter(Filing.id < filing.id). \
-            filter(Filing.effective_date < filing.effective_date). \
-            order_by(Filing.effective_date.desc()).all()
-        if filings:
-            return filings[0]
-        return None
+            filter(Filing._status == Filing.Status.COMPLETED.value)
+
+        if filing.transaction_id:  # transaction_id will be None for the pending filings (intermediate state)
+            query = query.filter(Filing.transaction_id < filing.transaction_id)
+
+        return query.order_by(Filing.transaction_id.desc()).first()
 
     @staticmethod
     def has_completed_filing(business_id: int, filing_type: str) -> bool:
