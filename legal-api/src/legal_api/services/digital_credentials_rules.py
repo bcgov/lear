@@ -33,24 +33,22 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(
 class DigitalCredentialsRulesService:
     """Digital Credentials Rules service."""
 
-    def registration_filings(self, business: Business) -> List[Filing]:
+    def _registration_filings(self, business: Business) -> List[Filing]:
         """Return the registration filings for the business."""
         return Filing.get_filings_by_types(business.id, ['registration'])
 
-    def registration_filing(self, business: Business) -> Filing:
+    def _registration_filing(self, business: Business) -> Filing:
         """Return the registration filing for the business."""
-        if len(registration_filings := self.registration_filings(business)) <= 0:
+        if len(registration_filings := self._registration_filings(business)) <= 0:
             return None
 
         return registration_filings[0]
 
-    def proprietors(self, business: Business) -> List[PartyRole]:
-        """Return the proprietors of the business."""
-        return PartyRole.get_parties_by_role(
-            business.id, PartyRole.RoleTypes.PROPRIETOR.value
-        )
+    def _parties_by_role(self, business: Business, role: PartyRole.RoleTypes) -> List[PartyRole]:
+        """Return the party roles of a role type the business."""
+        return PartyRole.get_parties_by_role(business.id, role)
 
-    def completing_parties(self, registration_filing: Filing) -> List[PartyRole]:
+    def _completing_parties(self, registration_filing: Filing) -> List[PartyRole]:
         """Return the completing parties of the registration filing."""
         return PartyRole.get_party_roles_by_filing(
             registration_filing.id,
@@ -58,7 +56,7 @@ class DigitalCredentialsRulesService:
             PartyRole.RoleTypes.COMPLETING_PARTY.value,
         )
 
-    def formatted_user(self, user: Union[User, Party]) -> dict:
+    def _formatted_user(self, user: Union[User, Party]) -> dict:
         """Return the formatted name of the user."""
         first_name = (getattr(user, 'firstname', '') or getattr(
             user, 'first_name', '') or '').lower()
@@ -76,9 +74,9 @@ class DigitalCredentialsRulesService:
         }
 
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
-        return self.has_general_access(user) and self.has_specific_access(user, business)
+        return self._has_general_access(user) and self._has_specific_access(user, business)
 
-    def has_general_access(self, user: User) -> bool:
+    def _has_general_access(self, user: User) -> bool:
         """Return Ture if general access rules are met."""
         if not user:
             logging.debug('No user is provided.')
@@ -91,34 +89,41 @@ class DigitalCredentialsRulesService:
 
         return True
 
-    def has_specific_access(self, user: User, business: Business) -> bool:
+    def _has_specific_access(self, user: User, business: Business) -> bool:
         """Return True if business rules are met."""
         if not business:
             logging.debug('No buisiness is provided.')
             return False
 
         if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
-            return self.is_self_registered_owner_operator(user, business)
+            return self._is_completing_party_and_has_party_role(
+                user, business, PartyRole.RoleTypes.PROPRIETOR.value
+            )
+
+        if business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
+            return True
 
         return False
 
-    def is_self_registered_owner_operator(self, user, business) -> bool:
-        """Return True if the user is the self-registered owner operator of the business."""
-        if not (registration_filing := self.registration_filing(business)):
+    def _is_completing_party_and_has_party_role(self, user, business, role: PartyRole.RoleTypes) -> bool:
+        """Return True if the user is the completing party and has a valid party role business."""
+        if not (registration_filing := self._registration_filing(business)):
             logging.debug('No registration filing found for the business.')
             return False
 
-        if len(proprietors := self.proprietors(business)) <= 0:
-            logging.debug('No proprietors found for the business.')
+        if len(parties := self._parties_by_role(business, role)) <= 0:
+            logging.debug(
+                f'No parties found for the business with role: {role}.')
             return False
 
-        if len(completing_parties := self.completing_parties(registration_filing)) <= 0:
+        if len(completing_parties := self._completing_parties(registration_filing)) <= 0:
             logging.debug(
                 'No completing parties found for the registration filing.')
             return False
 
-        if not (proprietor := proprietors[0].party):
-            logging.debug('No proprietor found for the business.')
+        if not (party := parties[0].party):
+            logging.debug(
+                f'No party found for the business with role: {role}.')
             return False
 
         if not (completing_party := completing_parties[0].party):
@@ -126,10 +131,10 @@ class DigitalCredentialsRulesService:
                 'No completing party found for the registration filing.')
             return False
 
-        cp_first_name, cp_last_name = self.formatted_user(
+        cp_first_name, cp_last_name = self._formatted_user(
             completing_party).values()
-        p_first_name, p_last_name = self.formatted_user(proprietor).values()
-        u_first_name, u_last_name = self.formatted_user(user).values()
+        p_first_name, p_last_name = self._formatted_user(party).values()
+        u_first_name, u_last_name = self._formatted_user(user).values()
 
         return (
             registration_filing.submitter_id == user.id
