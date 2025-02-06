@@ -180,6 +180,19 @@ class FilingInfo(Resource):
                         }
                     }), HTTPStatus.CREATED
 
+                # filing will not be created for Limited restoration expiration-Put back off (make business Historical)
+                # Create an event and update corp state.
+                if ('putBackOff' in filing_list and json_data['header']['hideInLedger'] is True):
+                    filing_dt = convert_to_pacific_time(json_data['header']['date'])
+                    event_id = Filing.add_limited_restoration_expiration_event(con, identifier, filing_dt)
+
+                    con.commit()
+                    return jsonify({
+                        'filing': {
+                            'header': {'colinIds': [event_id]}
+                        }
+                    }), HTTPStatus.CREATED
+
                 filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier, lear_identifier)
 
                 # success! commit the db changes
