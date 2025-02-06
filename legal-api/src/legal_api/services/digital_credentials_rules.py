@@ -33,6 +33,32 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(
 class DigitalCredentialsRulesService:
     """Digital Credentials Rules service."""
 
+    class FormattedUser:
+        """Formatted user class."""
+
+        first_name: str
+        last_name: str
+
+        def __init__(self, user: Union[User, Party]):
+            """Initialize the formatted user."""
+            first_name, last_name = self._formatted_user(user)
+            self.first_name = first_name
+            self.last_name = last_name
+
+        def _formatted_user(self, user: Union[User, Party]) -> dict:
+            """Return the formatted name of the user."""
+            first_name = (getattr(user, 'firstname', '') or getattr(
+                user, 'first_name', '') or '').lower()
+            last_name = (getattr(user, 'lastname', '') or getattr(
+                user, 'last_name', '') or '').lower()
+            middle_name = (getattr(user, 'middlename', '') or getattr(
+                user, 'middle_initial', '') or '').lower()
+
+            if middle_name:
+                first_name = f'{first_name} {middle_name}'
+
+            return first_name, last_name
+
     def _registration_filings(self, business: Business) -> List[Filing]:
         """Return the registration filings for the business."""
         return Filing.get_filings_by_types(business.id, ['registration'])
@@ -55,23 +81,6 @@ class DigitalCredentialsRulesService:
             datetime.utcnow(),
             PartyRole.RoleTypes.COMPLETING_PARTY.value,
         )
-
-    def _formatted_user(self, user: Union[User, Party]) -> dict:
-        """Return the formatted name of the user."""
-        first_name = (getattr(user, 'firstname', '') or getattr(
-            user, 'first_name', '') or '').lower()
-        last_name = (getattr(user, 'lastname', '') or getattr(
-            user, 'last_name', '') or '').lower()
-        middle_name = (getattr(user, 'middlename', '') or getattr(
-            user, 'middle_initial', '') or '').lower()
-
-        if middle_name:
-            first_name = f'{first_name} {middle_name}'
-
-        return {
-            'first_name': first_name,
-            'last_name': last_name,
-        }
 
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
         return self._has_general_access(user) and self._has_specific_access(user, business)
@@ -131,15 +140,14 @@ class DigitalCredentialsRulesService:
                 'No completing party found for the registration filing.')
             return False
 
-        cp_first_name, cp_last_name = self._formatted_user(
-            completing_party).values()
-        p_first_name, p_last_name = self._formatted_user(party).values()
-        u_first_name, u_last_name = self._formatted_user(user).values()
+        cp = self.FormattedUser(completing_party)
+        p = self.FormattedUser(party)
+        u = self.FormattedUser(user)
 
         return (
             registration_filing.submitter_id == user.id
-            and cp_first_name == p_first_name
-            and cp_last_name == p_last_name
-            and p_first_name == u_first_name
-            and p_last_name == u_last_name
+            and cp.first_name == p.first_name
+            and cp.last_name == p.last_name
+            and p.first_name == u.first_name
+            and p.last_name == u.last_name
         )

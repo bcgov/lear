@@ -52,7 +52,7 @@ def rules():
 def test_formatted_user(app, session, rules, test_user, expected):
     """Assert that the user is formatted correctly."""
 
-    assert rules._formatted_user(test_user) == expected
+    assert rules.FormattedUser(test_user).__dict__ == expected
 
 
 @patch('legal_api.models.User.find_by_jwt_token',
