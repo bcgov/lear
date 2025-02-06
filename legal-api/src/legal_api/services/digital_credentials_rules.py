@@ -116,23 +116,18 @@ class DigitalCredentialsRulesService:
 
     def _is_completing_party_and_has_party_role(self, user, business, role: PartyRole.RoleTypes) -> bool:
         """Return True if the user is the completing party and has a valid party role business."""
+        return (self._is_completing_party(user, business)
+                and self._has_party_role(user, business, role))
+
+    def _is_completing_party(self, user: FormattedUser, business: Business) -> bool:
+        """Return True if the user is the completing party."""
         if not (registration_filing := self._registration_filing(business)):
             logging.debug('No registration filing found for the business.')
-            return False
-
-        if len(parties := self._parties_by_role(business, role)) <= 0:
-            logging.debug(
-                f'No parties found for the business with role: {role}.')
             return False
 
         if len(completing_parties := self._completing_parties(registration_filing)) <= 0:
             logging.debug(
                 'No completing parties found for the registration filing.')
-            return False
-
-        if not (party := parties[0].party):
-            logging.debug(
-                f'No party found for the business with role: {role}.')
             return False
 
         if not (completing_party := completing_parties[0].party):
@@ -141,13 +136,25 @@ class DigitalCredentialsRulesService:
             return False
 
         cp = self.FormattedUser(completing_party)
+        u = self.FormattedUser(user)
+
+        return (registration_filing.submitter_id == user.id
+                and cp.first_name == u.first_name
+                and cp.last_name == u.last_name)
+
+    def _has_party_role(self, user: FormattedUser, business: Business, role: PartyRole.RoleTypes) -> bool:
+        """Return True if the user has a party role in the business."""
+        if len(parties := self._parties_by_role(business, role)) <= 0:
+            logging.debug(
+                f'No parties found for the business with role: {role}.')
+            return False
+
+        if not (party := parties[0].party):
+            logging.debug(
+                f'No party found for the business with role: {role}.')
+            return False
+
         p = self.FormattedUser(party)
         u = self.FormattedUser(user)
 
-        return (
-            registration_filing.submitter_id == user.id
-            and cp.first_name == p.first_name
-            and cp.last_name == p.last_name
-            and p.first_name == u.first_name
-            and p.last_name == u.last_name
-        )
+        return p.first_name == u.first_name and p.last_name == u.last_name
