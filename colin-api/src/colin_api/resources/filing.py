@@ -92,7 +92,8 @@ class FilingInfo(Resource):
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(legal_type, identifier, **kwargs):
         """Create a new filing."""
-        # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
+        # pylint: disable=too-many-return-statements,unused-argument,too-many-branches;
+        # filing_type is only used for the get
         try:
             if legal_type not in [x.value for x in Business.TypeCodes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
