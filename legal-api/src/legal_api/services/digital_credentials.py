@@ -83,7 +83,7 @@ class DigitalCredentialsService:
 
             # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
             if not (credential_definition_id := self._fetch_credential_definition(self.business_cred_def_id)):
-                raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
+                raise ValueError(f'Credential Definition with id: {self.business_cred_def_id}' +
                                  ' must be available in Traction tenant storage')
 
             # Check for the current Business definition.
@@ -114,14 +114,12 @@ class DigitalCredentialsService:
     def _fetch_schema(self, schema_id: str) -> Optional[str]:
         """Find a schema in Traction storage."""
         try:
-            response = requests.get(self.api_url + '/schema-storage',
-                                    params={'schema_id': schema_id},
+            response = requests.get(self.api_url + f'/schemas/{schema_id}',
                                     headers=self._get_headers())
             response.raise_for_status()
-            first_or_default = next((x for x in response.json()['results'] if x['schema_id'] == schema_id), None)
-            return first_or_default['schema_id'] if first_or_default else None
+            return response.json().get('schema', None).get('id', None)
         except Exception as err:
-            self.app.logger.error(f'Failed to fetch schema with id:{schema_id} from Traction tenant storage')
+            self.app.logger.error(f'Failed to fetch schema with id: {schema_id} from Traction tenant storage')
             self.app.logger.error(err)
             raise err
 
@@ -129,14 +127,12 @@ class DigitalCredentialsService:
     def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
         """Find a published credential definition."""
         try:
-            response = requests.get(self.api_url + '/credential-definition-storage',
-                                    params={'cred_def_id': cred_def_id},
+            response = requests.get(self.api_url + f'/credential-definitions/{cred_def_id}',
                                     headers=self._get_headers())
             response.raise_for_status()
-            first_or_default = next((x for x in response.json()['results'] if x['cred_def_id'] == cred_def_id), None)
-            return first_or_default['cred_def_id'] if first_or_default else None
+            return response.json().get('credential_definition', None).get('id', None)
         except Exception as err:
-            self.app.logger.error(f'Failed to find credential definition with id:{cred_def_id}' +
+            self.app.logger.error(f'Failed to find credential definition with id: {cred_def_id}' +
                                   ' from Traction tenant storage')
             self.app.logger.error(err)
             raise err
@@ -149,7 +145,7 @@ class DigitalCredentialsService:
                                      headers=self._get_headers(),
                                      params={'auto_accept': 'true'},
                                      data=json.dumps({
-                                         'handshake_protocols': ['https://didcomm.org/connections/1.0']
+                                         'handshake_protocols': ['https://didcomm.org/didexchange/1.1']
                                      }))
             response.raise_for_status()
             return response.json()
@@ -294,6 +290,7 @@ class DigitalCredentialsHelpers:
 
             # For an SP there is only one role. This will need to be updated
             # when the entity model changes and we need to support multiple roles.
+            # TODO: Find the party role where the party is the user;
             role = (
                 business.party_roles[0].role if (business.party_roles and len(business.party_roles.all())) else ''
             ).replace('_', ' ').title()
