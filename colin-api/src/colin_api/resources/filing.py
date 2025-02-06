@@ -229,8 +229,11 @@ class FilingInfo(Resource):
             filing_body = filing_list[filing_type]
             filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
             filing.body = filing_body
-            # get utc lear effective date and convert to pacific time for insert into oracle
-            filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
+            if filing.header['isFutureEffective']:
+                # get utc lear effective date and convert to pacific time for insert into oracle
+                filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
+            else:
+                filing.effective_date = filing.filing_date
 
             if filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication']:
                 filing.business = Business.create_corporation(con, json_data)
