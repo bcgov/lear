@@ -82,12 +82,10 @@ def check_parties(legal_type: str, business: Business) -> list:
     firm_party_roles = business.party_roles.filter(PartyRole.cessation_date.is_(None))
     result.extend(check_firm_parties(legal_type, firm_party_roles))
 
-    completing_party_filing = Filing \
-        .get_most_recent_legal_filing(business.id, 'conversion')
+    completing_party_filing = Filing.get_most_recent_filing(business.id, 'conversion')
 
     if not completing_party_filing:
-        completing_party_filing = Filing \
-            .get_most_recent_legal_filing(business.id, 'registration')
+        completing_party_filing = Filing.get_most_recent_filing(business.id, 'registration')
 
     result.extend(check_completing_party_for_filing(completing_party_filing))
     return result

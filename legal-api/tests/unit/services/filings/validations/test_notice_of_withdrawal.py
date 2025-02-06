@@ -31,6 +31,7 @@ from registry_schemas.example_data import FILING_HEADER, NOTICE_OF_WITHDRAWAL, D
 
 
 # setup
+FILING_HAS_POA_IN_EFFECT = {'error': 'Cannot file a Notice of Withdrawal as the filing has a POA in effect.'}
 FILING_NOT_EXIST_MSG = {'error': 'The filing to be withdrawn cannot be found.'}
 FILING_NOT_FED_MSG = {'error': 'Only filings with a future effective date can be withdrawn.'}
 FILING_NOT_PAID_MSG = {'error': 'Only paid filings with a future effective date can be withdrawn.'}
@@ -40,16 +41,17 @@ MISSING_FILING_DICT_MSG = {'error': 'A valid filing is required.'}
 # tests
 
 @pytest.mark.parametrize(
-        'test_name, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, expected_code, expected_msg',[
-            ('EXIST_BUSINESS_SUCCESS', True, Filing.Status.PAID, True, True, None, None),
-            ('EXIST_BUSINESS_FAIL_NOT_PAID', True, Filing.Status.PENDING, True, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_PAID_MSG]),
-            ('EXIST_BUSINESS_FAIL_NOT_FED', True, Filing.Status.PAID, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG]),
-            ('EXIST_BUSINESS_FAIL_FILING_NOT_EXIST', False, Filing.Status.PAID, True, True, HTTPStatus.NOT_FOUND, [FILING_NOT_EXIST_MSG]),
-            ('EXIST_BUSINESS_FAIL_MISS_FILING_ID', True, Filing.Status.PAID, True, False, HTTPStatus.UNPROCESSABLE_ENTITY, ''),
-            ('EXIST_BUSINESS_FAIL_NOT_PAID_NOT_FED', True, Filing.Status.PENDING, False, True, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG, FILING_NOT_PAID_MSG])
+        'test_name, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, has_taken_effect, part_of_poa, expected_code, expected_msg',[
+            ('EXIST_BUSINESS_SUCCESS', True, Filing.Status.PAID, True, True, False, False, None, None),
+            ('EXIST_BUSINESS_FAIL_NOT_PAID', True, Filing.Status.PENDING, True, True, None, None, HTTPStatus.BAD_REQUEST, [FILING_NOT_PAID_MSG]),
+            ('EXIST_BUSINESS_FAIL_NOT_FED', True, Filing.Status.PAID, False, True, None, None, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG]),
+            ('EXIST_BUSINESS_FAIL_FILING_NOT_EXIST', False, Filing.Status.PAID, True, True, None, None, HTTPStatus.NOT_FOUND, [FILING_NOT_EXIST_MSG]),
+            ('EXIST_BUSINESS_FAIL_MISS_FILING_ID', True, Filing.Status.PAID, True, False, None, None, HTTPStatus.UNPROCESSABLE_ENTITY, ''),
+            ('EXIST_BUSINESS_FAIL_NOT_PAID_NOT_FED', True, Filing.Status.PENDING, False, True, None, None, HTTPStatus.BAD_REQUEST, [FILING_NOT_FED_MSG, FILING_NOT_PAID_MSG]),
+            ('EXIST_BUSINESS_FAIL_POA_IN_EFFECT', True, Filing.Status.PAID, True, True, True, True, HTTPStatus.BAD_REQUEST, [FILING_HAS_POA_IN_EFFECT]),
         ]
 )
-def test_validate_notice_of_withdrawal(session, test_name, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, expected_code, expected_msg):
+def test_validate_notice_of_withdrawal(session, test_name, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, has_taken_effect, part_of_poa, expected_code, expected_msg):
     """Assert that notice of withdrawal flings can be validated"""
     today = datetime.utcnow().date()
     future_effective_date = today + timedelta(days=5)
@@ -82,6 +84,11 @@ def test_validate_notice_of_withdrawal(session, test_name, is_filing_exist, with
             filing_json['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing_id
     else:
         del filing_json['filing']['noticeOfWithdrawal']['filingId']
+
+    if has_taken_effect is not None:
+        filing_json['filing']['noticeOfWithdrawal']['hasTakenEffect'] = has_taken_effect
+    if part_of_poa is not None:
+        filing_json['filing']['noticeOfWithdrawal']['partOfPoa'] = part_of_poa    
 
     err = validate(business, filing_json)
     if expected_code:

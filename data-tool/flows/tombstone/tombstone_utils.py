@@ -1,16 +1,20 @@
 import copy
+from decimal import Decimal
 import json
 from datetime import datetime, timezone
+from decimal import Decimal
 
 import pandas as pd
 import pytz
 from sqlalchemy import Connection, text
-from tombstone.tombstone_base_data import (ALIAS, FILING, FILING_JSON, OFFICE,
+from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING, FILING_JSON, 
+                                           JURISDICTION, OFFICE,
                                            PARTY, PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
-from tombstone.tombstone_mappings import (EVENT_FILING_LEAR_TARGET_MAPPING,
+from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
+                                          EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
-                                          LEAR_STATE_FILINGS)
+                                          LEAR_STATE_FILINGS, EventFilings)
 
 unsupported_event_file_types = set()
 
@@ -21,10 +25,11 @@ def format_business_data(data: dict) -> dict:
     state = business_data['state']
     business_data['state'] = 'ACTIVE' if state == 'ACT' else 'HISTORICAL'
 
-    if not (last_ar_date := business_data['last_ar_date']):
-        last_ar_date = business_data['founding_date']
-    
-    last_ar_year = int(last_ar_date.split('-')[0])
+    if last_ar_date := business_data['last_ar_date']:
+        last_ar_year = int(last_ar_date.split('-')[0])
+    else:
+        last_ar_date = None
+        last_ar_year = None
 
     formatted_business = {
         **business_data,
@@ -223,13 +228,52 @@ def format_resolutions_data(data: dict) -> list[dict]:
     return formatted_resolutions
 
 
+def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
+    jurisdictions_data = data['jurisdictions']
+
+    matched_jurisdictions = [
+        item for item in jurisdictions_data if item.get('j_start_event_id') == event_id
+    ]
+
+    if not matched_jurisdictions:
+        return None
+    
+    formatted_jurisdiction = copy.deepcopy(JURISDICTION)
+    jurisdiction_info = matched_jurisdictions[0]
+
+    formatted_jurisdiction['legal_name'] = jurisdiction_info['j_home_company_nme']
+    formatted_jurisdiction['identifier'] = jurisdiction_info['j_home_juris_num']
+    formatted_jurisdiction['incorporation_date'] = jurisdiction_info['j_home_recogn_dt']
+    formatted_jurisdiction['expro_identifier'] = jurisdiction_info['j_bc_xpro_num']
+    formatted_jurisdiction['country'] = None
+    formatted_jurisdiction['region'] = None
+
+    can_jurisdiction_code = jurisdiction_info['j_can_jur_typ_cd']
+    other_jurisdiction_desc = jurisdiction_info['j_othr_juris_desc']
+
+    # when canadian jurisdiction, ignore othr_juris_desc
+    if can_jurisdiction_code != 'OT':
+        formatted_jurisdiction['country'] = 'CA'
+        formatted_jurisdiction['region'] = 'FEDERAL' if can_jurisdiction_code == 'FD' else can_jurisdiction_code
+    # when other jurisdiction and len(othr_juris_desc) = 2, then othr_juris_desc is country code
+    elif can_jurisdiction_code == 'OT' and len(other_jurisdiction_desc) == 2:
+        formatted_jurisdiction['country'] = other_jurisdiction_desc
+    # when other jurisdiction and len(othr_juris_desc) = 6, then othr_juris_desc contains both
+    # region code and country code (like "US, SS"). Ignore any other cases.
+    elif can_jurisdiction_code == 'OT' and len(other_jurisdiction_desc) == 6:
+        formatted_jurisdiction['country'] = other_jurisdiction_desc[:2]
+        formatted_jurisdiction['region'] = other_jurisdiction_desc[4:]
+
+    return formatted_jurisdiction
+
+
 def format_filings_data(data: dict) -> list[dict]:
     # filing info in business
     business_update_dict = {}
 
     filings_data = data['filings']
     formatted_filings = []
-    last_state_filing_idx = -1
+    state_filing_idx = -1
     idx = 0
     for x in filings_data:
         event_file_type = x['event_file_type']
@@ -249,14 +293,16 @@ def format_filings_data(data: dict) -> list[dict]:
         filing_json, meta_data = build_filing_json_meta_data(filing_type, filing_subtype,
                                                              effective_date, x)
 
-        filing = copy.deepcopy(FILING)
+        filing_body = copy.deepcopy(FILING['filings'])
+        jurisdiction = None
+        amalgamation = None
 
         # make it None if no valid value
         if not (user_id := x['u_user_id']):
             user_id = x['u_full_name'] if x['u_full_name'] else None
 
-        filing = {
-            **filing,
+        filing_body = {
+            **filing_body,
             'filing_date': effective_date,
             'filing_type': filing_type,
             'filing_sub_type': filing_subtype,
@@ -264,7 +310,22 @@ def format_filings_data(data: dict) -> list[dict]:
             'effective_date': effective_date,
             'filing_json': filing_json,
             'meta_data': meta_data,
-            'submitter_id': user_id  # will be updated to real user_id when loading data into db
+            'submitter_id': user_id,  # will be updated to real user_id when loading data into db
+        }
+
+        if filing_type == 'continuationIn':
+            jurisdiction = format_jurisdictions_data(data, x['e_event_id'])
+
+        if filing_type == 'amalgamationApplication':
+            amalgamation = format_amalgamations_data(data, x['e_event_id'])
+
+        comments = format_filing_comments_data(data, x['e_event_id'])
+
+        filing = {
+            'filings': filing_body,
+            'jurisdiction': jurisdiction,
+            'amalgamations': amalgamation,
+            'comments': comments
         }
 
         formatted_filings.append(filing)
@@ -275,16 +336,129 @@ def format_filings_data(data: dict) -> list[dict]:
             business_update_dict[k] = get_business_update_value(k, effective_date, trigger_date,
                                                                 filing_type, filing_subtype)
         # save state filing index
-        if filing_type in LEAR_STATE_FILINGS:
-            last_state_filing_idx = idx
+        if filing_type in LEAR_STATE_FILINGS and x['e_event_id'] == x['cs_state_event_id']:
+            state_filing_idx = idx
         
         idx += 1
 
     return {
         'filings': formatted_filings,
         'update_business_info': business_update_dict,
-        'state_filing_index': last_state_filing_idx
+        'state_filing_index': state_filing_idx
     }
+
+
+def format_amalgamations_data(data: dict, event_id: Decimal) -> dict:
+    amalgamations_data = data['amalgamations']
+
+    matched_amalgamations = [
+        item for item in amalgamations_data if item.get('e_event_id') == event_id
+    ]
+
+    if not matched_amalgamations:
+        return None
+
+    formatted_amalgmation = copy.deepcopy(AMALGAMATION)
+    amalgmation_info = matched_amalgamations[0]
+    
+    amalgmation_date = amalgmation_info['f_effective_dt_str']
+    if not amalgmation_date:
+        amalgmation_date = amalgmation_info['e_event_dt_str']
+    formatted_amalgmation['amalgamations']['amalgamation_date'] = amalgmation_date
+    formatted_amalgmation['amalgamations']['court_approval'] = bool(amalgmation_info['f_court_approval'])
+
+    event_file_type = amalgmation_info['event_file_type']
+    _, filing_subtype = get_target_filing_type(event_file_type)
+
+    formatted_amalgmation['amalgamations']['amalgamation_type'] = filing_subtype
+    formatted_tings = formatted_amalgmation['amalgamating_businesses']
+    for ting in matched_amalgamations:
+        formatted_tings.append(format_amalgamating_businesses(ting))
+
+    return formatted_amalgmation
+
+
+def format_amalgamating_businesses(ting_data: dict) -> dict:
+    formatted_ting = {}
+    role = 'holding' if ting_data['adopted_corp_ind'] else 'amalgamating'
+
+    foreign_identifier = None
+    if not (ting_data['ting_corp_num'].startswith('BC') or\
+            ting_data['ting_corp_num'].startswith('Q') or\
+            ting_data['ting_corp_num'].startswith('C')):
+        foreign_identifier = ting_data['ting_corp_num']
+
+    if foreign_identifier:
+        foreign_jurisdiction = 'CA'
+        foreign_jurisdiction_region = ting_data['can_jur_typ_cd']
+        if foreign_jurisdiction_region == 'OT':
+            foreign_jurisdiction = 'US'
+            foreign_jurisdiction_region = ting_data['othr_juri_desc']
+        formatted_ting = {
+            'foreign_jurisdiction': foreign_jurisdiction,
+            'foreign_name': ting_data['foreign_nme'],
+            'foreign_identifier': foreign_identifier,
+            'role': role,
+            'foreign_jurisdiction_region': foreign_jurisdiction_region
+        }
+    else:
+        formatted_ting = {
+            'ting_identifier': ting_data['ting_corp_num'],
+            'role': role,
+        }
+
+    return formatted_ting
+
+
+def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
+    filing_comments_data = data['filing_comments']
+
+    matched_filing_comments = [
+        item for item in filing_comments_data if item.get('e_event_id') == event_id
+    ]
+
+    if not matched_filing_comments:
+        return None
+    
+    formatted_filing_comments = []
+    for x in matched_filing_comments:
+        if c := x['lt_notation']:
+            timestamp = x['lt_ledger_text_dts_str']
+            # Note that only a small number of lt_user_id is BCOMPS,
+            # others are None
+            # TODO: investigate BCOMPS related stuff
+            staff_id = x['lt_user_id']
+        else:
+            c = x['cl_ledger_desc']
+            timestamp = None
+            staff_id = None
+        comment = {
+            'comment': c,
+            'timestamp': timestamp,
+            'staff_id': staff_id,  # will be updated to real staff_id when loading data into db
+        }
+
+        formatted_filing_comments.append(comment)
+
+    return formatted_filing_comments
+
+
+def format_business_comments_data(data: dict) -> list:
+    business_comments_data = data['business_comments']
+    formatted_business_comments = []
+    
+    for x in business_comments_data:
+        c = x['cc_comments'] if x['cc_comments'] else x['cc_accession_comments']
+        if not (staff_id := x['cc_user_id']):
+            staff_id = x['cc_full_name'] if x['cc_full_name'] else None
+        comment = {
+            'comment': c,
+            'timestamp': x['cc_comments_dts_str'],
+            'staff_id': staff_id,  # will be updated to real staff_id when loading data into db
+        }
+        formatted_business_comments.append(comment)
+
+    return formatted_business_comments
 
 
 def format_users_data(users_data: list) -> list:
@@ -293,8 +467,9 @@ def format_users_data(users_data: list) -> list:
     for x in users_data:
         user = copy.deepcopy(USER)
         event_file_types = x['event_file_types'].split(',')
-        # skip users if all event_file_type is unsupported
-        if not any(get_target_filing_type(ef)[0] for ef in event_file_types):
+        # skip users if all event_file_type is unsupported or not users for staff comments
+        if not any(get_target_filing_type(ef)[0] for ef in event_file_types)\
+                and not any (ef == 'STAFF_COMMENT' for ef in event_file_types):
             continue
         
         if not (username := x['u_user_id']):
@@ -339,7 +514,8 @@ def get_data_formatters() -> dict:
         'share_classes': format_share_classes_data,
         'aliases': format_aliases_data,
         'resolutions': format_resolutions_data,
-        'filings': format_filings_data
+        'filings': format_filings_data,
+        'comments': format_business_comments_data,  # only for business level, filing level will be formatted ith filings
     }
     return ret
 
@@ -377,9 +553,11 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
     meta_data = {
         'colinFilingInfo': {
             'eventType': data['e_event_type_cd'],
-            'filingType': data['f_filing_type_cd']
+            'filingType': data['f_filing_type_cd'],
+            'eventId': int(data['e_event_id'])
         },
         'isLedgerPlaceholder': True,
+        'colinDisplayName': get_colin_display_name(data)
     }
 
     if filing_type == 'annualReport':
@@ -414,9 +592,32 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
     return filing_json, meta_data
 
 
+def get_colin_display_name(data: dict) -> str:
+    event_file_type = data['event_file_type']
+    name = EVENT_FILING_DISPLAY_NAME_MAPPING.get(event_file_type)
+
+    # Annual Report
+    if event_file_type == EventFilings.FILE_ANNBC.value:
+        ar_dt_str = data['f_period_end_dt_str']
+        ar_dt = datetime.strptime(ar_dt_str, '%Y-%m-%d %H:%M:%S%z')
+        suffix = ar_dt.strftime('%b %d, %Y').upper()
+        name = f'{name} - {suffix}'
+    
+    # Change of Directors
+    elif event_file_type == EventFilings.FILE_NOCDR.value:
+        if not data['f_change_at_str']:
+            name = f'{name} - Address Change or Name Correction Only'
+    
+    # Conversion Ledger
+    elif event_file_type == EventFilings.FILE_CONVL.value:
+        name = data['cl_ledger_title_txt']
+
+    return name
+
+
 def build_epoch_filing(business_id: int) -> dict:
     now = datetime.utcnow().replace(tzinfo=pytz.UTC)
-    filing = copy.deepcopy(FILING)
+    filing = copy.deepcopy(FILING['filings'])
     filing = {
         **filing,
         'filing_type': 'lear_tombstone',
@@ -448,14 +649,15 @@ def load_data(conn: Connection, table_name: str, data: dict, conflict_column: st
     return id
 
 
-def update_data(conn: Connection, table_name: str, data: dict, id: int) -> bool:
+def update_data(conn: Connection, table_name: str, data: dict, column: str, value: any) -> int:
     update_pairs = [f'{k} = {format_value(v)}' for k, v in data.items()]
     update_pairs_str = ', '.join(update_pairs)
-    query = f"""update {table_name} set {update_pairs_str} where id={id}"""
+    query = f"""update {table_name} set {update_pairs_str} where {column}={format_value(value)} returning id"""
 
     result = conn.execute(text(query))
+    id = result.scalar()
 
-    return result.rowcount > 0
+    return id
 
 
 def format_value(value) -> str:

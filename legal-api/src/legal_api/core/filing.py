@@ -37,7 +37,7 @@ from .constants import REDACTED_STAFF_SUBMITTER
 
 
 # @dataclass(init=False, repr=False)
-class Filing:
+class Filing:  # pylint: disable=too-many-public-methods
     """Domain class for Filings."""
 
     class Status(str, Enum):
@@ -273,9 +273,21 @@ class Filing:
     def get(identifier, filing_id=None) -> Optional[Filing]:
         """Return a Filing domain by the id."""
         if identifier.startswith('T'):
-            storage = FilingStorage.get_temp_reg_filing(identifier)
+            storage = FilingStorage.get_temp_reg_filing(identifier, filing_id)
         else:
             storage = Business.get_filing_by_id(identifier, filing_id)
+
+        if storage:
+            filing = Filing()
+            filing._storage = storage  # pylint: disable=protected-access
+            return filing
+
+        return None
+
+    @staticmethod
+    def get_by_withdrawn_filing_id(filing_id, withdrawn_filing_id, filing_type: str = None) -> Optional[Filing]:
+        """Return a Filing domain by the id, withdrawn_filing_id and filing_type."""
+        storage = FilingStorage.get_temp_reg_filing_by_withdrawn_filing(filing_id, withdrawn_filing_id, filing_type)
 
         if storage:
             filing = Filing()
@@ -309,7 +321,7 @@ class Filing:
     @staticmethod
     def get_most_recent_filing_json(business_id: str, filing_type: str = None, jwt: JwtManager = None):
         """Return the most recent filing json."""
-        if storage := FilingStorage.get_most_recent_legal_filing(business_id, filing_type):
+        if storage := FilingStorage.get_most_recent_filing(business_id, filing_type):
             submitter_displayname = REDACTED_STAFF_SUBMITTER
             if (submitter := storage.filing_submitter) \
                 and submitter.username and jwt \
@@ -442,6 +454,7 @@ class Filing:
             filing_storage.filing_type not in no_output_filing_types else None,
             'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
             'isFutureEffective': filing.is_future_effective,
+            'withdrawalPending': filing_storage.withdrawal_pending
         }
 
     @staticmethod
@@ -487,6 +500,10 @@ class Filing:
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
         base_url = base_url[:base_url.find('/api')]
         identifier = business.identifier if business else filing.storage.temp_reg
+        if not identifier and filing.storage.withdrawn_filing_id:
+            withdrawn_filing = Filing.find_by_id(filing.storage.withdrawn_filing_id)
+            identifier = withdrawn_filing.storage.temp_reg
+
         doc_url = url_for('API2.get_documents', **{'identifier': identifier,
                                                    'filing_id': filing.id,
                                                    'legal_filing_name': None})
@@ -508,15 +525,17 @@ class Filing:
         if filing.storage and filing.storage.payment_completion_date:
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
-        no_legal_filings_in_paid_status = [
+        no_legal_filings_in_paid_withdrawn_status = [
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
         ]
-        if filing.status == Filing.Status.PAID and \
-            not (filing.filing_type in no_legal_filings_in_paid_status
+        if (filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) or
+                (filing.status == Filing.Status.COMPLETED and
+                    filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value)) and \
+            not (filing.filing_type in no_legal_filings_in_paid_withdrawn_status
                  or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
                      business.legal_type in [
                          Business.LegalTypes.SOLE_PROP.value,

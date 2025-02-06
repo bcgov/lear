@@ -159,6 +159,8 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
 def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
+    if parties is None:
+        return
     end_date_time = datetime.datetime.utcnow()
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]

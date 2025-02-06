@@ -42,6 +42,7 @@ class BusinessDocument:
         self._document_key = document_key
         self._report_date_time = LegislationDatetime.now()
         self._epoch_filing_date = None
+        self._tombstone_filing_date = None
 
     def get_pdf(self):
         """Render the business document pdf response."""
@@ -131,6 +132,7 @@ class BusinessDocument:
             business_json['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._report_date_time)}
             self._set_description(business_json)
             self._set_epoch_date(business_json)
+            self._set_tombstone_date()
 
             if self._document_key in ['lseal', 'summary']:
                 self._set_addresses(business_json)
@@ -185,6 +187,12 @@ class BusinessDocument:
         if epoch_filing:
             self._epoch_filing_date = epoch_filing[0].effective_date
             business['business']['epochFilingDate'] = self._epoch_filing_date.isoformat()
+
+    def _set_tombstone_date(self):
+        """Set the tombstone filing date if the business is tombstone."""
+        tombstone_filing = Filing.get_filings_by_status(self._business.id, [Filing.Status.TOMBSTONE])
+        if tombstone_filing:
+            self._tombstone_filing_date = tombstone_filing[0].effective_date
 
     def _set_description(self, business: dict):
         """Set business descriptors used by json and pdf template."""
@@ -319,14 +327,20 @@ class BusinessDocument:
                                                                       'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
 
-        # If it has amalgamating businesses
-        if (amalgamating_businesses := AmalgamatingBusiness.get_all_revision(self._business.id)):
+        # If it has linked amalgamating businesses
+        # set placeholder info if this business is tombstone
+        tombstone = self._business.is_tombstone
+        if (amalgamating_businesses := AmalgamatingBusiness.get_all_revision(self._business.id, tombstone)):
             for amalgamating_business in amalgamating_businesses:
-                amalgamation = Amalgamation.get_revision_by_id(amalgamating_business.transaction_id,
-                                                               amalgamating_business.amalgamation_id)
+                if tombstone:
+                    amalgamation = Amalgamation.get_revision_by_id(
+                        amalgamating_business.amalgamation_id, tombstone=True)
+                else:
+                    amalgamation = Amalgamation.get_revision_by_id(
+                        amalgamating_business.amalgamation_id, amalgamating_business.transaction_id)
                 filing = Filing.find_by_id(amalgamation.filing_id)
                 state_filing = self._format_state_filing(filing)
-                amalgamation_json = Amalgamation.get_revision_json(filing.transaction_id, filing.business_id)
+                amalgamation_json = Amalgamation.get_revision_json(filing.transaction_id, filing.business_id, tombstone)
                 state_filings.append({
                     **state_filing,
                     **amalgamation_json
@@ -449,7 +463,9 @@ class BusinessDocument:
         if filings:
             amalgamation_application = filings[0]
             business['business']['amalgamatedEntity'] = True
-            if self._epoch_filing_date and amalgamation_application.effective_date < self._epoch_filing_date:
+            if (self._epoch_filing_date and amalgamation_application.effective_date < self._epoch_filing_date) or\
+                    (self._tombstone_filing_date and
+                     amalgamation_application.effective_date < self._tombstone_filing_date):
                 # imported from COLIN
                 amalgamated_businesses_info = {
                     'legalName': 'Not Available',
@@ -534,17 +550,27 @@ class BusinessDocument:
                     'business_id': jurisdiction.business_id,
                     'filing_id': jurisdiction.filing_id,
                     }
+
+            # Imported from COLIN
+            if self._business.is_tombstone:
+                jurisdiction_info['expro_identifier'] = 'Not Available'
+                jurisdiction_info['expro_legal_name'] = 'Not Available'
+
             continuation_in_info['foreignJurisdiction'] = jurisdiction_info
             business['continuationIn'] = continuation_in_info
 
     @staticmethod
     def _format_address(address):
         address['streetAddressAdditional'] = address.get('streetAddressAdditional') or ''
+        address['addressCity'] = address.get('addressCity') or ''
         address['addressRegion'] = address.get('addressRegion') or ''
         address['deliveryInstructions'] = address.get('deliveryInstructions') or ''
 
         country = address['addressCountry']
-        country = pycountry.countries.search_fuzzy(country)[0].name
+        if country:
+            country = pycountry.countries.search_fuzzy(country)[0].name
+        else:
+            country = ''
         address['addressCountry'] = country
         address['addressCountryDescription'] = country
         return address

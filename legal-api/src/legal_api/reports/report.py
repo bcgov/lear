@@ -354,15 +354,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_description(self, filing):
         legal_type = None
-        if self._filing.filing_type == 'alteration':
-            legal_type = self._filing.filing_json.get('filing').get('alteration').get('business', {}).get('legalType')
-        else:
-            legal_type = (self._filing.filing_json
-                          .get('filing')
-                          .get(self._filing.filing_type)
-                          .get('nameRequest', {})
-                          .get('legalType'))
+        filing_json = self._filing.filing_json.get('filing', {})
+        filing_type = self._filing.filing_type
 
+        # Check for alteration filing type
+        if filing_type == 'alteration':
+            legal_type = filing_json.get('alteration', {}).get('business', {}).get('legalType')
+        else:
+            legal_type = filing_json.get(filing_type, {}).get('nameRequest', {}).get('legalType')
+
+        # Fallback: Check the general business section
+        if not legal_type:
+            legal_type = filing_json.get('business', {}).get('legalType')
+
+        # Final fallback: Check the _business object
         if not legal_type and self._business:
             legal_type = self._business.legal_type
 
@@ -1073,16 +1078,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
-        filing['nameRequest'] = name_request_json
-        prev_legal_name = versioned_business.legal_name
+        if name_request_json:
+            filing['nameRequest'] = name_request_json
+            prev_legal_name = versioned_business.legal_name
 
-        if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
-            new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
-                                                                   versioned_business.identifier)
+            if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
+                new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
+                                                                       versioned_business.identifier)
 
-        if new_legal_name and prev_legal_name != new_legal_name:
-            filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = new_legal_name
+            if new_legal_name and prev_legal_name != new_legal_name:
+                filing['previousLegalName'] = prev_legal_name
+                filing['newLegalName'] = new_legal_name
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
@@ -1165,6 +1171,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['ceasedParties'] = parties_deleted
 
     def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
+        if filing.get('correction').get('shareStructure') is None:
+            return
         filing['shareClasses'] = filing.get('correction').get('shareStructure', {}).get('shareClasses')
         dates = filing['correction']['shareStructure'].get('resolutionDates', [])
         formatted_dates = [

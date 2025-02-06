@@ -1,5 +1,93 @@
+
+def get_unprocessed_corps_subquery(flow_name, environment):
+    subqueries = [
+        {
+            'name': 'default(all corps)',
+            'cte': '',
+            'where': ''
+        },
+        {
+            'name':'TING',
+            'cte': """
+                    with ting_corps as (
+                        select distinct ting_corp_num
+                        from corp_involved_amalgamating
+                    ),
+                    ted_corps as (
+                        select distinct ted_corp_num
+                        from corp_involved_amalgamating
+                    )
+            """,
+            'where': """
+                    and exists (
+                        select 1 from ting_corps t where t.ting_corp_num = c.corp_num
+                    )
+                    and not exists (
+                        select 1 from ted_corps t where t.ted_corp_num = c.corp_num
+                    )
+            """
+        },
+        {
+            'name':'TED that all its TINGs(XP excluded) have been migrated',
+            'cte': f"""
+                with t2 as (
+                    select distinct cia1.ted_corp_num
+                    from corp_involved_amalgamating cia1
+                    where not exists (
+                        select 1
+                        from corp_involved_amalgamating cia2
+                        left join corp_processing cp
+                            on cia2.ting_corp_num = cp.corp_num
+                            and cp.flow_name = '{flow_name}'
+                            and cp.environment = '{environment}'
+                            and cp.processed_status = 'COMPLETED'
+                        where cia2.ted_corp_num = cia1.ted_corp_num
+                        and (cia2.ting_corp_num like 'BC%' or cia2.ting_corp_num like 'Q%' or cia2.ting_corp_num like 'C%')
+                        and cp.corp_num is null
+                    )
+                )
+            """,
+            'where': """
+                and exists (
+                    select 1 from t2 where c.corp_num = t2.ted_corp_num
+                ) 
+            """
+        },
+        {
+            'name':'Other corps, non-TING and non-TED',
+            'cte': """
+                with t3 as (
+                    select ting_corp_num as corp_num
+                    from corp_involved_amalgamating
+                    union
+                    select ted_corp_num as corp_num
+                    from corp_involved_amalgamating
+                )
+            """,
+            'where': """
+                and not exists (
+                    select 1
+                    from t3
+                    where t3.corp_num = c.corp_num
+                )
+            """
+        }
+    ]
+    # Note: change index to select subset of corps
+    # [0] all, [1] TING, [2] TED that linked TINGs are migrated, [3] exclude TING & TED
+    # Acceptable order when it comes to the actual migration:
+    # [1]->[2]->[3]
+    # [2]->[1]->[3] (may fetch fewer eligible corps in [2] at the beginning, if so, go to [1] and then go back to [2], repeatedly)
+    # Other usage:
+    # [0] is used for other purposes, e.g. tweak query to select specific corps
+    subquery = subqueries[3]
+    return subquery['cte'], subquery['where']
+
 def get_unprocessed_corps_query(flow_name, environment, batch_size):
+    cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
+
     query = f"""
+    {cte_clause}
     select c.corp_num, c.corp_type_cd, cs.state_type_cd, cp.flow_name, cp.processed_status, cp.last_processed_event_id, cp.failed_event_id, cp.failed_event_file_type
     from corporation c
     left outer join corp_state cs
@@ -9,6 +97,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
+    {where_clause}
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
@@ -18,9 +107,9 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --    and c.corp_num = 'BC0326163' -- double quotes in corp name, no share structure, city in street additional of party's address
 --    and c.corp_num = 'BC0395512' -- long RG, RC addresses
 --    and c.corp_num = 'BC0043406' -- lots of directors
---    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637') -- TODO: re-migrate issue (can be solved by adding tracking)
+--    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637')
 --    and c.corp_num = 'BC0870626' -- lots of filings - IA, CoDs, ARs
---      and c.corp_num = 'BC0004969' -- lots of filings - IA, ARs, transition, alteration, COD, COA
+--    and c.corp_num = 'BC0004969' -- lots of filings - IA, ARs, transition, alteration, COD, COA
 --    and c.corp_num = 'BC0002567' -- lots of filings - IA, ARs, transition, COD
 --    and c.corp_num in ('BC0068889', 'BC0441359') -- test users mapping
 --    and c.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
@@ -29,12 +118,21 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 --        'BC0472301', 'BC0649417', 'BC0808085', 'BC0803411', 'BC0511226', 'BC0833000', 'BC0343855', 'BC0149266', -- dissolution
 --        'BC0548839', 'BC0541207', 'BC0462424', 'BC0021973', -- restoration
 --        'BC0034290', -- legacy other
+--        'C0870179', 'C0870343', 'C0883424', -- continuation in (C, CCC, CUL)
+--        'BC0019921', 'BC0010385', -- conversion ledger
 --        'BC0207097', 'BC0693625', 'BC0754041', 'BC0072008', 'BC0355241', 'BC0642237', 'BC0555891', 'BC0308683', -- correction
 --        'BC0688906', 'BC0870100', 'BC0267106', 'BC0873461', -- alteration
 --        'BC0536998', 'BC0574096', 'BC0663523' -- new mappings of CoA, CoD
+        -- TED
+--          'BC0812196',                -- amalg - r (with xpro)
+--          'BC0870100',                -- amalg - v
+--          'BC0747392'                 -- amalg - h
+        -- TING
+--          'BC0593394',                -- amalg - r (with xpro)
+--          'BC0805986', 'BC0561086',   -- amalg - v
+--          'BC0543231', 'BC0358476'    -- amalg - h
 --    )
-
-    and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE') -- TODO: update transfer script
+    and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
     and cs.end_event_id is null
 --    and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
       and cp.processed_status is null
@@ -74,32 +172,50 @@ def get_corp_users_query(corp_nums: list):
         u_middle_name,
         u_last_name,
         to_char(
-            min(event_timerstamp::timestamp at time zone 'UTC'),
+            min(u_timestamp::timestamp at time zone 'UTC'),
             'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         ) as earliest_event_dt_str,
         min(u_email_addr) as u_email_addr,
         u_role_typ_cd
     from (
-    select
-        upper(u.user_id) as u_user_id,
-        u.last_name as u_last_name,
-        u.first_name as u_first_name,
-        u.middle_name as u_middle_name,
-        e.event_type_cd,
-        f.filing_type_cd,
-        e.event_timerstamp,
-        case
-            when u.first_name is null and u.middle_name is null and u.last_name is null then null
-            else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
-        end as u_full_name,
-        u.email_addr as u_email_addr,
-        u.role_typ_cd as u_role_typ_cd
-    from event e
-            left outer join filing f on e.event_id = f.event_id
-            left outer join filing_user u on u.event_id = e.event_id
-    where 1 = 1
---        and e.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
-        and e.corp_num in ({corp_nums_str})
+        select
+            upper(u.user_id) as u_user_id,
+            u.last_name as u_last_name,
+            u.first_name as u_first_name,
+            u.middle_name as u_middle_name,
+            e.event_type_cd,
+            f.filing_type_cd,
+            e.event_timerstamp as u_timestamp,
+            case
+                when u.first_name is null and u.middle_name is null and u.last_name is null then null
+                else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
+            end as u_full_name,
+            u.email_addr as u_email_addr,
+            u.role_typ_cd as u_role_typ_cd
+        from event e
+                left outer join filing f on e.event_id = f.event_id
+                left outer join filing_user u on u.event_id = e.event_id
+        where 1 = 1
+    --        and e.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
+            and e.corp_num in ({corp_nums_str})
+        union
+        -- staff comment at business level
+        select
+            upper(cc.user_id) as u_user_id,
+            cc.last_nme as u_last_name,
+            cc.first_nme as u_first_name,
+            cc.middle_nme as u_middle_name,
+            'STAFF' as event_type_cd, -- placeholder
+            'COMMENT' as filing_type_cd, -- placeholder
+            comment_dts as u_timestamp,
+            case
+                when cc.first_nme is null and cc.middle_nme is null and cc.last_nme is null then null
+                else upper(concat_ws('_', nullif(trim(cc.first_nme),''), nullif(trim(cc.middle_nme),''), nullif(trim(cc.last_nme),'')))
+            end as u_full_name,
+            null as u_email_addr,
+            null as u_role_typ_cd
+        from corp_comments cc
+        where cc.corp_num in ({corp_nums_str})
     ) sub
     group by sub.u_user_id, sub.u_full_name, sub.u_first_name, sub.u_middle_name, sub.u_last_name, sub.u_role_typ_cd
     order by sub.u_user_id;
@@ -166,7 +282,7 @@ def get_business_query(corp_num, suffix):
             else false
         end admin_freeze
     from corporation c
-    left outer join event e on e.corp_num = c.corp_num and e.event_type_cd = 'CONVICORP' -- need to add other event like CONVAMAL, CONVCIN...
+    left outer join event e on e.corp_num = c.corp_num and e.event_type_cd IN ('CONVICORP', 'CONVAMAL') -- need to add other event like CONVCIN...
     where 1 = 1
     --and c.corp_num = 'BC0684912' -- state - ACT
     --and c.corp_num = 'BC0000621' -- state - HLD
@@ -429,6 +545,27 @@ def get_resolutions_query(corp_num):
     return query
 
 
+def get_jurisdictions_query(corp_num):
+    query = f"""
+    select
+        j.corp_num          as j_corp_num,
+        j.start_event_id    as j_start_event_id,
+        j.can_jur_typ_cd    as j_can_jur_typ_cd,
+        j.xpro_typ_cd       as j_xpro_typ_cd,
+        j.home_company_nme  as j_home_company_nme,
+        j.home_juris_num    as j_home_juris_num,
+        to_char(
+            j.home_recogn_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                   as j_home_recogn_dt,
+        j.othr_juris_desc   as j_othr_juris_desc,
+        j.bc_xpro_num       as j_bc_xpro_num
+    from jurisdiction j
+    where corp_num = '{corp_num}'
+    ;
+    """
+    return query
+
+
 def get_filings_query(corp_num):
     query = f"""
     select                    
@@ -447,6 +584,15 @@ def get_filings_query(corp_num):
 --          paper only now -> f_ods_type
             f.nr_num               as f_nr_num,
             to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
+            to_char(f.change_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')     as f_change_at_str,
+            -- state filing info
+            (
+                select start_event_id
+                from corp_state
+                where 1 = 1
+                and corp_num = '{corp_num}'
+                and end_event_id is null
+            ) as cs_state_event_id,
             --- filing user
             upper(u.user_id)              as u_user_id,
             u.last_name            as u_last_name,
@@ -457,10 +603,13 @@ def get_filings_query(corp_num):
                 else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
             end as u_full_name,
             u.email_addr           as u_email_addr,
-            u.role_typ_cd          as u_role_typ_cd
+            u.role_typ_cd          as u_role_typ_cd,
+            --- conversion ledger
+            cl.ledger_title_txt    as cl_ledger_title_txt
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
+                 left outer join conv_ledger cl on cl.event_id = e.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'
@@ -468,6 +617,97 @@ def get_filings_query(corp_num):
 --        and e.trigger_dts is not null
         order by e.event_timerstamp
         ;
+    """
+    return query
+
+
+def get_amalgamation_query(corp_num):
+    query = f"""
+    select
+        e.event_id            as e_event_id,
+        ted_corp_num,
+        ting_corp_num,
+        cs.state_type_cd      as ting_state_type_cd,
+        cs.end_event_id       as ting_state_end_event_id,
+        corp_involve_id,
+        can_jur_typ_cd,
+        adopted_corp_ind,
+        home_juri_num,
+        othr_juri_desc,
+        foreign_nme,
+        -- event
+        e.event_type_cd        as e_event_type_cd,
+        to_char(e.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
+        -- filing
+        f.filing_type_cd       as f_filing_type_cd,
+        to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
+        f.court_appr_ind       as f_court_approval,
+        -- event_file
+        e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') as event_file_type
+    from corp_involved_amalgamating cig
+        left outer join event e on e.event_id = cig.event_id
+        left outer join filing f on e.event_id = f.event_id
+        left outer join corp_state cs on cig.ting_corp_num = cs.corp_num and cs.start_event_id = e.event_id
+    where 1 = 1
+    and cs.end_event_id is null
+    and cig.ted_corp_num = '{corp_num}'
+    order by cig.corp_involve_id;
+    """
+    return query
+
+
+def get_business_comments_query(corp_num):
+    query = f"""
+    select 
+        to_char(
+            cc.comment_dts::timestamp at time zone 'UTC',
+            'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                       as cc_comments_dts_str,
+        cc.comments             as cc_comments,
+        cc.accession_comments   as cc_accession_comments,
+        upper(cc.user_id)       as cc_user_id,
+        cc.first_nme            as cc_first_name,
+        cc.last_nme             as cc_last_name,
+        cc.middle_nme           as cc_middle_name,
+        case
+            when cc.first_nme is null and cc.middle_nme is null and cc.last_nme is null then null
+            else upper(concat_ws('_', nullif(trim(cc.first_nme),''), nullif(trim(cc.middle_nme),''), nullif(trim(cc.last_nme),'')))
+        end                     as cc_full_name
+    from corp_comments cc
+    where corp_num = '{corp_num}';
+    """
+    return query
+
+
+def get_filing_comments_query(corp_num):
+    query = f"""
+    select
+        e.event_id              as e_event_id,
+        to_char(
+                lt.ledger_text_dts::timestamp at time zone 'UTC',
+                'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                       as lt_ledger_text_dts_str,
+        lt.user_id              as lt_user_id,
+        trim(lt.notation)             as lt_notation,
+        null                    as cl_ledger_desc
+    from  event e
+        join ledger_text lt on e.event_id = lt.event_id
+        join corporation c on e.corp_num = c.corp_num and c.corp_num = '{corp_num}'
+    where
+        nullif(trim(lt.notation), '') is not null
+    union
+    select
+        e.event_id        as e_event_id,
+        null              as lt_ledger_text_dts_str,
+        null              as lt_user_id,
+        null               as lt_notation,
+        trim(cl.ledger_desc) as cl_ledger_desc
+    from event e
+        join conv_ledger cl on e.event_id = cl.event_id
+        join corporation c on e.corp_num = c.corp_num and c.corp_num = '{corp_num}'
+    where
+        nullif(trim(cl.ledger_desc), '') is not null
+    ;
     """
     return query
 
@@ -480,7 +720,11 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'share_classes': get_share_classes_share_series_query(corp_num),
         'aliases': get_aliases_query(corp_num),
         'resolutions': get_resolutions_query(corp_num),
-        'filings': get_filings_query(corp_num)
+        'jurisdictions': get_jurisdictions_query(corp_num),
+        'filings': get_filings_query(corp_num),
+        'amalgamations': get_amalgamation_query(corp_num),
+        'business_comments': get_business_comments_query(corp_num),
+        'filing_comments': get_filing_comments_query(corp_num)
     }
 
     return queries
