@@ -581,15 +581,21 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             state_change = True
         else:
             state_change = False
+        if filing_type == 'changeOfName':
+            name_change = True
+        else:
+            name_change = False
         filing_json['filing']['conversion'] = {
             'convFilingType': filing_type,
             'convFilingSubType': filing_subtype,
-            'stateChange': state_change
+            'stateChange': state_change,
+            'nameChange': name_change,
         }
         meta_data['conversion'] = {
             'convFilingType': filing_type,
             'convFilingSubType': filing_subtype,
-            'stateChange': state_change
+            'stateChange': state_change,
+            'nameChange': name_change,
         }
 
     if filing_type == 'annualReport':
