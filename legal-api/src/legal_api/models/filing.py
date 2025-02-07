@@ -292,8 +292,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             }
         },
         'courtOrder': {
-            'name': 'courtOrder', 
-            'title': 'Court Order', 
+            'name': 'courtOrder',
+            'title': 'Court Order',
             'codes': {
                 'BEN': 'COURT',
                 'BC': 'COURT',

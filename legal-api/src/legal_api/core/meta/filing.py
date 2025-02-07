@@ -387,16 +387,16 @@ FILINGS: Final = {
         ]
     },
     'courtOrder': {
-            'name': 'courtOrder', 
-            'title': 'Court Order', 
-            'codes': {
-                'BEN': 'COURT',
-                'BC': 'COURT',
-                'ULC': 'COURT',
-                'CC': 'COURT',
-                'C': 'COURT',
-                'CUL': 'COURT',
-                'CCC': 'COURT',
+        'name': 'courtOrder',
+        'title': 'Court Order',
+        'codes': {
+            'BEN': 'COURT',
+            'BC': 'COURT',
+            'ULC': 'COURT',
+            'CC': 'COURT',
+            'C': 'COURT',
+            'CUL': 'COURT',
+            'CCC': 'COURT',
             }
         },
     'dissolution': {
