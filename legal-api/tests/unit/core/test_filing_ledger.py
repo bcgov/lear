@@ -42,6 +42,11 @@ def load_ledger(business, founding_date):
         elif filing_meta['name'] == 'amalgamationApplication':
             filing['filing']['amalgamationApplication'] = {}
             filing['filing']['amalgamationApplication']['type'] = 'regular'
+        elif filing_meta['name'] == 'transparencyRegister':
+            filing['filing']['transparencyRegister'] = {
+                'type': 'initial',
+                'ledgerReferenceNumber': '123ewd2'
+            }
         f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
             comment = Comment()

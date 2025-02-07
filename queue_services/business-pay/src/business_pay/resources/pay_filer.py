@@ -109,7 +109,7 @@ async def worker():
         logger.debug(f"Removed From Queue: no payment info in ce: {str(ce)}")
         return {}, HTTPStatus.OK
 
-    if payment_token.corp_type_code in ["MHR", "BTR"]:
+    if payment_token.corp_type_code in ["MHR"]:
         logger.debug(
             f"ignoring message for corp_type_code:{payment_token.corp_type_code},  {str(ce)}")
         return {}, HTTPStatus.OK

@@ -901,6 +901,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             corp_type = business.legal_type if business.legal_type else \
                 filing.json['filing']['business'].get('legalType')
 
+            if filing.filing_type == Filing.FILINGS['transparencyRegister']['name']:
+                corp_type = 'BTR'
+
         payload = {
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
