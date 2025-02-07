@@ -645,7 +645,55 @@ FILINGS: Final = {
                 'outputs': ['noticeOfArticles']
             },
         ]
-    }
+    },
+    'transparencyRegister': {
+        'name': 'transparencyRegister',
+        'ANNUAL': {
+            'name': 'transparencyRegister',
+            'title': 'Transparency Register - Annual Filing',
+            'displayName': 'Transparency Register - Annual Filing',
+            'codes': {
+                'BC': 'REGSIGIN',
+                'BEN': 'REGSIGIN',
+                'ULC': 'REGSIGIN',
+                'CC': 'REGSIGIN',
+                'C': 'REGSIGIN',
+                'CBEN': 'REGSIGIN',
+                'CUL': 'REGSIGIN',
+                'CCC': 'REGSIGIN'
+            }
+        },
+        'CHANGE': {
+            'name': 'transparencyRegister',
+            'title': 'Transparency Register Filing',
+            'displayName': 'Transparency Register Filing',
+            'codes': {
+                'BC': 'REGSIGIN',
+                'BEN': 'REGSIGIN',
+                'ULC': 'REGSIGIN',
+                'CC': 'REGSIGIN',
+                'C': 'REGSIGIN',
+                'CBEN': 'REGSIGIN',
+                'CUL': 'REGSIGIN',
+                'CCC': 'REGSIGIN'
+            }
+        },
+        'INITIAL': {
+            'name': 'transparencyRegister',
+            'title': 'Transparency Register Filing',
+            'displayName': 'Transparency Register Filing',
+            'codes': {
+                'BC': 'REGSIGIN',
+                'BEN': 'REGSIGIN',
+                'ULC': 'REGSIGIN',
+                'CC': 'REGSIGIN',
+                'C': 'REGSIGIN',
+                'CBEN': 'REGSIGIN',
+                'CUL': 'REGSIGIN',
+                'CCC': 'REGSIGIN'
+            }
+        }
+    },
 }
 
 
