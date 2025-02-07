@@ -410,6 +410,17 @@ class BusinessDocument:
                                                                                               'Not Available')
                         name_change_info['filingDateTime'] = filing.filing_date.isoformat()
                         name_changes.append(name_change_info)
+
+        for filing in Filing.get_conversion_filings_by_conv_types(self._business.id, ['changeOfName']):
+            filing_meta = filing.meta_data
+            name_change_info = {}
+            name_change_info['fromLegalName'] = filing_meta.get('changeOfName').get('fromLegalName',
+                                                                                    'Not Available')
+            name_change_info['toLegalName'] = filing_meta.get('changeOfName').get('toLegalName',
+                                                                                    'Not Available')
+            name_change_info['filingDateTime'] = filing.filing_date.isoformat()
+            name_changes.append(name_change_info)
+
         business['nameChanges'] = name_changes
         business['alterations'] = alterations
 

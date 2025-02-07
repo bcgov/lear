@@ -583,6 +583,14 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             state_change = False
         if filing_type == 'changeOfName':
             name_change = True
+            filing_json['filing']['changeOfName'] = {
+                'fromLegalName': data['old_corp_name'],
+                'toLegalName': data['new_corp_name'],
+            }
+            meta_data['changeOfName'] = {
+                'fromLegalName': data['old_corp_name'],
+                'toLegalName': data['new_corp_name'],
+            }
         else:
             name_change = False
         filing_json['filing']['conversion'] = {
