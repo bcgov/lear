@@ -37,6 +37,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         regular = auto()
         vertical = auto()
         horizontal = auto()
+        unknown = auto()
 
     __versioned__ = {}
     __tablename__ = 'amalgamations'
@@ -124,7 +125,8 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         if tombstone:
             return {
                 'identifier': 'Not Available',
-                'legalName': 'Not Available'
+                'legalName': 'Not Available',
+                'amalgamationDate': 'Not Available'
             }
 
         amalgamation = Amalgamation.get_revision(transaction_id, business_id)

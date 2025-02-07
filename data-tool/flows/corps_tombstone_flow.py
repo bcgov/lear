@@ -397,6 +397,12 @@ def tombstone_flow():
                     )
                 else:
                     skipped += 1
+                    processing_service.update_corp_status(
+                        flow_run_id,
+                        corp_num,
+                        ProcessingStatuses.FAILED,
+                        error="Migration failed - Skip due to data collection error"
+                    )
                     print(f'❗ Skip migrating {corp_num} due to data collection error.')
 
             wait(corp_futures)

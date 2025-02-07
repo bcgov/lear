@@ -790,7 +790,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             else:
                 return {
                     'identifier': 'Not Available',
-                    'legalName': 'Not Available'
+                    'legalName': 'Not Available',
+                    'amalgamationDate': 'Not Available'
                 }
 
         return None
