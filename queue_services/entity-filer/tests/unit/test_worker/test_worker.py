@@ -14,6 +14,8 @@
 """The Test Suites to ensure that the worker is operating correctly."""
 import copy
 import datetime
+from datetime import timezone
+from http import HTTPStatus
 import random
 from unittest.mock import patch
 
@@ -26,12 +28,14 @@ from legal_api.resources.v1.business import DirectorResource
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
+    CONTINUATION_IN_FILING_TEMPLATE,
     CORRECTION_AR,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE,
 )
 
-from entity_filer.filing_processors.filing_components import create_party, create_role
+from entity_queue_common.service_utils import QueueException
+from entity_filer.filing_processors.filing_components import business_info, business_profile, create_party, create_role
 from entity_filer.worker import process_filing
 from tests.unit import (
     COD_FILING,
@@ -41,6 +45,24 @@ from tests.unit import (
     create_filing,
     create_user,
 )
+
+
+@pytest.fixture(scope='function')
+def bootstrap(account):
+    """Create a IA filing for processing."""
+    from legal_api.services.bootstrap import AccountService
+
+    bootstrap = RegistrationBootstrapService.create_bootstrap(account=account)
+    RegistrationBootstrapService.register_bootstrap(bootstrap, bootstrap.identifier)
+    identifier = bootstrap.identifier
+
+    yield identifier
+
+    try:
+        rv = AccountService.delete_affiliation(account, identifier)
+        print(rv)
+    except Exception as err:
+        print(err)
 
 
 def compare_addresses(business_address: dict, filing_address: dict):
@@ -467,3 +489,42 @@ async def test_publish_event():
         }
 
     mock_publish.publish.assert_called_with('entity.events', payload)
+
+
+@pytest.mark.parametrize('test_name,withdrawal_pending,filing_status', [
+    ('Process the Filing', False, 'PAID'),
+    ('Dont process the Filing', False, 'WITHDRAWN'),
+    ('Dont process the Filing', True, 'PAID'),
+    ('Dont process the Filing', True, 'WITHDRAWN'),
+])
+async def test_process_filing_completed(app, session, mocker, test_name, withdrawal_pending, filing_status):
+    """Assert that an filling can be processed."""
+    # vars
+    filing_type = 'continuationIn'
+    nr_identifier = 'NR 1234567'
+    next_corp_num = 'C0001095'
+
+    filing = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    filing['filing'][filing_type]['nameRequest']['nrNumber'] = nr_identifier
+    filing['filing'][filing_type]['nameTranslations'] = [{'name': 'ABCD Ltd.'}]
+    filing_rec = create_filing('123', filing)
+    effective_date = datetime.datetime.now(timezone.utc)
+    filing_rec.effective_date = effective_date
+    filing_rec._status = filing_status
+    filing_rec.withdrawal_pending = withdrawal_pending
+    filing_rec.save()
+
+    # test
+    filing_msg = {'filing': {'id': filing_rec.id}}
+    
+    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num):
+        with patch.object(business_profile, 'update_business_profile', return_value=HTTPStatus.OK):
+            if withdrawal_pending and filing_status != 'WITHDRAWN':
+                with pytest.raises(QueueException):
+                    await process_filing(filing_msg, app)
+            else:
+                await process_filing(filing_msg, app)
+
+    business = Business.find_by_identifier(next_corp_num)
+    if not withdrawal_pending and filing_status == 'PAID':
+        assert business.state == Business.State.ACTIVE

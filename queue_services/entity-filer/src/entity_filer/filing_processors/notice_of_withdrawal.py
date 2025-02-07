@@ -28,16 +28,16 @@ def process(
 ):  # pylint: disable=W0613, R0914
     """Render the notice_of_withdrawal onto the model objects."""
     now_filing = filing.get('noticeOfWithdrawal')
-    filing_meta.notice_of_withdrawal = {}
 
     if court_order := now_filing.get('courtOrder'):
         filings.update_filing_court_order(filing_submission, court_order)
-    filing_meta.notice_of_withdrawal = {**filing_meta.notice_of_withdrawal,
-                                        'withdrawnDate': datetime.datetime.utcnow()}
 
     withdrawn_filing_id = now_filing.get('filingId')
     withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
 
     withdrawn_filing._status = Filing.Status.WITHDRAWN.value  # pylint: disable=protected-access
     withdrawn_filing.withdrawal_pending = False
+    withdrawn_filing_meta_data = withdrawn_filing.meta_data if withdrawn_filing.meta_data else {}
+    withdrawn_filing._meta_data = {**withdrawn_filing_meta_data,  # pylint: disable=protected-access
+                                  'withdrawnDate': f'{datetime.datetime.utcnow()}'}
     withdrawn_filing.save_to_session()
