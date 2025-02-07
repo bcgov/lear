@@ -15,9 +15,9 @@
 import datetime
 from typing import Dict
 
+from entity_queue_common.service_utils import logger
 from legal_api.models import Filing
 
-from entity_queue_common.service_utils import logger
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
@@ -42,5 +42,5 @@ def process(
     withdrawn_filing.withdrawal_pending = False
     withdrawn_filing_meta_data = withdrawn_filing.meta_data if withdrawn_filing.meta_data else {}
     withdrawn_filing._meta_data = {**withdrawn_filing_meta_data,  # pylint: disable=protected-access
-                                  'withdrawnDate': f'{datetime.datetime.utcnow()}'}
+                                   'withdrawnDate': f'{datetime.datetime.utcnow()}'}
     withdrawn_filing.save_to_session()
