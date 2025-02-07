@@ -47,7 +47,6 @@ def test_worker_notice_of_withdrawal(session, test_name, withdrawal_pending, wit
         ia_filing._status = Filing.Status.WITHDRAWN.value
     else:
         ia_filing._status = 'PENDING'
-    ia_filing.skip_status_listener = True
     ia_filing.save()
 
     now_filing_json = copy.deepcopy(FILING_HEADER)

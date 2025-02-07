@@ -1158,7 +1158,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Set review decision."""
         if filing_status not in [Filing.Status.CHANGE_REQUESTED.value,
                                  Filing.Status.APPROVED.value,
-                                 Filing.Status.REJECTED.value]:
+                                 Filing.Status.REJECTED.value,
+                                 Filing.Status.WITHDRAWN.value]:
             raise BusinessException(
                 error=f'Cannot set this filing status {filing_status}.',
                 status_code=HTTPStatus.FORBIDDEN
@@ -1219,7 +1220,8 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     # pylint: disable=protected-access
     if (filing._status in [Filing.Status.AWAITING_REVIEW.value,
                            Filing.Status.CHANGE_REQUESTED.value,
-                           Filing.Status.REJECTED.value] or
+                           Filing.Status.REJECTED.value,
+                           Filing.Status.WITHDRAWN.value] or
             (filing._status == Filing.Status.APPROVED.value and not filing.payment_token)):
         return  # should not override status in the review process
 
