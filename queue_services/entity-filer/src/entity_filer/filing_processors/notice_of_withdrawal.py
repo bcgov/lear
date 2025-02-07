@@ -30,7 +30,6 @@ def process(
     now_filing = filing.get('noticeOfWithdrawal')
     filing_meta.notice_of_withdrawal = {}
 
-
     if court_order := now_filing.get('courtOrder'):
         filings.update_filing_court_order(filing_submission, court_order)
     filing_meta.notice_of_withdrawal = {**filing_meta.notice_of_withdrawal,
