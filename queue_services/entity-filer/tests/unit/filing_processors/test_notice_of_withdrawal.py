@@ -59,7 +59,6 @@ def test_worker_notice_of_withdrawal(session, test_name, withdrawal_pending, wit
     now_filing.save()
 
     filing_meta = FilingMeta()
-    filing_meta.notice_of_withdrawal = {}
     
     # Test
     notice_of_withdrawal.process(now_filing, now_filing_json['filing'], filing_meta)
