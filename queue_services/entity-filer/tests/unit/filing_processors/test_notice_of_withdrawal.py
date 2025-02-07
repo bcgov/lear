@@ -42,6 +42,8 @@ def test_worker_notice_of_withdrawal(session, test_name, withdrawal_pending, wit
     ia_filing = create_filing(payment_id, ia_filing_json, business_id=business.id)
     ia_filing.withdrawal_pending = withdrawal_pending
     ia_filing._status = withdrawn_filing_status
+    # TODO: setup skip_status_listener should be removed
+    ia_filing.skip_status_listener = True
     ia_filing.save()
 
     now_filing_json = copy.deepcopy(FILING_HEADER)
