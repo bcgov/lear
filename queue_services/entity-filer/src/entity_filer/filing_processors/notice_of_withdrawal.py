@@ -17,6 +17,7 @@ from typing import Dict
 
 from legal_api.models import Filing
 
+from entity_queue_common.service_utils import logger
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
 
@@ -28,12 +29,14 @@ def process(
 ):  # pylint: disable=W0613, R0914
     """Render the notice_of_withdrawal onto the model objects."""
     now_filing = filing.get('noticeOfWithdrawal')
+    logger.debug('start notice_of_withdrawal filing process, noticeOfWithdrawal: %s', now_filing)
 
     if court_order := now_filing.get('courtOrder'):
         filings.update_filing_court_order(filing_submission, court_order)
 
     withdrawn_filing_id = now_filing.get('filingId')
     withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+    logger.debug('withdrawn_filing_id: %s', withdrawn_filing.id)
 
     withdrawn_filing._status = Filing.Status.WITHDRAWN.value  # pylint: disable=protected-access
     withdrawn_filing.withdrawal_pending = False
