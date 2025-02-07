@@ -478,7 +478,6 @@ class Filing:  # pylint: disable=too-many-public-methods
         """Return a list of documents for a particular filing."""
         no_output_filings = [
             Filing.FilingTypes.CONVERSION.value,
-            Filing.FilingTypes.COURTORDER.value,
             Filing.FilingTypes.PUTBACKOFF.value,
             Filing.FilingTypes.PUTBACKON.value,
             Filing.FilingTypes.REGISTRARSNOTATION.value,
@@ -528,6 +527,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         no_legal_filings_in_paid_withdrawn_status = [
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
+            Filing.FilingTypes.COURTORDER.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
@@ -566,6 +566,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                     Filing.FilingTypes.CONTINUATIONOUT.value,
+                    Filing.FilingTypes.COURTORDER.value,
                     Filing.FilingTypes.AGMEXTENSION.value,
                     Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                 ]
