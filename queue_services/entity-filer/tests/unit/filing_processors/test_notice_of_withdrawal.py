@@ -25,8 +25,10 @@ from tests.unit import create_business, create_filing
 
 
 @pytest.mark.parametrize('test_name, withdrawal_pending,withdrawn_filing_status', [
-    ('Process the Filing', False, 'PAID'),
-    ('Process the Filing', False, 'COMPLETED')
+    ('Process the Filing', False, False),
+    ('Dont process the Filing', False, True),
+    ('Dont process the Filing', True, False),
+    ('Dont process the Filing', True, True),
 ])
 def test_worker_notice_of_withdrawal(session, test_name, withdrawal_pending, withdrawn_filing_status):
     """Assert that the notice of withdrawal filing processes correctly."""
@@ -41,8 +43,10 @@ def test_worker_notice_of_withdrawal(session, test_name, withdrawal_pending, wit
     ia_filing_json['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     ia_filing = create_filing(payment_id, ia_filing_json, business_id=business.id)
     ia_filing.withdrawal_pending = withdrawal_pending
-    ia_filing._status = withdrawn_filing_status
-    # TODO: setup skip_status_listener should be removed
+    if withdrawn_filing_status:
+        ia_filing._status = Filing.Status.WITHDRAWN.value
+    else:
+        ia_filing._status = 'PENDING'
     ia_filing.skip_status_listener = True
     ia_filing.save()
 
@@ -65,5 +69,9 @@ def test_worker_notice_of_withdrawal(session, test_name, withdrawal_pending, wit
     final_now_filing = Filing.find_by_id(now_filing.id)
 
     assert now_filing_json['filing']['noticeOfWithdrawal']['courtOrder']['orderDetails'] == final_now_filing.order_details
-    assert final_ia_filing.status == Filing.Status.WITHDRAWN.value
-    assert final_ia_filing.withdrawal_pending == False
+    if withdrawal_pending or withdrawn_filing_status:
+        assert final_ia_filing.status == ia_filing.status
+        assert final_ia_filing.withdrawal_pending == ia_filing.withdrawal_pending
+    else:
+        assert final_ia_filing.status == Filing.Status.WITHDRAWN.value
+        assert final_ia_filing.withdrawal_pending == False
