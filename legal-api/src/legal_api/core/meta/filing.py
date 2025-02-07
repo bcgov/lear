@@ -648,7 +648,7 @@ FILINGS: Final = {
     },
     'transparencyRegister': {
         'name': 'transparencyRegister',
-        'ANNUAL': {
+        'annual': {
             'name': 'transparencyRegister',
             'title': 'Transparency Register - Annual Filing',
             'displayName': 'Transparency Register - Annual Filing',
@@ -663,7 +663,7 @@ FILINGS: Final = {
                 'CCC': 'REGSIGIN'
             }
         },
-        'CHANGE': {
+        'change': {
             'name': 'transparencyRegister',
             'title': 'Transparency Register Filing',
             'displayName': 'Transparency Register Filing',
@@ -678,7 +678,7 @@ FILINGS: Final = {
                 'CCC': 'REGSIGIN'
             }
         },
-        'INITIAL': {
+        'initial': {
             'name': 'transparencyRegister',
             'title': 'Transparency Register Filing',
             'displayName': 'Transparency Register Filing',

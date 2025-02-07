@@ -484,21 +484,21 @@ def get_allowable_filings_dict():
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
                 },
                 CoreFiling.FilingTypes.TRANSPARENCY_REGISTER.value: {
-                    'ANNUAL': {
+                    'annual': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN],
                             'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
                         }
                     },
-                    'CHANGE': {
+                    'change': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN],
                             'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
                         }
                     },
-                    'INITIAL': {
+                    'initial': {
                         'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                         'blockerChecks': {
                             'business': [BusinessBlocker.BUSINESS_FROZEN],

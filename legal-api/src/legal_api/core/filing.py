@@ -111,9 +111,9 @@ class Filing:  # pylint: disable=too-many-public-methods
         AMALGAMATION_APPLICATION_REGULAR = 'amalgamationApplication.regular'
         AMALGAMATION_APPLICATION_VERTICAL = 'amalgamationApplication.vertical'
         AMALGAMATION_APPLICATION_HORIZONTAL = 'amalgamationApplication.horizontal'
-        TRANSPARENCY_REGISTER_ANNUAL = 'transparencyRegister.ANNUAL'
-        TRANSPARENCY_REGISTER_CHANGE = 'transparencyRegister.CHANGE'
-        TRANSPARENCY_REGISTER_INITIAL = 'transparencyRegister.INITIAL'
+        TRANSPARENCY_REGISTER_ANNUAL = 'transparencyRegister.annual'
+        TRANSPARENCY_REGISTER_CHANGE = 'transparencyRegister.change'
+        TRANSPARENCY_REGISTER_INITIAL = 'transparencyRegister.initial'
 
     NEW_BUSINESS_FILING_TYPES: Final = [
         FilingTypes.AMALGAMATIONAPPLICATION,
@@ -535,6 +535,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.CONTINUATIONOUT.value,
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
+            Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
         ]
         if (filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) or
                 (filing.status == Filing.Status.COMPLETED and

@@ -450,7 +450,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'transparencyRegister': {
             'name': 'transparencyRegister',
-            'ANNUAL': {
+            'annual': {
                 'name': 'transparencyRegister',
                 'title': 'Transparency Register - Annual Filing',
                 'codes': {
@@ -464,7 +464,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'CCC': 'REGSIGIN'
                 }
             },
-            'CHANGE': {
+            'change': {
                 'name': 'transparencyRegister',
                 'title': 'Transparency Register Filing',
                 'codes': {
@@ -478,7 +478,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'CCC': 'REGSIGIN'
                 }
             },
-            'INITIAL': {
+            'initial': {
                 'name': 'transparencyRegister',
                 'title': 'Transparency Register Filing',
                 'codes': {
@@ -1099,7 +1099,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_completed_filings_for_colin(limit=20, offset=0):
         """Return the filings based on limit and offset."""
         from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
-        excluded_filings = ['lear_epoch', 'adminFreeze', 'courtOrder', 'registrarsNotation', 'registrarsOrder', 'transparencyRegister']
+        excluded_filings = [
+            'lear_epoch',
+            'adminFreeze',
+            'courtOrder',
+            'registrarsNotation',
+            'registrarsOrder',
+            'transparencyRegister'
+        ]
         excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
         filings = db.session.query(Filing).join(Business). \
             filter(
