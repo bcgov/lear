@@ -968,52 +968,6 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
     return (rules.are_digital_credentials_allowed(user, business))
 
 
-def is_self_registered_owner_operator(business, user):
-    """Return True if the user is the self-registered owner operator of the business."""
-    if not (registration_filing := get_registration_filing(business)):
-        return False
-
-    if len(proprietors := PartyRole.get_parties_by_role(
-            business.id, PartyRole.RoleTypes.PROPRIETOR.value)) <= 0:
-        return False
-
-    if len(completing_parties := PartyRole.get_party_roles_by_filing(
-            registration_filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)) <= 0:
-        return False
-
-    if not (proprietor := proprietors[0].party):
-        return False
-
-    if not (completing_party := completing_parties[0].party):
-        return False
-
-    completing_party_first_name = (completing_party.first_name or '').lower()
-    completing_party_last_name = (completing_party.last_name or '').lower()
-    proprietor_first_name = (proprietor.first_name or '').lower()
-    proprietor_middle_initial = (proprietor.middle_initial or '').lower()
-    if proprietor_middle_initial:
-        proprietor_first_name = f'{proprietor_first_name} {proprietor_middle_initial}'
-    proprietor_last_name = (proprietor.last_name or '').lower()
-    user_first_name = (user.firstname or '').lower()
-    user_last_name = (user.lastname or '').lower()
-
-    return (
-        registration_filing.submitter_id == user.id and
-        completing_party_first_name == proprietor_first_name and
-        completing_party_last_name == proprietor_last_name and
-        proprietor_first_name == user_first_name and
-        proprietor_last_name == user_last_name
-    )
-
-
-def get_registration_filing(business):
-    """Return the registration filing for the business."""
-    if len(registration_filings := Filing.get_filings_by_types(business.id, ['registration'])) <= 0:
-        return None
-
-    return registration_filings[0]
-
-
 def get_account_id(_, account_id: str = None) -> str:
     """Return the account id."""
     return account_id or request.headers.get('Account-Id', None)
