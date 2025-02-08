@@ -47,24 +47,6 @@ from tests.unit import (
 )
 
 
-@pytest.fixture(scope='function')
-def bootstrap(account):
-    """Create a IA filing for processing."""
-    from legal_api.services.bootstrap import AccountService
-
-    bootstrap = RegistrationBootstrapService.create_bootstrap(account=account)
-    RegistrationBootstrapService.register_bootstrap(bootstrap, bootstrap.identifier)
-    identifier = bootstrap.identifier
-
-    yield identifier
-
-    try:
-        rv = AccountService.delete_affiliation(account, identifier)
-        print(rv)
-    except Exception as err:
-        print(err)
-
-
 def compare_addresses(business_address: dict, filing_address: dict):
     """Compare two address dicts."""
     for key, value in business_address.items():

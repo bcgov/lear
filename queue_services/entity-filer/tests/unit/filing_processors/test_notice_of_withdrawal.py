@@ -18,49 +18,59 @@ import random
 import pytest
 
 from legal_api.models import Filing
-from registry_schemas.example_data import FILING_HEADER, INCORPORATION, NOTICE_OF_WITHDRAWAL
+from legal_api.services import RegistrationBootstrapService
+from registry_schemas.example_data import ALTERATION, FILING_HEADER, INCORPORATION, NOTICE_OF_WITHDRAWAL
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors import notice_of_withdrawal
 from tests.unit import create_business, create_filing
 
 
-def test_worker_notice_of_withdrawal(session):
+@pytest.mark.parametrize('test_name,filing_type,filing_template,identifier', [
+    ('IA Withdrawn Filing', 'incorporationApplication', INCORPORATION, 'TJO4XI2qMo'),
+    ('alteration Withdrawn Filing', 'alteration', ALTERATION, 'BC1234567')
+])
+def test_worker_notice_of_withdrawal(session, test_name, filing_type, filing_template, identifier):
     """Assert that the notice of withdrawal filing processes correctly."""
     # Setup
-    identifier = 'BC1234567'
-    business = create_business(identifier, legal_type='BC')
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     
-    # Create IA filing
-    ia_filing_json = copy.deepcopy(FILING_HEADER)
-    ia_filing_json['filing']['business']['identifier'] = identifier
-    ia_filing_json['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
-    ia_filing = create_filing(payment_id, ia_filing_json, business_id=business.id)
-    ia_filing.payment_completion_date = datetime.datetime.utcnow()
-    ia_filing._meta_data = {}
-    ia_filing.save()
+    # Create withdrawn_filing
+    withdrawn_filing_json = copy.deepcopy(FILING_HEADER)
+    withdrawn_filing_json['filing']['business']['legalType'] = 'BC'
+    withdrawn_filing_json['filing']['business']['identifier'] = identifier
+    withdrawn_filing_json['filing'][filing_type] = copy.deepcopy(filing_template)
+    if identifier.startswith('T'):
+        business = RegistrationBootstrapService.create_bootstrap(account=28)
+        withdrawn_filing = create_filing(payment_id, withdrawn_filing_json, bootstrap_id=business.identifier)
+    else:
+        business = create_business(identifier, legal_type='BC')
+        withdrawn_filing = create_filing(payment_id, withdrawn_filing_json, business_id=business.id)
+    withdrawn_filing.payment_completion_date = datetime.datetime.utcnow()  # for setting the filing status PAID
+    withdrawn_filing._meta_data = {}
+    withdrawn_filing.save()
 
+    # Create NoW filing
     now_filing_json = copy.deepcopy(FILING_HEADER)
-    now_filing_json['filing']['business']['identifier'] = identifier
+    now_filing_json['filing']['business']['identifier'] = business.identifier
     now_filing_json['filing']['noticeOfWithdrawal'] = copy.deepcopy(NOTICE_OF_WITHDRAWAL)
-    now_filing_json['filing']['noticeOfWithdrawal']['filingId'] = ia_filing.id
-    now_filing = create_filing(payment_id, now_filing_json, business_id=business.id)
-    now_filing.withdrawn_filing_id = ia_filing.id
+    now_filing_json['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing.id
+    now_filing = create_filing(payment_id, now_filing_json)
+    now_filing.withdrawn_filing_id = withdrawn_filing.id
     now_filing.save()
     filing_meta = FilingMeta()
 
-    assert ia_filing.status == Filing.Status.PAID.value
+    assert withdrawn_filing.status == Filing.Status.PAID.value
 
     # Test
     notice_of_withdrawal.process(now_filing, now_filing_json['filing'], filing_meta)
-    business.save()
+    withdrawn_filing.save()
 
     # Check results
-    final_ia_filing = Filing.find_by_id(ia_filing.id)
+    final_withdrawn_filing = Filing.find_by_id(withdrawn_filing.id)
     final_now_filing = Filing.find_by_id(now_filing.id)
 
     assert now_filing_json['filing']['noticeOfWithdrawal']['courtOrder']['orderDetails'] == final_now_filing.order_details
-    assert final_ia_filing.status == Filing.Status.WITHDRAWN.value
-    assert final_ia_filing.withdrawal_pending == False
-    assert final_ia_filing.meta_data.get('withdrawnDate')
+    assert final_withdrawn_filing.status == Filing.Status.WITHDRAWN.value
+    assert final_withdrawn_filing.withdrawal_pending == False
+    assert final_withdrawn_filing.meta_data.get('withdrawnDate')
