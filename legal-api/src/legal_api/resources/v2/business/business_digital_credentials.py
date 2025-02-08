@@ -177,7 +177,7 @@ def send_credential(identifier, credential_type):
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential_data = DigitalCredentialsHelpers.get_digital_credential_data(business, user, definition.credential_type)
+    credential_data = DigitalCredentialsHelpers.get_digital_credential_data(user, business, definition.credential_type)
     credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
     if not (response := digital_credentials.issue_credential(

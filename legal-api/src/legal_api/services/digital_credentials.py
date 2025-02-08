@@ -260,7 +260,7 @@ class DigitalCredentialsHelpers:
     """Provides helper functions for digital credentials."""
 
     @staticmethod
-    def get_digital_credential_data(business: Business, user: User, credential_type: DCDefinition.CredentialType):
+    def get_digital_credential_data(user: User, business: Business, credential_type: DCDefinition.CredentialType):
         """Get the data for a digital credential."""
         if credential_type == DCDefinition.CredentialType.business:
 

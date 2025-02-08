@@ -58,8 +58,8 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
             # pylint: disable=broad-exception-raised
             raise Exception(f'{business.identifier} active connection not found.')
 
-        credential_data = DigitalCredentialsHelpers.get_digital_credential_data(business,
-                                                                                user,
+        credential_data = DigitalCredentialsHelpers.get_digital_credential_data(user,
+                                                                                business,
                                                                                 definition.credential_type)
         credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 

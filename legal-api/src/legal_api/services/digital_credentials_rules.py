@@ -105,20 +105,10 @@ class DigitalCredentialsRulesService:
             logging.debug('No buisiness is provided.')
             return False
 
-        if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
-            return self._is_completing_party_and_has_party_role(
-                user, business, PartyRole.RoleTypes.PROPRIETOR.value
-            )
-
-        if business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
-            return self._is_completing_party_and_has_party_role(
-                user, business, PartyRole.RoleTypes.PARTNER.value
-            )
-
-        if business.legal_type == Business.LegalTypes.BCOMP.value:
-            return self._is_completing_party_and_has_party_role(
-                user, business, PartyRole.RoleTypes.DIRECTOR.value
-            )
+        if (business.legal_type == Business.LegalTypes.SOLE_PROP.value or
+            business.legal_type == Business.LegalTypes.PARTNERSHIP.value or
+                business.legal_type == Business.LegalTypes.BCOMP.value):
+            return True
 
         logging.debug('No specific access rules are met.')
         return False
