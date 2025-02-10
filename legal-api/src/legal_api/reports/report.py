@@ -354,15 +354,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_description(self, filing):
         legal_type = None
-        if self._filing.filing_type == 'alteration':
-            legal_type = self._filing.filing_json.get('filing').get('alteration').get('business', {}).get('legalType')
-        else:
-            legal_type = (self._filing.filing_json
-                          .get('filing')
-                          .get(self._filing.filing_type)
-                          .get('nameRequest', {})
-                          .get('legalType'))
+        filing_json = self._filing.filing_json.get('filing', {})
+        filing_type = self._filing.filing_type
 
+        # Check for alteration filing type
+        if filing_type == 'alteration':
+            legal_type = filing_json.get('alteration', {}).get('business', {}).get('legalType')
+        else:
+            legal_type = filing_json.get(filing_type, {}).get('nameRequest', {}).get('legalType')
+
+        # Fallback: Check the general business section
+        if not legal_type:
+            legal_type = filing_json.get('business', {}).get('legalType')
+
+        # Final fallback: Check the _business object
         if not legal_type and self._business:
             legal_type = self._business.legal_type
 

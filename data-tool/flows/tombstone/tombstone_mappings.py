@@ -35,6 +35,8 @@ class EventFilings(str, Enum):
     FILE_AMLRC = 'FILE_AMLRC'
     FILE_AMLVC = 'FILE_AMLVC'
 
+    CONVAMAL_NULL = 'CONVAMAL_NULL'  # TODO: re-map
+
     # Annual Report
     FILE_ANNBC = 'FILE_ANNBC'
 
@@ -59,6 +61,9 @@ class EventFilings(str, Enum):
     FILE_CONTI = 'FILE_CONTI'
     FILE_CONTU = 'FILE_CONTU'
     FILE_CONTC = 'FILE_CONTC'
+
+    # Conversion
+    FILE_CONVL = 'FILE_CONVL'
 
     # Correction
     FILE_CO_AR = 'FILE_CO_AR'
@@ -98,7 +103,7 @@ class EventFilings(str, Enum):
     FILE_ICORP = 'FILE_ICORP'
     FILE_ICORU = 'FILE_ICORU'
     FILE_ICORC = 'FILE_ICORC'
-    CONVICORP_NULL = 'CONVICORP_NULL'  # TODO: may need to be removed
+    CONVICORP_NULL = 'CONVICORP_NULL'  # TODO: re-map
 
     # TODO: Ledger - unsupported
 
@@ -170,6 +175,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AMLHC: ['amalgamationApplication', 'horizontal'],
     EventFilings.FILE_AMLRC: ['amalgamationApplication', 'regular'],
     EventFilings.FILE_AMLVC: ['amalgamationApplication', 'vertical'],
+    EventFilings.CONVAMAL_NULL: ['amalgamationApplication', 'regular'],  # TODO: re-map
 
     EventFilings.FILE_ANNBC: 'annualReport',
 
@@ -188,6 +194,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CONTI: 'continuationIn',
     EventFilings.FILE_CONTU: 'continuationIn',
     EventFilings.FILE_CONTC: 'continuationIn',
+
+    EventFilings.FILE_CONVL: 'conversionLedger',
 
     EventFilings.FILE_CO_AR: 'correction',
     EventFilings.FILE_CO_BC: 'correction',
@@ -277,6 +285,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AMLHC: 'Amalgamation Application Short Form (Horizontal) for a Community Contribution Company',
     EventFilings.FILE_AMLRC: 'Amalgamation Application (Regular) for a Community Contribution Company',
     EventFilings.FILE_AMLVC: 'Amalgamation Application Short Form (Vertical) for a Community Contribution Company',
+    EventFilings.CONVAMAL_NULL: None,  # TODO: re-map
 
     EventFilings.FILE_ANNBC: 'BC Annual Report',  # has suffix of date, dynamically add it during formatting
 
@@ -383,8 +392,10 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'changeOfAddress': ['last_coa_date'],
     'changeOfDirectors': ['last_cod_date'],
     'agmExtension': ['last_agm_date'],
+    'amalgamationApplication': ['last_coa_date', 'last_cod_date'],
     # TODO: 'dissolution_date' - Amalgamating business, continuation out
     # TODO: 'continuation_out_date' - continuation out
+    'continuationIn': ['last_coa_date', 'last_cod_date'],
     'dissolution': ['dissolution_date'],
     'putBackOn': ['dissolution_date'],
     'restoration': ['dissolution_date', 'restoration_expiry_date'],

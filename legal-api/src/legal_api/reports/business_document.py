@@ -550,6 +550,12 @@ class BusinessDocument:
                     'business_id': jurisdiction.business_id,
                     'filing_id': jurisdiction.filing_id,
                     }
+
+            # Imported from COLIN
+            if self._business.is_tombstone:
+                jurisdiction_info['expro_identifier'] = 'Not Available'
+                jurisdiction_info['expro_legal_name'] = 'Not Available'
+
             continuation_in_info['foreignJurisdiction'] = jurisdiction_info
             business['continuationIn'] = continuation_in_info
 

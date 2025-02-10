@@ -1238,9 +1238,18 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         return None
 
+    @classmethod
+    def add_limited_restoration_expiration_event(cls, con, corp_num, filing_dt) -> int:
+        """Add limited restoration expiration event ."""
+        cursor = con.cursor()
+        event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing_dt, event_type='SYSDL')
+        Business.update_corp_state(cursor, event_id, corp_num,
+                                   Business.CorpStateTypes.RESTORATION_EXPIRATION.value)
+        return event_id
+
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
-    def add_filing(cls, con, filing: Filing) -> int:
+    def add_filing(cls, con, filing: Filing, lear_identifier: str) -> int:
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
@@ -1396,11 +1405,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                 Business.TypeCodes.BCOMP_CONTINUE_IN.value,
                                             ])
 
-            # Freeze all entities except CP if 'enable-bc-ccc-ulc' flag is on else just freeze BEN
+            # Freeze all entities except CP if business exists in lear and
+            # 'enable-bc-ccc-ulc' flag is on else just freeze BEN
             is_frozen_condition = (
                 flags.is_on('enable-bc-ccc-ulc') and
-                business['business']['legalType'] != Business.TypeCodes.COOP.value
+                business['business']['legalType'] != Business.TypeCodes.COOP.value and
+                filing_source == cls.FilingSource.LEAR.value
             )
+            current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
 
             is_new_or_altered_ben = is_new_ben or is_new_cben or is_alteration_to_ben_or_cben
 

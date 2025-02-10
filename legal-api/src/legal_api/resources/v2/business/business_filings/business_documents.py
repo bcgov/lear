@@ -45,6 +45,7 @@ DOCUMENTS_BASE_ROUTE: Final = '/<string:identifier>/filings/<int:filing_id>/docu
 @cross_origin(origin='*')
 @jwt.requires_auth
 def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None, file_key: str = None):
+    # pylint: disable=too-many-branches
     """Return a JSON object with meta information about the Service."""
     # basic checks
     if not authorized(identifier, jwt, ['view', ]):
@@ -63,14 +64,23 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
             message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
         ), HTTPStatus.NOT_FOUND
 
-    if not (filing := Filing.get(identifier, filing_id)):
+    filing = Filing.get(identifier, filing_id)
+    if filing and identifier.startswith('T') and filing.id != filing_id:
+        withdrawn_filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
+                                                             withdrawn_filing_id=filing.id,
+                                                             filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL)
+        if withdrawn_filing:
+            filing = withdrawn_filing
+
+    if not filing:
         return jsonify(
             message=get_error_message(ErrorCode.FILING_NOT_FOUND,
                                       **{'filing_id': filing_id, 'identifier': identifier})
         ), HTTPStatus.NOT_FOUND
 
     if not legal_filing_name and not file_key:
-        if identifier.startswith('T') and filing.status == Filing.Status.COMPLETED:
+        if identifier.startswith('T') and filing.status == Filing.Status.COMPLETED and \
+                filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
             return {'documents': {}}, HTTPStatus.OK
         return _get_document_list(business, filing)
 
@@ -106,6 +116,7 @@ def _get_receipt(business: Business, filing: Filing, token):
             Filing.Status.COMPLETED,
             Filing.Status.CORRECTED,
             Filing.Status.PAID,
+            Filing.Status.WITHDRAWN
     ):
         return {}, HTTPStatus.BAD_REQUEST
 
@@ -142,15 +153,15 @@ def _get_corp_name(business, filing):
     if business:
         return business.legal_name
 
-    name_request = (filing.filing_json
-                    .get('filing')
-                    .get(filing.filing_type)
-                    .get('nameRequest', {}))
-    if name_request.get('legalName'):
-        return name_request.get('legalName')
+    filing_json = filing.filing_json.get('filing', {})
+    name_request = filing_json.get(filing.filing_type, {}).get('nameRequest', {})
 
-    legal_type = name_request.get('legalType')
+    legal_name = name_request.get('legalName') or filing_json.get('business', {}).get('legalName')
+    if legal_name:
+        return legal_name
+
+    legal_type = name_request.get('legalType') or filing_json.get('business', {}).get('legal_type')
     if legal_type:
-        return Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+        return Business.BUSINESSES.get(legal_type, {}).get('numberedDescription', '')
 
     return ''
