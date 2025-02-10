@@ -349,7 +349,8 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
             filing_submission.transaction_id = transaction.id
 
-            business_type = business.legal_type if business else filing_submission['business']['legal_type']
+            business_type = business.legal_type if business \
+                else filing_submission.filing_json.get('filing', {}).get('business', {}).get('legalType')
             filing_submission.set_processed(business_type)
             business.last_modified = filing_submission.completion_date
 
