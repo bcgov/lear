@@ -42,7 +42,7 @@ def test_worker_notice_of_withdrawal(session, test_name, filing_type, filing_tem
     withdrawn_filing_json['filing'][filing_type] = copy.deepcopy(filing_template)
     if identifier.startswith('T'):
         business = RegistrationBootstrapService.create_bootstrap(account=28)
-        withdrawn_filing = create_filing(payment_id, withdrawn_filing_json, bootstrap_id=business.identifier)
+        withdrawn_filing = create_filing(token=payment_id, json_filing=withdrawn_filing_json, bootstrap_id=business.identifier)
     else:
         business = create_business(identifier, legal_type='BC')
         withdrawn_filing = create_filing(payment_id, withdrawn_filing_json, business_id=business.id)
