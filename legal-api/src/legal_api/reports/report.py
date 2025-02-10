@@ -37,7 +37,7 @@ from legal_api.models import (
     OfficeType,
     PartyRole,
     Resolution,
-    ShareClass
+    ShareClass,
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
