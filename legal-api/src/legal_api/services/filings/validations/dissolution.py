@@ -22,7 +22,9 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 
-from .common_validations import validate_court_order, validate_pdf
+from .common_validations import validate_court_order, validate_file_on_drs
+from legal_api.constants import DocumentClassEnum
+
 from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
@@ -243,7 +245,7 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[li
             return [{'error': _('A valid affidavit key is required.'),
                      'path': affidavit_file_key_path}]
 
-        return validate_pdf(affidavit_file_key, affidavit_file_key_path)
+        return validate_file_on_drs(DocumentClassEnum.CORP.value, affidavit_file_key, affidavit_file_key_path)
 
     return None
 
