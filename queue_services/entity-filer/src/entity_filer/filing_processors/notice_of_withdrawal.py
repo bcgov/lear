@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the Notice of Withdrawal filing."""
-import datetime
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
