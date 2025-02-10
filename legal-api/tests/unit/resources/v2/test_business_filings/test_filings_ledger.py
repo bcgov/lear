@@ -125,7 +125,7 @@ def test_ledger_search(session, client, jwt):
     alteration = next((f for f in ledger['filings'] if f.get('name') == 'alteration'), None)
 
     assert alteration
-    assert 16 == len(alteration.keys())
+    assert 17 == len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
@@ -135,6 +135,7 @@ def test_ledger_search(session, client, jwt):
     assert 'submittedDate' in alteration
     assert 'submitter' in alteration
     assert 'displayLedger' in alteration
+    assert 'withdrawalPending' in alteration
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']
@@ -176,6 +177,45 @@ def test_ledger_comment_count(session, client, jwt):
 
     # validate
     assert rv.json['filings'][0]['commentsCount'] == number_of_comments
+
+@pytest.mark.parametrize('test_name, filing_status, expected', [
+    ('filing-status-Completed', Filing.Status.COMPLETED.value, 1),
+    ('filing-status-Corrected',Filing.Status.CORRECTED.value, 0),
+    ('filing-status-Draft', Filing.Status.DRAFT.value, 0),
+    ('filing-status-Epoch', Filing.Status.EPOCH.value, 0),
+    ('filing-status-Error', Filing.Status.ERROR.value, 0),
+    ('filing-status-Paid', Filing.Status.PAID.value, 1),
+    ('filing-status-Pending', Filing.Status.PENDING.value, 0),
+    ('filing-status-PaperOnly', Filing.Status.PAPER_ONLY.value, 0),
+    ('filing-status-PendingCorrection', Filing.Status.PENDING_CORRECTION.value, 0),
+    ('filing-status-Withdrawn', Filing.Status.WITHDRAWN.value, 1),
+])    
+
+def test_get_all_business_filings_permitted_statuses(session, client, jwt, test_name, filing_status, expected):
+    """Assert that the ledger only shows filings with permitted statuses."""
+    # setup
+    identifier = 'BC1234567'
+    today = date.today().isoformat()
+    alteration_meta = {'alteration': {
+        'fromLegalType': 'BC',
+        'toLegalType': 'BEN'
+    }}
+    meta_data = {**{'applicationDate': today}, **alteration_meta}
+
+    business, filing_storage = ledger_element_setup_help(identifier, 'alteration')
+    filing_storage._meta_data = meta_data
+
+    # set filing status
+    filing_storage._status = filing_status
+    filing_storage.skip_status_listener = True
+    filing_storage.save()
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [UserRoles.system], identifier))
+
+    # validate
+    assert len(rv.json.get('filings')) == expected    
 
 
 @pytest.mark.parametrize('test_name, file_number, order_date, effect_of_order, order_details, expected', [

@@ -17,6 +17,28 @@ BUSINESS = {
 }
 
 
+# ======== user ========
+USER = {
+    'username': None,
+    'firstname': None,
+    'middlename': None,
+    'lastname': None,
+    'email': None,
+    'creation_date': None
+}
+
+
+# ======== comment ========
+COMMENT = {
+    'comment': None,
+    'timestamp': None,
+    # FK
+    'business_id': None,
+    'staff_id': None,
+    'filing_id': None
+}
+
+
 # ======== address ========
 ADDRESS = {
     'address_type': None,  # mailing or delivery
@@ -132,16 +154,20 @@ RESOLUTION = {
 }
 
 
-# ======== filing ========
-USER = {
-    'username': None,
-    'firstname': None,
-    'middlename': None,
-    'lastname': None,
-    'email': None,
-    'creation_date': None
+# ======== jurisdiction ========
+JURISDICTION = {
+    'country': None,
+    'region': None,
+    'identifier': None,
+    'legal_name': None,
+    'tax_id': None,
+    'incorporation_date': None,  # date
+    'expro_identifier': None,
+    'expro_legal_name': None,
 }
 
+
+# ======== filing ========
 FILING_JSON = {
     'filing': {
         'header': {}
@@ -171,7 +197,9 @@ FILING = {
         # others
         'submitter_roles': None,
     },
-    'amalgamations': None  # optional
+    'jurisdiction': None,  # optional
+    'amalgamations': None,  # optional
+    'comments': None  # optional
 }
 
 FILING_COMBINED = {

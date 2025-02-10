@@ -66,10 +66,7 @@ select case
            else c.CORP_NUM
        end CORP_NUM,
        CORP_FROZEN_TYP_CD as corp_frozen_type_cd,
-       case
-           when c.CORP_TYP_CD in ('QA', 'QB', 'QC', 'QD', 'QE') then 'BC'
-           else c.CORP_TYP_CD
-       end CORP_TYPE_CD,
+       CORP_TYP_CD as CORP_TYPE_CD,
        RECOGNITION_DTS,
        BN_9,
        bn_15,

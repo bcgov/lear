@@ -66,6 +66,7 @@ from entity_filer.filing_processors import (
     court_order,
     dissolution,
     incorporation_filing,
+    notice_of_withdrawal,
     put_back_off,
     put_back_on,
     registrars_notation,
@@ -199,7 +200,8 @@ async def publish_mras_email(filing: Filing):
             )
 
 
-async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
+async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+                         flask_app: Flask):
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
@@ -216,10 +218,14 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
         filing_submission = filing_core_submission.storage
 
-        if filing_core_submission.status == Filing.Status.COMPLETED:
+        if filing_core_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
+        if filing_submission.withdrawal_pending:
+            logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
+                           filing_submission.business_id, filing_submission.id, filing_msg)
+            raise QueueException
 
         # convenience flag to set that the envelope is a correction
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
@@ -321,6 +327,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('agmExtension'):
                     agm_extension.process(filing, filing_meta)
 
+                elif filing.get('noticeOfWithdrawal'):
+                    notice_of_withdrawal.process(filing_submission, filing, filing_meta)
+
                 elif filing.get('amalgamationApplication'):
                     business, filing_submission, filing_meta = amalgamation_application.process(
                         business,
@@ -400,16 +409,20 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
                             business_profile.update_business_profile(business, filing_submission, filing_type)
 
-            try:
-                await publish_email_message(
-                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                capture_message(
-                    f'Queue Error: Failed to place email for filing:{filing_submission.id}'
-                    f'on Queue with error:{err}',
-                    level='error'
-                )
+            # This will be True only in the case where filing is filed by Jupyter notebook for BEN corrections
+            is_system_filed_correction = is_correction and is_system_filed_filing(filing_submission)
+
+            if not is_system_filed_correction:
+                try:
+                    await publish_email_message(
+                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
+                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                    # mark any failure for human review
+                    capture_message(
+                        f'Queue Error: Failed to place email for filing:{filing_submission.id}'
+                        f'on Queue with error:{err}',
+                        level='error'
+                    )
 
             try:
                 await publish_event(business, filing_submission)
@@ -432,6 +445,16 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     f'on Queue with error:{err}',
                     level='error'
                 )
+
+
+def is_system_filed_filing(filing_submission) -> bool:
+    """Check if filing is filed by system.
+
+    Filing filed using Jupyter Notebook will have 'certified_by' field = 'system'.
+
+    """
+    certified_by = filing_submission.json['filing']['header']['certifiedBy']
+    return certified_by == 'system' if certified_by else False
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):

@@ -213,6 +213,26 @@ BC_CORRECTION = {
     }
 }
 
+BC_CORRECTION_SHORT = {
+    'filing': {
+        'header': {
+            'name': 'correction',
+            'date': '2025-01-01',
+            'certifiedBy': 'system'
+        },
+        'business': {
+            'identifier': 'BC1234567',
+            'legalType': 'BC'
+        },
+        'correction': {
+            'details': 'First correction',
+            'correctedFilingId': '123456',
+            'correctedFilingType': 'incorporationApplication',
+            'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system'
+        }
+    }
+}
+
 BC_CORRECTION_APPLICATION = BC_CORRECTION
 
 naics_response = {
@@ -828,3 +848,37 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
         assert business.share_classes.all()[0].par_value == share_class_json2['parValue']
         assert business.share_classes.all()[0].currency == share_class_json2['currency']
         assert [item.json for item in business.share_classes.all()[0].series] == share_class_json2['series']
+        
+
+async def test_correction_ben_statement(app, session, mocker):
+    """Assert the worker process calls the BEN correction statement correctly."""
+    
+    identifier = 'BC1234567'
+    business = create_entity(identifier, 'BEN', 'ABC test inc.')
+    business.save()
+    business_id = business.id
+
+    filing = copy.deepcopy(BC_CORRECTION_SHORT)
+    
+    corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_SHORT).id
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
+    
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+
+    filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
+    filing_msg = {'filing': {'id': filing_id}}
+    
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+
+    await process_filing(filing_msg, app)
+    
+    final_filing = Filing.find_by_id(filing_id)
+
+    filing_comments = final_filing.comments.all()
+    assert len(filing_comments) == 1
+    assert filing_comments[0].comment == filing['filing']['correction']['comment']

@@ -485,6 +485,29 @@ def get_allowable_filings_dict():
                 },
                 'transition': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
+                },
+                CoreFiling.FilingTypes.TRANSPARENCY_REGISTER.value: {
+                    'annual': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
+                        }
+                    },
+                    'change': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
+                        }
+                    },
+                    'initial': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
+                        }
+                    }
                 }
             },
             Business.State.HISTORICAL: {}

@@ -67,6 +67,8 @@ def get_completed_filings_for_colin():
         filing_json['filing']['header']['source'] = Filing.Source.LEAR.value
         filing_json['filing']['header']['date'] = filing.filing_date.isoformat()
         filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
+        filing_json['filing']['header']['isFutureEffective'] = filing.is_future_effective
+        filing_json['filing']['header']['hideInLedger'] = filing.hide_in_ledger
 
         if not filing_json['filing'].get('business'):
             if filing.transaction_id:
