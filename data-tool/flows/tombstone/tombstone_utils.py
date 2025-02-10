@@ -1,5 +1,4 @@
 import copy
-from decimal import Decimal
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -7,14 +6,16 @@ from decimal import Decimal
 import pandas as pd
 import pytz
 from sqlalchemy import Connection, text
-from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING, FILING_JSON, 
-                                           JURISDICTION, OFFICE,
+from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
+                                           FILING_JSON, JURISDICTION, OFFICE,
                                            PARTY, PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
-                                          LEAR_STATE_FILINGS, EventFilings)
+                                          LEAR_STATE_FILINGS,
+                                          LEGAL_TYPE_CHANGE_FILINGS,
+                                          EventFilings)
 
 unsupported_event_file_types = set()
 
@@ -633,6 +634,20 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             **filing_json['filing']['restoration'],
             'type': filing_subtype,
         }
+    elif filing_type == 'alteration':
+        meta_data['alteration'] = {}
+        if (event_file_type := data['event_file_type']) in LEGAL_TYPE_CHANGE_FILINGS.keys():
+            meta_data['alteration'] = {
+                **meta_data['alteration'],
+                'fromLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][0],
+                'toLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][1],
+            }
+        if (old_corp_name := data['old_corp_name']) and (new_corp_name := data['new_corp_name']):
+            meta_data['alteration'] = {
+                **meta_data['alteration'],
+                'fromLegalName': old_corp_name,
+                'toLegalName': new_corp_name,
+            }
     # TODO: populate meta_data for correction to display correct filing name
 
     return filing_json, meta_data

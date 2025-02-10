@@ -433,3 +433,10 @@ LEAR_STATE_FILINGS = [
     # ingore the following since we won't map to them
     # 'dissolved', 'restorationApplication', 'continuedOut'
 ]
+
+
+LEGAL_TYPE_CHANGE_FILINGS = {
+    EventFilings.FILE_NOALB: ['ULC', 'BC'],
+    EventFilings.FILE_NOALU: ['BC', 'ULC'],
+    EventFilings.FILE_NOALC: ['BC', 'CC'],
+}
