@@ -28,7 +28,7 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from legal_api.models import Business, Filing, PartyRole, User
+from legal_api.models import Business, Filing, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.services.warnings.business.business_checks import WarningType
 
@@ -965,7 +965,7 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
         return False
 
     rules = DigitalCredentialsRulesService()
-    return (rules.are_digital_credentials_allowed(user, business))
+    return rules.are_digital_credentials_allowed(user, business)
 
 
 def get_account_id(_, account_id: str = None) -> str:
