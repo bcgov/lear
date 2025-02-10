@@ -29,6 +29,7 @@ from .flags import Flags
 from .furnishing_documents_service import FurnishingDocumentsService
 from .involuntary_dissolution import InvoluntaryDissolutionService
 from .minio import MinioService
+from .document_record import DocumentRecordService
 from .mras_service import MrasService
 from .naics import NaicsService
 from .namex import NameXService

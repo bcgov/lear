@@ -13,4 +13,18 @@
 # limitations under the License.
 """Constants for legal api."""
 
+from enum import Enum
+
+
 BOB_DATE = '2019-03-08'
+
+class DocumentClassEnum(Enum):
+    CORP = 'CORP'
+    COOP = 'COOP'
+
+class DocumentTypeEnum(Enum):
+    CNTO = 'CNTO',
+    DIRECTOR_AFFIDAVIT = 'DIRECTOR_AFFIDAVIT'
+    CORP_AFFIDAVIT = 'CORP_AFFIDAVIT'
+    COOP_MEMORANDUM = 'COOP_MEMORANDUM'
+    COOP_RULES = 'COOP_RULES'

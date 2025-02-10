@@ -13,6 +13,7 @@
 # limitations under the License.
 """Module for handling Minio document operations."""
 
+import re
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, jsonify
@@ -20,6 +21,7 @@ from flask_cors import cross_origin
 
 from legal_api.models import Document, Filing
 from legal_api.services.minio import MinioService
+from legal_api.services.document_record import DocumentRecordService
 from legal_api.utils.auth import jwt
 
 
@@ -72,6 +74,45 @@ def get_minio_document(document_key: str):
                 status=response.status,
                 mimetype='application/pdf'
             )
+    except Exception as e:
+        current_app.logger.error(f'Error getting file {document_key}: {e}')
+        return jsonify(
+            message=f'Error getting file {document_key}.'
+        ), HTTPStatus.INTERNAL_SERVER_ERROR
+
+@bp.route('/<string:document_class>/<string:document_type>', methods=['POST', 'OPTIONS'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def upload_document(document_class: str, document_type: str):
+    """Upload document file to Document Record Service."""
+
+    return DocumentRecordService.upload_document(document_class, document_type), HTTPStatus.OK
+
+@bp.route('/drs/<string:document_service_id>', methods=['DELETE'])
+@cross_origin(origin='*')
+@jwt.requires_auth
+def delete_document(document_service_id: str):
+    """Delete document file from Document Record Service."""
+
+    return DocumentRecordService.delete_document(document_service_id), HTTPStatus.OK
+
+@bp.route('/drs/<string:document_class>/<string:document_key>', methods=['GET'])
+@cross_origin(origins='*')
+@jwt.requires_auth
+def get_document(document_class: str, document_key: str):
+    """Get document file from Minio or Document Record Service."""
+    drs_id_pattern = r"^DS\d{10}$"
+
+    try:
+        if re.match(drs_id_pattern, document_key):
+            return DocumentRecordService.get_document(document_class, document_key), HTTPStatus.OK
+        else:
+            response = MinioService.get_file(document_key)
+            return current_app.response_class(
+                    response=response.data,
+                    status=response.status,
+                    mimetype='application/pdf'
+                )
     except Exception as e:
         current_app.logger.error(f'Error getting file {document_key}: {e}')
         return jsonify(
