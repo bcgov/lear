@@ -393,13 +393,13 @@ FILINGS: Final = {
         'codes': {
                 'SP': 'NOFEE',
                 'GP': 'NOFEE',
-                'CP':'NOFEE',
+                'CP': 'NOFEE',
                 'BC': 'COURT',
                 'BEN': 'COURT',
                 'CC': 'COURT',
                 'ULC': 'COURT',
                 'C': 'COURT',
-                'CBEN':'NOFEE',
+                'CBEN': 'NOFEE',
                 'CUL': 'COURT',
                 'CCC': 'COURT',
             }
