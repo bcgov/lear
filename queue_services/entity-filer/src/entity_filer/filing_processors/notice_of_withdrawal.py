@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the Notice of Withdrawal filing."""
-import datetime
 from typing import Dict
 
 from entity_queue_common.service_utils import logger
@@ -42,5 +41,5 @@ def process(
     withdrawn_filing.withdrawal_pending = False
     withdrawn_filing_meta_data = withdrawn_filing.meta_data if withdrawn_filing.meta_data else {}
     withdrawn_filing._meta_data = {**withdrawn_filing_meta_data,  # pylint: disable=protected-access
-                                   'withdrawnDate': f'{datetime.datetime.utcnow()}'}
+                                   'withdrawnDate': f'{filing_submission.effective_date.isoformat()}'}
     withdrawn_filing.save_to_session()
