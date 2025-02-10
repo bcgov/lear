@@ -411,6 +411,7 @@ class BusinessDocument:
                         name_change_info['filingDateTime'] = filing.filing_date.isoformat()
                         name_changes.append(name_change_info)
 
+        # get name change info from conversion filing
         for filing in Filing.get_conversion_filings_by_conv_types(self._business.id, ['changeOfName']):
             filing_meta = filing.meta_data
             name_change_info = {}
@@ -482,6 +483,7 @@ class BusinessDocument:
     def _set_amalgamation_details(self, business: dict):
         """Set amalgamation filing data."""
         amalgamated_businesses = []
+        # get amalgamation info from either general filing or conversion filing
         filings = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication']) or \
             Filing.get_conversion_filings_by_conv_types(self._business.id, ['amalgamationApplication'])
         if filings:
@@ -543,6 +545,7 @@ class BusinessDocument:
     def _set_continuation_in_details(self, business: dict):
         """Set continuation in filing data."""
         continuation_in_info = {}
+        # get continuation in info from either general filing or conversion filing
         continuation_in_filing = Filing.get_filings_by_types(self._business.id, ['continuationIn']) or \
             Filing.get_conversion_filings_by_conv_types(self._business.id, ['continuationIn'])
         if continuation_in_filing:
