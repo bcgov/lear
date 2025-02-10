@@ -418,7 +418,7 @@ class BusinessDocument:
             name_change_info['fromLegalName'] = filing_meta.get('changeOfName').get('fromLegalName',
                                                                                     'Not Available')
             name_change_info['toLegalName'] = filing_meta.get('changeOfName').get('toLegalName',
-                                                                                    'Not Available')
+                                                                                  'Not Available')
             name_change_info['filingDateTime'] = filing.filing_date.isoformat()
             name_changes.append(name_change_info)
 
