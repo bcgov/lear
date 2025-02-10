@@ -517,15 +517,14 @@ class Filing:  # pylint: disable=too-many-public-methods
             return documents
 
         if filing.storage and filing.storage.filing_type in no_output_filings:
-            if filing.filing_type == 'courtOrder' and \
-                    (filing.storage.documents.filter(
-                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
-                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
-
             return documents
 
         # return a receipt for filings completed in our system
         if filing.storage and filing.storage.payment_completion_date:
+            if filing.filing_type == 'courtOrder' and \
+                    (filing.storage.documents.filter(
+                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
+                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         no_legal_filings_in_paid_withdrawn_status = [
