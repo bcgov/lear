@@ -40,6 +40,11 @@ class Office(db.Model, Versioned):  # pylint: disable=too-few-public-methods
     # relationships
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
 
+    @classmethod
+    def get_all_by_business_id(cls, business_id: int):
+        """Get all offices for a business."""
+        return cls.query.filter_by(business_id=business_id).all()
+
 
 class OfficeType(db.Model):  # pylint: disable=too-few-public-methods
     """Define the Office Types available for Legal Entities."""

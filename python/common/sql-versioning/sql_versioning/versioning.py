@@ -359,12 +359,22 @@ class Versioned:
             for pending_cls in cls._pending_version_classes:
                 version_cls = pending_cls._version_cls
                 mapper = inspect(pending_cls)
+
                 # Now add columns from the original table
                 for c in mapper.columns:
                     # Make sure table's column name and class's property name can be different
                     property_name = mapper.get_property_by_column(c).key
                     if not hasattr(version_cls, property_name):
                         setattr(version_cls, property_name, Column(c.name, c.type))
+                
+                # Add relationships from the original table. Currently only works for one-to-one relationships
+                # TODO: get "many-to-..." relationships working
+                for r in mapper.relationships:
+                    property_name = r.key
+                    property_value = getattr(pending_cls, property_name)
+                    if not hasattr(version_cls, property_name) and property_value:
+                        setattr(version_cls, property_name, property_value)
+
             delattr(cls, '_pending_version_classes')
 
 

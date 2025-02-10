@@ -92,6 +92,6 @@ class Resolution(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
         return resolutions
 
     @classmethod
-    def get_resolution_by_business_id(cls, business_id: int):
+    def get_all_by_business_id(cls, business_id: int):
         """Get all resolutions for a business."""
         return cls.query.filter_by(business_id=business_id).all()

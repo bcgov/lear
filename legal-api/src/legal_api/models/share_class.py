@@ -86,6 +86,11 @@ class ShareClass(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
             share_class = cls.query.filter_by(id=share_class_id).one_or_none()
         return share_class
 
+    @classmethod
+    def get_all_by_business_id(cls, business_id: int):
+        """Get all share classes for a business."""
+        return cls.query.filter_by(business_id=business_id).all()
+
 
 @event.listens_for(ShareClass, 'before_insert')
 @event.listens_for(ShareClass, 'before_update')
