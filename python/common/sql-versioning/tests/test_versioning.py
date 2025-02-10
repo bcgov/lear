@@ -143,6 +143,22 @@ def test_versioning_insert(db, session):
     assert result_versioned_address.operation_type == 0
     assert result_versioned_address.end_transaction_id is None
 
+def test_versioning_relationships(db, session):
+    user = User(name='user')
+    address = Address(name='address')
+    locations = [Location(name='location1'), Location(name='location2')]
+    user.address = address
+    user.locations = locations
+    session.add(user)
+    session.commit()
+
+    user_version = version_class(User)
+    result_revision = session.query(user_version)\
+        .filter(user_version.name=='user')\
+        .one_or_none()
+    assert result_revision.address == address
+    # assert result_revision.locations == locations
+
 
 def test_versioning_relationships(db, session):
     user = User(name='user')
