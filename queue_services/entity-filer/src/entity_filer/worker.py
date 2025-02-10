@@ -66,6 +66,7 @@ from entity_filer.filing_processors import (
     court_order,
     dissolution,
     incorporation_filing,
+    notice_of_withdrawal,
     put_back_off,
     put_back_on,
     registrars_notation,
@@ -217,10 +218,14 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
         filing_submission = filing_core_submission.storage
 
-        if filing_core_submission.status == Filing.Status.COMPLETED:
+        if filing_core_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
+        if filing_submission.withdrawal_pending:
+            logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
+                           filing_submission.business_id, filing_submission.id, filing_msg)
+            raise QueueException
 
         # convenience flag to set that the envelope is a correction
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
@@ -321,6 +326,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('agmExtension'):
                     agm_extension.process(filing, filing_meta)
+
+                elif filing.get('noticeOfWithdrawal'):
+                    notice_of_withdrawal.process(filing_submission, filing, filing_meta)
 
                 elif filing.get('amalgamationApplication'):
                     business, filing_submission, filing_meta = amalgamation_application.process(

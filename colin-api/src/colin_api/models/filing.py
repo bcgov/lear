@@ -1238,6 +1238,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         return None
 
+    @classmethod
+    def add_limited_restoration_expiration_event(cls, con, corp_num, filing_dt) -> int:
+        """Add limited restoration expiration event ."""
+        cursor = con.cursor()
+        event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing_dt, event_type='SYSDL')
+        Business.update_corp_state(cursor, event_id, corp_num,
+                                   Business.CorpStateTypes.RESTORATION_EXPIRATION.value)
+        return event_id
+
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
     def add_filing(cls, con, filing: Filing, lear_identifier: str) -> int:
