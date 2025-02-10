@@ -1,4 +1,4 @@
-# Copyright © 2024 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -16,13 +16,9 @@
 
 import logging
 import os
-from datetime import datetime
-from typing import List, Union
 
-from legal_api.models import Filing, PartyRole
-from legal_api.models.business import Business
-from legal_api.models.party import Party
-from legal_api.models.user import User
+from legal_api.models import Business, PartyRole, User
+from legal_api.services.digital_credentils_utils import user_completing_party_role, user_party_role
 from legal_api.utils.logging import setup_logging
 
 
@@ -32,55 +28,6 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(
 
 class DigitalCredentialsRulesService:
     """Digital Credentials Rules service."""
-
-    class FormattedUser:
-        """Formatted user class."""
-
-        first_name: str
-        last_name: str
-
-        def __init__(self, user: Union[User, Party]):
-            """Initialize the formatted user."""
-            first_name, last_name = self._formatted_user(user)
-            self.first_name = first_name
-            self.last_name = last_name
-
-        def _formatted_user(self, user: Union[User, Party]) -> dict:
-            """Return the formatted name of the user."""
-            first_name = (getattr(user, 'firstname', '') or getattr(
-                user, 'first_name', '') or '').lower()
-            last_name = (getattr(user, 'lastname', '') or getattr(
-                user, 'last_name', '') or '').lower()
-            middle_name = (getattr(user, 'middlename', '') or getattr(
-                user, 'middle_initial', '') or '').lower()
-
-            if middle_name:
-                first_name = f'{first_name} {middle_name}'
-
-            return first_name, last_name
-
-    def _registration_filings(self, business: Business) -> List[Filing]:
-        """Return the registration filings for the business."""
-        return Filing.get_filings_by_types(business.id, ['registration'])
-
-    def _registration_filing(self, business: Business) -> Filing:
-        """Return the registration filing for the business."""
-        if len(registration_filings := self._registration_filings(business)) <= 0:
-            return None
-
-        return registration_filings[0]
-
-    def _parties_by_role(self, business: Business, role: PartyRole.RoleTypes) -> List[PartyRole]:
-        """Return the party roles of a role type the business."""
-        return PartyRole.get_parties_by_role(business.id, role)
-
-    def _completing_parties(self, registration_filing: Filing) -> List[PartyRole]:
-        """Return the completing parties of the registration filing."""
-        return PartyRole.get_party_roles_by_filing(
-            registration_filing.id,
-            datetime.utcnow(),
-            PartyRole.RoleTypes.COMPLETING_PARTY.value,
-        )
 
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
         """Return True if the user is allowed to access digital credentials."""
@@ -105,54 +52,23 @@ class DigitalCredentialsRulesService:
             logging.debug('No buisiness is provided.')
             return False
 
-        if (business.legal_type == Business.LegalTypes.SOLE_PROP.value or
-            business.legal_type == Business.LegalTypes.PARTNERSHIP.value or
-                business.legal_type == Business.LegalTypes.BCOMP.value):
+        if business.legal_type in [Business.LegalTypes.SOLE_PROP.value,
+                                   Business.LegalTypes.PARTNERSHIP.value,
+                                   Business.LegalTypes.BCOMP.value]:
             return True
 
         logging.debug('No specific access rules are met.')
         return False
 
-    def _is_completing_party_and_has_party_role(self, user, business, role: PartyRole.RoleTypes) -> bool:
+    def is_completing_party_and_has_party_role(self, user, business, role: PartyRole.RoleTypes) -> bool:
         """Return True if the user is the completing party and has a valid party role business."""
-        return (self._is_completing_party(user, business)
-                and self._has_party_role(user, business, role))
+        return (self.is_completing_party(user, business)
+                and self.has_party_role(user, business, role))
 
-    def _is_completing_party(self, user: User, business: Business) -> bool:
+    def is_completing_party(self, user: User, business: Business) -> bool:
         """Return True if the user is the completing party."""
-        if not (registration_filing := self._registration_filing(business)):
-            logging.debug('No registration filing found for the business.')
-            return False
+        return user_completing_party_role(user, business) is not None
 
-        if len(completing_parties := self._completing_parties(registration_filing)) <= 0:
-            logging.debug(
-                'No completing parties found for the registration filing.')
-            return False
-
-        if not (completing_party := completing_parties[0].party):
-            logging.debug(
-                'No completing party found for the registration filing.')
-            return False
-
-        u = self.FormattedUser(user)
-        cp = self.FormattedUser(completing_party)
-
-        return (user.id == registration_filing.submitter_id
-                and u.first_name == cp.first_name and u.last_name == cp.last_name)
-
-    def _has_party_role(self, user: User, business: Business, role: PartyRole.RoleTypes) -> bool:
+    def has_party_role(self, user: User, business: Business, role: PartyRole.RoleTypes) -> bool:
         """Return True if the user has a party role in the business."""
-        if len(parties := self._parties_by_role(business, role)) <= 0:
-            logging.debug(
-                f'No parties found for the business with role: {role}.')
-            return False
-
-        if not (party := parties[0].party):
-            logging.debug(
-                f'No party found for the business with role: {role}.')
-            return False
-
-        u = self.FormattedUser(user)
-        p = self.FormattedUser(party)
-
-        return u.first_name == p.first_name and u.last_name == p.last_name
+        return user_party_role(user, business, role) is not None

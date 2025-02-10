@@ -1,4 +1,4 @@
-# Copyright © 2024 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -15,45 +15,26 @@
 
 Test suite to ensure that the Digital Credentials Rules service is working as expected.
 """
-from datetime import datetime
 import logging
+from datetime import datetime
 from unittest.mock import MagicMock, patch
-import pytest
+
 import jwt as pyjwt
+import pytest
+
 from legal_api.models.business import Business
 from legal_api.models.party import Party
 from legal_api.models.party_role import PartyRole
 from legal_api.models.user import User
 from legal_api.services import DigitalCredentialsRulesService
-from legal_api.services.authz import PUBLIC_USER, are_digital_credentials_allowed
+from legal_api.services.authz import PUBLIC_USER
+from tests.unit.models import factory_completed_filing, factory_user
 from tests.unit.services.utils import create_business, create_party_role, create_test_user, helper_create_jwt
-from tests.unit.models import factory_user, factory_completed_filing
 
 
 @pytest.fixture(scope='module')
 def rules():
     return DigitalCredentialsRulesService()
-
-
-@pytest.mark.parametrize(
-    'test_user, expected',
-    [
-        (Party(**{'first_name': 'First', 'last_name': 'Last'}),
-         {'first_name': 'first', 'last_name': 'last'}),
-        (Party(**{'first_name': 'First', 'middle_initial': 'M',
-         'last_name': 'Last'}), {'first_name': 'first m', 'last_name': 'last'}),
-        (User(**{'firstname': 'First', 'lastname': 'Last'}),
-         {'first_name': 'first', 'last_name': 'last'}),
-        (User(**{'firstname': 'First', 'middlename': 'M', 'lastname': 'Last'}),
-         {'first_name': 'first m', 'last_name': 'last'}),
-        (User(), {'first_name': '', 'last_name': ''}),
-        (Party(), {'first_name': '', 'last_name': ''}),
-    ]
-)
-def test_formatted_user(app, session, rules, test_user, expected):
-    """Assert that the user is formatted correctly."""
-
-    assert rules.FormattedUser(test_user).__dict__ == expected
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=None)
@@ -172,7 +153,7 @@ def test_has_specific_access_false_when_wrong_business_type(monkeypatch, app, se
 ])
 @patch('legal_api.models.User.find_by_jwt_token',
        return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, '_is_completing_party_and_has_party_role', return_value=True)
+@patch.object(DigitalCredentialsRulesService, 'is_completing_party_and_has_party_role', return_value=True)
 def test_has_specific_access_true_when_correct_business_type(monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
     token = helper_create_jwt(
@@ -199,7 +180,7 @@ def test_is_completing_party_false_when_no_registration_filing(app, session, cap
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
     caplog.set_level(logging.DEBUG)
 
-    assert rules._is_completing_party(user, business) is False
+    assert rules.is_completing_party(user, business) is False
     assert 'No registration filing found for the business.' in caplog.text
 
 
@@ -217,7 +198,7 @@ def test_is_completing_party_false_when_no_completing_parties(app, session, capl
     filing.save()
     caplog.set_level(logging.DEBUG)
 
-    assert rules._is_completing_party(user, business) is False
+    assert rules.is_completing_party(user, business) is False
     assert 'No completing parties found for the registration filing.' in caplog.text
 
 
@@ -237,7 +218,7 @@ def test_is_completing_party_false_when_no_completing_party(app, session, caplog
     filing.save()
     caplog.set_level(logging.DEBUG)
 
-    assert rules._is_completing_party(user, business) is False
+    assert rules.is_completing_party(user, business) is False
     assert 'No completing party found for the registration filing.' in caplog.text
 
 
@@ -270,7 +251,7 @@ def test_is_completing_party_false_when_user_name_not_matching_completing_party_
     filing.submitter_id = user.id
     filing.save()
 
-    assert rules._is_completing_party(user, business) is False
+    assert rules.is_completing_party(user, business) is False
 
 
 def test_is_completing_party_false_when_user_is_not_submitter(app, session, caplog, rules):
@@ -290,7 +271,7 @@ def test_is_completing_party_false_when_user_is_not_submitter(app, session, capl
     # Skip setting the submitter
     filing.save()
 
-    assert rules._is_completing_party(user, business) is False
+    assert rules.is_completing_party(user, business) is False
 
 
 def test_has_party_role_false_when_no_proprietors(app, session, caplog, rules):
@@ -300,7 +281,7 @@ def test_has_party_role_false_when_no_proprietors(app, session, caplog, rules):
     # Skip creating a proprietor
     caplog.set_level(logging.DEBUG)
 
-    assert rules._has_party_role(
+    assert rules.has_party_role(
         user, business, PartyRole.RoleTypes.PROPRIETOR.value) is False
     assert 'No parties found for the business with role: proprietor' in caplog.text
 
@@ -314,7 +295,7 @@ def test_has_party_role_false_when_no_proprietor(app, session, caplog, rules):
     # Skip creating a proprietor
     caplog.set_level(logging.DEBUG)
 
-    assert rules._has_party_role(
+    assert rules.has_party_role(
         user, business, PartyRole.RoleTypes.PROPRIETOR.value) is False
     assert 'No party found for the business with role: proprietor' in caplog.text
 
@@ -342,7 +323,7 @@ def test_has_party_role_false_when_user_name_not_matching_proprietor_name(app, s
     proprietor_party_role.business_id = business.id
     proprietor_party_role.save()
 
-    assert rules._has_party_role(
+    assert rules.has_party_role(
         user, business, PartyRole.RoleTypes.PROPRIETOR.value) is False
 
 
@@ -384,5 +365,5 @@ def test_is_completing_party_and_has_party_role_true(app, session, user, party, 
     proprietor_party_role.business_id = business.id
     proprietor_party_role.save()
 
-    assert rules._is_completing_party_and_has_party_role(
+    assert rules.is_completing_party_and_has_party_role(
         user, business, PartyRole.RoleTypes.PROPRIETOR.value) is True

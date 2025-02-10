@@ -23,13 +23,14 @@ from flask_cors import cross_origin
 from legal_api.decorators import can_access_digital_credentials
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, DCRevocationReason, User
 from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials import DigitalCredentialsHelpers
+from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
 from legal_api.utils.auth import jwt
 
 from .bp import bp
 
 
-bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__, url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
+bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__,
+                  url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
 
 
 @bp.route('/<string:identifier>/digitalCredentials/invitation', methods=['POST'], strict_slashes=False)
@@ -50,7 +51,7 @@ def create_invitation(identifier):
         if not (response := digital_credentials.create_invitation()):
             return jsonify({'message': 'Unable to create an invitation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-        invitation_message_id = DigitalCredentialsHelpers.extract_invitation_message_id(response)
+        invitation_message_id = extract_invitation_message_id(response)
 
         connection = DCConnection(
             connection_id=invitation_message_id,
@@ -140,7 +141,8 @@ def get_issued_credentials(identifier):
 
     response = []
     for issued_credential in issued_credentials:
-        definition = DCDefinition.find_by_id(issued_credential.dc_definition_id)
+        definition = DCDefinition.find_by_id(
+            issued_credential.dc_definition_id)
         response.append({
             'legalName': business.legal_name,
             'credentialType': definition.credential_type.name,
@@ -177,8 +179,10 @@ def send_credential(identifier, credential_type):
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential_data = DigitalCredentialsHelpers.get_digital_credential_data(user, business, definition.credential_type)
-    credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
+    credential_data = get_digital_credential_data(
+        user, business, definition.credential_type)
+    credential_id = next(
+        (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
     if not (response := digital_credentials.issue_credential(
         connection_id=connection.connection_id,
@@ -211,7 +215,8 @@ def revoke_credential(identifier, credential_id):
     if not (connection := DCConnection.find_active_by(business_id=business.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
-    issued_credential = DCIssuedCredential.find_by_credential_id(credential_id=credential_id)
+    issued_credential = DCIssuedCredential.find_by_credential_id(
+        credential_id=credential_id)
     if not issued_credential or issued_credential.is_revoked:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
@@ -257,7 +262,7 @@ def webhook_notification(topic_name: str):
     try:
         if topic_name == 'connections':
             connection = DCConnection.find_by_connection_id(
-                DigitalCredentialsHelpers.extract_invitation_message_id(json_input))
+                extract_invitation_message_id(json_input))
             # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
             # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
             if connection and not connection.is_active and json_input['state'] in (
@@ -267,13 +272,15 @@ def webhook_notification(topic_name: str):
                 connection.is_active = True
                 connection.save()
         elif topic_name == 'issuer_cred_rev':
-            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
+            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(
+                json_input['cred_ex_id'])
             if issued_credential and json_input['state'] == 'issued':
                 issued_credential.credential_revocation_id = json_input['cred_rev_id']
                 issued_credential.revocation_registry_id = json_input['rev_reg_id']
                 issued_credential.save()
         elif topic_name == 'issue_credential_v2_0':
-            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
+            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(
+                json_input['cred_ex_id'])
             if issued_credential and json_input['state'] == 'done':
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
