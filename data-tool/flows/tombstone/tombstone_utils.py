@@ -1,5 +1,4 @@
 import copy
-from decimal import Decimal
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -7,14 +6,16 @@ from decimal import Decimal
 import pandas as pd
 import pytz
 from sqlalchemy import Connection, text
-from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING, FILING_JSON, 
-                                           JURISDICTION, OFFICE,
+from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
+                                           FILING_JSON, JURISDICTION, OFFICE,
                                            PARTY, PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
-                                          LEAR_STATE_FILINGS, EventFilings)
+                                          LEAR_STATE_FILINGS,
+                                          LEGAL_TYPE_CHANGE_FILINGS,
+                                          EventFilings)
 
 unsupported_event_file_types = set()
 
@@ -248,8 +249,8 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
     formatted_jurisdiction['country'] = None
     formatted_jurisdiction['region'] = None
 
-    can_jurisdiction_code = jurisdiction_info['j_can_jur_typ_cd']
-    other_jurisdiction_desc = jurisdiction_info['j_othr_juris_desc']
+    can_jurisdiction_code = jurisdiction_info['j_can_jur_typ_cd'] or ''
+    other_jurisdiction_desc = jurisdiction_info['j_othr_juris_desc'] or ''
 
     # when canadian jurisdiction, ignore othr_juris_desc
     if can_jurisdiction_code != 'OT':
@@ -278,19 +279,29 @@ def format_filings_data(data: dict) -> list[dict]:
     for x in filings_data:
         event_file_type = x['event_file_type']
         # TODO: build a new complete filing event mapper (WIP)
-        filing_type, filing_subtype = get_target_filing_type(event_file_type)
+        raw_filing_type, raw_filing_subtype = get_target_filing_type(event_file_type)
         # skip the unsupported ones
-        if not filing_type:
+        if not raw_filing_type:
             print(f'❗ Skip event filing type: {event_file_type}')
             unsupported_event_file_types.add(event_file_type)
             continue
+        
+        # get converted filing_type and filing_subtype
+        if raw_filing_type == 'conversion':
+            if isinstance(raw_filing_subtype, tuple):
+                filing_type, filing_subtype = raw_filing_subtype
+            else:
+                filing_type = raw_filing_subtype
+                filing_subtype = None
+            raw_filing_subtype = None
+        else:
+            filing_type = raw_filing_type
+            filing_subtype = raw_filing_subtype
 
-        effective_date = x['f_effective_dt_str']
-        if not effective_date:
-            effective_date = x['e_event_dt_str']
+        effective_date = x['ce_effective_dt_str'] or x['f_effective_dt_str'] or x['e_event_dt_str']
         trigger_date = x['e_trigger_dt_str']
 
-        filing_json, meta_data = build_filing_json_meta_data(filing_type, filing_subtype,
+        filing_json, meta_data = build_filing_json_meta_data(raw_filing_type, filing_type, filing_subtype,
                                                              effective_date, x)
 
         filing_body = copy.deepcopy(FILING['filings'])
@@ -301,23 +312,31 @@ def format_filings_data(data: dict) -> list[dict]:
         if not (user_id := x['u_user_id']):
             user_id = x['u_full_name'] if x['u_full_name'] else None
 
+        if raw_filing_type == 'conversion' or raw_filing_subtype == 'involuntary':
+            hide_in_ledger = True
+        else:
+            hide_in_ledger = False
+
         filing_body = {
             **filing_body,
             'filing_date': effective_date,
-            'filing_type': filing_type,
-            'filing_sub_type': filing_subtype,
+            'filing_type': raw_filing_type,
+            'filing_sub_type': raw_filing_subtype,
             'completion_date': effective_date,
             'effective_date': effective_date,
             'filing_json': filing_json,
             'meta_data': meta_data,
+            'hide_in_ledger': hide_in_ledger,
             'submitter_id': user_id,  # will be updated to real user_id when loading data into db
         }
 
+        # conversion still need to populate create-new-business info
+        # based on converted filing type
         if filing_type == 'continuationIn':
             jurisdiction = format_jurisdictions_data(data, x['e_event_id'])
 
         if filing_type == 'amalgamationApplication':
-            amalgamation = format_amalgamations_data(data, x['e_event_id'])
+            amalgamation = format_amalgamations_data(data, x['e_event_id'], effective_date, filing_subtype)
 
         comments = format_filing_comments_data(data, x['e_event_id'])
 
@@ -348,7 +367,7 @@ def format_filings_data(data: dict) -> list[dict]:
     }
 
 
-def format_amalgamations_data(data: dict, event_id: Decimal) -> dict:
+def format_amalgamations_data(data: dict, event_id: Decimal, amalgamation_date: str, amalgamation_type: str) -> dict:
     amalgamations_data = data['amalgamations']
 
     matched_amalgamations = [
@@ -359,18 +378,12 @@ def format_amalgamations_data(data: dict, event_id: Decimal) -> dict:
         return None
 
     formatted_amalgmation = copy.deepcopy(AMALGAMATION)
-    amalgmation_info = matched_amalgamations[0]
+    amalgamation_info = matched_amalgamations[0]
     
-    amalgmation_date = amalgmation_info['f_effective_dt_str']
-    if not amalgmation_date:
-        amalgmation_date = amalgmation_info['e_event_dt_str']
-    formatted_amalgmation['amalgamations']['amalgamation_date'] = amalgmation_date
-    formatted_amalgmation['amalgamations']['court_approval'] = bool(amalgmation_info['f_court_approval'])
+    formatted_amalgmation['amalgamations']['amalgamation_date'] = amalgamation_date
+    formatted_amalgmation['amalgamations']['court_approval'] = bool(amalgamation_info['f_court_approval'])
 
-    event_file_type = amalgmation_info['event_file_type']
-    _, filing_subtype = get_target_filing_type(event_file_type)
-
-    formatted_amalgmation['amalgamations']['amalgamation_type'] = filing_subtype
+    formatted_amalgmation['amalgamations']['amalgamation_type'] = amalgamation_type
     formatted_tings = formatted_amalgmation['amalgamating_businesses']
     for ting in matched_amalgamations:
         formatted_tings.append(format_amalgamating_businesses(ting))
@@ -546,9 +559,11 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
     return value
 
 
-def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective_date: str, data: dict) -> tuple[dict, dict]:
+def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_subtype: str, effective_date: str, data: dict) -> tuple[dict, dict]:
     filing_json = copy.deepcopy(FILING_JSON)
-    filing_json['filing'][filing_type] = {}
+    filing_json['filing'][raw_filing_type] = {}
+    if raw_filing_type != filing_type:
+        filing_json['filing'][filing_type] = {}
 
     meta_data = {
         'colinFilingInfo': {
@@ -559,6 +574,38 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
         'isLedgerPlaceholder': True,
         'colinDisplayName': get_colin_display_name(data)
     }
+
+    if raw_filing_type == 'conversion':
+        # will populate state filing info for conversion in the following steps
+        # based on converted filing type and converted filing subtype
+        if filing_type in LEAR_STATE_FILINGS:
+            state_change = True
+        else:
+            state_change = False
+        if filing_type == 'changeOfName':
+            name_change = True
+            filing_json['filing']['changeOfName'] = {
+                'fromLegalName': data['old_corp_name'],
+                'toLegalName': data['new_corp_name'],
+            }
+            meta_data['changeOfName'] = {
+                'fromLegalName': data['old_corp_name'],
+                'toLegalName': data['new_corp_name'],
+            }
+        else:
+            name_change = False
+        filing_json['filing']['conversion'] = {
+            'convFilingType': filing_type,
+            'convFilingSubType': filing_subtype,
+            'stateChange': state_change,
+            'nameChange': name_change,
+        }
+        meta_data['conversion'] = {
+            'convFilingType': filing_type,
+            'convFilingSubType': filing_subtype,
+            'stateChange': state_change,
+            'nameChange': name_change,
+        }
 
     if filing_type == 'annualReport':
         meta_data['annualReport'] = {
@@ -587,6 +634,20 @@ def build_filing_json_meta_data(filing_type: str, filing_subtype: str, effective
             **filing_json['filing']['restoration'],
             'type': filing_subtype,
         }
+    elif filing_type == 'alteration':
+        meta_data['alteration'] = {}
+        if (event_file_type := data['event_file_type']) in LEGAL_TYPE_CHANGE_FILINGS.keys():
+            meta_data['alteration'] = {
+                **meta_data['alteration'],
+                'fromLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][0],
+                'toLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][1],
+            }
+        if (old_corp_name := data['old_corp_name']) and (new_corp_name := data['new_corp_name']):
+            meta_data['alteration'] = {
+                **meta_data['alteration'],
+                'fromLegalName': old_corp_name,
+                'toLegalName': new_corp_name,
+            }
     # TODO: populate meta_data for correction to display correct filing name
 
     return filing_json, meta_data

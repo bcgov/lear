@@ -189,7 +189,8 @@ FILING = {
         'source': 'COLIN',
         'colin_only': False,
         'deletion_locked': False,
-        # TODO: new column - hide_in_ledger
+        'hide_in_ledger': False, # TODO: double check when doing cleanup - dissolution (invol, admin)
+        # TODO: new columns for NoW
         # FK
         'business_id': None,
         'transaction_id': None,

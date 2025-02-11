@@ -327,6 +327,12 @@ class BusinessDocument:
                                                                       'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
 
+        # TODO: add conv liquidation etc. in the future work
+        for filing in Filing.get_conversion_filings_by_conv_types(self._business.id, ['dissolution',
+                                                                                      'continuationOut',
+                                                                                      'restoration']):
+            state_filings.append(self._format_state_filing(filing))
+
         # If it has linked amalgamating businesses
         # set placeholder info if this business is tombstone
         tombstone = self._business.is_tombstone
@@ -404,40 +410,58 @@ class BusinessDocument:
                                                                                               'Not Available')
                         name_change_info['filingDateTime'] = filing.filing_date.isoformat()
                         name_changes.append(name_change_info)
+
+        # get name change info from conversion filing
+        for filing in Filing.get_conversion_filings_by_conv_types(self._business.id, ['changeOfName']):
+            filing_meta = filing.meta_data
+            name_change_info = {}
+            name_change_info['fromLegalName'] = filing_meta.get('changeOfName').get('fromLegalName',
+                                                                                    'Not Available')
+            name_change_info['toLegalName'] = filing_meta.get('changeOfName').get('toLegalName',
+                                                                                  'Not Available')
+            name_change_info['filingDateTime'] = filing.filing_date.isoformat()
+            name_changes.append(name_change_info)
+
         business['nameChanges'] = name_changes
         business['alterations'] = alterations
 
     def _format_state_filing(self, filing: Filing) -> dict:
         """Format state change filing data."""
         filing_info = {}
+        filing_meta = filing.meta_data
+        if filing.filing_type == 'conversion':
+            filing_type = filing_meta.get('conversion').get('convFilingType')
+            filing_sub_type = filing_meta.get('conversion').get('convFilingSubType')
+        else:
+            filing_type = filing.filing_type
+            filing_sub_type = filing.filing_sub_type
 
-        filing_info['filingType'] = filing.filing_type
-        filing_info['filingSubType'] = filing.filing_sub_type
+        filing_info['filingType'] = filing_type
+        filing_info['filingSubType'] = filing_sub_type
         filing_info['filingDateTime'] = filing.filing_date.isoformat()
         filing_info['effectiveDateTime'] = filing.effective_date.isoformat()
 
-        filing_meta = filing.meta_data
-        if filing.filing_type == 'dissolution':
+        if filing_type == 'dissolution':
             filing_info['filingName'] = BusinessDocument.\
-                _get_summary_display_name(filing.filing_type,
+                _get_summary_display_name(filing_type,
                                           filing_meta['dissolution']['dissolutionType'],
                                           self._business.legal_type)
             if self._business.legal_type in ['SP', 'GP'] and filing_meta['dissolution']['dissolutionType'] == \
                     'voluntary':
                 filing_info['dissolution_date_str'] = LegislationDatetime.as_legislation_timezone_from_date_str(
                     filing.filing_json['filing']['dissolution']['dissolutionDate']).strftime(OUTPUT_DATE_FORMAT)
-        elif filing.filing_type == 'restoration':
+        elif filing_type == 'restoration':
             filing_info['filingName'] = BusinessDocument.\
-                _get_summary_display_name(filing.filing_type,
-                                          filing.filing_sub_type,
+                _get_summary_display_name(filing_type,
+                                          filing_sub_type,
                                           self._business.legal_type)
-            if filing.filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
+            if filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
                 expiry_date = filing_meta['restoration']['expiry']
                 expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
                 expiry_date = expiry_date.replace(minute=1)
                 filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.format_as_report_string(expiry_date)
-        elif filing.filing_type == 'continuationOut':
-            filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing.filing_type, None, None)
+        elif filing_type == 'continuationOut':
+            filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None)
 
             country_code = filing_meta['continuationOut']['country']
             region_code = filing_meta['continuationOut']['region']
@@ -453,13 +477,15 @@ class BusinessDocument:
             filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
         else:
             filing_info['filingName'] = BusinessDocument.\
-                _get_summary_display_name(filing.filing_type, None, None)
+                _get_summary_display_name(filing_type, None, None)
         return filing_info
 
     def _set_amalgamation_details(self, business: dict):
         """Set amalgamation filing data."""
         amalgamated_businesses = []
-        filings = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication'])
+        # get amalgamation info from either general filing or conversion filing
+        filings = Filing.get_filings_by_types(self._business.id, ['amalgamationApplication']) or \
+            Filing.get_conversion_filings_by_conv_types(self._business.id, ['amalgamationApplication'])
         if filings:
             amalgamation_application = filings[0]
             business['business']['amalgamatedEntity'] = True
@@ -519,7 +545,9 @@ class BusinessDocument:
     def _set_continuation_in_details(self, business: dict):
         """Set continuation in filing data."""
         continuation_in_info = {}
-        continuation_in_filing = Filing.get_filings_by_types(self._business.id, ['continuationIn'])
+        # get continuation in info from either general filing or conversion filing
+        continuation_in_filing = Filing.get_filings_by_types(self._business.id, ['continuationIn']) or \
+            Filing.get_conversion_filings_by_conv_types(self._business.id, ['continuationIn'])
         if continuation_in_filing:
             continuation_in_filing = continuation_in_filing[0]
             jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(continuation_in_filing.business_id)
@@ -541,20 +569,15 @@ class BusinessDocument:
             jurisdiction_info = {
                     'id': jurisdiction.id,
                     'jurisdiction': location_jurisdiction,
-                    'identifier': jurisdiction.identifier,
-                    'legal_name': jurisdiction.legal_name,
+                    'identifier': jurisdiction.identifier or 'Not Available',
+                    'legal_name': jurisdiction.legal_name or 'Not Available',
                     'tax_id': jurisdiction.tax_id,
                     'incorporation_date': formatted_incorporation_date,
                     'expro_identifier': jurisdiction.expro_identifier,
-                    'expro_legal_name': jurisdiction.expro_legal_name,
+                    'expro_legal_name': jurisdiction.expro_legal_name or 'Not Available',
                     'business_id': jurisdiction.business_id,
                     'filing_id': jurisdiction.filing_id,
                     }
-
-            # Imported from COLIN
-            if self._business.is_tombstone:
-                jurisdiction_info['expro_identifier'] = 'Not Available'
-                jurisdiction_info['expro_legal_name'] = 'Not Available'
 
             continuation_in_info['foreignJurisdiction'] = jurisdiction_info
             business['continuationIn'] = continuation_in_info
@@ -620,7 +643,8 @@ class BusinessDocument:
                 'GP': 'Dissolution Application'
             },
             'involuntary': 'Involuntary Dissolution',
-            'administrative': 'Administrative Dissolution'
+            'administrative': 'Administrative Dissolution',
+            'unknown': 'Dissolved'
         },
         'restorationApplication': 'Restoration Application',
         'restoration': {
