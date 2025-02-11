@@ -138,6 +138,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     TOMBSTONE_BATCHES = int(TOMBSTONE_BATCHES) if TOMBSTONE_BATCHES.isnumeric() else 0
     TOMBSTONE_BATCH_SIZE = os.getenv('TOMBSTONE_BATCH_SIZE')
     TOMBSTONE_BATCH_SIZE = int(TOMBSTONE_BATCH_SIZE) if TOMBSTONE_BATCH_SIZE.isnumeric() else 0
+    TOMBSTONE_DISSOLUTION_TS = os.getenv('TOMBSTONE_DISSOLUTION_TS')
 
     TESTING = False
     DEBUG = False
