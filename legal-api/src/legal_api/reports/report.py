@@ -33,11 +33,8 @@ from legal_api.models import (
     CorpType,
     Document,
     Filing,
-    Office,
     OfficeType,
     PartyRole,
-    Resolution,
-    ShareClass,
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
@@ -839,8 +836,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._filing.transaction_id,
                 primary_or_holding_business.id)
         else:
-            offices = Office.get_all_by_business_id(primary_or_holding_business.id)
-            for i in offices.all():
+            officelist = primary_or_holding_business.offices.all()
+            for i in officelist:
                 if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
                     offices[i.office_type] = {}
                     for address in i.addresses:
@@ -854,7 +851,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._filing.transaction_id,
                 primary_or_holding_business.id)
         else:
-            share_classes = ShareClass.get_all_by_business_id(primary_or_holding_business.id)
             for share_class in primary_or_holding_business.share_classes.all():
                 share_classes.append(share_class.json)
         filing['shareClasses'] = share_classes
@@ -866,8 +862,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._filing.transaction_id,
                 primary_or_holding_business.id)
         else:
-            resolutions = Resolution.get_all_by_business_id(primary_or_holding_business.id)
-            for resolution in resolutions.all():
+            for resolution in primary_or_holding_business.resolutions.all():
                 resolutions.append({'date': resolution.resolution_date.strftime(OUTPUT_DATE_FORMAT)})
         filing['resolutions'] = resolutions
 
