@@ -231,6 +231,10 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
                     'source': 'comments',
                     'params': {'filing_id': filing_ids},
                 },
+                {
+                    'source': 'furnishings',
+                    'params': {'business_id': business_ids},
+                },
                 # there're some Comment records saved by legal-api directly instead of filer
                 # some of them are linked via business_id
                 {
