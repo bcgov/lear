@@ -37,7 +37,7 @@ class User(Base, Versioned):
     name = Column(String)
 
     address = orm.relationship('Address', backref='user', uselist=False)
-    locations = orm.relationship('Location', backref='user')
+    locations = orm.relationship('Location', backref='user', lazy='dynamic')
 
 class Address(Base, Versioned):
     __tablename__ = 'addresses'
@@ -164,15 +164,16 @@ def test_versioning_relationships(db, session):
     assert result_revision.address.user == user
 
     # Test one-to-many relationship (w/ relationship to non-version class)
-    assert len(result_revision.locations) == len(locations)
-    assert result_revision.locations[0].id == locations[0].id
-    assert result_revision.locations[0].name == "Some location"
-    assert result_revision.locations[1].id == locations[1].id
-    assert result_revision.locations[1].name == "Some other location"
+    result_locations = result_revision.locations.all()
+    assert len(result_locations) == len(locations)
+    assert result_locations[0].id == locations[0].id
+    assert result_locations[0].name == "Some location"
+    assert result_locations[1].id == locations[1].id
+    assert result_locations[1].name == "Some other location"
 
     # Test many-to-one relationship
     # Note: this is a quirk of the RelationshipBuilder. We don't explicitly establish bi-directionality
-    # by including the "reverse" side of the relationship (i.e. Location.user).], but it works anyway
+    # by including the "reverse" side of the relationship (i.e. Location.user), but it works anyway
     assert result_revision.locations[0].user == user
     assert result_revision.locations[1].user == user
 
