@@ -37,7 +37,7 @@ from .pdf_service import PdfService
 from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
-
+from .digital_credentials_helpers import get_digital_credential_data
 
 from .authz import (  # noqa: I001; noqa: I001;
     ACCOUNT_IDENTITY,
