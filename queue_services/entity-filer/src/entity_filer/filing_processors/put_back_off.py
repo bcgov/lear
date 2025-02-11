@@ -39,6 +39,10 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     filing_rec.order_details = put_back_off_filing.get('details')
 
+    if business.restoration_expiry_date:
+        filing_meta.reason = 'Limited Restoration Expired'
+        filing_meta.expiryDate = business.restoration_expiry_date.date().isoformat()
+
     # change business state to historical
     business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
