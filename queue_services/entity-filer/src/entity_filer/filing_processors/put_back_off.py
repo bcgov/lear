@@ -19,6 +19,7 @@ from typing import Dict
 import dpath
 from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import Business, Filing
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
@@ -40,8 +41,10 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     filing_rec.order_details = put_back_off_filing.get('details')
 
     if business.restoration_expiry_date:
-        filing_meta.reason = 'Limited Restoration Expired'
-        filing_meta.expiryDate = business.restoration_expiry_date.date().isoformat()
+        filing_meta.put_back_off = {
+          'reason': 'Limited Restoration Expired',
+          'expiryDate': LegislationDatetime.format_as_legislation_date(business.restoration_expiry_date)
+        }
 
     # change business state to historical
     business.state = Business.State.HISTORICAL

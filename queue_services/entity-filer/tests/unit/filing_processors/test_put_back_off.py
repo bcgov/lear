@@ -17,6 +17,7 @@ import random
 
 from legal_api.models import Business, Filing
 from legal_api.utils.datetime import datetime
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import FILING_HEADER, PUT_BACK_OFF
 
 from entity_filer.filing_meta import FilingMeta
@@ -54,5 +55,5 @@ def test_worker_put_back_off(session):
     assert business.restoration_expiry_date is None
     assert filing.order_details == final_filing.order_details
     
-    assert filing_meta.reason == 'Limited Restoration Expired'
-    assert filing_meta.expiryDate == expiry.date().isoformat() 
+    assert filing_meta.put_back_off['reason'] == 'Limited Restoration Expired'
+    assert filing_meta.put_back_off['expiryDate'] == LegislationDatetime.format_as_legislation_date(expiry)
