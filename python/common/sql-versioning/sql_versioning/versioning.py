@@ -13,15 +13,15 @@
 # limitations under the License.
 """Versioned mixin class, listeners and other utilities."""
 import datetime
-from contextlib import suppress
 
 from sqlalchemy import (BigInteger, Column, DateTime, Integer, SmallInteger,
                         String, and_, event, func, insert, inspect, select,
                         update)
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import Session, mapper
+from sqlalchemy.orm import Session, mapper, relationships
 
 from .debugging import debug
+from .relationship_builder import RelationshipBuilder
 
 Base = declarative_base()
 
@@ -359,26 +359,21 @@ class Versioned:
             for pending_cls in cls._pending_version_classes:
                 version_cls = pending_cls._version_cls
                 mapper = inspect(pending_cls)
+
                 # Now add columns from the original table
                 for c in mapper.columns:
                     # Make sure table's column name and class's property name can be different
                     property_name = mapper.get_property_by_column(c).key
                     if not hasattr(version_cls, property_name):
                         setattr(version_cls, property_name, Column(c.name, c.type))
+
+            # Build relationships
+            for prop in inspect(cls).iterate_properties:
+                if type(prop) == relationships.RelationshipProperty:
+                    builder = RelationshipBuilder(cls, prop)
+                    builder()
+
             delattr(cls, '_pending_version_classes')
-
-
-def version_class(obj):
-    """Return the version class associated with a model.
-
-    :param obj: The object to get the version class for.
-    :return: The version class or None if not found.
-    """
-    with suppress(Exception):
-        versioned_class = obj.__versioned_cls__
-        print(f'\033[32mVersioned Class={versioned_class}\033[0m')
-        return versioned_class
-    return None
 
 
 def versioned_objects(session):

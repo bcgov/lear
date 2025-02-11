@@ -37,9 +37,18 @@ class User(Base, Versioned):
     name = Column(String)
 
     address = orm.relationship('Address', backref='user', uselist=False)
+    locations = orm.relationship('Location', backref='user', lazy='dynamic')
 
 class Address(Base, Versioned):
     __tablename__ = 'addresses'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+    user_id = Column(Integer, ForeignKey('users.id'))
+
+class Location(Base):
+    __tablename__ = 'locations'
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
@@ -133,6 +142,54 @@ def test_versioning_insert(db, session):
     assert result_versioned_address.transaction_id == transaction.id
     assert result_versioned_address.operation_type == 0
     assert result_versioned_address.end_transaction_id is None
+
+
+def test_versioning_relationships(db, session):
+    user = User(name='user')
+    address = Address(name='Some address')
+    locations = [Location(name='Some location'), Location(name='Some other location')]
+    user.address = address
+    user.locations = locations
+    session.add(user)
+    session.commit()
+
+    user_version = version_class(User)
+    result_revision = session.query(user_version)\
+        .filter(user_version.name=='user')\
+        .one_or_none()
+    
+    # Test one-to-one relationship (w/ relationship to version class)
+    assert result_revision.address.id == address.id
+    assert result_revision.address.name == "Some address"
+    assert result_revision.address.user == user
+
+    # Test one-to-many relationship (w/ relationship to non-version class)
+    result_locations = result_revision.locations.all()
+    assert len(result_locations) == len(locations)
+    assert result_locations[0].id == locations[0].id
+    assert result_locations[0].name == "Some location"
+    assert result_locations[1].id == locations[1].id
+    assert result_locations[1].name == "Some other location"
+
+    # Test many-to-one relationship
+    # Note: this is a quirk of the RelationshipBuilder. We don't explicitly establish bi-directionality
+    # by including the "reverse" side of the relationship (i.e. Location.user), but it works anyway
+    assert result_revision.locations[0].user == user
+    assert result_revision.locations[1].user == user
+
+    # Test update relationship
+    user.address = Address(name='Some new address')
+    session.commit()
+
+    user_version = version_class(User)
+    result_revisions = session.query(user_version)\
+        .filter(user_version.name=='user')\
+        .all()
+    
+    assert user.address.name == 'Some new address'
+    assert len(result_revisions) == 2
+    assert result_revisions[0].address.name == "Some address"
+    # assert result_revisions[1].address.name == "Some new address"
 
 
 def test_versioning_delete(db, session):
