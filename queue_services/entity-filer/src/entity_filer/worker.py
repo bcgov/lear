@@ -108,6 +108,7 @@ def get_filing_types(legal_filings: dict):
 
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
+    business_identifier = business.identifier if business else None
     try:
         payload = {
             'specversion': '1.x-wip',
@@ -115,19 +116,19 @@ async def publish_event(business: Business, filing: Filing):
             'source': ''.join([
                 APP_CONFIG.LEGAL_API_URL,
                 '/business/',
-                business.identifier,
+                business_identifier,
                 '/filing/',
                 str(filing.id)]),
             'id': str(uuid.uuid4()),
             'time': datetime.utcnow().isoformat(),
             'datacontenttype': 'application/json',
-            'identifier': business.identifier,
+            'identifier': business_identifier,
             'data': {
                 'filing': {
                     'header': {'filingId': filing.id,
                                'effectiveDate': filing.effective_date.isoformat()
                                },
-                    'business': {'identifier': business.identifier},
+                    'business': {'identifier': business_identifier},
                     'legalFilings': get_filing_types(filing.filing_json)
                 }
             }
@@ -148,6 +149,7 @@ async def publish_event(business: Business, filing: Filing):
 
 def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
+    business_identifier = business.identifier if business else None
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
         data = {
@@ -156,10 +158,10 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
                     'filingId': filing.id,
                     'effectiveDate': filing.effective_date.isoformat()
                 },
-                'business': {'identifier': business.identifier},
+                'business': {'identifier': business_identifier},
                 'legalFilings': get_filing_types(filing.filing_json)
             },
-            'identifier': business.identifier
+            'identifier': business_identifier
         }
         if filing.temp_reg:
             data['tempidentifier'] = filing.temp_reg
@@ -173,7 +175,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
             source=''.join([
                 APP_CONFIG.LEGAL_API_URL,
                 '/business/',
-                business.identifier,
+                business_identifier,
                 '/filing/',
                 str(filing.id)]),
             subject=subject,
