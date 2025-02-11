@@ -134,6 +134,10 @@ async def publish_event(business: Business, filing: Filing):
         }
         if filing.temp_reg:
             payload['tempidentifier'] = filing.temp_reg
+        if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+            logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                         filing, filing.withdrawn_filing)
+            payload['tempidentifier'] = filing.withdrawn_filing.temp_reg
 
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
@@ -159,6 +163,10 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
         }
         if filing.temp_reg:
             data['tempidentifier'] = filing.temp_reg
+        if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+            logger.debug('publish_gcp_queue_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                         filing, filing.withdrawn_filing)
+            data['tempidentifier'] = filing.withdrawn_filing.temp_reg
 
         ce = SimpleCloudEvent(
             id=str(uuid.uuid4()),
@@ -352,13 +360,14 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
             business_type = business.legal_type if business \
                 else filing_submission.filing_json.get('filing', {}).get('business', {}).get('legalType')
             filing_submission.set_processed(business_type)
-            business.last_modified = filing_submission.completion_date
+            if business:
+                business.last_modified = filing_submission.completion_date
+                db.session.add(business)
 
             filing_submission._meta_data = json.loads(  # pylint: disable=W0212
                 json.dumps(filing_meta.asjson, default=json_serial)
             )
 
-            db.session.add(business)
             db.session.add(filing_submission)
             db.session.commit()
 
