@@ -108,7 +108,6 @@ def get_filing_types(legal_filings: dict):
 
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
-    print('hello world here', business)
     temp_reg = filing.temp_reg
     if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
         logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
