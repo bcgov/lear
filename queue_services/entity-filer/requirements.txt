@@ -29,4 +29,4 @@ git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue
 #git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 # fetch legal api's updates from the feature-db-versioning branch, need to change to the main branch later
 git+https://github.com/bcgov/lear.git@feature-db-versioning#egg=legal_api&subdirectory=legal-api
-git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
+git+https://github.com/bcgov/lear.git@feature-db-versioning#egg=sql-versioning&subdirectory=python/common/sql-versioning
