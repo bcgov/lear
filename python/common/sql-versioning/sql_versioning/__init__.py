@@ -14,8 +14,8 @@
 """Versioning extension for SQLAlchemy."""
 from .debugging import debug
 from .versioning import (Base, TransactionFactory, TransactionManager,
-                         Versioned, disable_versioning, enable_versioning,
-                         version_class)
+                         Versioned, disable_versioning, enable_versioning)
+from .utils import version_class
 
 __all__ = (
     "Base",

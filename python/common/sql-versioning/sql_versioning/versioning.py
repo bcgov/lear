@@ -13,15 +13,15 @@
 # limitations under the License.
 """Versioned mixin class, listeners and other utilities."""
 import datetime
-from contextlib import suppress
 
 from sqlalchemy import (BigInteger, Column, DateTime, Integer, SmallInteger,
                         String, and_, event, func, insert, inspect, select,
                         update)
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.orm import Session, mapper
+from sqlalchemy.orm import Session, mapper, relationships
 
 from .debugging import debug
+from .relationship_builder import RelationshipBuilder
 
 Base = declarative_base()
 
@@ -366,29 +366,13 @@ class Versioned:
                     property_name = mapper.get_property_by_column(c).key
                     if not hasattr(version_cls, property_name):
                         setattr(version_cls, property_name, Column(c.name, c.type))
-                
-                # Add relationships from the original table. Currently only works for one-to-one relationships
-                # TODO: get "many-to-..." relationships working
-                for r in mapper.relationships:
-                    property_name = r.key
-                    property_value = getattr(pending_cls, property_name)
-                    if not hasattr(version_cls, property_name) and property_value:
-                        setattr(version_cls, property_name, property_value)
 
+            # Build relationships
+            for prop in inspect(cls).iterate_properties:
+                if type(prop) == relationships.RelationshipProperty:
+                    builder = RelationshipBuilder(cls, prop)
+                    builder()
             delattr(cls, '_pending_version_classes')
-
-
-def version_class(obj):
-    """Return the version class associated with a model.
-
-    :param obj: The object to get the version class for.
-    :return: The version class or None if not found.
-    """
-    with suppress(Exception):
-        versioned_class = obj.__versioned_cls__
-        print(f'\033[32mVersioned Class={versioned_class}\033[0m')
-        return versioned_class
-    return None
 
 
 def versioned_objects(session):
