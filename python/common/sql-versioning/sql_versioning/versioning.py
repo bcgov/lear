@@ -372,7 +372,6 @@ class Versioned:
                 if type(prop) == relationships.RelationshipProperty:
                     builder = RelationshipBuilder(cls, prop)
                     builder()
-
             delattr(cls, '_pending_version_classes')
 
 
