@@ -14,7 +14,7 @@
 
 """This provides helper functions for digital credentials."""
 
-from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, Party, PartyRole, User
+from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, PartyRole, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.services.digital_credentils_utils import user_party_role
 

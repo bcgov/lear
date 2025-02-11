@@ -24,6 +24,7 @@ from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
 from .digital_credentials import DigitalCredentialsService
+from .digital_credentials_helpers import get_digital_credential_data
 from .digital_credentials_rules import DigitalCredentialsRulesService
 from .document_meta import DocumentMetaService
 from .flags import Flags
@@ -37,7 +38,7 @@ from .pdf_service import PdfService
 from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
-from .digital_credentials_helpers import get_digital_credential_data
+
 
 from .authz import (  # noqa: I001; noqa: I001;
     ACCOUNT_IDENTITY,
