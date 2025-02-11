@@ -108,7 +108,14 @@ def get_filing_types(legal_filings: dict):
 
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
-    business_identifier = business.identifier if business else None
+    print('hello world here', business)
+    temp_reg = filing.temp_reg
+    if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+        logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                     filing, filing.withdrawn_filing)
+        temp_reg = filing.withdrawn_filing.temp_reg
+    business_identifier = business.identifier if business else temp_reg
+
     try:
         payload = {
             'specversion': '1.x-wip',
@@ -133,12 +140,8 @@ async def publish_event(business: Business, filing: Filing):
                 }
             }
         }
-        if filing.temp_reg:
-            payload['tempidentifier'] = filing.temp_reg
-        if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
-            logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-                         filing, filing.withdrawn_filing)
-            payload['tempidentifier'] = filing.withdrawn_filing.temp_reg
+        if temp_reg:
+            payload['tempidentifier'] = temp_reg
 
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
@@ -149,7 +152,13 @@ async def publish_event(business: Business, filing: Filing):
 
 def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
-    business_identifier = business.identifier if business else None
+    temp_reg = filing.temp_reg
+    if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+        logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                     filing, filing.withdrawn_filing)
+        temp_reg = filing.withdrawn_filing.temp_reg
+    business_identifier = business.identifier if business else temp_reg
+
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
         data = {
@@ -163,12 +172,8 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
             },
             'identifier': business_identifier
         }
-        if filing.temp_reg:
-            data['tempidentifier'] = filing.temp_reg
-        if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
-            logger.debug('publish_gcp_queue_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-                         filing, filing.withdrawn_filing)
-            data['tempidentifier'] = filing.withdrawn_filing.temp_reg
+        if temp_reg:
+            data['tempidentifier'] = temp_reg
 
         ce = SimpleCloudEvent(
             id=str(uuid.uuid4()),

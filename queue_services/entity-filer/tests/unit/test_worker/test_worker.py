@@ -479,7 +479,7 @@ async def test_publish_event():
     ('Dont process the Filing', True, 'PAID'),
     ('Dont process the Filing', True, 'WITHDRAWN'),
 ])
-async def test_process_filing_completed(app, session, mocker, test_name, withdrawal_pending, filing_status):
+async def test_skip_process_filing(app, session, mocker, test_name, withdrawal_pending, filing_status):
     """Assert that an filling can be processed."""
     # vars
     filing_type = 'continuationIn'
