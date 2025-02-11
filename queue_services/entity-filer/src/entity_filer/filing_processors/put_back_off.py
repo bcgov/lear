@@ -33,6 +33,8 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     logger.debug('processing putBackOff: %s', filing)
 
+    filing_meta.put_back_off = {}
+
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.util.get(put_back_off_filing, '/courtOrder')
@@ -42,6 +44,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     if business.restoration_expiry_date:
         filing_meta.put_back_off = {
+          **filing_meta.put_back_off,
           'reason': 'Limited Restoration Expired',
           'expiryDate': LegislationDatetime.format_as_legislation_date(business.restoration_expiry_date)
         }
