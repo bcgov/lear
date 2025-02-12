@@ -761,6 +761,7 @@ def load_data(conn: Connection,
               table_name: str,
               data: dict,
               conflict_column: str = None,
+              conflict_error = False,
               expecting_id: bool = True) -> Optional[int]:
     columns = ', '.join(data.keys())
     values = ', '.join([format_value(v) for v in data.values()])
@@ -770,7 +771,10 @@ def load_data(conn: Connection,
         check_query = f"select id from {table_name} where {conflict_column} = {conflict_value}"
         check_result = conn.execute(text(check_query)).scalar()
         if check_result:
-            return check_result
+            if not conflict_error:
+                return check_result
+            else:
+                raise Exception('Trying to reload corp existing in db, run delete script first')
 
     query = f"""insert into {table_name} ({columns}) values ({values})"""
     if expecting_id:

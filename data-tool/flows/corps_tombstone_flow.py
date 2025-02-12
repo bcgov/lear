@@ -123,7 +123,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
     # Note: The business info is partially loaded for businesses table now. And it will be fully
     # updated by the following placeholder historical filings migration. But it depends on the
     # implementation of next step.
-    business_id = load_data(conn, 'businesses', tombstone_data['businesses'])
+    business_id = load_data(conn, 'businesses', tombstone_data['businesses'], 'identifier', conflict_error=True)
 
     for office in tombstone_data['offices']:
         office['offices']['business_id'] = business_id
