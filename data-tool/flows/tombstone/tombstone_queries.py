@@ -605,17 +605,25 @@ def get_filings_query(corp_num):
             u.email_addr           as u_email_addr,
             u.role_typ_cd          as u_role_typ_cd,
             --- conversion ledger
-            cl.ledger_title_txt    as cl_ledger_title_txt
+            cl.ledger_title_txt    as cl_ledger_title_txt,
+            -- conv event
+            to_char(ce.effective_dt at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as ce_effective_dt_str,
+            -- corp name change
+            cn_old.corp_name        as old_corp_name,
+            cn_new.corp_name        as new_corp_name
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
                  left outer join conv_ledger cl on cl.event_id = e.event_id
+                 left outer join conv_event ce on e.event_id = ce.event_id
+                 left outer join corp_name cn_old on e.event_id = cn_old.end_event_id
+                 left outer join corp_name cn_new on e.event_id = cn_new.start_event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'
 --          and e.corp_num = 'BC0449924'  -- AR, ADCORP
 --        and e.trigger_dts is not null
-        order by e.event_timerstamp
+        order by e.event_timerstamp, e.event_id
         ;
     """
     return query

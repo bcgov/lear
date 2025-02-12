@@ -208,7 +208,7 @@ def delete_filings(identifier, filing_id=None):
     with suppress(Exception):
         ListFilingResource.delete_from_minio(filing_type, filing_json)
 
-    if identifier.startswith('T'):
+    if identifier.startswith('T') and filing.filing_type != Filing.FILINGS['noticeOfWithdrawal']['name']:
         bootstrap = RegistrationBootstrap.find_by_identifier(identifier)
         if bootstrap:
             deregister_status = RegistrationBootstrapService.deregister_bootstrap(bootstrap)
@@ -900,6 +900,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             mailing_address = business.mailing_address.one_or_none()
             corp_type = business.legal_type if business.legal_type else \
                 filing.json['filing']['business'].get('legalType')
+
+            if filing.filing_type == Filing.FILINGS['transparencyRegister']['name']:
+                corp_type = 'BTR'
 
         payload = {
             'businessInfo': {

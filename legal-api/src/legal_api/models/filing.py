@@ -11,6 +11,7 @@
 """Filings are legal documents that alter the state of a business."""
 # pylint: disable=too-many-lines
 import copy
+from contextlib import suppress
 from datetime import date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
@@ -63,10 +64,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     class Source(Enum):
         """Render an Enum of the Filing Sources."""
 
+        BTR = 'BTR'
         COLIN = 'COLIN'
         LEAR = 'LEAR'
 
     # TODO: get legal types from defined class once table is made (getting it from Business causes circ import)
+    # TODO: add filing types for btr
     FILINGS = {
         'affidavit': {
             'name': 'affidavit',
@@ -445,6 +448,51 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CCC': 'TRANS'
             }
         },
+        'transparencyRegister': {
+            'name': 'transparencyRegister',
+            'annual': {
+                'name': 'transparencyRegister',
+                'title': 'Transparency Register - Annual Filing',
+                'codes': {
+                    'BC': 'REGSIGIN',
+                    'BEN': 'REGSIGIN',
+                    'ULC': 'REGSIGIN',
+                    'CC': 'REGSIGIN',
+                    'C': 'REGSIGIN',
+                    'CBEN': 'REGSIGIN',
+                    'CUL': 'REGSIGIN',
+                    'CCC': 'REGSIGIN'
+                }
+            },
+            'change': {
+                'name': 'transparencyRegister',
+                'title': 'Transparency Register Filing',
+                'codes': {
+                    'BC': 'REGSIGIN',
+                    'BEN': 'REGSIGIN',
+                    'ULC': 'REGSIGIN',
+                    'CC': 'REGSIGIN',
+                    'C': 'REGSIGIN',
+                    'CBEN': 'REGSIGIN',
+                    'CUL': 'REGSIGIN',
+                    'CCC': 'REGSIGIN'
+                }
+            },
+            'initial': {
+                'name': 'transparencyRegister',
+                'title': 'Transparency Register Filing',
+                'codes': {
+                    'BC': 'REGSIGIN',
+                    'BEN': 'REGSIGIN',
+                    'ULC': 'REGSIGIN',
+                    'CC': 'REGSIGIN',
+                    'C': 'REGSIGIN',
+                    'CBEN': 'REGSIGIN',
+                    'CUL': 'REGSIGIN',
+                    'CCC': 'REGSIGIN'
+                }
+            }
+        },
 
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
@@ -461,7 +509,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         #  breaking and more testing was req'd so did not make refactor when introducing this dictionary.
         'dissolution': 'dissolutionType',
         'restoration': 'type',
-        'amalgamationApplication': 'type'
+        'amalgamationApplication': 'type',
+        'transparencyRegister': 'type'
     }
 
     __tablename__ = 'filings'
@@ -770,6 +819,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         )
 
     @property
+    def is_future_effective(self) -> bool:
+        """Return True if the effective date is in the future."""
+        with suppress(AttributeError, TypeError):
+            if self.effective_date > self.payment_completion_date:
+                return True
+        return False
+
+    @property
     def is_corrected(self):
         """Has this filing been corrected."""
         if (
@@ -940,6 +997,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
+    def get_conversion_filings_by_conv_types(business_id: int, filing_types: list):
+        """Return the conversion filings of a particular conv type.
+
+        Records only exist in some legacy corps imported from COLIN.
+        """
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type == 'conversion'). \
+            filter(
+                Filing._meta_data.op('->')('conversion').op('->>')('convFilingType').in_(filing_types)
+            ). \
+            order_by(desc(Filing.transaction_id)). \
+            all()
+
+        return filings
+
+    @staticmethod
     def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
         """Return the filings of particular types and statuses.
 
@@ -1042,7 +1116,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_completed_filings_for_colin(limit=20, offset=0):
         """Return the filings based on limit and offset."""
         from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
-        excluded_filings = ['lear_epoch', 'adminFreeze', 'courtOrder', 'registrarsNotation', 'registrarsOrder']
+        excluded_filings = [
+            'lear_epoch',
+            'adminFreeze',
+            'courtOrder',
+            'registrarsNotation',
+            'registrarsOrder',
+            'transparencyRegister'
+        ]
         excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
         filings = db.session.query(Filing).join(Business). \
             filter(
@@ -1210,7 +1291,8 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     # pylint: disable=protected-access
     if (filing._status in [Filing.Status.AWAITING_REVIEW.value,
                            Filing.Status.CHANGE_REQUESTED.value,
-                           Filing.Status.REJECTED.value] or
+                           Filing.Status.REJECTED.value,
+                           Filing.Status.WITHDRAWN.value] or
             (filing._status == Filing.Status.APPROVED.value and not filing.payment_token)):
         return  # should not override status in the review process
 

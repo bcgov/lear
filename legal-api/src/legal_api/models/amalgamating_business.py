@@ -96,4 +96,5 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
                 .filter(amalgamating_businesses_version.operation_type == 0) \
                 .filter(amalgamating_businesses_version.business_id == business_id) \
                 .order_by(amalgamating_businesses_version.transaction_id).all()
+
         return amalgamating_businesses

@@ -92,7 +92,8 @@ class FilingInfo(Resource):
     @jwt.requires_roles([COLIN_SVC_ROLE])
     def post(legal_type, identifier, **kwargs):
         """Create a new filing."""
-        # pylint: disable=unused-argument,too-many-branches; filing_type is only used for the get
+        # pylint: disable=too-many-return-statements,unused-argument,too-many-branches;
+        # filing_type is only used for the get
         try:
             if legal_type not in [x.value for x in Business.TypeCodes]:
                 return jsonify({'message': 'Must provide a valid legal type.'}), HTTPStatus.BAD_REQUEST
@@ -180,6 +181,19 @@ class FilingInfo(Resource):
                         }
                     }), HTTPStatus.CREATED
 
+                # filing will not be created for Limited restoration expiration-Put back off (make business Historical)
+                # Create an event and update corp state.
+                if ('putBackOff' in filing_list and json_data['header']['hideInLedger'] is True):
+                    filing_dt = convert_to_pacific_time(json_data['header']['date'])
+                    event_id = Filing.add_limited_restoration_expiration_event(con, identifier, filing_dt)
+
+                    con.commit()
+                    return jsonify({
+                        'filing': {
+                            'header': {'colinIds': [event_id]}
+                        }
+                    }), HTTPStatus.CREATED
+
                 filings_added = FilingInfo._add_filings(con, json_data, filing_list, identifier, lear_identifier)
 
                 # success! commit the db changes
@@ -216,8 +230,11 @@ class FilingInfo(Resource):
             filing_body = filing_list[filing_type]
             filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
             filing.body = filing_body
-            # get utc lear effective date and convert to pacific time for insert into oracle
-            filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
+            if filing.header['isFutureEffective']:
+                # get utc lear effective date and convert to pacific time for insert into oracle
+                filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
+            else:
+                filing.effective_date = filing.filing_date
 
             if filing_type in ['amalgamationApplication', 'continuationIn', 'incorporationApplication']:
                 filing.business = Business.create_corporation(con, json_data)

@@ -46,7 +46,6 @@ from colin_api.models import (  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
 from colin_api.services import flags
-from colin_api.services.legal import LegalApiService
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
 
 
@@ -1239,6 +1238,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         return None
 
+    @classmethod
+    def add_limited_restoration_expiration_event(cls, con, corp_num, filing_dt) -> int:
+        """Add limited restoration expiration event ."""
+        cursor = con.cursor()
+        event_id = cls._get_event_id(cursor=cursor, corp_num=corp_num, filing_dt=filing_dt, event_type='SYSDL')
+        Business.update_corp_state(cursor, event_id, corp_num,
+                                   Business.CorpStateTypes.RESTORATION_EXPIRATION.value)
+        return event_id
+
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
     def add_filing(cls, con, filing: Filing, lear_identifier: str) -> int:
@@ -1402,7 +1410,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             is_frozen_condition = (
                 flags.is_on('enable-bc-ccc-ulc') and
                 business['business']['legalType'] != Business.TypeCodes.COOP.value and
-                cls.is_business_in_lear(lear_identifier)
+                filing_source == cls.FilingSource.LEAR.value
             )
             current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
 
@@ -1417,15 +1425,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # something went wrong, roll it all back
             current_app.logger.error(err.with_traceback(None))
             raise err
-
-    @classmethod
-    def is_business_in_lear(cls, lear_identifier: str) -> bool:
-        """Check if business is in lear."""
-        response = LegalApiService.query_business(lear_identifier, slim=True)
-
-        if response.status_code == HTTPStatus.OK:
-            return True
-        return False
 
     @classmethod
     def _get_last_ar_filed_date(cls, header: dict, business: dict):
