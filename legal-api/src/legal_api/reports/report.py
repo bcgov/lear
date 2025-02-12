@@ -594,7 +594,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['nameRequest'] = filing['restoration'].get('nameRequest')
         filing['parties'] = filing['restoration'].get('parties')
         filing['offices'] = filing['restoration']['offices']
-        if self._filing.meta_data: # available when filing is COMPLETED
+        if self._filing.meta_data:  # available when filing is COMPLETED
             filing['fromLegalName'] = self._filing.meta_data.get('restoration', {}).get('fromLegalName')
         else:
             filing['fromLegalName'] = self._business.legal_name
@@ -610,7 +610,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['applicationDate'] = filing['restoration'].get('applicationDate', 'Not Applicable')
             filing['noticeDate'] = filing['restoration'].get('noticeDate', 'Not Applicable')
 
-        if self._filing.transaction_id: # available when filing is COMPLETED
+        if self._filing.transaction_id:  # available when filing is COMPLETED
             business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
                 self._filing.transaction_id, self._business.id, is_dissolution_date=True)
             filing['dissolutionLegalName'] = business_dissolution.legal_name
