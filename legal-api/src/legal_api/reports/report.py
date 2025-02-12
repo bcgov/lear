@@ -594,8 +594,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['nameRequest'] = filing['restoration'].get('nameRequest')
         filing['parties'] = filing['restoration'].get('parties')
         filing['offices'] = filing['restoration']['offices']
-        meta_data = self._filing.meta_data or {}
-        filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
+        if self._filing.meta_data:  # available when filing is COMPLETED
+            filing['fromLegalName'] = self._filing.meta_data.get('restoration', {}).get('fromLegalName')
+        else:
+            filing['fromLegalName'] = self._business.legal_name
 
         if relationships := filing['restoration'].get('relationships'):
             filing['relationshipsDesc'] = ', '.join(relationships)
@@ -608,11 +610,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['applicationDate'] = filing['restoration'].get('applicationDate', 'Not Applicable')
             filing['noticeDate'] = filing['restoration'].get('noticeDate', 'Not Applicable')
 
-        business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing.transaction_id, self._business.id, is_dissolution_date=True)
-        filing['dissolutionLegalName'] = business_dissolution.legal_name
+        if self._filing.transaction_id:  # available when filing is COMPLETED
+            business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
+                self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+            filing['dissolutionLegalName'] = business_dissolution.legal_name
+        else:
+            filing['dissolutionLegalName'] = self._business.legal_name
 
-        if expiry_date := meta_data.get('restoration', {}).get('expiry'):
+        if expiry_date := filing['restoration'].get('expiry'):
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
             expiry_date = expiry_date.replace(minute=1)
             filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_string(expiry_date)
@@ -685,9 +690,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # Get current list of translations in alteration. None if it is deletion
         if 'nameTranslations' in filing['alteration']:
             filing['listOfTranslations'] = filing['alteration'].get('nameTranslations', [])
-            # Get previous translations for deleted translations. No record created in aliases version for deletions
-            filing['previousNameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
-                self._filing.transaction_id, self._business.id)
+            if self._filing.transaction_id:
+                # Get previous translations for deleted translations. No record created in version for deletions
+                filing['previousNameTranslations'] = (
+                    VersionedBusinessDetailsService.get_name_translations_before_revision(
+                        self._filing.transaction_id,
+                        self._business.id))
+            else:
+                filing['previousNameTranslations'] = [alias.json for alias in self._business.aliases.all()]
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             dates = filing['alteration']['shareStructure'].get('resolutionDates', [])
