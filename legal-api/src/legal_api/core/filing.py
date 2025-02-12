@@ -482,7 +482,6 @@ class Filing:  # pylint: disable=too-many-public-methods
         """Return a list of documents for a particular filing."""
         no_output_filings = [
             Filing.FilingTypes.CONVERSION.value,
-            Filing.FilingTypes.COURTORDER.value,
             Filing.FilingTypes.PUTBACKOFF.value,
             Filing.FilingTypes.PUTBACKON.value,
             Filing.FilingTypes.REGISTRARSNOTATION.value,
@@ -518,20 +517,20 @@ class Filing:  # pylint: disable=too-many-public-methods
             return documents
 
         if filing.storage and filing.storage.filing_type in no_output_filings:
-            if filing.filing_type == 'courtOrder' and \
-                    (filing.storage.documents.filter(
-                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
-                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
-
             return documents
 
         # return a receipt for filings completed in our system
         if filing.storage and filing.storage.payment_completion_date:
+            if filing.filing_type == 'courtOrder' and \
+                    (filing.storage.documents.filter(
+                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
+                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         no_legal_filings_in_paid_withdrawn_status = [
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
+            Filing.FilingTypes.COURTORDER.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
@@ -571,6 +570,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                 no_legal_filings = [
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                     Filing.FilingTypes.CONTINUATIONOUT.value,
+                    Filing.FilingTypes.COURTORDER.value,
                     Filing.FilingTypes.AGMEXTENSION.value,
                     Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                     Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
