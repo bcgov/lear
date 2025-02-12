@@ -52,6 +52,11 @@ def check_business(business: Business) -> list:
                 exclude_in_dissolution=False, exclude_future_effective_filing=True
             )
         )
+
+        # dis_details is None when the account is not included in FF filter
+        if not dis_details:
+            return result
+
         if dis_details.transition_overdue:
             result.append(transition_warning)
         elif dis_details.ar_overdue:
