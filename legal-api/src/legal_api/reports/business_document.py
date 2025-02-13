@@ -330,6 +330,7 @@ class BusinessDocument:
         # TODO: add conv liquidation etc. in the future work
         for filing in Filing.get_conversion_filings_by_conv_types(self._business.id, ['dissolution',
                                                                                       'continuationOut',
+                                                                                      'putBackOn',
                                                                                       'restoration']):
             state_filings.append(self._format_state_filing(filing))
 

@@ -216,8 +216,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.CONVDSL_NULL: 'conversion',  # TODO: liquidation
     EventFilings.CONVDSO_NULL: ['conversion', ('dissolution', 'unknown')],
     EventFilings.CONVICORP_NULL: 'conversion',
-    EventFilings.CONVID1_NULL: 'conversion',  # TODO: related to invol dissolution
-    EventFilings.CONVID2_NULL: 'conversion',  # TODO: related to invol dissolution
+    EventFilings.CONVID1_NULL: ['conversion', 'putBackOn'],  # TODO: to confirm
+    EventFilings.CONVID2_NULL: ['conversion', 'putBackOn'],  # TODO: to confirm
     EventFilings.CONVILIQ_NULL: 'conversion',  # TODO: liquidation
     EventFilings.CONVLRSTR_NULL: ['conversion', ('restoration', 'limitedRestoration')],
     EventFilings.CONVNC_NULL: ['conversion', 'changeOfName'],
