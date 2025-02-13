@@ -15,6 +15,7 @@ SELECT COUNT(*) FROM businesses
 WHERE 1 = 1
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 AND legal_name LIKE '%' || :corp_name_suffix
+AND identifier IN ('BC0588870', 'BC0546050', 'BC0550140', 'BC0670410', 'BC0600187')
 """
 
 identifiers_query = """
@@ -22,6 +23,7 @@ SELECT id, identifier FROM businesses
 WHERE 1 = 1 
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 AND legal_name LIKE '%' || :corp_name_suffix
+AND identifier IN ('BC0588870', 'BC0546050', 'BC0550140', 'BC0670410', 'BC0600187')
 LIMIT :batch_size
 """
 

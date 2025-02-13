@@ -720,7 +720,7 @@ def get_filing_comments_query(corp_num):
     return query
 
 
-def get_in_dissolution_query(corp_num, threshold_timestamp):
+def get_in_dissolution_query(corp_num):
     query = f"""
     select
         cs.corp_num         as cs_corp_num,
@@ -736,7 +736,6 @@ def get_in_dissolution_query(corp_num, threshold_timestamp):
     and cs.corp_num = '{corp_num}'
     and cs.end_event_id is null
     and cs.state_type_cd in ('D1F', 'D2F', 'D1T', 'D2T')
-    and e.trigger_dts > '{threshold_timestamp}' :: timestamptz
     """
     return query
 
@@ -754,8 +753,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'amalgamations': get_amalgamation_query(corp_num),
         'business_comments': get_business_comments_query(corp_num),
         'filing_comments': get_filing_comments_query(corp_num),
-        'in_dissolution': get_in_dissolution_query(
-            corp_num, config.TOMBSTONE_DISSOLUTION_TS),
+        'in_dissolution': get_in_dissolution_query(corp_num),
     }
 
     return queries
