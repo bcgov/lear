@@ -628,7 +628,8 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
 def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_subtype: str, effective_date: str, data: dict) -> tuple[dict, dict]:
     filing_json = copy.deepcopy(FILING_JSON)
     filing_json['filing'][raw_filing_type] = {}
-    if raw_filing_type != filing_type:
+    # if conversion has conv filing type, set filing_json
+    if raw_filing_type != filing_type and filing_type:
         filing_json['filing'][filing_type] = {}
 
     meta_data = {
