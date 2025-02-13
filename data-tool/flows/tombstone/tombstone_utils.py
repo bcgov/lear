@@ -2,6 +2,7 @@ import copy
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Optional
 
 import pandas as pd
 import pytz
@@ -47,7 +48,7 @@ def format_business_data(data: dict) -> dict:
 def format_address_data(address_data: dict, prefix: str) -> dict:
     # Note: all corps have a format type of null or FOR
     address_type = 'mailing' if prefix == 'ma_' else 'delivery'
-    
+
     street = address_data[f'{prefix}addr_line_1']
     street_additional_elements = []
     if (line_2 := address_data[f'{prefix}addr_line_2']) and (line_2 := line_2.strip()):
@@ -57,7 +58,7 @@ def format_address_data(address_data: dict, prefix: str) -> dict:
     street_additional = ' '.join(street_additional_elements)
 
     if not (delivery_instructions := address_data[f'{prefix}delivery_instructions']) \
-        or not (delivery_instructions := delivery_instructions.strip()):
+            or not (delivery_instructions := delivery_instructions.strip()):
         delivery_instructions = ''
 
     formatted_address = {
@@ -90,7 +91,7 @@ def format_offices_data(data: dict) -> list[dict]:
         office['addresses'].append(delivery_address)
 
         formatted_offices.append(office)
-    
+
     return formatted_offices
 
 
@@ -117,7 +118,7 @@ def format_parties_data(data: dict) -> list[dict]:
             mailing_addr_data = group.loc[ma_index].to_dict()
         else:
             mailing_addr_data = None
-        
+
         if (da_index := group['cp_delivery_addr_id'].first_valid_index()) is not None:
             delivery_addr_data = group.loc[da_index].to_dict()
         else:
@@ -140,9 +141,9 @@ def format_parties_data(data: dict) -> list[dict]:
             party_role['appointment_date'] = r['cp_appointment_dt_str']
             party_role['cessation_date'] = r['cp_cessation_dt_str']
             formatted_party_roles.append(party_role)
-        
+
         formatted_parties.append(party)
-    
+
     return formatted_parties
 
 
@@ -191,7 +192,7 @@ def format_share_classes_data(data: dict) -> list[dict]:
         share_class['share_classes']['special_rights_flag'] = share_class_info['ssc_spec_rights_ind']
 
         # Note: srs_share_class_id should be either None or equal to share_class_id
-        matching_series = group[group['srs_share_class_id']==share_class_id]
+        matching_series = group[group['srs_share_class_id'] == share_class_id]
         formatted_series = share_class['share_series']
         for _, r in matching_series.iterrows():
             formatted_series.append(format_share_series_data(r.to_dict()))
@@ -238,7 +239,7 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
 
     if not matched_jurisdictions:
         return None
-    
+
     formatted_jurisdiction = copy.deepcopy(JURISDICTION)
     jurisdiction_info = matched_jurisdictions[0]
 
@@ -340,11 +341,13 @@ def format_filings_data(data: dict) -> list[dict]:
 
         comments = format_filing_comments_data(data, x['e_event_id'])
 
+        colin_event_ids = {'colin_event_id': x['e_event_id']}
         filing = {
             'filings': filing_body,
             'jurisdiction': jurisdiction,
             'amalgamations': amalgamation,
-            'comments': comments
+            'comments': comments,
+            'colin_event_ids': colin_event_ids
         }
 
         formatted_filings.append(filing)
@@ -357,7 +360,7 @@ def format_filings_data(data: dict) -> list[dict]:
         # save state filing index
         if filing_type in LEAR_STATE_FILINGS and x['e_event_id'] == x['cs_state_event_id']:
             state_filing_idx = idx
-        
+
         idx += 1
 
     return {
@@ -396,8 +399,8 @@ def format_amalgamating_businesses(ting_data: dict) -> dict:
     role = 'holding' if ting_data['adopted_corp_ind'] else 'amalgamating'
 
     foreign_identifier = None
-    if not (ting_data['ting_corp_num'].startswith('BC') or\
-            ting_data['ting_corp_num'].startswith('Q') or\
+    if not (ting_data['ting_corp_num'].startswith('BC') or
+            ting_data['ting_corp_num'].startswith('Q') or
             ting_data['ting_corp_num'].startswith('C')):
         foreign_identifier = ting_data['ting_corp_num']
 
@@ -432,7 +435,7 @@ def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
 
     if not matched_filing_comments:
         return None
-    
+
     formatted_filing_comments = []
     for x in matched_filing_comments:
         if c := x['lt_notation']:
@@ -459,7 +462,7 @@ def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
 def format_business_comments_data(data: dict) -> list:
     business_comments_data = data['business_comments']
     formatted_business_comments = []
-    
+
     for x in business_comments_data:
         c = x['cc_comments'] if x['cc_comments'] else x['cc_accession_comments']
         if not (staff_id := x['cc_user_id']):
@@ -482,9 +485,9 @@ def format_users_data(users_data: list) -> list:
         event_file_types = x['event_file_types'].split(',')
         # skip users if all event_file_type is unsupported or not users for staff comments
         if not any(get_target_filing_type(ef)[0] for ef in event_file_types)\
-                and not any (ef == 'STAFF_COMMENT' for ef in event_file_types):
+                and not any(ef == 'STAFF_COMMENT' for ef in event_file_types):
             continue
-        
+
         if not (username := x['u_user_id']):
             username = x['u_full_name']
 
@@ -518,7 +521,6 @@ def formatted_data_cleanup(data: dict) -> dict:
     return data
 
 
-
 def get_data_formatters() -> dict:
     ret = {
         'businesses': format_business_data,
@@ -549,7 +551,7 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
         value = None
     elif filing_type == 'restoration':
         if key == 'restoration_expiry_date' and\
-            filing_subtype in ['limitedRestoration', 'limitedRestorationExtension']:
+                filing_subtype in ['limitedRestoration', 'limitedRestorationExtension']:
             value = trigger_date
         else:
             value = None
@@ -663,12 +665,12 @@ def get_colin_display_name(data: dict) -> str:
         ar_dt = datetime.strptime(ar_dt_str, '%Y-%m-%d %H:%M:%S%z')
         suffix = ar_dt.strftime('%b %d, %Y').upper()
         name = f'{name} - {suffix}'
-    
+
     # Change of Directors
     elif event_file_type == EventFilings.FILE_NOCDR.value:
         if not data['f_change_at_str']:
             name = f'{name} - Address Change or Name Correction Only'
-    
+
     # Conversion Ledger
     elif event_file_type == EventFilings.FILE_CONVL.value:
         name = data['cl_ledger_title_txt']
@@ -691,7 +693,11 @@ def build_epoch_filing(business_id: int) -> dict:
     return filing
 
 
-def load_data(conn: Connection, table_name: str, data: dict, conflict_column: str=None) -> int:
+def load_data(conn: Connection,
+              table_name: str,
+              data: dict,
+              conflict_column: str = None,
+              expecting_id: bool = True) -> Optional[int]:
     columns = ', '.join(data.keys())
     values = ', '.join([format_value(v) for v in data.values()])
 
@@ -702,12 +708,17 @@ def load_data(conn: Connection, table_name: str, data: dict, conflict_column: st
         if check_result:
             return check_result
 
-    query = f"""insert into {table_name} ({columns}) values ({values}) returning id"""
+    query = f"""insert into {table_name} ({columns}) values ({values})"""
+    if expecting_id:
+        query = query + ' returning id'
 
     result = conn.execute(text(query))
-    id = result.scalar()
 
-    return id
+    if expecting_id:
+        id = result.scalar()
+        return id
+
+    return None
 
 
 def update_data(conn: Connection, table_name: str, data: dict, column: str, value: any) -> int:

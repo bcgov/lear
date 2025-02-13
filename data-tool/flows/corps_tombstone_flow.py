@@ -102,6 +102,7 @@ def get_snapshot_filings_data(config, colin_engine: Engine, corp_num: str) -> di
 
         return raw_data
 
+
 @task(name='2.2-Corp-Snapshot-Placeholder-Filings-Cleanup-Task')
 def clean_snapshot_filings_data(data: dict) -> dict:
     """Clean corp snapshot and placeholder filings data."""
@@ -197,9 +198,12 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         f['business_id'] = business_id
         filing_id = load_data(conn, 'filings', f)
 
+        data['colin_event_ids']['filing_id'] = filing_id
+        load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False)
+
         if i == state_filing_index:
             update_info['businesses']['state_filing_id'] = filing_id
-        
+
         if jurisdiction := data['jurisdiction']:
             jurisdiction['business_id'] = business_id
             jurisdiction['filing_id'] = filing_id
@@ -236,7 +240,7 @@ def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, busine
     amalgamation_id = load_data(conn, 'amalgamations', amalgamation)
 
     for ting in amalgamation_data['amalgamating_businesses']:
-        if ting_identifier:= ting.get('ting_identifier'):
+        if ting_identifier := ting.get('ting_identifier'):
             # TODO: avoid update info for withdrawn amalg filing (will handle in NoW work)
             # TING must exists in db before updating state filing info,
             del ting['ting_identifier']
