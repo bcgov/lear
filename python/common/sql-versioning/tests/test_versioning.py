@@ -16,46 +16,9 @@
 Test-Suite to ensure that the versioning extension is working as expected.
 """
 import pytest
-from sqlalchemy import Column, ForeignKey, Integer, String, orm
 
-from sql_versioning import (Base, TransactionFactory, Versioned,
-                            enable_versioning, version_class)
-
-enable_versioning()
-
-Transaction = TransactionFactory.create_transaction_model()
-
-class Model(Base):
-    __tablename__ = 'models'
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-class User(Base, Versioned):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-    address = orm.relationship('Address', backref='user', uselist=False)
-    locations = orm.relationship('Location', backref='user', lazy='dynamic')
-
-class Address(Base, Versioned):
-    __tablename__ = 'addresses'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-    user_id = Column(Integer, ForeignKey('users.id'))
-
-class Location(Base):
-    __tablename__ = 'locations'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
-    user_id = Column(Integer, ForeignKey('users.id'))
-
-orm.configure_mappers()
+from sql_versioning import (version_class)
+from tests import (Model, User, Address, Location, Email, Item, Transaction)
 
 
 @pytest.mark.parametrize('test_name', ['CLASS','INSTANCE'])
@@ -142,6 +105,76 @@ def test_versioning_insert(db, session):
     assert result_versioned_address.transaction_id == transaction.id
     assert result_versioned_address.operation_type == 0
     assert result_versioned_address.end_transaction_id is None
+
+
+def test_versioning_relationships(db, session):
+    user = User(name='user')
+    address = Address(name='Some address')
+    location = Location(name='Some location')
+    emails = [Email(name='primary'), Email(name='secondary')]
+    items = [Item(name='An item'), Item(name='Another item')]
+    user.address = address
+    user.location = location
+    user.items = items
+    user.emails = emails
+    session.add(user)
+    session.commit()
+
+    user_version = version_class(User)
+    result_revision = session.query(user_version)\
+        .filter(user_version.name=='user')\
+        .one_or_none()
+    
+    # Test one-to-one relationship
+    # Versioned
+    assert result_revision.address.id == address.id
+    assert result_revision.address.name == "Some address"
+    assert result_revision.address.user.name == user.name
+    # Non versioned
+    assert result_revision.location.id == location.id
+    assert result_revision.location.name == "Some location"
+    assert result_revision.location.user.name == user.name
+
+    # Test one-to-many relationship
+    # Versioned
+    result_emails = result_revision.emails.all()
+    assert len(result_emails) == len(emails)
+    assert result_emails[0].id == emails[0].id
+    assert result_emails[0].name == "primary"
+    assert result_emails[1].id == emails[1].id
+    assert result_emails[1].name == "secondary"
+    # Non versioned
+    result_items = result_revision.items.all()
+    assert len(result_items) == len(items)
+    assert result_items[0].id == items[0].id
+    assert result_items[0].name == "An item"
+    assert result_items[1].id == items[1].id
+    assert result_items[1].name == "Another item"
+
+    # Test many-to-one relationship
+    # Note: this is a quirk of the RelationshipBuilder. We don't explicitly establish bi-directionality
+    # by including the "reverse" side of the relationship (i.e. Item.user), but it works anyway
+    # Versioned
+    assert result_revision.emails[0].user.name == user.name
+    assert result_revision.emails[1].user.name == user.name
+    # Non versiones
+    assert result_revision.items[0].user == user
+    assert result_revision.items[1].user == user
+
+    # Test update relationship
+    user.address = Address(name='Some new address')
+    session.commit()
+
+    user_version = version_class(User)
+    result_revisions = session.query(user_version)\
+        .filter(user_version.name=='user')\
+        .order_by(user_version.transaction_id)\
+        .all()
+    
+    assert user.address.name == 'Some new address'
+    assert len(result_revisions) == 2
+    assert result_revisions[0].address.name == "Some address"
+    assert result_revisions[1].address.name == "Some new address"
 
 
 def test_versioning_relationships(db, session):

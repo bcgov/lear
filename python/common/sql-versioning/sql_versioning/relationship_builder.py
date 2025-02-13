@@ -102,8 +102,9 @@ class RelationshipBuilder(object):
         if self.versioned:
             if direction.name == 'ONETOMANY':
                 return self.one_to_many_criteria(obj)
-            elif direction.name == 'MANYTOMANY':
-                return self.many_to_many_criteria(obj)
+            # TODO: Get many-to-many relationships working
+            # elif direction.name == 'MANYTOMANY':
+            #     return self.many_to_many_criteria(obj)
             elif direction.name == 'MANYTOONE':
                 return self.many_to_one_criteria(obj)
         else:
@@ -354,7 +355,7 @@ class RelationshipBuilder(object):
         self.local_cls = version_class(self.model)
         self.versioned = False
         
-        if hasattr(self.property.mapper.class_, ""):
+        if version_class(self.property.mapper.class_):
             self.remote_cls = version_class(self.property.mapper.class_)
             self.versioned = True
         else:
