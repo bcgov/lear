@@ -581,6 +581,15 @@ def get_filings_query(corp_num):
             f.filing_type_cd       as f_filing_type_cd,
             to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
             f.withdrawn_event_id   as f_withdrawn_event_id,
+            case
+                when f.withdrawn_event_id is null then null
+                else (
+                    select 
+                        to_char(we.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
+                    from event we
+                    where we.event_id = f.withdrawn_event_id
+                )
+            end as f_withdrawn_event_ts_str,
 --          paper only now -> f_ods_type
             f.nr_num               as f_nr_num,
             to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,

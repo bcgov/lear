@@ -278,6 +278,7 @@ def format_filings_data(data: dict) -> list[dict]:
     formatted_filings = []
     state_filing_idx = -1
     idx = 0
+    withdrawn_filing_idx = -1
     for x in filings_data:
         event_file_type = x['event_file_type']
         # TODO: build a new complete filing event mapper (WIP)
@@ -301,6 +302,7 @@ def format_filings_data(data: dict) -> list[dict]:
             filing_subtype = raw_filing_subtype
 
         effective_date = x['ce_effective_dt_str'] or x['f_effective_dt_str'] or x['e_event_dt_str']
+        filing_date = x['ce_effective_dt_str'] or x['e_event_dt_str']
         trigger_date = x['e_trigger_dt_str']
 
         filing_json, meta_data = build_filing_json_meta_data(raw_filing_type, filing_type, filing_subtype,
@@ -319,16 +321,25 @@ def format_filings_data(data: dict) -> list[dict]:
         else:
             hide_in_ledger = False
 
+        if x['f_withdrawn_event_id']:
+            status = 'WITHDRAWN'
+            completion_date = None
+            withdrawn_filing_idx = idx
+        else:
+            status = 'COMPLETED'
+            completion_date = effective_date
+
         filing_body = {
             **filing_body,
-            'filing_date': effective_date,
+            'filing_date': filing_date,
             'filing_type': raw_filing_type,
             'filing_sub_type': raw_filing_subtype,
-            'completion_date': effective_date,
+            'completion_date': completion_date,
             'effective_date': effective_date,
             'filing_json': filing_json,
             'meta_data': meta_data,
             'hide_in_ledger': hide_in_ledger,
+            'status': status,
             'submitter_id': user_id,  # will be updated to real user_id when loading data into db
         }
 
@@ -336,9 +347,11 @@ def format_filings_data(data: dict) -> list[dict]:
         # based on converted filing type
         if filing_type == 'continuationIn':
             jurisdiction = format_jurisdictions_data(data, x['e_event_id'])
-
-        if filing_type == 'amalgamationApplication':
+        elif filing_type == 'amalgamationApplication':
             amalgamation = format_amalgamations_data(data, x['e_event_id'], effective_date, filing_subtype)
+        elif filing_type == 'noticeOfWithdrawal':
+            filing_body['withdrawn_filing_id'] = withdrawn_filing_idx  # will be updated to real filing_id when loading data
+            withdrawn_filing_idx = -1
 
         comments = format_filing_comments_data(data, x['e_event_id'])
 
@@ -715,6 +728,14 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
                 'fromLegalName': old_corp_name,
                 'toLegalName': new_corp_name,
             }
+
+    if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:
+        withdrawn_ts = datetime.strptime(withdrawn_ts_str, '%Y-%m-%d %H:%M:%S%z')
+        meta_data = {
+            **meta_data,
+            'withdrawnDate': withdrawn_ts.isoformat()
+        }
+
     # TODO: populate meta_data for correction to display correct filing name
 
     return filing_json, meta_data

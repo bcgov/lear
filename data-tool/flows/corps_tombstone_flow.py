@@ -201,6 +201,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     update_info = tombstone_data['updates']
     state_filing_index = update_info['state_filing_index']
     update_business_data = update_info['businesses']
+    filing_ids_mapper = {}
     # load placeholder filings
     for i, data in enumerate(filings_data):
         f = data['filings']
@@ -210,7 +211,11 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         f['submitter_id'] = user_id
         f['transaction_id'] = transaction_id
         f['business_id'] = business_id
+        if withdrawn_idx := f['withdrawn_filing_id']:
+            f['withdrawn_filing_id'] = filing_ids_mapper[withdrawn_idx]
+
         filing_id = load_data(conn, 'filings', f)
+        filing_ids_mapper[i] = filing_id
 
         data['colin_event_ids']['filing_id'] = filing_id
         load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False)
