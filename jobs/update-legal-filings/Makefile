@@ -135,7 +135,7 @@ tag: push ## tag image
 #################################################################################
 
 run: ## Run the project in local
-	. venv/bin/activate && python notebookreport.py
+	. venv/bin/activate && python update_legal_filings.py
 
 #################################################################################
 # Self Documenting Commands                                                     #
