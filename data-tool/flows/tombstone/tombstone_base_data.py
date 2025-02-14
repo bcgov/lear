@@ -200,7 +200,8 @@ FILING = {
     },
     'jurisdiction': None,  # optional
     'amalgamations': None,  # optional
-    'comments': None  # optional
+    'comments': None,  # optional
+    'colin_event_ids': None
 }
 
 FILING_COMBINED = {
