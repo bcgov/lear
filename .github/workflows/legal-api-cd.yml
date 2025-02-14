@@ -1,17 +1,12 @@
 name: Legal API CD
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "legal-api/**"
   workflow_dispatch:
     inputs:
       environment:
-        description: "Environment (dev/test/prod)"
+        description: "Environment (test/prod)"
         required: true
-        default: "dev"
+        default: "test"
 
 defaults:
   run:
@@ -20,15 +15,15 @@ defaults:
 
 env:
   APP_NAME: "legal-api"
-  TAG_NAME: "dev"
+  TAG_NAME: "test"
 
 jobs:
   legal-api-cd-by-push:
     runs-on: ubuntu-20.04
 
-    if: github.event_name == 'push' && github.repository == 'bcgov/lear'
+    if: github.event.inputs.environment == 'test' && github.repository == 'bcgov/lear'
     environment:
-      name: "dev"
+      name: "test"
 
     steps:
       - uses: actions/checkout@v3
@@ -69,9 +64,9 @@ jobs:
   legal-api-cd-by-dispatch:
     runs-on: ubuntu-20.04
 
-    if: github.event_name == 'workflow_dispatch' && github.repository == 'bcgov/lear'
+    if: github.event.inputs.environment == 'prod' && github.repository == 'bcgov/lear'
     environment:
-      name: "${{ github.event.inputs.environment }}"
+      name: "prod"
 
     steps:
       - uses: actions/checkout@v3
