@@ -181,7 +181,7 @@ def test_is_completing_party_false_when_no_registration_filing(app, session, cap
     caplog.set_level(logging.DEBUG)
 
     assert rules.is_completing_party(user, business) is False
-    assert 'No registration filing found for the business.' in caplog.text
+    assert 'No registration or incorporation filing found for the business.' in caplog.text
 
 
 def test_is_completing_party_false_when_no_completing_parties(app, session, caplog, rules):
