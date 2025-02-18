@@ -66,9 +66,11 @@ def _registration_filing(business: Business) -> Filing:
 
     return filings[0]
 
+
 def _incorporation_filings(business: Business) -> List[Filing]:
     """Return the incorporation filings for the business."""
     return Filing.get_filings_by_types(business.id, ['incorporationApplication'])
+
 
 def _incorporation_filing(business: Business) -> Filing:
     """Return the incorporation filing for the business."""
@@ -95,7 +97,8 @@ def _completing_parties(registration_filing: Filing) -> List[PartyRole]:
 def user_completing_party_role(user: User, business: Business) -> Union[PartyRole, None]:
     """Return the PartyRole if the user is the completing party."""
     if not (filing := _registration_filing(business) or _incorporation_filing(business)):
-        logging.debug('No registration or incorporation filing found for the business.')
+        logging.debug(
+            'No registration or incorporation filing found for the business.')
         return None
 
     if len(party_roles := _completing_parties(filing)) <= 0:
