@@ -322,6 +322,12 @@ def format_filings_data(data: dict) -> list[dict]:
             hide_in_ledger = False
 
         if x['f_withdrawn_event_id']:
+            if filing_type in [
+                'amalgamationApplication',
+                'incorporationApplication',
+                'continuationIn'
+            ]:
+                raise Exception('Stop migrating withdrawn corp')
             status = 'WITHDRAWN'
             completion_date = None
             withdrawn_filing_idx = idx
