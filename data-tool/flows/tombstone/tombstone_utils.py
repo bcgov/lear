@@ -8,8 +8,9 @@ import pandas as pd
 import pytz
 from sqlalchemy import Connection, text
 from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
-                                           FILING_JSON, JURISDICTION, OFFICE,
-                                           PARTY, PARTY_ROLE, RESOLUTION,
+                                           FILING_JSON, IN_DISSOLUTION,
+                                           JURISDICTION, OFFICE, PARTY,
+                                           PARTY_ROLE, RESOLUTION,
                                            SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           EVENT_FILING_LEAR_TARGET_MAPPING,
@@ -477,6 +478,68 @@ def format_business_comments_data(data: dict) -> list:
     return formatted_business_comments
 
 
+def format_in_dissolution_data(data: dict) -> dict:
+    if not (in_dissolution_data := data['in_dissolution']):
+        return None
+
+    in_dissolution_data = in_dissolution_data[0]
+
+    formatted_in_dissolution = copy.deepcopy(IN_DISSOLUTION)
+    batch = formatted_in_dissolution['batches']
+    batch_processiong = formatted_in_dissolution['batch_processing']
+    furnishing = formatted_in_dissolution['furnishings']
+
+    utc_now_str = datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+    batch['start_date'] = utc_now_str
+
+    corp_state = in_dissolution_data['cs_state_type_cd']
+
+    batch_processiong['business_identifier'] = in_dissolution_data['cs_corp_num']
+    batch_processiong['created_date'] = batch_processiong['last_modified'] = utc_now_str
+    batch_processiong['trigger_date'] = in_dissolution_data['e_trigger_dts_str']
+    batch_processiong['meta_data'] = {
+        'importFromColin': True,
+        'colinDissolutionState': corp_state,
+    }
+
+    furnishing['business_identifier'] = in_dissolution_data['cs_corp_num']
+    furnishing['created_date'] = furnishing['last_modified'] = furnishing['processed_date'] = utc_now_str
+    furnishing['meta_data'] = {
+        'importFromColin': True,
+        'colinDissolutionState': corp_state,
+    }
+
+    if corp_state in ('D1F', 'D1T'):
+        # stage 1
+        batch_processiong['step'] = 'WARNING_LEVEL_1'
+        overdue_ar = True if corp_state == 'D1F' else False
+        batch_processiong['meta_data'] = {
+            **batch_processiong['meta_data'],
+            'overdueARs': overdue_ar,
+            'overdueTransition': not overdue_ar,
+            'stage_1_date': utc_now_str,
+        }
+
+        furnishing['furnishing_type'] = 'MAIL'  # as placeholder
+        furnishing['furnishing_name'] = 'DISSOLUTION_COMMENCEMENT_NO_AR' if overdue_ar\
+            else 'DISSOLUTION_COMMENCEMENT_NO_TR'
+    else:
+        # stage 2
+        batch_processiong['step'] = 'WARNING_LEVEL_2'
+        overdue_ar = True if corp_state == 'D2F' else False
+        batch_processiong['meta_data'] = {
+            **batch_processiong['meta_data'],
+            'overdueARs': overdue_ar,
+            'overdueTransition': not overdue_ar,
+            'stage_2_date': utc_now_str,
+        }
+
+        furnishing['furnishing_type'] = 'GAZETTE'
+        furnishing['furnishing_name'] = 'INTENT_TO_DISSOLVE'
+
+    return formatted_in_dissolution
+
+
 def format_users_data(users_data: list) -> list:
     formatted_users = []
 
@@ -531,6 +594,7 @@ def get_data_formatters() -> dict:
         'resolutions': format_resolutions_data,
         'filings': format_filings_data,
         'comments': format_business_comments_data,  # only for business level, filing level will be formatted ith filings
+        'in_dissolution': format_in_dissolution_data,
     }
     return ret
 
@@ -564,7 +628,8 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
 def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_subtype: str, effective_date: str, data: dict) -> tuple[dict, dict]:
     filing_json = copy.deepcopy(FILING_JSON)
     filing_json['filing'][raw_filing_type] = {}
-    if raw_filing_type != filing_type:
+    # if conversion has conv filing type, set filing_json
+    if raw_filing_type != filing_type and filing_type:
         filing_json['filing'][filing_type] = {}
 
     meta_data = {
@@ -697,6 +762,7 @@ def load_data(conn: Connection,
               table_name: str,
               data: dict,
               conflict_column: str = None,
+              conflict_error = False,
               expecting_id: bool = True) -> Optional[int]:
     columns = ', '.join(data.keys())
     values = ', '.join([format_value(v) for v in data.values()])
@@ -706,7 +772,10 @@ def load_data(conn: Connection,
         check_query = f"select id from {table_name} where {conflict_column} = {conflict_value}"
         check_result = conn.execute(text(check_query)).scalar()
         if check_result:
-            return check_result
+            if not conflict_error:
+                return check_result
+            else:
+                raise Exception('Trying to reload corp existing in db, run delete script first')
 
     query = f"""insert into {table_name} ({columns}) values ({values})"""
     if expecting_id:
@@ -738,7 +807,8 @@ def format_value(value) -> str:
     elif isinstance(value, (int, float)):
         return str(value)
     elif isinstance(value, dict):
-        return f"'{json.dumps(value)}'"
+        value = json.dumps(value).replace("'", "''")
+        return f"'{value}'"
     else:
         # Note: handle single quote issue
         value = str(value).replace("'", "''")

@@ -235,6 +235,54 @@ AMALGAMTING_BUSINESS = {
     'amalgamation_id': None,
 }
 
+
+# ======== in_dissoluion ========
+BATCH = {
+    'batch_type': 'INVOLUNTARY_DISSOLUTION',
+    'status': 'PROCESSING',
+    'size': 1,
+    'max_size': 1,
+    'start_date': None,  # timestamptz, required
+    'notes': 'Import from COLIN',
+}
+
+BATCH_PROCESSING = {
+    'business_identifier': None,
+    'step': None,
+    'meta_data': None,
+    'created_date': None,  # timestamptz, required
+    'last_modified': None,  # timestamptz, required
+    'trigger_date': None,  # timestamptz
+    'status': 'PROCESSING',
+    'notes': 'Import from COLIN',
+    # FK
+    'batch_id': None,
+    'business_id': None,
+}
+
+FURNISHING = {
+    'business_identifier': None,
+    'furnishing_type': None,
+    'furnishing_name': None,
+    'meta_data': None,
+    'created_date': None,  # timestamptz, required
+    'last_modified': None,  # timestamptz, required
+    'processed_date': None,  # timestamptz
+    'status': 'PROCESSED',
+    'notes': 'Import from COLIN',
+    # FK
+    'batch_id': None,
+    'business_id': None,
+
+}
+
+IN_DISSOLUTION = {
+    'batches': BATCH,
+    'batch_processing': BATCH_PROCESSING,
+    'furnishings': FURNISHING,
+}
+
+
 # ======== tombstone example ========
 TOMBSTONE = {
     'businesses': BUSINESS,
@@ -244,6 +292,8 @@ TOMBSTONE = {
     'aliases': [ALIAS],
     'resolutions': [RESOLUTION],
     'filings': [FILING],
+    'comments': [COMMENT],
+    'in_dissolution': IN_DISSOLUTION,
     'updates': {
         'businesses': BUSINESS,
         'state_filing_index': -1

@@ -720,6 +720,26 @@ def get_filing_comments_query(corp_num):
     return query
 
 
+def get_in_dissolution_query(corp_num):
+    query = f"""
+    select
+        cs.corp_num         as cs_corp_num,
+        cs.state_type_cd    as cs_state_type_cd,
+        e.event_id          as e_event_id,
+        e.event_type_cd     as e_event_type_cd,
+        to_char(
+            e.trigger_dts::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                   as e_trigger_dts_str
+    from corp_state cs
+    join event e on e.event_id = cs.start_event_id
+    where 1 = 1
+    and cs.corp_num = '{corp_num}'
+    and cs.end_event_id is null
+    and cs.state_type_cd in ('D1F', 'D2F', 'D1T', 'D2T')
+    """
+    return query
+
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
@@ -732,7 +752,8 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'filings': get_filings_query(corp_num),
         'amalgamations': get_amalgamation_query(corp_num),
         'business_comments': get_business_comments_query(corp_num),
-        'filing_comments': get_filing_comments_query(corp_num)
+        'filing_comments': get_filing_comments_query(corp_num),
+        'in_dissolution': get_in_dissolution_query(corp_num),
     }
 
     return queries
