@@ -211,7 +211,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         f['submitter_id'] = user_id
         f['transaction_id'] = transaction_id
         f['business_id'] = business_id
-        if withdrawn_idx := f['withdrawn_filing_id']:
+        if (withdrawn_idx := f['withdrawn_filing_id']) is not None:
             f['withdrawn_filing_id'] = filing_ids_mapper[withdrawn_idx]
 
         filing_id = load_data(conn, 'filings', f)
