@@ -459,7 +459,8 @@ class BusinessDocument:
                 expiry_date = filing_meta['restoration']['expiry']
                 expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
                 expiry_date = expiry_date.replace(minute=1)
-                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.format_as_report_string(expiry_date)
+                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.\
+                    format_as_report_expiry_string_1159(expiry_date)
         elif filing_type == 'continuationOut':
             filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None)
 

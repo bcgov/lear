@@ -127,6 +127,13 @@ class LegislationDatetime():
         return date_time_str
 
     @staticmethod
+    def format_as_report_expiry_string_1159(date_time: datetime) -> str:
+        """Return a datetime string in this format (eg: `August 5, 2021 at 11:59 pm Pacific time`)."""
+        # ensure is set to correct timezone
+        date_time_str = LegislationDatetime.format_as_report_string_with_custom_time(date_time, 23, 59, 0, 0)
+        return date_time_str
+
+    @staticmethod
     def format_as_legislation_date(date_time: datetime) -> str:
         """Return the date in legislation timezone as a string."""
         date_time = LegislationDatetime.as_legislation_timezone(date_time)
