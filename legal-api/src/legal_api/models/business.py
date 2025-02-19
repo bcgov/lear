@@ -268,7 +268,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     filings = db.relationship('Filing', lazy='dynamic')
     offices = db.relationship('Office', backref='business', lazy='dynamic', cascade='all, delete, delete-orphan')
     party_roles = db.relationship('PartyRole', lazy='dynamic')
-    share_classes = db.relationship('ShareClass', backref='business', lazy='dynamic', cascade='all, delete, delete-orphan')
+    share_classes = db.relationship('ShareClass', backref='business', lazy='dynamic',
+                                    cascade='all, delete, delete-orphan')
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
