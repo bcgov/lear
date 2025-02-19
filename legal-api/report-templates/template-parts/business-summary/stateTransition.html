@@ -13,9 +13,9 @@
   {% for filing in stateFilings %}
     <tr class="no-page-break">
         <td>
-            <div class="section-sub-title">{{ filing.filingName }}
+            <div class="section-sub-title">{{filing.filingName}}
               {% if filing.limitedRestorationExpiryDate %}
-                with an Expiry Date of {{ filing.limitedRestorationExpiryDate }}
+              with an Expiry Date of {{filing.limitedRestorationExpiryDate}}
               {% endif %}
             </div>
             <div class="pt-2">
