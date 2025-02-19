@@ -48,13 +48,13 @@
                          {% if business.state == 'HISTORICAL' %}
                              {% if business.legalType in ['GP', 'SP'] %}
                                  <span>Dissolved</span>
-                             {% elif stateFilings[0].filingType == 'putBackOff' %}
-                                 <span>{{stateFilings[0].reason}} on {{stateFilings[0].expiryDate}}</span>
-                             {% else %}
-                                 <span>{{stateFilings[0].filingName}}</span>
-                             {% endif %}
-                             {% if stateFilings[0].filingType != 'putBackOff' %}
-                                 <span> - Effective {{stateFilings[0].effectiveDateTime}}</span>
+                              {% else %}
+                                 {% set filing = stateFilings[0] %}
+                                 {% if filing.filingType == 'putBackOff' %}
+                                     <span>{{filing.reason}} on {{filing.expiryDate}}</span>
+                                 {% else %}
+                                     <span>{{filing.filingName}} - Effective {{filing.effectiveDateTime}}</span>
+                                 {% endif %}
                              {% endif %}
                          {% endif %}
                      {% endif %}
