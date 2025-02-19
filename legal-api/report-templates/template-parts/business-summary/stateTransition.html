@@ -13,12 +13,7 @@
   {% for filing in stateFilings %}
     <tr class="no-page-break">
         <td>
-            <div class="section-sub-title">
-              {% if filing.filingType == 'putBackOff' %}
-                {{ filing.reason }}
-              {% else %}
-                {{ filing.filingName }}
-              {% endif %}
+            <div class="section-sub-title">{{ filing.filingName }}
               {% if filing.limitedRestorationExpiryDate %}
                 with an Expiry Date of {{ filing.limitedRestorationExpiryDate }}
               {% endif %}

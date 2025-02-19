@@ -476,8 +476,12 @@ class BusinessDocument:
                 filing_meta['continuationOut']['continuationOutDate'])
             filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
         elif filing_type == 'putBackOff':
-            filing_info['reason'] = BusinessDocument.\
-                _get_put_back_off_reason(filing_meta['putBackOff']['reason'])
+            put_back_off = filing_meta['putBackOff']
+            filing_info['filingName'] = BusinessDocument.\
+                _get_put_back_off_display_reason(put_back_off['reason'])
+            filing_info['reason'] = put_back_off['reason']
+            expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(put_back_off['expiryDate'])
+            filing_info['expiryDate'] = expiry_date.strftime('%B %d, %Y')
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing_type, None, None)
@@ -633,7 +637,7 @@ class BusinessDocument:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
     @staticmethod
-    def _get_put_back_off_reason(filing_reason: str) -> str:
+    def _get_put_back_off_display_reason(filing_reason: str) -> str:
         return BusinessDocument.PUT_BACK_OFF_DISPLAY[filing_reason]
 
     @staticmethod
