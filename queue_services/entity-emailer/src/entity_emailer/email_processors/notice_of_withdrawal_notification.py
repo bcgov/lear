@@ -40,10 +40,12 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
 
     # get template variables from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+    legal_type = business.get('legalType')
+    name_request = filing.json['filing'][f'{filing_type}']['nameRequest']
 
-    # display company name only for existing businesses
+    # display company name for existing businesses and temp businesses
     if business.get('identifier').startswith('T'):
-        company_name = None
+        company_name = name_request.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
     else:
         company_name = business.get('legalName')
     # record to be withdrawn --> withdrawn filing display name
@@ -91,6 +93,9 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
     if not identifier.startswith('T'):
         subject = f'{legal_name} - {subject}' if legal_name else subject
+    else:
+        company_name = name_request.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+        subject = f'{company_name} - {subject}' if company_name else subject
 
     return {
         'recipients': recipients,
