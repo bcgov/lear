@@ -64,13 +64,18 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     filing_data = (filing.json)['filing'][f'{filing_type}']
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
     header=(filing.json)['filing']['header']
+    # default to None
+    filing_id = None
+    if filing_type in ('incorporationApplication', 'amalgamationApplication', 'continuationApplication'):
+        filing_id=header.filingId
+
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
         header=header,
         company_name=company_name,
         filing_date_time=leg_tmz_filing_date,
-        filing_id=header.filingId,
+        filing_id=filing_id,
         effective_date_time=leg_tmz_effective_date,
         withdrawnFilingType=withdrawn_filing_display_name,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
