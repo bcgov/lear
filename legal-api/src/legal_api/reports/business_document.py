@@ -323,7 +323,7 @@ class BusinessDocument:
                                                                       'dissolved', 'restoration',
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
-                                                                      'voluntaryLiquidation', 'putBackOn',
+                                                                      'voluntaryLiquidation', 'putBackOn', 'putBackOff',
                                                                       'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
 
@@ -475,6 +475,9 @@ class BusinessDocument:
             continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing_meta['continuationOut']['continuationOutDate'])
             filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
+        elif filing_type == 'putBackOff':
+            filing_info['reason'] = BusinessDocument.\
+                _get_put_back_off_reason(filing_meta['putBackOff']['reason'])
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing_type, None, None)
@@ -630,9 +633,17 @@ class BusinessDocument:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
     @staticmethod
+    def _get_put_back_off_reason(filing_reason: str) -> str:
+        return BusinessDocument.PUT_BACK_OFF_DISPLAY[filing_reason]
+
+    @staticmethod
     def _get_legal_type_description(legal_type: str) -> str:
         corp_type = CorpType.find_by_id(legal_type)
         return corp_type.full_desc if corp_type else ''
+
+    PUT_BACK_OFF_DISPLAY = {
+        'Limited Restoration Expired': 'Dissolved due to expired Limited Restoration'
+    }
 
     FILING_SUMMARY_DISPLAY_NAME = {
         'amalgamationApplication': 'Amalgamated',
@@ -658,6 +669,7 @@ class BusinessDocument:
         'Involuntary Dissolution': 'Involuntary Dissolution',
         'voluntaryLiquidation': 'Voluntary Liquidation',
         'putBackOn': 'Correction - Put Back On',
+        'putBackOff': 'Correction - Put Back Off',
         'continuationOut': 'Continuation Out'
     }
 

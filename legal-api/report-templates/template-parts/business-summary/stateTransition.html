@@ -13,9 +13,14 @@
   {% for filing in stateFilings %}
     <tr class="no-page-break">
         <td>
-            <div class="section-sub-title">{{filing.filingName}}
+            <div class="section-sub-title">
+              {% if filing.filingType == 'putBackOff' %}
+                {{ filing.reason }}
+              {% else %}
+                {{ filing.filingName }}
+              {% endif %}
               {% if filing.limitedRestorationExpiryDate %}
-              with an Expiry Date of {{filing.limitedRestorationExpiryDate}}
+                with an Expiry Date of {{ filing.limitedRestorationExpiryDate }}
               {% endif %}
             </div>
             <div class="pt-2">
@@ -35,7 +40,8 @@
                 <div class="pt-2">
                   <span>Incorporation Number: {{ filing.identifier }}</span>
                 </div>
-              {% elif filing.filingType == 'dissolution' and filing.filingSubType == 'involuntary' %}
+              {% elif filing.filingType == 'dissolution' and filing.filingSubType == 'involuntary' or
+                filing.filingType == 'putBackOff' %}
                 <span>Effective Date:</span>
                 <span>{{ filing.effectiveDateTime }}</span>
               {% else %}
