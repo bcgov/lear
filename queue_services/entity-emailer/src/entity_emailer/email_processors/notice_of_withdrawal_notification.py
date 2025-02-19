@@ -63,12 +63,14 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+    header=(filing.json)['filing']['header']
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
-        header=(filing.json)['filing']['header'],
+        header=header,
         company_name=company_name,
         filing_date_time=leg_tmz_filing_date,
+        filing_id=header.filingId,
         effective_date_time=leg_tmz_effective_date,
         withdrawnFilingType=withdrawn_filing_display_name,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
