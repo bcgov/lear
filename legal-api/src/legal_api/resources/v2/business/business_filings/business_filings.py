@@ -37,6 +37,7 @@ from werkzeug.local import LocalProxy
 import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
+from legal_api.core.constants import REDACTED_STAFF_SUBMITTER
 from legal_api.exceptions import BusinessException
 from legal_api.models import (
     Address,
@@ -61,7 +62,7 @@ from legal_api.services import (
     namex,
     queue,
 )
-from legal_api.services.authz import is_allowed
+from legal_api.services.authz import has_roles, is_allowed
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -310,6 +311,16 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if (rv.status == Filing.Status.WITHDRAWN.value or rv.storage.withdrawal_pending) and identifier.startswith('T'):
             now_filing = ListFilingResource.get_notice_of_withdrawal(filing_json['filing']['header']['filingId'])
             filing_json['filing']['noticeOfWithdrawal'] = now_filing.json
+
+            submitter = now_filing.filing_submitter
+            if submitter and submitter.username and jwt:
+                if ListFilingResource.redact_submitter(now_filing.submitter_roles, jwt):
+                    submitter_displayname = REDACTED_STAFF_SUBMITTER
+                else:
+                    submitter_displayname = submitter.display_name or submitter.username
+
+                filing_json['filing']['noticeOfWithdrawal']['filing']['header']['submitter'] = submitter_displayname
+
         elif (rv.status in [Filing.Status.CHANGE_REQUESTED.value,
                             Filing.Status.APPROVED.value,
                             Filing.Status.REJECTED.value] and
@@ -319,6 +330,19 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing_json = {**filing_json, **CoreFiling.common_ledger_items(identifier, rv.storage)}
 
         return jsonify(rv.redacted(filing_json, jwt))
+
+    @staticmethod
+    def redact_submitter(submitter_roles: list, jwt_manager: JwtManager) -> Optional[bool]:
+        """Redact the submitter of the filing."""
+        if not (submitter_roles or jwt_manager):
+            return None
+
+        with suppress(KeyError, TypeError):
+            if (UserRoles.staff in submitter_roles
+                or UserRoles.system in submitter_roles) \
+                    and not has_roles(jwt_manager, [UserRoles.staff, ]):
+                return True
+        return False
 
     @staticmethod
     def get_payment_update(filing_dict: dict):
