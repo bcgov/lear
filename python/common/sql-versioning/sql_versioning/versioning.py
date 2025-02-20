@@ -82,7 +82,7 @@ def _is_session_modified(session):
     return False
 
 
-def _get_operation_type(session, obj, delete_orphan: False):
+def _get_operation_type(session, obj, delete_orphan=False):
     """Return the operation type for the given object within the session.
     
     :param session: The database session instance.
