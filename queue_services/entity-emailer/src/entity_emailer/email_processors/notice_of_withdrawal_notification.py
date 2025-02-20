@@ -43,7 +43,11 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     legal_type = business.get('legalType')
 
     # display company name for existing businesses and temp businesses
-    company_name = business.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+    company_name = (
+        business.get('legalName')
+        or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+        or 'Unknown Company' #fall back default value
+    )
     # record to be withdrawn --> withdrawn filing display name
     withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
     withdrawn_filing_display_name = FilingMeta.get_display_name(
@@ -92,11 +96,9 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
 
     # assign subject
     subject = 'Notice of Withdrawal filed Successfully'
-
-    legal_name = business.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
-    if legal_name and legal_name.startswith(identifier):
-        legal_name = 'Numbered Company'
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    legal_name = company_name
+    legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
+    subject = f'{legal_name} - {subject}'
 
     return {
         'recipients': recipients,
