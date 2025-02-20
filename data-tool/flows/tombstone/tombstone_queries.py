@@ -274,6 +274,7 @@ def get_business_query(corp_num, suffix):
     -- TODO: submitter_userid
     --
         c.send_ar_ind,
+        c.last_ar_reminder_year,
         to_char(c.last_ar_filed_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as last_ar_date,
     -- admin_freeze
         case

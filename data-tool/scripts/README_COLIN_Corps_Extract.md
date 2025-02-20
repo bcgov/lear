@@ -7,7 +7,7 @@
 ```
 # create empty db for the first time
 createdb -h localhost -p 5432 -U postgres -T template0 colin-mig-corps-data-test && \
-psql -h localhost -p 5432 -U postgres -d colin-mig-corps-test -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_ddl
+psql -h localhost -p 5432 -U postgres -d colin-mig-corps-data-test -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_ddl
 
 # kill connection & recreate empty db
 psql -h localhost -p 5432 -U postgres -d colin-mig-corps-data-test -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE datname = 'colin-mig-corps-data-test' AND pid <> pg_backend_pid();" && \
@@ -25,7 +25,7 @@ connection cprd -d Oracle -u <some_user> -p <some_password> -h <host_name> -P <p
 6. Register PostgreSQL driver and extract target db in  `~/.DbSchema/cli/init.sql`
 ```
 register driver PostgreSql org.postgresql.Driver jdbc:postgresql://<host>:<port>/<db> "port=5432"
-connection cprd_pg -d PostgreSql -u postgres -p <some_password> -h localhost -P <port> -D colin-mig-corps-test
+connection cprd_pg -d PostgreSql -u postgres -p <some_password> -h localhost -P <port> -D colin-mig-corps-data-test
 ```
 7. Transfer data `dbschemacli <lear-repo-base-path>/data-tool/scripts/transfer_cprd_corps.sql`
 8. Successful output will look something like following:
