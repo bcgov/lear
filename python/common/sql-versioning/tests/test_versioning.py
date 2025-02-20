@@ -177,6 +177,39 @@ def test_versioning_relationships(db, session):
     assert result_revisions[1].address.name == "Some new address"
 
 
+def test_versioning_relationships_remove(db, session):
+    """Test remove from relationship."""
+    user = User(name='test')
+    for i in range(5):
+        email = Email(name=f'email {i}')
+        user.emails.append(email)
+    session.add(user)
+    session.commit()
+
+    if existing_emails := user.emails.all():
+        for email in existing_emails:
+            user.emails.remove(email)
+    session.add(user)
+    session.commit()
+
+    user = session.query(User).one_or_none()
+    emails = user.emails.all()
+    assert not emails
+
+    emails = session.query(Email).all()
+    assert not emails
+
+    email_versions = session.query(version_class(Email))\
+        .order_by(version_class(Email).transaction_id)\
+        .all()
+    assert len(email_versions) == 10
+    for i in range(10):
+        if i < 5:
+            assert email_versions[i].operation_type == 0
+        else:
+            assert email_versions[i].operation_type == 2
+
+
 def test_versioning_delete(db, session):
     """Test deletion."""
     user = User(name='test')

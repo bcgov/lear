@@ -14,6 +14,7 @@
 """The Unit Tests for the business filing component processors."""
 import pytest
 from legal_api.models import Business
+from sql_versioning import version_class
 
 from entity_filer.filing_processors.filing_components import shares
 from tests import strip_keys_from_dict
@@ -119,5 +120,13 @@ def test_manage_share_structure__delete_shares(app, session):
     # check
     check_business = Business.find_by_internal_id(business_id)
     share_classes = check_business.share_classes.all()
-
     assert not share_classes
+
+    share_classes = session.query(ShareClass).all()
+    assert not share_classes
+
+    share_class_version = version_class(ShareClass)
+    share_class_versions = session.query(share_class_version).all()
+    assert len(share_class_versions) == 5
+    for scv in share_class_versions:
+        assert scv.operation_type == 2

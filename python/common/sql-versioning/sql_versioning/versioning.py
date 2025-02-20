@@ -47,6 +47,27 @@ def _is_obj_modified(obj):
     return False
 
 
+def _should_relationship_delete_orphan(session, obj):
+    """
+    Checks if:
+        1. This relationship is a many-to-one relationship
+        2. If the opposite direction one-to-many relationship parent object has changes
+        3. If the opposite direction one-to-many relationship has cascade=delete-orphan
+        
+    :param session: The database session instance.
+    :param obj: The object to inspect for changes.
+    :return: True if the above checks pass, otherwise False.
+    """
+    should_delete = False
+    for r in inspect(obj.__class__).relationships:
+        if r.direction.name == 'MANYTOONE' and r._reverse_property:
+            reverse_rel, *_ = r._reverse_property
+            parent_obj = inspect(obj).committed_state.get(reverse_rel.backref, None)
+            if parent_obj in session.dirty:
+                should_delete = should_delete or "delete-orphan" in inspect(reverse_rel)._cascade
+    return should_delete
+
+
 def _is_session_modified(session):
     """Check if the session contains modified versioned objects.
     
@@ -61,19 +82,20 @@ def _is_session_modified(session):
     return False
 
 
-def _get_operation_type(session, obj):
+def _get_operation_type(session, obj, delete_orphan=False):
     """Return the operation type for the given object within the session.
     
     :param session: The database session instance.
     :param obj: The object to determine the operation type.
     :return: The operation type ('I' for insert, 'U' for update, 'D' for delete), or None if unchanged.
     """
+    is_orphaned = inspect(obj)._orphaned_outside_of_session
     if obj in session.new:
         return 'I'
+    elif obj in session.deleted or (is_orphaned and delete_orphan):
+        return 'D'
     elif obj in session.dirty:
         return 'U' if _is_obj_modified(obj) else None
-    elif obj in session.deleted:
-        return 'D'
     return None
 
 
@@ -270,7 +292,8 @@ def _after_flush(session, flush_context):
     """Trigger after a flush operation to create version records for changed objects."""
     try:
         for obj in versioned_objects(session):
-            operation_type = _get_operation_type(session, obj)
+            should_delete_orphan = _should_relationship_delete_orphan(session, obj)
+            operation_type = _get_operation_type(session, obj, should_delete_orphan)
             if operation_type:
                 _create_version(session, obj, operation_type)
     except Exception as e:

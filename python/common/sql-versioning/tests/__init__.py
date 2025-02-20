@@ -41,9 +41,9 @@ class User(Base, Versioned):
     # One-to-one non-versioned relationship
     location = orm.relationship('Location', backref='user', uselist=False)
     # One-to-many versioned relationship
-    emails = orm.relationship('Email', backref='user', lazy='dynamic')
+    emails = orm.relationship('Email', backref='user', lazy='dynamic', cascade='all, delete, delete-orphan')
     # One-to-many non versioned relationship
-    items = orm.relationship('Item', backref='user', lazy='dynamic')
+    items = orm.relationship('Item', backref='user', lazy='dynamic', cascade='all, delete, delete-orphan')
 
 class Address(Base, Versioned):
     __tablename__ = 'addresses'
