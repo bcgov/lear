@@ -64,7 +64,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     filing_id = None
     # show filing ID in email template when the withdrawn record is an IA, Amalg. or a ContIn
     if business.get('identifier').startswith('T'):
-        filing_id=filing_data['filingId']
+        filing_id = filing_data['filingId']
 
     html_out = jnja_template.render(
         business=business,
