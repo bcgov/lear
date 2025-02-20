@@ -62,8 +62,9 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     header=(filing.json)['filing']['header']
     # default to None
     filing_id = None
-    if filing_type in ('incorporationApplication', 'amalgamationApplication', 'continuationApplication'):
-        filing_id=header.filingId
+    # show filing ID in email template when the withdrawn record is an IA, Amalg. or a ContIn
+    if business.get('identifier').startswith('T'):
+        filing_id=filing_data['filingId']
 
     html_out = jnja_template.render(
         business=business,
@@ -79,7 +80,6 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
-    print(html_out)
 
     # get attachments
     pdfs = _get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
