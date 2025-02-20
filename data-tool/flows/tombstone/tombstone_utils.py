@@ -34,13 +34,20 @@ def format_business_data(data: dict) -> dict:
         last_ar_date = None
         last_ar_year = None
 
+    last_ar_reminder_year = business_data['last_ar_reminder_year']
+
+    # last_ar_reminder_year can be None if send_ar_ind is false or the business is in the 1st financial year 
+    if business_data['send_ar_ind'] and last_ar_reminder_year is None:
+        last_ar_reminder_year = last_ar_year
+    
     formatted_business = {
         **business_data,
         'last_ar_date': last_ar_date,
         'last_ar_year': last_ar_year,
+        'last_ar_reminder_year': last_ar_reminder_year,
         'fiscal_year_end_date': business_data['founding_date'],
         'last_ledger_timestamp': business_data['founding_date'],
-        'last_modified': datetime.utcnow().replace(tzinfo=timezone.utc).isoformat()
+        'last_modified': datetime.now(tz=timezone.utc).isoformat()
     }
 
     return formatted_business
