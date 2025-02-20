@@ -201,6 +201,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     update_info = tombstone_data['updates']
     state_filing_index = update_info['state_filing_index']
     update_business_data = update_info['businesses']
+    filing_ids_mapper = {}
     # load placeholder filings
     for i, data in enumerate(filings_data):
         f = data['filings']
@@ -210,7 +211,11 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         f['submitter_id'] = user_id
         f['transaction_id'] = transaction_id
         f['business_id'] = business_id
+        if (withdrawn_idx := f['withdrawn_filing_id']) is not None:
+            f['withdrawn_filing_id'] = filing_ids_mapper[withdrawn_idx]
+
         filing_id = load_data(conn, 'filings', f)
+        filing_ids_mapper[i] = filing_id
 
         data['colin_event_ids']['filing_id'] = filing_id
         load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False)
@@ -324,7 +329,7 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
         return corp_num, clean_data
     except Exception as e:
         print(f'❌ Error collecting corp snapshot and filings data for {corp_num}: {repr(e)}')
-        return corp_num, None
+        return corp_num, e
 
 
 @task(name='3-Corp-Tombstone-Migrate-Task-Async')
@@ -409,7 +414,7 @@ def tombstone_flow():
             skipped = 0
             for f in data_futures:
                 corp_num, clean_data = f.result()
-                if clean_data:
+                if clean_data and not isinstance(clean_data, Exception):
                     corp_futures.append(
                         migrate_tombstone.submit(config, lear_engine, corp_num, clean_data, users_mapper)
                     )
@@ -419,7 +424,7 @@ def tombstone_flow():
                         flow_run_id,
                         corp_num,
                         ProcessingStatuses.FAILED,
-                        error="Migration failed - Skip due to data collection error"
+                        error=f"Migration failed - Skip due to data collection error: {repr(clean_data)}"
                     )
                     print(f'❗ Skip migrating {corp_num} due to data collection error.')
 

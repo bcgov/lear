@@ -190,11 +190,12 @@ FILING = {
         'colin_only': False,
         'deletion_locked': False,
         'hide_in_ledger': False, # TODO: double check when doing cleanup - dissolution (invol, admin)
-        # TODO: new columns for NoW
+        'withdrawal_pending': False,
         # FK
         'business_id': None,
         'transaction_id': None,
         'submitter_id': None,
+        'withdrawn_filing_id': None,
         # others
         'submitter_roles': None,
     },
