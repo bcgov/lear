@@ -98,7 +98,6 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         legal_name = 'Numbered Company'
     subject = f'{legal_name} - {subject}' if legal_name else subject
 
-
     return {
         'recipients': recipients,
         'requestBy': 'BCRegistries@gov.bc.ca',
@@ -108,6 +107,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
             'attachments': pdfs
         }
     }
+
 
 def _get_pdfs(
         token: str,
