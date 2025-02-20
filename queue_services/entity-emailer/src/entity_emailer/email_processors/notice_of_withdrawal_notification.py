@@ -59,7 +59,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
-    header=(filing.json)['filing']['header']
+
     # default to None
     filing_id = None
     # show filing ID in email template when the withdrawn record is an IA, Amalg. or a ContIn
@@ -69,7 +69,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
-        header=header,
+        header=(filing.json)['filing']['header'],
         company_name=company_name,
         filing_date_time=leg_tmz_filing_date,
         filing_id=filing_id,
