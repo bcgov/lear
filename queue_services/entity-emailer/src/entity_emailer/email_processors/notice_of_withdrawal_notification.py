@@ -40,12 +40,15 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
 
     # get template variables from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
+    legal_type = business.get('legalType')
 
-    # display company name only for existing businesses
-    if business.get('identifier').startswith('T'):
-        company_name = None
-    else:
-        company_name = business.get('legalName')
+    # display company name for existing businesses and temp businesses
+    company_name = (
+        business.get('legalName')
+        or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+        # fall back default value
+        or 'Unknown Company'
+    )
     # record to be withdrawn --> withdrawn filing display name
     withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
     withdrawn_filing_display_name = FilingMeta.get_display_name(
@@ -61,12 +64,20 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+
+    # default to None
+    filing_id = None
+    # show filing ID in email template when the withdrawn record is an IA, Amalg. or a ContIn
+    if business.get('identifier').startswith('T'):
+        filing_id = filing_data['filingId']
+
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
         header=(filing.json)['filing']['header'],
         company_name=company_name,
         filing_date_time=leg_tmz_filing_date,
+        filing_id=filing_id,
         effective_date_time=leg_tmz_effective_date,
         withdrawnFilingType=withdrawn_filing_display_name,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
@@ -86,11 +97,9 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
 
     # assign subject
     subject = 'Notice of Withdrawal filed Successfully'
-
-    legal_name = business.get('legalName', None)
+    legal_name = company_name
     legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
-    if not identifier.startswith('T'):
-        subject = f'{legal_name} - {subject}' if legal_name else subject
+    subject = f'{legal_name} - {subject}'
 
     return {
         'recipients': recipients,
