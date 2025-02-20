@@ -62,7 +62,7 @@ from legal_api.services import (
     namex,
     queue,
 )
-from legal_api.services.authz import has_roles, is_allowed
+from legal_api.services.authz import is_allowed
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -314,7 +314,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
             submitter = now_filing.filing_submitter
             if submitter and submitter.username and jwt:
-                if ListFilingResource.redact_submitter(now_filing.submitter_roles, jwt):
+                if rv.redact_submitter(now_filing.submitter_roles, jwt):
                     submitter_displayname = REDACTED_STAFF_SUBMITTER
                 else:
                     submitter_displayname = submitter.display_name or submitter.username
@@ -330,19 +330,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing_json = {**filing_json, **CoreFiling.common_ledger_items(identifier, rv.storage)}
 
         return jsonify(rv.redacted(filing_json, jwt))
-
-    @staticmethod
-    def redact_submitter(submitter_roles: list, jwt_manager: JwtManager) -> Optional[bool]:
-        """Redact the submitter of the filing."""
-        if not (submitter_roles or jwt_manager):
-            return None
-
-        with suppress(KeyError, TypeError):
-            if (UserRoles.staff in submitter_roles
-                or UserRoles.system in submitter_roles) \
-                    and not has_roles(jwt_manager, [UserRoles.staff, ]):
-                return True
-        return False
 
     @staticmethod
     def get_payment_update(filing_dict: dict):
