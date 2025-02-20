@@ -41,13 +41,9 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     # get template variables from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     legal_type = business.get('legalType')
-    name_request = filing.json['filing'][f'{filing_type}']['nameRequest']
 
     # display company name for existing businesses and temp businesses
-    if business.get('identifier').startswith('T'):
-        company_name = name_request.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
-    else:
-        company_name = business.get('legalName')
+    company_name = business.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
     # record to be withdrawn --> withdrawn filing display name
     withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
     withdrawn_filing_display_name = FilingMeta.get_display_name(
@@ -83,6 +79,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
+    print(html_out)
 
     # get attachments
     pdfs = _get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
@@ -96,13 +93,11 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     # assign subject
     subject = 'Notice of Withdrawal filed Successfully'
 
-    legal_name = business.get('legalName', None)
-    legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
-    if not identifier.startswith('T'):
-        subject = f'{legal_name} - {subject}' if legal_name else subject
-    else:
-        company_name = name_request.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
-        subject = f'{company_name} - {subject}' if company_name else subject
+    legal_name = business.get('legalName') or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+    if legal_name and legal_name.startswith(identifier):
+        legal_name = 'Numbered Company'
+    subject = f'{legal_name} - {subject}' if legal_name else subject
+
 
     return {
         'recipients': recipients,
