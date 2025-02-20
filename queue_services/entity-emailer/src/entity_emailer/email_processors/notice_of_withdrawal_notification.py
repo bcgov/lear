@@ -109,7 +109,6 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         }
     }
 
-
 def _get_pdfs(
         token: str,
         business: dict,
