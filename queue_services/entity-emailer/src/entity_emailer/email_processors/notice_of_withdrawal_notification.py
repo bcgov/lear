@@ -46,7 +46,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     company_name = (
         business.get('legalName')
         or Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
-        #fall back default value
+        # fall back default value
         or 'Unknown Company'
     )
     # record to be withdrawn --> withdrawn filing display name
