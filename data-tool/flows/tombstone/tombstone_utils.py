@@ -677,13 +677,15 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             state_change = False
         if filing_type == 'changeOfName':
             name_change = True
+            old_name = data['old_corp_name'].replace("'", "''")
+            new_name = data['new_corp_name'].replace("'", "''")
             filing_json['filing']['changeOfName'] = {
-                'fromLegalName': data['old_corp_name'],
-                'toLegalName': data['new_corp_name'],
+                'fromLegalName': old_name,
+                'toLegalName': new_name,
             }
             meta_data['changeOfName'] = {
-                'fromLegalName': data['old_corp_name'],
-                'toLegalName': data['new_corp_name'],
+                'fromLegalName': old_name,
+                'toLegalName': new_name,
             }
         else:
             name_change = False
@@ -735,11 +737,11 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
                 'fromLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][0],
                 'toLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][1],
             }
-        if (old_corp_name := data['old_corp_name']) and (new_corp_name := data['new_corp_name']):
+        if (old_corp_name := data.get('old_corp_name')) and (new_corp_name := data.get('new_corp_name')):
             meta_data['alteration'] = {
                 **meta_data['alteration'],
-                'fromLegalName': old_corp_name,
-                'toLegalName': new_corp_name,
+                'fromLegalName': old_corp_name.replace("'", "''"),
+                'toLegalName': new_corp_name.replace("'", "''"),
             }
 
     if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:
@@ -773,6 +775,10 @@ def get_colin_display_name(data: dict) -> str:
     # Conversion Ledger
     elif event_file_type == EventFilings.FILE_CONVL.value:
         name = data['cl_ledger_title_txt']
+
+    # Escape any single quotes in the name
+    if name:
+        name = name.replace("'", "''")
 
     return name
 
