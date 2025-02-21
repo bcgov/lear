@@ -45,7 +45,6 @@ from legal_api.models.db import VersioningProxy
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.models.db import VersioningProxy
 
 from .bp import bp
 
@@ -288,9 +287,9 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     """Set shares from holding/primary business."""
     # Copy shares
     share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
-                                                                           primary_or_holding_business.id)
+                                                                             primary_or_holding_business.id)
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
-    
+
     # Get resolution dates using versioned query
     resolution_version = VersioningProxy.version_class(db.session(), Resolution)
     resolutions_query = (
@@ -305,7 +304,7 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
         .order_by(resolution_version.transaction_id)
         .all()
     )
-    
+
     business_dates = [res.resolution_date.isoformat() for res in resolutions_query]
     if business_dates:
         amalgamation_filing['shareStructure']['resolutionDates'] = business_dates
