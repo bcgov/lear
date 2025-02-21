@@ -980,7 +980,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            filter(not_(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.WITHDRAWN.value]))). \
             order_by(desc(Filing.filing_date)). \
             all()
         return filings
@@ -1024,7 +1024,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            filter(not_(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.WITHDRAWN.value]))). \
             filter(not_(Filing._status.in_(excluded_statuses))). \
             order_by(desc(Filing.effective_date)). \
             all()
