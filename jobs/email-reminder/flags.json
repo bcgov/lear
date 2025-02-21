@@ -1,6 +1,6 @@
 {
     "flagValues": {
-        "disable-specific-service-provider": true,
+        "enable-bc-ccc-ulc": false,
         "db-versioning": {
             "legal-api": true,
             "emailer": true,
@@ -8,7 +8,7 @@
             "entity-bn": true,
             "digital-credentials": false,
             "dissolutions-job": false,
-            "furnishings-job": false,
+            "furnishings-job": true,
             "emailer-reminder-job": true
         }
     }
