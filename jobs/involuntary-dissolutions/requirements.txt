@@ -30,9 +30,6 @@ six==1.15.0
 urllib3==1.26.11
 requests==2.25.1
 cachelib==0.1.1
-# install updated legal-api from feature branch for development, 
-# TODO - change it back when the db versioning feature branch merged to main
-git+https://github.com/bcgov/lear.git@feature-db-versioning#egg=legal_api&subdirectory=legal-api
-# git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
-git+https://github.com/bcgov/lear.git@feature-db-versioning#egg=sql-versioning&subdirectory=python/common/sql-versioning
+git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
+git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
 git+https://github.com/bcgov/business-schemas.git@2.15.38#egg=registry_schemas
