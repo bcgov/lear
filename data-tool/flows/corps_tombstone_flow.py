@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import math
 from datetime import datetime, timedelta
 
@@ -7,6 +9,7 @@ from common.auth_service import AuthService
 from prefect import flow, task, serve
 from prefect.futures import wait
 from prefect.context import get_run_context
+from prefect.task_runners import ConcurrentTaskRunner
 from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
 
@@ -356,7 +359,9 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
 @flow(
     name='Corps-Tombstone-Migrate-Flow',
     log_prints=True,
-    persist_result=False
+    persist_result=False,
+    # use ConcurrentTaskRunner when using work pool based deployments
+    # task_runner=ConcurrentTaskRunner(max_workers=35)
 )
 def tombstone_flow():
     """Entry of tombstone pipeline"""
@@ -461,7 +466,7 @@ def tombstone_flow():
 
 
 if __name__ == "__main__":
-    tombstone_flow()
+   tombstone_flow()
 
     # # Create deployment - only intended to test locally for parallel flows
     # deployment = tombstone_flow.to_deployment(
@@ -472,3 +477,51 @@ if __name__ == "__main__":
     #
     # # Start serving the deployment
     # serve(deployment)
+
+
+    # Work pool based deployments
+    #
+    # Only one of deployments 1-3 should be running at any given time.
+    #
+    # Note: the following deployment is used strictly for maximizing local resource usage for production
+    # dry runs and the actual final tombstone migration to the production environment.  If there is no need
+    # to run multiple parallel flows, the following set-ups are not req'd.
+
+    # flow_source = Path(__file__).parent
+
+    # # 1. TINGs deployment setup
+    # # subquery = subqueries[1]
+    # # ensure "and cs.state_type_cd = 'ACT'" is commented out as TINGS are historical
+    # tombstone_flow.from_source(
+    #     source=flow_source,
+    #     entrypoint="corps_tombstone_flow.py:tombstone_flow"
+    # ).deploy(
+    #     name="tombstone-tings-deployment",
+    #     tags=["tombstone-tings-migration"],
+    #     work_pool_name="tombstone-tings-pool",
+    #     interval=timedelta(seconds=60)  # Run every x seconds
+    # )
+
+    # # 2. TEDs deployment setup
+    # # subquery = subqueries[2]
+    # tombstone_flow.from_source(
+    #     source=flow_source,
+    #     entrypoint="corps_tombstone_flow.py:tombstone_flow"
+    # ).deploy(
+    #     name="tombstone-teds-deployment",
+    #     tags=["tombstone-teds-migration"],
+    #     work_pool_name="tombstone-teds-pool",
+    #     interval=timedelta(seconds=60)  # Run every x seconds
+    # )
+
+    # # 3. OTHERs deployment setup
+    # # subquery = subqueries[3]
+    # tombstone_flow.from_source(
+    #     source=flow_source,
+    #     entrypoint="corps_tombstone_flow.py:tombstone_flow"
+    # ).deploy(
+    #     name="tombstone-deployment",
+    #     tags=["tombstone-migration"],
+    #     work_pool_name="tombstone-pool",
+    #     interval=timedelta(seconds=70)  # Run every x seconds
+    # )

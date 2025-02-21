@@ -36,10 +36,10 @@ def format_business_data(data: dict) -> dict:
 
     last_ar_reminder_year = business_data['last_ar_reminder_year']
 
-    # last_ar_reminder_year can be None if send_ar_ind is false or the business is in the 1st financial year 
+    # last_ar_reminder_year can be None if send_ar_ind is false or the business is in the 1st financial year
     if business_data['send_ar_ind'] and last_ar_reminder_year is None:
         last_ar_reminder_year = last_ar_year
-    
+
     formatted_business = {
         **business_data,
         'last_ar_date': last_ar_date,
@@ -185,7 +185,7 @@ def format_share_classes_data(data: dict) -> list[dict]:
         priority = int(share_class_info['ssc_share_class_id']) if share_class_info['ssc_share_class_id'] else None
         max_shares = int(share_class_info['ssc_share_quantity']) if share_class_info['ssc_share_quantity'] else None
         par_value = float(share_class_info['ssc_par_value_amt']) if share_class_info['ssc_par_value_amt'] else None
-        
+
         # TODO: map NULL or custom input value of ssc_other_currency
         if (currency := share_class_info['ssc_currency_typ_cd']) == 'OTH':
             currency = share_class_info['ssc_other_currency']
@@ -295,7 +295,7 @@ def format_filings_data(data: dict) -> list[dict]:
             print(f'❗ Skip event filing type: {event_file_type}')
             unsupported_event_file_types.add(event_file_type)
             continue
-        
+
         # get converted filing_type and filing_subtype
         if raw_filing_type == 'conversion':
             if isinstance(raw_filing_subtype, tuple):
@@ -409,7 +409,7 @@ def format_amalgamations_data(data: dict, event_id: Decimal, amalgamation_date: 
 
     formatted_amalgmation = copy.deepcopy(AMALGAMATION)
     amalgamation_info = matched_amalgamations[0]
-    
+
     formatted_amalgmation['amalgamations']['amalgamation_date'] = amalgamation_date
     formatted_amalgmation['amalgamations']['court_approval'] = bool(amalgamation_info['f_court_approval'])
 
@@ -547,7 +547,7 @@ def format_in_dissolution_data(data: dict) -> dict:
         }
 
         furnishing['furnishing_type'] = 'MAIL'  # as placeholder
-        furnishing['furnishing_name'] = 'DISSOLUTION_COMMENCEMENT_NO_AR' if overdue_ar\
+        furnishing['furnishing_name'] = 'DISSOLUTION_COMMENCEMENT_NO_AR' if overdue_ar \
             else 'DISSOLUTION_COMMENCEMENT_NO_TR'
     else:
         # stage 2
@@ -573,7 +573,7 @@ def format_users_data(users_data: list) -> list:
         user = copy.deepcopy(USER)
         event_file_types = x['event_file_types'].split(',')
         # skip users if all event_file_type is unsupported or not users for staff comments
-        if not any(get_target_filing_type(ef)[0] for ef in event_file_types)\
+        if not any(get_target_filing_type(ef)[0] for ef in event_file_types) \
                 and not any(ef == 'STAFF_COMMENT' for ef in event_file_types):
             continue
 
@@ -640,7 +640,7 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
     if filing_type == 'putBackOn':
         value = None
     elif filing_type == 'restoration':
-        if key == 'restoration_expiry_date' and\
+        if key == 'restoration_expiry_date' and \
                 filing_subtype in ['limitedRestoration', 'limitedRestorationExtension']:
             value = trigger_date
         else:
