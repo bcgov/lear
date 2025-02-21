@@ -109,7 +109,6 @@ def get_completed_filings_for_colin():
                 current_app.logger.error(f'dissolution: filingId={filing.id}, missing batch processing info')
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json['filing']['header']['name'] = None
-
         filings.append(filing_json)
     return jsonify({'filings': filings}), HTTPStatus.OK
 
@@ -285,11 +284,28 @@ def _set_offices(primary_or_holding_business, amalgamation_filing, transaction_i
 
 
 def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id):
-    # copy shares
+    """Set shares from holding/primary business."""
+    # Copy shares
     share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
                                                                              primary_or_holding_business.id)
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
-    business_dates = [item.resolution_date.isoformat() for item in primary_or_holding_business.resolutions]
+
+    # Get resolution dates using versioned query
+    resolution_version = VersioningProxy.version_class(db.session(), Resolution)
+    resolutions_query = (
+        db.session.query(resolution_version.resolution_date)
+        .filter(resolution_version.transaction_id <= transaction_id)  # Get records valid at or before the transaction
+        .filter(resolution_version.operation_type != 2)  # Exclude deleted records
+        .filter(resolution_version.business_id == primary_or_holding_business.id)
+        .filter(or_(
+            resolution_version.end_transaction_id.is_(None),  # Records not yet ended
+            resolution_version.end_transaction_id > transaction_id  # Records ended after our transaction
+        ))
+        .order_by(resolution_version.transaction_id)
+        .all()
+    )
+
+    business_dates = [res.resolution_date.isoformat() for res in resolutions_query]
     if business_dates:
         amalgamation_filing['shareStructure']['resolutionDates'] = business_dates
 
