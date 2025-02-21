@@ -20,7 +20,7 @@ jsonschema==4.19.0
 pyasn1==0.4.8
 pyrsistent==0.17.3
 python-dotenv==0.17.1
-python-jose==3.2.0
+python-jose==3.4.0
 pytz==2021.1
 requests==2.25.1
 rsa==4.7.2
