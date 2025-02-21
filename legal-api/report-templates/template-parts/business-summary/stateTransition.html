@@ -35,7 +35,8 @@
                 <div class="pt-2">
                   <span>Incorporation Number: {{ filing.identifier }}</span>
                 </div>
-              {% elif filing.filingType == 'dissolution' and filing.filingSubType == 'involuntary' %}
+              {% elif (filing.filingType == 'dissolution' and filing.filingSubType == 'involuntary') or
+                filing.filingType == 'putBackOff' %}
                 <span>Effective Date:</span>
                 <span>{{ filing.effectiveDateTime }}</span>
               {% else %}
