@@ -27,11 +27,6 @@ rsa==4.7.2
 sentry-sdk==1.20.0
 six==1.15.0
 urllib3==1.26.11
-
-# install updated legal-api from feature branch for development, 
-# TODO - change it back when the db versioning feature branch merged to main
-git+https://github.com/bcgov/lear.git@feature-db-versioning#egg=legal_api&subdirectory=legal-api
-# git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
-
-git+https://github.com/bcgov/lear.git@feature-db-versioning#egg=sql-versioning&subdirectory=python/common/sql-versioning
+git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
+git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
 git+https://github.com/bcgov/business-schemas.git@2.18.31#egg=registry_schemas
