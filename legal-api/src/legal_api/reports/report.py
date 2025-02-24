@@ -619,8 +619,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if expiry_date := filing['restoration'].get('expiry'):
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
-            expiry_date = expiry_date.replace(minute=1)
-            filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_string(expiry_date)
+            filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_expiry_string_1159(expiry_date)
 
     def _format_consent_continuation_out_data(self, filing):
         cco = ConsentContinuationOut.get_by_filing_id(self._filing.id)
