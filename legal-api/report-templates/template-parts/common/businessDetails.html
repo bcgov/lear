@@ -78,8 +78,8 @@
                   <div>{{business.identifier}}</div>
                {% endif %}
                <div class="pt-2">{{effective_date_time}}</div>
-               {% if header.isFutureEffective %}
-                  <div class="pt-2">{{effective_date_time}}</div>
+               {% if not business or business.identifier.startswith('T') %}
+                  <div class="pt-2">&nbsp;</div>
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
@@ -140,8 +140,8 @@
                   <div>{{business.identifier}}</div>
                {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
-               {% if header.isFutureEffective %}
-                  <div class="pt-2">{{effective_date_time}}</div> 
+               {% if not business or business.identifier.startswith('T') %}
+                  <div class="pt-2">&nbsp;</div> 
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
@@ -350,7 +350,7 @@
             <td>
                {% if not business or business.identifier.startswith('T') %}
                   <div>{{ filing_date_time }}</div>
-                  <div class="pt-2">{{ effective_date_time }}</div>
+                  <div class="pt-2">&nbsp;</div>
                {% else %}
                   <div>{{business.identifier}}</div>
                   <div class="pt-2">{{ filing_date_time }}</div>
