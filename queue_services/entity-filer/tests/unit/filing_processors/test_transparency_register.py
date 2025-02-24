@@ -36,6 +36,7 @@ from datetime import datetime
 
 import pytest
 from legal_api.models import Filing
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_processors import transparency_register
 from tests.unit import create_business, create_filing
@@ -49,12 +50,12 @@ from tests.unit import create_business, create_filing
 def test_transparency_register_filing_process_annual(app, session, test_name, sub_type, expected):
     """Assert that the transparency register object is correctly populated to model objects."""
     # setup
-    effective_date = datetime(2024, 3, 2)
+    effective_date = LegislationDatetime.as_legislation_timezone(datetime(2024, 3, 2))
     filing = {
         'filing': {
             'header': {
                 'name': 'transparencyRegister',
-                'date': (datetime.now()).isoformat(),
+                'date': LegislationDatetime.datenow().isoformat(),
                 'effectiveDate': effective_date.isoformat(),
                 'certifiedBy': 'test'
             },
