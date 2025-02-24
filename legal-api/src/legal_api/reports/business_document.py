@@ -323,7 +323,7 @@ class BusinessDocument:
                                                                       'dissolved', 'restoration',
                                                                       'voluntaryDissolution',
                                                                       'Involuntary Dissolution',
-                                                                      'voluntaryLiquidation', 'putBackOn',
+                                                                      'voluntaryLiquidation', 'putBackOn', 'putBackOff',
                                                                       'continuationOut']):
             state_filings.append(self._format_state_filing(filing))
 
@@ -445,7 +445,8 @@ class BusinessDocument:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing_type,
                                           filing_meta['dissolution']['dissolutionType'],
-                                          self._business.legal_type)
+                                          self._business.legal_type,
+                                          None)
             if self._business.legal_type in ['SP', 'GP'] and filing_meta['dissolution']['dissolutionType'] == \
                     'voluntary':
                 filing_info['dissolution_date_str'] = LegislationDatetime.as_legislation_timezone_from_date_str(
@@ -454,14 +455,16 @@ class BusinessDocument:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing_type,
                                           filing_sub_type,
-                                          self._business.legal_type)
+                                          self._business.legal_type,
+                                          None)
             if filing_sub_type in ['limitedRestoration', 'limitedRestorationExtension']:
                 expiry_date = filing_meta['restoration']['expiry']
                 expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
                 expiry_date = expiry_date.replace(minute=1)
-                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.format_as_report_string(expiry_date)
+                filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.\
+                    format_as_report_expiry_string_1159(expiry_date)
         elif filing_type == 'continuationOut':
-            filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None)
+            filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None, None)
 
             country_code = filing_meta['continuationOut']['country']
             region_code = filing_meta['continuationOut']['region']
@@ -475,9 +478,18 @@ class BusinessDocument:
             continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing_meta['continuationOut']['continuationOutDate'])
             filing_info['continuationOutDate'] = continuation_out_date.strftime(OUTPUT_DATE_FORMAT)
+        elif filing_type == 'putBackOff':
+            put_back_off = filing_meta.get('putBackOff')
+            reason = put_back_off.get('reason')
+            expiry_date_str = put_back_off.get('expiryDate')
+            filing_info['filingName'] = BusinessDocument.\
+                _get_summary_display_name(filing_type, None, None, reason)
+            filing_info['reason'] = reason
+            expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date_str)
+            filing_info['expiryDate'] = expiry_date.strftime('%B %d, %Y')
         else:
             filing_info['filingName'] = BusinessDocument.\
-                _get_summary_display_name(filing_type, None, None)
+                _get_summary_display_name(filing_type, None, None, None)
         return filing_info
 
     def _set_amalgamation_details(self, business: dict):
@@ -615,7 +627,9 @@ class BusinessDocument:
     @staticmethod
     def _get_summary_display_name(filing_type: str,
                                   filing_sub_type: Optional[str],
-                                  legal_type: Optional[str]) -> str:
+                                  legal_type: Optional[str],
+                                  reason: Optional[str]
+                                  ) -> str:
         if filing_type == 'dissolution':
             if filing_sub_type == 'voluntary':
                 if legal_type in ['SP', 'GP']:
@@ -626,6 +640,8 @@ class BusinessDocument:
                 return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
         elif filing_type == 'restoration':
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][filing_sub_type]
+        elif filing_type == 'putBackOff':
+            return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type][reason]
         else:
             return BusinessDocument.FILING_SUMMARY_DISPLAY_NAME[filing_type]
 
@@ -658,6 +674,9 @@ class BusinessDocument:
         'Involuntary Dissolution': 'Involuntary Dissolution',
         'voluntaryLiquidation': 'Voluntary Liquidation',
         'putBackOn': 'Correction - Put Back On',
+        'putBackOff': {
+            'Limited Restoration Expired': 'Dissolved due to expired Limited Restoration'
+        },
         'continuationOut': 'Continuation Out'
     }
 

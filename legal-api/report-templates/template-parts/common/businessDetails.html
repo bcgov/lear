@@ -42,16 +42,24 @@
                  </div>
                  <div class="pt-2">{{report_date_time}}</div>
                  <div class="pt-2">
-                   <span class="capitalize-text">{{business.state}}</span>
-                   {% if business.state in ('HISTORICAL', 'LIQUIDATION')  and stateFilings %}
-                    <span> - </span>
-                    {% if business.legalType in ['GP', 'SP'] and business.state == 'HISTORICAL' %}
-                        <span>Dissolved</span>
-                    {% else %}
-                        <span>{{stateFilings[0].filingName}}</span>
-                    {% endif %}
-                    <span> - Effective {{stateFilings[0].effectiveDateTime}}</span>
-                   {% endif %}
+                     <span class="capitalize-text">{{business.state}}</span>
+                     {% if business.state in ('HISTORICAL', 'LIQUIDATION') and stateFilings %}
+                         <span> - </span>
+                         {% if business.state == 'HISTORICAL' %}
+                             {% if business.legalType in ['GP', 'SP'] %}
+                                 <span>Dissolved</span>
+                              {% else %}
+                                 {% set filing = stateFilings[0] %}
+                                 {% if filing.filingType == 'putBackOff' %}
+                                     <span>{{filing.reason}} on {{filing.expiryDate}}</span>
+                                 {% else %}
+                                     <span>{{filing.filingName}} - Effective {{filing.effectiveDateTime}}</span>
+                                 {% endif %}
+                             {% endif %}
+                         {% endif %}
+                     {% endif %}
+                 </div>
+                 
                  </div>
               </td>
          {% elif header.reportType == 'amalgamationApplication' %}
