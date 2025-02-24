@@ -323,7 +323,11 @@ def format_filings_data(data: dict) -> list[dict]:
         if not (user_id := x['u_user_id']):
             user_id = x['u_full_name'] if x['u_full_name'] else None
 
-        if raw_filing_type == 'conversion' or raw_filing_subtype == 'involuntary':
+        if (
+            raw_filing_type == 'conversion'
+            or raw_filing_subtype == 'involuntary'
+            or (raw_filing_type == 'putBackOff' and event_file_type == 'SYSDL_NULL')
+        ):
             hide_in_ledger = True
         else:
             hide_in_ledger = False
@@ -639,6 +643,11 @@ def get_target_filing_type(event_file_type: str) -> tuple[str, str]:
 def get_business_update_value(key: str, effective_date: str, trigger_date: str, filing_type: str, filing_subtype: str) -> str:
     if filing_type == 'putBackOn':
         value = None
+    elif filing_type == 'putBackOff':
+        if key == 'restoration_expiry_date':
+            value = None
+        else:
+            value = effective_date
     elif filing_type == 'restoration':
         if key == 'restoration_expiry_date' and \
                 filing_subtype in ['limitedRestoration', 'limitedRestorationExtension']:
@@ -740,6 +749,15 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
                 **meta_data['alteration'],
                 'fromLegalName': old_corp_name,
                 'toLegalName': new_corp_name,
+            }
+    elif filing_type == 'putBackOff':
+        if (event_file_type := data['event_file_type']) == 'SYSDL_NULL':
+            filing_json['filing']['putBackOff'] = {
+                'details': 'Put back off filing due to expired limited restoration.'
+            }
+            meta_data['putBackOff'] = {
+                'reason': 'Limited Restoration Expired',
+                'expiryDate': effective_date[:10]
             }
 
     if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:
