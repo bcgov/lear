@@ -86,8 +86,6 @@ class EventFilings(str, Enum):
     FILE_CO_DI = 'FILE_CO_DI'
     FILE_CO_DO = 'FILE_CO_DO'
     FILE_CO_LI = 'FILE_CO_LI'
-    FILE_CO_PF = 'FILE_CO_PF'
-    FILE_CO_PO = 'FILE_CO_PO'
     FILE_CO_RM = 'FILE_CO_RM'
     FILE_CO_RR = 'FILE_CO_RR'
     FILE_CO_SS = 'FILE_CO_SS'
@@ -120,8 +118,6 @@ class EventFilings(str, Enum):
     FILE_ICORC = 'FILE_ICORC'
 
     # TODO: Legacy Other - unsupported
-    FILE_AM_PF = 'FILE_AM_PF'
-    FILE_AM_PO = 'FILE_AM_PO'
     FILE_AM_TR = 'FILE_AM_TR'
 
     # TODO: Liquidation - unsupported
@@ -129,6 +125,15 @@ class EventFilings(str, Enum):
 
     # TODO: Notice of Withdrawal - unsupported
     FILE_NWITH = 'FILE_NWITH'
+
+    # Put Back Off
+    SYSDL_NULL = 'SYSDL_NULL'
+    FILE_AM_PF = 'FILE_AM_PF'
+    FILE_CO_PF = 'FILE_CO_PF'
+
+    # Put Back On
+    FILE_AM_PO = 'FILE_AM_PO'
+    FILE_CO_PO = 'FILE_CO_PO'
 
     # Registrar's Notation
     FILE_REGSN = 'FILE_REGSN'
@@ -228,8 +233,6 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CO_DI: 'correction',
     EventFilings.FILE_CO_DO: 'correction',
     EventFilings.FILE_CO_LI: 'correction',
-    EventFilings.FILE_CO_PF: 'correction',
-    EventFilings.FILE_CO_PO: 'correction',
     EventFilings.FILE_CO_RM: 'correction',
     EventFilings.FILE_CO_RR: 'correction',
     EventFilings.FILE_CO_SS: 'correction',
@@ -256,13 +259,18 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_ICORC: 'incorporationApplication',
 
     # TODO: Legacy Other - unsupported
-    EventFilings.FILE_AM_PF: 'legacyOther',
-    EventFilings.FILE_AM_PO: 'legacyOther',
     EventFilings.FILE_AM_TR: 'legacyOther',
 
     # TODO: Liquidation - unsupported
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
+
+    EventFilings.SYSDL_NULL: 'putBackOff',
+    EventFilings.FILE_AM_PF: 'putBackOff',
+    EventFilings.FILE_CO_PF: 'putBackOff',
+
+    EventFilings.FILE_AM_PO: 'putBackOn',
+    EventFilings.FILE_CO_PO: 'putBackOn',
 
     EventFilings.FILE_REGSN: 'registrarsNotation',
     EventFilings.FILE_REGSO: 'registrarsOrder',
@@ -333,8 +341,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_CO_DI: 'Correction - Director',
     EventFilings.FILE_CO_DO: 'Correction - Dissolved Office',
     EventFilings.FILE_CO_LI: 'Correction - Ledger Information',
-    EventFilings.FILE_CO_PF: 'Correction - Put Back Off',
-    EventFilings.FILE_CO_PO: 'Correction - Put Back On',
     EventFilings.FILE_CO_RM: 'Correction - Receiver or Receiver Manager',
     EventFilings.FILE_CO_RR: 'Correction - Registered and Records Offices',
     EventFilings.FILE_CO_SS: 'Correction - Share Structure',
@@ -363,8 +369,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_ICORC: 'Incorporation Application for a Community Contribution Company',
 
     # TODO: Legacy Other - unsupported
-    EventFilings.FILE_AM_PF: 'Amendment - Put Back Off',
-    EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
     EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
@@ -390,6 +394,13 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     # CO_LQ: 'Correction - Liquidator'
 
     EventFilings.FILE_NWITH: 'Notice of Withdrawal',
+
+    EventFilings.SYSDL_NULL: None,
+    EventFilings.FILE_AM_PF: 'Amendment - Put Back Off',
+    EventFilings.FILE_CO_PF: 'Correction - Put Back Off',
+    
+    EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
+    EventFilings.FILE_CO_PO: 'Correction - Put Back On',
 
     EventFilings.FILE_REGSN: "Registrar''s Notation",
     EventFilings.FILE_REGSO: "Registrar''s Order",
@@ -418,6 +429,7 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     # TODO: 'continuation_out_date' - continuation out
     'continuationIn': ['last_coa_date', 'last_cod_date'],
     'dissolution': ['dissolution_date'],
+    'putBackOff': ['restoration_expiry_date', 'dissolution_date'],
     'putBackOn': ['dissolution_date'],
     'restoration': ['dissolution_date', 'restoration_expiry_date'],
 }
@@ -426,6 +438,7 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
 LEAR_STATE_FILINGS = [
     'dissolution',
     'restoration',
+    'putBackOff',
     'putBackOn',
     'continuationOut',
     # TODO: other state filings that lear doesn't support for now e.g. liquidation
