@@ -320,7 +320,7 @@ def test_construct_task_list_ar(session, client, jwt, test_name, identifier, fou
 ])
 def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier, founding_date, last_ar_date,
                                 legal_type, last_tr_date, tr_start_date, initial_date, restored_date, expected):
-    """Assert that construct_task_list returns the correct number of AR to be filed."""
+    """Assert that construct_task_list returns the correct items concerning TR and AR filings."""
     from legal_api.resources.v2.business.business_tasks import construct_task_list
 
     # tests expect current date to be in 2025. Adjust accordingly for the current year (freezetime only works for some things)
