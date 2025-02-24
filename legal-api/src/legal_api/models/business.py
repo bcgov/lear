@@ -204,6 +204,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'last_ledger_timestamp',
             'last_modified',
             'last_remote_ledger_id',
+            'last_tr_year',
             'legal_name',
             'legal_type',
             'restriction_ind',
@@ -247,6 +248,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
     last_ar_year = db.Column('last_ar_year', db.Integer)
     last_ar_reminder_year = db.Column('last_ar_reminder_year', db.Integer)
+    last_tr_year = db.Column('last_tr_year', db.Integer)
     association_type = db.Column('association_type', db.String(50))
     state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
     state_filing_id = db.Column('state_filing_id', db.Integer)
@@ -332,6 +334,84 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             last_anniversary = self.last_ar_date
 
         return last_anniversary + datedelta.datedelta(years=1)
+
+    @property
+    def next_annual_tr_due_datetime(self) -> datetime:
+        """Retrieve the next annual TR filing due datetime for the business."""
+        due_year_offset = 1
+        # NOTE: Converting to pacific time to ensure we get the right date
+        #       for comparisons and when replacing time at the end
+        founding_datetime = LegislationDatetime.as_legislation_timezone(self.founding_date)
+
+        tr_start_datetime = None
+        if tr_start_date := current_app.config.get('TR_START_DATE', None):
+            tr_start_datetime = LegislationDatetime.as_legislation_timezone_from_date(
+                datetime.fromisoformat(tr_start_date))
+
+        last_restoration_datetime = None
+        if restoration_filing := Filing.get_most_recent_filing(self.id, 'restoration'):
+            if restoration_filing.effective_date:
+                last_restoration_datetime = LegislationDatetime.as_legislation_timezone(
+                    restoration_filing.effective_date)
+            else:
+                last_restoration_datetime = LegislationDatetime.as_legislation_timezone(
+                    restoration_filing.filing_date)
+
+        if (
+            last_restoration_datetime and
+            last_restoration_datetime.year > (self.last_tr_year or tr_start_datetime.year or 0)
+        ):
+            # Set offset based on the year of the restoration
+            # NOTE: Currently could end up being due before the initial filing - policy still getting worked out
+            due_year_offset = last_restoration_datetime.year - founding_datetime.year
+            if (
+                last_restoration_datetime.month > founding_datetime.month or
+                (
+                    last_restoration_datetime.month == founding_datetime.month and
+                    last_restoration_datetime.day >= founding_datetime.day
+                )
+            ):
+                # Month/day of the founding date has already passed for this year so add 1
+                due_year_offset += 1
+
+        elif self.last_tr_year:
+            # i.e. founding_date.year=2023, last_tr_year=2024, then due_year_offset=2 and next due date for 2025
+            due_year_offset = (self.last_tr_year - founding_datetime.year) + 1
+
+        elif tr_start_datetime:
+            # Case examples:
+            # ---- Founded before TR start, month/day are earlier or the same
+            #   -> tr_start_date=2025-02-01, founding_date=2023-01-01..,
+            #      then due_year_offset=3 and next due date for 2026
+            #   -> tr_start_date=2025-02-01, founding_date=2024-01-01..,
+            #      then due_year_offset=2 and next due date for 2026
+            # ---- Founded before TR start, month/day are after
+            #   -> tr_start_date=2025-02-01, founding_date=2023-02-02..,
+            #      then due_year_offset=2 and next due date for 2025
+            #   -> tr_start_date=2025-02-01, founding_date=2024-02-02..,
+            #      then due_year_offset=1 and next due date for 2025
+            # ---- Founded after TR start, nothing needed
+            #   -> tr_start_date=2025-02-01, founding_date=2025-02-02..,
+            #      then due_year_offset=1 and next due date for 2026 (regular)
+            #   -> tr_start_date=2025-02-01, founding_date=2026-02-02..,
+            #      then due_year_offset=1 and next due date for 2027 (regular)
+            if tr_start_datetime > founding_datetime:
+                # Set offset based on the year of the tr start
+                due_year_offset = tr_start_datetime.year - founding_datetime.year
+                if (
+                    tr_start_datetime.month > founding_datetime.month or
+                    (
+                        tr_start_datetime.month == founding_datetime.month and
+                        tr_start_datetime.day >= founding_datetime.day
+                    )
+                ):
+                    # Month/day of the founding date had already passed for that year so add 1
+                    due_year_offset += 1
+
+        due_datetime = founding_datetime + datedelta.datedelta(years=due_year_offset, months=2)
+
+        # return as this date at 23:59:59
+        return due_datetime.replace(hour=23, minute=59, second=59, microsecond=0)
 
     def get_ar_dates(self, next_ar_year):
         """Get ar min and max date for the specific year."""
