@@ -55,7 +55,8 @@ def test_transparency_register_filing_process_annual(app, session, test_name, su
             'header': {
                 'name': 'transparencyRegister',
                 'date': (datetime.now()).isoformat(),
-                'effectiveDate': effective_date.isoformat()
+                'effectiveDate': effective_date.isoformat(),
+                'certifiedBy': 'test'
             },
             'business': {'identifier': 'BC1234567'},
             'transparencyRegister': {
