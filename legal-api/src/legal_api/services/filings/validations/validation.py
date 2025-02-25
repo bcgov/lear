@@ -27,6 +27,7 @@ from .agm_location_change import validate as agm_location_change_validate
 from .alteration import validate as alteration_validate
 from .amalgamation_application import validate as amalgamation_application_validate
 from .annual_report import validate as annual_report_validate
+from .appoint_receiver import validate as appoint_receiver_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
@@ -193,6 +194,9 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['transparencyRegister'].get('name'):
                     err = transparency_register_validate(filing_json)  # pylint: disable=assignment-from-none
+
+                elif k == Filing.FILINGS['appointReceiver'].get('name'):
+                    err = appoint_receiver_validate(filing_json)  # pylint: disable=assignment-from-none
 
                 if err:
                     return err
