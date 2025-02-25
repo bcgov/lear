@@ -25,21 +25,20 @@
                     [[20px.html]]
                     [[divider.html]]
                     [[20px.html]]
-                    {% if company_name %}
-                        <p class="now-filing-info-title">Company Name:</p>
-                        <p>{{ company_name }}</p>  
-                        [[16px.html]]
-                    {% endif %}
-                    <p class="now-filing-info-title">Date and Time of Filing:</p>
-                    <p>{{ filing_date_time}}</p>
 
+                    <p class="now-filing-info-title">Company Name:</p>
+                    <p>{{ company_name }}</p>  
                     [[16px.html]]
-                    <p class="now-filing-info-title">Effective Date and Time:</p>
+
+
+                    <p class="now-filing-info-title">Date and Time of Withdrawal:</p>
                     <p>{{ effective_date_time}}</p>
 
                     [[16px.html]]
-                    <p class="now-filing-info-title">Record to be Withdrawn:</p>
-                    <p>{{ withdrawnFilingType }}</p>
+                    <p class="now-filing-info-title">Withdrawn Record:</p>
+                    <p>
+                        {{ withdrawnFilingType }} {% if filing_id %} (Filing #{{ filing_id }}){% endif %}
+                    </p>
                     [[20px.html]]
                     [[divider.html]]
                     [[20px.html]]
