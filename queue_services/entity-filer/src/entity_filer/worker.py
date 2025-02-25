@@ -36,10 +36,10 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
-from legal_api import db
+from legal_api import init_db
 from legal_api.core import Filing as FilingCore
-from legal_api.models import Business, Filing
-from legal_api.models.db import init_db, versioning_manager
+from legal_api.models import Business, Filing, db
+from legal_api.models.db import VersioningProxy
 from legal_api.services import Flags
 from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
@@ -108,6 +108,13 @@ def get_filing_types(legal_filings: dict):
 
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
+    temp_reg = filing.temp_reg
+    if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+        logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                     filing, filing.withdrawn_filing)
+        temp_reg = filing.withdrawn_filing.temp_reg
+    business_identifier = business.identifier if business else temp_reg
+
     try:
         payload = {
             'specversion': '1.x-wip',
@@ -115,25 +122,25 @@ async def publish_event(business: Business, filing: Filing):
             'source': ''.join([
                 APP_CONFIG.LEGAL_API_URL,
                 '/business/',
-                business.identifier,
+                business_identifier,
                 '/filing/',
                 str(filing.id)]),
             'id': str(uuid.uuid4()),
             'time': datetime.utcnow().isoformat(),
             'datacontenttype': 'application/json',
-            'identifier': business.identifier,
+            'identifier': business_identifier,
             'data': {
                 'filing': {
                     'header': {'filingId': filing.id,
                                'effectiveDate': filing.effective_date.isoformat()
                                },
-                    'business': {'identifier': business.identifier},
+                    'business': {'identifier': business_identifier},
                     'legalFilings': get_filing_types(filing.filing_json)
                 }
             }
         }
-        if filing.temp_reg:
-            payload['tempidentifier'] = filing.temp_reg
+        if temp_reg:
+            payload['tempidentifier'] = temp_reg
 
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
@@ -144,6 +151,13 @@ async def publish_event(business: Business, filing: Filing):
 
 def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
+    temp_reg = filing.temp_reg
+    if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+        logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                     filing, filing.withdrawn_filing)
+        temp_reg = filing.withdrawn_filing.temp_reg
+    business_identifier = business.identifier if business else temp_reg
+
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
         data = {
@@ -152,20 +166,20 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
                     'filingId': filing.id,
                     'effectiveDate': filing.effective_date.isoformat()
                 },
-                'business': {'identifier': business.identifier},
+                'business': {'identifier': business_identifier},
                 'legalFilings': get_filing_types(filing.filing_json)
             },
-            'identifier': business.identifier
+            'identifier': business_identifier
         }
-        if filing.temp_reg:
-            data['tempidentifier'] = filing.temp_reg
+        if temp_reg:
+            data['tempidentifier'] = temp_reg
 
         ce = SimpleCloudEvent(
             id=str(uuid.uuid4()),
             source=''.join([
                 APP_CONFIG.LEGAL_API_URL,
                 '/business/',
-                business.identifier,
+                business_identifier,
                 '/filing/',
                 str(filing.id)]),
             subject=subject,
@@ -231,8 +245,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
         if legal_filings := filing_core_submission.legal_filings():
-            uow = versioning_manager.unit_of_work(db.session)
-            transaction = uow.create_transaction(db.session)
+            VersioningProxy.get_transaction_id(db.session())
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
@@ -347,17 +360,20 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
-            filing_submission.transaction_id = transaction.id
+            transaction_id = VersioningProxy.get_transaction_id(db.session())
+            filing_submission.transaction_id = transaction_id
 
-            business_type = business.legal_type if business else filing_submission['business']['legal_type']
+            business_type = business.legal_type if business \
+                else filing_submission.filing_json.get('filing', {}).get('business', {}).get('legalType')
             filing_submission.set_processed(business_type)
-            business.last_modified = filing_submission.completion_date
+            if business:
+                business.last_modified = filing_submission.completion_date
+                db.session.add(business)
 
             filing_submission._meta_data = json.loads(  # pylint: disable=W0212
                 json.dumps(filing_meta.asjson, default=json_serial)
             )
 
-            db.session.add(business)
             db.session.add(filing_submission)
             db.session.commit()
 

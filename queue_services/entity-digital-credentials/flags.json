@@ -1,13 +1,11 @@
 {
     "flagValues": {
-        "enable-involuntary-dissolution": true,
-        "namex-nro-decommissioned": true,
         "db-versioning": {
             "legal-api": true,
             "emailer": false,
-            "filer": true,
+            "filer": false,
             "entity-bn": false,
-            "digital-credentials": false,
+            "digital-credentials": true,
             "dissolutions-job": false,
             "furnishings-job": false,
             "emailer-reminder-job": false

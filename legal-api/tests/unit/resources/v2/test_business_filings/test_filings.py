@@ -116,8 +116,16 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing']['header']['name'] == filing_type
     assert rv.json['filing'][filing_type] == filing_json
 
-def test_get_withdrawn_temp_business_filing(session, client, jwt):
+@pytest.mark.parametrize(
+    'jwt_role, expected',
+    [
+        (UserRoles.staff, 'staff-person'),
+        (UserRoles.public_user, 'Registry Staff'),
+    ]
+)
+def test_get_withdrawn_temp_business_filing(session, client, jwt, jwt_role, expected):
     """Assert that a withdrawn FE temp business returns the filing with the NoW embedded once available."""
+    user = factory_user('idir/staff-person')
 
     # set-up withdrawn boostrap FE filing
     today = datetime.utcnow().date()
@@ -156,6 +164,8 @@ def test_get_withdrawn_temp_business_filing(session, client, jwt):
     del now_json_data['filing']['header']['filingId']
     now_filing = factory_filing(None, now_json_data)
     now_filing.withdrawn_filing_id = withdrawn_filing_id
+    now_filing.submitter_id = user.id
+    now_filing.submitter_roles = UserRoles.staff
     now_filing.save()
     new_business_filing.withdrawal_pending = True
     new_business_filing.save()
@@ -174,11 +184,12 @@ def test_get_withdrawn_temp_business_filing(session, client, jwt):
 
     # fetch filings after the bootstrap filing has been withdrawn
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+                    headers=create_header(jwt, [jwt_role], identifier))
 
     # validate that the NoW is still embedded in the withdrawn filing
     assert 'noticeOfWithdrawal' in rv.json['filing']
     assert rv.json['filing']['noticeOfWithdrawal'] is not None
+    assert rv.json['filing']['noticeOfWithdrawal']['filing']['header']['submitter'] == expected
 
 def test_get_filing_not_found(session, client, jwt):
     """Assert that the request fails if the filing ID doesn't match an existing filing."""

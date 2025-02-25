@@ -997,7 +997,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            filter(not_(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.WITHDRAWN.value]))). \
             order_by(desc(Filing.filing_date)). \
             all()
         return filings
@@ -1014,6 +1014,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
+    def get_conversion_filings_by_conv_types(business_id: int, filing_types: list):
+        """Return the conversion filings of a particular conv type.
+
+        Records only exist in some legacy corps imported from COLIN.
+        """
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type == 'conversion'). \
+            filter(
+                Filing._meta_data.op('->')('conversion').op('->>')('convFilingType').in_(filing_types)
+            ). \
+            order_by(desc(Filing.transaction_id)). \
+            all()
+
+        return filings
+
+    @staticmethod
     def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
         """Return the filings of particular types and statuses.
 
@@ -1024,7 +1041,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            filter(not_(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.WITHDRAWN.value]))). \
             filter(not_(Filing._status.in_(excluded_statuses))). \
             order_by(desc(Filing.effective_date)). \
             all()

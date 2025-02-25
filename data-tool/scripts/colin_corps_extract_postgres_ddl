@@ -6,10 +6,6 @@ create sequence corp_processing_id_seq;
 
 alter sequence corp_processing_id_seq owner to postgres;
 
-create sequence synonym_id_seq;
-
-alter sequence synonym_id_seq owner to postgres;
-
 create table if not exists address
 (
     addr_id                numeric(10)
@@ -55,7 +51,8 @@ create table if not exists corporation
     admin_email         varchar(254),
     accession_num       varchar(10),
     send_ar_ind         boolean,
-    last_ar_filed_dt    timestamp with time zone
+    last_ar_filed_dt    timestamp with time zone,
+    last_ar_reminder_year numeric(4)
 );
 
 alter table corporation
@@ -775,3 +772,115 @@ comment on table corp_involved_cont_in is 'new table\n\n"Optionally, a ""Continu
 alter table corp_involved_cont_in
     owner to postgres;
 
+
+CREATE INDEX if not exists ix_conv_event_event_id ON conv_event (event_id);
+
+CREATE INDEX if not exists ix_conv_ledger_event_id ON conv_ledger (event_id);
+
+CREATE INDEX if not exists ix_corp_comments_corp_num ON corp_comments (corp_num);
+
+CREATE INDEX if not exists ix_corp_comments_first_nme ON corp_comments (first_nme);
+
+CREATE INDEX if not exists ix_corp_comments_last_nme ON corp_comments (last_nme);
+
+CREATE INDEX if not exists ix_corp_comments_middle_nme ON corp_comments (middle_nme);
+
+CREATE INDEX if not exists ix_corp_involved_amalgamating_event_id ON corp_involved_amalgamating (event_id);
+
+CREATE INDEX if not exists ix_corp_involved_amalgamating_ted_corp_num ON corp_involved_amalgamating (ted_corp_num);
+
+CREATE INDEX if not exists ix_corp_involved_amalgamating_ting_corp_num ON corp_involved_amalgamating (ting_corp_num);
+
+CREATE INDEX if not exists ix_corp_name_corp_num ON corp_name (corp_num);
+
+CREATE INDEX if not exists ix_corp_name_start_event_id ON corp_name (start_event_id);
+
+CREATE INDEX if not exists ix_corp_name_end_event_id ON corp_name (end_event_id);
+
+CREATE INDEX if not exists ix_corp_name_corp_name_typ_cd ON corp_name (corp_name_typ_cd);
+
+CREATE INDEX if not exists ix_corp_party_mailing_addr_id ON corp_party (mailing_addr_id);
+
+CREATE INDEX if not exists ix_corp_party_delivery_addr_id ON corp_party (delivery_addr_id);
+
+CREATE INDEX if not exists ix_corp_party_corp_num ON corp_party (corp_num);
+
+CREATE INDEX if not exists ix_corp_party_start_event_id ON corp_party (start_event_id);
+
+CREATE INDEX if not exists ix_corp_party_end_event_id ON corp_party (end_event_id);
+
+CREATE INDEX if not exists ix_corp_party_appointment_dt ON corp_party (appointment_dt);
+
+CREATE INDEX if not exists ix_corp_processing_flow_run_id ON corp_processing (flow_run_id);
+
+CREATE INDEX if not exists ix_corp_processing_claimed_at ON corp_processing (claimed_at);
+
+CREATE INDEX if not exists ix_corp_state_corp_num ON corp_state (corp_num);
+
+CREATE INDEX if not exists ix_corp_state_start_event_id ON corp_state (start_event_id);
+
+CREATE INDEX if not exists ix_corp_state_end_event_id ON corp_state (end_event_id);
+
+CREATE INDEX if not exists ix_corp_state_state_type_cd ON corp_state (state_type_cd);
+
+CREATE INDEX if not exists ix_corporation_recognition_dts ON corporation (recognition_dts);
+
+CREATE INDEX if not exists ix_corporation_bn_9 ON corporation (bn_9);
+
+CREATE INDEX if not exists ix_corporation_bn_15 ON corporation (bn_15);
+
+CREATE INDEX if not exists ix_corporation_last_ar_filed_dt ON corporation (last_ar_filed_dt);
+
+CREATE INDEX if not exists ix_corporation_corp_frozen_type_cd ON corporation (corp_frozen_type_cd);
+
+CREATE INDEX if not exists ix_filing_withdrawn_event_id ON filing (withdrawn_event_id);
+
+CREATE INDEX if not exists ix_filing_user_event_id ON filing_user (event_id);
+
+CREATE INDEX if not exists ix_filing_user_last_name ON filing_user (last_name);
+
+CREATE INDEX if not exists ix_filing_user_middle_name ON filing_user (middle_name);
+
+CREATE INDEX if not exists ix_filing_user_first_name ON filing_user (first_name);
+
+CREATE INDEX if not exists ix_filing_user_user_id ON filing_user (user_id);
+
+CREATE INDEX if not exists ix_filing_user_role_typ_cd ON filing_user (role_typ_cd);
+
+CREATE INDEX if not exists ix_jurisdiction_corp_num ON jurisdiction (corp_num);
+
+CREATE INDEX if not exists ix_jurisdiction_start_event_id ON jurisdiction (start_event_id);
+
+CREATE INDEX if not exists ix_ledger_text_event_id ON ledger_text (event_id);
+
+CREATE INDEX if not exists ix_office_corp_num ON office (corp_num);
+
+CREATE INDEX if not exists ix_office_office_typ_cd ON office (office_typ_cd);
+
+CREATE INDEX if not exists ix_office_start_event_id ON office (start_event_id);
+
+CREATE INDEX if not exists ix_office_end_event_id ON office (end_event_id);
+
+CREATE INDEX if not exists ix_office_mailing_addr_id ON office (mailing_addr_id);
+
+CREATE INDEX if not exists ix_office_delivery_addr_id ON office (delivery_addr_id);
+
+CREATE INDEX if not exists ix_resolution_corp_num ON resolution (corp_num);
+
+CREATE INDEX if not exists ix_resolution_start_event_id ON resolution (start_event_id);
+
+CREATE INDEX if not exists ix_resolution_end_event_id ON resolution (end_event_id);
+
+CREATE INDEX if not exists ix_share_series_corp_num ON share_series (corp_num);
+
+CREATE INDEX if not exists ix_share_series ON share_series (share_class_id);
+
+CREATE INDEX if not exists ix_share_series_start_event_id ON share_series (start_event_id);
+
+CREATE INDEX if not exists ix_share_struct_end_event_id ON share_struct (end_event_id);
+
+CREATE INDEX if not exists ix_share_struct_cls_corp_num ON share_struct_cls (corp_num);
+
+CREATE INDEX if not exists ix_share_struct_cls_start_event_id ON share_struct_cls (start_event_id);
+
+CREATE INDEX if not exists ix_share_struct_cls_share_class_id ON share_struct_cls (share_class_id);

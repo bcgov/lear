@@ -35,7 +35,6 @@ class EventFilings(str, Enum):
     FILE_AMLRC = 'FILE_AMLRC'
     FILE_AMLVC = 'FILE_AMLVC'
 
-    CONVAMAL_NULL = 'CONVAMAL_NULL'  # TODO: re-map
 
     # Annual Report
     FILE_ANNBC = 'FILE_ANNBC'
@@ -62,8 +61,24 @@ class EventFilings(str, Enum):
     FILE_CONTU = 'FILE_CONTU'
     FILE_CONTC = 'FILE_CONTC'
 
-    # Conversion
+    # Conversion Ledger
     FILE_CONVL = 'FILE_CONVL'
+
+    # Conversion
+    CONVAMAL_NULL = 'CONVAMAL_NULL'
+    CONVCIN_NULL = 'CONVCIN_NULL'
+    CONVCOUT_NULL = 'CONVCOUT_NULL'
+    CONVDS_NULL = 'CONVDS_NULL'
+    CONVDSF_NULL = 'CONVDSF_NULL'
+    CONVDSL_NULL = 'CONVDSL_NULL'
+    CONVDSO_NULL = 'CONVDSO_NULL'
+    CONVICORP_NULL = 'CONVICORP_NULL'
+    CONVID1_NULL = 'CONVID1_NULL'
+    CONVID2_NULL = 'CONVID2_NULL'
+    CONVILIQ_NULL = 'CONVILIQ_NULL'
+    CONVLRSTR_NULL = 'CONVLRSTR_NULL'
+    CONVNC_NULL = 'CONVNC_NULL'
+    CONVRSTR_NULL = 'CONVRSTR_NULL'
 
     # Correction
     FILE_CO_AR = 'FILE_CO_AR'
@@ -71,8 +86,6 @@ class EventFilings(str, Enum):
     FILE_CO_DI = 'FILE_CO_DI'
     FILE_CO_DO = 'FILE_CO_DO'
     FILE_CO_LI = 'FILE_CO_LI'
-    FILE_CO_PF = 'FILE_CO_PF'
-    FILE_CO_PO = 'FILE_CO_PO'
     FILE_CO_RM = 'FILE_CO_RM'
     FILE_CO_RR = 'FILE_CO_RR'
     FILE_CO_SS = 'FILE_CO_SS'
@@ -103,20 +116,24 @@ class EventFilings(str, Enum):
     FILE_ICORP = 'FILE_ICORP'
     FILE_ICORU = 'FILE_ICORU'
     FILE_ICORC = 'FILE_ICORC'
-    CONVICORP_NULL = 'CONVICORP_NULL'  # TODO: re-map
-
-    # TODO: Ledger - unsupported
 
     # TODO: Legacy Other - unsupported
-    FILE_AM_PF = 'FILE_AM_PF'
-    FILE_AM_PO = 'FILE_AM_PO'
     FILE_AM_TR = 'FILE_AM_TR'
 
     # TODO: Liquidation - unsupported
     # FILE_ADCOL = 'FILE_ADCOL'
 
-    # Notice of Withdrawal
+    # TODO: Notice of Withdrawal - unsupported
     FILE_NWITH = 'FILE_NWITH'
+
+    # Put Back Off
+    SYSDL_NULL = 'SYSDL_NULL'
+    FILE_AM_PF = 'FILE_AM_PF'
+    FILE_CO_PF = 'FILE_CO_PF'
+
+    # Put Back On
+    FILE_AM_PO = 'FILE_AM_PO'
+    FILE_CO_PO = 'FILE_CO_PO'
 
     # Registrar's Notation
     FILE_REGSN = 'FILE_REGSN'
@@ -140,7 +157,7 @@ class EventFilings(str, Enum):
 
     # TODO:
     # Other COLIN events:
-    # CONV*, Adim Corp (ADCORP, BNUPD, ADMIN), XPRO filing
+    # Adim Corp (ADCORP, BNUPD, ADMIN), XPRO filing
     # SYSDL, SYST
     # more legacyOther filings
 
@@ -175,7 +192,6 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AMLHC: ['amalgamationApplication', 'horizontal'],
     EventFilings.FILE_AMLRC: ['amalgamationApplication', 'regular'],
     EventFilings.FILE_AMLVC: ['amalgamationApplication', 'vertical'],
-    EventFilings.CONVAMAL_NULL: ['amalgamationApplication', 'regular'],  # TODO: re-map
 
     EventFilings.FILE_ANNBC: 'annualReport',
 
@@ -197,13 +213,26 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_CONVL: 'conversionLedger',
 
+    EventFilings.CONVAMAL_NULL: ['conversion', ('amalgamationApplication', 'unknown')],
+    EventFilings.CONVCIN_NULL: ['conversion', 'continuationIn'],
+    EventFilings.CONVCOUT_NULL: ['conversion', 'continuationOut'],  # TODO: continuation out
+    EventFilings.CONVDS_NULL: ['conversion', ('dissolution', 'voluntary')],
+    EventFilings.CONVDSF_NULL: ['conversion', ('dissolution', 'involuntary')],
+    EventFilings.CONVDSL_NULL: 'conversion',  # TODO: liquidation
+    EventFilings.CONVDSO_NULL: ['conversion', ('dissolution', 'unknown')],
+    EventFilings.CONVICORP_NULL: 'conversion',
+    EventFilings.CONVID1_NULL: ['conversion', 'putBackOn'],  # TODO: to confirm
+    EventFilings.CONVID2_NULL: ['conversion', 'putBackOn'],  # TODO: to confirm
+    EventFilings.CONVILIQ_NULL: 'conversion',  # TODO: liquidation
+    EventFilings.CONVLRSTR_NULL: ['conversion', ('restoration', 'limitedRestoration')],
+    EventFilings.CONVNC_NULL: ['conversion', 'changeOfName'],
+    EventFilings.CONVRSTR_NULL: ['conversion', ('restoration', 'fullRestoration')],
+
     EventFilings.FILE_CO_AR: 'correction',
     EventFilings.FILE_CO_BC: 'correction',
     EventFilings.FILE_CO_DI: 'correction',
     EventFilings.FILE_CO_DO: 'correction',
     EventFilings.FILE_CO_LI: 'correction',
-    EventFilings.FILE_CO_PF: 'correction',
-    EventFilings.FILE_CO_PO: 'correction',
     EventFilings.FILE_CO_RM: 'correction',
     EventFilings.FILE_CO_RR: 'correction',
     EventFilings.FILE_CO_SS: 'correction',
@@ -228,17 +257,20 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_ICORP: 'incorporationApplication',
     EventFilings.FILE_ICORU: 'incorporationApplication',
     EventFilings.FILE_ICORC: 'incorporationApplication',
-    EventFilings.CONVICORP_NULL: 'incorporationApplication',  # TODO: re-map
 
-    # TODO: Ledger - unsupported
     # TODO: Legacy Other - unsupported
-    EventFilings.FILE_AM_PF: 'legacyOther',
-    EventFilings.FILE_AM_PO: 'legacyOther',
     EventFilings.FILE_AM_TR: 'legacyOther',
 
     # TODO: Liquidation - unsupported
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
+
+    EventFilings.SYSDL_NULL: 'putBackOff',
+    EventFilings.FILE_AM_PF: 'putBackOff',
+    EventFilings.FILE_CO_PF: 'putBackOff',
+
+    EventFilings.FILE_AM_PO: 'putBackOn',
+    EventFilings.FILE_CO_PO: 'putBackOn',
 
     EventFilings.FILE_REGSN: 'registrarsNotation',
     EventFilings.FILE_REGSO: 'registrarsOrder',
@@ -285,7 +317,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AMLHC: 'Amalgamation Application Short Form (Horizontal) for a Community Contribution Company',
     EventFilings.FILE_AMLRC: 'Amalgamation Application (Regular) for a Community Contribution Company',
     EventFilings.FILE_AMLVC: 'Amalgamation Application Short Form (Vertical) for a Community Contribution Company',
-    EventFilings.CONVAMAL_NULL: None,  # TODO: re-map
 
     EventFilings.FILE_ANNBC: 'BC Annual Report',  # has suffix of date, dynamically add it during formatting
 
@@ -310,8 +341,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_CO_DI: 'Correction - Director',
     EventFilings.FILE_CO_DO: 'Correction - Dissolved Office',
     EventFilings.FILE_CO_LI: 'Correction - Ledger Information',
-    EventFilings.FILE_CO_PF: 'Correction - Put Back Off',
-    EventFilings.FILE_CO_PO: 'Correction - Put Back On',
     EventFilings.FILE_CO_RM: 'Correction - Receiver or Receiver Manager',
     EventFilings.FILE_CO_RR: 'Correction - Registered and Records Offices',
     EventFilings.FILE_CO_SS: 'Correction - Share Structure',
@@ -338,12 +367,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_ICORP: 'Incorporation Application',
     EventFilings.FILE_ICORU: 'Incorporation Application for a BC Unlimited Liability Company',
     EventFilings.FILE_ICORC: 'Incorporation Application for a Community Contribution Company',
-    EventFilings.CONVICORP_NULL: None,  # TODO: re-map
 
-    # TODO: Ledger - unsupported
     # TODO: Legacy Other - unsupported
-    EventFilings.FILE_AM_PF: 'Amendment - Put Back Off',
-    EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
     EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
@@ -370,6 +395,13 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     EventFilings.FILE_NWITH: 'Notice of Withdrawal',
 
+    EventFilings.SYSDL_NULL: None,
+    EventFilings.FILE_AM_PF: 'Amendment - Put Back Off',
+    EventFilings.FILE_CO_PF: 'Correction - Put Back Off',
+    
+    EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
+    EventFilings.FILE_CO_PO: 'Correction - Put Back On',
+
     EventFilings.FILE_REGSN: "Registrar''s Notation",
     EventFilings.FILE_REGSO: "Registrar''s Order",
 
@@ -393,10 +425,11 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'changeOfDirectors': ['last_cod_date'],
     'agmExtension': ['last_agm_date'],
     'amalgamationApplication': ['last_coa_date', 'last_cod_date'],
-    # TODO: 'dissolution_date' - Amalgamating business, continuation out
+    # TODO: 'dissolution_date' - continuation out
     # TODO: 'continuation_out_date' - continuation out
     'continuationIn': ['last_coa_date', 'last_cod_date'],
     'dissolution': ['dissolution_date'],
+    'putBackOff': ['restoration_expiry_date', 'dissolution_date'],
     'putBackOn': ['dissolution_date'],
     'restoration': ['dissolution_date', 'restoration_expiry_date'],
 }
@@ -405,6 +438,7 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
 LEAR_STATE_FILINGS = [
     'dissolution',
     'restoration',
+    'putBackOff',
     'putBackOn',
     'continuationOut',
     # TODO: other state filings that lear doesn't support for now e.g. liquidation
@@ -412,3 +446,10 @@ LEAR_STATE_FILINGS = [
     # ingore the following since we won't map to them
     # 'dissolved', 'restorationApplication', 'continuedOut'
 ]
+
+
+LEGAL_TYPE_CHANGE_FILINGS = {
+    EventFilings.FILE_NOALB: ['ULC', 'BC'],
+    EventFilings.FILE_NOALU: ['BC', 'ULC'],
+    EventFilings.FILE_NOALC: ['BC', 'CC'],
+}

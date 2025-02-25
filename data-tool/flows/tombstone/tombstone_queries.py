@@ -274,6 +274,7 @@ def get_business_query(corp_num, suffix):
     -- TODO: submitter_userid
     --
         c.send_ar_ind,
+        c.last_ar_reminder_year,
         to_char(c.last_ar_filed_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as last_ar_date,
     -- admin_freeze
         case
@@ -581,6 +582,15 @@ def get_filings_query(corp_num):
             f.filing_type_cd       as f_filing_type_cd,
             to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
             f.withdrawn_event_id   as f_withdrawn_event_id,
+            case
+                when f.withdrawn_event_id is null then null
+                else (
+                    select 
+                        to_char(we.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
+                    from event we
+                    where we.event_id = f.withdrawn_event_id
+                )
+            end as f_withdrawn_event_ts_str,
 --          paper only now -> f_ods_type
             f.nr_num               as f_nr_num,
             to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
@@ -605,17 +615,25 @@ def get_filings_query(corp_num):
             u.email_addr           as u_email_addr,
             u.role_typ_cd          as u_role_typ_cd,
             --- conversion ledger
-            cl.ledger_title_txt    as cl_ledger_title_txt
+            cl.ledger_title_txt    as cl_ledger_title_txt,
+            -- conv event
+            to_char(ce.effective_dt at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as ce_effective_dt_str,
+            -- corp name change
+            cn_old.corp_name        as old_corp_name,
+            cn_new.corp_name        as new_corp_name
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
                  left outer join conv_ledger cl on cl.event_id = e.event_id
+                 left outer join conv_event ce on e.event_id = ce.event_id
+                 left outer join corp_name cn_old on e.event_id = cn_old.end_event_id
+                 left outer join corp_name cn_new on e.event_id = cn_new.start_event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'
 --          and e.corp_num = 'BC0449924'  -- AR, ADCORP
 --        and e.trigger_dts is not null
-        order by e.event_timerstamp
+        order by e.event_timerstamp, e.event_id
         ;
     """
     return query
@@ -712,6 +730,26 @@ def get_filing_comments_query(corp_num):
     return query
 
 
+def get_in_dissolution_query(corp_num):
+    query = f"""
+    select
+        cs.corp_num         as cs_corp_num,
+        cs.state_type_cd    as cs_state_type_cd,
+        e.event_id          as e_event_id,
+        e.event_type_cd     as e_event_type_cd,
+        to_char(
+            e.trigger_dts::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )                   as e_trigger_dts_str
+    from corp_state cs
+    join event e on e.event_id = cs.start_event_id
+    where 1 = 1
+    and cs.corp_num = '{corp_num}'
+    and cs.end_event_id is null
+    and cs.state_type_cd in ('D1F', 'D2F', 'D1T', 'D2T')
+    """
+    return query
+
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
@@ -724,7 +762,8 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'filings': get_filings_query(corp_num),
         'amalgamations': get_amalgamation_query(corp_num),
         'business_comments': get_business_comments_query(corp_num),
-        'filing_comments': get_filing_comments_query(corp_num)
+        'filing_comments': get_filing_comments_query(corp_num),
+        'in_dissolution': get_in_dissolution_query(corp_num),
     }
 
     return queries

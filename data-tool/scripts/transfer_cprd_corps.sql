@@ -77,7 +77,14 @@ select case
            when 'N' then 0
            when 'Y' then 1
            else 1
-           end               SEND_AR_IND
+           end               SEND_AR_IND,
+       (select
+            to_number(to_char(max(date_1), 'YYYY'))
+        from eml_log e, rep_data r
+        where 
+            e.corp_num=c.corp_num
+            and e.param_id=r.param_id
+            and e.corp_num=r.t20_1) as LAST_AR_REMINDER_YEAR
 from corporation c
 where corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
     -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')

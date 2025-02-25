@@ -27,7 +27,6 @@ from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql import and_, exists, func, not_, text
-from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -37,7 +36,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .db import db  # noqa: I001
+from .db import db, VersioningProxy  # noqa: I001
 from .party import Party
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
 
@@ -267,9 +266,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
-    offices = db.relationship('Office', lazy='dynamic', cascade='all, delete, delete-orphan')
+    offices = db.relationship('Office', backref='business', lazy='dynamic', cascade='all, delete, delete-orphan')
     party_roles = db.relationship('PartyRole', lazy='dynamic')
-    share_classes = db.relationship('ShareClass', lazy='dynamic', cascade='all, delete, delete-orphan')
+    share_classes = db.relationship('ShareClass', backref='business', lazy='dynamic',
+                                    cascade='all, delete, delete-orphan')
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
@@ -707,7 +707,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         alternate_names = []
 
         # Fetch aliases and related filings in a single query
-        alias_version = version_class(Alias)
+        alias_version = VersioningProxy.version_class(db.session(), Alias)
         filing_alias = aliased(Filing)
         aliases_query = db.session.query(
             alias_version.alias,
@@ -790,7 +790,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             else:
                 return {
                     'identifier': 'Not Available',
-                    'legalName': 'Not Available'
+                    'legalName': 'Not Available',
+                    'amalgamationDate': 'Not Available'
                 }
 
         return None
