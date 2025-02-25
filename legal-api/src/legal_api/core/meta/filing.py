@@ -390,8 +390,20 @@ FILINGS: Final = {
         'name': 'courtOrder',
         'title': 'Court Order',
         'displayName': 'Court Order',
-        'code': 'NOFEE'
-    },
+        'codes': {
+                'SP': 'COURT',
+                'GP': 'COURT',
+                'CP': 'COURT',
+                'BC': 'COURT',
+                'BEN': 'COURT',
+                'CC': 'COURT',
+                'ULC': 'COURT',
+                'C': 'COURT',
+                'CBEN': 'COURT',
+                'CUL': 'COURT',
+                'CCC': 'COURT',
+            }
+        },
     'dissolution': {
         'name': 'dissolution',
         'additional': [

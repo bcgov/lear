@@ -735,7 +735,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                                                                                     legal_type,
                                                                                     priority_flag,
                                                                                     waive_fees_flag))
-        elif filing_type in ('adminFreeze', 'courtOrder', 'putBackOff', 'putBackOn',
+        elif filing_type in ('adminFreeze', 'putBackOff', 'putBackOn',
                              'registrarsNotation', 'registrarsOrder'):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
