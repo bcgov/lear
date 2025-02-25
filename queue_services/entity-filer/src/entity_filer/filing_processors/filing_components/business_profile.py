@@ -78,7 +78,7 @@ def _update_business_profile(business: Business, profile_info: Dict) -> Dict:
         if rv.status_code == HTTPStatus.BAD_REQUEST and \
                 'DATA_ALREADY_EXISTS' in rv.text:
             put = requests.put(
-                url=''.join([account_svc_entity_url, '/', business.identifier]),
+                url=''.join([account_svc_entity_url, '/', business.identifier, '/contacts']),
                 headers={**AccountService.CONTENT_TYPE_JSON,
                          'Authorization': AccountService.BEARER + token},
                 data=data,

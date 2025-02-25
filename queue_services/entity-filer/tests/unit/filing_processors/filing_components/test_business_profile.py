@@ -60,7 +60,7 @@ def test_update_business_profile(app, session, requests_mock,
         requests_mock.post(f'{current_app.config["ACCOUNT_SVC_ENTITY_URL"]}/{business.identifier}/contacts',
                            json=response_json,
                            status_code=response_status)
-        requests_mock.put(f'{current_app.config["ACCOUNT_SVC_ENTITY_URL"]}/{business.identifier}',
+        requests_mock.put(f'{current_app.config["ACCOUNT_SVC_ENTITY_URL"]}/{business.identifier}/contacts',
                           status_code=put_status)
 
         # test

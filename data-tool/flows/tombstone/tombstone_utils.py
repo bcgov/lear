@@ -610,6 +610,9 @@ def formatted_data_cleanup(data: dict) -> dict:
         'state_filing_index': filings_business['state_filing_index']
     }
     data['filings'] = filings_business['filings']
+    
+    data['admin_email'] = data['businesses']['admin_email']
+    del data['businesses']['admin_email']
 
     return data
 
