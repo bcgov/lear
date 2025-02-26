@@ -22,7 +22,7 @@ from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.core.meta.filing import FilingMeta
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, UserRoles
 
 from entity_emailer.email_processors import (
     get_filing_document,
@@ -185,5 +185,9 @@ def _get_contacts(identifier, token, withdrawn_filing):
                     break
     else:
         recipients.append(get_recipient_from_auth(identifier, token))
+
+    if withdrawn_filing.submitter_roles and UserRoles.staff in withdrawn_filing.submitter_roles:
+        # when staff file a dissolution documentOptionalEmail may contain completing party email
+        recipients.append(withdrawn_filing.filing_json['filing']['header'].get('documentOptionalEmail'))
 
     return recipients

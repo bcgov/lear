@@ -30,14 +30,14 @@ from tests.unit import create_business, create_future_effective_filing, prep_not
 
 
 @pytest.mark.parametrize(
-        'status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp', [
-            ('COMPLETED', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True),
-            ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'continuationIn', CONTINUATION_IN, True),
-            ('COMPLETED', 'test business', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True),
-            ('COMPLETED', 'test business', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
-            ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False),
-            ('COMPLETED', '1234567 B.C. INC.', 'CBEN', 'dissolution', DISSOLUTION, False)
-        ]
+    'status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp', [
+        ('COMPLETED', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True),
+        ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'continuationIn', CONTINUATION_IN, True),
+        ('COMPLETED', 'test business', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True),
+        ('COMPLETED', 'test business', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
+        ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False),
+        ('COMPLETED', '1234567 B.C. INC.', 'CBEN', 'dissolution', DISSOLUTION, False)
+    ]
 )
 def test_notice_of_withdrawal_notification(
         app, session, status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp):
@@ -69,6 +69,7 @@ def test_notice_of_withdrawal_notification(
 
             assert email['content']['subject'] == f'{legal_name} - Notice of Withdrawal filed Successfully'
             assert 'recipient@email.com' in email['recipients']
+            assert 'completing_party@email.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []
             assert mock_get_pdfs.call_args[0][0] == token
