@@ -195,7 +195,6 @@ class VersioningProxy:
         :param transaction: The transaction associated with the session.
         :return: None
         """
-
         if '_versioning_locked' in session.info and '_transactions_locked' in session.info:
             session.info['_transactions_locked'].remove(transaction)
 
