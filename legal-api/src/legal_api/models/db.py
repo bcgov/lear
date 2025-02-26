@@ -19,7 +19,7 @@ from datetime import datetime
 
 from flask import current_app
 from flask_sqlalchemy import SignallingSession, SQLAlchemy
-from sql_versioning import TransactionManager, debug
+from sql_versioning import TransactionManager
 from sql_versioning import disable_versioning as _new_disable_versioning
 from sql_versioning import enable_versioning as _new_enable_versioning
 from sql_versioning import version_class as _new_version_class
@@ -161,7 +161,6 @@ class VersioningProxy:
         cls._versioning_control[current]['enable']()
 
     @classmethod
-    @debug
     def lock_versioning(cls, session, transaction):
         """Lock versioning for the session.
 
@@ -171,37 +170,22 @@ class VersioningProxy:
         :param transaction: The transaction associated with the session.
         :return: None
         """
-        print(f"\033[32mCurrent service={current_app.config['SERVICE_NAME']}, session={session},"
-              f' transaction={transaction}\033[0m')
         if '_versioning_locked' not in session.info:
             if not cls._is_initialized:
                 cls._initialize_versioning()
-                print(f'\033[31mVersioning locked, current versioning type={cls._current_versioning}'
-                      '(initialized)\033[0m')
             else:
                 previous_versioning = cls._current_versioning
                 cls._check_versioning()
 
-                # TODO: remove debug - lock_type
-                lock_type = 'unchanged'
                 if cls._current_versioning != previous_versioning:
                     cls._switch_versioning(previous_versioning, cls._current_versioning)
-                    lock_type = 'switched'
-
-                print(f'\033[31mVersioning locked, current versioning type={cls._current_versioning}'
-                      f'({lock_type})\033[0m')
 
             session.info['_versioning_locked'] = cls._current_versioning
             session.info['_transactions_locked'] = []
 
-        # TODO: remove debug - else statement
-        else:
-            print('\033[31mVersioning already set for this session, skip\033[0m')
-
         session.info['_transactions_locked'].append(transaction)
 
     @classmethod
-    @debug
     def unlock_versioning(cls, session, transaction):
         """Unlock versioning for the session.
 
@@ -211,27 +195,15 @@ class VersioningProxy:
         :param transaction: The transaction associated with the session.
         :return: None
         """
-        print(f'\033[32mSession={session}, transaction={transaction}\033[0m')
 
         if '_versioning_locked' in session.info and '_transactions_locked' in session.info:
             session.info['_transactions_locked'].remove(transaction)
-            print('\033[31mTransaction unlocked\033[0m')
 
             if not session.info['_transactions_locked']:
                 session.info.pop('_versioning_locked', None)
                 session.info.pop('_transactions_locked', None)
-                print('\033[31mVersioning unlocked\033[0m')
-
-            # TODO: remove debug - else statement
-            else:
-                print("\033[32mThis session has active transaction, can't be unlocked\033[0m")
-
-        # TODO: remove debug - else statement
-        else:
-            print("\033[32mVersioning/Transaction lock doesn't exist, skip\033[0m")
 
     @classmethod
-    @debug
     def get_transaction_id(cls, session):
         """Get the transaction ID for the session.
 
@@ -241,14 +213,11 @@ class VersioningProxy:
         transaction_id = None
         current_versioning = session.info['_versioning_locked']
 
-        print(f'\033[31mCurrent versioning type={current_versioning}\033[0m')
         transaction_id = cls._versioning_control[current_versioning]['get_transaction_id'](session)
-        print(f'\033[31mUsing transaction_id = {transaction_id}\033[0m')
 
         return transaction_id
 
     @classmethod
-    @debug
     def version_class(cls, session, obj):
         """Return version class for an object based in the session.
 
@@ -260,12 +229,10 @@ class VersioningProxy:
             session.begin()
 
         current_versioning = session.info['_versioning_locked']
-        print(f'\033[31mCurrent versioning type={current_versioning}\033[0m')
 
         return cls._versioning_control[current_versioning]['version_class'](obj)
 
 
-@debug
 def setup_versioning():
     """Set up and initialize versioning switching.
 
@@ -273,12 +240,10 @@ def setup_versioning():
     """
     # use SignallingSession to skip events for continuum's internal session/txn operations
     @event.listens_for(SignallingSession, 'after_transaction_create')
-    @debug
     def after_transaction_create(session, transaction):
         VersioningProxy.lock_versioning(session, transaction)
 
     @event.listens_for(SignallingSession, 'after_transaction_end')
-    @debug
     def clear_transaction(session, transaction):
         VersioningProxy.unlock_versioning(session, transaction)
 
