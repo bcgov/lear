@@ -1,3 +1,4 @@
+import contextlib
 from http import HTTPStatus
 from pathlib import Path
 
@@ -288,13 +289,20 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
     if config.AFFILIATE_ENTITY:
         business_data = tombstone_data['businesses']
         account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
-        AuthService.create_affiliation(
+        affiliation_status = AuthService.create_affiliation(
             config=config,
             account=account_id,
             business_registration=business_data['identifier'],
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type']
         )
+        if affiliation_status != HTTPStatus.OK:
+            with contextlib.suppress(Exception):
+                AuthService.delete_affiliation(
+                    config=config,
+                    account=account_id,
+                    business_registration=business_data['identifier'])
+            raise Exception(f"""Failed to affiliate business {business_data['identifier']}""")
     if config.UPDATE_ENTITY:
         business_data = tombstone_data['businesses']
         entity_status = AuthService.create_entity(
