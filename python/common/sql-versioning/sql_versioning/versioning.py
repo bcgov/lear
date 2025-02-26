@@ -20,7 +20,6 @@ from sqlalchemy import (BigInteger, Column, DateTime, Integer, SmallInteger,
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import Session, mapper, relationships
 
-from .debugging import debug
 from .relationship_builder import RelationshipBuilder
 
 Base = declarative_base()
@@ -220,7 +219,6 @@ class TransactionManager:
         self.session = session
         self.transaction_model = TransactionFactory.create_transaction_model()
 
-    @debug
     def create_transaction(self):
         """Create a new transaction in the session.
 
@@ -254,7 +252,6 @@ class TransactionManager:
         else:
             return self.create_transaction()
 
-    @debug
     def clear_current_transaction(self):
         """Clear the current transaction_id stored in the session.
         
@@ -268,7 +265,6 @@ class TransactionManager:
 
 
 # ---------- Event Listeners ----------
-@debug
 def _before_flush(session, flush_context, instances):
     """Trigger before a flush operation to ensure a transaction is created."""
     try:
@@ -287,7 +283,6 @@ def _before_flush(session, flush_context, instances):
         raise e
 
 
-@debug
 def _after_flush(session, flush_context):
     """Trigger after a flush operation to create version records for changed objects."""
     try:
@@ -300,7 +295,6 @@ def _after_flush(session, flush_context):
         raise e
 
 
-@debug
 def _clear_transaction(session):
     """Clears the current transaction from the session after commit or rollback."""
     try:
@@ -410,7 +404,6 @@ def versioned_objects(session):
             yield obj
 
 
-@debug
 def enable_versioning(transaction_cls=None):
     """Enable versioning. It registers listeners.
 
@@ -426,7 +419,6 @@ def enable_versioning(transaction_cls=None):
         raise e
 
 
-@debug
 def disable_versioning():
     """Disable versioning. It removes listeners.
     

@@ -23,7 +23,6 @@ def version_class(obj):
     """
     with suppress(Exception):
         versioned_class = obj.__versioned_cls__
-        print(f'\033[32mVersioned Class={versioned_class}\033[0m')
         return versioned_class
     return None
 
