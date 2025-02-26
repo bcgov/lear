@@ -209,7 +209,14 @@ FILINGS: Final = {
         'title': 'Appoint Receiver Filing',
         'displayName': 'Appoint Receiver',
         'codes': {
-            'CP': 'OTNRC'
+            'BEN': 'NOARM',
+            'BC': 'NOARM',
+            'ULC': 'NOARM',
+            'CC': 'NOARM',
+            'CBEN': 'NOARM',
+            'C': 'NOARM',
+            'CUL': 'NOARM',
+            'CCC': 'NOARM'
         }
     },
     'changeOfAddress': {

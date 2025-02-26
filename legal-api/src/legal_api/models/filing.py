@@ -174,7 +174,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'name': 'appointReceiver',
             'title': 'Appoint Receiver Filing',
             'codes': {
-                'CP': 'OTNRC'
+                'BEN': 'NOARM',
+                'BC': 'NOARM',
+                'ULC': 'NOARM',
+                'CC': 'NOARM',
+                'CBEN': 'NOARM',
+                'C': 'NOARM',
+                'CUL': 'NOARM',
+                'CCC': 'NOARM'
             }
         },
         'changeOfAddress': {

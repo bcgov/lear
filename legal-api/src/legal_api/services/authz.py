@@ -208,7 +208,7 @@ def get_allowable_filings_dict():
                     }
                 },
                 'appointReceiver': {
-                    'legalTypes': ['CP'],
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT]
                     }
