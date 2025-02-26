@@ -170,6 +170,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CCC': 'BCANN'
             }
         },
+        'appointReceiver': {
+            'name': 'appointReceiver',
+            'title': 'Appoint Receiver Filing',
+            'codes': {
+                'CP': 'OTNRC'
+            }
+        },
         'changeOfAddress': {
             'name': 'changeOfAddress',
             'title': 'Change of Address Filing',

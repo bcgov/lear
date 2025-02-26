@@ -38,6 +38,7 @@ class PartyRole(db.Model, Versioned):
         LIQUIDATOR = 'liquidator'
         PROPRIETOR = 'proprietor'
         PARTNER = 'partner'
+        RECEIVER = 'receiver'
 
     __versioned__ = {}
     __tablename__ = 'party_roles'
