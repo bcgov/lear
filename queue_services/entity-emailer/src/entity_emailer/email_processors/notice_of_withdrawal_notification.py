@@ -91,7 +91,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
 
     # get recipients
     identifier = filing.filing_json['filing']['business']['identifier']
-    recipients = _get_contacts(identifier, token, withdrawn_filing)
+    recipients = _get_contacts(identifier, token, filing, withdrawn_filing)
     recipients = list(set(recipients))
     recipients = ', '.join(filter(None, recipients)).strip()
 
@@ -171,7 +171,7 @@ def _get_pdfs(
     return pdfs
 
 
-def _get_contacts(identifier, token, withdrawn_filing):
+def _get_contacts(identifier, token, filing, withdrawn_filing):
     recipients = []
     if identifier.startswith('T'):
         # get from withdrawn filing (FE new business filing)
@@ -186,8 +186,8 @@ def _get_contacts(identifier, token, withdrawn_filing):
     else:
         recipients.append(get_recipient_from_auth(identifier, token))
 
-    if withdrawn_filing.submitter_roles and UserRoles.staff in withdrawn_filing.submitter_roles:
+    if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
         # when staff file a dissolution documentOptionalEmail may contain completing party email
-        recipients.append(withdrawn_filing.filing_json['filing']['header'].get('documentOptionalEmail'))
+        recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
 
     return recipients
