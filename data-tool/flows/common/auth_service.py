@@ -128,7 +128,7 @@ class AuthService:
             timeout=cls.get_time_out(config)
         )
 
-        if entity_record.status_code != HTTPStatus.OK:
+        if entity_record.status_code not in (HTTPStatus.ACCEPTED, HTTPStatus.CREATED):
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
 
@@ -200,3 +200,43 @@ class AuthService:
                 or entity_record.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT):
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
+
+    @classmethod
+    def update_contact_email(cls, config, identifier: str, email: str) -> Dict:
+        """Update contact email of the business."""
+        token = cls.get_bearer_token(config)
+        auth_url = config.AUTH_SVC_URL
+        account_svc_entity_url = f'{auth_url}/entities'
+
+        # Create an entity record
+        data = {
+            'email': email,
+            'phone': '',
+            'phoneExtension': ''
+        }
+
+        rv = requests.post(
+            url=f'{account_svc_entity_url}/{identifier}/contacts',
+            headers={
+                **cls.CONTENT_TYPE_JSON,
+                'Authorization': cls.BEARER + token
+            },
+            data=json.dumps(data),
+            timeout=cls.get_time_out(config)
+        )
+
+        if (rv.status_code == HTTPStatus.BAD_REQUEST and 'DATA_ALREADY_EXISTS' in rv.text):
+            rv = requests.put(
+                url=f'{account_svc_entity_url}/{identifier}/contacts',
+                headers={
+                    **cls.CONTENT_TYPE_JSON,
+                    'Authorization': cls.BEARER + token
+                },
+                data=json.dumps(data),
+                timeout=cls.get_time_out(config)
+            )
+
+        if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
+            return HTTPStatus.OK
+
+        return rv.status_code

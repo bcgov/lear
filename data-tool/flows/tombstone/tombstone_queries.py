@@ -281,7 +281,8 @@ def get_business_query(corp_num, suffix):
             when c.corp_frozen_type_cd = 'C'
             then true
             else false
-        end admin_freeze
+        end admin_freeze,
+        c.admin_email
     from corporation c
     left outer join event e on e.corp_num = c.corp_num and e.event_type_cd IN ('CONVICORP', 'CONVAMAL') -- need to add other event like CONVCIN...
     where 1 = 1

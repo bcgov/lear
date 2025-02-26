@@ -1,3 +1,5 @@
+import contextlib
+from http import HTTPStatus
 from pathlib import Path
 
 import math
@@ -287,21 +289,38 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
     if config.AFFILIATE_ENTITY:
         business_data = tombstone_data['businesses']
         account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
-        AuthService.create_affiliation(
+        affiliation_status = AuthService.create_affiliation(
             config=config,
             account=account_id,
             business_registration=business_data['identifier'],
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type']
         )
+        if affiliation_status != HTTPStatus.OK:
+            with contextlib.suppress(Exception):
+                AuthService.delete_affiliation(
+                    config=config,
+                    account=account_id,
+                    business_registration=business_data['identifier'])
+            raise Exception(f"""Failed to affiliate business {business_data['identifier']}""")
     if config.UPDATE_ENTITY:
         business_data = tombstone_data['businesses']
-        AuthService.create_entity(
+        entity_status = AuthService.create_entity(
             config=config,
             business_registration=business_data['identifier'],
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type']
         )
+        if entity_status == HTTPStatus.OK:
+            update_email_status = AuthService.update_contact_email(
+                config=config,
+                identifier=business_data['identifier'],
+                email=tombstone_data['admin_email']
+            )
+            if update_email_status != HTTPStatus.OK:
+                raise Exception(f"""Failed to update admin email in auth {business_data['identifier']}""")
+        else:
+            raise Exception(f"""Failed to create entity in auth {business_data['identifier']}""")
 
 
 @task(name='1-Migrate-Corp-Users-Task')
