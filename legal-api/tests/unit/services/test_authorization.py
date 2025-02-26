@@ -164,6 +164,7 @@ class FilingKey(str, Enum):
     TRANSPARENCY_REGISTER_ANNUAL = 'TRANSPARENCY_REGISTER_ANNUAL'
     TRANSPARENCY_REGISTER_CHANGE = 'TRANSPARENCY_REGISTER_CHANGE'
     TRANSPARENCY_REGISTER_INITIAL = 'TRANSPARENCY_REGISTER_INITIAL'
+    APPOINT_RECEIVER = 'APPOINT_RECEIVER'
 
 
 EXPECTED_DATA = {
@@ -243,6 +244,7 @@ EXPECTED_DATA = {
     FilingKey.TRANSPARENCY_REGISTER_ANNUAL: {'name': 'transparencyRegister', 'type': 'annual', 'displayName': 'Transparency Register - Annual Filing', 'feeCode': 'REGSIGIN'},
     FilingKey.TRANSPARENCY_REGISTER_CHANGE: {'name': 'transparencyRegister', 'type': 'change', 'displayName': 'Transparency Register Filing', 'feeCode': 'REGSIGIN'},
     FilingKey.TRANSPARENCY_REGISTER_INITIAL: {'name': 'transparencyRegister', 'type': 'initial', 'displayName': 'Transparency Register Filing', 'feeCode': 'REGSIGIN'},
+    FilingKey.APPOINT_RECEIVER: {'displayName': 'Appoint Receiver', 'feeCode': 'OTNRC', 'name': 'appointReceiver'}
 }
 
 EXPECTED_DATA_CONT_IN = {
@@ -551,7 +553,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
     [
         # active business
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
+         ['adminFreeze', 'annualReport', 'appointReceiver', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
@@ -719,6 +721,10 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
 
         ('staff_active_allowed', Business.State.ACTIVE, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], True),
+
+        ('user_active_allowed', Business.State.ACTIVE, 'appointReceiver', None, ['CP'], 'staff', [STAFF_ROLE], True),
+        ('user_active', Business.State.ACTIVE, 'appointReceiver', None,
+         ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
         ('user_active_allowed', Business.State.ACTIVE, 'agmExtension', None,
          ['BC', 'BEN', 'ULC', 'CC'], 'general', [BASIC_USER], True),
@@ -940,6 +946,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
+                          FilingKey.APPOINT_RECEIVER,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
@@ -1239,6 +1246,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
+                          FilingKey.APPOINT_RECEIVER,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
@@ -1574,6 +1582,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
+                          FilingKey.APPOINT_RECEIVER,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
@@ -2047,6 +2056,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
+                          FilingKey.APPOINT_RECEIVER,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
@@ -2211,6 +2221,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
+                          FilingKey.APPOINT_RECEIVER,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
@@ -2704,6 +2715,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
+                          FilingKey.APPOINT_RECEIVER,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
@@ -2812,6 +2824,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE], None,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
+                          FilingKey.APPOINT_RECEIVER,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
                           FilingKey.CORRCTN,
