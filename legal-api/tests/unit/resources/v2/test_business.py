@@ -589,6 +589,10 @@ def test_get_could_file(session, client, jwt):
             "name": "annualReport"
         },
         {
+            "displayName": "Appoint Receiver",
+            "name": "appointReceiver"
+        },
+        {
             "displayName": "Address Change",
             "name": "changeOfAddress"
         },
