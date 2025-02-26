@@ -748,8 +748,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 # overriden with the latest correction, which cause loosing the previous correction link.
                 name = FilingMeta.get_corrected_filing_name(filing, business_revision, name)
 
-        elif filing.filing_type in ('dissolution') and filing.meta_data:
-            if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
+        elif filing.filing_type in ('dissolution'):
+            dissolution_data = filing.meta_data.get('dissolution') if filing.meta_data else None
+            if dissolution_data and dissolution_data.get('dissolutionType') == 'administrative':
                 name = 'Administrative Dissolution'
 
         elif filing.filing_type in ('adminFreeze') and filing.meta_data:
