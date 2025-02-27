@@ -106,11 +106,7 @@ def _create_version(session, target, operation_type):
     :param operation_type: The type of operation ('I', 'U', 'D') being performed on the object.
     :return: None
     """
-
-    print(f'\033[32mCreating version for {target.__class__.__name__} (id={target.id}), operation_type: {operation_type}\033[0m')
-
     if not session:
-        print(f'\033[32mSkipping version creation for {target.__class__.__name__} (id={target.id})\033[0m')
         return
 
     transaction_manager = TransactionManager(session)
@@ -173,8 +169,6 @@ def _create_version(session, target, operation_type):
         values(end_transaction_id=transaction_id)
     )
 
-    print(f'\033[32mVersion created/updated for {target.__class__.__name__} (id={target.id}), transaction_id: {transaction_id}\033[0m')
-
 
 # ---------- Transaction Related Classes ----------
 class TransactionFactory:
@@ -226,7 +220,6 @@ class TransactionManager:
         """
 
         if 'current_transaction_id' in self.session.info:
-            print(f"\033[32mPoping out existing transaction: {self.session.info['current_transaction_id']}\033[0m")
             self.session.info.pop('current_transaction_id', None)
 
         # Use insert().returning() to get the ID and issued_at without committing
@@ -236,10 +229,7 @@ class TransactionManager:
         result = self.session.execute(stmt)
         transaction_id, issued_at = result.first()
 
-        print(f'\033[32mCreated new transaction: {transaction_id}\033[0m')
-
         self.session.info['current_transaction_id'] = transaction_id
-        print(f'\033[32mSet current_transaction_id: {transaction_id}\033[0m')
         return transaction_id
 
     def get_current_transaction_id(self):
@@ -258,9 +248,7 @@ class TransactionManager:
         :return: None
         """
         if self.session.transaction.nested:
-            print(f"\033[32mSkip clearing nested transaction\033[0m")
             return
-        print(f"\033[32mClearing current transaction: {self.session.info.get('current_transaction_id')}\033[0m")
         self.session.info.pop('current_transaction_id', None)
 
 
@@ -269,13 +257,9 @@ def _before_flush(session, flush_context, instances):
     """Trigger before a flush operation to ensure a transaction is created."""
     try:
         if not _is_session_modified(session):
-            print('\033[31mThere is no modified versioned object in this session.\033[0m')
             return
         
-        if 'current_transaction_id' in session.info:
-            print(f"\033[31mtransaction_id={session.info['current_transaction_id']} exists before flush.\033[0m")
-        else:
-            print('\033[31mCreating transaction before flush.\033[0m')
+        if not 'current_transaction_id' in session.info:
             transaction_manager = TransactionManager(session)
             transaction_manager.create_transaction()
 
