@@ -23,13 +23,14 @@ from flask_cors import cross_origin
 from legal_api.decorators import can_access_digital_credentials
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, DCRevocationReason, User
 from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials import DigitalCredentialsHelpers
+from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
 from legal_api.utils.auth import jwt
 
 from .bp import bp
 
 
-bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__, url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
+bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__,
+                  url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
 
 
 @bp.route('/<string:identifier>/digitalCredentials/invitation', methods=['POST'], strict_slashes=False)
@@ -50,13 +51,13 @@ def create_invitation(identifier):
         if not (response := digital_credentials.create_invitation()):
             return jsonify({'message': 'Unable to create an invitation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-        invitation_message_id = DigitalCredentialsHelpers.extract_invitation_message_id(response)
+        invitation_message_id = extract_invitation_message_id(response)
 
         connection = DCConnection(
             connection_id=invitation_message_id,
             invitation_url=response['invitation_url'],
             is_active=False,
-            connection_state=DCConnection.State.INVITATION.value,
+            connection_state=DCConnection.State.INVITATION_SENT.value,
             business_id=business.id
         )
         connection.save()
@@ -83,6 +84,25 @@ def get_connections(identifier):
     return jsonify({'connections': response}), HTTPStatus.OK
 
 
+@bp.route('/<string:identifier>/digitalCredentials/connections/<string:connection_id>/attest',
+          methods=['POST'], strict_slashes=False)
+@cross_origin(origin='*')
+@jwt.requires_auth
+@can_access_digital_credentials
+def attest_connection(identifier, connection_id):
+    """Attest a connection."""
+    if not Business.find_by_identifier(identifier):
+        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+    if not (connection := DCConnection.find_by_connection_id(connection_id=connection_id)):
+        return jsonify({'message': f'{identifier} connection not found.'}), HTTPStatus.NOT_FOUND
+
+    if digital_credentials.attest_connection(connection_id=connection.connection_id) is None:
+        return jsonify({'message': 'Unable to request connection attestation.'}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+    return jsonify({'message': 'Connection attestation request sent.'}), HTTPStatus.OK
+
+
 @bp.route('/<string:identifier>/digitalCredentials/connections/<string:connection_id>',
           methods=['DELETE'], strict_slashes=False)
 @cross_origin(origin='*')
@@ -96,7 +116,7 @@ def delete_connection(identifier, connection_id):
     if not (connection := DCConnection.find_by_connection_id(connection_id=connection_id)):
         return jsonify({'message': f'{identifier} connection not found.'}), HTTPStatus.NOT_FOUND
 
-    if (connection.connection_state != DCConnection.State.INVITATION.value and
+    if (connection.connection_state != DCConnection.State.INVITATION_SENT.value and
             digital_credentials.remove_connection_record(connection_id=connection.connection_id) is None):
         return jsonify({'message': 'Failed to remove connection record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
@@ -140,7 +160,8 @@ def get_issued_credentials(identifier):
 
     response = []
     for issued_credential in issued_credentials:
-        definition = DCDefinition.find_by_id(issued_credential.dc_definition_id)
+        definition = DCDefinition.find_by_id(
+            issued_credential.dc_definition_id)
         response.append({
             'legalName': business.legal_name,
             'credentialType': definition.credential_type.name,
@@ -157,6 +178,7 @@ def get_issued_credentials(identifier):
 @jwt.requires_auth
 @can_access_digital_credentials
 def send_credential(identifier, credential_type):
+    # TODO: Need to check if the connection is attested
     """Issue credentials to the connection."""
     if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
         return jsonify({'message': 'Unable to decode JWT'}, HTTPStatus.UNAUTHORIZED)
@@ -168,6 +190,11 @@ def send_credential(identifier, credential_type):
         return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
 
     connection = DCConnection.find_active_by(business_id=business.id)
+    if not connection.last_attested:
+        return jsonify({'message': 'Connection not attested.'}), HTTPStatus.UNAUTHORIZED
+    elif not connection.is_attested:
+        return jsonify({'message': 'Connection failed attestation.'}), HTTPStatus.UNAUTHORIZED
+
     definition = DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
                                       digital_credentials.business_schema_id,
                                       digital_credentials.business_cred_def_id)
@@ -177,8 +204,10 @@ def send_credential(identifier, credential_type):
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential_data = DigitalCredentialsHelpers.get_digital_credential_data(business, user, definition.credential_type)
-    credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
+    credential_data = get_digital_credential_data(
+        user, business, definition.credential_type)
+    credential_id = next(
+        (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
     if not (response := digital_credentials.issue_credential(
         connection_id=connection.connection_id,
@@ -211,7 +240,8 @@ def revoke_credential(identifier, credential_id):
     if not (connection := DCConnection.find_active_by(business_id=business.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
-    issued_credential = DCIssuedCredential.find_by_credential_id(credential_id=credential_id)
+    issued_credential = DCIssuedCredential.find_by_credential_id(
+        credential_id=credential_id)
     if not issued_credential or issued_credential.is_revoked:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
@@ -254,30 +284,41 @@ def delete_credential(identifier, credential_id):
 def webhook_notification(topic_name: str):
     """To receive notification from aca-py admin api."""
     json_input = request.get_json()
+    state = json_input.get('state', None)
     try:
-        if topic_name == 'connections':
-            connection = DCConnection.find_by_connection_id(
-                DigitalCredentialsHelpers.extract_invitation_message_id(json_input))
-            # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
-            # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
-            if connection and not connection.is_active and json_input['state'] in (
-                    DCConnection.State.ACTIVE.value, DCConnection.State.COMPLETED.value):
-                connection.connection_id = json_input['connection_id']
-                connection.connection_state = json_input['state']
-                connection.is_active = True
-                connection.save()
-        elif topic_name == 'issuer_cred_rev':
-            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
-            if issued_credential and json_input['state'] == 'issued':
+        # Using https://didcomm.org/connections/1.0 protocol the final state is 'active'
+        # Using https://didcomm.org/didexchange/1.0 protocol the final state is 'completed'
+        if topic_name == 'connections' and state in (
+                DCConnection.State.ACTIVE.value, DCConnection.State.COMPLETED.value):
+            if (connection := DCConnection.find_by_connection_id(
+                    extract_invitation_message_id(json_input))):
+                if not connection.is_active:
+                    connection.connection_id = json_input['connection_id']
+                    connection.connection_state = state
+                    connection.is_active = True
+                    connection.save()
+        elif topic_name == 'issuer_cred_rev' and state == 'issued':
+            cred_ex_id = json_input.get('cred_ex_id', None)
+            if cred_ex_id and (issued_credential := DCIssuedCredential.find_by_credential_exchange_id(
+                    cred_ex_id)):
                 issued_credential.credential_revocation_id = json_input['cred_rev_id']
                 issued_credential.revocation_registry_id = json_input['rev_reg_id']
                 issued_credential.save()
-        elif topic_name == 'issue_credential_v2_0':
-            issued_credential = DCIssuedCredential.find_by_credential_exchange_id(json_input['cred_ex_id'])
-            if issued_credential and json_input['state'] == 'done':
+        elif topic_name == 'issue_credential_v2_0' and state == 'done':
+            cred_ex_id = json_input.get('cred_ex_id', None)
+            if (issued_credential := DCIssuedCredential.find_by_credential_exchange_id(
+                    cred_ex_id)):
                 issued_credential.date_of_issue = datetime.utcnow()
                 issued_credential.is_issued = True
                 issued_credential.save()
+        elif topic_name == 'present_proof_v2_0' and state == 'done':
+            connection_id = json_input.get('connection_id', None)
+            verified = json_input.get('verified', 'false') == 'true'
+            if connection_id and (connection := DCConnection.find_by_connection_id(
+                    connection_id)):
+                connection.is_attested = verified
+                connection.last_attested = datetime.utcnow()
+                connection.save()
     except Exception as err:
         current_app.logger.error(err)
         raise err

@@ -63,7 +63,7 @@ def test_find_active_by(session):
     res = DCConnection.find_active_by(business.id)
 
     assert res
-    assert res.connection_state == 'active'
+    assert res.connection_state == DCConnection.State.ACTIVE.value
 
 
 def test_find_by(session):
@@ -72,7 +72,8 @@ def test_find_by(session):
     business = factory_business(identifier)
     connection = create_dc_connection(business)
 
-    res = DCConnection.find_by(business_id=business.id, connection_state='invitation')
+    res = DCConnection.find_by(
+        business_id=business.id, connection_state=DCConnection.State.INVITATION_SENT.value)
 
     assert len(res) == 1
     assert res[0].id == connection.id
@@ -87,7 +88,7 @@ def create_dc_connection(business, is_active=False):
 LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFyc2lKWjY
 iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE2OC42NS4zOjgwMjAifQ==""",
         is_active=is_active,
-        connection_state='active' if is_active else 'invitation',
+        connection_state=DCConnection.State.ACTIVE.value if is_active else DCConnection.State.INVITATION_SENT.value,
         business_id=business.id
     )
     connection.save()

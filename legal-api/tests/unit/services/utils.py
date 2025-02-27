@@ -11,14 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Data for the JWT tokens."""
-from typing import List
+"""Utility functions for tests."""
+
+from flask_jwt_oidc import JwtManager
+import random
+from datetime import datetime
+from typing import List, Union
+from legal_api.models.address import Address
+from legal_api.models.business import Business
+from legal_api.models.party_role import PartyRole
+from tests.unit.models import factory_business, factory_party_role
 
 
-STAFF_ROLE = 'staff'
-
-
-def helper_create_jwt(jwt_manager, roles: List[str] = [], username: str = 'test-user'):
+def helper_create_jwt(jwt_manager: JwtManager, roles: List[str] = [], username: str = 'test-user'):
     """Create a jwt bearer token with the correct keys, roles and username."""
     token_header = {
         'alg': 'RS256',
@@ -48,3 +53,51 @@ def create_header(jwt_manager, roles: List[str] = [], username: str = 'test-user
     token = helper_create_jwt(jwt_manager, roles=roles, username=username)
     headers = {**kwargs, **{'Authorization': 'Bearer ' + token}}
     return headers
+
+
+def create_test_user(first_name: Union[str, None] = None, last_name: Union[str, None] = None,
+                     middle_initial: Union[str, None] = None, suffix: Union[str, None] = '',
+                     default_first: bool = True, default_last: bool = True, default_middle: bool = True):
+    first = first_name or ('TEST' if default_first else None)
+    last = last_name or ('USER' if default_last else None)
+    middle = middle_initial or ('TU' if default_middle else None)
+
+    return {
+        'first_name': f'{first}{suffix}' if first else None,
+        'last_name': f'{last}{suffix}' if last else None,
+        'middle_initial': f'{middle}{suffix}' if middle else None,
+    }
+
+
+def create_business(legal_type: str, state: Business.State):
+    """Create a business."""
+    identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+    business = factory_business(identifier=identifier,
+                                entity_type=legal_type,
+                                state=state,
+                                founding_date=datetime.now())
+    return business
+
+
+def create_party_role(role=PartyRole.RoleTypes.COMPLETING_PARTY,
+                      first_name: Union[str, None] = None,
+                      last_name: Union[str, None] = None,
+                      middle_initial: Union[str, None] = None):
+    completing_party_address = Address(
+        city='Test Mailing City', address_type=Address.DELIVERY)
+    officer = {
+        'firstName': first_name,
+        'middleInitial': middle_initial,
+        'lastName': last_name,
+        'partyType': 'person',
+        'organizationName': ''
+    }
+    party_role = factory_party_role(
+        completing_party_address,
+        None,
+        officer,
+        datetime.utcnow(),
+        None,
+        role
+    )
+    return party_role

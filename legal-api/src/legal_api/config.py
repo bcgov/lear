@@ -162,6 +162,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     BUSINESS_SCHEMA_VERSION = os.getenv('BUSINESS_SCHEMA_VERSION')
     BUSINESS_SCHEMA_ID = os.getenv('BUSINESS_SCHEMA_ID')
     BUSINESS_CRED_DEF_ID = os.getenv('BUSINESS_CRED_DEF_ID')
+    WALLET_CRED_DEF_ID = os.getenv('WALLET_CRED_DEF_ID')
 
     # Cache stuff
     CACHE_TYPE = os.getenv('CACHE_TYPE', 'SimpleCache')
