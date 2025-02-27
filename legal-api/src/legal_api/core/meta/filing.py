@@ -205,6 +205,21 @@ FILINGS: Final = {
             'CCC': 'BCANN'
         }
     },
+    'appointReceiver': {
+        'name': 'appointReceiver',
+        'title': 'Appoint Receiver Filing',
+        'displayName': 'Appoint Receiver',
+        'codes': {
+            'BEN': 'NOARM',
+            'BC': 'NOARM',
+            'ULC': 'NOARM',
+            'CC': 'NOARM',
+            'CBEN': 'NOARM',
+            'C': 'NOARM',
+            'CUL': 'NOARM',
+            'CCC': 'NOARM'
+        }
+    },
     'changeOfAddress': {
         'name': 'changeOfAddress',
         'title': 'Change of Address Filing',
