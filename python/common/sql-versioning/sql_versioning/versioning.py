@@ -259,7 +259,7 @@ def _before_flush(session, flush_context, instances):
         if not _is_session_modified(session):
             return
         
-        if not 'current_transaction_id' in session.info:
+        if 'current_transaction_id' not in session.info:
             transaction_manager = TransactionManager(session)
             transaction_manager.create_transaction()
 
