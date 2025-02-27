@@ -25,7 +25,7 @@ env:
 
 jobs:
   entity-pay-cd-by-push:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     if: github.event_name == 'push' && github.repository == 'bcgov/lear'
     environment:
@@ -68,7 +68,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   entity-pay-cd-by-dispatch:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     if: github.event_name == 'workflow_dispatch' && github.repository == 'bcgov/lear'
     environment:

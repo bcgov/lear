@@ -13,7 +13,7 @@ defaults:
 
 jobs:
   setup-job:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     if: github.repository == 'bcgov/lear'
 
@@ -23,7 +23,7 @@ jobs:
 
   linting:
     needs: setup-job
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
@@ -49,7 +49,7 @@ jobs:
 
   testing:
     needs: setup-job
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     env:
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: postgres
@@ -99,7 +99,7 @@ jobs:
 
   build-check:
     needs: setup-job
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v3
