@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Versioning extension for SQLAlchemy."""
-from .debugging import debug
 from .versioning import (Base, TransactionFactory, TransactionManager,
                          Versioned, disable_versioning, enable_versioning)
 from .utils import version_class
