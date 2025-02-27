@@ -319,9 +319,7 @@ def format_filings_data(data: dict) -> list[dict]:
         jurisdiction = None
         amalgamation = None
 
-        # make it None if no valid value
-        if not (user_id := x['u_user_id']):
-            user_id = x['u_full_name'] if x['u_full_name'] else None
+        user_id = get_username(x)
 
         if (
             raw_filing_type == 'conversion'
@@ -496,8 +494,7 @@ def format_business_comments_data(data: dict) -> list:
 
     for x in business_comments_data:
         c = x['cc_comments'] if x['cc_comments'] else x['cc_accession_comments']
-        if not (staff_id := x['cc_user_id']):
-            staff_id = x['cc_full_name'] if x['cc_full_name'] else None
+        staff_id = get_username(x)
         comment = {
             'comment': c,
             'timestamp': x['cc_comments_dts_str'],
@@ -581,19 +578,14 @@ def format_users_data(users_data: list) -> list:
                 and not any(ef == 'STAFF_COMMENT' for ef in event_file_types):
             continue
 
-        if not (username := x['u_user_id']):
-            username = x['u_full_name']
+        username = get_username(x)
 
-        # skip if both u_user_id and u_full_name is empty
         if not username:
             continue
 
         user = {
             **user,
             'username': username,
-            'firstname': x['u_first_name'],
-            'middlename': x['u_middle_name'],
-            'lastname': x['u_last_name'],
             'email': x['u_email_addr'],
             'creation_date': x['earliest_event_dt_str']
         }
@@ -808,6 +800,20 @@ def build_epoch_filing(business_id: int) -> dict:
         'status': 'TOMBSTONE'
     }
     return filing
+
+
+def get_username(data: dict) -> str:
+    first_name = data.get('u_first_name')
+    middle_name = data.get('u_middle_name')
+    last_name = data.get('u_last_name')
+
+    username = ' '.join([name for name in [first_name, middle_name, last_name] if name])
+    if not username:
+        username = data.get('u_user_id')
+    if not username:
+        username = data.get('p_cc_holder_name')
+
+    return username
 
 
 def load_data(conn: Connection,

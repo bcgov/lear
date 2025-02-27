@@ -166,7 +166,6 @@ def get_corp_users_query(corp_nums: list):
     query = f"""
     select
         u_user_id,
-        u_full_name,
         string_agg(event_type_cd || '_' || coalesce(filing_type_cd, 'NULL'), ',') as event_file_types,
         u_first_name,
         u_middle_name,
@@ -176,48 +175,44 @@ def get_corp_users_query(corp_nums: list):
             'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         ) as earliest_event_dt_str,
         min(u_email_addr) as u_email_addr,
-        u_role_typ_cd
+        u_role_typ_cd,
+        p_cc_holder_name
     from (
         select
-            upper(u.user_id) as u_user_id,
-            u.last_name as u_last_name,
-            u.first_name as u_first_name,
-            u.middle_name as u_middle_name,
+            upper(u.user_id)        as u_user_id,
+            trim(u.last_name)       as u_last_name,
+            trim(u.first_name)      as u_first_name,
+            trim(u.middle_name)     as u_middle_name,
             e.event_type_cd,
             f.filing_type_cd,
             e.event_timerstamp as u_timestamp,
-            case
-                when u.first_name is null and u.middle_name is null and u.last_name is null then null
-                else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
-            end as u_full_name,
             u.email_addr as u_email_addr,
-            u.role_typ_cd as u_role_typ_cd
+            u.role_typ_cd as u_role_typ_cd,
+            p.cc_holder_nme as p_cc_holder_name
         from event e
                 left outer join filing f on e.event_id = f.event_id
-                left outer join filing_user u on u.event_id = e.event_id
+                left outer join filing_user u on e.event_id = u.event_id
+                left outer join payment p on e.event_id = p.event_id
         where 1 = 1
     --        and e.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
             and e.corp_num in ({corp_nums_str})
         union
         -- staff comment at business level
         select
-            upper(cc.user_id) as u_user_id,
-            cc.last_nme as u_last_name,
-            cc.first_nme as u_first_name,
-            cc.middle_nme as u_middle_name,
+            upper(cc.user_id)       as u_user_id,
+            trim(cc.last_nme)       as u_last_name,
+            trim(cc.first_nme)      as u_first_name,
+            trim(cc.middle_nme)     as u_middle_name,
             'STAFF' as event_type_cd, -- placeholder
             'COMMENT' as filing_type_cd, -- placeholder
             comment_dts as u_timestamp,
-            case
-                when cc.first_nme is null and cc.middle_nme is null and cc.last_nme is null then null
-                else upper(concat_ws('_', nullif(trim(cc.first_nme),''), nullif(trim(cc.middle_nme),''), nullif(trim(cc.last_nme),'')))
-            end as u_full_name,
             null as u_email_addr,
-            null as u_role_typ_cd
+            null as u_role_typ_cd,
+            null as p_cc_holder_name
         from corp_comments cc
         where cc.corp_num in ({corp_nums_str})
     ) sub
-    group by sub.u_user_id, sub.u_full_name, sub.u_first_name, sub.u_middle_name, sub.u_last_name, sub.u_role_typ_cd
+    group by sub.u_user_id, sub.u_first_name, sub.u_middle_name, sub.u_last_name, sub.u_role_typ_cd, sub.p_cc_holder_name
     order by sub.u_user_id;
     """
     return query
@@ -604,16 +599,13 @@ def get_filings_query(corp_num):
                 and end_event_id is null
             ) as cs_state_event_id,
             --- filing user
-            upper(u.user_id)              as u_user_id,
-            u.last_name            as u_last_name,
-            u.first_name           as u_first_name,
-            u.middle_name          as u_middle_name,
-            case
-                when u.first_name is null and u.middle_name is null and u.last_name is null then null
-                else upper(concat_ws('_', nullif(trim(u.first_name),''), nullif(trim(u.middle_name),''), nullif(trim(u.last_name),'')))
-            end as u_full_name,
+            upper(u.user_id)             as u_user_id,
+            trim(u.last_name)            as u_last_name,
+            trim(u.first_name)           as u_first_name,
+            trim(u.middle_name)          as u_middle_name,
             u.email_addr           as u_email_addr,
             u.role_typ_cd          as u_role_typ_cd,
+            p.cc_holder_nme        as p_cc_holder_name,
             --- conversion ledger
             cl.ledger_title_txt    as cl_ledger_title_txt,
             -- conv event
@@ -624,6 +616,7 @@ def get_filings_query(corp_num):
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
+                 left outer join payment p on p.event_id = e.event_id
                  left outer join conv_ledger cl on cl.event_id = e.event_id
                  left outer join conv_event ce on e.event_id = ce.event_id
                  left outer join corp_name cn_old on e.event_id = cn_old.end_event_id
@@ -683,14 +676,10 @@ def get_business_comments_query(corp_num):
         )                       as cc_comments_dts_str,
         cc.comments             as cc_comments,
         cc.accession_comments   as cc_accession_comments,
-        upper(cc.user_id)       as cc_user_id,
-        cc.first_nme            as cc_first_name,
-        cc.last_nme             as cc_last_name,
-        cc.middle_nme           as cc_middle_name,
-        case
-            when cc.first_nme is null and cc.middle_nme is null and cc.last_nme is null then null
-            else upper(concat_ws('_', nullif(trim(cc.first_nme),''), nullif(trim(cc.middle_nme),''), nullif(trim(cc.last_nme),'')))
-        end                     as cc_full_name
+        upper(cc.user_id)       as u_user_id,
+        trim(cc.first_nme)      as u_first_name,
+        trim(cc.last_nme)       as u_last_name,
+        trim(cc.middle_nme)     as u_middle_name
     from corp_comments cc
     where corp_num = '{corp_num}';
     """
