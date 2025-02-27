@@ -80,11 +80,49 @@ def test_get_connections(app, session, client, jwt):  # pylint:disable=unused-ar
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connections',
                     headers=headers, content_type=content_type)
+
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json.get('connections')[0].get('invitationUrl') == connection.invitation_url
-    assert rv.json.get('connections')[0].get('connectionId') == connection.connection_id
-    assert rv.json.get('connections')[0].get('isActive') == connection.is_active
-    assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
+    assert rv.json.get('connections')[0].get(
+        'invitationUrl') == connection.invitation_url
+    assert rv.json.get('connections')[0].get(
+        'connectionId') == connection.connection_id
+    assert rv.json.get('connections')[0].get(
+        'isActive') == connection.is_active
+    assert rv.json.get('connections')[0].get(
+        'connectionState') == connection.connection_state
+
+
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_attest_connection(app, session, client, jwt):  # pylint:disable=unused-argument
+    """Assert Attest connection endpoint sends a request."""
+    headers = create_header(jwt, [BASIC_USER])
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+
+    connection = create_dc_connection(business)
+
+    with patch.object(DigitalCredentialsService, 'attest_connection', return_value={}):
+        rv = client.post(f'/api/v2/businesses/{identifier}/digitalCredentials/connections/{connection.connection_id}/attest',
+                         headers=headers, content_type=content_type)
+        assert rv.status_code == HTTPStatus.OK
+        assert rv.json.get('message') == 'Connection attestation request sent.'
+
+
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_attest_connection_fail(app, session, client, jwt):  # pylint:disable=unused-argument
+    """Assert Attest connection endpoint sends a request."""
+    headers = create_header(jwt, [BASIC_USER])
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+
+    connection = create_dc_connection(business)
+
+    with patch.object(DigitalCredentialsService, 'attest_connection', return_value=None):
+        rv = client.post(f'/api/v2/businesses/{identifier}/digitalCredentials/connections/{connection.connection_id}/attest',
+                         headers=headers, content_type=content_type)
+        assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+        assert rv.json.get(
+            'message') == 'Unable to request connection attestation.'
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
@@ -118,12 +156,16 @@ def test_get_issued_credentials(app, session, client, jwt):  # pylint:disable=un
 
     issued_credential = create_dc_issued_credential(business=business)
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
+    rv = client.get(
+        f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('issuedCredentials')) == 1
-    assert rv.json.get('issuedCredentials')[0].get('legalName') == business.legal_name
-    assert rv.json.get('issuedCredentials')[0].get('credentialType') == DCDefinition.CredentialType.business.name
-    assert rv.json.get('issuedCredentials')[0].get('credentialId') == issued_credential.credential_id
+    assert rv.json.get('issuedCredentials')[0].get(
+        'legalName') == business.legal_name
+    assert rv.json.get('issuedCredentials')[0].get(
+        'credentialType') == DCDefinition.CredentialType.business.name
+    assert rv.json.get('issuedCredentials')[0].get(
+        'credentialId') == issued_credential.credential_id
     assert not rv.json.get('issuedCredentials')[0].get('isIssued')
     assert rv.json.get('issuedCredentials')[0].get('dateOfIssue') == ''
     assert not rv.json.get('issuedCredentials')[0].get('isRevoked')
@@ -151,8 +193,10 @@ def test_webhook_connections_notification(app, session, client, jwt):  # pylint:
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connections',
                     headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json.get('connections')[0].get('isActive') == connection.is_active
-    assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
+    assert rv.json.get('connections')[0].get(
+        'isActive') == connection.is_active
+    assert rv.json.get('connections')[0].get(
+        'connectionState') == connection.connection_state
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
@@ -180,3 +224,32 @@ def test_webhook_issue_credential_notification(app, session, client, jwt):  # py
     assert rv.json.get('issuedCredentials')[0].get('isIssued')
     assert rv.json.get('issuedCredentials')[0].get('dateOfIssue')
     assert not rv.json.get('issuedCredentials')[0].get('isRevoked')
+
+
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_webhook_connection_attest_notification(app, session, client, jwt):
+    """Assert webhook connection attest notification endpoint when connection attested."""
+    headers = create_header(jwt, [BASIC_USER])
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+
+    connection = create_dc_connection(business)
+
+    json_data = {
+        'connection_id': connection.connection_id,
+        'state': 'done',
+        'verified': 'true'
+    }
+    rv = client.post('/api/v2/digitalCredentials/topic/present_proof_v2_0',
+                     json=json_data,
+                     headers=headers, content_type=content_type)
+    assert rv.status_code == HTTPStatus.OK
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connections',
+                    headers=headers, content_type=content_type)
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('connections')[0].get('isAttested') == True
+    assert rv.json.get('connections')[0].get('lastAttested') != ''
+    assert rv.json.get('connections')[0].get(
+        'connectionState') == connection.connection_state

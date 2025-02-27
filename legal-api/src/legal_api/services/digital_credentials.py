@@ -15,8 +15,10 @@
 """This provides the service for aca-py api calls."""
 
 
+from datetime import datetime
 import json
 from contextlib import suppress
+import random
 from typing import Optional
 
 import requests
@@ -42,6 +44,8 @@ class DigitalCredentialsService:
         self.business_schema_id = None
         self.business_cred_def_id = None
 
+        self.wallet_cred_def_id = None
+
     def init_app(self, app):
         """Initialize digital credentials using aca-py agent."""
         self.app = app
@@ -55,6 +59,8 @@ class DigitalCredentialsService:
             'BUSINESS_SCHEMA_VERSION')
         self.business_schema_id = app.config.get('BUSINESS_SCHEMA_ID')
         self.business_cred_def_id = app.config.get('BUSINESS_CRED_DEF_ID')
+
+        self.wallet_cred_def_id = app.config.get('WALLET_CRED_DEF_ID')
 
         with suppress(Exception):
             self._register_business_definition()
@@ -152,6 +158,55 @@ class DigitalCredentialsService:
                                      params={'auto_accept': 'true'},
                                      data=json.dumps({
                                          'handshake_protocols': ['https://didcomm.org/didexchange/1.1']
+                                     }))
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def attest_connection(self, connection_id: str) -> Optional[dict]:
+        "Perform an attestation to ensure that interactions only happen with connections on a trusted app."
+        try:
+            current_timestamp = int(datetime.now().timestamp())
+            # Generate a random nonce
+            nonce = str(random.randint(1000000000, 9999999999))
+
+            response = requests.post(self.api_url + '/present-proof-2.0/send-request',
+                                     headers=self._get_headers(),
+                                     data=json.dumps({
+                                         "comment": "BC Wallet App Attestation",
+                                         "connection_id": connection_id,
+                                         "presentation_request": {
+                                             "indy": {
+                                                 "name": "App Attestation",
+                                                 "nonce": nonce,  # Use the generated nonce
+                                                 "requested_attributes": {
+                                                    "attestationInfo": {
+                                                        "names": ["app_version", "operating_system", "operating_system_version"],
+                                                        "restrictions": [
+                                                            {
+                                                                "cred_def_id": self.wallet_cred_def_id
+                                                            }
+                                                        ]
+                                                    }
+                                                 },
+                                                 "requested_predicates": {
+                                                     "validAttestationDate": {
+                                                         "name": "issue_date_dateint",
+                                                         "p_type": "<",
+                                                         "p_value": current_timestamp,
+                                                         "restrictions": [
+                                                             {
+                                                                 "cred_def_id": self.wallet_cred_def_id
+                                                             }
+                                                         ]
+                                                     }
+                                                 },
+                                                 "version": "2.0"
+                                             }
+                                         }
                                      }))
             response.raise_for_status()
             return response.json()
