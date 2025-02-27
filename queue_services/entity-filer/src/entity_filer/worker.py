@@ -75,6 +75,7 @@ from entity_filer.filing_processors import (
     restoration,
     special_resolution,
     transition,
+    transparency_register,
 )
 from entity_filer.filing_processors.filing_components import business_profile, name_request
 
@@ -356,6 +357,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                         filing_core_submission.json,
                         filing_submission,
                         filing_meta)
+
+                elif filing.get('transparencyRegister'):
+                    transparency_register.process(business, filing_submission, filing_core_submission.json)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
