@@ -137,7 +137,8 @@ FILINGS: Final = {
             'CBEN': 'ALTER',
             'CUL': 'ALTER',
             'CCC': 'ALTER',
-            'BC_TO_ULC': 'NOALU'
+            'BC_TO_ULC': 'NOALU',
+            'C_TO_CUL': 'NOALU'
         },
         'additional': [
             {
