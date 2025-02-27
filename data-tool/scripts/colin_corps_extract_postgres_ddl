@@ -772,6 +772,17 @@ comment on table corp_involved_cont_in is 'new table\n\n"Optionally, a ""Continu
 alter table corp_involved_cont_in
     owner to postgres;
 
+create table if not exists payment
+(
+    event_id numeric(9)  not null
+        constraint fk_payment
+            references event (event_id),
+    payment_typ_cd varchar(4) not null,
+    cc_holder_nme varchar(80)
+);
+
+alter table payment
+    owner to postgres;
 
 CREATE INDEX if not exists ix_conv_event_event_id ON conv_event (event_id);
 
@@ -864,6 +875,8 @@ CREATE INDEX if not exists ix_office_end_event_id ON office (end_event_id);
 CREATE INDEX if not exists ix_office_mailing_addr_id ON office (mailing_addr_id);
 
 CREATE INDEX if not exists ix_office_delivery_addr_id ON office (delivery_addr_id);
+
+CREATE INDEX if not exists ix_payment_event_id ON payment (event_id);
 
 CREATE INDEX if not exists ix_resolution_corp_num ON resolution (corp_num);
 
