@@ -190,6 +190,11 @@ def send_credential(identifier, credential_type):
         return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
 
     connection = DCConnection.find_active_by(business_id=business.id)
+    if not connection.last_attested:
+        return jsonify({'message': 'Connection not attested.'}), HTTPStatus.UNAUTHORIZED
+    elif not connection.is_attested:
+        return jsonify({'message': 'Connection failed attestation.'}), HTTPStatus.UNAUTHORIZED
+
     definition = DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
                                       digital_credentials.business_schema_id,
                                       digital_credentials.business_cred_def_id)
