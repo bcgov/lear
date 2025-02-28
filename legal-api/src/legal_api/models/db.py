@@ -33,7 +33,6 @@ from sqlalchemy_continuum.manager import VersioningManager
 # by convention in the Flask community these are lower case,
 # whereas pylint wants them upper case
 db = SQLAlchemy()  # pylint: disable=invalid-name
-IS_LOGGED = False
 
 
 class Transaction(db.Model):
@@ -57,22 +56,18 @@ def print_versioning_info():
 
     This should only be called within an application context.
     """
-    global IS_LOGGED  # pylint: disable=global-statement
+    try:
+        from legal_api.services import flags as flag_service  # pylint: disable=import-outside-toplevel
 
-    if not IS_LOGGED:
-        try:
-            from legal_api.services import flags as flag_service  # pylint: disable=import-outside-toplevel
-
-            current_service = current_app.config.get('SERVICE_NAME')
-            if current_service:
-                db_versioning = flag_service.value('db-versioning')
-                use_new_versioning = (bool(db_versioning) and bool(db_versioning.get(current_service)))
-                current_versioning = 'new' if use_new_versioning else 'old'
-                print(f'\033[31mService: {current_service}, db versioning={current_versioning}\033[0m')
-                IS_LOGGED = True
-        except Exception as err:
-            # Don't crash if something goes wrong
-            print(f'\033[31mUnable to determine versioning type: {err}\033[0m')
+        current_service = current_app.config.get('SERVICE_NAME')
+        if current_service:
+            db_versioning = flag_service.value('db-versioning')
+            use_new_versioning = (bool(db_versioning) and bool(db_versioning.get(current_service)))
+            current_versioning = 'new' if use_new_versioning else 'old'
+            print(f'\033[31mService: {current_service}, db versioning={current_versioning}\033[0m')
+    except Exception as err:
+        # Don't crash if something goes wrong
+        print(f'\033[31mUnable to determine versioning type: {err}\033[0m')
 
 
 def init_db(app):
