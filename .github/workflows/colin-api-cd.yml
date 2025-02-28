@@ -33,6 +33,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install CLI tools from OpenShift
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          oc: "4"
+
       - name: Login Openshift
         shell: bash
         run: |
@@ -75,9 +80,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - name: Set env by input
         run: |
           echo "TAG_NAME=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+
+      - name: Install CLI tools from OpenShift
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          oc: "4"
 
       - name: Login Openshift
         shell: bash
