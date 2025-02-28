@@ -35,6 +35,7 @@ from sqlalchemy_continuum.manager import VersioningManager
 db = SQLAlchemy()  # pylint: disable=invalid-name
 IS_LOGGED = False
 
+
 class Transaction(db.Model):
     """This class manages the transaction."""
 
@@ -51,16 +52,17 @@ class Transaction(db.Model):
 
 
 def print_versioning_info():
-    """Print the current versioning status if not already printed.
+    """
+    Print the current versioning status if not already printed.
+
     This should only be called within an application context.
     """
-    global IS_LOGGED
-    
+    global IS_LOGGED  # pylint: disable=global-statement
+
     if not IS_LOGGED:
         try:
-            from legal_api.services import flags as flag_service
-            from flask import current_app
-            
+            from legal_api.services import flags as flag_service  # pylint: disable=import-outside-toplevel
+
             current_service = current_app.config.get('SERVICE_NAME')
             if current_service:
                 db_versioning = flag_service.value('db-versioning')
@@ -276,8 +278,10 @@ def setup_versioning():
     _new_enable_versioning(transaction_cls=Transaction)
     make_versioned(user_cls=None, manager=versioning_manager)
 
+
 # TODO: enable versioning switching
 # it should be called before data model initialized, otherwise, old versioning doesn't work properly
 setup_versioning()
+
 
 # make_versioned(user_cls=None, manager=versioning_manager)
