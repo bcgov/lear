@@ -613,8 +613,7 @@ def get_filings_query(corp_num):
             to_char(ce.effective_dt at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as ce_effective_dt_str,
             -- corp name change
             cn_old.corp_name        as old_corp_name,
-            cn_new.corp_name        as new_corp_name,
-            e.event_timerstamp
+            cn_new.corp_name        as new_corp_name
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
