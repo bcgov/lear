@@ -565,7 +565,7 @@ def get_jurisdictions_query(corp_num):
 
 def get_filings_query(corp_num):
     query = f"""
-    select                    
+    select
             -- event
             e.event_id             as e_event_id,
             e.corp_num             as e_corp_num,
@@ -620,8 +620,8 @@ def get_filings_query(corp_num):
                  left outer join payment p on p.event_id = e.event_id
                  left outer join conv_ledger cl on cl.event_id = e.event_id
                  left outer join conv_event ce on e.event_id = ce.event_id
-                 left outer join corp_name cn_old on e.event_id = cn_old.end_event_id
-                 left outer join corp_name cn_new on e.event_id = cn_new.start_event_id
+                 left outer join corp_name cn_old on e.event_id = cn_old.end_event_id and cn_old.corp_name_typ_cd in ('CO', 'NB')
+                 left outer join corp_name cn_new on e.event_id = cn_new.start_event_id and cn_new.corp_name_typ_cd in ('CO', 'NB')
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'

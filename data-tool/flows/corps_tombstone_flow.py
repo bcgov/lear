@@ -311,11 +311,11 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type']
         )
-        if entity_status == HTTPStatus.OK:
+        if entity_status == HTTPStatus.OK and (admin_email := tombstone_data.get('admin_email')):
             update_email_status = AuthService.update_contact_email(
                 config=config,
                 identifier=business_data['identifier'],
-                email=tombstone_data['admin_email']
+                email=admin_email
             )
             if update_email_status != HTTPStatus.OK:
                 raise Exception(f"""Failed to update admin email in auth {business_data['identifier']}""")
