@@ -70,6 +70,9 @@ jobs:
       BUSINESS_SCHEMA_VERSION: "1.0.0"
 
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        python-version: [3.8]
 
     services:
       postgres:
