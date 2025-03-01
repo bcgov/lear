@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -65,6 +65,11 @@ jobs:
       NATS_ENTITY_EVENTS_SUBJECT: entity.events
       STAGE_1_DELAY: 42
       STAGE_2_DELAY: 30
+
+    strategy:
+      matrix:
+        python-version: [3.8]
+
     services:
       postgres:
         image: postgres:12
@@ -78,7 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
