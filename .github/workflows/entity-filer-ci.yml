@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -74,7 +74,6 @@ jobs:
       ACCOUNT_SVC_CLIENT_SECRET: account_svc_client_secret
       BUSINESS_EVENTS_TOPIC: projects/project-id/topics/test
 
-
     runs-on: ubuntu-24.04
 
     strategy:
@@ -96,7 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install docker-compose
