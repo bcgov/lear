@@ -64,7 +64,7 @@ def get_unprocessed_corps_subquery(flow_name, environment):
                     from corp_involved_amalgamating
                 )
             """,
-            'where': """
+            'where': """  
                 and not exists (
                     select 1
                     from t3
@@ -97,7 +97,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
-    {where_clause}
+    {where_clause}        
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
@@ -458,7 +458,7 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
         and cp.end_event_id is null
-        and cp.party_typ_cd in ('INC', 'DIR')
+        and cp.party_typ_cd in ('INC', 'DIR', 'OFF')
     --order by e.event_id
     order by cp_full_name, e.event_id
     ;
@@ -739,12 +739,30 @@ def get_in_dissolution_query(corp_num):
     """
     return query
 
+def get_offices_held_query(corp_num):
+    query = f"""
+    SELECT cp.corp_party_id                                                                       AS cp_corp_party_id,
+           concat_ws(' ', nullif(trim(cp.first_name), ''), nullif(trim(cp.middle_name), ''),
+                     nullif(trim(cp.last_name), ''))                                              as cp_full_name,    
+           oh.officer_typ_cd                                                                      as oh_officer_typ_cd,
+           e.event_id                                                                             AS transaction_id
+    FROM event e
+             join corp_party cp on cp.start_event_id = e.event_id
+             join offices_held oh on oh.corp_party_id = cp.corp_party_id
+    WHERE 1 = 1
+      and cp.corp_num = '{corp_num}'
+      and cp.end_event_id is null
+      AND cp.party_typ_cd IN ('OFF')
+    """
+    return query
+
 
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
         'offices': get_offices_and_addresses_query(corp_num),
         'parties': get_parties_and_addresses_query(corp_num),
+        'offices_held': get_offices_held_query(corp_num),
         'share_classes': get_share_classes_share_series_query(corp_num),
         'aliases': get_aliases_query(corp_num),
         'resolutions': get_resolutions_query(corp_num),

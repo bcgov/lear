@@ -822,6 +822,8 @@ CREATE INDEX if not exists ix_corp_party_end_event_id ON corp_party (end_event_i
 
 CREATE INDEX if not exists ix_corp_party_appointment_dt ON corp_party (appointment_dt);
 
+CREATE INDEX if not exists ix_corp_processing_id ON corp_processing (id);
+
 CREATE INDEX if not exists ix_corp_processing_flow_run_id ON corp_processing (flow_run_id);
 
 CREATE INDEX if not exists ix_corp_processing_claimed_at ON corp_processing (claimed_at);
@@ -897,3 +899,11 @@ CREATE INDEX if not exists ix_share_struct_cls_corp_num ON share_struct_cls (cor
 CREATE INDEX if not exists ix_share_struct_cls_start_event_id ON share_struct_cls (start_event_id);
 
 CREATE INDEX if not exists ix_share_struct_cls_share_class_id ON share_struct_cls (share_class_id);
+
+CREATE INDEX if not exists idx_corp_processing_flow_env_status ON corp_processing (flow_name, environment, processed_status, corp_num);
+
+CREATE INDEX if not exists idx_corp_processing_claim_batch ON corp_processing (environment, flow_name, flow_run_id, processed_status, claimed_at);
+
+CREATE INDEX if not exists idx_corp_state_active ON corp_state (end_event_id, corp_num);
+
+CREATE INDEX if not exists idx_corp_state_corp_num_end_event_id ON corp_state (corp_num, end_event_id);
