@@ -130,6 +130,7 @@ SHARE_CLASSES = {
         'par_value_flag': False,
         'par_value': None,  # float
         'currency': None,
+        'currency_additional': None,
         'special_rights_flag': False,
         # FK
         'business_id': None
