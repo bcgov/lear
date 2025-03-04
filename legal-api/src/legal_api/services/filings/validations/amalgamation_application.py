@@ -170,11 +170,21 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
                 'error': 'Adopt a name that have the same business type as the resulting business.',
                 'path': f'/filing/{filing_type}/nameRequest/legalName'
             })
-    elif primary_or_holding_business and primary_or_holding_business.legal_type != legal_type:
-        msg.append({
-            'error': 'Legal type should be same as the legal type in primary or holding business.',
-            'path': f'/filing/{filing_type}/nameRequest/legalType'
-        })
+
+    if primary_or_holding_business:
+        continued_types_map = {
+            Business.LegalTypes.CONTINUE_IN.value: Business.LegalTypes.COMP.value,
+            Business.LegalTypes.BCOMP_CONTINUE_IN.value: Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.ULC_CONTINUE_IN.value: Business.LegalTypes.BC_ULC_COMPANY.value,
+            Business.LegalTypes.CCC_CONTINUE_IN.value: Business.LegalTypes.BC_CCC.value
+        }
+        legal_type_to_compare = continued_types_map.get(primary_or_holding_business.legal_type,
+                                                        primary_or_holding_business.legal_type)
+        if legal_type_to_compare != legal_type:
+            msg.append({
+                'error': 'Legal type should be same as the legal type in primary or holding business.',
+                'path': f'/filing/{filing_type}/nameRequest/legalType'
+            })
 
     msg.extend(_validate_amalgamation_type(amalgamation_type,
                                            amalgamating_business_roles,
