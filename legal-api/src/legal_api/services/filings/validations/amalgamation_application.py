@@ -173,10 +173,10 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
 
     if primary_or_holding_business:
         continued_types_map = {
-            'C': 'BC',
-            'CBEN': 'BEN',
-            'CUL': 'ULC',
-            'CCC': 'CC'
+            Business.LegalTypes.CONTINUE_IN.value: Business.LegalTypes.COMP.value,
+            Business.LegalTypes.BCOMP_CONTINUE_IN.value: Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.ULC_CONTINUE_IN.value: Business.LegalTypes.BC_ULC_COMPANY.value,
+            Business.LegalTypes.CCC_CONTINUE_IN.value: Business.LegalTypes.BC_CCC.value
         }
         legal_type_to_compare = continued_types_map.get(primary_or_holding_business.legal_type,
                                                         primary_or_holding_business.legal_type)
