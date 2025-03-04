@@ -67,7 +67,7 @@ def print_versioning_info():
             current_app.logger.info(f'\033[31mService: {current_service}, db versioning={current_versioning}\033[0m')
     except Exception as err:
         # Don't crash if something goes wrong
-        current_app.logger.info(f'\033[31mUnable to determine versioning type: {err}\033[0m')
+        current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
 
 
 def init_db(app):
