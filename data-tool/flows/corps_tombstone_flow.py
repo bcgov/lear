@@ -12,6 +12,7 @@ from prefect import flow, task, serve
 from prefect.futures import wait
 from prefect.context import get_run_context
 from prefect.task_runners import ConcurrentTaskRunner
+from prefect_dask import DaskTaskRunner
 from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
 
@@ -65,7 +66,6 @@ def get_unprocessed_count(config, colin_engine: Engine) -> int:
 def get_corp_users(colin_engine: Engine, corp_nums: list) -> list[dict]:
     """Get user information."""
     query = get_corp_users_query(corp_nums)
-
     sql_text = text(query)
 
     with colin_engine.connect() as conn:
@@ -139,6 +139,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
             address['office_id'] = office_id
             load_data(conn, 'addresses', address)
 
+    party_roles_map = {}
     for party in tombstone_data['parties']:
         mailing_address_id = None
         delivery_address_id = None
@@ -152,12 +153,26 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
         party['parties']['mailing_address_id'] = mailing_address_id
         party['parties']['delivery_address_id'] = delivery_address_id
 
+        source_full_name = party['parties']['cp_full_name']
+        del party['parties']['cp_full_name']
         party_id = load_data(conn, 'parties', party['parties'])
 
         for party_role in party['party_roles']:
             party_role['business_id'] = business_id
             party_role['party_id'] = party_id
-            load_data(conn, 'party_roles', party_role)
+            party_role_id = load_data(conn, 'party_roles', party_role, expecting_id=True)
+
+            # Create a unique key for mapping
+            key = (source_full_name, party_role['role'])
+            party_roles_map[key] = party_role_id
+
+    for office_held in tombstone_data.get('offices_held', []):
+        # Map to party_role_id using the key
+        key = (office_held['cp_full_name'], 'officer')
+        party_role_id = party_roles_map.get(key)
+        office_held['party_role_id'] = party_role_id
+        del office_held['cp_full_name']
+        load_data(conn,'offices_held', office_held)
 
     for share_class in tombstone_data['share_classes']:
         share_class['share_classes']['business_id'] = business_id
@@ -380,7 +395,8 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
     log_prints=True,
     persist_result=False,
     # use ConcurrentTaskRunner when using work pool based deployments
-    # task_runner=ConcurrentTaskRunner(max_workers=35)
+    # task_runner=ConcurrentTaskRunner(max_workers=100)
+    # task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 3, "threads_per_worker": 2})
 )
 def tombstone_flow():
     """Entry of tombstone pipeline"""
@@ -485,7 +501,7 @@ def tombstone_flow():
 
 
 if __name__ == "__main__":
-   tombstone_flow()
+    tombstone_flow()
 
     # # Create deployment - only intended to test locally for parallel flows
     # deployment = tombstone_flow.to_deployment(

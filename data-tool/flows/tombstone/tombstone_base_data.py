@@ -103,6 +103,10 @@ PARTY = {
     ]
 }
 
+OFFICES_HELD = {
+    'party_role_id': None,
+    'title': None # enum
+}
 
 # ======== share structure (composite) ========
 # insert: share_class -> share_series(if any)

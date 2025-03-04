@@ -11,7 +11,7 @@ from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
                                            FILING_JSON, IN_DISSOLUTION,
                                            JURISDICTION, OFFICE, PARTY,
                                            PARTY_ROLE, RESOLUTION,
-                                           SHARE_CLASSES, USER)
+                                           SHARE_CLASSES, USER, OFFICES_HELD)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
@@ -111,11 +111,20 @@ def format_parties_data(data: dict) -> list[dict]:
 
     formatted_parties = []
 
+    # Map role codes to role names
+    role_mapping = {
+        'INC': 'incorporator',
+        'DIR': 'director',
+        'OFF': 'officer'
+        # Additional roles can be added here in the future
+    }
+
     df = pd.DataFrame(parties_data)
     grouped_parties = df.groupby('cp_full_name')
     for _, group in grouped_parties:
         party = copy.deepcopy(PARTY)
         party_info = group.iloc[0].to_dict()
+        party['parties']['cp_full_name'] = party_info['cp_full_name']
         party['parties']['first_name'] = party_info['cp_first_name']
         party['parties']['middle_initial'] = party_info['cp_middle_name']
         party['parties']['last_name'] = party_info['cp_last_name']
@@ -141,9 +150,11 @@ def format_parties_data(data: dict) -> list[dict]:
 
         formatted_party_roles = party['party_roles']
         for _, r in group.iterrows():
-            if (role_code := r['cp_party_typ_cd']) not in ['INC', 'DIR']:
+            if (role_code := r['cp_party_typ_cd']) not in ['INC', 'DIR', 'OFF']:
                 continue
-            role = 'incorporator' if role_code == 'INC' else 'director'
+
+            role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
+
             party_role = copy.deepcopy(PARTY_ROLE)
             party_role['role'] = role
             party_role['appointment_date'] = r['cp_appointment_dt_str']
@@ -153,6 +164,34 @@ def format_parties_data(data: dict) -> list[dict]:
         formatted_parties.append(party)
 
     return formatted_parties
+
+def format_offices_held_data(data: dict) -> list[dict]:
+    offices_held_data = data['offices_held']
+
+    if not offices_held_data:
+        return []
+
+    formatted_offices_held = []
+
+    title_mapping = {
+        'ASC': 'ASSISTANT_SECRETARY',
+        'CEO': 'CEO',
+        'CFO': 'CFO',
+        'CHR': 'CHAIR',
+        'OTH': 'OTHER_OFFICES',
+        'PRE': 'PRESIDENT',
+        'SEC': 'SECRETARY',
+        'TRE': 'TREASURER',
+        'VIP': 'VICE_PRESIDENT'
+    }
+
+    for x in offices_held_data:
+        office_held = copy.deepcopy(OFFICES_HELD)
+        office_held['cp_full_name'] = x['cp_full_name']
+        office_held['title'] = title_mapping[x['oh_officer_typ_cd']] # map to enum val
+        formatted_offices_held.append(office_held)
+
+    return formatted_offices_held
 
 
 def format_share_series_data(share_series_data: dict) -> dict:
@@ -602,7 +641,7 @@ def formatted_data_cleanup(data: dict) -> dict:
         'state_filing_index': filings_business['state_filing_index']
     }
     data['filings'] = filings_business['filings']
-    
+
     data['admin_email'] = data['businesses']['admin_email']
     del data['businesses']['admin_email']
 
@@ -614,6 +653,7 @@ def get_data_formatters() -> dict:
         'businesses': format_business_data,
         'offices': format_offices_data,
         'parties': format_parties_data,
+        'offices_held': format_offices_held_data,
         'share_classes': format_share_classes_data,
         'aliases': format_aliases_data,
         'resolutions': format_resolutions_data,
