@@ -21,7 +21,6 @@ __all__ = (
     "TransactionFactory",
     "TransactionManager",
     "Versioned",
-    "debug",
     "disable_versioning",
     "enable_versioning",
     "version_class"

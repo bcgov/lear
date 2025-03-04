@@ -50,6 +50,26 @@ class Transaction(db.Model):
     issued_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
 
 
+def print_versioning_info():
+    """
+    Print the current versioning status if not already printed.
+
+    This should only be called within an application context.
+    """
+    try:
+        from legal_api.services import flags as flag_service  # pylint: disable=import-outside-toplevel
+
+        current_service = current_app.config.get('SERVICE_NAME')
+        if current_service:
+            db_versioning = flag_service.value('db-versioning')
+            use_new_versioning = (bool(db_versioning) and bool(db_versioning.get(current_service)))
+            current_versioning = 'new' if use_new_versioning else 'old'
+            print(f'\033[31mService: {current_service}, db versioning={current_versioning}\033[0m')
+    except Exception as err:
+        # Don't crash if something goes wrong
+        print(f'\033[31mUnable to determine versioning type: {err}\033[0m')
+
+
 def init_db(app):
     """Initialize database using flask app and configure db mappers.
 
@@ -58,6 +78,9 @@ def init_db(app):
     """
     db.init_app(app)
     orm.configure_mappers()
+
+    with app.app_context():
+        print_versioning_info()
 
 
 # TODO: remove versioning switching logic
@@ -136,7 +159,6 @@ class VersioningProxy:
         db_versioning = flags.value('db-versioning')
         use_new_versioning = (bool(db_versioning) and bool(db_versioning.get(current_service)))
         cls._current_versioning = 'new' if use_new_versioning else 'old'
-        print(f'\033[31mCurrent versioning={cls._current_versioning}\033[0m')
 
     @classmethod
     def _initialize_versioning(cls):
@@ -159,6 +181,8 @@ class VersioningProxy:
         """
         cls._versioning_control[previous]['disable']()
         cls._versioning_control[current]['enable']()
+        # Print when versioning changes
+        print(f'\033[31mVersioning changed: {previous} -> {current}\033[0m')
 
     @classmethod
     def lock_versioning(cls, session, transaction):
@@ -253,5 +277,6 @@ def setup_versioning():
 # TODO: enable versioning switching
 # it should be called before data model initialized, otherwise, old versioning doesn't work properly
 setup_versioning()
+
 
 # make_versioned(user_cls=None, manager=versioning_manager)
