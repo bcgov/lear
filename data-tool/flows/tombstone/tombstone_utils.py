@@ -111,6 +111,14 @@ def format_parties_data(data: dict) -> list[dict]:
 
     formatted_parties = []
 
+    # Map role codes to role names
+    role_mapping = {
+        'INC': 'incorporator',
+        'DIR': 'director',
+        'OFF': 'officer'
+        # Additional roles can be added here in the future
+    }
+
     df = pd.DataFrame(parties_data)
     grouped_parties = df.groupby('cp_full_name')
     for _, group in grouped_parties:
@@ -144,14 +152,6 @@ def format_parties_data(data: dict) -> list[dict]:
         for _, r in group.iterrows():
             if (role_code := r['cp_party_typ_cd']) not in ['INC', 'DIR', 'OFF']:
                 continue
-
-            # Map role codes to role names
-            role_mapping = {
-                'INC': 'incorporator',
-                'DIR': 'director',
-                'OFF': 'officer'
-                # Additional roles can be added here in the future
-            }
 
             role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
 
