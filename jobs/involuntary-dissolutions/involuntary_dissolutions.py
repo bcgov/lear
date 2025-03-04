@@ -21,9 +21,9 @@ import pytz
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from croniter import croniter
 from flask import Flask
-from legal_api import init_db
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models import Batch, BatchProcessing, Business, Configuration, Filing, Furnishing, db  # noqa: I001
+from legal_api.models.db import init_db
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService

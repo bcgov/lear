@@ -20,8 +20,8 @@ import pytz
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from croniter import croniter
 from flask import Flask
-from legal_api import init_db
 from legal_api.models import Configuration
+from legal_api.models.db import init_db
 from legal_api.services.flags import Flags
 from legal_api.services.queue import QueueService
 from sentry_sdk.integrations.logging import LoggingIntegration

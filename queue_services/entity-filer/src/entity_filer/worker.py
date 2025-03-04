@@ -36,10 +36,9 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
-from legal_api import init_db
 from legal_api.core import Filing as FilingCore
 from legal_api.models import Business, Filing, db
-from legal_api.models.db import VersioningProxy
+from legal_api.models.db import VersioningProxy, init_db
 from legal_api.services import Flags
 from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
