@@ -64,10 +64,10 @@ def print_versioning_info():
             db_versioning = flag_service.value('db-versioning')
             use_new_versioning = (bool(db_versioning) and bool(db_versioning.get(current_service)))
             current_versioning = 'new' if use_new_versioning else 'old'
-            print(f'\033[31mService: {current_service}, db versioning={current_versioning}\033[0m')
+            current_app.logger.info(f'\033[31mService: {current_service}, db versioning={current_versioning}\033[0m')
     except Exception as err:
         # Don't crash if something goes wrong
-        print(f'\033[31mUnable to determine versioning type: {err}\033[0m')
+        current_app.logger.info(f'\033[31mUnable to determine versioning type: {err}\033[0m')
 
 
 def init_db(app):
@@ -182,7 +182,7 @@ class VersioningProxy:
         cls._versioning_control[previous]['disable']()
         cls._versioning_control[current]['enable']()
         # Print when versioning changes
-        print(f'\033[31mVersioning changed: {previous} -> {current}\033[0m')
+        current_app.logger.info(f'\033[31mVersioning changed: {previous} -> {current}\033[0m')
 
     @classmethod
     def lock_versioning(cls, session, transaction):
