@@ -225,9 +225,13 @@ def format_share_classes_data(data: dict) -> list[dict]:
         max_shares = int(share_class_info['ssc_share_quantity']) if share_class_info['ssc_share_quantity'] else None
         par_value = float(share_class_info['ssc_par_value_amt']) if share_class_info['ssc_par_value_amt'] else None
 
-        # TODO: map NULL or custom input value of ssc_other_currency
+        currency_additioanl = None
         if (currency := share_class_info['ssc_currency_typ_cd']) == 'OTH':
-            currency = share_class_info['ssc_other_currency']
+            if (other_currency := share_class_info['ssc_other_currency']) and other_currency.strip() == 'CAD':
+                currency = 'CAD'
+            else:
+                currency = 'OTHER'  # TODO: to confirm the code used in LEAR in the end
+                currency_additioanl = other_currency
 
         share_class['share_classes']['name'] = share_class_info['ssc_class_nme']
         share_class['share_classes']['priority'] = priority
@@ -236,6 +240,7 @@ def format_share_classes_data(data: dict) -> list[dict]:
         share_class['share_classes']['par_value_flag'] = share_class_info['ssc_par_value_ind']
         share_class['share_classes']['par_value'] = par_value
         share_class['share_classes']['currency'] = currency
+        share_class['share_classes']['currency_additional'] = currency_additioanl
         share_class['share_classes']['special_rights_flag'] = share_class_info['ssc_spec_rights_ind']
 
         # Note: srs_share_class_id should be either None or equal to share_class_id
@@ -312,11 +317,14 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
     elif can_jurisdiction_code == 'OT' and len(other_jurisdiction_desc) == 6:
         formatted_jurisdiction['country'] = other_jurisdiction_desc[:2]
         formatted_jurisdiction['region'] = other_jurisdiction_desc[4:]
+    else:
+    # add placeholder for unavailable information
+        formatted_jurisdiction['country'] = 'UNKNOWN'
 
     return formatted_jurisdiction
 
 
-def format_filings_data(data: dict) -> list[dict]:
+def format_filings_data(data: dict) -> dict:
     # filing info in business
     business_update_dict = {}
 
@@ -866,23 +874,23 @@ def load_data(conn: Connection,
               conflict_error = False,
               expecting_id: bool = True) -> Optional[int]:
     columns = ', '.join(data.keys())
-    values = ', '.join([format_value(v) for v in data.values()])
+    placeholders = ', '.join([f':{key}' for key in data.keys()])
 
     if conflict_column:
-        conflict_value = format_value(data[conflict_column])
-        check_query = f"select id from {table_name} where {conflict_column} = {conflict_value}"
-        check_result = conn.execute(text(check_query)).scalar()
+        conflict_value = data[conflict_column]
+        check_query = f"select id from {table_name} where {conflict_column} = :conflict_value"
+        check_result = conn.execute(text(check_query), {'conflict_value': format_value(conflict_value)}).scalar()
         if check_result:
             if not conflict_error:
                 return check_result
             else:
                 raise Exception('Trying to reload corp existing in db, run delete script first')
 
-    query = f"""insert into {table_name} ({columns}) values ({values})"""
+    query = f"""insert into {table_name} ({columns}) values ({placeholders})"""
     if expecting_id:
         query = query + ' returning id'
 
-    result = conn.execute(text(query))
+    result = conn.execute(text(query), format_params(data))
 
     if expecting_id:
         id = result.scalar()
@@ -892,25 +900,27 @@ def load_data(conn: Connection,
 
 
 def update_data(conn: Connection, table_name: str, data: dict, column: str, value: any) -> int:
-    update_pairs = [f'{k} = {format_value(v)}' for k, v in data.items()]
+    update_pairs = [f'{k} = :{k}' for k in data.keys()]
     update_pairs_str = ', '.join(update_pairs)
-    query = f"""update {table_name} set {update_pairs_str} where {column}={format_value(value)} returning id"""
+    query = f"""update {table_name} set {update_pairs_str} where {column}=:condition_value returning id"""
 
-    result = conn.execute(text(query))
+    params = copy.deepcopy(data)
+    params['condition_value'] = value
+
+    result = conn.execute(text(query), format_params(params))
     id = result.scalar()
 
     return id
 
 
 def format_value(value) -> str:
-    if value is None:
-        return 'NULL'
-    elif isinstance(value, (int, float)):
-        return str(value)
-    elif isinstance(value, dict):
-        value = json.dumps(value).replace("'", "''")
-        return f"'{value}'"
-    else:
-        # Note: handle single quote issue
-        value = str(value).replace("'", "''")
-        return f"'{value}'"
+    if isinstance(value, dict):
+        return json.dumps(value)
+    return value
+
+
+def format_params(data: dict) -> dict:
+    formatted = {}
+    for k, v in data.items():
+        formatted[k] = format_value(v)
+    return formatted

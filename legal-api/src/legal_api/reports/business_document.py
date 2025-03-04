@@ -264,9 +264,13 @@ class BusinessDocument:
             business['formatted_registration_date'] = LegislationDatetime.\
                 format_as_report_string(datetime.fromisoformat(registration_datetime_str))
         # founding dates
-        founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
-        business['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
-        business['formatted_founding_date'] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
+        if self._business.founding_date:
+            founding_datetime = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
+            business['formatted_founding_date_time'] = LegislationDatetime.format_as_report_string(founding_datetime)
+            business['formatted_founding_date'] = founding_datetime.strftime(OUTPUT_DATE_FORMAT)
+        else:
+            business['formatted_founding_date_time'] = 'Not Available'
+            business['formatted_founding_date'] = 'Not Available'
         # dissolution dates
         if self._business.dissolution_date:
             dissolution_datetime = LegislationDatetime.as_legislation_timezone(self._business.dissolution_date)
@@ -565,18 +569,26 @@ class BusinessDocument:
             continuation_in_filing = continuation_in_filing[0]
             jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(continuation_in_filing.business_id)
 
+            if not jurisdiction:
+                return
+
             # Format country and region
             region_code = jurisdiction.region
             country_code = jurisdiction.country
-            country = pycountry.countries.get(alpha_2=country_code)
-            region = None
-            if region_code and region_code.upper() != 'FEDERAL':
-                region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-            location_jurisdiction = f'{region.name}, {country.name}' if region else country.name
+            location_jurisdiction = 'Not Available'
+            if country_code and country_code.upper() != 'UNKNOWN':
+                country = pycountry.countries.get(alpha_2=country_code)
+                region = None
+                if region_code and region_code.upper() != 'FEDERAL':
+                    region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+                location_jurisdiction = f'{region.name}, {country.name}' if region else country.name
 
             # Format incorporation date
-            incorp_date = LegislationDatetime.as_legislation_timezone(jurisdiction.incorporation_date)
-            formatted_incorporation_date = incorp_date.strftime(OUTPUT_DATE_FORMAT)
+            if jurisdiction.incorporation_date:
+                incorp_date = LegislationDatetime.as_legislation_timezone(jurisdiction.incorporation_date)
+                formatted_incorporation_date = incorp_date.strftime(OUTPUT_DATE_FORMAT)
+            else:
+                formatted_incorporation_date = 'Not Available'
 
             # Format Jurisdiction data
             jurisdiction_info = {
@@ -586,7 +598,7 @@ class BusinessDocument:
                     'legal_name': jurisdiction.legal_name or 'Not Available',
                     'tax_id': jurisdiction.tax_id,
                     'incorporation_date': formatted_incorporation_date,
-                    'expro_identifier': jurisdiction.expro_identifier,
+                    'expro_identifier': jurisdiction.expro_identifier or 'Not Available',
                     'expro_legal_name': jurisdiction.expro_legal_name or 'Not Available',
                     'business_id': jurisdiction.business_id,
                     'filing_id': jurisdiction.filing_id,
@@ -597,10 +609,12 @@ class BusinessDocument:
 
     @staticmethod
     def _format_address(address):
+        address['streetAddress'] = address.get('streetAddress') or ''
         address['streetAddressAdditional'] = address.get('streetAddressAdditional') or ''
         address['addressCity'] = address.get('addressCity') or ''
         address['addressRegion'] = address.get('addressRegion') or ''
         address['deliveryInstructions'] = address.get('deliveryInstructions') or ''
+        address['postalCode'] = address.get('postalCode') or ''
 
         country = address['addressCountry']
         if country:

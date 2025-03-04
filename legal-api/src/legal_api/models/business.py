@@ -329,6 +329,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
+        if not self.founding_date and not self.last_ar_date:
+            return None
         last_anniversary = self.founding_date
         if self.last_ar_date:
             last_anniversary = self.last_ar_date
@@ -581,20 +583,24 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if slim:
             return slim_json
 
-        ar_min_date, ar_max_date = self.get_ar_dates(
-            (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
-        )
+        ar_min_date = None
+        ar_max_date = None
+        if self.last_ar_year or self.founding_date:
+            ar_min_date, ar_max_date = self.get_ar_dates(
+                (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+            )
+
         d = {
             **slim_json,
-            'arMinDate': ar_min_date.isoformat(),
-            'arMaxDate': ar_max_date.isoformat(),
-            'foundingDate': self.founding_date.isoformat(),
+            'arMinDate': ar_min_date.isoformat() if ar_min_date else '',
+            'arMaxDate': ar_max_date.isoformat() if ar_max_date else '',
+            'foundingDate': self.founding_date.isoformat() if self.founding_date else '',
             'hasRestrictions': self.restriction_ind,
             'complianceWarnings': self.compliance_warnings,
             'warnings': self.warnings,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
+            'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat() if self.last_ledger_timestamp else '',
             'lastAddressChangeDate': '',
             'lastDirectorChangeDate': '',
             'naicsKey': self.naics_key,
@@ -602,7 +608,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'naicsDescription': self.naics_description,
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
-            ).astimezone(timezone.utc).isoformat(),
+            ).astimezone(timezone.utc).isoformat() if self.next_anniversary else '',
             'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions,
