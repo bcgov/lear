@@ -1,17 +1,16 @@
 """modify_data_type_for_max_shares
 
 Revision ID: f1d010259785
-Revises: ad21c1ed551e
+Revises: b0937b915e6b
 Create Date: 2025-02-28 22:29:38.543965
 
 """
 from alembic import op
-import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
 revision = 'f1d010259785'
-down_revision = 'ad21c1ed551e'
+down_revision = 'b0937b915e6b'
 branch_labels = None
 depends_on = None
 
