@@ -994,12 +994,6 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool
 
 def get_digital_credentials_preconditions(business: Business, jwt: JwtManager) -> List[str]:
     """Return the preconditions for digital credentials."""
-
-    class PreconditionsEnum(Enum):
-        """Digital Credentials Preconditions Enum."""
-        BUSINESS_ROLE = 'attest_party_role'
-        COMPLETOR_ROLE = 'attest_completor_role'
-
     if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
         return []
 

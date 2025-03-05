@@ -14,14 +14,17 @@
 
 """This provides the service for determining access rules to digital credentials."""
 
-from enum import Enum
 import logging
 import os
+from enum import Enum
 from typing import List
 
 from legal_api.models import Business, PartyRole, User
-from legal_api.services.digital_credentils_utils import (
-    user_completing_party_role, user_party_role, business_party_role_mapping)
+from legal_api.services.digital_credentials_utils import (
+    business_party_role_mapping,
+    user_completing_party_role,
+    user_party_role,
+)
 from legal_api.utils.logging import setup_logging
 
 
@@ -81,6 +84,7 @@ class DigitalCredentialsRulesService:
 
         class PreconditionsEnum(Enum):
             """Digital Credentials Preconditions Enum."""
+
             BUSINESS_ROLE = 'attest_party_role'
             COMPLETOR_ROLE = 'attest_completor_role'
 

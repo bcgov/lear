@@ -18,7 +18,7 @@ Test suite to ensure that helpers and utility functions for digital credentials 
 
 import pytest
 from legal_api.models import Party, User
-from legal_api.services.digital_credentils_utils import FormattedUser
+from legal_api.services.digital_credentials_utils import FormattedUser
 
 
 @pytest.mark.parametrize(

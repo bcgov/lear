@@ -15,10 +15,10 @@
 """This provides the service for aca-py api calls."""
 
 
-from datetime import datetime
 import json
-from contextlib import suppress
 import random
+from contextlib import suppress
+from datetime import datetime
 from typing import Optional
 
 import requests
@@ -167,7 +167,7 @@ class DigitalCredentialsService:
 
     @requires_traction_auth
     def attest_connection(self, connection_id: str) -> Optional[dict]:
-        "Perform an attestation to ensure that interactions only happen with connections on a trusted app."
+        """Perform an attestation to ensure that interactions only happen with connections on a trusted app."""
         try:
             current_timestamp = int(datetime.now().timestamp())
             # Generate a random nonce
@@ -176,35 +176,39 @@ class DigitalCredentialsService:
             response = requests.post(self.api_url + '/present-proof-2.0/send-request',
                                      headers=self._get_headers(),
                                      data=json.dumps({
-                                         "comment": "BC Wallet App Attestation",
-                                         "connection_id": connection_id,
-                                         "presentation_request": {
-                                             "indy": {
-                                                 "name": "App Attestation",
-                                                 "nonce": nonce,  # Use the generated nonce
-                                                 "requested_attributes": {
-                                                    "attestationInfo": {
-                                                        "names": ["app_version", "operating_system", "operating_system_version"],
-                                                        "restrictions": [
+                                         'comment': 'BC Wallet App Attestation',
+                                         'connection_id': connection_id,
+                                         'presentation_request': {
+                                             'indy': {
+                                                 'name': 'App Attestation',
+                                                 'nonce': nonce,  # Use the generated nonce
+                                                 'requested_attributes': {
+                                                    'attestationInfo': {
+                                                        'names': [
+                                                            'app_version',
+                                                            'operating_system',
+                                                            'operating_system_version'
+                                                        ],
+                                                        'restrictions': [
                                                             {
-                                                                "cred_def_id": self.wallet_cred_def_id
+                                                                'cred_def_id': self.wallet_cred_def_id
                                                             }
                                                         ]
                                                     }
                                                  },
-                                                 "requested_predicates": {
-                                                     "validAttestationDate": {
-                                                         "name": "issue_date_dateint",
-                                                         "p_type": "<",
-                                                         "p_value": current_timestamp,
-                                                         "restrictions": [
+                                                 'requested_predicates': {
+                                                     'validAttestationDate': {
+                                                         'name': 'issue_date_dateint',
+                                                         'p_type': '<',
+                                                         'p_value': current_timestamp,
+                                                         'restrictions': [
                                                              {
-                                                                 "cred_def_id": self.wallet_cred_def_id
+                                                                 'cred_def_id': self.wallet_cred_def_id
                                                              }
                                                          ]
                                                      }
                                                  },
-                                                 "version": "2.0"
+                                                 'version': '2.0'
                                              }
                                          }
                                      }))

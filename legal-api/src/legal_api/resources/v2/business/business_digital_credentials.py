@@ -23,11 +23,12 @@ from flask_cors import cross_origin
 from legal_api.decorators import can_access_digital_credentials
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, DCRevocationReason, User
 from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
+from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.utils.auth import jwt
 
 from .bp import bp
+
 
 rules = DigitalCredentialsRulesService()
 

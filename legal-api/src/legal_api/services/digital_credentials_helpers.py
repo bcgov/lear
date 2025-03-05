@@ -15,9 +15,10 @@
 """This provides helper functions for digital credentials."""
 
 from typing import List, Union
+
 from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
-from legal_api.services.digital_credentils_utils import user_party_role, business_party_role_mapping
+from legal_api.services.digital_credentials_utils import business_party_role_mapping, user_party_role
 
 
 def get_digital_credential_data(user: User, business: Business,
@@ -27,47 +28,15 @@ def get_digital_credential_data(user: User, business: Business,
     if credential_type == DCDefinition.CredentialType.business:
         rules = DigitalCredentialsRulesService()
 
-        # Find the credential id from dc_issued_business_user_credentials and if there isn't one create one
-        if not (issued_business_user_credential := DCIssuedBusinessUserCredential.find_by(
-                business_id=business.id, user_id=user.id)):
-            issued_business_user_credential = DCIssuedBusinessUserCredential(
-                business_id=business.id, user_id=user.id)
-            issued_business_user_credential.save()
-
+        issued_business_user_credential = get_or_create_issued_credential(
+            user, business)
         credential_id = f'{issued_business_user_credential.id:08}'
-
-        if (business_type := CorpType.find_by_id(business.legal_type)):
-            business_type = business_type.full_desc
-        else:
-            business_type = business.legal_type
-
-        registered_on_dateint = ''
-        if business.founding_date:
-            registered_on_dateint = business.founding_date.strftime(
-                '%Y%m%d')
-
-        company_status = Business.State(business.state).name
-
-        family_name = (user.lastname or '').strip().upper()
-
-        given_names = ' '.join(
-            [x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
-
-        preconditions = rules.get_preconditions(user, business)
-        can_attach_role = (preconditions == None) or (len(
-            preconditions) and preconditions_met == True)
-
-        roles = []
-        if business.legal_type in business_party_role_mapping:
-            party_role_type = business_party_role_mapping[business.legal_type]
-            if (rules.has_party_role(user, business, party_role_type) and can_attach_role):
-                party_role = user_party_role(user, business, party_role_type)
-                roles.append((party_role.role or '').replace('_', ' ').title())
-
-        # For companies that have separate incporporating information
-        if business.legal_type == Business.LegalTypes.BCOMP.value:
-            if (rules.is_completing_party(user, business) and can_attach_role):
-                roles.append('incorporator'.title())
+        business_type = get_business_type(business)
+        registered_on_dateint = get_registered_on_dateint(business)
+        company_status = get_company_status(business)
+        family_name = get_family_name(user)
+        given_names = get_given_names(user)
+        roles = get_roles(user, business, rules, preconditions_met)
 
         return [
             {
@@ -113,6 +82,66 @@ def get_digital_credential_data(user: User, business: Business,
         ]
 
     return None
+
+
+def get_or_create_issued_credential(user: User, business: Business) -> DCIssuedBusinessUserCredential:
+    """Get or create issued business user credential."""
+    issued_business_user_credential = DCIssuedBusinessUserCredential.find_by(
+        business_id=business.id, user_id=user.id)
+    if not issued_business_user_credential:
+        issued_business_user_credential = DCIssuedBusinessUserCredential(
+            business_id=business.id, user_id=user.id)
+        issued_business_user_credential.save()
+    return issued_business_user_credential
+
+
+def get_business_type(business: Business) -> str:
+    """Get business type description."""
+    business_type = CorpType.find_by_id(business.legal_type)
+    return business_type.full_desc if business_type else business.legal_type
+
+
+def get_company_status(business: Business) -> str:
+    """Get company status."""
+    return Business.State(business.state).name
+
+
+def get_registered_on_dateint(business: Business) -> str:
+    """Get registered on date in YYYYMMDD format."""
+    return business.founding_date.strftime('%Y%m%d') if business.founding_date else ''
+
+
+def get_family_name(user: User) -> str:
+    """Get family name in uppercase."""
+    return (user.lastname or '').strip().upper()
+
+
+def get_given_names(user: User) -> str:
+    """Get given names in uppercase."""
+    return ' '.join([x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
+
+
+def get_roles(user: User,
+              business: Business,
+              rules: DigitalCredentialsRulesService,
+              preconditions_met: Union[bool, None]) -> List[str]:
+    """Get roles for the user in the business."""
+    roles = []
+    preconditions = rules.get_preconditions(user, business)
+    can_attach_role = (preconditions is None) or (
+        len(preconditions) and preconditions_met is True)
+
+    if business.legal_type in business_party_role_mapping:
+        party_role_type = business_party_role_mapping[business.legal_type]
+        if rules.has_party_role(user, business, party_role_type) and can_attach_role:
+            party_role = user_party_role(user, business, party_role_type)
+            roles.append((party_role.role or '').replace('_', ' ').title())
+
+    if business.legal_type == Business.LegalTypes.BCOMP.value:
+        if rules.is_completing_party(user, business) and can_attach_role:
+            roles.append('incorporator'.title())
+
+    return roles
 
 
 def extract_invitation_message_id(json_message: dict) -> str:

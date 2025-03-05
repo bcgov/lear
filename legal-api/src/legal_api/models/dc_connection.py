@@ -26,13 +26,13 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     class State(Enum):
         """Enum of the didexchange protocol states."""
 
-        START = 'start' # altough there is a start state we never see it
+        START = 'start'  # altough there is a start state we never see it
         INVITATION_SENT = 'invitation-sent'
         REQUEST_RECEIVED = 'request-received'
         RESPONSE_SENT = 'response-sent'
         ABANDONED = 'abandoned'
         COMPLETED = 'completed'
-        ACTIVE = 'active' # artifact from the connection protocol
+        ACTIVE = 'active'  # artifact from the connection protocol
 
     __tablename__ = 'dc_connections'
 
@@ -44,8 +44,8 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     # connection_state values we recieve in webhook, but we may not need all of it
     connection_state = db.Column('connection_state', db.String(50))
 
-
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    business_id = db.Column('business_id', db.Integer,
+                            db.ForeignKey('businesses.id'))
 
     is_attested = db.Column('is_attested', db.Boolean, default=False)
     last_attested = db.Column('last_attested', db.DateTime, default=None)
@@ -80,7 +80,8 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the id."""
         dc_connection = None
         if dc_connection_id:
-            dc_connection = cls.query.filter_by(id=dc_connection_id).one_or_none()
+            dc_connection = cls.query.filter_by(
+                id=dc_connection_id).one_or_none()
         return dc_connection
 
     @classmethod
@@ -88,7 +89,8 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the connection_id."""
         dc_connection = None
         if connection_id:
-            dc_connection = cls.query.filter(DCConnection.connection_id == connection_id).one_or_none()
+            dc_connection = cls.query.filter(
+                DCConnection.connection_id == connection_id).one_or_none()
         return dc_connection
 
     @classmethod
@@ -114,6 +116,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
             query = query.filter(DCConnection.business_id == business_id)
 
         if connection_state:
-            query = query.filter(DCConnection.connection_state == connection_state)
+            query = query.filter(
+                DCConnection.connection_state == connection_state)
 
         return query.all()
