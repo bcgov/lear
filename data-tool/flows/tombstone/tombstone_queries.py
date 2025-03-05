@@ -380,8 +380,8 @@ def get_parties_and_addresses_query(corp_num):
             when cp.appointment_dt is null and f.effective_dt is not null then date_trunc('day', f.effective_dt)
             when cp.appointment_dt is null and f.effective_dt is null then date_trunc('day', e.event_timerstamp)
             else null
-        end)::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cp_appointment_dt_str,
-        to_char(cp.cessation_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')     as cp_cessation_dt_str,
+        end), 'YYYY-MM-DD') as cp_appointment_dt_str,
+        to_char(cp.cessation_dt, 'YYYY-MM-DD')     as cp_cessation_dt_str,
         cp.last_name              as cp_last_name,
         cp.middle_name            as cp_middle_name,
         cp.first_name             as cp_first_name,
