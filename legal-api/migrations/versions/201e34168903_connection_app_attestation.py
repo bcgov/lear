@@ -13,7 +13,7 @@ from legal_api.models import DCConnection
 
 # revision identifiers, used by Alembic.
 revision = '201e34168903'
-down_revision = 'd9254d3cbbf4'
+down_revision = '24b59f535ec3'
 branch_labels = None
 depends_on = None
 
