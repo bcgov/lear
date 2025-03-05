@@ -67,11 +67,7 @@ def test_notice_of_withdrawal_notification(
                 {'filingId': now_filing.id, 'type': 'noticeOfWithdrawal', 'option': status}, token
             )
 
-            if is_temp:
-                assert email['content']['subject'] == 'Notice of Withdrawal filed Successfully'
-            else:
-                assert email['content']['subject'] == f'{legal_name} - Notice of Withdrawal filed Successfully'
-
+            assert email['content']['subject'] == f'{legal_name} - Notice of Withdrawal filed Successfully'
             assert 'recipient@email.com' in email['recipients']
             assert email['content']['body']
             assert email['content']['attachments'] == []

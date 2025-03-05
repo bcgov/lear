@@ -2,6 +2,17 @@
     "flagValues": {
         "enable-involuntary-dissolution": true,
         "disable-dissolution-sftp-bcmail": true,
-        "disable-dissolution-sftp-bclaws": false
+        "disable-dissolution-sftp-bclaws": false,
+        "db-versioning": {
+            "legal-api": true,
+            "emailer": true,
+            "filer": false,
+            "entity-bn": true,
+            "digital-credentials": false,
+            "dissolutions-job": false,
+            "furnishings-job": true,
+            "emailer-reminder-job": true,
+            "future-effective-job": false
+        }
     }
 }

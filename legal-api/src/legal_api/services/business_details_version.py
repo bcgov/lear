@@ -18,7 +18,6 @@ from datetime import datetime
 
 import pycountry
 from sqlalchemy import or_
-from sqlalchemy_continuum import version_class
 
 from legal_api.models import (
     Address,
@@ -33,6 +32,7 @@ from legal_api.models import (
     ShareSeries,
     db,
 )
+from legal_api.models.db import VersioningProxy
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
@@ -210,7 +210,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_business_revision(transaction_id, business) -> dict:
         """Consolidates the business info as of a particular transaction."""
-        business_version = version_class(Business)
+        business_version = VersioningProxy.version_class(db.session(), Business)
         business_revision = db.session.query(business_version) \
             .filter(business_version.transaction_id <= transaction_id) \
             .filter(business_version.operation_type != 2) \
@@ -223,7 +223,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_business_revision_obj(transaction_id, business_id):
         """Return business version object associated with a given transaction id for a business."""
-        business_version = version_class(Business)
+        business_version = VersioningProxy.version_class(db.session(), Business)
         business_revision = db.session.query(business_version) \
             .filter(business_version.transaction_id <= transaction_id) \
             .filter(business_version.operation_type != 2) \
@@ -238,7 +238,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                                                is_dissolution_date=False,
                                                is_restoration_expiry_date=False) -> dict:
         """Get business info with last value of dissolution_date or restoration_expiry_date."""
-        business_version = version_class(Business)
+        business_version = VersioningProxy.version_class(db.session(), Business)
         query = db.session.query(business_version) \
             .filter(business_version.transaction_id < transaction_id) \
             .filter(business_version.operation_type != 2) \
@@ -255,7 +255,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         """Consolidates the business info as of a particular transaction."""
         business = Business.find_by_internal_id(business_id)
         filing = Filing.find_by_id(filing_id)
-        business_version = version_class(Business)
+        business_version = VersioningProxy.version_class(db.session(), Business)
         business_revision = db.session.query(business_version) \
             .filter(business_version.transaction_id > filing.transaction_id) \
             .filter(business_version.operation_type != 2) \
@@ -267,8 +267,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_office_revision(transaction_id, business_id) -> dict:
         """Consolidates all office changes upto the given transaction id."""
         offices_json = {}
-        address_version = version_class(Address)
-        offices_version = version_class(Office)
+        address_version = VersioningProxy.version_class(db.session(), Address)
+        offices_version = VersioningProxy.version_class(db.session(), Office)
 
         offices = db.session.query(offices_version) \
             .filter(offices_version.transaction_id <= transaction_id) \
@@ -296,7 +296,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_party_role_revision(transaction_id, business_id, is_ia_or_after=False, role=None) -> dict:
         """Consolidates all party changes upto the given transaction id."""
-        party_role_version = version_class(PartyRole)
+        party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
         party_roles = db.session.query(party_role_version)\
             .filter(party_role_version.transaction_id <= transaction_id) \
             .filter(party_role_version.operation_type != 2) \
@@ -322,7 +322,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_share_class_revision(transaction_id, business_id) -> dict:
         """Consolidates all share classes upto the given transaction id."""
-        share_class_version = version_class(ShareClass)
+        share_class_version = VersioningProxy.version_class(db.session(), ShareClass)
         share_classes_list = db.session.query(share_class_version) \
             .filter(share_class_version.transaction_id <= transaction_id) \
             .filter(share_class_version.operation_type != 2) \
@@ -343,7 +343,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_share_series_revision(transaction_id, share_class_id) -> dict:
         """Consolidates all share series under the share class upto the given transaction id."""
-        share_series_version = version_class(ShareSeries)
+        share_series_version = VersioningProxy.version_class(db.session(), ShareSeries)
         share_series_list = db.session.query(share_series_version) \
             .filter(share_series_version.transaction_id <= transaction_id) \
             .filter(share_series_version.operation_type != 2) \
@@ -362,7 +362,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_name_translations_revision(transaction_id, business_id) -> dict:
         """Consolidates all name translations upto the given transaction id."""
-        name_translations_version = version_class(Alias)
+        name_translations_version = VersioningProxy.version_class(db.session(), Alias)
         name_translations_list = db.session.query(name_translations_version) \
             .filter(name_translations_version.transaction_id <= transaction_id) \
             .filter(name_translations_version.operation_type != 2) \
@@ -380,7 +380,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_name_translations_before_revision(transaction_id, business_id) -> dict:
         """Consolidates all name translations before deletion given a transaction id."""
-        name_translations_version = version_class(Alias)
+        name_translations_version = VersioningProxy.version_class(db.session(), Alias)
         name_translations_list = db.session.query(name_translations_version) \
             .filter(name_translations_version.transaction_id <= transaction_id) \
             .filter(name_translations_version.operation_type != 2) \
@@ -396,7 +396,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_resolution_dates_revision(transaction_id, business_id) -> dict:
         """Consolidates all resolutions upto the given transaction id."""
-        resolution_version = version_class(Resolution)
+        resolution_version = VersioningProxy.version_class(db.session(), Resolution)
         resolution_list = db.session.query(resolution_version) \
             .filter(resolution_version.transaction_id <= transaction_id) \
             .filter(resolution_version.operation_type != 2) \
@@ -439,7 +439,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_party_revision(transaction_id, party_id) -> dict:
         """Consolidates all party changes upto the given transaction id."""
-        party_version = version_class(Party)
+        party_version = VersioningProxy.version_class(db.session(), Party)
         party = db.session.query(party_version) \
             .filter(party_version.transaction_id <= transaction_id) \
             .filter(party_version.operation_type != 2) \
@@ -500,9 +500,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             if 'addressType' in member_mailing_address:
                 del member_mailing_address['addressType']
             member['mailingAddress'] = member_mailing_address
-        else:
-            if party_revision.delivery_address:
-                member['mailingAddress'] = member['deliveryAddress']
+        elif party_revision.delivery_address_id:
+            member['mailingAddress'] = member['deliveryAddress']
 
         if is_ia_or_after:
             member['officer']['id'] = str(party_revision.id)
@@ -514,7 +513,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     @staticmethod
     def get_address_revision(transaction_id, address_id) -> dict:
         """Consolidates all party changes upto the given transaction id."""
-        address_version = version_class(Address)
+        address_version = VersioningProxy.version_class(db.session(), Address)
         address = db.session.query(address_version) \
             .filter(address_version.transaction_id <= transaction_id) \
             .filter(address_version.operation_type != 2) \
@@ -550,7 +549,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             'name': share_class_revision.name,
             'priority': share_class_revision.priority,
             'hasMaximumShares': share_class_revision.max_share_flag,
-            'maxNumberOfShares': share_class_revision.max_shares,
+            'maxNumberOfShares': int(share_class_revision.max_shares) if share_class_revision.max_shares else None,
             'hasParValue': share_class_revision.par_value_flag,
             'parValue': share_class_revision.par_value,
             'currency': share_class_revision.currency,
@@ -566,7 +565,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             'name': share_series_revision.name,
             'priority': share_series_revision.priority,
             'hasMaximumShares': share_series_revision.max_share_flag,
-            'maxNumberOfShares': share_series_revision.max_shares,
+            'maxNumberOfShares': int(share_series_revision.max_shares) if share_series_revision.max_shares else None,
             'hasRightsOrRestrictions': share_series_revision.special_rights_flag
         }
         return share_series

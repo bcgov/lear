@@ -19,10 +19,10 @@ from http import HTTPStatus
 import dpath
 from flask import current_app
 from legal_api.models import Address, Business, Filing, Party, PartyRole, RequestTracker, db
+from legal_api.models.db import VersioningProxy
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from sqlalchemy import and_, func
-from sqlalchemy_continuum import version_class
 
 from entity_bn.bn_processors import (
     bn_note,
@@ -215,7 +215,7 @@ def change_address(business: Business, filing: Filing,  # pylint: disable=too-ma
 
 def has_previous_address(transaction_id: int, office_id: int, address_type: str) -> bool:
     """Has previous address for the given transaction and office id."""
-    address_version = version_class(Address)
+    address_version = VersioningProxy.version_class(db.session(), Address)
     address = db.session.query(address_version) \
         .filter(address_version.operation_type != 2) \
         .filter(address_version.office_id == office_id) \
@@ -227,7 +227,7 @@ def has_previous_address(transaction_id: int, office_id: int, address_type: str)
 
 def has_party_name_changed(business: Business, filing: Filing) -> bool:
     """Has party name changed in the given filing."""
-    party_role_version = version_class(PartyRole)
+    party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
     party_roles = db.session.query(party_role_version)\
         .filter(party_role_version.transaction_id == filing.transaction_id) \
         .filter(party_role_version.operation_type != 2) \
@@ -266,7 +266,7 @@ def _get_name(party) -> str:
 
 def _get_modified_parties(transaction_id, business_id):
     """Get all party values before the given transaction id."""
-    party_version = version_class(Party)
+    party_version = VersioningProxy.version_class(db.session(), Party)
     parties = db.session.query(party_version) \
         .join(PartyRole, and_(PartyRole.party_id == party_version.id, PartyRole.business_id == business_id)) \
         .filter(PartyRole.role.in_([PartyRole.RoleTypes.PARTNER.value, PartyRole.RoleTypes.PROPRIETOR.value])) \

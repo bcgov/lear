@@ -66,7 +66,10 @@ select case
            else c.CORP_NUM
        end CORP_NUM,
        CORP_FROZEN_TYP_CD as corp_frozen_type_cd,
-       CORP_TYP_CD as CORP_TYPE_CD,
+       case
+           when c.CORP_TYP_CD in ('QA', 'QB', 'QC', 'QD', 'QE') then 'BC'
+           else c.CORP_TYP_CD
+       end CORP_TYPE_CD,
        RECOGNITION_DTS,
        BN_9,
        bn_15,
@@ -77,7 +80,14 @@ select case
            when 'N' then 0
            when 'Y' then 1
            else 1
-           end               SEND_AR_IND
+           end               SEND_AR_IND,
+       (select
+            to_number(to_char(max(date_1), 'YYYY'))
+        from eml_log e, rep_data r
+        where 
+            e.corp_num=c.corp_num
+            and e.param_id=r.param_id
+            and e.corp_num=r.t20_1) as LAST_AR_REMINDER_YEAR
 from corporation c
 where corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
     -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
@@ -880,6 +890,22 @@ where cp.CORP_PARTY_ID = pn.party_id
   -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
   -- and rownum <= 5
 order by c.corp_num;
+
+
+
+-- payment
+transfer public.payment from cprd using
+select p.event_id,
+       p.payment_typ_cd,
+       p.cc_holder_nme
+from payment p
+   , event e
+   , corporation c
+where p.event_id = e.event_id
+and e.corp_num = c.corp_num
+and c.corp_typ_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+order by e.event_id;
+
 
 
 -- alter tables

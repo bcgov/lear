@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from sql_versioning import Versioned
+from sqlalchemy import and_, or_
 
 from .db import db
 from .filing import Filing
@@ -61,6 +62,15 @@ class Jurisdiction(db.Model, Versioned):  # pylint: disable=too-many-instance-at
             # pylint: disable=protected-access
             jurisdiction = (db.session.query(Jurisdiction).join(Filing).
                             filter(Jurisdiction.business_id == business_id).
-                            filter(Filing._filing_type == 'continuationIn').
+                            filter(
+                                or_(
+                                    Filing._filing_type == 'continuationIn',
+                                    and_(
+                                        Filing._filing_type == 'conversion',
+                                        Filing._meta_data.op('->')('conversion').
+                                        op('->>')('convFilingType') == 'continuationIn'
+                                    )
+                                )
+                            ).
                             one_or_none())
         return jurisdiction

@@ -22,7 +22,7 @@ from freezegun import freeze_time
 
 from legal_api.models import Batch, BatchProcessing, Filing, Resolution, ShareClass, ShareSeries, db
 from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -589,9 +589,8 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
         filing.filing_json = data_dict
         filing.save()
 
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(db.session())
+        filing.transaction_id = transaction_id
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date

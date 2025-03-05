@@ -1,1 +1,2 @@
 prefect==3.0.8
+prefect[dask]

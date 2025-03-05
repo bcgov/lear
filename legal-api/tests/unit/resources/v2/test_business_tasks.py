@@ -28,8 +28,9 @@ from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business
 from legal_api.services.authz import STAFF_ROLE
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
-from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing, factory_pending_filing
+from tests.unit.models import factory_business, factory_business_mailing_address, factory_completed_filing, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
 from tests.unit.services.warnings import create_business
 
@@ -283,7 +284,7 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     ('SP no AR', 'FM1234567', '2019-05-15', None, Business.LegalTypes.SOLE_PROP.value, 0),
     ('GP no AR', 'FM1234567', '2019-05-15', None, Business.LegalTypes.PARTNERSHIP.value, 0)
 ])
-def test_construct_task_list(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type,
+def test_construct_task_list_ar(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type,
                              tasks_length):
     """Assert that construct_task_list returns the correct number of AR to be filed."""
     from legal_api.resources.v2.business.business_tasks import construct_task_list
@@ -298,6 +299,90 @@ def test_construct_task_list(session, client, jwt, test_name, identifier, foundi
         if tasks_length:
             assert tasks[0]['task']['todo']['business']['nextAnnualReport'][-14:] != '00:00:00+00:00'
 
+
+@pytest.mark.parametrize('test_name, identifier, founding_date, last_ar_date, legal_type, last_tr_date, tr_start_date, initial_date, restored_date, expected', [
+    ('BEN_ITR', 'BC1234567', datetime(2025, 7, 2, 8), None, Business.LegalTypes.BCOMP.value, None, datetime(2025, 7, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'enabled': True}]),
+    ('BEN_ITR_DRAFT', 'BC1234567', datetime(2025, 7, 2, 8), None, Business.LegalTypes.BCOMP.value, None, datetime(2025, 7, 1), datetime(2025, 7, 2), None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'status': 'DRAFT', 'enabled': True}]),
+    ('BEN_ITR_PENDING', 'BC1234567', datetime(2025, 7, 2, 8), None, Business.LegalTypes.BCOMP.value, None, datetime(2025, 7, 1), datetime(2025, 7, 2), None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'status': 'PENDING', 'enabled': True}]),
+    ('BEN_ITR_FILED', 'BC1234567', datetime(2025, 7, 2, 8), None, Business.LegalTypes.BCOMP.value, None, datetime(2025, 7, 1), datetime(2025, 7, 2), None, []),
+    ('BEN_ITR_NONE', 'BC1234567', datetime(2025, 7, 1, 8), None, Business.LegalTypes.BCOMP.value, None, datetime(2025, 7, 2), None, None, []),
+    ('BEN_ATR', 'BC1234567', datetime(2023, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, None, datetime(2024, 1, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': True}]),
+    ('BEN_ATR_MULTI', 'BC1234567', datetime(2021, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, None, datetime(2022, 1, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2023, 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2024, 'enabled': False}, {'order': 3, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+    ('BEN_ATR_PREV_FILED', 'BC1234567', datetime(2022, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, datetime(2024, 1, 1), datetime(2023, 1, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': True}]),
+    ('BEN_ATR_PREV_FILED_MULTI', 'BC1234567', datetime(2021, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, datetime(2023, 2, 1), datetime(2022, 1, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2024, 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+    ('BEN_ITR_ATR', 'BC1234567', datetime(2024, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, None, datetime(2022, 1, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+    ('BEN_ITR_ATR_MULTI', 'BC1234567', datetime(2023, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, None, datetime(2022, 1, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2024, 'enabled': False}, {'order': 3, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+    ('BEN_ITR_ATR_RESTORATION', 'BC1234567', datetime(2010, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, None, datetime(2022, 1, 1), None, datetime(2023, 1, 1, 8), [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2024, 'enabled': False}, {'order': 3, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+    ('BEN_ATR_RESTORATION_PREV_FILED', 'BC1234567', datetime(2010, 1, 1, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, datetime(2024, 2, 1), datetime(2022, 1, 1), datetime(2023, 2, 1), datetime(2023, 1, 1, 8), [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': True}]),
+    ('BEN_ATR_RESTORATION_PREV_FILED_COMPLEX', 'BC1234567', datetime(2020, 1, 2, 8), datetime(2025, 1, 1), Business.LegalTypes.BCOMP.value, datetime(2021, 2, 1), datetime(2020, 1, 1), datetime(2020, 2, 1), datetime(2023, 1, 3, 8), [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2024, 'enabled': False}, {'order': 3, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+    ('BEN_ITR_ATR_AR', 'BC1234567', datetime(2023, 2, 1, 8), datetime(2024, 2, 1), Business.LegalTypes.BCOMP.value, None, datetime(2023, 1, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2024, 'enabled': False}, {'order': 3, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': True}, {'order': 4, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+    ('BEN_ATR_AR', 'BC1234567', datetime(2020, 2, 1, 8), datetime(2023, 2, 1), Business.LegalTypes.BCOMP.value, datetime(2023, 2, 1), datetime(2021, 1, 1), None, None, [{'order': 1, 'name': 'annualReport', 'ARFilingYear': 2024, 'enabled': True}, {'order': 2, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2024, 'enabled': True}, {'order': 3, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': False}, {'order': 4, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025, 'enabled': False}]),
+])
+def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier, founding_date, last_ar_date,
+                                legal_type, last_tr_date, tr_start_date, initial_date, restored_date, expected):
+    """Assert that construct_task_list returns the correct items concerning TR and AR filings."""
+    from legal_api.resources.v2.business.business_tasks import construct_task_list
+
+    # tests expect current date to be in 2025. Adjust accordingly for the current year (freezetime only works for some things)
+    year_offset = (datetime.now()).year - 2025
+    founding_date += datedelta.datedelta(years=year_offset)
+    tr_start_date += datedelta.datedelta(years=year_offset)
+    if last_ar_date:
+        last_ar_date += datedelta.datedelta(years=year_offset)
+    if last_tr_date:
+        last_tr_date += datedelta.datedelta(years=year_offset)
+
+    app.config['TR_START_DATE'] = tr_start_date.isoformat()
+    with patch('legal_api.resources.v2.business.business_tasks.check_warnings', return_value=[]):
+        business = factory_business(identifier, founding_date, last_ar_date, legal_type)
+        business.last_tr_year = last_tr_date.year if last_tr_date else None
+        if initial_date:
+            filing = {
+                'filing': {
+                    'header': {'name': 'transparencyRegister', 'certifiedBy': 'test', 'date': initial_date.isoformat()},
+                    'transparencyRegister': {'type': 'initial', 'ledgerReferenceNumber': '1234'}
+                }}
+            if 'DRAFT' in test_name:
+                factory_filing(business, filing, initial_date, 'transparencyRegister', 'initial')
+            elif 'PENDING' in test_name:
+                factory_pending_filing(business, filing, initial_date)
+            else:
+                factory_completed_filing(business, filing, initial_date, None, None, 'transparencyRegister', 'initial')
+
+        if restored_date:
+            filing = {'filing': {'header': {'name': 'restoration', 'date': restored_date.isoformat(), 'certifiedBy': 'test'}, 'restoration': {'type': 'fullRestoration'}}}
+            filing_obj = factory_completed_filing(business, filing, initial_date, None, None, 'restoration', 'fullRestoration')
+            filing_obj.effective_date = restored_date
+            filing_obj.save()
+
+        business.save()
+        tasks = construct_task_list(business)
+
+        # check number of tasks
+        # assert tasks == expected
+        assert len(tasks) == len(expected)
+        if tasks:
+            # check order and values
+            def get_order_val(e: dict):
+                """Return the order value of the task."""
+                return e['order']
+
+            tasks.sort(key=get_order_val)
+            expected.sort(key=get_order_val)
+
+            for task, expected_task in zip(tasks, expected):
+                assert task['order'] == expected_task['order']
+                assert task['enabled'] == expected_task.get('enabled')
+                if task['task'].get('todo'):
+                    assert task['task']['todo']['header']['name'] == expected_task['name']
+                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear')
+                    assert task['task']['todo']['header'].get('TRFilingYear') == expected_task.get('TRFilingYear')
+                    assert task['task']['todo']['header'].get('subType') == expected_task.get('subType')
+                else:
+                    assert task['task']['filing']['header']['status'] == expected_task.get('status')
+
+    # Reset this to empty string so it doesn't interfere with other tests
+    app.config['TR_START_DATE'] = ''
 
 @pytest.mark.parametrize('test_name, legal_type, identifier, has_missing_business_info, conversion_task_expected', [
     ('CONVERSION_TODO_EXISTS_MISSING_DATA', 'SP', 'FM0000001', True, True),

@@ -118,7 +118,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CBEN': 'ALTER',
                 'CUL': 'ALTER',
                 'CCC': 'ALTER',
-                'BC_TO_ULC': 'NOALU'
+                'BC_TO_ULC': 'NOALU',
+                'C_TO_CUL': 'NOALU'
             }
         },
         'amalgamationApplication': {
@@ -168,6 +169,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'C': 'BCANN',
                 'CUL': 'BCANN',
                 'CCC': 'BCANN'
+            }
+        },
+        'appointReceiver': {
+            'name': 'appointReceiver',
+            'title': 'Appoint Receiver Filing',
+            'codes': {
+                'BEN': 'NOARM',
+                'BC': 'NOARM',
+                'ULC': 'NOARM',
+                'CC': 'NOARM',
+                'CBEN': 'NOARM',
+                'C': 'NOARM',
+                'CUL': 'NOARM',
+                'CCC': 'NOARM'
             }
         },
         'changeOfAddress': {
@@ -291,6 +306,24 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'C': 'CRCTN',
                 'CUL': 'CRCTN',
                 'CCC': 'CRCTN',
+            }
+        },
+        'courtOrder': {
+            'name': 'courtOrder',
+            'title': 'Court Order',
+            'displayName': 'Court Order',
+            'codes': {
+                'SP': 'COURT',
+                'GP': 'COURT',
+                'CP': 'COURT',
+                'BC': 'COURT',
+                'BEN': 'COURT',
+                'CC': 'COURT',
+                'ULC': 'COURT',
+                'C': 'COURT',
+                'CBEN': 'COURT',
+                'CUL': 'COURT',
+                'CCC': 'COURT',
             }
         },
         'dissolution': {
@@ -497,7 +530,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         # changing the structure of fee code in courtOrder/registrarsNotation/registrarsOrder
         # for all the business the fee code remain same as NOFEE (Staff)
         'adminFreeze': {'name': 'adminFreeze', 'title': 'Admin Freeze', 'code': 'NOFEE'},
-        'courtOrder': {'name': 'courtOrder', 'title': 'Court Order', 'code': 'NOFEE'},
         'putBackOff': {'name': 'putBackOff', 'title': 'Put Back Off', 'code': 'NOFEE'},
         'putBackOn': {'name': 'putBackOn', 'title': 'Put Back On', 'code': 'NOFEE'},
         'registrarsNotation': {'name': 'registrarsNotation', 'title': 'Registrars Notation', 'code': 'NOFEE'},
@@ -809,7 +841,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def effective_date_can_be_before_payment_completion_date(self, business_type):
         """For AR or COD filings then the effective date can be before the payment date."""
         return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
-                                    Filing.FILINGS['changeOfDirectors'].get('name'))
+                                    Filing.FILINGS['changeOfDirectors'].get('name'),
+                                    Filing.FILINGS['transparencyRegister'].get('name'))
 
     @staticmethod
     def _raise_default_lock_exception():
@@ -980,7 +1013,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == filing_type). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            filter(not_(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.WITHDRAWN.value]))). \
             order_by(desc(Filing.filing_date)). \
             all()
         return filings
@@ -997,6 +1030,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
+    def get_conversion_filings_by_conv_types(business_id: int, filing_types: list):
+        """Return the conversion filings of a particular conv type.
+
+        Records only exist in some legacy corps imported from COLIN.
+        """
+        filings = db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._filing_type == 'conversion'). \
+            filter(
+                Filing._meta_data.op('->')('conversion').op('->>')('convFilingType').in_(filing_types)
+            ). \
+            order_by(desc(Filing.transaction_id)). \
+            all()
+
+        return filings
+
+    @staticmethod
     def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
         """Return the filings of particular types and statuses.
 
@@ -1007,7 +1057,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type.in_(filing_types)). \
-            filter(Filing._status != Filing.Status.COMPLETED.value). \
+            filter(not_(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.WITHDRAWN.value]))). \
             filter(not_(Filing._status.in_(excluded_statuses))). \
             order_by(desc(Filing.effective_date)). \
             all()

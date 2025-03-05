@@ -33,7 +33,7 @@ class ShareSeries(db.Model, Versioned):  # pylint: disable=too-many-instance-att
     name = db.Column('name', db.String(1000), index=True)
     priority = db.Column('priority', db.Integer, nullable=True)
     max_share_flag = db.Column('max_share_flag', db.Boolean, unique=False, default=False)
-    max_shares = db.Column('max_shares', db.Integer, nullable=True)
+    max_shares = db.Column('max_shares', db.Numeric(20), nullable=True)
     special_rights_flag = db.Column('special_rights_flag', db.Boolean, unique=False, default=False)
 
     # parent keys
@@ -52,7 +52,7 @@ class ShareSeries(db.Model, Versioned):  # pylint: disable=too-many-instance-att
             'name': self.name,
             'priority': self.priority,
             'hasMaximumShares': self.max_share_flag,
-            'maxNumberOfShares': self.max_shares,
+            'maxNumberOfShares': int(self.max_shares) if self.max_shares else None,
             'hasRightsOrRestrictions': self.special_rights_flag
         }
         return share_series

@@ -104,11 +104,23 @@ def test_valid_amalgamation_save(session):
 
     amalgamation_3.save()
 
+    amalgamation_4 = Amalgamation(
+        amalgamation_type=Amalgamation.AmalgamationTypes.unknown,
+        business_id=b.id,
+        filing_id=filing.id,
+        amalgamation_date=datetime.utcnow(),
+        court_approval=True
+    )
+
+    amalgamation_4.save()
+
     # verify
     assert amalgamation_1.id
     assert amalgamation_2.id
     assert amalgamation_3.id
+    assert amalgamation_4.id
     for type in Amalgamation.AmalgamationTypes:
         assert type in [Amalgamation.AmalgamationTypes.horizontal,
                         Amalgamation.AmalgamationTypes.vertical,
-                        Amalgamation.AmalgamationTypes.regular]
+                        Amalgamation.AmalgamationTypes.regular,
+                        Amalgamation.AmalgamationTypes.unknown]

@@ -23,6 +23,7 @@ from croniter import croniter
 from flask import Flask
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models import Batch, BatchProcessing, Business, Configuration, Filing, Furnishing, db  # noqa: I001
+from legal_api.models.db import init_db
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
@@ -52,7 +53,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
-    db.init_app(app)
+    init_db(app)
 
     # Configure Sentry
     if app.config.get('SENTRY_DSN', None):

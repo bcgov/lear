@@ -183,6 +183,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     STAGE_1_DELAY = int(os.getenv('STAGE_1_DELAY', '42'))
     STAGE_2_DELAY = int(os.getenv('STAGE_2_DELAY', '30'))
 
+    # Transparency Register
+    TR_START_DATE = os.getenv('TR_START_DATE', '').strip()  # i.e. '2025-02-01'
+
     TESTING = False
     DEBUG = False
 
@@ -216,6 +219,9 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     # URLs
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://test-auth-url')
+
+    # Transparency Register - test cases set this explicitly as needed
+    TR_START_DATE = ''
 
     # JWT OIDC settings
     # JWT_OIDC_TEST_MODE will set jwt_manager to use
