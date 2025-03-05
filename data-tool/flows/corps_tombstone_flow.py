@@ -1,3 +1,7 @@
+import contextlib
+from http import HTTPStatus
+from pathlib import Path
+
 import math
 from datetime import datetime, timedelta
 
@@ -7,6 +11,8 @@ from common.auth_service import AuthService
 from prefect import flow, task, serve
 from prefect.futures import wait
 from prefect.context import get_run_context
+from prefect.task_runners import ConcurrentTaskRunner
+from prefect_dask import DaskTaskRunner
 from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
 
@@ -60,7 +66,6 @@ def get_unprocessed_count(config, colin_engine: Engine) -> int:
 def get_corp_users(colin_engine: Engine, corp_nums: list) -> list[dict]:
     """Get user information."""
     query = get_corp_users_query(corp_nums)
-
     sql_text = text(query)
 
     with colin_engine.connect() as conn:
@@ -102,6 +107,7 @@ def get_snapshot_filings_data(config, colin_engine: Engine, corp_num: str) -> di
 
         return raw_data
 
+
 @task(name='2.2-Corp-Snapshot-Placeholder-Filings-Cleanup-Task')
 def clean_snapshot_filings_data(data: dict) -> dict:
     """Clean corp snapshot and placeholder filings data."""
@@ -122,7 +128,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
     # Note: The business info is partially loaded for businesses table now. And it will be fully
     # updated by the following placeholder historical filings migration. But it depends on the
     # implementation of next step.
-    business_id = load_data(conn, 'businesses', tombstone_data['businesses'], 'identifier')
+    business_id = load_data(conn, 'businesses', tombstone_data['businesses'], 'identifier', conflict_error=True)
 
     for office in tombstone_data['offices']:
         office['offices']['business_id'] = business_id
@@ -133,6 +139,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
             address['office_id'] = office_id
             load_data(conn, 'addresses', address)
 
+    party_roles_map = {}
     for party in tombstone_data['parties']:
         mailing_address_id = None
         delivery_address_id = None
@@ -146,12 +153,26 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
         party['parties']['mailing_address_id'] = mailing_address_id
         party['parties']['delivery_address_id'] = delivery_address_id
 
+        source_full_name = party['parties']['cp_full_name']
+        del party['parties']['cp_full_name']
         party_id = load_data(conn, 'parties', party['parties'])
 
         for party_role in party['party_roles']:
             party_role['business_id'] = business_id
             party_role['party_id'] = party_id
-            load_data(conn, 'party_roles', party_role)
+            party_role_id = load_data(conn, 'party_roles', party_role, expecting_id=True)
+
+            # Create a unique key for mapping
+            key = (source_full_name, party_role['role'])
+            party_roles_map[key] = party_role_id
+
+    for office_held in tombstone_data.get('offices_held', []):
+        # Map to party_role_id using the key
+        key = (office_held['cp_full_name'], 'officer')
+        party_role_id = party_roles_map.get(key)
+        office_held['party_role_id'] = party_role_id
+        del office_held['cp_full_name']
+        load_data(conn,'offices_held', office_held)
 
     for share_class in tombstone_data['share_classes']:
         share_class['share_classes']['business_id'] = business_id
@@ -176,6 +197,20 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
         comment['staff_id'] = staff_id
         load_data(conn, 'comments', comment)
 
+    if in_dissolution := tombstone_data['in_dissolution']:
+        batch = in_dissolution['batches']
+        batch_id = load_data(conn, 'batches', batch)
+        batch_processing = in_dissolution['batch_processing']
+
+        batch_processing['batch_id'] = batch_id
+        batch_processing['business_id'] = business_id
+        load_data(conn, 'batch_processing', batch_processing)
+
+        furnishing = in_dissolution['furnishings']
+        furnishing['batch_id'] = batch_id
+        furnishing['business_id'] = business_id
+        load_data(conn, 'furnishings', furnishing)
+
     return business_id
 
 
@@ -186,6 +221,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     update_info = tombstone_data['updates']
     state_filing_index = update_info['state_filing_index']
     update_business_data = update_info['businesses']
+    filing_ids_mapper = {}
     # load placeholder filings
     for i, data in enumerate(filings_data):
         f = data['filings']
@@ -195,11 +231,18 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         f['submitter_id'] = user_id
         f['transaction_id'] = transaction_id
         f['business_id'] = business_id
+        if (withdrawn_idx := f['withdrawn_filing_id']) is not None:
+            f['withdrawn_filing_id'] = filing_ids_mapper[withdrawn_idx]
+
         filing_id = load_data(conn, 'filings', f)
+        filing_ids_mapper[i] = filing_id
+
+        data['colin_event_ids']['filing_id'] = filing_id
+        load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False)
 
         if i == state_filing_index:
             update_info['businesses']['state_filing_id'] = filing_id
-        
+
         if jurisdiction := data['jurisdiction']:
             jurisdiction['business_id'] = business_id
             jurisdiction['filing_id'] = filing_id
@@ -236,7 +279,7 @@ def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, busine
     amalgamation_id = load_data(conn, 'amalgamations', amalgamation)
 
     for ting in amalgamation_data['amalgamating_businesses']:
-        if ting_identifier:= ting.get('ting_identifier'):
+        if ting_identifier := ting.get('ting_identifier'):
             # TODO: avoid update info for withdrawn amalg filing (will handle in NoW work)
             # TING must exists in db before updating state filing info,
             del ting['ting_identifier']
@@ -261,21 +304,38 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
     if config.AFFILIATE_ENTITY:
         business_data = tombstone_data['businesses']
         account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
-        AuthService.create_affiliation(
+        affiliation_status = AuthService.create_affiliation(
             config=config,
             account=account_id,
             business_registration=business_data['identifier'],
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type']
         )
+        if affiliation_status != HTTPStatus.OK:
+            with contextlib.suppress(Exception):
+                AuthService.delete_affiliation(
+                    config=config,
+                    account=account_id,
+                    business_registration=business_data['identifier'])
+            raise Exception(f"""Failed to affiliate business {business_data['identifier']}""")
     if config.UPDATE_ENTITY:
         business_data = tombstone_data['businesses']
-        AuthService.create_entity(
+        entity_status = AuthService.create_entity(
             config=config,
             business_registration=business_data['identifier'],
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type']
         )
+        if entity_status == HTTPStatus.OK and (admin_email := tombstone_data.get('admin_email')):
+            update_email_status = AuthService.update_contact_email(
+                config=config,
+                identifier=business_data['identifier'],
+                email=admin_email
+            )
+            if update_email_status != HTTPStatus.OK:
+                raise Exception(f"""Failed to update admin email in auth {business_data['identifier']}""")
+        else:
+            raise Exception(f"""Failed to create entity in auth {business_data['identifier']}""")
 
 
 @task(name='1-Migrate-Corp-Users-Task')
@@ -306,7 +366,7 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
         return corp_num, clean_data
     except Exception as e:
         print(f'❌ Error collecting corp snapshot and filings data for {corp_num}: {repr(e)}')
-        return corp_num, None
+        return corp_num, e
 
 
 @task(name='3-Corp-Tombstone-Migrate-Task-Async')
@@ -333,7 +393,10 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
 @flow(
     name='Corps-Tombstone-Migrate-Flow',
     log_prints=True,
-    persist_result=False
+    persist_result=False,
+    # use ConcurrentTaskRunner when using work pool based deployments
+    # task_runner=ConcurrentTaskRunner(max_workers=100)
+    # task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 3, "threads_per_worker": 2})
 )
 def tombstone_flow():
     """Entry of tombstone pipeline"""
@@ -391,12 +454,18 @@ def tombstone_flow():
             skipped = 0
             for f in data_futures:
                 corp_num, clean_data = f.result()
-                if clean_data:
+                if clean_data and not isinstance(clean_data, Exception):
                     corp_futures.append(
                         migrate_tombstone.submit(config, lear_engine, corp_num, clean_data, users_mapper)
                     )
                 else:
                     skipped += 1
+                    processing_service.update_corp_status(
+                        flow_run_id,
+                        corp_num,
+                        ProcessingStatuses.FAILED,
+                        error=f"Migration failed - Skip due to data collection error: {repr(clean_data)}"
+                    )
                     print(f'❗ Skip migrating {corp_num} due to data collection error.')
 
             wait(corp_futures)
@@ -443,3 +512,51 @@ if __name__ == "__main__":
     #
     # # Start serving the deployment
     # serve(deployment)
+
+
+    # Work pool based deployments
+    #
+    # Only one of deployments 1-3 should be running at any given time.
+    #
+    # Note: the following deployment is used strictly for maximizing local resource usage for production
+    # dry runs and the actual final tombstone migration to the production environment.  If there is no need
+    # to run multiple parallel flows, the following set-ups are not req'd.
+
+    # flow_source = Path(__file__).parent
+
+    # # 1. TINGs deployment setup
+    # # subquery = subqueries[1]
+    # # ensure "and cs.state_type_cd = 'ACT'" is commented out as TINGS are historical
+    # tombstone_flow.from_source(
+    #     source=flow_source,
+    #     entrypoint="corps_tombstone_flow.py:tombstone_flow"
+    # ).deploy(
+    #     name="tombstone-tings-deployment",
+    #     tags=["tombstone-tings-migration"],
+    #     work_pool_name="tombstone-tings-pool",
+    #     interval=timedelta(seconds=60)  # Run every x seconds
+    # )
+
+    # # 2. TEDs deployment setup
+    # # subquery = subqueries[2]
+    # tombstone_flow.from_source(
+    #     source=flow_source,
+    #     entrypoint="corps_tombstone_flow.py:tombstone_flow"
+    # ).deploy(
+    #     name="tombstone-teds-deployment",
+    #     tags=["tombstone-teds-migration"],
+    #     work_pool_name="tombstone-teds-pool",
+    #     interval=timedelta(seconds=60)  # Run every x seconds
+    # )
+
+    # # 3. OTHERs deployment setup
+    # # subquery = subqueries[3]
+    # tombstone_flow.from_source(
+    #     source=flow_source,
+    #     entrypoint="corps_tombstone_flow.py:tombstone_flow"
+    # ).deploy(
+    #     name="tombstone-deployment",
+    #     tags=["tombstone-migration"],
+    #     work_pool_name="tombstone-pool",
+    #     interval=timedelta(seconds=70)  # Run every x seconds
+    # )

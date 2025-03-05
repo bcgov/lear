@@ -1391,15 +1391,26 @@ def test_amalgamating_business_roles(mocker, app, session, jwt, amalgamation_typ
 
 
 @pytest.mark.parametrize(
-    'legal_type, amalgamation_type, expected_code',
+    'legal_type, mock_legal_type, amalgamation_type, expected_code',
     [
-        (Business.LegalTypes.BCOMP.value, Amalgamation.AmalgamationTypes.vertical.name, HTTPStatus.BAD_REQUEST),
-        (Business.LegalTypes.BCOMP.value, Amalgamation.AmalgamationTypes.horizontal.name, HTTPStatus.BAD_REQUEST),
-        (Business.LegalTypes.COMP.value, Amalgamation.AmalgamationTypes.vertical.name, None),
-        (Business.LegalTypes.COMP.value, Amalgamation.AmalgamationTypes.horizontal.name, None)
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value, 
+         Amalgamation.AmalgamationTypes.vertical.name, HTTPStatus.BAD_REQUEST),
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value, 
+         Amalgamation.AmalgamationTypes.horizontal.name, HTTPStatus.BAD_REQUEST),
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value, 
+         Amalgamation.AmalgamationTypes.vertical.name, None),
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value, 
+         Amalgamation.AmalgamationTypes.horizontal.name, None),
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.CONTINUE_IN.value, 
+         Amalgamation.AmalgamationTypes.horizontal.name, None),
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP_CONTINUE_IN.value, 
+         Amalgamation.AmalgamationTypes.horizontal.name, None),
+        (Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.ULC_CONTINUE_IN.value, 
+         Amalgamation.AmalgamationTypes.horizontal.name, None)
     ]
 )
-def test_amalgamation_legal_type_mismatch(mocker, app, session, jwt, legal_type, amalgamation_type, expected_code):
+def test_amalgamation_legal_type_mismatch(mocker, app, session, jwt, legal_type, mock_legal_type,
+                                           amalgamation_type, expected_code):
     """Assert amalgamation legal type validation for short form."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -1417,7 +1428,7 @@ def test_amalgamation_legal_type_mismatch(mocker, app, session, jwt, legal_type,
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
-                        legal_type=Business.LegalTypes.COMP.value)
+                        legal_type=mock_legal_type)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])

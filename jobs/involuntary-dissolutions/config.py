@@ -45,6 +45,7 @@ def get_named_config(config_name: str = 'production'):
 class _Config(object):  # pylint: disable=too-few-public-methods
     """Base class configuration."""
 
+    SERVICE_NAME = 'dissolutions-job'
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SENTRY_DSN = os.getenv('SENTRY_DSN') or ''

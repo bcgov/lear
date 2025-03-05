@@ -1,4 +1,5 @@
 prefect==3.0.8
+prefect[dask]
 Babel==2.9.1
 Flask>=2.0.0,<2.1.0  # Pin to 2.0.x series for flask-restx compatibility
 Flask-Babel==2.0.0

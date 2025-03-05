@@ -37,6 +37,7 @@ from werkzeug.local import LocalProxy
 import legal_api.reports
 from legal_api.constants import BOB_DATE
 from legal_api.core import Filing as CoreFiling
+from legal_api.core.constants import REDACTED_STAFF_SUBMITTER
 from legal_api.exceptions import BusinessException
 from legal_api.models import (
     Address,
@@ -310,6 +311,16 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if (rv.status == Filing.Status.WITHDRAWN.value or rv.storage.withdrawal_pending) and identifier.startswith('T'):
             now_filing = ListFilingResource.get_notice_of_withdrawal(filing_json['filing']['header']['filingId'])
             filing_json['filing']['noticeOfWithdrawal'] = now_filing.json
+
+            submitter = now_filing.filing_submitter
+            if submitter and submitter.username and jwt:
+                if rv.redact_submitter(now_filing.submitter_roles, jwt):
+                    submitter_displayname = REDACTED_STAFF_SUBMITTER
+                else:
+                    submitter_displayname = submitter.display_name or submitter.username
+
+                filing_json['filing']['noticeOfWithdrawal']['filing']['header']['submitter'] = submitter_displayname
+
         elif (rv.status in [Filing.Status.CHANGE_REQUESTED.value,
                             Filing.Status.APPROVED.value,
                             Filing.Status.REJECTED.value] and
@@ -724,7 +735,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                                                                                     legal_type,
                                                                                     priority_flag,
                                                                                     waive_fees_flag))
-        elif filing_type in ('adminFreeze', 'courtOrder', 'putBackOff', 'putBackOn',
+        elif filing_type in ('adminFreeze', 'putBackOff', 'putBackOn',
                              'registrarsNotation', 'registrarsOrder'):
             filing_type_code = Filing.FILINGS.get(filing_type, {}).get('code')
             filing_types.append({
