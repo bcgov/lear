@@ -14,12 +14,15 @@
 
 """This provides helper functions for digital credentials."""
 
-from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, PartyRole, User
+from typing import List, Union
+from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
-from legal_api.services.digital_credentils_utils import user_party_role
+from legal_api.services.digital_credentils_utils import user_party_role, business_party_role_mapping
 
 
-def get_digital_credential_data(user: User, business: Business, credential_type: DCDefinition.CredentialType):
+def get_digital_credential_data(user: User, business: Business,
+                                credential_type: DCDefinition.CredentialType,
+                                preconditions_met: Union[bool, None] = None) -> List[str]:
     """Get the data for a digital credential."""
     if credential_type == DCDefinition.CredentialType.business:
         rules = DigitalCredentialsRulesService()
@@ -50,22 +53,21 @@ def get_digital_credential_data(user: User, business: Business, credential_type:
         given_names = ' '.join(
             [x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
 
+        preconditions = rules.get_preconditions(user, business)
+        can_attach_role = (preconditions == None) or (len(
+            preconditions) and preconditions_met == True)
+
         roles = []
-        business_party_role_mapping = {
-            Business.LegalTypes.SOLE_PROP.value: PartyRole.RoleTypes.PROPRIETOR.value,
-            Business.LegalTypes.PARTNERSHIP.value: PartyRole.RoleTypes.PARTNER.value,
-            Business.LegalTypes.BCOMP.value: PartyRole.RoleTypes.DIRECTOR.value
-        }
         if business.legal_type in business_party_role_mapping:
             party_role_type = business_party_role_mapping[business.legal_type]
-            if rules.has_party_role(user, business, party_role_type):
-                party_role = user_party_role(
-                    user, business, party_role_type)
-                roles.append(
-                    (party_role.role or '').replace('_', ' ').title())
+            if (rules.has_party_role(user, business, party_role_type) and can_attach_role):
+                party_role = user_party_role(user, business, party_role_type)
+                roles.append((party_role.role or '').replace('_', ' ').title())
 
-            if business.legal_type == Business.LegalTypes.BCOMP.value and rules.is_completing_party(user, business):
-                roles.append('Incorporator'.title())
+        # For companies that have separate incporporating information
+        if business.legal_type == Business.LegalTypes.BCOMP.value:
+            if (rules.is_completing_party(user, business) and can_attach_role):
+                roles.append('incorporator'.title())
 
         return [
             {
@@ -113,7 +115,7 @@ def get_digital_credential_data(user: User, business: Business, credential_type:
     return None
 
 
-def extract_invitation_message_id(json_message: dict):
+def extract_invitation_message_id(json_message: dict) -> str:
     """Extract the invitation message id from the json message."""
     if 'invitation' in json_message and json_message['invitation'] is not None:
         invitation_message_id = json_message['invitation']['@id']

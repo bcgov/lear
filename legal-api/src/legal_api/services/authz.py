@@ -586,6 +586,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
             'filingTypes': allowed_filings
         },
         'digitalBusinessCard': are_digital_credentials_allowed(business, jwt),
+        'digitalBusinessCardPreconditions': get_digital_credentials_preconditions(business, jwt),
         'viewAll': is_competent_authority
     }
     return result
@@ -974,7 +975,7 @@ def add_allowable_filing_type(is_allowable: bool = False,
     return allowable_filing_types
 
 
-def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
+def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool:
     """Return True if the business is allowed to have/view digital credentials."""
     if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
         return False
@@ -989,6 +990,24 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
 
     rules = DigitalCredentialsRulesService()
     return rules.are_digital_credentials_allowed(user, business)
+
+
+def get_digital_credentials_preconditions(business: Business, jwt: JwtManager) -> List[str]:
+    """Return the preconditions for digital credentials."""
+
+    class PreconditionsEnum(Enum):
+        """Digital Credentials Preconditions Enum."""
+        BUSINESS_ROLE = 'attest_party_role'
+        COMPLETOR_ROLE = 'attest_completor_role'
+
+    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
+        return []
+
+    if not (user := User.find_by_jwt_token(token)):
+        return []
+
+    rules = DigitalCredentialsRulesService()
+    return rules.get_preconditions(user, business)
 
 
 def get_account_id(_, account_id: str = None) -> str:

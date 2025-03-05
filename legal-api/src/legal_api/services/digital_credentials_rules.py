@@ -14,11 +14,14 @@
 
 """This provides the service for determining access rules to digital credentials."""
 
+from enum import Enum
 import logging
 import os
+from typing import List
 
 from legal_api.models import Business, PartyRole, User
-from legal_api.services.digital_credentils_utils import user_completing_party_role, user_party_role
+from legal_api.services.digital_credentils_utils import (
+    user_completing_party_role, user_party_role, business_party_role_mapping)
 from legal_api.utils.logging import setup_logging
 
 
@@ -72,3 +75,26 @@ class DigitalCredentialsRulesService:
     def has_party_role(self, user: User, business: Business, role: PartyRole.RoleTypes) -> bool:
         """Return True if the user has a party role in the business."""
         return user_party_role(user, business, role) is not None
+
+    def get_preconditions(self, user: User, business: Business) -> List[str]:
+        """Return the preconditions for digital credentials."""
+
+        class PreconditionsEnum(Enum):
+            """Digital Credentials Preconditions Enum."""
+            BUSINESS_ROLE = 'attest_party_role'
+            COMPLETOR_ROLE = 'attest_completor_role'
+
+        role = None
+        if business.legal_type in business_party_role_mapping:
+            role = business_party_role_mapping[business.legal_type]
+        preconditions = []
+        if (self.has_party_role(user, business, role)
+                and not self.is_completing_party(user, business)):
+            preconditions.append(PreconditionsEnum.BUSINESS_ROLE.value)
+
+        if (business.legal_type == Business.LegalTypes.BCOMP
+            and self.is_completing_party(user, business)
+                and not self.has_party_role(user, business, role)):
+            preconditions.append(PreconditionsEnum.COMPLETOR_ROLE.value)
+
+        return preconditions

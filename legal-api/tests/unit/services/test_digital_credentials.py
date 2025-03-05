@@ -16,7 +16,7 @@
 Test suite to ensure that the Digital Credentials service is working as expected.
 """
 from datetime import datetime
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -24,6 +24,7 @@ from legal_api.models import DCDefinition, DCIssuedBusinessUserCredential, Party
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials import DigitalCredentialsService
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data
+from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
 from tests.unit.services.utils import create_party_role, create_test_user
 
@@ -163,7 +164,9 @@ def test_init_app(app, session):
     ]),
     ({
         'business': {
-            'identifier': 'FM1234567'
+            'identifier': 'FM1234567',
+            'entity_type': 'SP',
+            'state': 'HISTORICAL',
         },
         'business_extra': {
             'legal_name': '',
@@ -186,10 +189,10 @@ def test_init_app(app, session):
         {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
         {'name': 'business_name', 'value': ''},
-        {'name': 'business_type', 'value': 'BC Cooperative Association'},
+        {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
         {'name': 'cra_business_number', 'value': ''},
         {'name': 'registered_on_dateint', 'value': '19700101'},
-        {'name': 'company_status', 'value': 'ACTIVE'},
+        {'name': 'company_status', 'value': 'HISTORICAL'},
         {'name': 'family_name', 'value': 'LAST'},
         {'name': 'given_names', 'value': 'FIRST'},
         {'name': 'role', 'value': ''}
@@ -220,16 +223,17 @@ def test_data_helper_user_is_not_completing_party(app, session, test_data, expec
         business_id=business.id, user_id=user.id)
     issued_business_user_credential.save()
 
-    # Act
-    credential_data = get_digital_credential_data(
-        user, business, credential_type)
+    with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
+        # Act
+        credential_data = get_digital_credential_data(
+            user, business, credential_type)
 
-    # Assert
-    for item in credential_data:
-        if item['name'] == 'credential_id':
-            assert item['value'] == f'{issued_business_user_credential.id:08}'
-        else:
-            assert item in expected
+        # Assert
+        for item in credential_data:
+            if item['name'] == 'credential_id':
+                assert item['value'] == f'{issued_business_user_credential.id:08}'
+            else:
+                assert item in expected
 
 
 @pytest.mark.parametrize('test_data, expected', [
@@ -347,7 +351,9 @@ def test_data_helper_user_is_not_completing_party(app, session, test_data, expec
     ]),
     ({
         'business': {
-            'identifier': 'FM1234567'
+            'identifier': 'FM1234567',
+            'entity_type': 'SP',
+            'state': 'HISTORICAL',
         },
         'business_extra': {
             'legal_name': '',
@@ -370,10 +376,10 @@ def test_data_helper_user_is_not_completing_party(app, session, test_data, expec
         {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
         {'name': 'business_name', 'value': ''},
-        {'name': 'business_type', 'value': 'BC Cooperative Association'},
+        {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
         {'name': 'cra_business_number', 'value': ''},
         {'name': 'registered_on_dateint', 'value': '19700101'},
-        {'name': 'company_status', 'value': 'ACTIVE'},
+        {'name': 'company_status', 'value': 'HISTORICAL'},
         {'name': 'family_name', 'value': 'LAST'},
         {'name': 'given_names', 'value': 'FIRST'},
         {'name': 'role', 'value': ''}
@@ -420,13 +426,100 @@ def test_data_helper_user_is_completing_party(app, session, test_data, expected)
         business_id=business.id, user_id=user.id)
     issued_business_user_credential.save()
 
-    # Act
-    credential_data = get_digital_credential_data(
-        user, business, credential_type)
+    with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
+        # Act
+        credential_data = get_digital_credential_data(
+            user, business, credential_type)
 
-    # Assert
-    for item in credential_data:
-        if item['name'] == 'credential_id':
-            assert item['value'] == f'{issued_business_user_credential.id:08}'
-        else:
-            assert item in expected
+        # Assert
+        for item in credential_data:
+            if item['name'] == 'credential_id':
+                assert item['value'] == f'{issued_business_user_credential.id:08}'
+            else:
+                assert item in expected
+
+
+def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
+    """Assert that the data helper returns the correct data when preconditions not met."""
+    # Arrange
+    credential_type = DCDefinition.CredentialType.business
+
+    user = factory_user(
+        username='test',
+        lastname='Last',
+        firstname='First',
+    )
+
+    business = factory_business(
+        identifier='FM1234567',
+        entity_type='BEN',
+        founding_date='2010-01-01',
+        state='ACTIVE'
+    )
+    business.legal_name = 'Test Business'
+    business.tax_id = '000000000000001'
+    business.save()
+
+    party_role = PartyRole(role='director')
+    party_role.party = Party(
+        first_name='First',
+        last_name='Last'
+    )
+    party_role.business_id = business.id
+    party_role.save()
+
+    issued_business_user_credential = DCIssuedBusinessUserCredential(
+        business_id=business.id, user_id=user.id)
+    issued_business_user_credential.save()
+
+    with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
+        # Act
+        credential_data = get_digital_credential_data(
+            user, business, credential_type, False)
+
+        # Assert
+        assert {'name': 'role', 'value': ''} in credential_data
+
+
+def test_data_helper_role_added_if_preconditions_met(app, session):
+    """Assert that the data helper returns the correct data when preconditions met."""
+    # Arrange
+    credential_type = DCDefinition.CredentialType.business
+
+    user = factory_user(
+        username='test',
+        lastname='Last',
+        firstname='First',
+    )
+
+    business = factory_business(
+        identifier='FM1234567',
+        entity_type='BEN',
+        founding_date='2010-01-01',
+        state='ACTIVE'
+    )
+    business.legal_name = 'Test Business'
+    business.tax_id = '000000000000001'
+    business.save()
+
+    party_role = PartyRole(role='director')
+    party_role.party = Party(
+        first_name='First',
+        last_name='Last'
+    )
+    party_role.business_id = business.id
+    party_role.save()
+
+    issued_business_user_credential = DCIssuedBusinessUserCredential(
+        business_id=business.id, user_id=user.id)
+    issued_business_user_credential.save()
+
+    with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
+        # Act
+        credential_data = get_digital_credential_data(
+            user, business, credential_type, True)
+
+        print(credential_data)
+
+        # Assert
+        assert {'name': 'role', 'value': 'Director'} in credential_data

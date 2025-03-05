@@ -23,11 +23,13 @@ from flask_cors import cross_origin
 from legal_api.decorators import can_access_digital_credentials
 from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, DCRevocationReason, User
 from legal_api.services import digital_credentials
+from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
 from legal_api.utils.auth import jwt
 
 from .bp import bp
 
+rules = DigitalCredentialsRulesService()
 
 bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__,
                   url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
@@ -204,8 +206,12 @@ def send_credential(identifier, credential_type):
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
+    json_input = request.get_json()
+    preconditions_met = json_input.get(
+        'preconditionsMet', None) if json_input else None
+
     credential_data = get_digital_credential_data(
-        user, business, definition.credential_type)
+        user, business, definition.credential_type, preconditions_met)
     credential_id = next(
         (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 

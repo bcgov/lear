@@ -13,6 +13,7 @@
 # limitations under the License.
 """Helper functions for digital credentials."""
 
+from typing import List, Union
 from legal_api.models import (
     Business,
     DCConnection,
@@ -23,10 +24,10 @@ from legal_api.models import (
     User,
 )
 from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials import DigitalCredentialsHelpers
+from legal_api.services.digital_credentials_helpers import get_digital_credential_data
 
 
-def get_issued_digital_credentials(business: Business):
+def get_issued_digital_credentials(business: Business) -> Union[List[DCIssuedCredential], None]:
     """Get issued digital credentials for a business."""
     try:
         # pylint: disable=superfluous-parens
@@ -44,7 +45,9 @@ def get_issued_digital_credentials(business: Business):
         raise err
 
 
-def issue_digital_credential(business: Business, user: User, credential_type: DCDefinition.credential_type):
+def issue_digital_credential(business: Business, 
+                             user: User,
+                             credential_type: DCDefinition.CredentialType) -> Union[DCIssuedCredential, None]:
     """Issue a digital credential for a business to a user."""
     try:
         if not (definition := DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
@@ -58,10 +61,9 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
             # pylint: disable=broad-exception-raised
             raise Exception(f'{business.identifier} active connection not found.')
 
-        credential_data = DigitalCredentialsHelpers.get_digital_credential_data(user,
-                                                                                business,
-                                                                                definition.credential_type)
-        credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
+        credential_data = get_digital_credential_data(user, business, definition.credential_type)
+        credential_id = next(
+            (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
         if not (response := digital_credentials.issue_credential(connection_id=connection.connection_id,
                                                                  definition=definition,
@@ -84,7 +86,7 @@ def issue_digital_credential(business: Business, user: User, credential_type: DC
 
 def revoke_issued_digital_credential(business: Business,
                                      issued_credential: DCIssuedCredential,
-                                     reason: DCRevocationReason):
+                                     reason: DCRevocationReason) -> Union[dict, None]:
     """Revoke an issued digital credential for a business."""
     try:
         if not issued_credential.is_issued or issued_credential.is_revoked:
@@ -114,7 +116,7 @@ def revoke_issued_digital_credential(business: Business,
 def replace_issued_digital_credential(business: Business,
                                       issued_credential: DCIssuedCredential,
                                       credential_type: DCDefinition.CredentialType,
-                                      reason: DCRevocationReason):  # pylint: disable=too-many-arguments
+                                      reason: DCRevocationReason) -> Union[DCIssuedCredential, None]:  # pylint: disable=too-many-arguments
     """Replace an issued digital credential for a business."""
     try:
         if issued_credential.is_issued and not issued_credential.is_revoked:

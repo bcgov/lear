@@ -27,6 +27,13 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(
     __file__)), 'logging.conf'))  # important to do this first
 
 
+business_party_role_mapping = {
+    Business.LegalTypes.SOLE_PROP.value: PartyRole.RoleTypes.PROPRIETOR.value,
+    Business.LegalTypes.PARTNERSHIP.value: PartyRole.RoleTypes.PARTNER.value,
+    Business.LegalTypes.BCOMP.value: PartyRole.RoleTypes.DIRECTOR.value
+}
+
+
 class FormattedUser:
     """Formatted user class."""
 
