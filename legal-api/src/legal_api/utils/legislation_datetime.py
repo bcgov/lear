@@ -80,14 +80,13 @@ class LegislationDatetime():
         """Return a datetime adjusted to the GMT timezone (aka UTC) from a date (1900-12-31) string."""
         _date_time = LegislationDatetime.as_legislation_timezone_from_date_str(date_string)
         return LegislationDatetime.as_utc_timezone(_date_time)
-    
+
     @staticmethod
     def format_as_next_legislation_day(date_string: str) -> str:
         """Return the next day in this format (eg: `August 5, 2021`)."""
-        
         input_date = datetime.fromisoformat(date_string)
         next_day = input_date + timedelta(days=1)
-        
+
         return next_day.strftime('%B %d, %Y')
 
     @staticmethod
