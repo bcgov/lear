@@ -118,6 +118,7 @@ class EventFilings(str, Enum):
     FILE_ICORC = 'FILE_ICORC'
 
     # TODO: Legacy Other - unsupported
+    ADCORP_NULL = 'ADCORP_NULL'
     FILE_AM_TR = 'FILE_AM_TR'
 
     # TODO: Liquidation - unsupported
@@ -259,6 +260,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_ICORC: 'incorporationApplication',
 
     # TODO: Legacy Other - unsupported
+    EventFilings.ADCORP_NULL: 'legacyOther',
     EventFilings.FILE_AM_TR: 'legacyOther',
 
     # TODO: Liquidation - unsupported
@@ -369,6 +371,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_ICORC: 'Incorporation Application for a Community Contribution Company',
 
     # TODO: Legacy Other - unsupported
+    EventFilings.ADCORP_NULL: None,
     EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
