@@ -276,13 +276,18 @@ class AccountService:
     @classmethod
     def get_account_by_affiliated_identifier(cls, identifier: str):
         """Return the account affiliated to the business."""
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
         token = cls.get_bearer_token()
         auth_url = current_app.config.get('AUTH_SVC_URL')
         url = f'{auth_url}/orgs?affiliation={identifier}'
 
-        res = requests.get(url,
-                           headers={**cls.CONTENT_TYPE_JSON,
-                                    'Authorization': cls.BEARER + token})
+        # headers with conditional sandbox override
+        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
+        if flags and flags.is_on('enable-sandbox'):
+            current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
+            headers['Environment-Override'] = 'sandbox'
+
+        res = requests.get(url, headers)
         try:
             return res.json()
         except Exception:  # noqa B902; pylint: disable=W0703;
