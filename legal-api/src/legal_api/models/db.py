@@ -19,7 +19,7 @@ from datetime import datetime
 
 from flask import current_app
 from flask_sqlalchemy import SignallingSession, SQLAlchemy
-from sql_versioning import TransactionManager, debug
+from sql_versioning import TransactionManager
 from sql_versioning import disable_versioning as _new_disable_versioning
 from sql_versioning import enable_versioning as _new_enable_versioning
 from sql_versioning import version_class as _new_version_class
@@ -161,7 +161,6 @@ class VersioningProxy:
         cls._versioning_control[current]['enable']()
 
     @classmethod
-    @debug
     def lock_versioning(cls, session, transaction):
         """Lock versioning for the session.
 
@@ -201,7 +200,6 @@ class VersioningProxy:
         session.info['_transactions_locked'].append(transaction)
 
     @classmethod
-    @debug
     def unlock_versioning(cls, session, transaction):
         """Unlock versioning for the session.
 
@@ -231,7 +229,6 @@ class VersioningProxy:
             print("\033[32mVersioning/Transaction lock doesn't exist, skip\033[0m")
 
     @classmethod
-    @debug
     def get_transaction_id(cls, session):
         """Get the transaction ID for the session.
 
@@ -248,7 +245,6 @@ class VersioningProxy:
         return transaction_id
 
     @classmethod
-    @debug
     def version_class(cls, session, obj):
         """Return version class for an object based in the session.
 
@@ -265,7 +261,6 @@ class VersioningProxy:
         return cls._versioning_control[current_versioning]['version_class'](obj)
 
 
-@debug
 def setup_versioning():
     """Set up and initialize versioining switching.
 
@@ -273,12 +268,10 @@ def setup_versioning():
     """
     # use SignallingSession to skip events for continuum's internal session/txn operations
     @event.listens_for(SignallingSession, 'after_transaction_create')
-    @debug
     def after_transaction_create(session, transaction):
         VersioningProxy.lock_versioning(session, transaction)
 
     @event.listens_for(SignallingSession, 'after_transaction_end')
-    @debug
     def clear_transaction(session, transaction):
         VersioningProxy.unlock_versioning(session, transaction)
 
