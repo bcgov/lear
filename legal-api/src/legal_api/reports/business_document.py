@@ -492,6 +492,7 @@ class BusinessDocument:
             filing_info['reason'] = reason
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date_str)
             filing_info['expiryDate'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
+            filing_info['historicalDate'] = LegislationDatetime.format_as_next_legislation_day(expiry_date_str)
         else:
             filing_info['filingName'] = BusinessDocument.\
                 _get_summary_display_name(filing_type, None, None, None)
