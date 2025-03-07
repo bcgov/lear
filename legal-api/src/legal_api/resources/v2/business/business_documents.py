@@ -61,7 +61,7 @@ def get_business_documents(identifier: str, document_name: str = None):
         not flags.is_on('enable-business-summary-for-migrated-corps') and
         business.is_tombstone and
         business.legal_type in Business.CORPS and
-        document_name == "summary"
+        document_name == 'summary'
     ):
         return {}, HTTPStatus.NOT_FOUND
 
