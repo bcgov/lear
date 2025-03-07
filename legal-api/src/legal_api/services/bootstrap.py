@@ -25,6 +25,7 @@ from flask import current_app
 from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
 from sqlalchemy.orm.exc import FlushError  # noqa: I001
 
+
 from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
 
 
@@ -286,9 +287,11 @@ class AccountService:
         if flags and flags.is_on('enable-sandbox'):
             current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
             headers['Environment-Override'] = 'sandbox'
-
+        current_app.logger.debug(f'Header:\n{headers}')
         res = requests.get(url, headers)
+        current_app.logger.debug(f'Response:\n{res}')
         try:
+            current_app.logger.debug(f'res JSON:\n{res.json()}')
             return res.json()
         except Exception:  # noqa B902; pylint: disable=W0703;
             current_app.logger.error('Failed to get response')
