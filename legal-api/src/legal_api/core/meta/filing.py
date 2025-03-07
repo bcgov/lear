@@ -220,6 +220,21 @@ FILINGS: Final = {
             'CCC': 'NOARM'
         }
     },
+    'ceaseReceiver': {
+        'name': 'ceaseReceiver',
+        'title': 'Cease Receiver Filing',
+        'displayName': 'Cease Receiver',
+        'codes': {
+            'BEN': 'NOCER',
+            'BC': 'NOCER',
+            'ULC': 'NOCER',
+            'CC': 'NOCER',
+            'CBEN': 'NOCER',
+            'C': 'NOCER',
+            'CUL': 'NOCER',
+            'CCC': 'NOCER'
+        }
+    },
     'changeOfAddress': {
         'name': 'changeOfAddress',
         'title': 'Change of Address Filing',
