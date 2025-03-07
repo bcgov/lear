@@ -28,4 +28,4 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         return
 
     if parties := appoint_receiver_filing.get('parties'):
-        update_parties(business, parties, filing_rec)
+        update_parties(business, parties, filing_rec, False)
