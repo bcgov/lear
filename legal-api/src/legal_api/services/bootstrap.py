@@ -288,7 +288,7 @@ class AccountService:
             current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
             headers['Environment-Override'] = 'sandbox'
         current_app.logger.debug(f'Header:\n{headers}')
-        res = requests.get(url, headers)
+        res = requests.get(url=url, headers=headers)
         current_app.logger.debug(f'Response:\n{res}')
         try:
             current_app.logger.debug(f'res JSON:\n{res.json()}')
