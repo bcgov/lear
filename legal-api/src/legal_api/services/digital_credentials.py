@@ -1,4 +1,4 @@
-# Copyright © 2022 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 
 import json
+import random
 from contextlib import suppress
+from datetime import datetime
 from typing import Optional
 
 import requests
 
 from legal_api.decorators import requires_traction_auth
-from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, DCRevocationReason, User
+from legal_api.models import DCDefinition, DCRevocationReason
 
 
 class DigitalCredentialsService:
@@ -42,6 +44,8 @@ class DigitalCredentialsService:
         self.business_schema_id = None
         self.business_cred_def_id = None
 
+        self.wallet_cred_def_id = None
+
     def init_app(self, app):
         """Initialize digital credentials using aca-py agent."""
         self.app = app
@@ -51,9 +55,12 @@ class DigitalCredentialsService:
         self.public_issuer_did = app.config.get('TRACTION_PUBLIC_ISSUER_DID')
 
         self.business_schema_name = app.config.get('BUSINESS_SCHEMA_NAME')
-        self.business_schema_version = app.config.get('BUSINESS_SCHEMA_VERSION')
+        self.business_schema_version = app.config.get(
+            'BUSINESS_SCHEMA_VERSION')
         self.business_schema_id = app.config.get('BUSINESS_SCHEMA_ID')
         self.business_cred_def_id = app.config.get('BUSINESS_CRED_DEF_ID')
+
+        self.wallet_cred_def_id = app.config.get('WALLET_CRED_DEF_ID')
 
         with suppress(Exception):
             self._register_business_definition()
@@ -62,12 +69,16 @@ class DigitalCredentialsService:
         """Fetch schema and credential definition and save a Business definition."""
         try:
             if not self.business_schema_id:
-                self.app.logger.error('Environment variable: BUSINESS_SCHEMA_ID must be configured')
-                raise ValueError('Environment variable: BUSINESS_SCHEMA_ID must be configured')
+                self.app.logger.error(
+                    'Environment variable: BUSINESS_SCHEMA_ID must be configured')
+                raise ValueError(
+                    'Environment variable: BUSINESS_SCHEMA_ID must be configured')
 
             if not self.business_cred_def_id:
-                self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
-                raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
+                self.app.logger.error(
+                    'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
+                raise ValueError(
+                    'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
             ###
             # The following just a sanity check to make sure the schema and
@@ -83,7 +94,7 @@ class DigitalCredentialsService:
 
             # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
             if not (credential_definition_id := self._fetch_credential_definition(self.business_cred_def_id)):
-                raise ValueError(f'Credential Definition with id:{self.business_cred_def_id}' +
+                raise ValueError(f'Credential Definition with id: {self.business_cred_def_id}' +
                                  ' must be available in Traction tenant storage')
 
             # Check for the current Business definition.
@@ -114,14 +125,13 @@ class DigitalCredentialsService:
     def _fetch_schema(self, schema_id: str) -> Optional[str]:
         """Find a schema in Traction storage."""
         try:
-            response = requests.get(self.api_url + '/schema-storage',
-                                    params={'schema_id': schema_id},
+            response = requests.get(self.api_url + f'/schemas/{schema_id}',
                                     headers=self._get_headers())
             response.raise_for_status()
-            first_or_default = next((x for x in response.json()['results'] if x['schema_id'] == schema_id), None)
-            return first_or_default['schema_id'] if first_or_default else None
+            return response.json().get('schema', None).get('id', None)
         except Exception as err:
-            self.app.logger.error(f'Failed to fetch schema with id:{schema_id} from Traction tenant storage')
+            self.app.logger.error(
+                f'Failed to fetch schema with id: {schema_id} from Traction tenant storage')
             self.app.logger.error(err)
             raise err
 
@@ -129,14 +139,12 @@ class DigitalCredentialsService:
     def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
         """Find a published credential definition."""
         try:
-            response = requests.get(self.api_url + '/credential-definition-storage',
-                                    params={'cred_def_id': cred_def_id},
+            response = requests.get(self.api_url + f'/credential-definitions/{cred_def_id}',
                                     headers=self._get_headers())
             response.raise_for_status()
-            first_or_default = next((x for x in response.json()['results'] if x['cred_def_id'] == cred_def_id), None)
-            return first_or_default['cred_def_id'] if first_or_default else None
+            return response.json().get('credential_definition', None).get('id', None)
         except Exception as err:
-            self.app.logger.error(f'Failed to find credential definition with id:{cred_def_id}' +
+            self.app.logger.error(f'Failed to find credential definition with id: {cred_def_id}' +
                                   ' from Traction tenant storage')
             self.app.logger.error(err)
             raise err
@@ -149,7 +157,60 @@ class DigitalCredentialsService:
                                      headers=self._get_headers(),
                                      params={'auto_accept': 'true'},
                                      data=json.dumps({
-                                         'handshake_protocols': ['https://didcomm.org/connections/1.0']
+                                         'handshake_protocols': ['https://didcomm.org/didexchange/1.1']
+                                     }))
+            response.raise_for_status()
+            return response.json()
+        except Exception as err:
+            self.app.logger.error(err)
+            return None
+
+    @requires_traction_auth
+    def attest_connection(self, connection_id: str) -> Optional[dict]:
+        """Perform an attestation to ensure that interactions only happen with connections on a trusted app."""
+        try:
+            current_timestamp = int(datetime.now().timestamp())
+            # Generate a random nonce
+            nonce = str(random.randint(1000000000, 9999999999))
+
+            response = requests.post(self.api_url + '/present-proof-2.0/send-request',
+                                     headers=self._get_headers(),
+                                     data=json.dumps({
+                                         'comment': 'BC Wallet App Attestation',
+                                         'connection_id': connection_id,
+                                         'presentation_request': {
+                                             'indy': {
+                                                 'name': 'App Attestation',
+                                                 'nonce': nonce,  # Use the generated nonce
+                                                 'requested_attributes': {
+                                                    'attestationInfo': {
+                                                        'names': [
+                                                            'app_version',
+                                                            'operating_system',
+                                                            'operating_system_version'
+                                                        ],
+                                                        'restrictions': [
+                                                            {
+                                                                'cred_def_id': self.wallet_cred_def_id
+                                                            }
+                                                        ]
+                                                    }
+                                                 },
+                                                 'requested_predicates': {
+                                                     'validAttestationDate': {
+                                                         'name': 'issue_date_dateint',
+                                                         'p_type': '<',
+                                                         'p_value': current_timestamp,
+                                                         'restrictions': [
+                                                             {
+                                                                 'cred_def_id': self.wallet_cred_def_id
+                                                             }
+                                                         ]
+                                                     }
+                                                 },
+                                                 'version': '2.0'
+                                             }
+                                         }
                                      }))
             response.raise_for_status()
             return response.json()
@@ -161,7 +222,8 @@ class DigitalCredentialsService:
     def issue_credential(self,
                          connection_id: str,
                          definition: DCDefinition,
-                         data: list,  # list of { 'name': 'business_name', 'value': 'test_business' }
+                         # list of { 'name': 'business_name', 'value': 'test_business' }
+                         data: list,
                          comment: str = '') -> Optional[dict]:
         """Send holder a credential, automating entire flow."""
         try:
@@ -258,96 +320,3 @@ class DigitalCredentialsService:
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.app.api_token}'
         }
-
-
-class DigitalCredentialsHelpers:
-    """Provides helper functions for digital credentials."""
-
-    @staticmethod
-    def get_digital_credential_data(business: Business, user: User, credential_type: DCDefinition.CredentialType):
-        """Get the data for a digital credential."""
-        if credential_type == DCDefinition.CredentialType.business:
-
-            # Find the credential id from dc_issued_business_user_credentials and if there isn't one create one
-            if not (issued_business_user_credential := DCIssuedBusinessUserCredential.find_by(
-                    business_id=business.id, user_id=user.id)):
-                issued_business_user_credential = DCIssuedBusinessUserCredential(
-                    business_id=business.id, user_id=user.id)
-                issued_business_user_credential.save()
-
-            credential_id = f'{issued_business_user_credential.id:08}'
-
-            if (business_type := CorpType.find_by_id(business.legal_type)):
-                business_type = business_type.full_desc
-            else:
-                business_type = business.legal_type
-
-            registered_on_dateint = ''
-            if business.founding_date:
-                registered_on_dateint = business.founding_date.strftime('%Y%m%d')
-
-            company_status = Business.State(business.state).name
-
-            family_name = (user.lastname or '').strip().upper()
-
-            given_names = ' '.join([x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
-
-            # For an SP there is only one role. This will need to be updated
-            # when the entity model changes and we need to support multiple roles.
-            role = (
-                business.party_roles[0].role if (business.party_roles and len(business.party_roles.all())) else ''
-            ).replace('_', ' ').title()
-
-            return [
-                {
-                    'name': 'credential_id',
-                    'value':  credential_id or ''
-                },
-                {
-                    'name': 'identifier',
-                    'value': business.identifier or ''
-                },
-                {
-                    'name': 'business_name',
-                    'value': business.legal_name or ''
-                },
-                {
-                    'name': 'business_type',
-                    'value': business_type or ''
-                },
-                {
-                    'name': 'cra_business_number',
-                    'value': business.tax_id or ''
-                },
-                {
-                    'name': 'registered_on_dateint',
-                    'value': registered_on_dateint or ''
-                },
-                {
-                    'name': 'company_status',
-                    'value': company_status or ''
-                },
-                {
-                    'name': 'family_name',
-                    'value': family_name or ''
-                },
-                {
-                    'name': 'given_names',
-                    'value': given_names or ''
-                },
-                {
-                    'name': 'role',
-                    'value': role or ''
-                }
-            ]
-
-        return None
-
-    @staticmethod
-    def extract_invitation_message_id(json_message: dict):
-        """Extract the invitation message id from the json message."""
-        if 'invitation' in json_message and json_message['invitation'] is not None:
-            invitation_message_id = json_message['invitation']['@id']
-        else:
-            invitation_message_id = json_message['invitation_msg_id']
-        return invitation_message_id

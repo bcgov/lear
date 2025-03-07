@@ -24,16 +24,15 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the digital credentials connection."""
 
     class State(Enum):
-        """Enum of the connection states."""
+        """Enum of the didexchange protocol states."""
 
-        INIT = 'init'
-        INVITATION = 'invitation'
-        REQUEST = 'request'
-        RESPONSE = 'response'
-        ACTIVE = 'active'
+        START = 'start'  # altough there is a start state we never see it
+        INVITATION_SENT = 'invitation-sent'
+        REQUEST_RECEIVED = 'request-received'
+        RESPONSE_SENT = 'response-sent'
+        ABANDONED = 'abandoned'
         COMPLETED = 'completed'
-        INACTIVE = 'inactive'
-        ERROR = 'error'
+        ACTIVE = 'active'  # artifact from the connection protocol
 
     __tablename__ = 'dc_connections'
 
@@ -43,10 +42,13 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     is_active = db.Column('is_active', db.Boolean, default=False)
 
     # connection_state values we recieve in webhook, but we may not need all of it
-    # [init / invitation / request / response / active / error / inactive]
     connection_state = db.Column('connection_state', db.String(50))
 
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    business_id = db.Column('business_id', db.Integer,
+                            db.ForeignKey('businesses.id'))
+
+    is_attested = db.Column('is_attested', db.Boolean, default=False)
+    last_attested = db.Column('last_attested', db.DateTime, default=None)
 
     @property
     def json(self):
@@ -57,7 +59,9 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
             'connectionId': self.connection_id,
             'invitationUrl': self.invitation_url,
             'isActive': self.is_active,
-            'connectionState': self.connection_state
+            'connectionState': self.connection_state,
+            'isAttested': self.is_attested,
+            'lastAttested': self.last_attested
         }
         return dc_connection
 
@@ -76,7 +80,8 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the id."""
         dc_connection = None
         if dc_connection_id:
-            dc_connection = cls.query.filter_by(id=dc_connection_id).one_or_none()
+            dc_connection = cls.query.filter_by(
+                id=dc_connection_id).one_or_none()
         return dc_connection
 
     @classmethod
@@ -84,7 +89,8 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the connection_id."""
         dc_connection = None
         if connection_id:
-            dc_connection = cls.query.filter(DCConnection.connection_id == connection_id).one_or_none()
+            dc_connection = cls.query.filter(
+                DCConnection.connection_id == connection_id).one_or_none()
         return dc_connection
 
     @classmethod
@@ -110,6 +116,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
             query = query.filter(DCConnection.business_id == business_id)
 
         if connection_state:
-            query = query.filter(DCConnection.connection_state == connection_state)
+            query = query.filter(
+                DCConnection.connection_state == connection_state)
 
         return query.all()
