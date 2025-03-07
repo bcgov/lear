@@ -88,7 +88,7 @@ def _get_document_list(business):
         business.legal_type in Business.CORPS
     ):
         return jsonify(documents), HTTPStatus.OK
-    
+
     business_documents = ['summary']
     for doc in business_documents:
         documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
