@@ -21,7 +21,7 @@ from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Filing
 from legal_api.models.document import Document, DocumentType
 from legal_api.reports.business_document import BusinessDocument
-from legal_api.services import authorized
+from legal_api.services import authorized, flags
 from legal_api.services.business import validate_document_request
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -56,6 +56,15 @@ def get_business_documents(identifier: str, document_name: str = None):
         response_message = {'errors': err.msg}
         return jsonify(response_message), err.code
 
+    # Hide business summary for tombstone corps
+    if (
+        not flags.is_on('enable-business-summary-for-migrated-corps') and
+        business.is_tombstone and
+        business.legal_type in Business.CORPS and
+        document_name == "summary"
+    ):
+        return {}, HTTPStatus.NOT_FOUND
+
     if document_name:
         if 'application/pdf' in request.accept_mimetypes:
             return BusinessDocument(business, document_name).get_pdf()
@@ -70,9 +79,17 @@ def _get_document_list(business):
     base_url = base_url[:base_url.find('/api')]
     doc_url = url_for('API2.get_business_documents', **{'identifier': business.identifier,
                                                         'document_name': None})
-    business_documents = ['summary']
     documents = {'documents': {}}
 
+    # Hide business summary for tombstone corps
+    if (
+        not flags.is_on('enable-business-summary-for-migrated-corps') and
+        business.is_tombstone and
+        business.legal_type in Business.CORPS
+    ):
+        return jsonify(documents), HTTPStatus.OK
+    
+    business_documents = ['summary']
     for doc in business_documents:
         documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
 
