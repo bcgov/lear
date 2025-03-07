@@ -286,9 +286,11 @@ class AccountService:
         if flags and flags.is_on('enable-sandbox'):
             current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
             headers['Environment-Override'] = 'sandbox'
-
+        current_app.logger.debug(f"Header:\n{headers}")
         res = requests.get(url, headers)
+        current_app.logger.debug(f"Response:\n{res}")
         try:
+            current_app.logger.debug(f"res JSON:\n{res.json()}")
             return res.json()
         except Exception:  # noqa B902; pylint: disable=W0703;
             current_app.logger.error('Failed to get response')
