@@ -648,14 +648,7 @@ def format_cont_out_data(data: dict) -> dict:
         return {}
 
     cont_data = cont_data[0]
-    region = cont_data['can_jur_typ_cd']
-
-    if region != 'OT':
-        region = 'FEDERAL' if region == 'FD' else region
-        country = 'CA'
-    else:  # placeholder for other
-        country = 'UNKNOWN'
-        region = ''
+    country, region = map_country_region(cont_data['can_jur_typ_cd'])
 
     formatted_cont_out = {
         'foreign_jurisdiction': country,
@@ -666,6 +659,16 @@ def format_cont_out_data(data: dict) -> dict:
 
     return formatted_cont_out
 
+
+def map_country_region(can_jur_typ_cd):
+    if can_jur_typ_cd != 'OT':
+        country = 'CA'
+        region = 'FEDERAL' if can_jur_typ_cd == 'FD' else can_jur_typ_cd
+    else:  # placeholder for other
+        country = 'UNKNOWN'
+        region = 'UNKNOWN'
+
+    return country, region
 
 
 def formatted_data_cleanup(data: dict) -> dict:
@@ -829,6 +832,14 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             meta_data['putBackOff'] = {
                 'reason': 'Limited Restoration Expired',
                 'expiryDate': effective_date[:10]
+            }
+    elif filing_type == 'continuationOut':
+        country, region = map_country_region(data['cont_out_can_jur_typ_cd'])
+        meta_data['continuationOut'] = {
+                'country': country,
+                'region': region,
+                'legalName': data['cont_out_home_company_nme'],
+                'continuationOutDate': data['cont_out_dt'][:10]
             }
 
     if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:

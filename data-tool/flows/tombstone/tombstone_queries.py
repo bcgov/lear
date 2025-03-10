@@ -613,7 +613,13 @@ def get_filings_query(corp_num):
             to_char(ce.effective_dt at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as ce_effective_dt_str,
             -- corp name change
             cn_old.corp_name        as old_corp_name,
-            cn_new.corp_name        as new_corp_name
+            cn_new.corp_name        as new_corp_name,
+            
+            -- continuation out
+            co.can_jur_typ_cd as cont_out_can_jur_typ_cd,
+            to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
+            co.othr_juri_desc as cont_out_othr_juri_desc,
+            co.home_company_nme as cont_out_home_company_nme
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
@@ -622,6 +628,7 @@ def get_filings_query(corp_num):
                  left outer join conv_event ce on e.event_id = ce.event_id
                  left outer join corp_name cn_old on e.event_id = cn_old.end_event_id and cn_old.corp_name_typ_cd in ('CO', 'NB')
                  left outer join corp_name cn_new on e.event_id = cn_new.start_event_id and cn_new.corp_name_typ_cd in ('CO', 'NB')
+                 left outer join cont_out co on co.start_event_id = e.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'
@@ -759,9 +766,9 @@ def get_offices_held_query(corp_num):
 
 def get_cont_out_query(corp_num):
     query = f"""
-    select 
+    select
         co.can_jur_typ_cd,
-        to_char(co.cont_out_dt, 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
+        to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
         co.othr_juri_desc,
         co.home_company_nme
     from cont_out co
