@@ -642,6 +642,32 @@ def format_users_data(users_data: list) -> list:
     return formatted_users
 
 
+def format_cont_out_data(data: dict) -> dict:
+    cont_data = data.get('cont_out', [])
+    if not cont_data:
+        return {}
+
+    cont_data = cont_data[0]
+    region = cont_data['can_jur_typ_cd']
+
+    if region != 'OT':
+        region = 'FEDERAL' if region == 'FD' else region
+        country = 'CA'
+    else:  # placeholder for other
+        country = 'UNKNOWN'
+        region = ''
+
+    formatted_cont_out = {
+        'foreign_jurisdiction': country,
+        'foreign_jurisdiction_region': region,
+        'foreign_legal_name': cont_data['home_company_nme'],
+        'continuation_out_date': cont_data['cont_out_dt'],
+    }
+
+    return formatted_cont_out
+
+
+
 def formatted_data_cleanup(data: dict) -> dict:
     filings_business = data['filings']
     data['updates'] = {
@@ -653,6 +679,7 @@ def formatted_data_cleanup(data: dict) -> dict:
     data['admin_email'] = data['businesses']['admin_email']
     del data['businesses']['admin_email']
 
+    data['businesses'].update(data['cont_out'])
     return data
 
 
@@ -668,6 +695,7 @@ def get_data_formatters() -> dict:
         'filings': format_filings_data,
         'comments': format_business_comments_data,  # only for business level, filing level will be formatted ith filings
         'in_dissolution': format_in_dissolution_data,
+        'cont_out': format_cont_out_data,
     }
     return ret
 

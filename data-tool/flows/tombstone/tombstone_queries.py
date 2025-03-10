@@ -757,6 +757,22 @@ def get_offices_held_query(corp_num):
     return query
 
 
+def get_cont_out_query(corp_num):
+    query = f"""
+    select 
+        co.can_jur_typ_cd,
+        to_char(co.cont_out_dt, 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
+        co.othr_juri_desc,
+        co.home_company_nme
+    from cont_out co
+        join corp_state cs on cs.corp_num = co.corp_num and cs.end_event_id is null
+    where co.corp_num = '{corp_num}'
+      and co.end_event_id is null
+      and cs.state_type_cd in ('HCO', 'HAO')
+    """
+    return query
+
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
@@ -772,6 +788,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'business_comments': get_business_comments_query(corp_num),
         'filing_comments': get_filing_comments_query(corp_num),
         'in_dissolution': get_in_dissolution_query(corp_num),
+        'cont_out': get_cont_out_query(corp_num),
     }
 
     return queries
