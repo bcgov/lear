@@ -213,6 +213,12 @@ def get_allowable_filings_dict():
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
+                'ceaseReceiver': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
                 'changeOfAddress': {
                     'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {

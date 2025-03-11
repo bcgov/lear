@@ -593,6 +593,10 @@ def test_get_could_file(session, client, jwt):
             "name": "appointReceiver"
         },
         {
+            "displayName": "Cease Receiver",
+            "name": "ceaseReceiver"
+        },
+        {
             "displayName": "Address Change",
             "name": "changeOfAddress"
         },
