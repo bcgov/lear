@@ -73,6 +73,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         AMENDEDCHANGEOFDIRECTORS = 'amendedChangeOfDirectors'
         ANNUALREPORT = 'annualReport'
         APPOINTRECEIVER = 'appointReceiver'
+        CEASERECEIVER = 'ceaseReceiver'
         CHANGEOFADDRESS = 'changeOfAddress'
         CHANGEOFDIRECTORS = 'changeOfDirectors'
         CHANGEOFNAME = 'changeOfName'
