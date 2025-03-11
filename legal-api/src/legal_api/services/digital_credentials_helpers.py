@@ -128,7 +128,7 @@ def get_roles(user: User,
     """Get roles for the user in the business."""
     roles = []
     preconditions = rules.get_preconditions(user, business)
-    can_attach_role = (preconditions is None) or (
+    can_attach_role = (preconditions is None) or (len(preconditions) == 0) or (
         len(preconditions) and preconditions_met is True)
 
     if business.legal_type in business_party_role_mapping:
