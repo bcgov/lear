@@ -434,8 +434,6 @@ LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'changeOfDirectors': ['last_cod_date'],
     'agmExtension': ['last_agm_date'],
     'amalgamationApplication': ['last_coa_date', 'last_cod_date'],
-    # TODO: 'dissolution_date' - continuation out
-    # TODO: 'continuation_out_date' - continuation out
     'continuationIn': ['last_coa_date', 'last_cod_date'],
     'dissolution': ['dissolution_date'],
     'putBackOff': ['restoration_expiry_date', 'dissolution_date'],

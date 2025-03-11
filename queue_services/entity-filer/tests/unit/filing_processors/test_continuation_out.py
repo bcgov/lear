@@ -60,7 +60,6 @@ async def test_worker_continuation_out(app, session):
     assert business.foreign_jurisdiction_region == foreign_jurisdiction_json['region'].upper()
     assert business.foreign_legal_name == filing_json['filing']['continuationOut']['legalName']
     assert business.continuation_out_date == continuation_out_date
-    assert business.dissolution_date == continuation_out_date
 
     assert filing_meta.continuation_out['country'] == foreign_jurisdiction_json['country']
     assert filing_meta.continuation_out['region'] == foreign_jurisdiction_json['region']
