@@ -368,7 +368,7 @@ def test_issue_digital_credential_throws_active_connection_not_found_error(mock_
 
 
 @patch('entity_digital_credentials.helpers.digital_credentials')
-@patch('entity_digital_credentials.helpers.DigitalCredentialsHelpers.get_digital_credential_data', return_value=[{
+@patch('entity_digital_credentials.helpers.get_digital_credential_data', return_value=[{
     'name': 'credential_id',
     'value': '00000001'
 }])
@@ -394,7 +394,7 @@ def test_issue_digital_credential_throws_exception_on_failure(mock_digital_crede
 
 
 @patch('entity_digital_credentials.helpers.digital_credentials')
-@patch('entity_digital_credentials.helpers.DigitalCredentialsHelpers.get_digital_credential_data', return_value=[{
+@patch('entity_digital_credentials.helpers.get_digital_credential_data', return_value=[{
     'name': 'credential_id',
     'value': '00000001'
 }])
