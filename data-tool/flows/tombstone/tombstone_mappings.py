@@ -447,9 +447,18 @@ SKIPPED_EVENT_FILE_TYPES = [
     'SYST_TILAT',
     'SYST_TILHO',
     'SYST_NULL',
+    'TRESP_NULL',
+    'TRESP_COUTI',
     # Others
     'FILE_COGS1',
-    # TODO: may need to add more
+    # TODO: decide on the final list
+]
+
+
+NO_FILING_EVENT_FILE_TYPES = [
+    'SYSD1_NULL',
+    'SYSD2_NULL',
+    # TODO: decide on the final list
 ]
 
 

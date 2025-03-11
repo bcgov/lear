@@ -9,14 +9,15 @@ import pytz
 from sqlalchemy import Connection, text
 from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
                                            FILING_JSON, IN_DISSOLUTION,
-                                           JURISDICTION, OFFICE, PARTY,
-                                           PARTY_ROLE, RESOLUTION,
-                                           SHARE_CLASSES, USER, OFFICES_HELD)
+                                           JURISDICTION, OFFICE, OFFICES_HELD,
+                                           PARTY, PARTY_ROLE, RESOLUTION,
+                                           SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
                                           LEAR_STATE_FILINGS,
                                           LEGAL_TYPE_CHANGE_FILINGS,
+                                          NO_FILING_EVENT_FILE_TYPES,
                                           SKIPPED_EVENT_FILE_TYPES,
                                           EventFilings)
 
@@ -344,7 +345,7 @@ def format_filings_data(data: dict) -> dict:
         # TODO: build a new complete filing event mapper (WIP)
         raw_filing_type, raw_filing_subtype = get_target_filing_type(event_file_type)
         # skip the unsupported ones (need to support in the future)
-        if not raw_filing_type:
+        if not raw_filing_type and event_file_type not in NO_FILING_EVENT_FILE_TYPES:
             print(f'❗ Unsupported event filing type: {event_file_type}')
             current_unsupported_types.add(event_file_type)
             all_unsupported_types.add(event_file_type)
