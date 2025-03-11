@@ -428,6 +428,31 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 }
 
 
+SKIPPED_EVENT_FILE_TYPES = [
+    # XPRO
+    'FILE_CHGJU',
+    'FILE_NWPTA',
+    'FILE_PARES',
+    'FILE_TILAT',
+    'FILE_TILHO',
+    'FILE_TILMA',
+    'SYST_CANPS',
+    'SYST_CHGJU',
+    'SYST_CHGPN',
+    'SYST_CO_PN',
+    'SYST_LNKPS',
+    'SYST_NWPTA',
+    'SYST_PARES',
+    'SYST_RIPFL',
+    'SYST_TILAT',
+    'SYST_TILHO',
+    'SYST_NULL',
+    # Others
+    'FILE_COGS1',
+    # TODO: may need to add more
+]
+
+
 LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
     'incorporationApplication': ['last_coa_date', 'last_cod_date'],
     'changeOfAddress': ['last_coa_date'],

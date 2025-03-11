@@ -25,7 +25,7 @@ from tombstone.tombstone_queries import (get_corp_snapshot_filings_queries,
 from tombstone.tombstone_utils import (build_epoch_filing, format_users_data,
                                        formatted_data_cleanup,
                                        get_data_formatters, load_data,
-                                       unsupported_event_file_types,
+                                       all_unsupported_types,
                                        update_data)
 
 
@@ -388,7 +388,9 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
             print(f'❌ Error migrating corp snapshot and filings data for {corp_num}: {repr(e)}')
             return corp_num, e
     print(f'✅ Complete migrating {corp_num}!')
-    return corp_num, None
+
+    additional_info = clean_data['unsupported_types']
+    return corp_num, additional_info
 
 
 @flow(
@@ -462,7 +464,7 @@ def tombstone_flow():
                 )
 
             corp_futures = []
-            skipped = 0
+            failed = 0
             for f in data_futures:
                 corp_num, clean_data = f.result()
                 if clean_data and not isinstance(clean_data, Exception):
@@ -470,7 +472,7 @@ def tombstone_flow():
                         migrate_tombstone.submit(config, lear_engine, corp_num, clean_data, users_mapper)
                     )
                 else:
-                    skipped += 1
+                    failed += 1
                     processing_service.update_corp_status(
                         flow_run_id,
                         corp_num,
@@ -480,33 +482,42 @@ def tombstone_flow():
                     print(f'❗ Skip migrating {corp_num} due to data collection error.')
 
             wait(corp_futures)
-            succeeded = 0
+            complete = 0
+            partial = 0
             for f in corp_futures:
                 corp_num, e = f.result()
                 if not e:
-                    succeeded += 1
+                    complete += 1
                     processing_service.update_corp_status(
                         flow_run_id,
                         corp_num,
                         ProcessingStatuses.COMPLETED
                     )
-                else:
+                elif isinstance(e, Exception):
                     # Handle error case if needed
+                    failed += 1
                     processing_service.update_corp_status(
                         flow_run_id,
                         corp_num,
                         ProcessingStatuses.FAILED,
-                        error=f'Failed - {repr(e)}'
+                        error=f'Failed due to {repr(e)}'
+                    )
+                else:
+                    partial += 1
+                    processing_service.update_corp_status(
+                        flow_run_id,
+                        corp_num,
+                        ProcessingStatuses.PARTIAL,
+                        error=f"Partial due to unsupported event_file types: {', '.join(e)}"
                     )
 
-            failed = len(corp_futures) - succeeded
-            total_corp_failed += failed + skipped
-            print(f'🌟 Complete round {cnt}. Succeeded: {succeeded}. Failed: {failed}. Skip: {skipped}')
+            total_corp_failed += failed
+            print(f'🌟 Complete round {cnt}. Complete: {complete}. Partial: {partial}. Failed: {failed}.')
             cnt += 1
-            migrated_cnt += succeeded
+            migrated_cnt += complete + partial
 
         print(f'🌰 Complete {cnt} rounds, migrate {migrated_cnt} corps.')
-        print(f"🌰 All unsupport event file types: {', '.join(unsupported_event_file_types)}")
+        print(f"🌰 All unsupport event file types: {', '.join(all_unsupported_types)}")
 
         if is_user_failed:
             return Failed(message='Failed due to user migration error.')

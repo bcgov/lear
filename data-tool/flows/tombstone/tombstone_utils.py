@@ -17,9 +17,10 @@ from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
                                           LEAR_STATE_FILINGS,
                                           LEGAL_TYPE_CHANGE_FILINGS,
+                                          SKIPPED_EVENT_FILE_TYPES,
                                           EventFilings)
 
-unsupported_event_file_types = set()
+all_unsupported_types = set()
 
 
 def format_business_data(data: dict) -> dict:
@@ -327,6 +328,7 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
 def format_filings_data(data: dict) -> dict:
     # filing info in business
     business_update_dict = {}
+    current_unsupported_types = set()
 
     filings_data = data['filings']
     formatted_filings = []
@@ -335,12 +337,17 @@ def format_filings_data(data: dict) -> dict:
     withdrawn_filing_idx = -1
     for x in filings_data:
         event_file_type = x['event_file_type']
+        # skip event_file_type that we don't need to support
+        if event_file_type in SKIPPED_EVENT_FILE_TYPES:
+            print(f'💡 Skip event filing type: {event_file_type}')
+            continue
         # TODO: build a new complete filing event mapper (WIP)
         raw_filing_type, raw_filing_subtype = get_target_filing_type(event_file_type)
-        # skip the unsupported ones
+        # skip the unsupported ones (need to support in the future)
         if not raw_filing_type:
-            print(f'❗ Skip event filing type: {event_file_type}')
-            unsupported_event_file_types.add(event_file_type)
+            print(f'❗ Unsupported event filing type: {event_file_type}')
+            current_unsupported_types.add(event_file_type)
+            all_unsupported_types.add(event_file_type)
             continue
 
         # get converted filing_type and filing_subtype
@@ -442,7 +449,8 @@ def format_filings_data(data: dict) -> dict:
     return {
         'filings': formatted_filings,
         'update_business_info': business_update_dict,
-        'state_filing_index': state_filing_idx
+        'state_filing_index': state_filing_idx,
+        'unsupported_types': current_unsupported_types,
     }
 
 
@@ -677,6 +685,8 @@ def formatted_data_cleanup(data: dict) -> dict:
         'businesses': filings_business['update_business_info'],
         'state_filing_index': filings_business['state_filing_index']
     }
+    data['unsupported_types'] = filings_business['unsupported_types']
+
     data['filings'] = filings_business['filings']
 
     data['admin_email'] = data['businesses']['admin_email']
