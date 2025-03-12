@@ -78,6 +78,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         CHANGEOFDIRECTORS = 'changeOfDirectors'
         CHANGEOFNAME = 'changeOfName'
         CHANGEOFREGISTRATION = 'changeOfRegistration'
+        CONSENTAMALGAMATIONOUT = 'consentAmalgamationOut'
         CONSENTCONTINUATIONOUT = 'consentContinuationOut'
         CONTINUATIONIN = 'continuationIn'
         CONTINUATIONOUT = 'continuationOut'
