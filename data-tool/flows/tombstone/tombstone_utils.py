@@ -364,6 +364,9 @@ def format_filings_data(data: dict) -> dict:
             filing_subtype = raw_filing_subtype
 
         effective_date = x['ce_effective_dt_str'] or x['f_effective_dt_str'] or x['e_event_dt_str']
+        if filing_type == 'annualReport':
+            effective_date = data['f_period_end_dt_str']
+
         filing_date = x['ce_effective_dt_str'] or x['e_event_dt_str']
         trigger_date = x['e_trigger_dt_str']
 
