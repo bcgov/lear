@@ -40,7 +40,7 @@ def get_unprocessed_corps_subquery(flow_name, environment):
                             on cia2.ting_corp_num = cp.corp_num
                             and cp.flow_name = '{flow_name}'
                             and cp.environment = '{environment}'
-                            and cp.processed_status = 'COMPLETED'
+                            and cp.processed_status in ('COMPLETED', 'PARTIAL')
                         where cia2.ted_corp_num = cia1.ted_corp_num
                         and (cia2.ting_corp_num like 'BC%' or cia2.ting_corp_num like 'Q%' or cia2.ting_corp_num like 'C%')
                         and cp.corp_num is null
@@ -156,7 +156,7 @@ def get_total_unprocessed_count_query(flow_name, environment):
         and cp.environment = '{environment}'
     where 1 = 1
     and cs.end_event_id is null
-    and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
+    and ((cp.processed_status is null or cp.processed_status not in ('COMPLETED', 'PARTIAL')))
     """
     return query
 

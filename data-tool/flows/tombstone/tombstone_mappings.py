@@ -358,8 +358,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     # TODO: Delay of Dissolution - unsupported (need confirmation)
     # no ledger item in colin
 
-    EventFilings.DISD1_DISDE: "Registrar''s Notation - Dissolution or Cancellation Delay",  # has prefix "Registrar's Notation - "
-    EventFilings.DISD2_DISDE: "Registrar''s Notation - Dissolution or Cancellation Delay",
+    EventFilings.DISD1_DISDE: "Registrar's Notation - Dissolution or Cancellation Delay",  # has prefix "Registrar's Notation - "
+    EventFilings.DISD2_DISDE: "Registrar's Notation - Dissolution or Cancellation Delay",
 
     EventFilings.FILE_ADVD2: 'Application for Dissolution (Voluntary Dissolution)',
     EventFilings.FILE_ADVDS: 'Application for Dissolution (Voluntary Dissolution)',
@@ -381,8 +381,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
-    # NOLDS: "Notice of Location of Dissolved Company''s Records"
-    # NOCDS: "Notice of Change Respecting Dissolved Company''s Records"
+    # NOLDS: "Notice of Location of Dissolved Company's Records"
+    # NOCDS: "Notice of Change Respecting Dissolved Company's Records"
     # NOTRA: 'Notice of Transfer of Records'
     # NOAPL: 'Notice of Appointment of Liquidator'
     # NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office'
@@ -411,8 +411,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
     EventFilings.FILE_CO_PO: 'Correction - Put Back On',
 
-    EventFilings.FILE_REGSN: "Registrar''s Notation",
-    EventFilings.FILE_REGSO: "Registrar''s Order",
+    EventFilings.FILE_REGSN: "Registrar's Notation",
+    EventFilings.FILE_REGSO: "Registrar's Order",
 
     EventFilings.FILE_RESTL: 'Restoration Application - Limited',
     EventFilings.FILE_RESTF: 'Restoration Application - Full',
@@ -426,6 +426,40 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_TRANS: 'Transition Application',
     EventFilings.FILE_TRANP: 'Post Restoration Transition Application',
 }
+
+
+SKIPPED_EVENT_FILE_TYPES = [
+    # XPRO
+    'FILE_CHGJU',
+    'FILE_NWPTA',
+    'FILE_PARES',
+    'FILE_TILAT',
+    'FILE_TILHO',
+    'FILE_TILMA',
+    'SYST_CANPS',
+    'SYST_CHGJU',
+    'SYST_CHGPN',
+    'SYST_CO_PN',
+    'SYST_LNKPS',
+    'SYST_NWPTA',
+    'SYST_PARES',
+    'SYST_RIPFL',
+    'SYST_TILAT',
+    'SYST_TILHO',
+    'SYST_NULL',
+    'TRESP_NULL',
+    'TRESP_COUTI',
+    # Others
+    'FILE_COGS1',
+    # TODO: decide on the final list
+]
+
+
+NO_FILING_EVENT_FILE_TYPES = [
+    'SYSD1_NULL',
+    'SYSD2_NULL',
+    # TODO: decide on the final list
+]
 
 
 LEAR_FILING_BUSINESS_UPDATE_MAPPING = {
