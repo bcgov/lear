@@ -356,6 +356,9 @@ def format_filings_data(data: dict) -> dict:
             filing_subtype = raw_filing_subtype
 
         effective_date = x['ce_effective_dt_str'] or x['f_effective_dt_str'] or x['e_event_dt_str']
+        if filing_type == 'annualReport':
+            effective_date = data['f_period_end_dt_str']
+
         filing_date = x['ce_effective_dt_str'] or x['e_event_dt_str']
         trigger_date = x['e_trigger_dt_str']
 
@@ -785,7 +788,7 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
 
     if filing_type == 'annualReport':
         meta_data['annualReport'] = {
-            'annualReportFilingYear': int(data['f_period_end_dt_str'][:4]),
+            'annualReportFilingYear': int(effective_date[:4]),
         }
     elif filing_type == 'dissolution':
         dissolution_date = effective_date[:10]
