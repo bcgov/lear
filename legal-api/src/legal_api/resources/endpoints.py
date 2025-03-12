@@ -107,7 +107,7 @@ class Endpoints:
 
     def _set_access_control_header(self, response):  # pylint: disable=unused-variable
         response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+        response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, App-Name'
 
     def _mount_endpoints(self):
         """Mount the endpoints of the system."""
