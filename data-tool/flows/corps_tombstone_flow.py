@@ -327,7 +327,12 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type']
         )
-        if entity_status == HTTPStatus.OK and (admin_email := tombstone_data.get('admin_email')):
+
+        admin_email = tombstone_data.get('admin_email')
+        if config.USE_CUSTOM_CONTACT_EMAIL:
+            admin_email = config.CUSTOM_CONTACT_EMAIL
+
+        if entity_status == HTTPStatus.OK and admin_email:
             update_email_status = AuthService.update_contact_email(
                 config=config,
                 identifier=business_data['identifier'],
