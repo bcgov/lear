@@ -594,7 +594,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             **slim_json,
             'arMinDate': ar_min_date.isoformat() if ar_min_date else '',
             'arMaxDate': ar_max_date.isoformat() if ar_max_date else '',
-            'foundingDate': self.founding_date.isoformat() if self.founding_date else '',
             'hasRestrictions': self.restriction_ind,
             'complianceWarnings': self.compliance_warnings,
             'warnings': self.warnings,
@@ -622,6 +621,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         """Return a smaller/faster version of the business json."""
         d = {
             'adminFreeze': self.admin_freeze or False,
+            'foundingDate': self.founding_date.isoformat() if self.founding_date else '',
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
             'inDissolution': self.in_dissolution,
