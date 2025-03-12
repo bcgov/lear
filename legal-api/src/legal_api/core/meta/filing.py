@@ -318,6 +318,27 @@ FILINGS: Final = {
             },
         ]
     },
+    'consentAmalgamationOut': {
+        'name': 'consentAmalgamationOut',
+        'title': 'Consent Amalgamation Out',
+        'displayName': '6-Month Consent to Amalgamate Out',
+        'codes': {
+            'BC': 'IAMGO',
+            'BEN': 'IAMGO',
+            'ULC': 'IAMGO',
+            'CC': 'IAMGO',
+            'C': 'IAMGO',
+            'CBEN': 'IAMGO',
+            'CUL': 'IAMGO',
+            'CCC': 'IAMGO'
+        },
+        'additional': [
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['letterOfConsent']
+            },
+        ]
+    },
     'consentContinuationOut': {
         'name': 'consentContinuationOut',
         'title': 'Consent Continuation Out',
