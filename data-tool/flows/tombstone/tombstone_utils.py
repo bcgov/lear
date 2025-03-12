@@ -785,7 +785,7 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
 
     if filing_type == 'annualReport':
         meta_data['annualReport'] = {
-            'annualReportFilingYear': int(effective_date[:4]),
+            'annualReportFilingYear': int(data['f_period_end_dt_str'][:4]),
         }
     elif filing_type == 'dissolution':
         dissolution_date = effective_date[:10]
