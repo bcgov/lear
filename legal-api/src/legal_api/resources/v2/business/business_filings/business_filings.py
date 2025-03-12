@@ -1024,6 +1024,10 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         filing.submit_filing_to_awaiting_review(submission_date)
 
+        if flags.is_on('enable-sandbox'):
+            current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
+            return
+
         # emailer notification
         queue.publish_json(
             {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
