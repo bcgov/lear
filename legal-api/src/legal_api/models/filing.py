@@ -257,7 +257,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'SP': 'FMCHANGE',
                 'GP': 'FMCHANGE'
             }
-        }, 
+        },
         'consentAmalgamationOut': {
             'name': 'consentAmalgamationOut',
             'title': 'Consent Amalgamation Out',
