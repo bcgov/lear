@@ -1025,6 +1025,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing.submit_filing_to_awaiting_review(submission_date)
 
         if flags.is_on('enable-sandbox'):
+            # sandbox continuation in application auto approval flow
+            if filing.filing_type == 'continuationIn' and filing.status == Filing.Status.AWAITING_REVIEW.value:
+                ListFilingResource.sandbox_auto_approval_continuation_in(filing, submission_date)
             current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
             return
 
@@ -1033,3 +1036,45 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             current_app.config.get('NATS_EMAILER_SUBJECT')
         )
+
+    @staticmethod
+    def sandbox_auto_approval_continuation_in(filing: Filing, submition_date: datetime) -> None:
+        """Auto-approve continuation in filings in sandbox mode."""
+        current_app.logger.info(f'Auto-approving {filing.filing_type} filing, id: {filing.id} in sandbox environment')
+        review = Review.get_review(filing.id)
+        review.status = ReviewStatus.APPROVED
+        review_result = ReviewResult()
+        review_result.status = ReviewStatus.APPROVED
+        review_result.comments = "Auto-approved in sandbox environment"
+        review.review_results.append(review_result)
+        review.save()
+        filing.set_review_decision(Filing.Status.APPROVED.value)
+
+        # put the filing in the queue for one-shot approach
+        # so the sandbox Filer will pick it up and process
+        def is_multi_step_first_half(filing_data):
+            """Check if this is the first half of multi-step approach."""
+            is_multi_step_first_half = False
+            # Check for indicators that this is a first-half in multi-step process or one-shot
+            # Missing offices property entirely is a strong indicator of first step
+            offices = filing_data.get('offices')
+            if not offices:
+                is_multi_step_first_half = True
+            else:
+                # Missing or empty offices addresses is a good indicator of first step
+                reg_office = offices.get('registeredOffice', {})
+                if reg_office:
+                    delivery_addr = reg_office.get('deliveryAddress', {})
+                    if not delivery_addr or not delivery_addr.get('streetAddress'):
+                        is_multi_step_first_half = True
+            # Another indicator: missing or empty parties (directors)
+            parties = filing_data.get('parties', [])
+            if not parties or len(parties) <= 1:  # Only completing party
+                is_multi_step_first_half = True
+            return is_multi_step_first_half
+
+        # Only queue for processing if this is NOT the first step
+        if not is_multi_step_first_half(filing.filing_json['filing'][filing.filing_type]):
+            current_app.logger.info(f'Continuation in submission detected - Queueing filing {filing.id} for processing')
+            payload = {'filing': {'id': filing.id}}
+            queue.publish_json(payload)
