@@ -26,6 +26,7 @@ from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
 from sqlalchemy.orm.exc import FlushError  # noqa: I001
 
 from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
+from legal_api.services import flags  # noqa: D204, I003, I001;# due to babel cast above
 
 
 class RegistrationBootstrapService:
@@ -83,7 +84,8 @@ class RegistrationBootstrapService:
                                                business_registration=bootstrap.identifier,
                                                business_name=business_name,
                                                corp_type_code=corp_type_code,
-                                               corp_sub_type_code=corp_sub_type_code)
+                                               corp_sub_type_code=corp_sub_type_code,
+                                               flags=flags)
 
         if rv == HTTPStatus.OK:
             return HTTPStatus.OK
@@ -144,8 +146,10 @@ class AccountService:
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None,
                            pass_code: str = '',
-                           details: dict = None):
+                           details: dict = None,
+                           flags: any = None):
         """Affiliate a business to an account."""
+        current_app.logger.info(f'Creating affiliation of {business_registration} for {account}')
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
@@ -153,6 +157,7 @@ class AccountService:
         token = cls.get_bearer_token()
 
         if not token:
+            current_app.logger.info('Missing token for affiliation call')
             return HTTPStatus.UNAUTHORIZED
 
         # Create an entity record
@@ -173,6 +178,12 @@ class AccountService:
         )
 
         # Create an account:business affiliation
+        # headers with conditional sandbox override
+        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
+        if flags and flags.is_on('enable-sandbox'):
+            current_app.logger.info('Appending Environment-Override = sandbox header to create affiliation call')
+            headers['Environment-Override'] = 'sandbox'
+
         affiliate_data = {
             'businessIdentifier': business_registration,
             'passCode': pass_code
@@ -181,8 +192,7 @@ class AccountService:
             affiliate_data['entityDetails'] = details
         affiliate = requests.post(
             url=account_svc_affiliate_url,
-            headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+            headers=headers,
             data=json.dumps(affiliate_data),
             timeout=cls.timeout
         )
@@ -234,6 +244,7 @@ class AccountService:
 
         @TODO Update this when account affiliation is changed next sprint.
         """
+        current_app.logger.info(f'Deleting affiliation of {business_registration} for {account}')
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
@@ -267,9 +278,12 @@ class AccountService:
         auth_url = current_app.config.get('AUTH_SVC_URL')
         url = f'{auth_url}/orgs?affiliation={identifier}'
 
-        res = requests.get(url,
-                           headers={**cls.CONTENT_TYPE_JSON,
-                                    'Authorization': cls.BEARER + token})
+        # headers with conditional sandbox override
+        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
+        if flags and flags.is_on('enable-sandbox'):
+            current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
+            headers['Environment-Override'] = 'sandbox'
+        res = requests.get(url=url, headers=headers)
         try:
             return res.json()
         except Exception:  # noqa B902; pylint: disable=W0703;
