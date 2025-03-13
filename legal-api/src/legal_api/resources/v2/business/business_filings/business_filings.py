@@ -1052,13 +1052,13 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
         # put the filing in the queue for one-shot approach
         # so the sandbox Filer will pick it up and process
-        if not ListFilingResource.is_multi_step_first_half(filing.filing_json['filing'][filing.filing_type]):
+        if not ListFilingResource._check_multi_step_first_part_for_auto_approval(filing.filing_json['filing'][filing.filing_type]):
             current_app.logger.info(f'Continuation in submission detected - Queueing filing {filing.id} for processing')
             payload = {'filing': {'id': filing.id}}
             queue.publish_json(payload)
 
     @staticmethod
-    def is_multi_step_first_half(filing_data):
+    def _check_multi_step_first_part_for_auto_approval(filing_data):
             """Check if this is the first half of multi-step approach."""
             is_multi_step_first_half = False
             # Check for indicators that this is a first-half in multi-step process or one-shot
