@@ -32,7 +32,7 @@ def test_handle_http_error_pass_through_routing_exception():  # pylint: disable=
 
 def test_handle_http_error_pass(app):
     """Assert that the RoutingException is passed through the handler."""
-    with app.app_context():
+    with app.test_request_context():
         err = HTTPException(description='description')
         err.code = 200
         response = errorhandlers.handle_http_error(err)
@@ -47,7 +47,7 @@ def test_handle_uncaught_error(app, caplog):
     and log an ERROR of an uncaught exception.
     Unhandled exceptions should get ticketed and managed.
     """
-    with app.app_context():
+    with app.test_request_context():
         # logger = errorhandlers.logger
         caplog.set_level(errorhandlers.logging.ERROR, logger=errorhandlers.logger.name)
         resp = errorhandlers.handle_uncaught_error(Exception())

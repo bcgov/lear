@@ -20,9 +20,10 @@ http://flask.pocoo.org/docs/1.0/patterns/apierrors/
 """
 
 import logging
+import re
 import sys
 
-from flask import jsonify
+from flask import jsonify, request
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 
@@ -47,6 +48,11 @@ def handle_http_error(error):
     if isinstance(error, RoutingException):
         return error
 
+    app_name = request.headers.get('App-Name', 'unknown')
+    if not re.match(r'^[a-zA-Z0-9_-]+$', app_name):
+        app_name = 'invalid app name'
+    logger.error('HTTP error from app: %s', app_name, exc_info=sys.exc_info())
+
     response = jsonify({'message': error.description})
     response.status_code = error.code
     return response
@@ -58,7 +64,11 @@ def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
     Since the handler suppresses the actual exception, log it explicitly to
     ensure it's logged and recorded in Sentry.
     """
-    logger.error('Uncaught exception', exc_info=sys.exc_info())
+    app_name = request.headers.get('App-Name', 'unknown')
+    if not re.match(r'^[a-zA-Z0-9_-]+$', app_name):
+        app_name = 'invalid app name'
+    logger.error('Uncaught exception from app: %s', app_name, exc_info=sys.exc_info())
+
     response = jsonify({'message': 'Internal server error'})
     response.status_code = 500
     return response
