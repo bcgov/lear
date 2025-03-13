@@ -31,6 +31,7 @@ from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
     ALTERATION_FILING_TEMPLATE,
+    AMALGAMATION_OUT,
     ANNUAL_REPORT,
     CHANGE_OF_REGISTRATION_TEMPLATE,
     CONSENT_AMALGAMATION_OUT,
@@ -139,6 +140,7 @@ class FilingKey(str, Enum):
     ADM_DISS = 'ADM_DISS'
     VOL_DISS_FIRMS = 'VOL_DISS_FIRMS'
     ADM_DISS_FIRMS = 'ADM_DISS_FIRMS'
+    AMALGAMATION_OUT = 'AMALGAMATION_OUT'
     REGISTRARS_NOTATION = 'REGISTRARS_NOTATION'
     REGISTRARS_ORDER = 'REGISTRARS_ORDER'
     SPECIAL_RESOLUTION = 'SPECIAL_RESOLUTION'
@@ -190,6 +192,7 @@ EXPECTED_DATA = {
                                'name': 'dissolution', 'type': 'voluntary'},
     FilingKey.ADM_DISS_FIRMS: {'displayName': 'Statement of Dissolution', 'feeCode': 'DIS_ADM',
                                'name': 'dissolution', 'type': 'administrative'},
+    FilingKey.AMALGAMATION_OUT: {'displayName': 'Amalgamation Out', 'feeCode': 'AMALO', 'name': 'amalgamationOut'},
     FilingKey.REGISTRARS_NOTATION: {'displayName': "Registrar's Notation", 'feeCode': 'NOFEE',
                                     'name': 'registrarsNotation'},
     FilingKey.REGISTRARS_ORDER: {'displayName': "Registrar's Order", 'feeCode': 'NOFEE', 'name': 'registrarsOrder'},
@@ -280,6 +283,7 @@ EXPECTED_DATA_CONT_IN = {
     FilingKey.AGM_EXTENSION: {'displayName': 'Request for AGM Extension', 'feeCode': 'AGMDT', 'name': 'agmExtension'},
     FilingKey.AGM_LOCATION_CHANGE: {'displayName': 'AGM Location Change', 'feeCode': 'AGMLC', 'name': 'agmLocationChange'},
     FilingKey.ALTERATION: {'displayName': 'Alteration', 'feeCode': 'ALTER', 'name': 'alteration'},
+    FilingKey.AMALGAMATION_OUT: {'displayName': 'Amalgamation Out', 'feeCode': 'AMALO', 'name': 'amalgamationOut'},
     FilingKey.CONSENT_AMALGAMATION_OUT: {'displayName': '6-Month Consent to Amalgamate Out', 'feeCode': 'IAMGO',
                                          'name': 'consentAmalgamationOut'},
     FilingKey.CONSENT_CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
@@ -353,6 +357,9 @@ AGM_EXTENSION_FILING_TEMPLATE['filing']['agmExtension'] = AGM_EXTENSION
 AGM_LOCATION_CHANGE_FILING_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 AGM_LOCATION_CHANGE_FILING_TEMPLATE['filing']['agmLocationChange'] = AGM_LOCATION_CHANGE
 
+AMALGAMATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+AMALGAMATION_OUT_TEMPLATE['filing']['amalgamationOut'] = AMALGAMATION_OUT
+
 RESTORATION_FILING_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 RESTORATION_FILING_TEMPLATE['filing']['restoration'] = RESTORATION
 
@@ -382,6 +389,7 @@ FILING_DATA = {
     'agmExtension': AGM_EXTENSION_FILING_TEMPLATE,
     'agmLocationChange': AGM_LOCATION_CHANGE_FILING_TEMPLATE,
     'alteration': ALTERATION_FILING_TEMPLATE,
+    'amalgamationOut': AMALGAMATION_OUT_TEMPLATE,
     'correction': CORRECTION_AR,
     'changeOfRegistration': CHANGE_OF_REGISTRATION_TEMPLATE,
     'restoration.limitedRestoration': RESTORATION_FILING_TEMPLATE,
@@ -572,14 +580,14 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
-          {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'appointReceiver',
+          {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'amalgamationOut','annualReport', 'appointReceiver',
           'ceaseReceiver', 'changeOfAddress', 'changeOfDirectors', 'consentAmalgamationOut', 'consentContinuationOut', 'continuationOut',
           'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
           'incorporationApplication', 'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
           {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
-          {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'appointReceiver',
+          {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},'amalgamationOut', 'annualReport', 'appointReceiver',
           'ceaseReceiver', 'changeOfAddress', 'changeOfDirectors', 'continuationIn', 'consentAmalgamationOut', 'consentContinuationOut',
           'continuationOut', 'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
           'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
@@ -659,6 +667,11 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
          ['BC', 'BEN', 'ULC', 'CC'], 'staff', [STAFF_ROLE], True),
         ('staff_active_allowed', Business.State.ACTIVE, 'amalgamationApplication', None,
          ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], False),
+
+        ('staff_active_allowed', Business.State.ACTIVE, 'amalgamationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], False),
+        ('staff_active', Business.State.ACTIVE, 'amalgamationOut', None,
+         ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'annualReport', None,
          ['CP', 'BEN', 'BC', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], True),
@@ -2701,8 +2714,50 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
+        ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], ['consentAmalgamationOut', 'consentAmalgamationOut'], [None, None], [True, True],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AGM_EXTENSION,
+                          FilingKey.AGM_LOCATION_CHANGE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AMALGAMATION_REGULAR,
+                          FilingKey.AMALGAMATION_VERTICAL,
+                          FilingKey.AMALGAMATION_HORIZONTAL,
+                          FilingKey.AMALGAMATION_OUT,
+                          FilingKey.AR_CORPS,
+                          FilingKey.APPOINT_RECEIVER,
+                          FilingKey.CEASE_RECEIVER,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
+                          FilingKey.CONSENT_CONTINUATION_OUT,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], ['consentAmalgamationOut', 'consentAmalgamationOut'], [None, None], [True, False],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_OUT,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
         ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [False, False],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION])),
+        ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
+         [STAFF_ROLE], ['consentAmalgamationOut', 'consentAmalgamationOut'], [None, None], [False, False],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_OFF,
