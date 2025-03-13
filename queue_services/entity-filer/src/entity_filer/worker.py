@@ -54,6 +54,7 @@ from entity_filer.filing_processors import (
     amalgamation_application,
     annual_report,
     appoint_receiver,
+    cease_receiver,
     change_of_address,
     change_of_directors,
     change_of_name,
@@ -363,6 +364,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('appointReceiver'):
                     appoint_receiver.process(business, filing, filing_submission, filing_meta)
+
+                elif filing.get('ceaseReceiver'):
+                    cease_receiver.process(business, filing, filing_submission, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
