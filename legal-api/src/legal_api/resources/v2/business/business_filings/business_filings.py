@@ -1060,7 +1060,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def _check_is_one_shot_for_auto_approval(filing_data):
-        """Check if this is the first half of multi-step approach."""
+        """Check if this is the sandbox one-shot approach."""
         is_one_shot = True
         # Check for indicators that this is not a one-shot
         offices = filing_data.get('offices')
