@@ -1031,6 +1031,9 @@ DISSOLUTION_VOLUNTARY_FILING['filing']['dissolution']['dissolutionType'] = 'volu
 SPECIAL_RESOLUTION_NO_CON_FILING = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
 del SPECIAL_RESOLUTION_NO_CON_FILING['filing']['changeOfName']
 
+AMALGAMATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
+AMALGAMATION_OUT_FILING['filing']['amalgamationOut'] = {}
+
 CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
 CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
@@ -1098,6 +1101,10 @@ def _fee_code_asserts(business, filing_json: dict, multiple_fee_codes, expected_
          False, []),
         ('CP1234567', CP_SPECIAL_RESOLUTION_TEMPLATE, 'specialResolution', Business.LegalTypes.COOP.value,
          False, ['SPRLN', 'OTCON']),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.COMP.value, False, []),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BCOMP.value, False, []),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BC_CCC.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, []),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, []),

@@ -156,6 +156,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 },
             }
         },
+        'amalgamationOut': {
+            'name': 'amalgamationOut',
+            'title': 'Amalgamation Out',
+            'codes': {
+                'BC': 'AMALO',
+                'BEN': 'AMALO',
+                'ULC': 'AMALO',
+                'CC': 'AMALO',
+                'C': 'AMALO',
+                'CBEN': 'AMALO',
+                'CUL': 'AMALO',
+                'CCC': 'AMALO'
+            }
+        },
         'annualReport': {
             'name': 'annualReport',
             'title': 'Annual Report Filing',
