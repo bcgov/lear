@@ -189,7 +189,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         'include_properties': [
             'id',
             'admin_freeze',
-            'amalgamation_out_date'
+            'amalgamation_out_date',
             'association_type',
             'continuation_out_date',
             'dissolution_date',
@@ -527,10 +527,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                     exists().where(
                         and_(
                             transition_filing.business_id == self.id,
-                            transition_filing._filing_type ==
-                            CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
-                            transition_filing._status ==
-                            Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                            (transition_filing._filing_type ==
+                             CoreFiling.FilingTypes.TRANSITION.value),  # pylint: disable=protected-access
+                            (transition_filing._status ==
+                             Filing.Status.COMPLETED.value),  # pylint: disable=protected-access
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
                                 restoration_filing_effective_cutoff

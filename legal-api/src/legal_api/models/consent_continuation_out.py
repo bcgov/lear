@@ -26,6 +26,7 @@ from .db import db
 class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-methods
     """This class manages the consent continuation out for businesses."""
 
+    # pylint: disable=invalid-name
     class ConsentTypes(BaseEnum):
         """Enum for the consent type."""
 
