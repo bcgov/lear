@@ -527,10 +527,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                     exists().where(
                         and_(
                             transition_filing.business_id == self.id,
-                            (transition_filing._filing_type ==
-                             CoreFiling.FilingTypes.TRANSITION.value),  # pylint: disable=protected-access
-                            (transition_filing._status ==
-                             Filing.Status.COMPLETED.value),  # pylint: disable=protected-access
+                            (transition_filing._filing_type ==  # pylint: disable=protected-access
+                             CoreFiling.FilingTypes.TRANSITION.value),
+                            (transition_filing._status ==  # pylint: disable=protected-access
+                             Filing.Status.COMPLETED.value),
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
                                 restoration_filing_effective_cutoff
