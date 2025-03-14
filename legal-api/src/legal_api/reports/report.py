@@ -309,6 +309,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_continuation_in_data(filing)
         elif self._report_key == 'noticeOfWithdrawal':
             self._format_notice_of_withdrawal_data(filing)
+        if self._report_key == 'ceaseReceiver':
+            self._format_receiver_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -506,6 +508,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
             ]
             filing['resolutions'] = formatted_dates
+
+    def _format_receiver_data(self, filing):
+        filing['parties'] = filing['ceaseReceiver']['parties']
 
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
@@ -1496,6 +1501,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'noticeOfWithdrawal': {
             'filingDescription': 'Notice of Withdrawal',
             'fileName': 'noticeOfWithdrawal'
+        },
+        'ceaseReceiver': {
+            'filingDescription': 'Cease Receiver',
+            'fileName': 'ceaseReceiver'
         }
     }
 

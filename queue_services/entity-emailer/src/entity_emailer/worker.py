@@ -49,6 +49,7 @@ from entity_emailer.email_processors import (
     amalgamation_notification,
     ar_reminder_notification,
     bn_notification,
+    cease_receiver_notification,
     change_of_registration_notification,
     consent_continuation_out_notification,
     continuation_in_notification,
@@ -219,6 +220,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'noticeOfWithdrawal' and option == Filing.Status.COMPLETED.value:
                 email = notice_of_withdrawal_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'ceaseReceiver' and option == Filing.Status.COMPLETED.value:
+                email = cease_receiver_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
