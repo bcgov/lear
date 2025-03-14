@@ -46,7 +46,6 @@ if __name__ == '__main__':
             FLASK_APP.run(debug=False, port=server_port, host="0.0.0.0")
         else:
             # NATS Queue
-            logger.debug('asdfasdf')
             event_loop = asyncio.get_event_loop()
             event_loop.run_until_complete(qsm.run(loop=event_loop,
                                                 config=APP_CONFIG,
