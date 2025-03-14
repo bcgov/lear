@@ -33,6 +33,7 @@ from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_REGISTRATION_TEMPLATE,
+    CONSENT_AMALGAMATION_OUT,
     CONSENT_CONTINUATION_OUT,
     CONTINUATION_IN,
     CONTINUATION_OUT,
@@ -144,6 +145,7 @@ class FilingKey(str, Enum):
     AGM_EXTENSION = 'AGM_EXTENSION'
     AGM_LOCATION_CHANGE = 'AGM_LOCATION_CHANGE'
     ALTERATION = 'ALTERATION'
+    CONSENT_AMALGAMATION_OUT = 'CONSENT_AMALGAMATION_OUT'
     CONSENT_CONTINUATION_OUT = 'CONSENT_CONTINUATION_OUT'
     CONTINUATION_OUT = 'CONTINUATION_OUT'
     TRANSITION = 'TRANSITION'
@@ -195,6 +197,8 @@ EXPECTED_DATA = {
     FilingKey.AGM_EXTENSION: {'displayName': 'Request for AGM Extension', 'feeCode': 'AGMDT', 'name': 'agmExtension'},
     FilingKey.AGM_LOCATION_CHANGE: {'displayName': 'AGM Location Change', 'feeCode': 'AGMLC', 'name': 'agmLocationChange'},
     FilingKey.ALTERATION: {'displayName': 'Alteration', 'feeCode': 'ALTER', 'name': 'alteration'},
+    FilingKey.CONSENT_AMALGAMATION_OUT: {'displayName': '6-Month Consent to Amalgamate Out', 'feeCode': 'IAMGO',
+                                         'name': 'consentAmalgamationOut'},
     FilingKey.CONSENT_CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
                                          'name': 'consentContinuationOut'},
     FilingKey.CONTINUATION_OUT: {'displayName': 'Continuation Out', 'feeCode': 'COUTI', 'name': 'continuationOut'},
@@ -276,6 +280,8 @@ EXPECTED_DATA_CONT_IN = {
     FilingKey.AGM_EXTENSION: {'displayName': 'Request for AGM Extension', 'feeCode': 'AGMDT', 'name': 'agmExtension'},
     FilingKey.AGM_LOCATION_CHANGE: {'displayName': 'AGM Location Change', 'feeCode': 'AGMLC', 'name': 'agmLocationChange'},
     FilingKey.ALTERATION: {'displayName': 'Alteration', 'feeCode': 'ALTER', 'name': 'alteration'},
+    FilingKey.CONSENT_AMALGAMATION_OUT: {'displayName': '6-Month Consent to Amalgamate Out', 'feeCode': 'IAMGO',
+                                         'name': 'consentAmalgamationOut'},
     FilingKey.CONSENT_CONTINUATION_OUT: {'displayName': '6-Month Consent to Continue Out', 'feeCode': 'CONTO',
                                          'name': 'consentContinuationOut'},
     FilingKey.CONTINUATION_OUT: {'displayName': 'Continuation Out', 'feeCode': 'COUTI', 'name': 'continuationOut'},
@@ -366,6 +372,9 @@ CONTINUATION_IN_TEMPLATE['filing']['continuationIn']['nameRequest']['legalType']
 CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONTINUATION_OUT_TEMPLATE['filing']['continuationOut'] = CONTINUATION_OUT
 
+CONSENT_AMALGAMATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+CONSENT_AMALGAMATION_OUT_TEMPLATE['filing']['consentAmalgamationOut'] = CONSENT_AMALGAMATION_OUT
+
 CONSENT_CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONSENT_CONTINUATION_OUT_TEMPLATE['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
 
@@ -383,6 +392,7 @@ FILING_DATA = {
     'putBackOn': PUT_BACK_ON_FILING_TEMPLATE,
     'continuationIn': CONTINUATION_IN_TEMPLATE,
     'continuationOut': CONTINUATION_OUT_TEMPLATE,
+    'consentAmalgamationOut': CONSENT_AMALGAMATION_OUT_TEMPLATE,
     'consentContinuationOut': CONSENT_CONTINUATION_OUT_TEMPLATE
 }
 
@@ -563,14 +573,14 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
           {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'appointReceiver',
-          'ceaseReceiver', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut', 'continuationOut',
+          'ceaseReceiver', 'changeOfAddress', 'changeOfDirectors', 'consentAmalgamationOut', 'consentContinuationOut', 'continuationOut',
           'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
           'incorporationApplication', 'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
           {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
           {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'annualReport', 'appointReceiver',
-          'ceaseReceiver', 'changeOfAddress', 'changeOfDirectors', 'continuationIn', 'consentContinuationOut',
+          'ceaseReceiver', 'changeOfAddress', 'changeOfDirectors', 'continuationIn', 'consentAmalgamationOut', 'consentContinuationOut',
           'continuationOut', 'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
           'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
           {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
@@ -664,6 +674,11 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
          ['CP', 'BEN', 'BC', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], True),
         ('staff_active', Business.State.ACTIVE, 'changeOfDirectors', None,
          ['LLC'], 'staff', [STAFF_ROLE], False),
+
+        ('staff_active_allowed', Business.State.ACTIVE, 'consentAmalgamationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], True),
+        ('staff_active', Business.State.ACTIVE, 'consentAmalgamationOut', None,
+         ['CP', 'LLC'], 'staff', [STAFF_ROLE], False),
 
         ('staff_active_allowed', Business.State.ACTIVE, 'consentContinuationOut', None,
          ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], True),
@@ -875,6 +890,9 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('staff_historical', Business.State.HISTORICAL, 'changeOfRegistration', None,
          ['SP', 'GP'], 'staff', [STAFF_ROLE], False),
 
+        ('staff_historical', Business.State.HISTORICAL, 'consentAmalgamationOut', None,
+         ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], False),
+
         ('staff_historical', Business.State.HISTORICAL, 'consentContinuationOut', None,
          ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], False),
 
@@ -978,6 +996,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.CEASE_RECEIVER,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
                           FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
@@ -1001,6 +1020,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                                             FilingKey.CEASE_RECEIVER,
                                             FilingKey.COA_CORPS,
                                             FilingKey.COD_CORPS,
+                                            FilingKey.CONSENT_AMALGAMATION_OUT,
                                             FilingKey.CONSENT_CONTINUATION_OUT,
                                             FilingKey.CORRCTN,
                                             FilingKey.COURT_ORDER,
@@ -1282,6 +1302,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                           FilingKey.CEASE_RECEIVER,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
                           FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
@@ -1305,6 +1326,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                                             FilingKey.CEASE_RECEIVER,
                                             FilingKey.COA_CORPS,
                                             FilingKey.COD_CORPS,
+                                            FilingKey.CONSENT_AMALGAMATION_OUT,
                                             FilingKey.CONSENT_CONTINUATION_OUT,
                                             FilingKey.CORRCTN,
                                             FilingKey.COURT_ORDER,
@@ -2097,6 +2119,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                           FilingKey.CEASE_RECEIVER,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
                           FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
@@ -2119,6 +2142,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                             FilingKey.CEASE_RECEIVER,
                                             FilingKey.COA_CORPS,
                                             FilingKey.COD_CORPS,
+                                            FilingKey.CONSENT_AMALGAMATION_OUT,
                                             FilingKey.CONSENT_CONTINUATION_OUT,
                                             FilingKey.CORRCTN,
                                             FilingKey.COURT_ORDER,
@@ -2267,6 +2291,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.CEASE_RECEIVER,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
                           FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
@@ -2293,6 +2318,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                                             FilingKey.CEASE_RECEIVER,
                                             FilingKey.COA_CORPS,
                                             FilingKey.COD_CORPS,
+                                            FilingKey.CONSENT_AMALGAMATION_OUT,
                                             FilingKey.CONSENT_CONTINUATION_OUT,
                                             FilingKey.CORRCTN,
                                             FilingKey.COURT_ORDER,
@@ -2318,6 +2344,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.CEASE_RECEIVER,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
                           FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
@@ -2341,6 +2368,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                                             FilingKey.CEASE_RECEIVER,
                                             FilingKey.COA_CORPS,
                                             FilingKey.COD_CORPS,
+                                            FilingKey.CONSENT_AMALGAMATION_OUT,
                                             FilingKey.CONSENT_CONTINUATION_OUT,
                                             FilingKey.CORRCTN,
                                             FilingKey.COURT_ORDER,
@@ -2653,6 +2681,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.CEASE_RECEIVER,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
                           FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CONTINUATION_OUT,
                           FilingKey.CORRCTN,
@@ -2694,6 +2723,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.CEASE_RECEIVER,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
+                          FilingKey.CONSENT_AMALGAMATION_OUT,
                           FilingKey.CONSENT_CONTINUATION_OUT,
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,

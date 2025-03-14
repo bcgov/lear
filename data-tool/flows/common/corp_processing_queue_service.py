@@ -8,6 +8,7 @@ class ProcessingStatuses(str, Enum):
     PROCESSING = 'PROCESSING'
     COMPLETED = 'COMPLETED'
     FAILED = 'FAILED'
+    PARTIAL = 'PARTIAL'
 
 class CorpProcessingQueueService:
     def __init__(self, environment: str, db_engine, flow_name: str):

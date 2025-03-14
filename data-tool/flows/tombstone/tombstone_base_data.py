@@ -216,6 +216,7 @@ FILING_COMBINED = {
         # business info to update
     },
     'state_filing_index': -1,
+    'unsupported_types': None,
 }
 
 AMALGAMATION = {
@@ -303,5 +304,6 @@ TOMBSTONE = {
     'updates': {
         'businesses': BUSINESS,
         'state_filing_index': -1
-    }
+    },
+    'unsupported_types': None,
 }

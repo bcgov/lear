@@ -324,6 +324,7 @@ def test_business_json(session):
     # slim json
     d_slim = {
         'adminFreeze': False,
+        'foundingDate': '1970-01-01T00:00:00+00:00',
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
         'inDissolution': False,
