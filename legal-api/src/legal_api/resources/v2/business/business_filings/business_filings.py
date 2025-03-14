@@ -1054,9 +1054,13 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         # for sandbox one-shot approach, run save_filings again after approval
         if not ListFilingResource._check_is_one_shot_for_auto_approval(
            filing.filing_json['filing'][filing.filing_type]):
-            current_app.logger.info(f'Continuation in submission detected - processing {filing.id}')
-            identifier = filing.temp_reg
-            saving_filings(identifier=identifier)  # pylint: disable=no-value-for-parameter
+            try:
+                current_app.logger.info(f'Continuation in submission detected - processing {filing.id}')
+                bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
+                account_id = filing.filing_json['filing']['header']['accountId']
+                ListFilingResource.complete_filing(bootstrap, filing, False, account_id)
+            except Exception as e:
+                current_app.logger.error(f'Failed to continue one-shot continuation-in after auto-approval, error: {e}')
 
     @staticmethod
     def _check_is_one_shot_for_auto_approval(filing_data):
