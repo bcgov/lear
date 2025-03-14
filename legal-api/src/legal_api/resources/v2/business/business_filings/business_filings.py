@@ -1025,6 +1025,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing.submit_filing_to_awaiting_review(submission_date)
 
         if flags.is_on('enable-sandbox'):
+            # sandbox continuation in application auto approval
+            if filing.filing_type == 'continuationIn' and filing.status == Filing.Status.AWAITING_REVIEW.value:
+                ListFilingResource._sandbox_auto_approval_continuation_in(filing)
             current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
             return
 
@@ -1033,3 +1036,49 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             current_app.config.get('NATS_EMAILER_SUBJECT')
         )
+
+    @staticmethod
+    def _sandbox_auto_approval_continuation_in(filing: Filing) -> None:
+        """Auto-approve continuation in filings in sandbox mode."""
+        current_app.logger.info(f'Auto-approving {filing.filing_type} filing, id: {filing.id} in sandbox environment')
+        review = Review.get_review(filing.id)
+        review.status = ReviewStatus.APPROVED
+        review_result = ReviewResult()
+        review_result.status = ReviewStatus.APPROVED
+        review_result.comments = 'Auto-approved in sandbox environment'
+        review_result.review_id = review.id
+        review.review_results.append(review_result)
+        review.save()
+        filing.set_review_decision(Filing.Status.APPROVED.value)
+
+        # for sandbox one-shot approach, run save_filings again after approval
+        if not ListFilingResource._check_is_one_shot_for_auto_approval(
+           filing.filing_json['filing'][filing.filing_type]):
+            try:
+                current_app.logger.info(f'Continuation in submission detected - processing {filing.id}')
+                bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
+                account_id = filing.filing_json['filing']['header']['accountId']
+                ListFilingResource.complete_filing(bootstrap, filing, False, account_id)
+            except Exception as e:
+                current_app.logger.error(f'Failed to continue one-shot continuation-in after auto-approval, error: {e}')
+
+    @staticmethod
+    def _check_is_one_shot_for_auto_approval(filing_data):
+        """Check if this is the sandbox one-shot approach."""
+        is_one_shot = True
+        # Check for indicators that this is not a one-shot
+        offices = filing_data.get('offices')
+        # Another indicator: missing or empty parties (directors)
+        parties = filing_data.get('parties', [])
+        if not parties or len(parties) <= 1:
+            is_one_shot = False
+        elif not offices:  # Missing offices property entirely is a strong indicator of not an one-shot
+            is_one_shot = False
+        else:
+            # Missing or empty offices addresses is a good indicator of not a one-shot
+            reg_office = offices.get('registeredOffice', {})
+            if reg_office:
+                delivery_addr = reg_office.get('deliveryAddress', {})
+                if not delivery_addr or not delivery_addr.get('streetAddress'):
+                    is_one_shot = False
+        return is_one_shot
