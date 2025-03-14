@@ -189,21 +189,6 @@ FILINGS: Final = {
             }
         }
     },
-    'amalgamationOut': {
-        'name': 'amalgamationOut',
-        'title': 'Amalgamation Out',
-        'displayName': 'Amalgamation Out',
-        'codes': {
-            'BC': 'AMALO',
-            'BEN': 'AMALO',
-            'ULC': 'AMALO',
-            'CC': 'AMALO',
-            'C': 'AMALO',
-            'CBEN': 'AMALO',
-            'CUL': 'AMALO',
-            'CCC': 'AMALO'
-        }
-    },
     'annualReport': {
         'name': 'annualReport',
         'title': 'Annual Report Filing',

@@ -68,7 +68,6 @@ class Filing:  # pylint: disable=too-many-public-methods
         AGMLOCATIONCHANGE = 'agmLocationChange'
         ALTERATION = 'alteration'
         AMALGAMATIONAPPLICATION = 'amalgamationApplication'
-        AMALGAMATIONOUT = 'amalgamationOut'
         AMENDEDAGM = 'amendedAGM'
         AMENDEDANNUALREPORT = 'amendedAnnualReport'
         AMENDEDCHANGEOFDIRECTORS = 'amendedChangeOfDirectors'

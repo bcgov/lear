@@ -601,10 +601,6 @@ def test_get_could_file(session, client, jwt):
             "name": "changeOfAddress"
         },
         {
-            "displayName": "Amalgamation Out",
-            "name": "amalgamationOut"
-        },
-        {
             "displayName": "Director Change",
             "name": "changeOfDirectors"
         },
