@@ -156,6 +156,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 },
             }
         },
+        'amalgamationOut': {
+            'name': 'amalgamationOut',
+            'title': 'Amalgamation Out',
+            'codes': {
+                'BC': 'AMALO',
+                'BEN': 'AMALO',
+                'ULC': 'AMALO',
+                'CC': 'AMALO',
+                'C': 'AMALO',
+                'CBEN': 'AMALO',
+                'CUL': 'AMALO',
+                'CCC': 'AMALO'
+            }
+        },
         'annualReport': {
             'name': 'annualReport',
             'title': 'Annual Report Filing',
@@ -183,6 +197,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'C': 'NOARM',
                 'CUL': 'NOARM',
                 'CCC': 'NOARM'
+            }
+        },
+        'ceaseReceiver': {
+            'name': 'ceaseReceiver',
+            'title': 'Cease Receiver Filing',
+            'displayName': 'Cease Receiver',
+            'codes': {
+                'BEN': 'NOCER',
+                'BC': 'NOCER',
+                'ULC': 'NOCER',
+                'CC': 'NOCER',
+                'CBEN': 'NOCER',
+                'C': 'NOCER',
+                'CUL': 'NOCER',
+                'CCC': 'NOCER'
             }
         },
         'changeOfAddress': {
@@ -241,6 +270,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'codes': {
                 'SP': 'FMCHANGE',
                 'GP': 'FMCHANGE'
+            }
+        },
+        'consentAmalgamationOut': {
+            'name': 'consentAmalgamationOut',
+            'title': 'Consent Amalgamation Out',
+            'codes': {
+                'BC': 'IAMGO',
+                'BEN': 'IAMGO',
+                'ULC': 'IAMGO',
+                'CC': 'IAMGO',
+                'C': 'IAMGO',
+                'CBEN': 'IAMGO',
+                'CUL': 'IAMGO',
+                'CCC': 'IAMGO'
             }
         },
         'consentContinuationOut': {

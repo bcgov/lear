@@ -9,17 +9,19 @@ import pytz
 from sqlalchemy import Connection, text
 from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
                                            FILING_JSON, IN_DISSOLUTION,
-                                           JURISDICTION, OFFICE, PARTY,
-                                           PARTY_ROLE, RESOLUTION,
-                                           SHARE_CLASSES, USER, OFFICES_HELD)
+                                           JURISDICTION, OFFICE, OFFICES_HELD,
+                                           PARTY, PARTY_ROLE, RESOLUTION,
+                                           SHARE_CLASSES, USER)
 from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           EVENT_FILING_LEAR_TARGET_MAPPING,
                                           LEAR_FILING_BUSINESS_UPDATE_MAPPING,
                                           LEAR_STATE_FILINGS,
                                           LEGAL_TYPE_CHANGE_FILINGS,
+                                          NO_FILING_EVENT_FILE_TYPES,
+                                          SKIPPED_EVENT_FILE_TYPES,
                                           EventFilings)
 
-unsupported_event_file_types = set()
+all_unsupported_types = set()
 
 
 def format_business_data(data: dict) -> dict:
@@ -327,6 +329,7 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
 def format_filings_data(data: dict) -> dict:
     # filing info in business
     business_update_dict = {}
+    current_unsupported_types = set()
 
     filings_data = data['filings']
     formatted_filings = []
@@ -335,12 +338,17 @@ def format_filings_data(data: dict) -> dict:
     withdrawn_filing_idx = -1
     for x in filings_data:
         event_file_type = x['event_file_type']
+        # skip event_file_type that we don't need to support
+        if event_file_type in SKIPPED_EVENT_FILE_TYPES:
+            print(f'💡 Skip event filing type: {event_file_type}')
+            continue
         # TODO: build a new complete filing event mapper (WIP)
         raw_filing_type, raw_filing_subtype = get_target_filing_type(event_file_type)
-        # skip the unsupported ones
-        if not raw_filing_type:
-            print(f'❗ Skip event filing type: {event_file_type}')
-            unsupported_event_file_types.add(event_file_type)
+        # skip the unsupported ones (need to support in the future)
+        if not raw_filing_type and event_file_type not in NO_FILING_EVENT_FILE_TYPES:
+            print(f'❗ Unsupported event filing type: {event_file_type}')
+            current_unsupported_types.add(event_file_type)
+            all_unsupported_types.add(event_file_type)
             continue
 
         # get converted filing_type and filing_subtype
@@ -356,6 +364,9 @@ def format_filings_data(data: dict) -> dict:
             filing_subtype = raw_filing_subtype
 
         effective_date = x['ce_effective_dt_str'] or x['f_effective_dt_str'] or x['e_event_dt_str']
+        if filing_type == 'annualReport':
+            effective_date = x['f_period_end_dt_str']
+
         filing_date = x['ce_effective_dt_str'] or x['e_event_dt_str']
         trigger_date = x['e_trigger_dt_str']
 
@@ -371,7 +382,7 @@ def format_filings_data(data: dict) -> dict:
         if (
             raw_filing_type == 'conversion'
             or raw_filing_subtype == 'involuntary'
-            or (raw_filing_type == 'putBackOff' and event_file_type == 'SYSDL_NULL')
+            or event_file_type in ['SYSDL_NULL', 'ADCORP_NULL', 'ADFIRM_NULL', 'ADMIN_NULL']
         ):
             hide_in_ledger = True
         else:
@@ -442,7 +453,8 @@ def format_filings_data(data: dict) -> dict:
     return {
         'filings': formatted_filings,
         'update_business_info': business_update_dict,
-        'state_filing_index': state_filing_idx
+        'state_filing_index': state_filing_idx,
+        'unsupported_types': current_unsupported_types,
     }
 
 
@@ -642,17 +654,49 @@ def format_users_data(users_data: list) -> list:
     return formatted_users
 
 
+def format_cont_out_data(data: dict) -> dict:
+    cont_data = data.get('cont_out', [])
+    if not cont_data:
+        return {}
+
+    cont_data = cont_data[0]
+    country, region = map_country_region(cont_data['can_jur_typ_cd'])
+
+    formatted_cont_out = {
+        'foreign_jurisdiction': country,
+        'foreign_jurisdiction_region': region,
+        'foreign_legal_name': cont_data['home_company_nme'],
+        'continuation_out_date': cont_data['cont_out_dt'],
+    }
+
+    return formatted_cont_out
+
+
+def map_country_region(can_jur_typ_cd):
+    if can_jur_typ_cd != 'OT':
+        country = 'CA'
+        region = 'FEDERAL' if can_jur_typ_cd == 'FD' else can_jur_typ_cd
+    else:  # placeholder for other
+        country = 'UNKNOWN'
+        region = 'UNKNOWN'
+
+    return country, region
+
+
 def formatted_data_cleanup(data: dict) -> dict:
     filings_business = data['filings']
     data['updates'] = {
         'businesses': filings_business['update_business_info'],
         'state_filing_index': filings_business['state_filing_index']
     }
+    data['unsupported_types'] = filings_business['unsupported_types']
+
     data['filings'] = filings_business['filings']
 
     data['admin_email'] = data['businesses']['admin_email']
     del data['businesses']['admin_email']
 
+    data['businesses'].update(data['cont_out'])
     return data
 
 
@@ -668,6 +712,7 @@ def get_data_formatters() -> dict:
         'filings': format_filings_data,
         'comments': format_business_comments_data,  # only for business level, filing level will be formatted ith filings
         'in_dissolution': format_in_dissolution_data,
+        'cont_out': format_cont_out_data,
     }
     return ret
 
@@ -801,6 +846,14 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             meta_data['putBackOff'] = {
                 'reason': 'Limited Restoration Expired',
                 'expiryDate': effective_date[:10]
+            }
+    elif filing_type == 'continuationOut':
+        country, region = map_country_region(data['cont_out_can_jur_typ_cd'])
+        meta_data['continuationOut'] = {
+                'country': country,
+                'region': region,
+                'legalName': data['cont_out_home_company_nme'],
+                'continuationOutDate': data['cont_out_dt'][:10]
             }
 
     if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:

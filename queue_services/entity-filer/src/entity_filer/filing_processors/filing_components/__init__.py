@@ -38,6 +38,7 @@ JSON_ROLE_CONVERTER = {
     'proprietor': PartyRole.RoleTypes.PROPRIETOR.value,
     'partner': PartyRole.RoleTypes.PARTNER.value,
     'applicant': PartyRole.RoleTypes.APPLICANT.value,
+    'receiver': PartyRole.RoleTypes.RECEIVER.value,
 }
 
 

@@ -40,7 +40,7 @@
                 <span>{{ filing.effectiveDateTime }}</span>
               {% elif filing.filingType == 'putBackOff' %}  
                 <span>Effective Date:</span>
-                <span>{{ filing.expiryDate }}</span>
+                <span>{{ filing.historicalDate }}</span>
               {% else %}
                 <span>Filing Date:</span>
                 <span>{{filing.filingDateTime}}</span>

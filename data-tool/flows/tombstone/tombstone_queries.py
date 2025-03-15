@@ -40,7 +40,7 @@ def get_unprocessed_corps_subquery(flow_name, environment):
                             on cia2.ting_corp_num = cp.corp_num
                             and cp.flow_name = '{flow_name}'
                             and cp.environment = '{environment}'
-                            and cp.processed_status = 'COMPLETED'
+                            and cp.processed_status in ('COMPLETED', 'PARTIAL')
                         where cia2.ted_corp_num = cia1.ted_corp_num
                         and (cia2.ting_corp_num like 'BC%' or cia2.ting_corp_num like 'Q%' or cia2.ting_corp_num like 'C%')
                         and cp.corp_num is null
@@ -156,7 +156,7 @@ def get_total_unprocessed_count_query(flow_name, environment):
         and cp.environment = '{environment}'
     where 1 = 1
     and cs.end_event_id is null
-    and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
+    and ((cp.processed_status is null or cp.processed_status not in ('COMPLETED', 'PARTIAL')))
     """
     return query
 
@@ -171,7 +171,7 @@ def get_corp_users_query(corp_nums: list):
         u_middle_name,
         u_last_name,
         to_char(
-            min(u_timestamp::timestamp at time zone 'UTC'),
+            min(u_timestamp::timestamptz at time zone 'UTC'),
             'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         ) as earliest_event_dt_str,
         min(u_email_addr) as u_email_addr,
@@ -245,7 +245,7 @@ def get_business_query(corp_num, suffix):
         (case
             when (c.recognition_dts is null and e.event_timerstamp is not null) then e.event_timerstamp
             else c.recognition_dts
-        end)::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as founding_date,
+        end)::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as founding_date,
     -- state
         (
             select op_state_type_cd
@@ -270,7 +270,7 @@ def get_business_query(corp_num, suffix):
     --
         c.send_ar_ind,
         c.last_ar_reminder_year,
-        to_char(c.last_ar_filed_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as last_ar_date,
+        to_char(c.last_ar_filed_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as last_ar_date,
     -- admin_freeze
         case
             when c.corp_frozen_type_cd = 'C'
@@ -380,8 +380,8 @@ def get_parties_and_addresses_query(corp_num):
             when cp.appointment_dt is null and f.effective_dt is not null then date_trunc('day', f.effective_dt)
             when cp.appointment_dt is null and f.effective_dt is null then date_trunc('day', e.event_timerstamp)
             else null
-        end)::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cp_appointment_dt_str,
-        to_char(cp.cessation_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')     as cp_cessation_dt_str,
+        end), 'YYYY-MM-DD') as cp_appointment_dt_str,
+        to_char(cp.cessation_dt, 'YYYY-MM-DD')     as cp_cessation_dt_str,
         cp.last_name              as cp_last_name,
         cp.middle_name            as cp_middle_name,
         cp.first_name             as cp_first_name,
@@ -552,7 +552,7 @@ def get_jurisdictions_query(corp_num):
         j.home_company_nme  as j_home_company_nme,
         j.home_juris_num    as j_home_juris_num,
         to_char(
-            j.home_recogn_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+            j.home_recogn_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         )                   as j_home_recogn_dt,
         j.othr_juris_desc   as j_othr_juris_desc,
         j.bc_xpro_num       as j_bc_xpro_num
@@ -570,27 +570,27 @@ def get_filings_query(corp_num):
             e.event_id             as e_event_id,
             e.corp_num             as e_corp_num,
             e.event_type_cd        as e_event_type_cd,
-            to_char(e.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
-            to_char(e.trigger_dts::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_trigger_dt_str,
+            to_char(e.event_timerstamp::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
+            to_char(e.trigger_dts::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_trigger_dt_str,
             e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') as event_file_type,
             -- filing
             f.event_id             as f_event_id,
             f.filing_type_cd       as f_filing_type_cd,
-            to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
+            to_char(f.effective_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
             f.withdrawn_event_id   as f_withdrawn_event_id,
             case
                 when f.withdrawn_event_id is null then null
                 else (
                     select 
-                        to_char(we.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
+                        to_char(we.event_timerstamp::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
                     from event we
                     where we.event_id = f.withdrawn_event_id
                 )
             end as f_withdrawn_event_ts_str,
 --          paper only now -> f_ods_type
             f.nr_num               as f_nr_num,
-            to_char(f.period_end_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
-            to_char(f.change_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')     as f_change_at_str,
+            to_char(f.period_end_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
+            to_char(f.change_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')     as f_change_at_str,
             -- state filing info
             (
                 select start_event_id
@@ -610,10 +610,16 @@ def get_filings_query(corp_num):
             --- conversion ledger
             cl.ledger_title_txt    as cl_ledger_title_txt,
             -- conv event
-            to_char(ce.effective_dt at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as ce_effective_dt_str,
+            to_char(ce.effective_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as ce_effective_dt_str,
             -- corp name change
             cn_old.corp_name        as old_corp_name,
-            cn_new.corp_name        as new_corp_name
+            cn_new.corp_name        as new_corp_name,
+            
+            -- continuation out
+            co.can_jur_typ_cd as cont_out_can_jur_typ_cd,
+            to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
+            co.othr_juri_desc as cont_out_othr_juri_desc,
+            co.home_company_nme as cont_out_home_company_nme
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
@@ -622,6 +628,7 @@ def get_filings_query(corp_num):
                  left outer join conv_event ce on e.event_id = ce.event_id
                  left outer join corp_name cn_old on e.event_id = cn_old.end_event_id and cn_old.corp_name_typ_cd in ('CO', 'NB')
                  left outer join corp_name cn_new on e.event_id = cn_new.start_event_id and cn_new.corp_name_typ_cd in ('CO', 'NB')
+                 left outer join cont_out co on co.start_event_id = e.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
 --          and e.corp_num = 'BC0068889'
@@ -649,10 +656,10 @@ def get_amalgamation_query(corp_num):
         foreign_nme,
         -- event
         e.event_type_cd        as e_event_type_cd,
-        to_char(e.event_timerstamp::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
+        to_char(e.event_timerstamp::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as e_event_dt_str,
         -- filing
         f.filing_type_cd       as f_filing_type_cd,
-        to_char(f.effective_dt::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
+        to_char(f.effective_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
         f.court_appr_ind       as f_court_approval,
         -- event_file
         e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') as event_file_type
@@ -672,7 +679,7 @@ def get_business_comments_query(corp_num):
     query = f"""
     select 
         to_char(
-            cc.comment_dts::timestamp at time zone 'UTC',
+            cc.comment_dts::timestamptz at time zone 'UTC',
             'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         )                       as cc_comments_dts_str,
         cc.comments             as cc_comments,
@@ -692,7 +699,7 @@ def get_filing_comments_query(corp_num):
     select
         e.event_id              as e_event_id,
         to_char(
-                lt.ledger_text_dts::timestamp at time zone 'UTC',
+                lt.ledger_text_dts::timestamptz at time zone 'UTC',
                 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         )                       as lt_ledger_text_dts_str,
         lt.user_id              as lt_user_id,
@@ -728,7 +735,7 @@ def get_in_dissolution_query(corp_num):
         e.event_id          as e_event_id,
         e.event_type_cd     as e_event_type_cd,
         to_char(
-            e.trigger_dts::timestamp at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+            e.trigger_dts::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
         )                   as e_trigger_dts_str
     from corp_state cs
     join event e on e.event_id = cs.start_event_id
@@ -757,6 +764,22 @@ def get_offices_held_query(corp_num):
     return query
 
 
+def get_cont_out_query(corp_num):
+    query = f"""
+    select
+        co.can_jur_typ_cd,
+        to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
+        co.othr_juri_desc,
+        co.home_company_nme
+    from cont_out co
+        join corp_state cs on cs.corp_num = co.corp_num and cs.end_event_id is null
+    where co.corp_num = '{corp_num}'
+      and co.end_event_id is null
+      and cs.state_type_cd in ('HCO', 'HAO')
+    """
+    return query
+
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
@@ -772,6 +795,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'business_comments': get_business_comments_query(corp_num),
         'filing_comments': get_filing_comments_query(corp_num),
         'in_dissolution': get_in_dissolution_query(corp_num),
+        'cont_out': get_cont_out_query(corp_num),
     }
 
     return queries

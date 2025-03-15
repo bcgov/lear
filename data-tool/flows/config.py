@@ -61,6 +61,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     else:
         AFFILIATE_ENTITY_ACCOUNT_ID = None
 
+    USE_CUSTOM_CONTACT_EMAIL = os.getenv('USE_CUSTOM_CONTACT_EMAIL', 'False') == 'True'
+    CUSTOM_CONTACT_EMAIL = os.getenv('CUSTOM_CONTACT_EMAIL', '')
+
     # POSTGRESQL COLIN MIGRATION DB
     DB_USER_COLIN_MIGR = os.getenv('DATABASE_USERNAME_COLIN_MIGR', '')
     DB_PASSWORD_COLIN_MIGR = os.getenv('DATABASE_PASSWORD_COLIN_MIGR', '')

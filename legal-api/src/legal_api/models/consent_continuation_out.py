@@ -14,19 +14,29 @@
 """This model holds data for consent continuation out."""
 from __future__ import annotations
 
+from enum import auto
 from typing import Optional
 
 from sqlalchemy.orm import backref
 
+from ..utils.base import BaseEnum
 from .db import db
 
 
 class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-methods
     """This class manages the consent continuation out for businesses."""
 
+    # pylint: disable=invalid-name
+    class ConsentTypes(BaseEnum):
+        """Enum for the consent type."""
+
+        continuation_out = auto()
+        amalgamation_out = auto()
+
     __tablename__ = 'consent_continuation_outs'
 
     id = db.Column('id', db.Integer, unique=True, primary_key=True)
+    consent_type = db.Column('consent_type', db.Enum(ConsentTypes), nullable=False)
     foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
     foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
     expiry_date = db.Column('expiry_date', db.DateTime(timezone=True))
@@ -46,11 +56,13 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
     def get_active_cco(business_id,
                        expiry_date,
                        foreign_jurisdiction=None,
-                       foreign_jurisdiction_region=None) -> list[ConsentContinuationOut]:
+                       foreign_jurisdiction_region=None,
+                       consent_type=ConsentTypes.continuation_out) -> list[ConsentContinuationOut]:
         """Get a list of active consent_continuation_outs linked to the given business_id."""
-        query = db.session.query(ConsentContinuationOut). \
-            filter(ConsentContinuationOut.business_id == business_id). \
-            filter(ConsentContinuationOut.expiry_date >= expiry_date)
+        query = (db.session.query(ConsentContinuationOut).
+                 filter(ConsentContinuationOut.business_id == business_id).
+                 filter(ConsentContinuationOut.consent_type == consent_type).
+                 filter(ConsentContinuationOut.expiry_date >= expiry_date))
 
         if foreign_jurisdiction:
             query = query.filter(ConsentContinuationOut.foreign_jurisdiction == foreign_jurisdiction.upper())

@@ -26,7 +26,7 @@ def cors_preflight(methods: str = 'GET'):
             return {'Allow': 'GET'}, 200, \
                    {'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': methods,
-                    'Access-Control-Allow-Headers': 'Authorization, Content-Type'}
+                    'Access-Control-Allow-Headers': 'Authorization, Content-Type, App-Name'}
 
         setattr(func, 'options', options)
         return func
