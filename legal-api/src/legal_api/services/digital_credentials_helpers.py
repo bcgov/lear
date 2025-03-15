@@ -16,7 +16,7 @@
 
 from typing import List, Union
 
-from legal_api.models import Business, CorpType, DCDefinition, DCIssuedBusinessUserCredential, User
+from legal_api.models import Business, CorpType, DCDefinition, DCBusinessUser, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.services.digital_credentials_utils import business_party_role_mapping, user_party_role
 
@@ -84,12 +84,12 @@ def get_digital_credential_data(user: User, business: Business,
     return None
 
 
-def get_or_create_issued_credential(user: User, business: Business) -> DCIssuedBusinessUserCredential:
+def get_or_create_issued_credential(user: User, business: Business) -> DCBusinessUser:
     """Get or create issued business user credential."""
-    issued_business_user_credential = DCIssuedBusinessUserCredential.find_by(
+    issued_business_user_credential = DCBusinessUser.find_by(
         business_id=business.id, user_id=user.id)
     if not issued_business_user_credential:
-        issued_business_user_credential = DCIssuedBusinessUserCredential(
+        issued_business_user_credential = DCBusinessUser(
             business_id=business.id, user_id=user.id)
         issued_business_user_credential.save()
     return issued_business_user_credential

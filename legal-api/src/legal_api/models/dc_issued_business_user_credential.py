@@ -19,10 +19,10 @@ from typing import List
 from .db import db
 
 
-class DCIssuedBusinessUserCredential(db.Model):  # pylint: disable=too-many-instance-attributes
+class DCBusinessUser(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the issued credential IDs for a user of a business."""
 
-    __tablename__ = 'dc_issued_business_user_credentials'
+    __tablename__ = 'dc_business_users'
 
     id = db.Column(db.Integer, primary_key=True)
 
@@ -35,7 +35,7 @@ class DCIssuedBusinessUserCredential(db.Model):  # pylint: disable=too-many-inst
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, dc_issued_business_user_id: str) -> DCIssuedBusinessUserCredential:
+    def find_by_id(cls, dc_issued_business_user_id: str) -> DCBusinessUser:
         """Return the issued business user credential matching the id."""
         dc_issued_business_user = None
         if dc_issued_business_user_id:
@@ -45,13 +45,13 @@ class DCIssuedBusinessUserCredential(db.Model):  # pylint: disable=too-many-inst
     @classmethod
     def find_by(cls,
                 business_id: int = None,
-                user_id: int = None) -> List[DCIssuedBusinessUserCredential]:
+                user_id: int = None) -> List[DCBusinessUser]:
         """Return the issued business user credential matching the user_id and buisness_id."""
         dc_issued_business_user_credential = None
         if business_id and user_id:
             dc_issued_business_user_credential = (
                 cls.query
-                .filter(DCIssuedBusinessUserCredential.business_id == business_id)
-                .filter(DCIssuedBusinessUserCredential.user_id == user_id)
+                .filter(DCBusinessUser.business_id == business_id)
+                .filter(DCBusinessUser.user_id == user_id)
                 .one_or_none())
         return dc_issued_business_user_credential

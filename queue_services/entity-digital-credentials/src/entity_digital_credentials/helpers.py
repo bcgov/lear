@@ -19,7 +19,7 @@ from legal_api.models import (
     Business,
     DCConnection,
     DCDefinition,
-    DCIssuedBusinessUserCredential,
+    DCBusinessUser,
     DCIssuedCredential,
     DCRevocationReason,
     User,
@@ -143,7 +143,7 @@ def replace_issued_digital_credential(business: Business,
             raise Exception(
                 'Failed to remove credential exchange record.')
 
-        if not (issued_business_user_credential := DCIssuedBusinessUserCredential.find_by_id(
+        if not (issued_business_user_credential := DCBusinessUser.find_by_id(
                 dc_issued_business_user_id=issued_credential.credential_id)):
             # pylint: disable=broad-exception-raised
             raise Exception(

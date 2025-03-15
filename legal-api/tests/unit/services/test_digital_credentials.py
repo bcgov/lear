@@ -20,7 +20,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from legal_api.models import DCDefinition, DCIssuedBusinessUserCredential, Party, PartyRole
+from legal_api.models import DCDefinition, DCBusinessUser, Party, PartyRole
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials import DigitalCredentialsService
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data
@@ -219,7 +219,7 @@ def test_data_helper_user_is_not_completing_party(app, session, test_data, expec
         party_role.business_id = business.id
         party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
+    issued_business_user_credential = DCBusinessUser(
         business_id=business.id, user_id=user.id)
     issued_business_user_credential.save()
 
@@ -422,7 +422,7 @@ def test_data_helper_user_is_completing_party(app, session, test_data, expected)
         party_role.business_id = business.id
         party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
+    issued_business_user_credential = DCBusinessUser(
         business_id=business.id, user_id=user.id)
     issued_business_user_credential.save()
 
@@ -468,7 +468,7 @@ def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
     party_role.business_id = business.id
     party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
+    issued_business_user_credential = DCBusinessUser(
         business_id=business.id, user_id=user.id)
     issued_business_user_credential.save()
 
@@ -510,7 +510,7 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
     party_role.business_id = business.id
     party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
+    issued_business_user_credential = DCBusinessUser(
         business_id=business.id, user_id=user.id)
     issued_business_user_credential.save()
 

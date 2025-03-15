@@ -20,7 +20,7 @@ import pytest
 from legal_api.models import (
     DCConnection,
     DCDefinition,
-    DCIssuedBusinessUserCredential,
+    DCBusinessUser,
     DCIssuedCredential,
     DCRevocationReason,
     User,
@@ -157,8 +157,8 @@ def test_issued_credential_revoked(mock_revoke_credential, app, session):
 @patch('entity_digital_credentials.helpers.issue_digital_credential', return_value=None)
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
 @patch('legal_api.models.User.find_by_id', return_value=User(id=1))
-@patch('legal_api.models.DCIssuedBusinessUserCredential.find_by_id',
-       return_value=DCIssuedBusinessUserCredential(id=1, user_id=1))
+@patch('legal_api.models.DCBusinessUser.find_by_id',
+       return_value=DCBusinessUser(id=1, user_id=1))
 @patch('entity_digital_credentials.helpers.revoke_issued_digital_credential')
 def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_credential,
                                                         mock_find_ibuc_by_id,
@@ -185,8 +185,8 @@ def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_credential,
 @patch('entity_digital_credentials.helpers.issue_digital_credential', return_value=None)
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
 @patch('legal_api.models.User.find_by_id', return_value=User(id=1))
-@patch('legal_api.models.DCIssuedBusinessUserCredential.find_by_id',
-       return_value=DCIssuedBusinessUserCredential(id=1, user_id=1))
+@patch('legal_api.models.DCBusinessUser.find_by_id',
+       return_value=DCBusinessUser(id=1, user_id=1))
 @patch('entity_digital_credentials.helpers.revoke_issued_digital_credential')
 def test_issued_credential_revoked_is_not_revoked_first(mock_revoke_credential,
                                                         mock_find_ibuc_by_id,
@@ -242,7 +242,7 @@ def test_replace_issued_digital_credential_throws_cred_ex_id_exception(mock_remo
 
 @patch('entity_digital_credentials.helpers.issue_digital_credential')
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
-@patch('legal_api.models.DCIssuedBusinessUserCredential.find_by_id', return_value=None)
+@patch('legal_api.models.DCBusinessUser.find_by_id', return_value=None)
 def test_replace_issued_digital_credential_throws_ibuc_not_found_exception(mock_find_ibuc_by_id,
                                                                            mock_fetch_credential_exchange_record,
                                                                            mock_issue_digital_credential,
@@ -272,8 +272,8 @@ def test_replace_issued_digital_credential_throws_ibuc_not_found_exception(mock_
 @patch('entity_digital_credentials.helpers.issue_digital_credential')
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
 @patch('legal_api.models.User.find_by_id', return_value=None)
-@patch('legal_api.models.DCIssuedBusinessUserCredential.find_by_id',
-       return_value=DCIssuedBusinessUserCredential(id=1, user_id=1))
+@patch('legal_api.models.DCBusinessUser.find_by_id',
+       return_value=DCBusinessUser(id=1, user_id=1))
 def test_replace_issued_digital_credential_throws_user_not_found_exception(mock_find_ibuc_by_id,
                                                                            mock_find_user_by_id,
                                                                            mock_fetch_credential_exchange_record,
@@ -304,8 +304,8 @@ def test_replace_issued_digital_credential_throws_user_not_found_exception(mock_
 @patch('entity_digital_credentials.helpers.issue_digital_credential', return_value=None)
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
 @patch('legal_api.models.User.find_by_id', return_value=User(id=1))
-@patch('legal_api.models.DCIssuedBusinessUserCredential.find_by_id',
-       return_value=DCIssuedBusinessUserCredential(id=1, user_id=1))
+@patch('legal_api.models.DCBusinessUser.find_by_id',
+       return_value=DCBusinessUser(id=1, user_id=1))
 def test_issued_credential_replaced(mock_find_ibuc_by_id,
                                     mock_find_user_by_id,
                                     mock_fetch_credential_exchange_record,

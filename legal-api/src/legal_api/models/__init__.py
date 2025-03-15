@@ -28,7 +28,7 @@ from .consent_continuation_out import ConsentContinuationOut
 from .corp_type import CorpType
 from .dc_connection import DCConnection
 from .dc_definition import DCDefinition
-from .dc_issued_business_user_credential import DCIssuedBusinessUserCredential
+from .dc_issued_business_user_credential import DCBusinessUser
 from .dc_issued_credential import DCIssuedCredential
 from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
@@ -68,7 +68,7 @@ __all__ = (
     'DCConnection',
     'DCDefinition',
     'DCIssuedCredential',
-    'DCIssuedBusinessUserCredential',
+    'DCBusinessUser',
     'DCRevocationReason',
     'Document',
     'DocumentType',

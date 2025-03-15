@@ -1,4 +1,4 @@
-"""connection app attestation
+"""connection_app_attestation
 
 Revision ID: 201e34168903
 Revises: d9254d3cbbf4
@@ -7,9 +7,6 @@ Create Date: 2025-02-27 00:52:44.233035
 """
 from alembic import op
 import sqlalchemy as sa
-
-from legal_api.models import DCConnection
-
 
 # revision identifiers, used by Alembic.
 revision = '201e34168903'
