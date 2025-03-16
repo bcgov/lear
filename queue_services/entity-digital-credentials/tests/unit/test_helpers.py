@@ -419,5 +419,5 @@ def test_issue_digital_credential(mock_digital_credentials_helpers,
     # Assert
     assert issued_credential.credential_exchange_id == 'test_credential_exchange_id'
     assert issued_credential.credential_id == '00000001'
-    assert issued_credential.dc_definition_id == definition.id
-    assert issued_credential.dc_connection_id == connection.id
+    assert issued_credential.definition_id == definition.id
+    assert issued_credential.connection_id == connection.id

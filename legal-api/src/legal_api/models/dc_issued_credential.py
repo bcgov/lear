@@ -26,8 +26,8 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
 
     id = db.Column(db.Integer, primary_key=True)
 
-    dc_definition_id = db.Column('dc_definition_id', db.Integer, db.ForeignKey('dc_definitions.id'))
-    dc_connection_id = db.Column('dc_connection_id', db.Integer, db.ForeignKey('dc_connections.id'))
+    definition_id = db.Column('definition_id', db.Integer, db.ForeignKey('dc_definitions.id'))
+    connection_id = db.Column('connection_id', db.Integer, db.ForeignKey('dc_connections.id'))
 
     credential_exchange_id = db.Column('credential_exchange_id', db.String(100))
     credential_id = db.Column('credential_id', db.String(10))
@@ -43,8 +43,8 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
         """Return a dict of this object, with keys in JSON format."""
         dc_issued_credential = {
             'id': self.id,
-            'dcDefinitionId': self.dc_definition_id,
-            'dcConnectionId': self.dc_connection_id,
+            'definitionId': self.definition_id,
+            'connectionId': self.connection_id,
             'credentialExchangeId': self.credential_exchange_id,
             'credentialId': self.credential_id,
             'isIssued': self.is_issued,
@@ -93,15 +93,15 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
 
     @classmethod
     def find_by(cls,
-                dc_definition_id: int = None,
-                dc_connection_id: int = None) -> List[DCIssuedCredential]:
+                definition_id: int = None,
+                connection_id: int = None) -> List[DCIssuedCredential]:
         """Return the issued credential matching the filter."""
         query = db.session.query(DCIssuedCredential)
 
-        if dc_definition_id:
-            query = query.filter(DCIssuedCredential.dc_definition_id == dc_definition_id)
+        if definition_id:
+            query = query.filter(DCIssuedCredential.definition_id == definition_id)
 
-        if dc_connection_id:
-            query = query.filter(DCIssuedCredential.dc_connection_id == dc_connection_id)
+        if connection_id:
+            query = query.filter(DCIssuedCredential.connection_id == connection_id)
 
         return query.all()

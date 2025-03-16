@@ -49,8 +49,8 @@ def test_find_by_credential_exchange_id(session):
 def test_find_by(session):
     """Assert that the method returns correct value."""
     issued_credential = create_dc_issued_credential()
-    res = DCIssuedCredential.find_by(dc_connection_id=issued_credential.dc_connection_id,
-                                     dc_definition_id=issued_credential.dc_definition_id)
+    res = DCIssuedCredential.find_by(connection_id=issued_credential.connection_id,
+                                     definition_id=issued_credential.definition_id)
 
     assert len(res) == 1
     assert res[0].id == issued_credential.id
@@ -64,8 +64,8 @@ def create_dc_issued_credential(business=None):
     definition = create_dc_definition()
     connection = create_dc_connection(business, is_active=True)
     issued_credential = DCIssuedCredential(
-        dc_definition_id=definition.id,
-        dc_connection_id=connection.id,
+        definition_id=definition.id,
+        connection_id=connection.id,
         credential_exchange_id='8dbdce35-d47a-40cc-96b0-90ec263b162b'
     )
     issued_credential.save()

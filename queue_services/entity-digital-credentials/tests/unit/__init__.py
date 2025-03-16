@@ -89,8 +89,8 @@ def create_dc_issued_credential(business=None,
     definition = create_dc_definition()
     connection = create_dc_connection(business, is_active=True)
     issued_credential = DCIssuedCredential(
-        dc_definition_id=definition.id,
-        dc_connection_id=connection.id,
+        definition_id=definition.id,
+        connection_id=connection.id,
         credential_exchange_id=credential_exchange_id,
         credential_revocation_id=credential_revocation_id,
         revocation_registry_id=revocation_registry_id,

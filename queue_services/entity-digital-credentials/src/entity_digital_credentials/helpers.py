@@ -38,7 +38,7 @@ def get_issued_digital_credentials(business: Business) -> Union[List[DCIssuedCre
                 f'{business.identifier} active connection not found.')
 
         # pylint: disable=superfluous-parens
-        if not (issued_credentials := DCIssuedCredential.find_by(dc_connection_id=connection.id)):
+        if not (issued_credentials := DCIssuedCredential.find_by(connection_id=connection.id)):
             return []
 
         return issued_credentials
@@ -78,8 +78,8 @@ def issue_digital_credential(business: Business,
                 'Failed to issue credential.')
 
         issued_credential = DCIssuedCredential(
-            dc_definition_id=definition.id,
-            dc_connection_id=connection.id,
+            definition_id=definition.id,
+            connection_id=connection.id,
             credential_exchange_id=response['cred_ex_id'],
             credential_id=credential_id
         )

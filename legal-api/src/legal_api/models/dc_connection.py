@@ -76,12 +76,11 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, dc_connection_id: str) -> DCConnection:
+    def find_by_id(cls, connection_id: str) -> DCConnection:
         """Return the digital credential connection matching the id."""
         dc_connection = None
-        if dc_connection_id:
-            dc_connection = cls.query.filter_by(
-                id=dc_connection_id).one_or_none()
+        if connection_id:
+            dc_connection = cls.query.filter_by(id=connection_id).one_or_none()
         return dc_connection
 
     @classmethod

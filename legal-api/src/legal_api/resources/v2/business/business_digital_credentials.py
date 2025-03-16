@@ -158,13 +158,12 @@ def get_issued_credentials(identifier):
     if not (connection := DCConnection.find_active_by(business_id=business.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
-    if not (issued_credentials := DCIssuedCredential.find_by(dc_connection_id=connection.id)):
+    if not (issued_credentials := DCIssuedCredential.find_by(connection_id=connection.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
     response = []
     for issued_credential in issued_credentials:
-        definition = DCDefinition.find_by_id(
-            issued_credential.dc_definition_id)
+        definition = DCDefinition.find_by_id(issued_credential.definition_id)
         response.append({
             'legalName': business.legal_name,
             'credentialType': definition.credential_type.name,
@@ -202,8 +201,8 @@ def send_credential(identifier, credential_type):
                                       digital_credentials.business_schema_id,
                                       digital_credentials.business_cred_def_id)
 
-    issued_credentials = DCIssuedCredential.find_by(dc_connection_id=connection.id,
-                                                    dc_definition_id=definition.id)
+    issued_credentials = DCIssuedCredential.find_by(connection_id=connection.id,
+                                                    definition_id=definition.id)
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
@@ -224,8 +223,8 @@ def send_credential(identifier, credential_type):
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential = DCIssuedCredential(
-        dc_definition_id=definition.id,
-        dc_connection_id=connection.id,
+        definition_id=definition.id,
+        connection_id=connection.id,
         credential_exchange_id=response['cred_ex_id'],
         credential_id=credential_id
     )

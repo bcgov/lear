@@ -61,11 +61,11 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, dc_definition_id: str) -> DCDefinition:
+    def find_by_id(cls, definition_id: str) -> DCDefinition:
         """Return the digital credential definition matching the id."""
         dc_definition = None
-        if dc_definition_id:
-            dc_definition = cls.query.filter_by(id=dc_definition_id).one_or_none()
+        if definition_id:
+            dc_definition = cls.query.filter_by(id=definition_id).one_or_none()
         return dc_definition
 
     @classmethod
