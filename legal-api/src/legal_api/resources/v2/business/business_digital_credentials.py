@@ -1,4 +1,4 @@
-# Copyright © 2022 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -48,7 +48,10 @@ def create_invitation(identifier):
     if DCConnection.find_active_by(business_id=business.id):
         return jsonify({'message': f'{identifier} already have an active connection.'}), HTTPStatus.UNPROCESSABLE_ENTITY
 
-    if (connections := DCConnection.find_by(business_id=business.id, connection_state='invitation')):
+    if (connections := DCConnection.find_by_filters([
+        DCConnection.business_id == business.id,
+        DCConnection.connection_state == DCConnection.State.INVITATION_SENT.value,
+    ])):
         connection = connections[0]
     else:
         if not (response := digital_credentials.create_invitation()):

@@ -1,4 +1,4 @@
-# Copyright © 2022 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +19,10 @@ Test-Suite to ensure that the DCCredential Model is working as expected.
 
 from legal_api.models import DCCredential
 
-from tests.unit.models import factory_business
+from legal_api.models.business import Business
+from legal_api.models.user import User
+from tests.unit.models import factory_business, factory_user
+from tests.unit.models.test_dc_business_user import create_dc_business_user
 from tests.unit.models.test_dc_connection import create_dc_connection
 from tests.unit.models.test_dc_definition import create_dc_definition
 
@@ -57,13 +60,16 @@ def test_find_by(session):
     assert res[0].id == issued_credential.id
 
 
-def create_dc_credential(business=None):
+def create_dc_credential(business: Business = None, user: User = None) -> DCCredential:
     """Create new dc_credential object."""
     if not business:
         identifier = 'FM1234567'
         business = factory_business(identifier)
+    if not user:
+        user = factory_user('test', 'Test', 'User')
+    business_user = create_dc_business_user(business, user)
     definition = create_dc_definition()
-    connection = create_dc_connection(business, is_active=True)
+    connection = create_dc_connection(business_user, is_active=True)
     issued_credential = DCCredential(
         definition_id=definition.id,
         connection_id=connection.id,
