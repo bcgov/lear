@@ -40,7 +40,6 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
 
     business.state = Business.State.HISTORICAL
     business.state_filing_id = continuation_out_filing.id
-    business.dissolution_date = continuation_out_date
 
     business.jurisdiction = foreign_jurisdiction_country
     business.foreign_legal_name = legal_name

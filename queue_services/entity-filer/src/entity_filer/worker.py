@@ -53,6 +53,7 @@ from entity_filer.filing_processors import (
     alteration,
     amalgamation_application,
     annual_report,
+    appoint_receiver,
     change_of_address,
     change_of_directors,
     change_of_name,
@@ -359,6 +360,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('transparencyRegister'):
                     transparency_register.process(business, filing_submission, filing_core_submission.json)
+
+                elif filing.get('appointReceiver'):
+                    appoint_receiver.process(business, filing, filing_submission, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)

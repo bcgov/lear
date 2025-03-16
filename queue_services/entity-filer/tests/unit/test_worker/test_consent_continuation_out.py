@@ -42,8 +42,8 @@ async def test_worker_consent_continuation_out(app, session, mocker, test_name, 
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
     business.save()
-    business_id=business.id
-    
+    business_id = business.id
+
     filing_json = copy.deepcopy(FILING_TEMPLATE)
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['header']['name'] = 'consentContinuationOut'
@@ -79,6 +79,7 @@ async def test_worker_consent_continuation_out(app, session, mocker, test_name, 
 
     cco = ConsentContinuationOut.get_active_cco(business_id, expiry_date_utc)
     assert cco
+    assert cco[0].consent_type == ConsentContinuationOut.ConsentTypes.continuation_out
     assert cco[0].foreign_jurisdiction == \
         filing_json['filing']['consentContinuationOut']['foreignJurisdiction']['country']
     assert cco[0].foreign_jurisdiction_region == \

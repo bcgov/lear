@@ -39,6 +39,7 @@ def _create_consent_continuation_out(business, foreign_jurisdiction, effective_d
     filing = factory_completed_filing(business, filing_dict, filing_date=effective_date)
 
     consent_continuation_out = ConsentContinuationOut()
+    consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
     consent_continuation_out.foreign_jurisdiction = foreign_jurisdiction.get('country')
 
     region = foreign_jurisdiction.get('region')

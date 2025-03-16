@@ -5,6 +5,7 @@
         "integer-flag": 10,
         "enable-legal-name-fix": true,
         "disable-nr-check": false,
+        "enable-business-summary-for-migrated-corps": true,
         "enable-involuntary-dissolution-filter": false,
         "enable-new-ben-statements": false,
         "involuntary-dissolution-filter": {
