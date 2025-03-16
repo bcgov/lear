@@ -21,7 +21,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.decorators import can_access_digital_credentials
-from legal_api.models import Business, DCConnection, DCDefinition, DCCredential, DCRevocationReason, User
+from legal_api.models import Business, DCConnection, DCCredential, DCDefinition, DCRevocationReason, User
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
@@ -201,8 +201,8 @@ def send_credential(identifier, credential_type):
                                       digital_credentials.business_schema_id,
                                       digital_credentials.business_cred_def_id)
 
-    issued_credentials = DCCredential.find_by(connection_id=connection.id,
-                                                    definition_id=definition.id)
+    issued_credentials = DCCredential.find_by(
+        connection_id=connection.id, definition_id=definition.id)
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 

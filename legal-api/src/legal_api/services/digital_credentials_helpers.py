@@ -16,7 +16,7 @@
 
 from typing import List, Union
 
-from legal_api.models import Business, CorpType, DCDefinition, DCBusinessUser, User
+from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.services.digital_credentials_utils import business_party_role_mapping, user_party_role
 
