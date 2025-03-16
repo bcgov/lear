@@ -21,7 +21,7 @@ from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.decorators import can_access_digital_credentials
-from legal_api.models import Business, DCConnection, DCCredential, DCDefinition, DCRevocationReason, User
+from legal_api.models import Business, DCBusinessUser, DCConnection, DCCredential, DCDefinition, DCRevocationReason, User
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
@@ -76,17 +76,29 @@ def create_invitation(identifier):
 @jwt.requires_auth
 @can_access_digital_credentials
 def get_connections(identifier):
-    """Get active connection for this business."""
+    """
+    Get connections for this business
+
+    We currently only support one connection per business user.
+    We still return a list of connections to be consistent with RESTful API naming conventions.
+    """
+    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
+        return jsonify({'message': 'Unable to decode JWT'}, HTTPStatus.UNAUTHORIZED)
+
     if not (business := Business.find_by_identifier(identifier)):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    connections = DCConnection.find_by(business_id=business.id)
-    if len(connections) == 0:
+    if not (user := User.find_by_jwt_token(token)):
+        return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
+
+    if not (business_user := DCBusinessUser.find_by(business_id=business.id, user_id=user.id)):
+        return jsonify({'message': 'Business User not found'}, HTTPStatus.NOT_FOUND)
+
+    if not (connection := DCConnection.find_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'connections': []}), HTTPStatus.OK
 
     response = []
-    for connection in connections:
-        response.append(connection.json)
+    response.append(connection.json)
     return jsonify({'connections': response}), HTTPStatus.OK
 
 
@@ -183,7 +195,6 @@ def get_issued_credentials(identifier):
 @jwt.requires_auth
 @can_access_digital_credentials
 def send_credential(identifier, credential_type):
-    # TODO: Need to check if the connection is attested
     """Issue credentials to the connection."""
     if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
         return jsonify({'message': 'Unable to decode JWT'}, HTTPStatus.UNAUTHORIZED)
