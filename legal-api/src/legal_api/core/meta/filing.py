@@ -189,6 +189,21 @@ FILINGS: Final = {
             }
         }
     },
+    'amalgamationOut': {
+        'name': 'amalgamationOut',
+        'title': 'Amalgamation Out',
+        'displayName': 'Amalgamation Out',
+        'codes': {
+            'BC': 'AMALO',
+            'BEN': 'AMALO',
+            'ULC': 'AMALO',
+            'CC': 'AMALO',
+            'C': 'AMALO',
+            'CBEN': 'AMALO',
+            'CUL': 'AMALO',
+            'CCC': 'AMALO'
+        }
+    },
     'annualReport': {
         'name': 'annualReport',
         'title': 'Annual Report Filing',
@@ -218,6 +233,21 @@ FILINGS: Final = {
             'C': 'NOARM',
             'CUL': 'NOARM',
             'CCC': 'NOARM'
+        }
+    },
+    'ceaseReceiver': {
+        'name': 'ceaseReceiver',
+        'title': 'Cease Receiver Filing',
+        'displayName': 'Cease Receiver',
+        'codes': {
+            'BEN': 'NOCER',
+            'BC': 'NOCER',
+            'ULC': 'NOCER',
+            'CC': 'NOCER',
+            'CBEN': 'NOCER',
+            'C': 'NOCER',
+            'CUL': 'NOCER',
+            'CCC': 'NOCER'
         }
     },
     'changeOfAddress': {
@@ -300,6 +330,27 @@ FILINGS: Final = {
             {
                 'types': ['SP', 'GP'],
                 'outputs': ['amendedRegistrationStatement']
+            },
+        ]
+    },
+    'consentAmalgamationOut': {
+        'name': 'consentAmalgamationOut',
+        'title': 'Consent Amalgamation Out',
+        'displayName': '6-Month Consent to Amalgamate Out',
+        'codes': {
+            'BC': 'IAMGO',
+            'BEN': 'IAMGO',
+            'ULC': 'IAMGO',
+            'CC': 'IAMGO',
+            'C': 'IAMGO',
+            'CBEN': 'IAMGO',
+            'CUL': 'IAMGO',
+            'CCC': 'IAMGO'
+        },
+        'additional': [
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['letterOfConsent']
             },
         ]
     },

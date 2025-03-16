@@ -45,6 +45,7 @@ def test_consent_continuation_out_save(session):
     expiry_date = get_cco_expiry_date(filing.effective_date)
 
     consent_continuation_out = ConsentContinuationOut()
+    consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
     consent_continuation_out.foreign_jurisdiction = 'CA'
     consent_continuation_out.foreign_jurisdiction_region = 'AB'
     consent_continuation_out.expiry_date = expiry_date
@@ -65,6 +66,7 @@ def test_get_active_cco(session):
     expiry_date = get_cco_expiry_date(filing.effective_date)
 
     consent_continuation_out = ConsentContinuationOut()
+    consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
     consent_continuation_out.foreign_jurisdiction = 'CA'
     consent_continuation_out.foreign_jurisdiction_region = 'AB'
     consent_continuation_out.expiry_date = expiry_date
