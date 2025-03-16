@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from enum import auto
 
-from business_pay.utils.base import BaseEnum
+from business_pay.utils import BaseEnum
 
 from .db import db
 

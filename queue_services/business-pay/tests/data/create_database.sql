@@ -1,5 +1,5 @@
 
-CREATE TABLE public.filings (
+CREATE TABLE IF NOT EXISTS public.filings (
     id integer NOT NULL,
     filing_date timestamp with time zone,
     filing_type character varying(30),
@@ -30,7 +30,7 @@ CREATE TABLE public.filings (
     meta_data jsonb
 );
 
-CREATE SEQUENCE public.filings_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.filings_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
