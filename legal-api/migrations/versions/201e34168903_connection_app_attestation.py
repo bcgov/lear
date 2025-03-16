@@ -1,7 +1,7 @@
 """connection app attestation
 
 Revision ID: 201e34168903
-Revises: d9254d3cbbf4
+Revises: fe158a53151f
 Create Date: 2025-02-27 00:52:44.233035
 
 """
@@ -13,7 +13,7 @@ from legal_api.models import DCConnection
 
 # revision identifiers, used by Alembic.
 revision = '201e34168903'
-down_revision = '24b59f535ec3'
+down_revision = 'fe158a53151f'
 branch_labels = None
 depends_on = None
 
