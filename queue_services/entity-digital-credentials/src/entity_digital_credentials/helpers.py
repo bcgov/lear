@@ -20,7 +20,7 @@ from legal_api.models import (
     DCConnection,
     DCDefinition,
     DCBusinessUser,
-    DCIssuedCredential,
+    DCCredential,
     DCRevocationReason,
     User,
 )
@@ -28,7 +28,7 @@ from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data
 
 
-def get_issued_digital_credentials(business: Business) -> Union[List[DCIssuedCredential], None]:
+def get_issued_digital_credentials(business: Business) -> Union[List[DCCredential], None]:
     """Get issued digital credentials for a business."""
     try:
         # pylint: disable=superfluous-parens
@@ -38,7 +38,7 @@ def get_issued_digital_credentials(business: Business) -> Union[List[DCIssuedCre
                 f'{business.identifier} active connection not found.')
 
         # pylint: disable=superfluous-parens
-        if not (issued_credentials := DCIssuedCredential.find_by(connection_id=connection.id)):
+        if not (issued_credentials := DCCredential.find_by(connection_id=connection.id)):
             return []
 
         return issued_credentials
@@ -49,7 +49,7 @@ def get_issued_digital_credentials(business: Business) -> Union[List[DCIssuedCre
 
 def issue_digital_credential(business: Business,
                              user: User,
-                             credential_type: DCDefinition.CredentialType) -> Union[DCIssuedCredential, None]:
+                             credential_type: DCDefinition.CredentialType) -> Union[DCCredential, None]:
     """Issue a digital credential for a business to a user."""
     try:
         if not (definition := DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
@@ -77,7 +77,7 @@ def issue_digital_credential(business: Business,
             raise Exception(
                 'Failed to issue credential.')
 
-        issued_credential = DCIssuedCredential(
+        issued_credential = DCCredential(
             definition_id=definition.id,
             connection_id=connection.id,
             credential_exchange_id=response['cred_ex_id'],
@@ -92,7 +92,7 @@ def issue_digital_credential(business: Business,
 
 
 def revoke_issued_digital_credential(business: Business,
-                                     issued_credential: DCIssuedCredential,
+                                     issued_credential: DCCredential,
                                      reason: DCRevocationReason) -> Union[dict, None]:
     """Revoke an issued digital credential for a business."""
     try:
@@ -126,9 +126,9 @@ def revoke_issued_digital_credential(business: Business,
 
 # pylint: disable=too-many-arguments
 def replace_issued_digital_credential(business: Business,
-                                      issued_credential: DCIssuedCredential,
+                                      issued_credential: DCCredential,
                                       credential_type: DCDefinition.CredentialType,
-                                      reason: DCRevocationReason) -> Union[DCIssuedCredential, None]:
+                                      reason: DCRevocationReason) -> Union[DCCredential, None]:
     """Replace an issued digital credential for a business."""
     try:
         if issued_credential.is_issued and not issued_credential.is_revoked:

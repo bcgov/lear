@@ -13,7 +13,7 @@
 # limitations under the License.
 """The Unit Tests and the helper routines."""
 
-from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, Filing
+from legal_api.models import Business, DCConnection, DCDefinition, DCCredential, Filing
 from legal_api.models.db import VersioningProxy
 
 
@@ -77,18 +77,18 @@ iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE
     return connection
 
 
-def create_dc_issued_credential(business=None,
+def create_dc_credential(business=None,
                                 credential_exchange_id='test_credential_exchange_id',
                                 credential_revocation_id='123',
                                 revocation_registry_id='123',
                                 is_issued=True, is_revoked=False):
-    """Create new dc_issued_credential object."""
+    """Create new dc_credential object."""
     if not business:
         identifier = 'FM1234567'
         business = create_business(identifier)
     definition = create_dc_definition()
     connection = create_dc_connection(business, is_active=True)
-    issued_credential = DCIssuedCredential(
+    issued_credential = DCCredential(
         definition_id=definition.id,
         connection_id=connection.id,
         credential_exchange_id=credential_exchange_id,

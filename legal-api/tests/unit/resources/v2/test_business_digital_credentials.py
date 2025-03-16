@@ -28,7 +28,7 @@ from legal_api.services.digital_credentials import DigitalCredentialsService
 from tests.unit.models import factory_business
 from tests.unit.models.test_dc_connection import create_dc_connection
 from tests.unit.models.test_dc_definition import create_dc_definition
-from tests.unit.models.test_dc_issued_credential import create_dc_issued_credential
+from tests.unit.models.test_dc_credential import create_dc_credential
 from tests.unit.services.utils import create_header
 
 
@@ -131,7 +131,8 @@ def test_send_credential(app, session, client, jwt):  # pylint:disable=unused-ar
     """Assert issue credentials to the connection."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business = factory_business(identifier, entity_type=Business.LegalTypes.BCOMP.value)
+    business = factory_business(
+        identifier, entity_type=Business.LegalTypes.BCOMP.value)
     definition = create_dc_definition()
     test_user = User(username='test-user', firstname='test', lastname='test')
     test_user.save()
@@ -209,7 +210,7 @@ def test_get_issued_credentials(app, session, client, jwt):  # pylint:disable=un
     identifier = 'FM1234567'
     business = factory_business(identifier)
 
-    issued_credential = create_dc_issued_credential(business=business)
+    issued_credential = create_dc_credential(business=business)
 
     rv = client.get(
         f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
@@ -261,7 +262,7 @@ def test_webhook_issue_credential_notification(app, session, client, jwt):  # py
     identifier = 'FM1234567'
     business = factory_business(identifier)
 
-    issued_credential = create_dc_issued_credential(business=business)
+    issued_credential = create_dc_credential(business=business)
 
     json_data = {
         'cred_ex_id': issued_credential.credential_exchange_id,
