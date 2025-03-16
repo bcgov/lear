@@ -32,3 +32,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """This module holds general utility functions and helpers for the package."""
+from .base import BaseEnum
+from .base import BaseMeta
+from .version import get_run_version

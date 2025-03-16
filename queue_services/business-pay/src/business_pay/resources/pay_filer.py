@@ -35,6 +35,8 @@
 """This Module processes simple cloud event messages for possible filing payments.
 """
 import re
+import traceback
+import uuid
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
@@ -44,14 +46,17 @@ from typing import Optional
 
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
+from simple_cloudevent import to_queue_message
 from structured_logging import StructuredLogging
 
-from business_pay.services import create_filing_msg
+from business_pay.database import Filing
 from business_pay.services import create_email_msg
-from business_pay.services import verify_gcp_jwt
+from business_pay.services import create_filing_msg
+from business_pay.services import create_gcp_filing_msg
+from business_pay.services import flags
 from business_pay.services import gcp_queue
 from business_pay.services import queue
-from business_pay.database import Filing
+from business_pay.services import verify_gcp_jwt
 
 bp = Blueprint("worker", __name__)
 
@@ -109,7 +114,7 @@ async def worker():
         logger.debug(f"Removed From Queue: no payment info in ce: {str(ce)}")
         return {}, HTTPStatus.OK
 
-    if payment_token.corp_type_code in ["MHR"]:
+    if payment_token.corp_type_code in ["MHR", "BTR", "BUS"]:
         logger.debug(
             f"ignoring message for corp_type_code:{payment_token.corp_type_code},  {str(ce)}")
         return {}, HTTPStatus.OK
@@ -170,27 +175,52 @@ class PaymentToken:
 
 def publish_to_filer(filing: Filing, payment_token: PaymentToken):
     """Publish a queue message to entity-filer once the filing has been marked as PAID."""
-    with suppress(Exception):
-        logger.debug(
-            f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
+    logger.debug(
+        f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
+    try:
         if filing.effective_date <= filing.payment_completion_date:
-            filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
-            queue_message = create_filing_msg(filing.id)
-            logger.debug(f"filer queue_message: {queue_message}")
+            flag_on = flags.is_on("enable-sandbox")
+            logger.debug(f"enable-sandbox flag on: {flag_on}")
+            # use Pub/Sub if FF on, otherwise NATS
+            if flag_on:
+                data = create_gcp_filing_msg(filing.id)
 
-            try:
+                ce = SimpleCloudEvent(
+                    id=str(uuid.uuid4()),
+                    source='business_pay',
+                    subject='filing',
+                    time=datetime.now(timezone.utc),
+                    type='filingMessage',
+                    data = data
+                )
+                topic = current_app.config.get('BUSINESS_FILER_TOPIC')
+                gcp_queue.publish(topic, to_queue_message(ce))
+                logger.debug(
+                    f"Filer pub/sub message: {str(ce)}"
+                )
+            else:
+                filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
+                queue_message = create_filing_msg(filing.id)
+                logger.debug(f"Filer NATS message: {queue_message}")
                 # await queue.publish(subject=filer_topic, msg=queue_message)
                 queue.publish_json(subject=filer_topic, payload=queue_message)
-            except Exception as err:
-                logger.debug(
-                    f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
 
-            logger.info(f"publish to filer for pay-id: {payment_token.id}")
+        logger.info(f"publish to filer for pay-id: {payment_token.id}")
+    except Exception as err:
+        logger.debug(
+            f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
+        # debug
+        logger.debug(traceback.format_exc())
 
 
 def publish_to_emailer(filing: Filing):
     """Publish a queue message to entity-emailer once the filing has been marked as PAID."""
     with suppress(Exception):
+        # skip publishing NATS message
+        if flags.is_on("enable-sandbox"):
+            logger.debug("Skip publishing to emailer.")
+            return
+
         mail_topic = current_app.config["EMAIL_PUBLISH_OPTIONS"]["subject"]
         email_msg = create_email_msg(filing.id, filing.filing_type)
         # await queue.publish(subject=mail_topic, msg=email_msg)
