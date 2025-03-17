@@ -18,20 +18,17 @@ from unittest.mock import patch
 import pytest
 from legal_api.models import DCDefinition, DCRevocationReason, Filing
 
-from entity_digital_credentials.digital_credentials_processors.change_of_registration import process
+from entity_digital_credentials.digital_credentials_processors import change_of_registration
 from tests.unit import create_business, create_filing
 
 
 @pytest.mark.asyncio
-@patch('entity_digital_credentials.digital_credentials_processors' +
-       '.change_of_registration.get_issued_digital_credentials',
-       return_value=[])
-@patch('entity_digital_credentials.digital_credentials_processors.change_of_registration.logger')
-@patch('entity_digital_credentials.digital_credentials_processors.' +
-       'change_of_registration.replace_digital_credential')
+@patch.object(change_of_registration, 'get_all_digital_credentials_for_business', return_value=[])
+@patch.object(change_of_registration, 'logger')
+@patch.object(change_of_registration, 'replace_digital_credential')
 async def test_processor_does_not_run_if_no_issued_credential(mock_replace_digital_credential,
                                                               mock_logger,
-                                                              mock_get_issued_digital_credentials,
+                                                              mock_get_all_digital_credentials_for_business,
                                                               app, session):
     """Assert that the processor does not run if the current business has no issued credentials."""
     # Arrange
@@ -48,22 +45,21 @@ async def test_processor_does_not_run_if_no_issued_credential(mock_replace_digit
         }}, 'test', Filing.Status.COMPLETED.value)
 
     # Act
-    await process(business, filing)
+    await change_of_registration.process(business, filing)
 
     # Assert
-    mock_get_issued_digital_credentials.assert_called_once_with(business=business)
-    mock_logger.warning.assert_called_once_with('No issued credentials found for business: %s', 'FM0000001')
+    mock_get_all_digital_credentials_for_business.assert_called_once_with(
+        business=business)
+    mock_logger.warning.assert_called_once_with(
+        'No issued credentials found for business: %s', 'FM0000001')
     mock_replace_digital_credential.assert_not_called()
 
 
 @pytest.mark.asyncio
-@patch('entity_digital_credentials.digital_credentials_processors' +
-       '.change_of_registration.get_issued_digital_credentials',
-       return_value=[{'id': 1}])
-@patch('entity_digital_credentials.digital_credentials_processors' +
-       '.change_of_registration.replace_digital_credential')
+@patch.object(change_of_registration, 'get_all_digital_credentials_for_business', return_value=[{'id': 1}])
+@patch.object(change_of_registration, 'replace_digital_credential')
 async def test_processor_does_not_run_if_invalid_typel(mock_replace_digital_credential,
-                                                       mock_get_issued_digital_credentials,
+                                                       mock_get_all_digital_credentials_for_business,
                                                        app, session):
     """Assert that the processor does not run if not the right type."""
     # Arrange
@@ -80,21 +76,18 @@ async def test_processor_does_not_run_if_invalid_typel(mock_replace_digital_cred
         }}, 'changeOfRegistration', Filing.Status.COMPLETED.value)
 
     # Act
-    await process(business, filing)
+    await change_of_registration.process(business, filing)
 
     # Assert
-    mock_get_issued_digital_credentials.assert_not_called()
+    mock_get_all_digital_credentials_for_business.assert_not_called()
     mock_replace_digital_credential.assert_not_called()
 
 
 @pytest.mark.asyncio
-@patch('entity_digital_credentials.digital_credentials_processors' +
-       '.change_of_registration.get_issued_digital_credentials',
-       return_value=[{'id': 1}])
-@patch('entity_digital_credentials.digital_credentials_processors' +
-       '.change_of_registration.replace_digital_credential')
+@patch.object(change_of_registration, 'get_all_digital_credentials_for_business', return_value=[{'id': 1}])
+@patch.object(change_of_registration, 'replace_digital_credential')
 async def test_processor_replaces_issued_credential(mock_replace_digital_credential,
-                                                    mock_get_issued_digital_credentials,
+                                                    mock_get_all_digital_credentials_for_business,
                                                     app, session):
     """Assert that the processor replaces the issued credential if it exists."""
     # Arrange
@@ -111,10 +104,11 @@ async def test_processor_replaces_issued_credential(mock_replace_digital_credent
         }}, 'changeOfRegistration', Filing.Status.COMPLETED.value)
 
     # Act
-    await process(business, filing)
+    await change_of_registration.process(business, filing)
 
     # Assert
-    mock_get_issued_digital_credentials.assert_called_once_with(business=business)
+    mock_get_all_digital_credentials_for_business.assert_called_once_with(
+        business=business)
     mock_replace_digital_credential.assert_called_once_with(
         credential={'id': 1},
         credential_type=DCDefinition.CredentialType.business.name,

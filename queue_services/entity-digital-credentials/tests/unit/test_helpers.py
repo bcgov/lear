@@ -17,10 +17,10 @@
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import DCBusinessUser, DCConnection, DCCredential, DCDefinition, DCRevocationReason, User
+from legal_api.models import DCBusinessUser, DCCredential, DCDefinition, DCRevocationReason, User
 
 from entity_digital_credentials.helpers import (
-    get_issued_digital_credentials,
+    get_all_digital_credentials_for_business,
     issue_digital_credential,
     replace_digital_credential,
     revoke_digital_credential,
@@ -38,34 +38,51 @@ from tests.unit import (
 BUSINESS_IDENTIFIER = 'FM0000001'
 
 
-@patch('legal_api.models.DCCredential.find_by', return_value=DCCredential(id=1))
-@patch('legal_api.models.DCConnection.find_active_by', return_value=None)
-def test_get_issued_digital_credentials_raises_exception(mock_find_active_by, mock_find_by, app, session):
-    """Assert get_issued_digital_credentials raises an exception when no active connection found."""
+def test_get_all_issued_credentials_for_business_returns_empty_list_no_business_users(app, session):
+    """Assert get_all_digital_credentials_for_business returns an empty list when no business users."""
     # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
 
     # Act
-    with pytest.raises(Exception) as excinfo:
-        get_issued_digital_credentials(business=business)
+    credentials = get_all_digital_credentials_for_business(business=business)
 
     # Assert
-    assert f'{BUSINESS_IDENTIFIER} active connection not found.' in str(
-        excinfo)
+    assert credentials == []
 
 
-@patch('legal_api.models.DCCredential.find_by', return_value=None)
-@patch('legal_api.models.DCConnection.find_active_by', return_value=DCConnection(id=1))
-def test_get_issued_credentials_returns_empty_list(mock_find_active_by, mock_find_by, app, session):
-    """Assert get_issued_digital_credentials returns an empty list when no issued credentials found."""
+def test_get_all_issued_credentials_for_business_returns_empty_list_no_active_connection(app, session):
+    """Assert get_all_digital_credentials_for_business returns an empty list when no active connections."""
     # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
+    user = create_user()
+    business_user = create_dc_business_user(business=business, user=user)
+    create_dc_connection(business_user=business_user, is_active=False)
 
     # Act
-    issued_credentials = get_issued_digital_credentials(business=business)
+    credentials = get_all_digital_credentials_for_business(business=business)
 
     # Assert
-    assert issued_credentials == []
+    assert credentials == []
+
+
+def test_get_all_issued_credentials_for_business_returns_credentials(app, session):
+    """Assert get_all_digital_credentials_for_business returns a list of credentials."""
+    # Arrange
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
+    user = create_user()
+    user2 = create_user()
+    business_user1 = create_dc_business_user(business=business, user=user)
+    business_user2 = create_dc_business_user(business=business, user=user2)
+    create_dc_credential(business_user=business_user1,
+                         is_issued=True, is_revoked=False)
+    create_dc_credential(business_user=business_user2,
+                         is_issued=True, is_revoked=False)
+
+    # Act
+    credentials = get_all_digital_credentials_for_business(business=business)
+
+    # Assert
+    assert len(credentials) == 2
 
 
 @patch('legal_api.services.digital_credentials.revoke_credential')
@@ -343,7 +360,7 @@ def test_issue_digital_credential_throws_active_connection_not_found_error(mock_
             business_user=business_user, credential_type=definition.credential_type.name)
 
     # Assert
-    assert f'{BUSINESS_IDENTIFIER} active connection not found.' in str(
+    assert f'Active connection not found for business user with ID: {business_user.id}.' in str(
         excinfo)
 
 

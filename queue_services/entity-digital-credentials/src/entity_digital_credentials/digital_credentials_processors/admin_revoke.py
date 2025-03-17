@@ -26,19 +26,19 @@ Note: The credential is not replaced, it is simply revoked.
 from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCRevocationReason
 
-from entity_digital_credentials.helpers import get_issued_digital_credentials, revoke_digital_credential
+from entity_digital_credentials.helpers import get_all_digital_credentials_for_business, revoke_digital_credential
 
 
 async def process(business: Business) -> None:
     """Process admin actions."""
-    issued_credentials = get_issued_digital_credentials(business=business)
+    credentials = get_all_digital_credentials_for_business(business=business)
 
-    if not (issued_credentials and len(issued_credentials)):
+    if not (credentials and len(credentials)):
         logger.warning(
             'No issued credentials found for business: %s', business.identifier)
         return None
 
-    for credential in issued_credentials:
+    for credential in credentials:
         revoke_digital_credential(
             credential=credential, reason=DCRevocationReason.ADMINISTRATIVE_REVOCATION)
     return None

@@ -15,36 +15,29 @@
 
 from typing import List, Union
 
-from legal_api.models import (
-    Business,
-    DCBusinessUser,
-    DCConnection,
-    DCCredential,
-    DCDefinition,
-    DCRevocationReason,
-)
+from legal_api.models import Business, DCBusinessUser, DCConnection, DCCredential, DCDefinition, DCRevocationReason
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data
 
 
-def get_issued_digital_credentials(business: Business) -> Union[List[DCCredential], None]:
+def get_all_digital_credentials_for_business(business: Business) -> Union[List[DCCredential], None]:
     """
     Get issued digital credentials for a business.
 
-    DEPRECATED: This function is deprecated and will be removed in future releases.
+    TODO: Once DCCredential references DCBusinessUser, this function can be refactored
     """
     try:
-        # pylint: disable=superfluous-parens
-        if not (connection := DCConnection.find_active_by(business_id=business.id)):
-            # pylint: disable=broad-exception-raised
-            raise Exception(
-                f'{business.identifier} active connection not found.')
+        credentials = []
+        for business_user in business.business_users:
+            active_connections = list(filter(lambda connection: connection.is_active,
+                                             business_user.connections))
+            if active_connections and len(active_connections) == 1:
+                active_connection = active_connections[0]
+                for credential in list(filter(lambda credential: (credential.is_issued and not credential.is_revoked),
+                                              active_connection.credentials)):
+                    credentials.append(credential)
 
-        # pylint: disable=superfluous-parens
-        if not (issued_credentials := DCCredential.find_by(connection_id=connection.id)):
-            return []
-
-        return issued_credentials
+        return credentials
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err
@@ -54,9 +47,6 @@ def issue_digital_credential(business_user: DCBusinessUser,
                              credential_type: DCDefinition.CredentialType) -> Union[DCCredential, None]:
     """Issue a digital credential for a business to a user."""
     try:
-        business = business_user.business
-        user = business_user.user
-
         if not (definition := DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
                                                    digital_credentials.business_schema_id,
                                                    digital_credentials.business_cred_def_id)):
@@ -65,13 +55,13 @@ def issue_digital_credential(business_user: DCBusinessUser,
                 f'Definition not found for credential type: {credential_type}.')
 
         # pylint: disable=superfluous-parens
-        if not (connection := DCConnection.find_active_by(business_id=business.id)):
+        if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
             # pylint: disable=broad-exception-raised
             raise Exception(
-                f'{business.identifier} active connection not found.')
+                f'Active connection not found for business user with ID: {business_user.id}.')
 
         credential_data = get_digital_credential_data(
-            user, business, definition.credential_type)
+            business_user.user, business_user.business, definition.credential_type)
         credential_id = next(
             (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
@@ -142,7 +132,8 @@ def replace_digital_credential(credential: DCCredential,
 
         credential.delete()
 
-        return issue_digital_credential(credential.connection.business_user, credential_type)  # pylint: disable=too-many-function-args
+        return issue_digital_credential(credential.connection.business_user,
+                                        credential_type)  # pylint: disable=too-many-function-args
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err
