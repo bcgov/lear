@@ -1052,7 +1052,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing.set_review_decision(Filing.Status.APPROVED.value)
 
         # for sandbox one-shot approach, run save_filings again after approval
-        if not ListFilingResource._check_is_one_shot_for_auto_approval(
+        if ListFilingResource._check_is_one_shot_for_auto_approval(
            filing.filing_json['filing'][filing.filing_type]):
             try:
                 current_app.logger.info(f'Continuation in submission detected - processing {filing.id}')
