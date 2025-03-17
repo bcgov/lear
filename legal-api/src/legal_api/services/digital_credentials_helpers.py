@@ -21,16 +21,17 @@ from legal_api.services.digital_credentials_rules import DigitalCredentialsRules
 from legal_api.services.digital_credentials_utils import business_party_role_mapping, user_party_role
 
 
-def get_digital_credential_data(user: User, business: Business,
+def get_digital_credential_data(business_user: DCBusinessUser,
                                 credential_type: DCDefinition.CredentialType,
                                 preconditions_met: Union[bool, None] = None) -> List[str]:
     """Get the data for a digital credential."""
     if credential_type == DCDefinition.CredentialType.business:
         rules = DigitalCredentialsRulesService()
 
-        issued_business_user_credential = get_or_create_issued_credential(
-            user, business)
-        credential_id = f'{issued_business_user_credential.id:08}'
+        business = business_user.business
+        user = business_user.user
+
+        credential_id = f'{business_user.id:08}'
         business_type = get_business_type(business)
         registered_on_dateint = get_registered_on_dateint(business)
         company_status = get_company_status(business)
@@ -84,15 +85,19 @@ def get_digital_credential_data(user: User, business: Business,
     return None
 
 
-def get_or_create_issued_credential(user: User, business: Business) -> DCBusinessUser:
-    """Get or create issued business user credential."""
-    issued_business_user_credential = DCBusinessUser.find_by(
+def get_or_create_business_user(user: User, business: Business) -> DCBusinessUser:
+    """
+    Get or create business user.
+
+    DEPRECATED: This function is deprecated and will be removed in future releases.
+    """
+    business_user = DCBusinessUser.find_by(
         business_id=business.id, user_id=user.id)
-    if not issued_business_user_credential:
-        issued_business_user_credential = DCBusinessUser(
+    if not business_user:
+        business_user = DCBusinessUser(
             business_id=business.id, user_id=user.id)
-        issued_business_user_credential.save()
-    return issued_business_user_credential
+        business_user.save()
+    return business_user
 
 
 def get_business_type(business: Business) -> str:

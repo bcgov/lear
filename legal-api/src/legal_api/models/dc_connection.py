@@ -46,7 +46,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     is_attested = db.Column('is_attested', db.Boolean, default=False)
     last_attested = db.Column('last_attested', db.DateTime, default=None)
 
-    # DEPRECATED: use business_user_id instead
+    # DEPRECATED: use business_user_id instead, remove when all references are removed
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'), nullable=False)
     business_user_id = db.Column('business_user_id', db.Integer,

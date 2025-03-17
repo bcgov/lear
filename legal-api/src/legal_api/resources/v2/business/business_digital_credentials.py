@@ -245,7 +245,7 @@ def send_credential(identifier, credential_type):
         'preconditionsMet', None) if json_input else None
 
     credential_data = get_digital_credential_data(
-        business_user.user, business_user.business, definition.credential_type, preconditions_met)
+        business_user, definition.credential_type, preconditions_met)
     credential_id = next(
         (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 

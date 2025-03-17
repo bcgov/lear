@@ -61,7 +61,7 @@ def issue_digital_credential(business_user: DCBusinessUser,
                 f'Active connection not found for business user with ID: {business_user.id}.')
 
         credential_data = get_digital_credential_data(
-            business_user.user, business_user.business, definition.credential_type)
+            business_user, definition.credential_type)
         credential_id = next(
             (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
