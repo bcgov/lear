@@ -11,7 +11,7 @@ python = "^3.12"
 Flask-SQLAlchemy = "^3.1.1"
 pycountry = "^24.6.1"
 datedelta = "^1.4"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.19"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.39"}
 
 
 [build-system]
