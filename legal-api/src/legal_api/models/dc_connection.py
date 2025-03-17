@@ -38,35 +38,33 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
 
     id = db.Column(db.Integer, primary_key=True)
     connection_id = db.Column('connection_id', db.String(100))
-    invitation_url = db.Column('invitation_url', db.String(4096))
-    is_active = db.Column('is_active', db.Boolean, default=False)
-
     # connection_state values we recieve in webhook, but we may not need all of it
     connection_state = db.Column('connection_state', db.String(50))
+    invitation_url = db.Column('invitation_url', db.String(4096))
+    
+    is_active = db.Column('is_active', db.Boolean, default=False)
+    is_attested = db.Column('is_attested', db.Boolean, default=False)
+    last_attested = db.Column('last_attested', db.DateTime, default=None)
 
     # DEPRECATED: use business_user_id instead
     business_id = db.Column('business_id', db.Integer,
-                            db.ForeignKey('businesses.id'))
-
+                            db.ForeignKey('businesses.id'), nullable=False)
     business_user_id = db.Column('business_user_id', db.Integer,
                                  db.ForeignKey('dc_business_users.id'), nullable=False)
-
-    is_attested = db.Column('is_attested', db.Boolean, default=False)
-    last_attested = db.Column('last_attested', db.DateTime, default=None)
 
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         dc_connection = {
             'id': self.id,
-            'businessId': self.business_id,  # DEPRECATED
-            'businessUserId': self.business_user_id,
             'connectionId': self.connection_id,
+            'connectionState': self.connection_state,
             'invitationUrl': self.invitation_url,
             'isActive': self.is_active,
-            'connectionState': self.connection_state,
             'isAttested': self.is_attested,
-            'lastAttested': self.last_attested
+            'lastAttested': self.last_attested,
+            'businessId': self.business_id,  # DEPRECATED
+            'businessUserId': self.business_user_id,
         }
         return dc_connection
 

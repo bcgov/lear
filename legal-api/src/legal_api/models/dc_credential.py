@@ -25,24 +25,23 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
     __tablename__ = 'dc_credentials'
 
     id = db.Column(db.Integer, primary_key=True)
-
-    definition_id = db.Column(
-        'definition_id', db.Integer, db.ForeignKey('dc_definitions.id'))
-    connection_id = db.Column(
-        'connection_id', db.Integer, db.ForeignKey('dc_connections.id'))
-
+    credential_id = db.Column('credential_id', db.String(10))
+    connection_id = db.Column('connection_id', db.Integer, db.ForeignKey(
+        'dc_connections.id'), nullable=False)
     credential_exchange_id = db.Column(
         'credential_exchange_id', db.String(100))
-    credential_id = db.Column('credential_id', db.String(10))
+    definition_id = db.Column('definition_id', db.Integer, db.ForeignKey(
+        'dc_definitions.id'), nullable=False)
+
     is_issued = db.Column('is_issued', db.Boolean, default=False)
     date_of_issue = db.Column('date_of_issue', db.DateTime(timezone=True))
-
     is_revoked = db.Column('is_revoked', db.Boolean, default=False)
     credential_revocation_id = db.Column(
         'credential_revocation_id', db.String(10))
     revocation_registry_id = db.Column(
         'revocation_registry_id', db.String(200))
 
+    # relationships
     definition = db.relationship(
         'DCDefinition', backref='credentials', foreign_keys=[definition_id])
 
@@ -51,10 +50,10 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return a dict of this object, with keys in JSON format."""
         dc_credential = {
             'id': self.id,
-            'definitionId': self.definition_id,
+            'credentialId': self.credential_id,
             'connectionId': self.connection_id,
             'credentialExchangeId': self.credential_exchange_id,
-            'credentialId': self.credential_id,
+            'definitionId': self.definition_id,
             'isIssued': self.is_issued,
             'dateOfIssue': self.date_of_issue.isoformat() if self.date_of_issue else None,
             'isRevoked': self.is_revoked,

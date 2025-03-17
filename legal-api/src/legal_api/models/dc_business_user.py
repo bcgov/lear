@@ -25,11 +25,12 @@ class DCBusinessUser(db.Model):  # pylint: disable=too-many-instance-attributes
     __tablename__ = 'dc_business_users'
 
     id = db.Column(db.Integer, primary_key=True)
-
     business_id = db.Column('business_id', db.Integer,
-                            db.ForeignKey('businesses.id'))
-    user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
+                            db.ForeignKey('businesses.id'), nullable=False)
+    user_id = db.Column('user_id', db.Integer,
+                        db.ForeignKey('users.id'), nullable=False)
 
+    # relationships
     business = db.relationship(
         'Business', backref='business_users', foreign_keys=[business_id])
     user = db.relationship(
