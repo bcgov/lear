@@ -19,7 +19,7 @@ from legal_api.models import Business, DCDefinition, DCRevocationReason
 from entity_digital_credentials.helpers import (
     get_issued_digital_credentials,
     replace_issued_digital_credential,
-    revoke_issued_digital_credential,
+    revoke_digital_credential,
 )
 
 
@@ -42,10 +42,8 @@ async def process(business: Business, filing_sub_type: str) -> None:
         return None
     elif filing_sub_type == 'administrative':
         reason = DCRevocationReason.ADMINISTRATIVE_DISSOLUTION
-        for issued_credential in issued_credentials:
-            revoke_issued_digital_credential(business=business,
-                                             issued_credential=issued_credential,
-                                             reason=reason)
+        for credential in issued_credentials:
+            revoke_digital_credential(credential=credential, reason=reason)
         return None
     else:
         raise Exception('Invalid filing sub type.')  # pylint: disable=broad-exception-raised

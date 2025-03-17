@@ -23,7 +23,7 @@ from entity_digital_credentials.helpers import (
     get_issued_digital_credentials,
     issue_digital_credential,
     replace_issued_digital_credential,
-    revoke_issued_digital_credential,
+    revoke_digital_credential,
 )
 from tests.unit import (
     create_business,
@@ -75,14 +75,13 @@ def test_issued_credential_not_issued_not_revoked(mock_revoke_credential, app, s
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
-    issued_credential = create_dc_credential(
+    credential = create_dc_credential(
         business_user=business_user, is_issued=False)
 
     # Act
     with pytest.raises(Exception) as excinfo:
-        revoke_issued_digital_credential(business=business_user.business,
-                                         issued_credential=issued_credential,
-                                         reason=DCRevocationReason.UPDATED_INFORMATION)
+        revoke_digital_credential(
+            credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
     # Assert
     assert 'Credential is not issued yet or is revoked already.' in str(
         excinfo)
@@ -96,61 +95,79 @@ def test_issued_credential_already_revoked_not_revoked(mock_revoke_credential, a
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
-    issued_credential = create_dc_credential(
+    credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=True)
 
     # Act
     with pytest.raises(Exception) as excinfo:
-        revoke_issued_digital_credential(business=business_user.business,
-                                         issued_credential=issued_credential,
-                                         reason=DCRevocationReason.UPDATED_INFORMATION)
+        revoke_digital_credential(
+            credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
     # Assert
     assert 'Credential is not issued yet or is revoked already.' in str(
         excinfo)
     mock_revoke_credential.assert_not_called()
 
 
-@patch('legal_api.models.DCConnection.find_active_by', return_value=None)
 @patch('legal_api.services.digital_credentials.revoke_credential')
-def test_issued_credential_no_active_connection_not_revoked(mock_revoke_credential, mock_find_active_by, app, session):
-    """Assert that the issued credential is not revoked if no active connection found."""
+def test_issued_credential_no_credential_connection_not_revoked(mock_revoke_credential, app, session):
+    """Assert that the issued credential is not revoked if no credential connection found."""
     # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
-    issued_credential = create_dc_credential(
+    credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=False)
 
     # Act
+    credential.connection = None
     with pytest.raises(Exception) as excinfo:
-        revoke_issued_digital_credential(business=business_user.business,
-                                         issued_credential=issued_credential,
-                                         reason=DCRevocationReason.UPDATED_INFORMATION)
+        revoke_digital_credential(
+            credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
     # Assert
-    assert f'{BUSINESS_IDENTIFIER} active connection not found.' in str(
+    assert f'Active connection not found for credential with ID: {credential.credential_id}.' in str(
+        excinfo)
+    mock_revoke_credential.assert_not_called()
+
+
+@patch('legal_api.services.digital_credentials.revoke_credential')
+def test_issued_credential_no_active_credential_connection_not_revoked(mock_revoke_credential, app, session):
+    """Assert that the issued credential is not revoked if credential connection is not active."""
+    # Arrange
+    business = create_business(identifier=BUSINESS_IDENTIFIER)
+    user = create_user()
+    business_user = create_dc_business_user(business=business, user=user)
+    credential = create_dc_credential(
+        business_user=business_user, is_issued=True, is_revoked=False)
+
+    # Act
+    credential.connection.is_active = False
+    with pytest.raises(Exception) as excinfo:
+        revoke_digital_credential(
+            credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
+    # Assert
+    assert f'Active connection not found for credential with ID: {credential.credential_id}.' in str(
         excinfo)
     mock_revoke_credential.assert_not_called()
 
 
 @patch('legal_api.services.digital_credentials.revoke_credential', return_value=None)
-def test_revoke_issued_digital_credential_helper_throws_exception(mock_revoke_credential, app, session):
+def test_revoke_digital_credential_helper_throws_exception(mock_revoke_credential, app, session):
     """Assert that the revoke issued credential helper throws an exception if the service fails."""
     # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
-    issued_credential = create_dc_credential(
+    credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=False)
 
     # Act
     with pytest.raises(Exception) as excinfo:
-        revoke_issued_digital_credential(business=business_user.business,
-                                         issued_credential=issued_credential,
-                                         reason=DCRevocationReason.UPDATED_INFORMATION)
+        revoke_digital_credential(
+            credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
 
     # Assert
     assert 'Failed to revoke credential.' in str(excinfo)
-    assert issued_credential.is_revoked is False
+    assert credential.is_revoked is False
 
 
 @patch('legal_api.services.digital_credentials.revoke_credential', return_value={})
@@ -160,24 +177,23 @@ def test_issued_credential_revoked(mock_revoke_credential, app, session):
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
-    issued_credential = create_dc_credential(
+    credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=False)
 
     # Act
-    revoke_issued_digital_credential(business=business_user.business,
-                                     issued_credential=issued_credential,
-                                     reason=DCRevocationReason.UPDATED_INFORMATION)
+    revoke_digital_credential(
+        credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
 
     # Assert
-    assert issued_credential.is_revoked is True
+    assert credential.is_revoked is True
 
 
 @patch('entity_digital_credentials.helpers.issue_digital_credential', return_value=None)
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
 @patch('legal_api.models.User.find_by_id', return_value=User(id=1))
 @patch('legal_api.models.DCBusinessUser.find_by_id', return_value=DCBusinessUser(id=1, user_id=1))
-@patch('entity_digital_credentials.helpers.revoke_issued_digital_credential')
-def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_credential,
+@patch('entity_digital_credentials.helpers.revoke_digital_credential')
+def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_digital_credential,
                                                         mock_find_business_user_by_id,
                                                         mock_find_user_by_id,
                                                         mock_fetch_credential_exchange_record,
@@ -199,15 +215,15 @@ def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_credential,
                                       reason=reason)
 
     # Assert
-    mock_revoke_credential.assert_called_once_with(
-        business, issued_credential, reason)
+    mock_revoke_digital_credential.assert_called_once_with(
+        issued_credential, reason)
 
 
 @patch('entity_digital_credentials.helpers.issue_digital_credential', return_value=None)
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
 @patch('legal_api.models.User.find_by_id', return_value=User(id=1))
 @patch('legal_api.models.DCBusinessUser.find_by_id', return_value=DCBusinessUser(id=1, user_id=1))
-@patch('entity_digital_credentials.helpers.revoke_issued_digital_credential')
+@patch('entity_digital_credentials.helpers.revoke_digital_credential')
 def test_issued_credential_revoked_is_not_revoked_first(mock_revoke_credential,
                                                         mock_find_buisness_user_by_id,
                                                         mock_find_user_by_id,
@@ -270,7 +286,9 @@ def test_replace_issued_digital_credential_throws_cred_ex_id_exception(mock_remo
 @patch('legal_api.services.digital_credentials.fetch_credential_exchange_record', return_value=None)
 @patch('legal_api.models.DCBusinessUser.find_by_id', return_value=None)
 def test_replace_issued_digital_credential_throws_business_user_not_found_exception(
-        mock_find_business_user_by_id, mock_fetch_credential_exchange_record, mock_issue_digital_credential,
+        mock_find_business_user_by_id,
+        mock_fetch_credential_exchange_record,
+        mock_issue_digital_credential,
         app, session):
     """
     Assert the digital credential credential service throws an exception.

@@ -17,7 +17,7 @@
 from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCRevocationReason
 
-from entity_digital_credentials.helpers import get_issued_digital_credentials, revoke_issued_digital_credential
+from entity_digital_credentials.helpers import get_issued_digital_credentials, revoke_digital_credential
 
 
 async def process(business: Business) -> None:
@@ -29,8 +29,7 @@ async def process(business: Business) -> None:
             'No issued credentials found for business: %s', business.identifier)
         return None
 
-    for issued_credential in issued_credentials:
-        revoke_issued_digital_credential(business=business,
-                                         issued_credential=issued_credential,
-                                         reason=DCRevocationReason.PUT_BACK_ON)
+    for credential in issued_credentials:
+        revoke_digital_credential(
+            credential=credential, reason=DCRevocationReason.PUT_BACK_ON)
     return None
