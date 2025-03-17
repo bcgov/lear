@@ -14,7 +14,7 @@
 """File processing rules and actions for the Change of Name filing."""
 from typing import Dict
 
-from entity_queue_common.service_utils import logger
+from flask import current_app
 from legal_api.models import Business
 
 from entity_filer.filing_meta import FilingMeta
@@ -22,7 +22,7 @@ from entity_filer.filing_meta import FilingMeta
 
 def process(business: Business, filing: Dict, filing_meta: FilingMeta):
     """Render the change of name into the business model objects."""
-    logger.debug('processing Change of Name: %s', filing)
+    current_app.logger.debug('processing Change of Name: %s', filing)
 
     if name_request_json := filing['changeOfName'].get('nameRequest'):
         new_name = name_request_json.get('legalName')
