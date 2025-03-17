@@ -23,21 +23,25 @@ from tests.unit.models import factory_business, factory_user
 from tests.unit.models.test_dc_business_user import create_dc_business_user
 
 
-def test_valid_dc_connection_save(session):
-    """Assert that a valid dc_connection can be saved."""
-    identifier = 'FM1234567'
+def setup_business_and_user(identifier='FM1234567'):
+    """Helper function to setup business and user."""
     business = factory_business(identifier)
     user = factory_user('test', 'Test', 'User')
-    connection = create_dc_connection(create_dc_business_user(business, user))
+    business_user = create_dc_business_user(business, user)
+    return business, user, business_user
+
+
+def test_valid_dc_connection_save(session):
+    """Assert that a valid dc_connection can be saved."""
+    business, user, business_user = setup_business_and_user()
+    connection = create_dc_connection(business_user)
     assert connection.id
 
 
 def test_find_by_id(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    connection = create_dc_connection(create_dc_business_user(business, user))
+    business, user, business_user = setup_business_and_user()
+    connection = create_dc_connection(business_user)
 
     res = DCConnection.find_by_id(connection.id)
 
@@ -47,10 +51,8 @@ def test_find_by_id(session):
 
 def test_find_dc_connection_by_connection_id(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    connection = create_dc_connection(create_dc_business_user(business, user))
+    business, user, business_user = setup_business_and_user()
+    connection = create_dc_connection(business_user)
 
     res = DCConnection.find_by_connection_id(connection.connection_id)
 
@@ -60,11 +62,8 @@ def test_find_dc_connection_by_connection_id(session):
 
 def test_find_active_by(session):
     """DEPRECATED: Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    create_dc_connection(create_dc_business_user(
-        business, user), is_active=True)
+    business, user, business_user = setup_business_and_user()
+    create_dc_connection(business_user, is_active=True)
 
     res = DCConnection.find_active_by(business.id)
 
@@ -74,10 +73,8 @@ def test_find_active_by(session):
 
 def test_find_by(session):
     """DEPRECATED: Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    connection = create_dc_connection(create_dc_business_user(business, user))
+    business, user, business_user = setup_business_and_user()
+    connection = create_dc_connection(business_user)
 
     res = DCConnection.find_by(
         business_id=business.id, connection_state=DCConnection.State.INVITATION_SENT.value)
@@ -88,10 +85,7 @@ def test_find_by(session):
 
 def test_find_active_by_business_user_id(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    business_user = create_dc_business_user(business, user)
+    business, user, business_user = setup_business_and_user()
     connection = create_dc_connection(business_user, is_active=True)
 
     res = DCConnection.find_active_by_business_user_id(business_user.id)
@@ -103,10 +97,7 @@ def test_find_active_by_business_user_id(session):
 
 def test_find_state_by_business_user_id(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    business_user = create_dc_business_user(business, user)
+    business, user, business_user = setup_business_and_user()
     connection = create_dc_connection(business_user)
 
     res = DCConnection.find_state_by_business_user_id(
@@ -118,10 +109,8 @@ def test_find_state_by_business_user_id(session):
 
 def test_find_by_filters(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    connection = create_dc_connection(create_dc_business_user(business, user))
+    business, user, business_user = setup_business_and_user()
+    connection = create_dc_connection(business_user)
 
     filters = [DCConnection.business_id == business.id,
                DCConnection.connection_state == DCConnection.State.INVITATION_SENT.value]

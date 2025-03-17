@@ -15,13 +15,22 @@
 """API endpoints for managing an Digital Credentials resource."""
 from datetime import datetime
 from http import HTTPStatus
+from typing import Tuple, Union
 
 import jwt as pyjwt
 from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.decorators import can_access_digital_credentials
-from legal_api.models import Business, DCBusinessUser, DCConnection, DCCredential, DCDefinition, DCRevocationReason, User
+from legal_api.models import (
+    Business,
+    DCBusinessUser,
+    DCConnection,
+    DCCredential,
+    DCDefinition,
+    DCRevocationReason,
+    User,
+)
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
@@ -36,20 +45,40 @@ bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__,
                   url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
 
 
+def get_business_user(identifier) -> Tuple[Union[DCBusinessUser, None], Union[dict, None], Union[HTTPStatus, None]]:
+    """Get the business, user, and business user if they exist and the user is authorized."""
+    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
+        return None, jsonify({'message': 'Unable to decode JWT'}), HTTPStatus.UNAUTHORIZED
+
+    if not (business := Business.find_by_identifier(identifier)):
+        return None, jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+
+    if not (user := User.find_by_jwt_token(token)):
+        return None, jsonify({'message': 'User not found'}), HTTPStatus.NOT_FOUND
+
+    if not (business_user := DCBusinessUser.find_by(business_id=business.id, user_id=user.id)):
+        return None, jsonify({'message': 'Business User not found'}), HTTPStatus.NOT_FOUND
+
+    return business_user, None, None
+
+
 @bp.route('/<string:identifier>/digitalCredentials/invitation', methods=['POST'], strict_slashes=False)
 @cross_origin(origin='*')
 @jwt.requires_auth
 @can_access_digital_credentials
 def create_invitation(identifier):
     """Create a new connection invitation."""
-    if not (business := Business.find_by_identifier(identifier)):
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+    business_user, error_response, error_status = get_business_user(identifier)
+    if error_response:
+        return error_response, error_status
 
-    if DCConnection.find_active_by(business_id=business.id):
-        return jsonify({'message': f'{identifier} already have an active connection.'}), HTTPStatus.UNPROCESSABLE_ENTITY
+    if DCConnection.find_active_by_business_user_id(business_user_id=business_user.id):
+        return jsonify(
+            {'message': f'User {business_user.user_id} from Business {identifier} already has an active connection.'}
+        ), HTTPStatus.UNPROCESSABLE_ENTITY
 
     if (connections := DCConnection.find_by_filters([
-        DCConnection.business_id == business.id,
+        DCConnection.business_id == business_user.business_id,
         DCConnection.connection_state == DCConnection.State.INVITATION_SENT.value,
     ])):
         connection = connections[0]
@@ -64,7 +93,7 @@ def create_invitation(identifier):
             invitation_url=response['invitation_url'],
             is_active=False,
             connection_state=DCConnection.State.INVITATION_SENT.value,
-            business_id=business.id
+            business_id=business_user.business_id
         )
         connection.save()
 
@@ -77,22 +106,14 @@ def create_invitation(identifier):
 @can_access_digital_credentials
 def get_connections(identifier):
     """
-    Get connections for this business
+    Get connections for this business.
 
     We currently only support one connection per business user.
     We still return a list of connections to be consistent with RESTful API naming conventions.
     """
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return jsonify({'message': 'Unable to decode JWT'}, HTTPStatus.UNAUTHORIZED)
-
-    if not (business := Business.find_by_identifier(identifier)):
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
-
-    if not (user := User.find_by_jwt_token(token)):
-        return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
-
-    if not (business_user := DCBusinessUser.find_by(business_id=business.id, user_id=user.id)):
-        return jsonify({'message': 'Business User not found'}, HTTPStatus.NOT_FOUND)
+    business_user, error_response, error_status = get_business_user(identifier)
+    if error_response:
+        return error_response, error_status
 
     if not (connection := DCConnection.find_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'connections': []}), HTTPStatus.OK
@@ -148,10 +169,11 @@ def delete_connection(identifier, connection_id):
 @can_access_digital_credentials
 def delete_active_connection(identifier):
     """Delete an active connection for this business."""
-    if not (business := Business.find_by_identifier(identifier)):
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+    business_user, error_response, error_status = get_business_user(identifier)
+    if error_response:
+        return error_response, error_status
 
-    if not (connection := DCConnection.find_active_by(business_id=business.id)):
+    if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
     if digital_credentials.remove_connection_record(connection_id=connection.connection_id) is None:
@@ -167,10 +189,11 @@ def delete_active_connection(identifier):
 @can_access_digital_credentials
 def get_issued_credentials(identifier):
     """Get all issued credentials."""
-    if not (business := Business.find_by_identifier(identifier)):
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+    business_user, error_response, error_status = get_business_user(identifier)
+    if error_response:
+        return error_response, error_status
 
-    if not (connection := DCConnection.find_active_by(business_id=business.id)):
+    if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
     if not (issued_credentials := DCCredential.find_by(connection_id=connection.id)):
@@ -180,7 +203,8 @@ def get_issued_credentials(identifier):
     for issued_credential in issued_credentials:
         definition = DCDefinition.find_by_id(issued_credential.definition_id)
         response.append({
-            'legalName': business.legal_name,
+            'legalName': business_user.business.legal_name,
+            'businessIdentifier': business_user.business.identifier,
             'credentialType': definition.credential_type.name,
             'credentialId': issued_credential.credential_id,
             'isIssued': issued_credential.is_issued,
@@ -196,16 +220,12 @@ def get_issued_credentials(identifier):
 @can_access_digital_credentials
 def send_credential(identifier, credential_type):
     """Issue credentials to the connection."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return jsonify({'message': 'Unable to decode JWT'}, HTTPStatus.UNAUTHORIZED)
+    business_user, error_response, error_status = get_business_user(identifier)
+    if error_response:
+        return error_response, error_status
 
-    if not (business := Business.find_by_identifier(identifier)):
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-
-    if not (user := User.find_by_jwt_token(token)):
-        return jsonify({'message': 'User not found'}, HTTPStatus.NOT_FOUND)
-
-    connection = DCConnection.find_active_by(business_id=business.id)
+    connection = DCConnection.find_active_by_business_user_id(
+        business_user_id=business_user.id)
     if not connection.last_attested:
         return jsonify({'message': 'Connection not attested.'}), HTTPStatus.UNAUTHORIZED
     elif not connection.is_attested:
@@ -225,7 +245,7 @@ def send_credential(identifier, credential_type):
         'preconditionsMet', None) if json_input else None
 
     credential_data = get_digital_credential_data(
-        user, business, definition.credential_type, preconditions_met)
+        business_user.user, business_user.business, definition.credential_type, preconditions_met)
     credential_id = next(
         (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
@@ -254,10 +274,11 @@ def send_credential(identifier, credential_type):
 @can_access_digital_credentials
 def revoke_credential(identifier, credential_id):
     """Revoke a credential."""
-    if not (business := Business.find_by_identifier(identifier)):
-        return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
+    business_user, error_response, error_status = get_business_user(identifier)
+    if error_response:
+        return error_response, error_status
 
-    if not (connection := DCConnection.find_active_by(business_id=business.id)):
+    if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
     issued_credential = DCCredential.find_by_credential_id(

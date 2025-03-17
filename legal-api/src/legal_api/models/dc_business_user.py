@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module holds data for issued credential."""
+"""This module holds data for digitial credentials business users."""
 from __future__ import annotations
 
 from typing import List
@@ -20,14 +20,20 @@ from .db import db
 
 
 class DCBusinessUser(db.Model):  # pylint: disable=too-many-instance-attributes
-    """This class manages the issued credential IDs for a user of a business."""
+    """This class manages the user of a business that has a digital credential."""
 
     __tablename__ = 'dc_business_users'
 
     id = db.Column(db.Integer, primary_key=True)
 
+    business_id = db.Column('business_id', db.Integer,
+                            db.ForeignKey('businesses.id'))
     user_id = db.Column('user_id', db.Integer, db.ForeignKey('users.id'))
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+
+    business = db.relationship(
+        'Business', backref='business_user', foreign_keys=[business_id])
+    user = db.relationship(
+        'User', backref='business_user', foreign_keys=[user_id])
 
     def save(self):
         """Save the object to the database immediately."""
@@ -35,23 +41,24 @@ class DCBusinessUser(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, dc_issued_business_user_id: str) -> DCBusinessUser:
-        """Return the issued business user credential matching the id."""
-        dc_issued_business_user = None
-        if dc_issued_business_user_id:
-            dc_issued_business_user = cls.query.filter_by(id=dc_issued_business_user_id).one_or_none()
-        return dc_issued_business_user
+    def find_by_id(cls, business_user_id: str) -> DCBusinessUser:
+        """Return the business user matching the id."""
+        business_user = None
+        if business_user_id:
+            business_user = cls.query.filter_by(
+                id=business_user_id).one_or_none()
+        return business_user
 
     @classmethod
     def find_by(cls,
                 business_id: int = None,
                 user_id: int = None) -> List[DCBusinessUser]:
-        """Return the issued business user credential matching the user_id and buisness_id."""
-        dc_issued_business_user_credential = None
+        """Return the business user matching the user_id and buisness_id."""
+        business_user = None
         if business_id and user_id:
-            dc_issued_business_user_credential = (
+            business_user = (
                 cls.query
                 .filter(DCBusinessUser.business_id == business_id)
                 .filter(DCBusinessUser.user_id == user_id)
                 .one_or_none())
-        return dc_issued_business_user_credential
+        return business_user

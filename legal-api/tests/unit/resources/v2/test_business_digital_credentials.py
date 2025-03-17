@@ -22,6 +22,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import jwt as pyjwt
+import pytest
 from legal_api.services.authz import BASIC_USER
 from legal_api.models import Business, DCConnection, DCDefinition, User
 from legal_api.services.digital_credentials import DigitalCredentialsService
@@ -50,7 +51,8 @@ def test_create_invitation(app, session, client, jwt):  # pylint:disable=unused-
     """Assert create invitation endpoint returns invitation_url."""
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    factory_business(identifier)
+    create_dc_business_user(factory_business(identifier),
+                            User.create_from_jwt_token(decode_auth_header_token(headers)))
     invitation_id = '0d94e18b-3a52-4122-8adf-33e2ccff681f'
     invitation_url = """http://192.168.65.3:8020?c_i=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb
 25zLzEuMC9pbnZpdGF0aW9uIiwgIkBpZCI6ICIyZjU1M2JkZS01YWJlLTRkZDctODIwZi1mNWQ2Mjc1OWQxODgi
@@ -151,8 +153,8 @@ def test_send_credential(app, session, client, jwt):  # pylint:disable=unused-ar
     json_data = {}
 
     with patch.object(DCDefinition, 'find_by', return_value=definition):
-        with patch.object(DCConnection, 'find_active_by', return_value=DCConnection(is_attested=True,
-                                                                                    last_attested=datetime.utcnow())):
+        with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=True,
+                                                                                                     last_attested=datetime.utcnow())):
             with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
                 rv = client.post(
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
@@ -173,8 +175,8 @@ def test_send_credential_attestation_not_complete_fail(app, session, client, jwt
     cred_ex_id = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
 
     with patch.object(DCDefinition, 'find_by', return_value=definition):
-        with patch.object(DCConnection, 'find_active_by', return_value=DCConnection(is_attested=False,
-                                                                                    last_attested=None)):
+        with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=False,
+                                                                                                     last_attested=None)):
             with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
                 rv = client.post(
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
@@ -196,8 +198,8 @@ def test_send_credential_attestation_fail(app, session, client, jwt):  # pylint:
     cred_ex_id = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
 
     with patch.object(DCDefinition, 'find_by', return_value=definition):
-        with patch.object(DCConnection, 'find_active_by', return_value=DCConnection(is_attested=False,
-                                                                                    last_attested=datetime.utcnow())):
+        with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=False,
+                                                                                                     last_attested=datetime.utcnow())):
             with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
                 rv = client.post(
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
@@ -213,7 +215,8 @@ def test_get_issued_credentials(app, session, client, jwt):  # pylint:disable=un
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
     business = factory_business(identifier)
-    issued_credential = create_dc_credential(business=business)
+    user = User.create_from_jwt_token(decode_auth_header_token(headers))
+    issued_credential = create_dc_credential(business=business, user=user)
 
     rv = client.get(
         f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
@@ -264,7 +267,8 @@ def test_webhook_issue_credential_notification(app, session, client, jwt):  # py
     headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
     business = factory_business(identifier)
-    issued_credential = create_dc_credential(business=business)
+    user = User.create_from_jwt_token(decode_auth_header_token(headers))
+    issued_credential = create_dc_credential(business=business, user=user)
 
     json_data = {
         'cred_ex_id': issued_credential.credential_exchange_id,

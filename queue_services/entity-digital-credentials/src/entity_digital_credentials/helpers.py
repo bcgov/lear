@@ -29,7 +29,11 @@ from legal_api.services.digital_credentials_helpers import get_digital_credentia
 
 
 def get_issued_digital_credentials(business: Business) -> Union[List[DCCredential], None]:
-    """Get issued digital credentials for a business."""
+    """
+    Get issued digital credentials for a business.
+    
+    DEPRECATED: This function is deprecated and will be removed in future releases.
+    """
     try:
         # pylint: disable=superfluous-parens
         if not (connection := DCConnection.find_active_by(business_id=business.id)):

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This module holds data for issued credential."""
+"""This module holds data for digital credentials."""
 from __future__ import annotations
 
 from typing import List
@@ -20,7 +20,7 @@ from .db import db
 
 
 class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
-    """This class manages the issued credential."""
+    """This class manages the digital credential."""
 
     __tablename__ = 'dc_credentials'
 
@@ -72,7 +72,7 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def find_by_id(cls, dc_credential_id: str) -> DCCredential:
-        """Return the issued credential matching the id."""
+        """Return the digital credential matching the id."""
         dc_credential = None
         if dc_credential_id:
             dc_credential = cls.query.filter_by(
@@ -81,7 +81,7 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def find_by_credential_exchange_id(cls, credential_exchange_id: str) -> DCCredential:
-        """Return the issued credential matching the credential exchange id."""
+        """Return the digital credential matching the credential exchange id."""
         dc_credential = None
         if credential_exchange_id:
             dc_credential = cls.query. \
@@ -91,7 +91,7 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def find_by_credential_id(cls, credential_id: str) -> DCCredential:
-        """Return the issued credential matching the credential id."""
+        """Return the digital credential matching the credential id."""
         dc_credential = None
         if credential_id:
             dc_credential = cls.query. \
@@ -103,7 +103,7 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
     def find_by(cls,
                 definition_id: int = None,
                 connection_id: int = None) -> List[DCCredential]:
-        """Return the issued credential matching the filter."""
+        """Return the digital credential matching the filter."""
         query = db.session.query(DCCredential)
 
         if definition_id:
