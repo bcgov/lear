@@ -26,8 +26,8 @@ from tests.unit import create_business
 @patch('entity_digital_credentials.digital_credentials_processors.business_number.get_issued_digital_credentials',
        return_value=[])
 @patch('entity_digital_credentials.digital_credentials_processors.business_number.logger')
-@patch('entity_digital_credentials.digital_credentials_processors.business_number.replace_issued_digital_credential')
-async def test_processor_does_not_run_if_no_issued_credential(mock_replace_issued_digital_credential,
+@patch('entity_digital_credentials.digital_credentials_processors.business_number.replace_digital_credential')
+async def test_processor_does_not_run_if_no_issued_credential(mock_replace_digital_credential,
                                                               mock_logger,
                                                               mock_get_issued_digital_credentials,
                                                               app, session):
@@ -39,16 +39,18 @@ async def test_processor_does_not_run_if_no_issued_credential(mock_replace_issue
     await process(business)
 
     # Assert
-    mock_get_issued_digital_credentials.assert_called_once_with(business=business)
-    mock_logger.warning.assert_called_once_with('No issued credentials found for business: %s', 'FM0000001')
-    mock_replace_issued_digital_credential.assert_not_called()
+    mock_get_issued_digital_credentials.assert_called_once_with(
+        business=business)
+    mock_logger.warning.assert_called_once_with(
+        'No issued credentials found for business: %s', 'FM0000001')
+    mock_replace_digital_credential.assert_not_called()
 
 
 @pytest.mark.asyncio
 @patch('entity_digital_credentials.digital_credentials_processors.business_number.get_issued_digital_credentials',
        return_value=[{'id': 1}])
-@patch('entity_digital_credentials.digital_credentials_processors.business_number.replace_issued_digital_credential')
-async def test_processor_replaces_issued_credential(mock_replace_issued_digital_credential,
+@patch('entity_digital_credentials.digital_credentials_processors.business_number.replace_digital_credential')
+async def test_processor_replaces_issued_credential(mock_replace_digital_credential,
                                                     mock_get_issued_digital_credentials,
                                                     app, session):
     """Assert that the processor replaces the issued credential if it exists."""
@@ -59,9 +61,9 @@ async def test_processor_replaces_issued_credential(mock_replace_issued_digital_
     await process(business)
 
     # Assert
-    mock_get_issued_digital_credentials.assert_called_once_with(business=business)
-    mock_replace_issued_digital_credential.assert_called_once_with(
-        business=business,
-        issued_credential={'id': 1},
+    mock_get_issued_digital_credentials.assert_called_once_with(
+        business=business)
+    mock_replace_digital_credential.assert_called_once_with(
+        credential={'id': 1},
         credential_type=DCDefinition.CredentialType.business.name,
         reason=DCRevocationReason.UPDATED_INFORMATION)

@@ -26,10 +26,10 @@ from tests.unit import create_business
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.get_issued_digital_credentials',
        return_value=[])
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.logger')
-@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_issued_digital_credential')
+@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_digital_credential')
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.revoke_digital_credential')
 async def test_processor_does_not_run_if_no_issued_credential(mock_revoke_digital_credential,
-                                                              mock_replace_issued_digital_credential,
+                                                              mock_replace_digital_credential,
                                                               mock_logger,
                                                               mock_get_issued_digital_credentials,
                                                               app, session):
@@ -45,17 +45,17 @@ async def test_processor_does_not_run_if_no_issued_credential(mock_revoke_digita
         business=business)
     mock_logger.warning.assert_called_once_with(
         'No issued credentials found for business: %s', 'FM0000001')
-    mock_replace_issued_digital_credential.assert_not_called()
+    mock_replace_digital_credential.assert_not_called()
     mock_revoke_digital_credential.assert_not_called()
 
 
 @pytest.mark.asyncio
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.get_issued_digital_credentials',
        return_value=[{'id': 1}])
-@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_issued_digital_credential')
+@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_digital_credential')
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.revoke_digital_credential')
 async def test_processor_does_not_run_if_invalid_sub_type(mock_revoke_digital_credential,
-                                                          mock_replace_issued_digital_credential,
+                                                          mock_replace_digital_credential,
                                                           mock_get_issued_digital_credentials,
                                                           app, session):
     """Assert that the processor does not run if an invalid sub type provided."""
@@ -69,7 +69,7 @@ async def test_processor_does_not_run_if_invalid_sub_type(mock_revoke_digital_cr
     # Assert
     mock_get_issued_digital_credentials.assert_called_once_with(
         business=business)
-    mock_replace_issued_digital_credential.assert_not_called()
+    mock_replace_digital_credential.assert_not_called()
     mock_revoke_digital_credential.assert_not_called()
     assert 'Invalid filing sub type.' in str(excinfo)
 
@@ -77,10 +77,10 @@ async def test_processor_does_not_run_if_invalid_sub_type(mock_revoke_digital_cr
 @pytest.mark.asyncio
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.get_issued_digital_credentials',
        return_value=[{'id': 1}])
-@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_issued_digital_credential')
+@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_digital_credential')
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.revoke_digital_credential')
 async def test_processor_replaces_issued_credential(mock_revoke_digital_credential,
-                                                    mock_replace_issued_digital_credential,
+                                                    mock_replace_digital_credential,
                                                     mock_get_issued_digital_credentials,
                                                     app, session):
     """Assert that the processor replaces the issued credential if it exists."""
@@ -93,9 +93,8 @@ async def test_processor_replaces_issued_credential(mock_revoke_digital_credenti
     # Assert
     mock_get_issued_digital_credentials.assert_called_once_with(
         business=business)
-    mock_replace_issued_digital_credential.assert_called_once_with(
-        business=business,
-        issued_credential={'id': 1},
+    mock_replace_digital_credential.assert_called_once_with(
+        credential={'id': 1},
         credential_type=DCDefinition.CredentialType.business.name,
         reason=DCRevocationReason.VOLUNTARY_DISSOLUTION)
     mock_revoke_digital_credential.assert_not_called()
@@ -104,10 +103,10 @@ async def test_processor_replaces_issued_credential(mock_revoke_digital_credenti
 @pytest.mark.asyncio
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.get_issued_digital_credentials',
        return_value=[{'id': 1}])
-@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_issued_digital_credential')
+@patch('entity_digital_credentials.digital_credentials_processors.dissolution.replace_digital_credential')
 @patch('entity_digital_credentials.digital_credentials_processors.dissolution.revoke_digital_credential')
 async def test_processor_revokes_issued_credential(mock_revoke_digital_credential,
-                                                   mock_replace_issued_digital_credential,
+                                                   mock_replace_digital_credential,
                                                    mock_get_issued_digital_credentials,
                                                    app, session):
     """Assert that the processor revokes the issued credential if it exists."""
@@ -121,5 +120,6 @@ async def test_processor_revokes_issued_credential(mock_revoke_digital_credentia
     mock_get_issued_digital_credentials.assert_called_once_with(
         business=business)
     mock_revoke_digital_credential.assert_called_once_with(
-        issued_credential={'id': 1}, reason=DCRevocationReason.ADMINISTRATIVE_DISSOLUTION)
-    mock_replace_issued_digital_credential.assert_not_called()
+        credential={'id': 1},
+        reason=DCRevocationReason.ADMINISTRATIVE_DISSOLUTION)
+    mock_replace_digital_credential.assert_not_called()

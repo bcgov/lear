@@ -16,7 +16,7 @@
 from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCDefinition, DCRevocationReason, Filing
 
-from entity_digital_credentials.helpers import get_issued_digital_credentials, replace_issued_digital_credential
+from entity_digital_credentials.helpers import get_issued_digital_credentials, replace_digital_credential
 
 
 async def process(business: Business, filing: Filing) -> None:
@@ -29,9 +29,8 @@ async def process(business: Business, filing: Filing) -> None:
                 'No issued credentials found for business: %s', business.identifier)
             return None
 
-        for issued_credential in issued_credentials:
-            replace_issued_digital_credential(business=business,
-                                              issued_credential=issued_credential,
-                                              credential_type=DCDefinition.CredentialType.business.name,
-                                              reason=DCRevocationReason.UPDATED_INFORMATION)
+        for credential in issued_credentials:
+            replace_digital_credential(credential=credential,
+                                       credential_type=DCDefinition.CredentialType.business.name,
+                                       reason=DCRevocationReason.UPDATED_INFORMATION)
     return None

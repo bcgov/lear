@@ -22,7 +22,6 @@ from legal_api.models import (
     DCCredential,
     DCDefinition,
     DCRevocationReason,
-    User,
 )
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data
@@ -80,8 +79,7 @@ def issue_digital_credential(business_user: DCBusinessUser,
                                                                  definition=definition,
                                                                  data=credential_data)):
             # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Failed to issue credential.')
+            raise Exception('Failed to issue credential.')
 
         issued_credential = DCCredential(
             definition_id=definition.id,
@@ -117,8 +115,7 @@ def revoke_digital_credential(credential: DCCredential,
                                                              credential.revocation_registry_id,
                                                              reason) is None):
             # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Failed to revoke credential.')
+            raise Exception('Failed to revoke credential.')
 
         credential.is_revoked = True
         credential.save()
@@ -130,41 +127,22 @@ def revoke_digital_credential(credential: DCCredential,
 
 
 # pylint: disable=too-many-arguments
-def replace_issued_digital_credential(business: Business,
-                                      issued_credential: DCCredential,
-                                      credential_type: DCDefinition.CredentialType,
-                                      reason: DCRevocationReason) -> Union[DCCredential, None]:
-    """
-    Replace an issued digital credential for a business.
-
-    DEPRECATED: This function is deprecated and will be removed in future releases.
-    """
+def replace_digital_credential(credential: DCCredential,
+                               credential_type: DCDefinition.CredentialType,
+                               reason: DCRevocationReason) -> Union[DCCredential, None]:
+    """Replace an issued digital credential for a business."""
     try:
-        if issued_credential.is_issued and not issued_credential.is_revoked:
-            revoke_digital_credential(issued_credential, reason)
+        if credential.is_issued and not credential.is_revoked:
+            revoke_digital_credential(credential, reason)
 
-        if (digital_credentials.fetch_credential_exchange_record(
-                issued_credential.credential_exchange_id) is not None and
-                digital_credentials.remove_credential_exchange_record(
-                    issued_credential.credential_exchange_id) is None):
+        if (digital_credentials.fetch_credential_exchange_record(credential.credential_exchange_id) is not None
+                and digital_credentials.remove_credential_exchange_record(credential.credential_exchange_id) is None):
             # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Failed to remove credential exchange record.')
+            raise Exception('Failed to remove credential exchange record.')
 
-        if not (business_user := DCBusinessUser.find_by_id(
-                business_user_id=issued_credential.connection.business_user_id)):
-            # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Unable to find business user for issued credential.')
+        credential.delete()
 
-        if not (user := User.find_by_id(business_user.user_id)):  # pylint: disable=superfluous-parens
-            # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Unable to find user for issued business user credential.')
-
-        issued_credential.delete()
-
-        return issue_digital_credential(business, user, credential_type)  # pylint: disable=too-many-function-args
+        return issue_digital_credential(credential.connection.business_user, credential_type)  # pylint: disable=too-many-function-args
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err
