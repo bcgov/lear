@@ -1025,6 +1025,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing.submit_filing_to_awaiting_review(submission_date)
 
         if flags.is_on('enable-sandbox'):
+            # sandbox continuation in application auto approval
+            if filing.filing_type == 'continuationIn' and filing.status == Filing.Status.AWAITING_REVIEW.value:
+                ListFilingResource._sandbox_auto_approval_continuation_in(filing)
             current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
             return
 
@@ -1033,3 +1036,17 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             current_app.config.get('NATS_EMAILER_SUBJECT')
         )
+
+    @staticmethod
+    def _sandbox_auto_approval_continuation_in(filing: Filing) -> None:
+        """Auto-approve continuation in filings in sandbox mode."""
+        current_app.logger.info(f'Auto-approving {filing.filing_type} filing, id: {filing.id} in sandbox environment')
+        review = Review.get_review(filing.id)
+        review.status = ReviewStatus.APPROVED
+        review_result = ReviewResult()
+        review_result.status = ReviewStatus.APPROVED
+        review_result.comments = 'Auto-approved in sandbox environment'
+        review_result.review_id = review.id
+        review.review_results.append(review_result)
+        review.save()
+        filing.set_review_decision(Filing.Status.APPROVED.value)
