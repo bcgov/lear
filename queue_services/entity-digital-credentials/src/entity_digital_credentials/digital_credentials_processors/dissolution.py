@@ -48,5 +48,4 @@ async def process(business: Business, filing_sub_type: str) -> None:
                                              reason=reason)
         return None
     else:
-        raise Exception(
-            'Invalid filing sub type.')  # pylint: disable=broad-exception-raised
+        raise Exception('Invalid filing sub type.')  # pylint: disable=broad-exception-raised

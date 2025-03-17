@@ -17,10 +17,10 @@ from typing import List, Union
 
 from legal_api.models import (
     Business,
-    DCConnection,
-    DCDefinition,
     DCBusinessUser,
+    DCConnection,
     DCCredential,
+    DCDefinition,
     DCRevocationReason,
     User,
 )
@@ -31,7 +31,7 @@ from legal_api.services.digital_credentials_helpers import get_digital_credentia
 def get_issued_digital_credentials(business: Business) -> Union[List[DCCredential], None]:
     """
     Get issued digital credentials for a business.
-    
+
     DEPRECATED: This function is deprecated and will be removed in future releases.
     """
     try:
@@ -51,11 +51,17 @@ def get_issued_digital_credentials(business: Business) -> Union[List[DCCredentia
         raise err
 
 
-def issue_digital_credential(business: Business,
-                             user: User,
+def issue_digital_credential(business_user: DCBusinessUser,
                              credential_type: DCDefinition.CredentialType) -> Union[DCCredential, None]:
-    """Issue a digital credential for a business to a user."""
+    """
+    Issue a digital credential for a business to a user.
+
+    DEPRECATED: This function is deprecated and will be removed in future releases.
+    """
     try:
+        business = business_user.business
+        user = business_user.user
+
         if not (definition := DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
                                                    digital_credentials.business_schema_id,
                                                    digital_credentials.business_cred_def_id)):
@@ -98,7 +104,11 @@ def issue_digital_credential(business: Business,
 def revoke_issued_digital_credential(business: Business,
                                      issued_credential: DCCredential,
                                      reason: DCRevocationReason) -> Union[dict, None]:
-    """Revoke an issued digital credential for a business."""
+    """
+    Revoke an issued digital credential for a business.
+
+    DEPRECATED: This function is deprecated and will be removed in future releases.
+    """
     try:
         if not issued_credential.is_issued or issued_credential.is_revoked:
             # pylint: disable=broad-exception-raised
@@ -133,7 +143,11 @@ def replace_issued_digital_credential(business: Business,
                                       issued_credential: DCCredential,
                                       credential_type: DCDefinition.CredentialType,
                                       reason: DCRevocationReason) -> Union[DCCredential, None]:
-    """Replace an issued digital credential for a business."""
+    """
+    Replace an issued digital credential for a business.
+
+    DEPRECATED: This function is deprecated and will be removed in future releases.
+    """
     try:
         if issued_credential.is_issued and not issued_credential.is_revoked:
             revoke_issued_digital_credential(
@@ -147,20 +161,20 @@ def replace_issued_digital_credential(business: Business,
             raise Exception(
                 'Failed to remove credential exchange record.')
 
-        if not (issued_business_user_credential := DCBusinessUser.find_by_id(
-                dc_issued_business_user_id=issued_credential.credential_id)):
+        if not (business_user := DCBusinessUser.find_by_id(
+                business_user_id=issued_credential.connection.business_user_id)):
             # pylint: disable=broad-exception-raised
             raise Exception(
                 'Unable to find business user for issued credential.')
 
-        if not (user := User.find_by_id(issued_business_user_credential.user_id)):  # pylint: disable=superfluous-parens
+        if not (user := User.find_by_id(business_user.user_id)):  # pylint: disable=superfluous-parens
             # pylint: disable=broad-exception-raised
             raise Exception(
                 'Unable to find user for issued business user credential.')
 
         issued_credential.delete()
 
-        return issue_digital_credential(business, user, credential_type)
+        return issue_digital_credential(business, user, credential_type)  # pylint: disable=too-many-function-args
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err
