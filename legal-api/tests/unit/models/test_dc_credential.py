@@ -50,11 +50,32 @@ def test_find_by_credential_exchange_id(session):
     assert res.id == issued_credential.id
 
 
-def test_find_by(session):
+def test_find_by_connection_id(session):
     """Assert that the method returns correct value."""
+    issued_credential = create_dc_credential()
+    res = DCCredential.find_by_connection_id(issued_credential.connection_id)
+
+    assert res
+    assert res.id == issued_credential.id
+
+
+def test_find_by(session):
+    """DEPRECATED: Assert that the method returns correct value."""
     issued_credential = create_dc_credential()
     res = DCCredential.find_by(connection_id=issued_credential.connection_id,
                                definition_id=issued_credential.definition_id)
+
+    assert len(res) == 1
+    assert res[0].id == issued_credential.id
+
+
+def test_find_by_filters(session):
+    """Assert that the method returns correct value."""
+    issued_credential = create_dc_credential()
+    res = DCCredential.find_by_filters([
+        DCCredential.connection_id == issued_credential.connection_id,
+        DCCredential.definition_id == issued_credential.definition_id,
+    ])
 
     assert len(res) == 1
     assert res[0].id == issued_credential.id

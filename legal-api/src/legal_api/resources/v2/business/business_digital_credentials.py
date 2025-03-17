@@ -196,21 +196,19 @@ def get_issued_credentials(identifier):
     if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
-    if not (issued_credentials := DCCredential.find_by(connection_id=connection.id)):
+    if not (issued_credential := DCCredential.find_by_connection_id(connection_id=connection.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
     response = []
-    for issued_credential in issued_credentials:
-        definition = DCDefinition.find_by_id(issued_credential.definition_id)
-        response.append({
-            'legalName': business_user.business.legal_name,
-            'businessIdentifier': business_user.business.identifier,
-            'credentialType': definition.credential_type.name,
-            'credentialId': issued_credential.credential_id,
-            'isIssued': issued_credential.is_issued,
-            'dateOfIssue': issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else '',
-            'isRevoked': issued_credential.is_revoked
-        })
+    response.append({
+        'legalName': business_user.business.legal_name,
+        'businessIdentifier': business_user.business.identifier,
+        'credentialType': issued_credential.definition.credential_type.name,
+        'credentialId': issued_credential.credential_id,
+        'isIssued': issued_credential.is_issued,
+        'dateOfIssue': issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else '',
+        'isRevoked': issued_credential.is_revoked
+    })
     return jsonify({'issuedCredentials': response}), HTTPStatus.OK
 
 
@@ -235,8 +233,10 @@ def send_credential(identifier, credential_type):
                                       digital_credentials.business_schema_id,
                                       digital_credentials.business_cred_def_id)
 
-    issued_credentials = DCCredential.find_by(
-        connection_id=connection.id, definition_id=definition.id)
+    issued_credentials = DCCredential.find_by_filters([
+        DCCredential.connection_id == connection.id,
+        DCCredential.definition_id == definition.id
+    ])
     if issued_credentials and issued_credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 

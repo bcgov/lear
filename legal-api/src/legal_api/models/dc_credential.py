@@ -14,7 +14,7 @@
 """This module holds data for digital credentials."""
 from __future__ import annotations
 
-from typing import List
+from typing import Any, List
 
 from .db import db
 
@@ -42,6 +42,9 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         'credential_revocation_id', db.String(10))
     revocation_registry_id = db.Column(
         'revocation_registry_id', db.String(200))
+
+    definition = db.relationship(
+        'DCDefinition', backref='credentials', foreign_keys=[definition_id])
 
     @property
     def json(self):
@@ -71,12 +74,12 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @classmethod
-    def find_by_id(cls, dc_credential_id: str) -> DCCredential:
+    def find_by_id(cls, credential_id: str) -> DCCredential:
         """Return the digital credential matching the id."""
         dc_credential = None
-        if dc_credential_id:
+        if credential_id:
             dc_credential = cls.query.filter_by(
-                id=dc_credential_id).one_or_none()
+                id=credential_id).one_or_none()
         return dc_credential
 
     @classmethod
@@ -100,10 +103,24 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         return dc_credential
 
     @classmethod
+    def find_by_connection_id(cls, connection_id: str) -> DCCredential:
+        """Return the digital credential matching the connection id."""
+        dc_credential = None
+        if connection_id:
+            dc_credential = cls.query. \
+                filter(DCCredential.connection_id ==
+                       connection_id).one_or_none()
+        return dc_credential
+
+    @classmethod
     def find_by(cls,
                 definition_id: int = None,
                 connection_id: int = None) -> List[DCCredential]:
-        """Return the digital credential matching the filter."""
+        """
+        Return the digital credential matching the filter.
+
+        DEPRECATED: use find_by_filters instead.
+        """
         query = db.session.query(DCCredential)
 
         if definition_id:
@@ -111,5 +128,16 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
 
         if connection_id:
             query = query.filter(DCCredential.connection_id == connection_id)
+
+        return query.all()
+
+    @classmethod
+    def find_by_filters(cls, filters: List[Any] = None) -> List[DCCredential]:
+        """Return the digital credential matching any provided filter."""
+        query = db.session.query(DCCredential)
+
+        if filters:
+            for query_filter in filters:
+                query = query.filter(query_filter)
 
         return query.all()

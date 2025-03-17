@@ -48,8 +48,8 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
 
-    business_user_id = db.Column(
-        'business_user_id', db.Integer, db.ForeignKey('dc_business_users.id'))
+    business_user_id = db.Column('business_user_id', db.Integer,
+                                 db.ForeignKey('dc_business_users.id'), nullable=False)
 
     is_attested = db.Column('is_attested', db.Boolean, default=False)
     last_attested = db.Column('last_attested', db.DateTime, default=None)
