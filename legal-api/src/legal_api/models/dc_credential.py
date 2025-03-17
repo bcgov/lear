@@ -42,6 +42,8 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         'revocation_registry_id', db.String(200))
 
     # relationships
+    connection = db.relationship(
+        'DCConnection', backref='credentials', foreign_keys=[connection_id])
     definition = db.relationship(
         'DCDefinition', backref='credentials', foreign_keys=[definition_id])
 
