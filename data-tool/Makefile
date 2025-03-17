@@ -105,6 +105,10 @@ run-tombstone-migration: ## Run corp tombstone migration flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/corps_tombstone_flow.py
 
+run-tombstone-verify: ## Run corp tombstone verify flow
+	. $(VENV_DIR)/bin/activate && \
+	python flows/corps_verify_flow.py
+
 
 #################################################################################
 # Self Documenting Commands                                                     #
