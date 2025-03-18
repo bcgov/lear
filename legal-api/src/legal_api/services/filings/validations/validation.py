@@ -200,7 +200,7 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
                     err = appoint_receiver_validate(filing_json)  # pylint: disable=assignment-from-none
 
                 elif k == Filing.FILINGS['ceaseReceiver'].get('name'):
-                    err = cease_receiver_validate(filing_json)  # pylint: disable=assignment-from-none
+                    err = cease_receiver_validate(business, filing_json)  # pylint: disable=assignment-from-none
 
                 if err:
                     return err

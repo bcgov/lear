@@ -32,12 +32,33 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Cease Receiver filing."""
-from typing import Optional
+from http import HTTPStatus
+from typing import Dict, Optional
+
+import babel
 
 from legal_api.errors import Error
+from legal_api.models import Business
 
 
-def validate(_: dict) -> Optional[Error]:
+def validate(business: Business, cease_receiver: Dict) -> Optional[Error]:
     """Validate the Cease Receiver filing."""
-    # NOTE: There isn't anything to validate outside what is already validated via the schema yet
+    if not business or not cease_receiver:
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+    msg = []
+    msg.append(validate_party(cease_receiver))
+
+    if msg:
+        return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+
+def validate_party(filing: Dict) -> list:
+    """Validate party."""
+    msg = []
+    parties = filing['filing']['ceaseReceiver']['parties']
+
+    if len(parties) == 0:
+        msg.append({'error': 'Must have an Receiver.', 'path': '/filing/ceaseReceiver/parties'})
+
+    return msg
