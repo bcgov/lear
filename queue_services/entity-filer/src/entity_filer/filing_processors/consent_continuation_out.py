@@ -33,7 +33,7 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
 
     foreign_jurisdiction = filing['consentContinuationOut']['foreignJurisdiction']
     consent_continuation_out = ConsentContinuationOut()
-
+    consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
     country = foreign_jurisdiction.get('country').upper()
     consent_continuation_out.foreign_jurisdiction = country
 
@@ -48,11 +48,11 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     consent_continuation_out.business_id = business.id
     business.consent_continuation_outs.append(consent_continuation_out)
 
-    filing_meta.consent_continuation_out = {}
-    filing_meta.consent_continuation_out = {**filing_meta.consent_continuation_out,
-                                            **{'country': country,
-                                               'region': region,
-                                               'expiry': expiry_date.isoformat()}}
+    filing_meta.consent_continuation_out = {
+        'country': country,
+        'region': region,
+        'expiry': expiry_date.isoformat()
+    }
 
 
 def get_expiry_date(filing: Filing):
