@@ -168,7 +168,7 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
 
     consent_amalgamation_out.filing_id = previous_filing.id
     consent_amalgamation_out.business_id = business.id
-    business.consent_amalgamation_outs.append(consent_amalgamation_out)
+    business.consent_continuation_outs.append(consent_amalgamation_out)
     business.save()
 
     err = validate(business, filing)
