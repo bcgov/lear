@@ -28,10 +28,10 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql import and_, exists, func, not_, text
 
-from business_model.exceptions import BusinessException
-from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime, timezone
-from business_model.utils.legislation_datetime import LegislationDatetime
+from business_common.exceptions import BusinessException
+from business_common.utils.base import BaseEnum
+from business_common.utils.datetime import datetime, timezone
+from business_common.utils.legislation_datetime import LegislationDatetime
 
 # from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 # from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import

@@ -22,8 +22,8 @@ from enum import auto
 from flask import current_app
 from sql_versioning import Versioned
 
-from business_model.exceptions import BusinessException
-from business_model.utils.base import BaseEnum
+from business_common.exceptions import BusinessException
+from business_common.utils.base import BaseEnum
 
 from .db import db
 

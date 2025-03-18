@@ -1,30 +1,23 @@
 [tool.poetry]
-name = "business-registry-model"
+name = "business-registry-common"
 version = "0.1.0"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"
-packages = [{include = "business_model", from = "src"}]
+packages = [{include = "business_common", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.13"
-Flask-SQLAlchemy = "^3.1.1"
 pycountry = "^24.6.1"
 datedelta = "^1.4"
 pytz = "^2025.1"
-python-dotenv = "^1.0.1"
 registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.39"}
-business-registry-common = { git = "https://github.com/BrandonSharratt/lear.git", subdirectory = "python/common/business-registry-common" }
-sql-versioning = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/sql-versioning", branch = "feature-legal-name" }
 
 [tool.poetry.group.dev.dependencies]
-Flask = "^3.1.0"
 pytest = "^8.3.5"
 black = "^25.1.0"
 flake8 = "^7.1.2"
 freezegun = "^1.5.1"
-psycopg2-binary = "^2.9.9"
-Flask-Migrate = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core"]
