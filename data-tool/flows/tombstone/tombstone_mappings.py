@@ -20,8 +20,8 @@ class EventFilings(str, Enum):
 
     # TODO: FILE_AM_AR = 'FILE_AM_AR'
 
-    FILE_IAMGO = 'FILE_IAMGO'  # TODO: Amalgamation Out Consent - unsupported
-    FILE_AMALO = 'FILE_AMALO'  # TODO: Amalgamation Out - unsupported
+    FILE_IAMGO = 'FILE_IAMGO'
+    FILE_AMALO = 'FILE_AMALO'
 
     # Amalgamation Appliation
     FILE_AMALH = 'FILE_AMALH'
@@ -309,7 +309,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
 
-    EventFilings.FILE_IAMGO: '6-Month Consent to Amalgamate Out',
+    EventFilings.FILE_IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted',
     EventFilings.FILE_AMALO: 'Record of Amalgamation',
 
     EventFilings.FILE_AMALH: 'Amalgamation Application Short Form (Horizontal)',

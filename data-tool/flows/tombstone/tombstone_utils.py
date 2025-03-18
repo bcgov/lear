@@ -3,7 +3,7 @@ import datedelta
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Optional
+from typing import Final, Optional
 
 import pandas as pd
 import pytz
@@ -23,7 +23,7 @@ from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
                                           EventFilings)
 
 all_unsupported_types = set()
-
+date_format_with_tz: Final = '%Y-%m-%d %H:%M:%S%z'
 
 def format_business_data(data: dict) -> dict:
     business_data = data['businesses'][0]
@@ -428,7 +428,7 @@ def format_filings_data(data: dict) -> dict:
             filing_body['withdrawn_filing_id'] = withdrawn_filing_idx  # will be updated to real filing_id when loading data
             withdrawn_filing_idx = -1
         elif filing_type in ('consentContinuationOut', 'consentAmalgamationOut'):
-            consent_continuation_out = format_consent_continuation_out(x, filing_type, effective_date)
+            consent_continuation_out = format_consent_continuation_out(filing_type, effective_date)
 
         comments = format_filing_comments_data(data, x['e_event_id'])
 
@@ -462,7 +462,7 @@ def format_filings_data(data: dict) -> dict:
         'unsupported_types': current_unsupported_types,
     }
 
-def format_consent_continuation_out(data: dict, filing_type: str, effective_date_str: str):
+def format_consent_continuation_out(filing_type: str, effective_date_str: str):
     expiry_date = get_expiry_date(effective_date_str)
     consent_continuation_out = {
         'consent_type': 'continuation_out' if filing_type == 'consentContinuationOut' else 'amalgamation_out',
@@ -476,7 +476,7 @@ def format_consent_continuation_out(data: dict, filing_type: str, effective_date
 
 def get_expiry_date(effective_date_str: str) -> datetime:
     pst = pytz.timezone('America/Vancouver')
-    effective_date = datetime.strptime(effective_date_str, '%Y-%m-%d %H:%M:%S%z')
+    effective_date = datetime.strptime(effective_date_str, date_format_with_tz)
     effective_date = effective_date.astimezone(pst)
     _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
     _date += datedelta.datedelta(months=6)
@@ -898,7 +898,7 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             meta_data[filing_type]['otherJurisdictionDesc'] = data['out_othr_juri_desc']
 
     if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:
-        withdrawn_ts = datetime.strptime(withdrawn_ts_str, '%Y-%m-%d %H:%M:%S%z')
+        withdrawn_ts = datetime.strptime(withdrawn_ts_str, date_format_with_tz)
         meta_data = {
             **meta_data,
             'withdrawnDate': withdrawn_ts.isoformat()
@@ -916,7 +916,7 @@ def get_colin_display_name(data: dict) -> str:
     # Annual Report
     if event_file_type == EventFilings.FILE_ANNBC.value:
         ar_dt_str = data['f_period_end_dt_str']
-        ar_dt = datetime.strptime(ar_dt_str, '%Y-%m-%d %H:%M:%S%z')
+        ar_dt = datetime.strptime(ar_dt_str, date_format_with_tz)
         suffix = ar_dt.strftime('%b %d, %Y').upper()
         name = f'{name} - {suffix}'
 
