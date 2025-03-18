@@ -24,18 +24,10 @@
          </table>
          <div class="business-name-header">
             <label class="lbl-business-name">
-               {% if business.legalName %}
-                  {{ business.legalName }}
-               {% elif nameRequest.legalName %}
-                  {{ nameRequest.legalName }}
-               {% else %}
-                  {{numberedDescription}}
-               {% endif %}
+               {{ business.legalName }}
             </label>
          </div>
       </div>
       [[common/businessDetails.html]]
-
-      This is test
    </body>
 </html>
