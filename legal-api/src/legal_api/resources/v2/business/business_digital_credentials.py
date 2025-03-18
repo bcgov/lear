@@ -32,7 +32,11 @@ from legal_api.models import (
     User,
 )
 from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials_helpers import extract_invitation_message_id, get_digital_credential_data
+from legal_api.services.digital_credentials_helpers import (
+    extract_invitation_message_id,
+    get_digital_credential_data,
+    get_or_create_business_user,
+)
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.utils.auth import jwt
 
@@ -56,7 +60,7 @@ def get_business_user(identifier) -> Tuple[Union[DCBusinessUser, None], Union[di
     if not (user := User.find_by_jwt_token(token)):
         return None, jsonify({'message': 'User not found'}), HTTPStatus.NOT_FOUND
 
-    if not (business_user := DCBusinessUser.find_by(business_id=business.id, user_id=user.id)):
+    if not (business_user := get_or_create_business_user(business=business, user=user)):
         return None, jsonify({'message': 'Business User not found'}), HTTPStatus.NOT_FOUND
 
     return business_user, None, None
@@ -88,14 +92,19 @@ def create_invitation(identifier):
 
         invitation_message_id = extract_invitation_message_id(response)
 
-        connection = DCConnection(
-            connection_id=invitation_message_id,
-            invitation_url=response['invitation_url'],
-            is_active=False,
-            connection_state=DCConnection.State.INVITATION_SENT.value,
-            business_id=business_user.business_id
-        )
-        connection.save()
+        try:
+            connection = DCConnection(
+                connection_id=invitation_message_id,
+                invitation_url=response['invitation_url'],
+                is_active=False,
+                connection_state=DCConnection.State.INVITATION_SENT.value,
+                business_id=business_user.business_id,  # DEPRECATED: use business_user_id
+                # FIXME: this constraint needs to be enforced in the DB
+                business_user_id=business_user.id,
+            )
+            connection.save()
+        except Exception as err:
+            return jsonify({'message': 'Unable to create a connection.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     return jsonify(connection.json), HTTPStatus.OK
 
@@ -257,10 +266,13 @@ def send_credential(identifier, credential_type):
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     issued_credential = DCCredential(
-        definition_id=definition.id,
+        credential_id=credential_id,
         connection_id=connection.id,
         credential_exchange_id=response['cred_ex_id'],
-        credential_id=credential_id
+        definition_id=definition.id,
+        # FIXME: this constraint needs to be enforced in the DB
+        business_user_id=business_user.id,
+
     )
     issued_credential.save()
 

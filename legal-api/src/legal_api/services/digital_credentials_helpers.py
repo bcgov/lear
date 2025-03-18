@@ -86,11 +86,7 @@ def get_digital_credential_data(business_user: DCBusinessUser,
 
 
 def get_or_create_business_user(user: User, business: Business) -> DCBusinessUser:
-    """
-    Get or create business user.
-
-    DEPRECATED: This function is deprecated and will be removed in future releases.
-    """
+    """Get or create business user."""
     business_user = DCBusinessUser.find_by(
         business_id=business.id, user_id=user.id)
     if not business_user:
