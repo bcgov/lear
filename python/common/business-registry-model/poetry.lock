@@ -113,6 +113,28 @@ files = [
 ]
 
 [[package]]
+name = "business-registry-common"
+version = "0.1.0"
+description = ""
+optional = false
+python-versions = "^3.13"
+files = []
+develop = false
+
+[package.dependencies]
+datedelta = "^1.4"
+pycountry = "^24.6.1"
+pytz = "^2025.1"
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.39"}
+
+[package.source]
+type = "git"
+url = "https://github.com/BrandonSharratt/lear.git"
+reference = "HEAD"
+resolved_reference = "d11878ee0db725cd2c0ed9c6c4728f7bc8d398be"
+subdirectory = "python/common/business-registry-common"
+
+[[package]]
 name = "certifi"
 version = "2025.1.31"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -1309,4 +1331,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13"
-content-hash = "5a7419b2fbc216e5d8167cdc2629cd251ab56aee92e001794a52ce9196750183"
+content-hash = "0f930fff669893928248e4600467b0315a6b87d16013d9fdf2fc5bd2a57a2dde"
