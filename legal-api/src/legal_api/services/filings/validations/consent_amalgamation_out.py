@@ -48,7 +48,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
         now = datetime.utcnow()
         country_code = foreign_jurisdiction.get('country')
         region = foreign_jurisdiction.get('region')
-        ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region, 
+        ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region,
                                                      consent_type=ConsentContinuationOut.ConsentTypes.amalgamation_out)
         if ccos:
             msg.extend([{'error': "Can't have new consent for same jurisdiction if an unexpired one already exists",
