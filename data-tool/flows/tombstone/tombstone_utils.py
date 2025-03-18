@@ -1,4 +1,5 @@
 import copy
+import datedelta
 import json
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -376,6 +377,7 @@ def format_filings_data(data: dict) -> dict:
         filing_body = copy.deepcopy(FILING['filings'])
         jurisdiction = None
         amalgamation = None
+        consent_continuation_out = None
 
         user_id = get_username(x)
 
@@ -425,6 +427,8 @@ def format_filings_data(data: dict) -> dict:
         elif filing_type == 'noticeOfWithdrawal':
             filing_body['withdrawn_filing_id'] = withdrawn_filing_idx  # will be updated to real filing_id when loading data
             withdrawn_filing_idx = -1
+        elif filing_type in ('consentContinuationOut', 'consentAmalgamationOut'):
+            consent_continuation_out = format_consent_continuation_out(x, filing_type, effective_date)
 
         comments = format_filing_comments_data(data, x['e_event_id'])
 
@@ -434,7 +438,8 @@ def format_filings_data(data: dict) -> dict:
             'jurisdiction': jurisdiction,
             'amalgamations': amalgamation,
             'comments': comments,
-            'colin_event_ids': colin_event_ids
+            'colin_event_ids': colin_event_ids,
+            'consent_continuation_out': consent_continuation_out
         }
 
         formatted_filings.append(filing)
@@ -456,6 +461,35 @@ def format_filings_data(data: dict) -> dict:
         'state_filing_index': state_filing_idx,
         'unsupported_types': current_unsupported_types,
     }
+
+def format_consent_continuation_out(data: dict, filing_type: str, effective_date_str: str):
+    expiry_date = get_expiry_date(effective_date_str)
+    consent_continuation_out = {
+        'consent_type': 'continuation_out' if filing_type == 'consentContinuationOut' else 'amalgamation_out',
+        'expiry_date': expiry_date.isoformat(),
+        'foreign_jurisdiction': '',
+        'foreign_jurisdiction_region': '',
+    }
+
+    return consent_continuation_out
+
+
+def get_expiry_date(effective_date_str: str) -> datetime:
+    pst = pytz.timezone('America/Vancouver')
+    effective_date = datetime.strptime(effective_date_str, '%Y-%m-%d %H:%M:%S%z')
+    effective_date = effective_date.astimezone(pst)
+    _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
+    _date += datedelta.datedelta(months=6)
+
+    # Setting legislation timezone again after adding 6 months to recalculate the UTC offset and DST info
+    _date = _date.astimezone(pst)
+
+    # Adjust day light savings. Handle DST +-1 hour changes
+    dst_offset_diff = effective_date.dst() - _date.dst()
+    _date += dst_offset_diff
+
+    return _date.astimezone(pytz.timezone('GMT'))
+
 
 
 def format_amalgamations_data(data: dict, event_id: Decimal, amalgamation_date: str, amalgamation_type: str) -> dict:
@@ -654,22 +688,27 @@ def format_users_data(users_data: list) -> list:
     return formatted_users
 
 
-def format_cont_out_data(data: dict) -> dict:
-    cont_data = data.get('cont_out', [])
-    if not cont_data:
+def format_out_data_data(data: dict) -> dict:
+    out_data = data.get('out_data')
+    if not out_data:
         return {}
 
-    cont_data = cont_data[0]
-    country, region = map_country_region(cont_data['can_jur_typ_cd'])
+    out_data = out_data[0]
+    country, region = map_country_region(out_data['can_jur_typ_cd'])
 
-    formatted_cont_out = {
+    date_field = {
+        'HCO': 'continuation_out_date',
+        'HAO': 'amalgamation_out_date'
+    }.get(out_data['state_type_cd'])
+
+    formatted_out_data = {
         'foreign_jurisdiction': country,
         'foreign_jurisdiction_region': region,
-        'foreign_legal_name': cont_data['home_company_nme'],
-        'continuation_out_date': cont_data['cont_out_dt'],
+        'foreign_legal_name': out_data['home_company_nme'],
+        date_field: out_data['cont_out_dt'],
     }
 
-    return formatted_cont_out
+    return formatted_out_data
 
 
 def map_country_region(can_jur_typ_cd):
@@ -696,7 +735,7 @@ def formatted_data_cleanup(data: dict) -> dict:
     data['admin_email'] = data['businesses']['admin_email']
     del data['businesses']['admin_email']
 
-    data['businesses'].update(data['cont_out'])
+    data['businesses'].update(data['out_data'])
     return data
 
 
@@ -712,7 +751,7 @@ def get_data_formatters() -> dict:
         'filings': format_filings_data,
         'comments': format_business_comments_data,  # only for business level, filing level will be formatted ith filings
         'in_dissolution': format_in_dissolution_data,
-        'cont_out': format_cont_out_data,
+        'out_data': format_out_data_data,  # continuation/amalgamation out
     }
     return ret
 
@@ -847,14 +886,16 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
                 'reason': 'Limited Restoration Expired',
                 'expiryDate': effective_date[:10]
             }
-    elif filing_type == 'continuationOut':
-        country, region = map_country_region(data['cont_out_can_jur_typ_cd'])
-        meta_data['continuationOut'] = {
+    elif filing_type in ('amalgamationOut', 'continuationOut'):
+        country, region = map_country_region(data['out_can_jur_typ_cd'])
+        meta_data[filing_type] = {
                 'country': country,
                 'region': region,
-                'legalName': data['cont_out_home_company_nme'],
-                'continuationOutDate': data['cont_out_dt'][:10]
+                'legalName': data['out_home_company_nme'],
+                f'{filing_type}Date': data['cont_out_dt'][:10]
             }
+        if data['out_othr_juri_desc']:
+            meta_data[filing_type]['otherJurisdictionDesc'] = data['out_othr_juri_desc']
 
     if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:
         withdrawn_ts = datetime.strptime(withdrawn_ts_str, '%Y-%m-%d %H:%M:%S%z')
