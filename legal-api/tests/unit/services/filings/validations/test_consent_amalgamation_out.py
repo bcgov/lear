@@ -20,7 +20,7 @@ import pycountry
 import pytest
 from registry_schemas.example_data import FILING_HEADER, CONSENT_AMALGAMATION_OUT
 
-from legal_api.models import Business, ConsentAmalgamationOut
+from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
 from tests.unit.models import factory_business, factory_completed_filing
@@ -160,8 +160,8 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
 
     foreign_jurisdiction = filing['filing']['consentAmalgamationOut']['foreignJurisdiction']
 
-    consent_amalgamation_out = ConsentAmalgamationOut()
-    consent_amalgamation_out.consent_type = ConsentAmalgamationOut.ConsentTypes.amalgamation_out
+    consent_amalgamation_out = ConsentContinuationOut()
+    consent_amalgamation_out.consent_type = ConsentContinuationOut.ConsentTypes.amalgamation_out
     consent_amalgamation_out.foreign_jurisdiction = foreign_jurisdiction.get('country')
     consent_amalgamation_out.foreign_jurisdiction_region = foreign_jurisdiction.get('region').upper()
     consent_amalgamation_out.expiry_date = get_cco_expiry_date(effective_date)

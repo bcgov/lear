@@ -19,7 +19,7 @@ from typing import Dict, Final, Optional
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 # noqa: I004
 from legal_api.errors import Error
-from legal_api.models import Business, ConsentAmalgamationOut
+from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
@@ -48,7 +48,8 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
         now = datetime.utcnow()
         country_code = foreign_jurisdiction.get('country')
         region = foreign_jurisdiction.get('region')
-        ccos = ConsentAmalgamationOut.get_active_cco(business.id, now, country_code, region)
+        ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region, 
+                                                     consent_type=ConsentContinuationOut.ConsentTypes.amalgamation_out)
         if ccos:
             msg.extend([{'error': "Can't have new consent for same jurisdiction if an unexpired one already exists",
                         'path': foreign_jurisdiction_path}])
