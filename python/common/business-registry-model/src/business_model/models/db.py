@@ -11,18 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Create SQLAlchenmy and Schema managers.
 
-"""This exports all of the models and schemas used by the application."""
-from .address import Address
-from .business import Business
-from .office import Office
-from .user import User
-from .db import db  # noqa: I001
+These will get initialized by the application using the models
+"""
+from flask_sqlalchemy import SQLAlchemy
+from sql_versioning import versioned_session
 
-__all__ = (
-    "db",
-    "Address",
-    "Office",
-    "Business",
-    "User",
-)
+db = SQLAlchemy()  # pylint: disable=invalid-name
+versioned_session(db.session)

@@ -1,4 +1,4 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ class Address(db.Model, Versioned):  # pylint: disable=too-many-instance-attribu
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    furnishings_id = db.Column('furnishings_id', db.Integer, db.ForeignKey('furnishings.id'), nullable=True)
+    # furnishings_id = db.Column('furnishings_id', db.Integer, db.ForeignKey('furnishings.id'), nullable=True)
 
     office_id = db.Column(
         'office_id',
