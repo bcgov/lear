@@ -34,7 +34,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
     """Get existing parties."""
-    # Cease the party roles not present in the edit request
+    # Cease the party role
     end_date_time = datetime.datetime.utcnow()
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
