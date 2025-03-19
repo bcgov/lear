@@ -1,4 +1,4 @@
-# Copyright © 2024 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,47 +31,30 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""The Entity Payment service.
-
-This module applied payments against Filings, and if NOT a FED type
-puts a message onto the Filers queue to process the file.
-"""
-from __future__ import annotations
-
-import asyncio
-
-import sentry_sdk
-from flask import Flask
-from sentry_sdk.integrations.flask import FlaskIntegration
-
-from .config import Config, ProdConfig
-from .database.db import db
-from .resources import register_endpoints
-from .services import flags
-from .services import gcp_queue
-from .services import queue
+"""GCP Auth Services."""
+from flask import current_app
+from google.auth.transport import requests
+from google.oauth2 import id_token
 
 
-def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
-    """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(environment)
-
-    # Configure Sentry
-    if dsn := app.config.get("SENTRY_DSN", None):
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            send_default_pii=False,
+def verify_gcp_jwt(flask_request):
+    """Verify the bearer token as sign by gcp oauth."""
+    msg = ''
+    try:
+        bearer_token = flask_request.headers.get('Authorization')
+        current_app.logger.debug('bearer_token %s', bearer_token)
+        token = bearer_token.split(' ')[1]
+        audience = current_app.config.get('SUB_AUDIENCE')
+        current_app.logger.debug('audience %s', audience)
+        claim = id_token.verify_oauth2_token(
+            token, requests.Request(), audience=audience
         )
+        sa_email = current_app.config.get('SUB_SERVICE_ACCOUNT')
+        current_app.logger.debug('sa_email %s', sa_email)
+        if not claim['email_verified'] or claim['email'] != sa_email:
+            msg = f"Invalid service account or email not verified for email: {claim['email']}\n"
+        current_app.logger.debug('claim %s', claim)
 
-    # Configure LaunchDarkly
-    if app.config.get("LD_SDK_KEY", None):
-        flags.init_app(app)
-
-    db.init_app(app)
-    register_endpoints(app)
-    gcp_queue.init_app(app)
-    queue.init_app(app)
-
-    return app
+    except Exception as err:  # pylint: disable=broad-exception-caught
+        msg = f'Invalid token: {err}\n'
+    return msg

@@ -39,7 +39,9 @@ class BaseMeta(EnumMeta):
 class BusinessType(str, Enum, metaclass=BaseMeta):
     """The business type."""
 
+    CONTINUE_IN = 'C'
     COOPERATIVE = 'CP'
+    CORPORATION = 'BC'
     INDIVIDUAL = 'FP'
     PARTNERSHIP_AND_SOLE_PROP = 'FM'
     TRUST = 'TRUST'

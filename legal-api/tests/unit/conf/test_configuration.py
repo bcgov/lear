@@ -97,7 +97,7 @@ def test_prod_config_jwks_cache(monkeypatch):  # pylint: disable=missing-docstri
 
     # Assert that secret key will default to some value
     # even if missed in the environment setup
-    monkeypatch.delenv(key)  # , raising=False)
+    monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv(key, None)
     reload(config)
     assert config.ProdConfig().JWT_OIDC_JWKS_CACHE_TIMEOUT is not None
