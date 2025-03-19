@@ -270,7 +270,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
         # convenience flag to set that the envelope is a correction
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
-        # pylint: disable=too-many-nested-blocks;
+        # pylint: disable=too-many-nested-blocks, disable=too-many-function-args;
         if legal_filings := filing_core_submission.legal_filings():
             VersioningProxy.get_transaction_id(db.session())
 
@@ -326,7 +326,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                                                                      filing_core_submission.json,
                                                                      filing_submission,
                                                                      filing_meta,
-                                                                     flags)  # pylint: disable=too-many-function-args
+                                                                     flags)
 
                 elif filing.get('courtOrder'):
                     court_order.process(business, filing_submission, filing, filing_meta)
