@@ -189,11 +189,16 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         'include_properties': [
             'id',
             'admin_freeze',
+            'amalgamation_out_date',
             'association_type',
+            'continuation_out_date',
             'dissolution_date',
             'fiscal_year_end_date',
+            'foreign_jurisdiction_region',
+            'foreign_legal_name',
             'founding_date',
             'identifier',
+            'jurisdiction',
             'last_agm_date',
             'last_ar_date',
             'last_ar_year',
@@ -207,22 +212,18 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'last_tr_year',
             'legal_name',
             'legal_type',
+            'naics_code',
+            'naics_description',
+            'naics_key',
+            'no_dissolution',
+            'restoration_expiry_date',
             'restriction_ind',
+            'send_ar_ind',
             'state',
+            'start_date',
             'state_filing_id',
             'submitter_userid',
             'tax_id',
-            'naics_key',
-            'naics_code',
-            'naics_description',
-            'no_dissolution',
-            'start_date',
-            'jurisdiction',
-            'foreign_jurisdiction_region',
-            'foreign_legal_name',
-            'send_ar_ind',
-            'restoration_expiry_date',
-            'continuation_out_date'
         ]
     }
 
@@ -242,6 +243,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     continuation_out_date = db.Column('continuation_out_date', db.DateTime(timezone=True))
+    amalgamation_out_date = db.Column('amalgamation_out_date', db.DateTime(timezone=True))
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
@@ -525,10 +527,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                     exists().where(
                         and_(
                             transition_filing.business_id == self.id,
-                            transition_filing._filing_type == \
-                            CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
-                            transition_filing._status == \
-                            Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                            (transition_filing._filing_type ==  # pylint: disable=protected-access
+                             CoreFiling.FilingTypes.TRANSITION.value),
+                            (transition_filing._status ==  # pylint: disable=protected-access
+                             Filing.Status.COMPLETED.value),
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
                                 restoration_filing_effective_cutoff
@@ -663,6 +665,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             d['restorationExpiryDate'] = LegislationDatetime.format_as_legislation_date(self.restoration_expiry_date)
         if self.continuation_out_date:
             d['continuationOutDate'] = LegislationDatetime.format_as_legislation_date(self.continuation_out_date)
+        if self.amalgamation_out_date:
+            d['amalgamationOutDate'] = LegislationDatetime.format_as_legislation_date(self.amalgamation_out_date)
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
@@ -919,6 +923,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
         """Return the next value from the sequence."""
         sequence_mapping = {
+            'BC': 'business_identifier_bc',  # only available in sandbox now
+            'C': 'business_identifier_c',  # only available in sandbox now
             'CP': 'business_identifier_coop',
             'FM': 'business_identifier_sp_gp',
         }

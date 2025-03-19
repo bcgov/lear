@@ -14,11 +14,12 @@
 """Installer and setup for this module
 """
 import ast
+import re
 from glob import glob
 from os.path import basename, splitext
-import re
 
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from setuptools import setup
 
 _version_re = re.compile(r'__version__\s+=\s+(.*)')  # pylint: disable=invalid-name
 

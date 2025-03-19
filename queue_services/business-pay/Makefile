@@ -37,7 +37,7 @@ clean-test: ## clean test files
 	rm -fr htmlcov/
 
 build-req: clean ## Upgrade requirements
-	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
+	test -f venv/bin/activate || python3.9 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install pip==20.1.1 ;\
 	pip install -Ur requirements/prod.txt ;\
@@ -46,7 +46,7 @@ build-req: clean ## Upgrade requirements
 	pip install -Ur requirements/bcregistry-libraries.txt
 
 install: clean ## Install python virtual environment
-	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
+	test -f venv/bin/activate || python3.9 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install pip==20.1.1 ;\
 	pip install -Ur requirements.txt

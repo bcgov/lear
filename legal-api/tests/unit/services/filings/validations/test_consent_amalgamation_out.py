@@ -1,4 +1,4 @@
-# Copyright © 2023 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -11,14 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Test suite to ensure Consent Continuation Out is validated correctly."""
+"""Test suite to ensure Consent Amalgamation Out is validated correctly."""
 import copy
 import datedelta
 from http import HTTPStatus
 
 import pycountry
 import pytest
-from registry_schemas.example_data import FILING_HEADER, CONSENT_CONTINUATION_OUT
+from registry_schemas.example_data import FILING_HEADER, CONSENT_AMALGAMATION_OUT
 
 from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services.filings.validations.validation import validate
@@ -37,8 +37,8 @@ legal_name = 'Test name request'
         ('SUCCESS', None)
     ]
 )
-def test_consent_continuation_out_active_and_good_standing(session, test_name, expected_code):
-    """Assert Consent Continuation Out can be filed."""
+def test_consent_amalgamation_out_active_and_good_standing(session, test_name, expected_code):
+    """Assert Consent Amalgamation Out can be filed."""
     business = Business(
         identifier='BC1234567',
         legal_type='BC',
@@ -51,15 +51,15 @@ def test_consent_continuation_out_active_and_good_standing(session, test_name, e
         business.founding_date = datetime.utcnow() - datedelta.datedelta(years=2)
 
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
-    filing['filing']['header']['name'] = 'consentContinuationOut'
+    filing['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
+    filing['filing']['header']['name'] = 'consentAmalgamationOut'
 
     err = validate(business, filing)
 
     # validate outcomes
     if test_name != 'SUCCESS':
         assert expected_code == err.code
-        assert 'Business should be Active and in Good Standing to file Consent Continuation Out.' == err.msg[0]['error']
+        assert 'Business should be Active and in Good Standing to file Consent Amalgamation Out.' == err.msg[0]['error']
     else:
         assert not err
 
@@ -84,20 +84,20 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
         founding_date=datetime.utcnow()
     )
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
-    filing['filing']['header']['name'] = 'consentContinuationOut'
+    filing['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
+    filing['filing']['header']['name'] = 'consentAmalgamationOut'
 
     if test_name == 'FAIL_NO_COUNTRY':
-        del filing['filing']['consentContinuationOut']['foreignJurisdiction']['country']
+        del filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['country']
     elif test_name == 'FAIL_INVALID_COUNTRY':
-        filing['filing']['consentContinuationOut']['foreignJurisdiction']['country'] = 'NONE'
+        filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['country'] = 'NONE'
     elif test_name == 'FAIL_REGION_BC':
-        filing['filing']['consentContinuationOut']['foreignJurisdiction']['region'] = 'BC'
+        filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['region'] = 'BC'
     elif test_name == 'FAIL_INVALID_REGION':
-        filing['filing']['consentContinuationOut']['foreignJurisdiction']['region'] = 'NONE'
+        filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['region'] = 'NONE'
     elif test_name == 'FAIL_INVALID_US_REGION':
-        filing['filing']['consentContinuationOut']['foreignJurisdiction']['country'] = 'US'
-        filing['filing']['consentContinuationOut']['foreignJurisdiction']['region'] = 'NONE'
+        filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['country'] = 'US'
+        filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['region'] = 'NONE'
 
     err = validate(business, filing)
 
@@ -119,20 +119,20 @@ def test_valid_foreign_jurisdiction(session):
         founding_date=datetime.utcnow()
     )
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['header']['name'] = 'consentContinuationOut'
+    filing['filing']['header']['name'] = 'consentAmalgamationOut'
 
     for country in pycountry.countries:
-        filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
-        filing['filing']['consentContinuationOut']['foreignJurisdiction']['country'] = country.alpha_2
+        filing['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
+        filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['country'] = country.alpha_2
         if country.alpha_2 in ('CA', 'US'):
             for region in pycountry.subdivisions.get(country_code=country.alpha_2):
                 region_code = region.code.replace(f'{country.alpha_2}-', '')
                 if country.alpha_2 == 'CA' and region_code == 'BC':
                     region_code = 'FEDERAL'  # Testing Federal code instead of invalid code BC
 
-                filing['filing']['consentContinuationOut']['foreignJurisdiction']['region'] = region_code
+                filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['region'] = region_code
         else:
-            del filing['filing']['consentContinuationOut']['foreignJurisdiction']['region']
+            del filing['filing']['consentAmalgamationOut']['foreignJurisdiction']['region']
 
         err = validate(business, filing)
         assert not err
@@ -150,25 +150,25 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
     """Assert validate foreign jurisdiction exist."""
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
-    filing['filing']['header']['name'] = 'consentContinuationOut'
+    filing['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
+    filing['filing']['header']['name'] = 'consentAmalgamationOut'
     effective_date = datetime.utcnow()
     if test_name == 'SUCCESS':
         effective_date -= datedelta.datedelta(months=6, days=5)
 
     previous_filing = factory_completed_filing(business, filing, filing_date=effective_date)
 
-    foreign_jurisdiction = filing['filing']['consentContinuationOut']['foreignJurisdiction']
+    foreign_jurisdiction = filing['filing']['consentAmalgamationOut']['foreignJurisdiction']
 
-    consent_continuation_out = ConsentContinuationOut()
-    consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
-    consent_continuation_out.foreign_jurisdiction = foreign_jurisdiction.get('country')
-    consent_continuation_out.foreign_jurisdiction_region = foreign_jurisdiction.get('region').upper()
-    consent_continuation_out.expiry_date = get_cco_expiry_date(effective_date)
+    consent_amalgamation_out = ConsentContinuationOut()
+    consent_amalgamation_out.consent_type = ConsentContinuationOut.ConsentTypes.amalgamation_out
+    consent_amalgamation_out.foreign_jurisdiction = foreign_jurisdiction.get('country')
+    consent_amalgamation_out.foreign_jurisdiction_region = foreign_jurisdiction.get('region').upper()
+    consent_amalgamation_out.expiry_date = get_cco_expiry_date(effective_date)
 
-    consent_continuation_out.filing_id = previous_filing.id
-    consent_continuation_out.business_id = business.id
-    business.consent_continuation_outs.append(consent_continuation_out)
+    consent_amalgamation_out.filing_id = previous_filing.id
+    consent_amalgamation_out.business_id = business.id
+    business.consent_continuation_outs.append(consent_amalgamation_out)
     business.save()
 
     err = validate(business, filing)
@@ -189,7 +189,7 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
         ('SUCCESS', '12345678901234567890', None)
     ]
 )
-def test_consent_continuation_out_court_order(session, test_status, file_number, expected_code):
+def test_consent_amalgamation_out_court_order(session, test_status, file_number, expected_code):
     """Assert valid court order."""
     business = Business(
         identifier='BC1234567',
@@ -198,15 +198,15 @@ def test_consent_continuation_out_court_order(session, test_status, file_number,
         founding_date=datetime.utcnow()
     )
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
-    filing['filing']['header']['name'] = 'consentContinuationOut'
+    filing['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
+    filing['filing']['header']['name'] = 'consentAmalgamationOut'
 
     if file_number:
         court_order = {}
         court_order['fileNumber'] = file_number
-        filing['filing']['consentContinuationOut']['courtOrder'] = court_order
+        filing['filing']['consentAmalgamationOut']['courtOrder'] = court_order
     else:
-        del filing['filing']['consentContinuationOut']['courtOrder']['fileNumber']
+        del filing['filing']['consentAmalgamationOut']['courtOrder']['fileNumber']
 
     err = validate(business, filing)
 

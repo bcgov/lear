@@ -2,6 +2,7 @@
     "flagValues": {
         "enable-involuntary-dissolution": true,
         "namex-nro-decommissioned": true,
+        "enable-sandbox": false,
         "db-versioning": {
             "legal-api": true,
             "emailer": false,

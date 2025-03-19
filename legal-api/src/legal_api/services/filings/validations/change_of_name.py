@@ -19,6 +19,7 @@ from flask_babel import _ as babel  # noqa: N81
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services import flags
 from legal_api.services import namex
 
 from ...utils import get_str
@@ -36,6 +37,9 @@ def validate(business: Business, filing: Dict) -> Error:
     nr_number = get_str(filing, nr__number_path)
 
     if nr_number:
+        # Skip the NR check in the Sandbox
+        if flags.is_on('enable-sandbox'):
+            return None
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number).json()
         validation_result = namex.validate_nr(nr_response)

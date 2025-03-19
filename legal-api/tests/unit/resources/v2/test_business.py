@@ -585,6 +585,10 @@ def test_get_could_file(session, client, jwt):
             "type": "horizontal"
         },
         {
+            "displayName": "Amalgamation Out",
+            "name": "amalgamationOut"
+        },
+        {
             "displayName": "Annual Report",
             "name": "annualReport"
         },

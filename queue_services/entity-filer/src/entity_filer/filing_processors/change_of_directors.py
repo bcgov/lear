@@ -15,7 +15,8 @@
 from datetime import datetime
 from typing import Dict
 
-from entity_queue_common.service_utils import QueueException, logger
+from entity_queue_common.service_utils import QueueException
+from flask import current_app
 from legal_api.models import Business, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
@@ -79,7 +80,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylin
                 else new_director['officer'].get('prevFirstName') + \
                 new_director['officer'].get('prevMiddleInitial') + new_director['officer'].get('prevLastName')
             if not new_director_name:
-                logger.error('Could not resolve director name from json %s.', new_director)
+                current_app.logger.error('Could not resolve director name from json %s.', new_director)
                 raise QueueException
 
             for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):

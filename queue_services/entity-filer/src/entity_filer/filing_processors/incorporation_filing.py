@@ -18,7 +18,8 @@ from typing import Dict
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
-from legal_api.services.minio import MinioService
+from legal_api.services import Flags
+from legal_api.services import MinioService
 from legal_api.services.pdf_service import RegistrarStampData
 
 from entity_filer.filing_meta import FilingMeta
@@ -64,7 +65,8 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
 def process(business: Business,  # pylint: disable=too-many-branches,too-many-locals
             filing: Dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
+            filing_meta: FilingMeta,
+            flags: Flags):  # pylint: disable=too-many-branches
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing.get('filing', {}).get('incorporationApplication')
@@ -81,7 +83,7 @@ def process(business: Business,  # pylint: disable=too-many-branches,too-many-lo
         corp_num = filing['filing']['business']['identifier']
     else:
         # Reserve the Corp Number for this entity
-        corp_num = business_info.get_next_corp_num(business_info_obj['legalType'])
+        corp_num = business_info.get_next_corp_num(business_info_obj['legalType'], flags)
         if not corp_num:
             raise QueueException(
                 f'incorporationApplication {filing_rec.id} unable to get a business registration number.')

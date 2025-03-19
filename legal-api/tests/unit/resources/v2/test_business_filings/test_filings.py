@@ -1242,6 +1242,9 @@ RESTORATION_LIMITED_EXT_FILING['filing']['restoration']['type'] = 'limitedRestor
 RESTORATION_LIMITED_TO_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
 RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRestorationToFull'
 
+AMALGAMATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
+AMALGAMATION_OUT_FILING['filing']['amalgamationOut'] = {}
+
 CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
 CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
@@ -1320,6 +1323,10 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, False, [], False),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BC_CCC.value, False, [], False),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, [], False),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, [], False),

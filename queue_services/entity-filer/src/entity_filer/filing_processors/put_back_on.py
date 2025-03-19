@@ -17,7 +17,8 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from entity_queue_common.service_utils import QueueException, logger
+from entity_queue_common.service_utils import QueueException
+from flask import current_app
 from legal_api.models import Business, Filing, Office, OfficeType, db
 
 from entity_filer.filing_meta import FilingMeta
@@ -28,10 +29,10 @@ from entity_filer.filing_processors.filing_components import filings
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the put back on filing unto the model objects."""
     if not (put_back_on_filing := filing.get('putBackOn')):
-        logger.error('Could not find putBackOn in: %s', filing)
+        current_app.logger.error('Could not find putBackOn in: %s', filing)
         raise QueueException(f'legal_filing:putBackOn missing from {filing}')
 
-    logger.debug('processing putBackOn: %s', filing)
+    current_app.logger.debug('processing putBackOn: %s', filing)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):

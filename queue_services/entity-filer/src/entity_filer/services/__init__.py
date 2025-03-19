@@ -1,4 +1,4 @@
-# Copyright © 2024 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,47 +31,10 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""The Entity Payment service.
+"""Services used by Entity-Filer."""
+from gcp_queue import GcpQueue
 
-This module applied payments against Filings, and if NOT a FED type
-puts a message onto the Filers queue to process the file.
-"""
-from __future__ import annotations
-
-import asyncio
-
-import sentry_sdk
-from flask import Flask
-from sentry_sdk.integrations.flask import FlaskIntegration
-
-from .config import Config, ProdConfig
-from .database.db import db
-from .resources import register_endpoints
-from .services import flags
-from .services import gcp_queue
-from .services import queue
+from .gcp_auth import verify_gcp_jwt
 
 
-def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
-    """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(environment)
-
-    # Configure Sentry
-    if dsn := app.config.get("SENTRY_DSN", None):
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            send_default_pii=False,
-        )
-
-    # Configure LaunchDarkly
-    if app.config.get("LD_SDK_KEY", None):
-        flags.init_app(app)
-
-    db.init_app(app)
-    register_endpoints(app)
-    gcp_queue.init_app(app)
-    queue.init_app(app)
-
-    return app
+gcp_queue = GcpQueue()

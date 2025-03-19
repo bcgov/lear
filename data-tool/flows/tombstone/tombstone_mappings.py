@@ -19,8 +19,9 @@ class EventFilings(str, Enum):
     FILE_AM_SS = 'FILE_AM_SS'
 
     # TODO: FILE_AM_AR = 'FILE_AM_AR'
-    # TODO: Amalgamation Out Consent - unsupported
-    # TODO: Amalgamation Out - unsupported
+
+    FILE_IAMGO = 'FILE_IAMGO'
+    FILE_AMALO = 'FILE_AMALO'
 
     # Amalgamation Appliation
     FILE_AMALH = 'FILE_AMALH'
@@ -183,8 +184,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AM_RM: 'alteration',
     EventFilings.FILE_AM_SS: 'alteration',
 
-    # TODO: Amalgamation Out Consent - unsupported
-    # TODO: Amalgamation Out - unsupported
+    EventFilings.FILE_IAMGO: 'consentAmalgamationOut',
+    EventFilings.FILE_AMALO: 'amalgamationOut',
 
     EventFilings.FILE_AMALH: ['amalgamationApplication', 'horizontal'],
     EventFilings.FILE_AMALR: ['amalgamationApplication', 'regular'],
@@ -218,7 +219,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.CONVAMAL_NULL: ['conversion', ('amalgamationApplication', 'unknown')],
     EventFilings.CONVCIN_NULL: ['conversion', 'continuationIn'],
-    EventFilings.CONVCOUT_NULL: ['conversion', 'continuationOut'],  # TODO: continuation out
+    EventFilings.CONVCOUT_NULL: ['conversion', 'continuationOut'],
     EventFilings.CONVDS_NULL: ['conversion', ('dissolution', 'voluntary')],
     EventFilings.CONVDSF_NULL: ['conversion', ('dissolution', 'involuntary')],
     EventFilings.CONVDSL_NULL: 'conversion',  # TODO: liquidation
@@ -308,11 +309,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
 
-    # TODO: Amalgamation Out Consent - unsupported
-    # IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted'
-    # TODO: Amalgamation Out - unsupported
-    # AMALO: 'Record of Amalgamation'
-
+    EventFilings.FILE_IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted',
+    EventFilings.FILE_AMALO: 'Record of Amalgamation',
 
     EventFilings.FILE_AMALH: 'Amalgamation Application Short Form (Horizontal)',
     EventFilings.FILE_AMALR: 'Amalgamation Application (Regular)',
@@ -482,6 +480,7 @@ LEAR_STATE_FILINGS = [
     'putBackOff',
     'putBackOn',
     'continuationOut',
+    'amalgamationOut',
     # TODO: other state filings that lear doesn't support for now e.g. liquidation
     
     # ingore the following since we won't map to them

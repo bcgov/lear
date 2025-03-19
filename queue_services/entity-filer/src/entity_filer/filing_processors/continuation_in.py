@@ -17,6 +17,7 @@ from typing import Dict
 
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Document, DocumentType, Filing, Jurisdiction
+from legal_api.services import Flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
@@ -96,7 +97,8 @@ def create_authorization_documents(continuation_in: Dict,
 def process(business: Business,  # pylint: disable=too-many-branches,too-many-locals
             filing: Dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta):
+            filing_meta: FilingMeta,
+            flags: Flags):
     """Process the incoming continuationIn filing."""
     # Extract the filing information for continuation in
     continuation_in = filing.get('filing', {}).get('continuationIn')
@@ -113,7 +115,7 @@ def process(business: Business,  # pylint: disable=too-many-branches,too-many-lo
         corp_num = filing['filing']['business']['identifier']
     else:
         # Reserve the Corp Number for this entity
-        corp_num = business_info.get_next_corp_num(business_info_obj['legalType'])
+        corp_num = business_info.get_next_corp_num(business_info_obj['legalType'], flags)
         if not corp_num:
             raise QueueException(
                 f'continuationIn {filing_rec.id} unable to get a business registration number.')

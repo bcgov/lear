@@ -17,7 +17,7 @@ from http import HTTPStatus
 
 import requests
 import sentry_sdk
-from entity_queue_common.service_utils import QueueException, logger
+from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services import AccountService, Flags
@@ -27,6 +27,10 @@ from legal_api.services.utils import get_str
 def consume_nr(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
     """Update the nr to a consumed state."""
     try:
+        if flags.is_on('enable-sandbox'):
+            current_app.logger.info('Skip consuming NR')
+            return
+
         filing_type = filing_type if filing_type else filing.filing_type
         # skip this if none (nrNumber will not be available for numbered company)
         if nr_num := get_str(filing.filing_json, f'/filing/{filing_type}/nameRequest/nrNumber'):
@@ -34,7 +38,7 @@ def consume_nr(business: Business, filing: Filing, filing_type: str = None, flag
             namex_svc_url = current_app.config.get('NAMEX_API')
             token = AccountService.get_bearer_token()
             if flags and (flag_on := flags.is_on('namex-nro-decommissioned')):
-                logger.debug('namex-nro-decommissioned flag: %s', flag_on)
+                current_app.logger.debug('namex-nro-decommissioned flag: %s', flag_on)
                 data = json.dumps({'state': 'CONSUMED', 'corpNum': business.identifier})
             else:
                 data = json.dumps({'consume': {'corpNum': business.identifier}})
