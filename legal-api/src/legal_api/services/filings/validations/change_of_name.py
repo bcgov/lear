@@ -19,8 +19,7 @@ from flask_babel import _ as babel  # noqa: N81
 
 from legal_api.errors import Error
 from legal_api.models import Business
-from legal_api.services import flags
-from legal_api.services import namex
+from legal_api.services import flags, namex
 
 from ...utils import get_str
 
