@@ -36,8 +36,8 @@ class DocumentRecordService:
             current_app.logger.debug('No file found in request.')
             return {'data': 'File not provided'}
         current_app.logger.debug(f'Upload file to document record service {file.filename}')
-        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
-        url = f'{DRS_BASE_URL}/documents/{document_class}/{document_type}'
+        DOC_API_URL = current_app.config.get('DOC_API_URL', '') # pylint: disable=invalid-name
+        url = f'{DOC_API_URL}/documents/{document_class}/{document_type}'
 
         # Validate file size and encryption status before submitting to DRS.
         validation_error = DocumentRecordService.validate_pdf(file, request.content_length, document_type)
@@ -60,8 +60,8 @@ class DocumentRecordService:
                     'content_type': file.content_type,
                 },
                 headers={
-                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
-                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
+                    'x-apikey': current_app.config.get('DOC_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DOC_API_ACCOUNT_ID', ''),
                     'Content-Type': file.content_type
                 }
             ).json()
@@ -77,17 +77,38 @@ class DocumentRecordService:
             return {}
 
     @staticmethod
+    def update_document(document: bytes, document_service_id: str, document_name: str) -> dict:
+        """Update a document on Document Record Service (DRS)."""
+
+        DOC_API_URL = current_app.config.get('DOC_API_URL', '')
+        url = f"{DOC_API_URL}/documents/{document_service_id}?consumerFilename={document_name}"
+
+        headers = {
+            'x-apikey': current_app.config.get('DOC_API_KEY', ''),
+            'Account-Id': current_app.config.get('DOC_API_ACCOUNT_ID', ''),
+            'Content-Type': 'application/pdf'
+        }
+
+        try:
+            response = requests.put(url, data=document, headers=headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as error:
+            current_app.logger.error(f"Error updating document on DRS: {error}")
+            return {"error": str(error), "response": error.response.json() if error.response else None}
+
+    @staticmethod
     def delete_document(document_service_id: str) -> dict:
         """Delete document from Document Record Service."""
-        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
-        url = f'{DRS_BASE_URL}/documents/{document_service_id}'
+        DOC_API_URL = current_app.config.get('DOC_API_URL', '') # pylint: disable=invalid-name
+        url = f'{DOC_API_URL}/documents/{document_service_id}'
 
         try:
             response = requests.patch(
                 url, json={ 'removed': True },
                 headers={
-                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
-                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
+                    'x-apikey': current_app.config.get('DOC_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DOC_API_ACCOUNT_ID', ''),
                 }
             ).json()
             current_app.logger.debug(f'Delete document from document record service {response}')
@@ -99,14 +120,14 @@ class DocumentRecordService:
     @staticmethod
     def get_document(document_class: str, document_service_id: str) -> dict:
         """Get document record from Document Record Service."""
-        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
-        url = f'{DRS_BASE_URL}/searches/{document_class}?documentServiceId={document_service_id}'
+        DOC_API_URL = current_app.config.get('DOC_API_URL', '') # pylint: disable=invalid-name
+        url = f'{DOC_API_URL}/searches/{document_class}?documentServiceId={document_service_id}'
         try:
             response = requests.get(
                 url,
                 headers={
-                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
-                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
+                    'x-apikey': current_app.config.get('DOC_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DOC_API_ACCOUNT_ID', ''),
                 }
             ).json()
             current_app.logger.debug(f'Get document from document record service {response}')
@@ -128,15 +149,15 @@ class DocumentRecordService:
     @staticmethod
     def update_business_identifier(business_identifier: str, document_service_id: str):
         """Update business identifier up on approval."""
-        DRS_BASE_URL = current_app.config.get('DRS_BASE_URL', '') # pylint: disable=invalid-name
-        url = f'{DRS_BASE_URL}/documents/{document_service_id}'
+        DOC_API_URL = current_app.config.get('DOC_API_URL', '') # pylint: disable=invalid-name
+        url = f'{DOC_API_URL}/documents/{document_service_id}'
 
         try:
             response = requests.patch(
                 url, json={ 'consumerIdentifer': business_identifier },
                 headers={
-                    'x-apikey': current_app.config.get('DRS_X_API_KEY', ''),
-                    'Account-Id': current_app.config.get('DRS_ACCOUNT_ID', ''),
+                    'x-apikey': current_app.config.get('DOC_API_KEY', ''),
+                    'Account-Id': current_app.config.get('DOC_API_ACCOUNT_ID', ''),
                 }
             ).json()
             current_app.logger.debug(f'Update business identifier - {business_identifier}')

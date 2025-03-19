@@ -40,9 +40,11 @@ from legal_api.services import (
     DocumentMetaService,
     MinioService,
     RegistrationBootstrapService,
+    DocumentRecordService,
     authorized,
     namex,
     queue,
+    flags
 )
 from legal_api.services.authz import is_allowed
 from legal_api.services.filings import validate
@@ -244,7 +246,10 @@ class ListFilingResource(Resource):
             return ListFilingResource._create_deletion_locked_response(identifier, filing)
 
         try:
-            ListFilingResource._delete_from_minio(filing)
+            if flags.is_on('enable-document-records'):
+                ListFilingResource._delete_from_drs(filing)
+            else:    
+                ListFilingResource._delete_from_minio(filing)
             filing.delete()
         except BusinessException as err:
             return jsonify({'errors': [{'error': err.error}, ]}), err.status_code
@@ -286,6 +291,36 @@ class ListFilingResource(Resource):
                      .get('courtOrder', {})
                      .get('fileKey', None)):
             MinioService.delete_file(file_key)
+
+    @staticmethod
+    def _delete_from_drs(filing):
+        document_service_id = ''
+        if (filing.filing_type == Filing.FILINGS['incorporationApplication'].get('name')
+                and (cooperative := filing.filing_json
+                     .get('filing', {})
+                     .get('incorporationApplication', {})
+                     .get('cooperative', None))) or \
+            (filing.filing_type == Filing.FILINGS['alteration'].get('name')
+                and (cooperative := filing.filing_json
+                     .get('filing', {})
+                     .get('alteration', {}))):
+            if rules_file_key := cooperative.get('rulesFileKey', None):
+                document_service_id = rules_file_key
+            if memorandum_file_key := cooperative.get('memorandumFileKey', None):
+                document_service_id = memorandum_file_key
+        elif filing.filing_type == Filing.FILINGS['dissolution'].get('name') \
+                and (affidavit_file_key := filing.filing_json
+                     .get('filing', {})
+                     .get('dissolution', {})
+                     .get('affidavitFileKey', None)):
+            document_service_id = affidavit_file_key
+        elif filing.filing_type == Filing.FILINGS['courtOrder'].get('name') \
+                and (file_key := filing.filing_json
+                     .get('filing', {})
+                     .get('courtOrder', {})
+                     .get('fileKey', None)):
+            document_service_id = file_key
+        DocumentRecordService.delete_document(document_service_id)
 
     @staticmethod
     def _create_deletion_locked_response(identifier, filing):

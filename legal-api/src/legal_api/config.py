@@ -185,9 +185,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Transparency Register
     TR_START_DATE = os.getenv('TR_START_DATE', '').strip()  # i.e. '2025-02-01'
     # Document Record Service Settings
-    DRS_BASE_URL = os.getenv('DRS_BASE_URL', '')
-    DRS_ACCOUNT_ID = os.getenv('DRS_ACCOUNT_ID', '')
-    DRS_X_API_KEY = os.getenv('DRS_X_API_KEY', '')
+    DOC_API_URL = os.getenv('DOC_API_URL', '')
+    DOC_API_ACCOUNT_ID = os.getenv('DOC_API_ACCOUNT_ID', '')
+    DOC_API_KEY = os.getenv('DOC_API_KEY', '')
 
     TESTING = False
     DEBUG = False

@@ -21,6 +21,7 @@ from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.utils import get_bool, get_str
+from legal_api.constants import DocumentClassEnum
 
 from .common_validations import (
     validate_court_order,
@@ -28,6 +29,7 @@ from .common_validations import (
     validate_pdf,
     validate_resolution_date_in_share_structure,
     validate_share_structure,
+    validate_file_on_drs
 )
 
 
@@ -179,7 +181,11 @@ def rules_change_validation(filing):
         return msg
 
     if rules_file_key:
-        rules_err = validate_pdf(rules_file_key, rules_file_key_path)
+        rules_err = validate_file_on_drs(
+            DocumentClassEnum.COOP.value,
+            rules_file_key,
+            rules_file_key_path)
+        
         if rules_err:
             msg.extend(rules_err)
         return msg
@@ -203,7 +209,10 @@ def memorandum_change_validation(filing):
         return msg
 
     if memorandum_file_key:
-        memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
+        memorandum_err = validate_file_on_drs(
+            DocumentClassEnum.COOP.value,
+            memorandum_file_key,
+            memorandum_file_key_path)
         if memorandum_err:
             msg.extend(memorandum_err)
 

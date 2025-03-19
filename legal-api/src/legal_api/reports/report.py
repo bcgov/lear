@@ -38,10 +38,16 @@ from legal_api.models import (
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService, flags
+from legal_api.services import (
+    MinioService,
+    VersionedBusinessDetailsService,
+    DocumentRecordService,
+    flags
+)
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.constants import DocumentClassEnum
 
 
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
@@ -66,9 +72,19 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return self._get_report()
 
     def _get_static_report(self):
+        
         document_type = ReportMeta.static_reports[self._report_key]['documentType']
+        document_class = ReportMeta.static_reports[self._report_key]['documentType']
+        
+        print(document_type)
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
-        response = MinioService.get_file(document.file_key)
+        if(flags.is_on('enable-document-records')):
+            response = DocumentRecordService.download_document(
+                document_class,
+                document.file_key
+            )
+        else:
+            response = MinioService.get_file(document.file_key)
         return current_app.response_class(
             response=response.data,
             status=response.status,
@@ -76,6 +92,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _get_report(self):
+        current_app.logger.debug("Came to _get_report")
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
             Report._populate_business_info_to_filing(self._filing, self._business)
@@ -1501,15 +1518,19 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
 
     static_reports = {
         'certifiedRules': {
+            'documentClass': DocumentClassEnum.COOP.value,
             'documentType': 'coop_rules'
         },
         'certifiedMemorandum': {
+            'documentClass': DocumentClassEnum.COOP.value,
             'documentType': 'coop_memorandum'
         },
         'affidavit': {
+            'documentClass': DocumentClassEnum.CORP.value,
             'documentType': 'affidavit'
         },
         'uploadedCourtOrder': {
+            'documentClass': DocumentClassEnum.CORP.value,
             'documentType': 'court_order'
         }
     }

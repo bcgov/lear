@@ -58,7 +58,9 @@ from legal_api.services import (
     SYSTEM_ROLE,
     MinioService,
     RegistrationBootstrapService,
+    DocumentRecordService,
     authorized,
+    flags,
     namex,
     queue,
 )
@@ -207,7 +209,10 @@ def delete_filings(identifier, filing_id=None):
     filing.delete()
 
     with suppress(Exception):
-        ListFilingResource.delete_from_minio(filing_type, filing_json)
+        if flags.is_on('enable-document-records'):
+            ListFilingResource.delete_from_drs(filing_type, filing_json)
+        else:
+            ListFilingResource.delete_from_minio(filing_type, filing_json)
 
     if identifier.startswith('T') and filing.filing_type != Filing.FILINGS['noticeOfWithdrawal']['name']:
         bootstrap = RegistrationBootstrap.find_by_identifier(identifier)
@@ -635,7 +640,10 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             if not filing:
                 filing = Filing()
                 filing.business_id = business.id
-
+        current_app.logger.error("------------------------------------------------------")
+        current_app.logger.error(filing.business_id)
+        current_app.logger.error("------------------------------------------------------")
+        
         try:
             filing.submitter_id = user.id
             filing.filing_json = ListFilingResource.sanitize_html_fields(json_input)
@@ -1045,19 +1053,56 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             ListFilingResource.delete_continuation_in_files(filing_json)
 
     @staticmethod
+    def delete_from_drs(filing_type: str, filing_json: dict):
+        """Delete file from Document Record Service."""
+        if (filing_type == Filing.FILINGS['incorporationApplication'].get('name')
+                and (cooperative := filing_json
+                     .get('filing', {})
+                     .get('incorporationApplication', {})
+                     .get('cooperative', None))) or \
+            (filing_type == Filing.FILINGS['alteration'].get('name')
+                and (cooperative := filing_json
+                     .get('filing', {})
+                     .get('alteration', {}))):
+            if rules_file_key := cooperative.get('rulesFileKey', None):
+                DocumentRecordService.delete_document(rules_file_key)
+            if memorandum_file_key := cooperative.get('memorandumFileKey', None):
+                DocumentRecordService.delete_document(memorandum_file_key)
+        elif filing_type == Filing.FILINGS['dissolution'].get('name') \
+                and (affidavit_file_key := filing_json
+                     .get('filing', {})
+                     .get('dissolution', {})
+                     .get('affidavitFileKey', None)):
+            DocumentRecordService.delete_document(affidavit_file_key)
+        elif filing_type == Filing.FILINGS['courtOrder'].get('name') \
+                and (file_key := filing_json
+                     .get('filing', {})
+                     .get('courtOrder', {})
+                     .get('fileKey', None)):
+            DocumentRecordService.delete_document(file_key)
+        elif filing_type == Filing.FILINGS['continuationIn'].get('name'):
+            ListFilingResource.delete_continuation_in_files(filing_json)
+
+    @staticmethod
     def delete_continuation_in_files(filing_json: dict):
         """Delete continuation in files from minio."""
         continuation_in = filing_json.get('filing', {}).get('continuationIn', {})
 
         # Delete affidavit file
         if affidavit_file_key := continuation_in.get('foreignJurisdiction', {}).get('affidavitFileKey', None):
-            MinioService.delete_file(affidavit_file_key)
+            if flags.is_on('enable-document-records'):
+                DocumentRecordService.delete_document(affidavit_file_key)
+            else:
+                MinioService.delete_file(affidavit_file_key)
 
         # Delete authorization file(s)
         authorization_files = continuation_in.get('authorization', {}).get('files', [])
         for file in authorization_files:
             if auth_file_key := file.get('fileKey', None):
-                MinioService.delete_file(auth_file_key)
+                if flags.is_on('enable-document-records'):
+                    DocumentRecordService.delete_document(auth_file_key)
+                else:
+                    MinioService.delete_file(auth_file_key)
 
     @staticmethod
     def details_for_invoice(business_identifier: str, corp_type: str):
