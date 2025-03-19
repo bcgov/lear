@@ -53,6 +53,7 @@ loop = asyncio.get_event_loop()
 @bp.route('/', methods=('POST',))
 def worker():
     """Process the incoming cloud event.
+
     Flow
     --------
     1. Get cloud event

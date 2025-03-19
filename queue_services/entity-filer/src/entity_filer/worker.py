@@ -132,8 +132,8 @@ async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
     temp_reg = filing.temp_reg
     if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
-        current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-                     filing, filing.withdrawn_filing)
+        current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s', 
+                                 filing, filing.withdrawn_filing)
         temp_reg = filing.withdrawn_filing.temp_reg
     business_identifier = business.identifier if business else temp_reg
 
@@ -175,8 +175,8 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
     temp_reg = filing.temp_reg
     if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
-        current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-                     filing, filing.withdrawn_filing)
+        current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s', 
+                                 filing, filing.withdrawn_filing)
         temp_reg = filing.withdrawn_filing.temp_reg
     business_identifier = business.identifier if business else temp_reg
 
@@ -259,12 +259,12 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
         filing_submission = filing_core_submission.storage
 
         if filing_core_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
-            current_app.logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
-                                        filing_submission.business_id, filing_submission.id, filing_msg)
+            current_app.logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s', 
+                                       filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
         if filing_submission.withdrawal_pending:
             current_app.logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
-                                        filing_submission.business_id, filing_submission.id, filing_msg)
+                                       filing_submission.business_id, filing_submission.id, filing_msg)
             raise QueueException
 
         # convenience flag to set that the envelope is a correction
@@ -326,7 +326,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                                                                      filing_core_submission.json,
                                                                      filing_submission,
                                                                      filing_meta,
-                                                                     flags)
+                                                                     flags)  # pylint: disable=too-many-function-args
 
                 elif filing.get('courtOrder'):
                     court_order.process(business, filing_submission, filing, filing_meta)
