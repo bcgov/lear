@@ -30,17 +30,5 @@ poetry lock
 ```
 remember to switch them back before the final PR
 
-## Database management
-via poetry's shell, or enabling a python virtualenv  
-Using the Flask db commands can be used
-Deploy to a configured database
-```shell
-flask db upgrade
-```
-Update migrations for model changes
-```shell
-flask db migrate
-```
-
 ## Tests
 pytest
