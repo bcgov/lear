@@ -139,7 +139,7 @@ class AccountService:
             return None
 
     @classmethod
-    # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name;
+    # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name, disable=redefined-outer-name;
     def create_affiliation(cls, account: int,
                            business_registration: str,
                            business_name: str = None,
