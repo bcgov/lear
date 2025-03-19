@@ -256,7 +256,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                                                     for item in sublist])
             if is_correction:
                 filing_meta.correction = {}
-
+            
             for filing in legal_filings:
                 if filing.get('alteration'):
                     alteration.process(business, filing_submission, filing, filing_meta, is_correction)
@@ -481,10 +481,11 @@ def is_system_filed_filing(filing_submission) -> bool:
 
 
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
+# async def cb_subscription_handler(msg):
     """Use Callback to process Queue Msg objects."""
     try:
-        logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
-        filing_msg = json.loads(msg.data.decode('utf-8'))
+        # logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
+        filing_msg = msg
         logger.debug('Extracted filing msg: %s', filing_msg)
         await process_filing(filing_msg, FLASK_APP)
     except OperationalError as err:
@@ -495,7 +496,13 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                      '\n\nThis message has been put back on the queue for reprocessing.',
                      json.dumps(filing_msg), exc_info=True)
         raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    except (QueueException, Exception):  # pylint: disable=broad-except
+    except (QueueException, Exception) as err:  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(filing_msg), level='error')
         logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)
+
+# import asyncio
+# # //171009
+# if __name__ == '__main__':
+    
+#     asyncio.run(cb_subscription_handler({'filing': {'id': '172702'}}))

@@ -19,11 +19,15 @@ from typing import List, Optional
 
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
+from legal_api.services import Flags
 from legal_api.services.minio import MinioService
+from legal_api.services.document_record import DocumentRecordService
+from legal_api.constants import DocumentClassEnum
 from legal_api.services.pdf_service import RegistrarStampData
 
 from entity_filer.utils import replace_file_with_certified_copy
 
+flags = Flags()  # pylint: disable=invalid-name
 
 def update_rules(
     business: Business,
@@ -40,9 +44,22 @@ def update_rules(
         return None
 
     is_correction = filing.filing_type == 'correction'
-    rules_file = MinioService.get_file(rules_file_key)
+
+    if not flags.is_on('enable-document-records'):
+        rules_file = DocumentRecordService.download_document(
+            DocumentClassEnum.COOP.value, 
+            rules_file_key
+        )
+    else:
+        rules_file = MinioService.get_file(rules_file_key)
+
     registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)
-    replace_file_with_certified_copy(rules_file.data, rules_file_key, registrar_stamp_data)
+    replace_file_with_certified_copy(
+        rules_file.data,
+        rules_file_key,
+        registrar_stamp_data,
+        rules_file.name
+    )
 
     document = Document()
     document.type = DocumentType.COOP_RULES.value
@@ -70,10 +87,20 @@ def update_memorandum(
 
     is_correction = filing.filing_type == 'correction'
     # create certified copy for memorandum document
-    memorandum_file = MinioService.get_file(memorandum_file_key)
+    if flags.is_on('enable-document-records'):
+        memorandum_file = DocumentRecordService.download_document(
+            DocumentClassEnum.COOP.value, 
+            memorandum_file_key
+        )
+    else:
+        memorandum_file = MinioService.get_file(memorandum_file_key)
     registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)
-    replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
-
+    replace_file_with_certified_copy(
+        memorandum_file.data,
+        memorandum_file_key,
+        registrar_stamp_data,
+        memorandum_file.name
+    )
     document = Document()
     document.type = DocumentType.COOP_MEMORANDUM.value
     document.file_key = memorandum_file_key

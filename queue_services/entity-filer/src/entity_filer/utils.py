@@ -19,12 +19,14 @@ import io
 import os
 
 import PyPDF2
-from legal_api.services import PdfService
+from legal_api.services import PdfService, Flags
 from legal_api.services.minio import MinioService
+from legal_api.services.document_record import DocumentRecordService
 from legal_api.services.pdf_service import RegistrarStampData
 
 from entity_filer.version import __version__
 
+flags = Flags()  # pylint: disable=invalid-name
 
 def _get_build_openshift_commit_hash():
     return os.getenv('OPENSHIFT_BUILD_COMMIT', None)
@@ -38,7 +40,7 @@ def get_run_version():
     return __version__
 
 
-def replace_file_with_certified_copy(_bytes: bytes, key: str, data: RegistrarStampData):
+def replace_file_with_certified_copy(_bytes: bytes, key: str, data: RegistrarStampData, file_name: str):
     """Create a certified copy and replace it into Minio server."""
     open_pdf_file = io.BytesIO(_bytes)
     pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
@@ -50,5 +52,7 @@ def replace_file_with_certified_copy(_bytes: bytes, key: str, data: RegistrarSta
     pdf_service = PdfService()
     registrars_stamp = pdf_service.create_registrars_stamp(data)
     certified_copy = pdf_service.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
-
-    MinioService.put_file(key, certified_copy, certified_copy.getbuffer().nbytes)
+    if(flags.is_on('enable-document-records')):
+        DocumentRecordService.update_document(certified_copy, key, file_name)
+    else:
+        MinioService.put_file(key, certified_copy, certified_copy.getbuffer().nbytes)
