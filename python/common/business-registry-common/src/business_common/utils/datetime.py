@@ -25,7 +25,7 @@ class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha dat
     def utcnow(cls):
         """Construct a UTC non-naive datetime, meaning it includes timezone from time.time()."""
         time_stamp = _time.time()
-        return super().utcfromtimestamp(time_stamp).replace(tzinfo=timezone.utc)
+        return super().fromtimestamp(time_stamp, timezone.utc).replace(tzinfo=timezone.utc)
 
     @classmethod
     def from_date(cls, date_obj):
