@@ -46,7 +46,7 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
 
     consent_amalgamation_out.filing_id = cco_filing.id
     consent_amalgamation_out.business_id = business.id
-    business.consent_amalgamation_outs.append(consent_amalgamation_out)
+    business.consent_continuation_outs.append(consent_amalgamation_out)
 
     filing_meta.consent_amalgamation_out = {
         'country': country,
