@@ -77,7 +77,7 @@ async def test_worker_consent_amalgamation_out(app, session, mocker, test_name, 
 
     expiry_date_utc = LegislationDatetime.as_utc_timezone(expiry_date)
 
-    cco = ConsentContinuationOut.get_active_cco(business_id, expiry_date_utc)
+    cco = ConsentContinuationOut.get_active_cco(business_id, expiry_date_utc, consent_type=ConsentContinuationOut.ConsentTypes.amalgamation_out)
     assert cco
     assert cco[0].consent_type == ConsentContinuationOut.ConsentTypes.amalgamation_out
     assert cco[0].foreign_jurisdiction == \
