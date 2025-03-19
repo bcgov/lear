@@ -74,6 +74,7 @@ from entity_filer.filing_processors import (
     amalgamation_application,
     annual_report,
     appoint_receiver,
+    cease_receiver,
     change_of_address,
     change_of_directors,
     change_of_name,
@@ -132,7 +133,7 @@ async def publish_event(business: Business, filing: Filing):
     temp_reg = filing.temp_reg
     if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
         current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-                     filing, filing.withdrawn_filing)
+                                 filing, filing.withdrawn_filing)
         temp_reg = filing.withdrawn_filing.temp_reg
     business_identifier = business.identifier if business else temp_reg
 
@@ -175,7 +176,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
     temp_reg = filing.temp_reg
     if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
         current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-                     filing, filing.withdrawn_filing)
+                                 filing, filing.withdrawn_filing)
         temp_reg = filing.withdrawn_filing.temp_reg
     business_identifier = business.identifier if business else temp_reg
 
@@ -259,17 +260,17 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
         if filing_core_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
             current_app.logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
-                                        filing_submission.business_id, filing_submission.id, filing_msg)
+                                       filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
         if filing_submission.withdrawal_pending:
             current_app.logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
-                                        filing_submission.business_id, filing_submission.id, filing_msg)
+                                       filing_submission.business_id, filing_submission.id, filing_msg)
             raise QueueException
 
         # convenience flag to set that the envelope is a correction
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
-        # pylint: disable=too-many-nested-blocks;
+        # pylint: disable=too-many-nested-blocks, disable=too-many-function-args;
         if legal_filings := filing_core_submission.legal_filings():
             VersioningProxy.get_transaction_id(db.session())
 
@@ -393,6 +394,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('appointReceiver'):
                     appoint_receiver.process(business, filing, filing_submission, filing_meta)
+
+                elif filing.get('ceaseReceiver'):
+                    cease_receiver.process(business, filing, filing_submission, filing_meta)
 
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)

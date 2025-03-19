@@ -358,6 +358,15 @@
                {% endif %}
                <div class="pt-2">{{ report_date_time }}</div>
             </td>
+         {% elif header.name == 'ceaseReceiver' %}
+            <td>
+               <div class="bold">Incorporation Number:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+            </td>
          {% endif %}
          {% if reportType != 'summary' %}
          <td class="business-details-registar-td">

@@ -18,8 +18,7 @@ from typing import Dict
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
-from legal_api.services import Flags
-from legal_api.services import MinioService
+from legal_api.services import Flags, MinioService
 from legal_api.services.pdf_service import RegistrarStampData
 
 from entity_filer.filing_meta import FilingMeta

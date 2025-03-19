@@ -32,12 +32,42 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Cease Receiver filing."""
-from typing import Optional
+from http import HTTPStatus
+from typing import Dict, Optional
+
+from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
+from legal_api.models import Business, PartyRole
+from legal_api.utils.datetime import datetime, timezone
 
 
-def validate(_: dict) -> Optional[Error]:
+def validate(business: Business, cease_receiver: Dict) -> Optional[Error]:
     """Validate the Cease Receiver filing."""
-    # NOTE: There isn't anything to validate outside what is already validated via the schema yet
+    if not business or not cease_receiver:
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+    msg = []
+    msg.extend(validate_party(business, cease_receiver))
+
+    if msg:
+        return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+
+def validate_party(business: Business, filing: Dict) -> list:
+    """Validate party."""
+    msg = []
+    parties = filing['filing']['ceaseReceiver']['parties']
+
+    # get Receivers for the business
+    receivers = PartyRole.get_party_roles(business.id,
+                                          datetime.now(tz=timezone.utc).date(),
+                                          PartyRole.RoleTypes.RECEIVER.value)
+    receiver_role_ids = [receiver_party_role.id for receiver_party_role in receivers]
+
+    # Check if party is a valid party of receiver role
+    for party in parties:
+        if party.get('officer').get('id') not in receiver_role_ids:
+            msg.append({'error': 'Must be a valid Receiver party.', 'path': '/filing/ceaseReceiver/parties'})
+
+    return msg

@@ -32,6 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Entity-Filer module.
+
 Provides the service that applies filings to the Business Database structure.
 """
 from flask import Flask
