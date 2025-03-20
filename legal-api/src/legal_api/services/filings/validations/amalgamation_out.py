@@ -49,7 +49,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
         is_valid_foreign_jurisdiction = False
 
     if is_valid_co_date and is_valid_foreign_jurisdiction:
-        msg.extend(validate_active_cco(business, filing, filing_type))
+        msg.extend(validate_active_cao(business, filing, filing_type))
 
     if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
         court_order_path: Final = f'/filing/{filing_type}/courtOrder'
@@ -62,7 +62,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     return None
 
 
-def validate_active_cco(business: Business, filing: Dict, filing_type: str) -> list:
+def validate_active_cao(business: Business, filing: Dict, filing_type: str) -> list:
     """Validate active consent amalgamation out."""
     msg = []
     amalgamation_out_date_str = filing['filing'][filing_type]['amalgamationOutDate']
@@ -73,12 +73,12 @@ def validate_active_cco(business: Business, filing: Dict, filing_type: str) -> l
     region = foreign_jurisdiction.get('region')
 
     amalgamation_out_date_utc = LegislationDatetime.as_utc_timezone(amalgamation_out_date)
-    ccos = ConsentContinuationOut.get_active_cco(business.id, amalgamation_out_date_utc, country_code, region,
+    caos = ConsentContinuationOut.get_active_cco(business.id, amalgamation_out_date_utc, country_code, region,
                                                  consent_type=ConsentContinuationOut.ConsentTypes.amalgamation_out)
 
     active_consent = False
     # Make sure amalgamation_out_date is on or after consent filing effective date
-    for consent in ccos:
+    for consent in caos:
         if amalgamation_out_date.date() >= \
                 LegislationDatetime.as_legislation_timezone(consent.filing.effective_date).date():
             active_consent = True

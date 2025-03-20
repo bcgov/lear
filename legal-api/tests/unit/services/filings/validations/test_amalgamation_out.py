@@ -30,7 +30,7 @@ from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
 
 date_format = '%Y-%m-%d'
 legal_name = 'Test name request'
-validate_active_cco_path = 'legal_api.services.filings.validations.amalgamation_out.validate_active_cco'
+validate_active_cao_path = 'legal_api.services.filings.validations.amalgamation_out.validate_active_cao'
 
 
 def _create_consent_amalgamation_out(business, foreign_jurisdiction, effective_date=datetime.utcnow()):
@@ -57,7 +57,7 @@ def _create_consent_amalgamation_out(business, foreign_jurisdiction, effective_d
     'test_name, expected_code, message',
     [
         ('FAIL_IN_FUTURE', HTTPStatus.BAD_REQUEST, 'Amalgamation out date must be today or past.'),
-        ('FAIL_NO_CCO', HTTPStatus.BAD_REQUEST, 'No active consent amalgamation out for this date and/or jurisdiction.'),
+        ('FAIL_NO_CAO', HTTPStatus.BAD_REQUEST, 'No active consent amalgamation out for this date and/or jurisdiction.'),
         ('SUCCESS', None, None)
     ]
 )
@@ -74,7 +74,7 @@ def test_validate_amalgamation_out_date(session, test_name, expected_code, messa
     if test_name == 'FAIL_IN_FUTURE':
         filing['filing']['amalgamationOut']['amalgamationOutDate'] = \
             (LegislationDatetime.now() + datedelta.datedelta(days=1)).strftime(date_format)
-    elif test_name == 'FAIL_NO_CCO':
+    elif test_name == 'FAIL_NO_CAO':
         effective_date -= datedelta.datedelta(months=6, days=1)
 
     _create_consent_amalgamation_out(business,
@@ -120,7 +120,7 @@ def test_validate_foreign_jurisdiction(session, mocker, test_name, expected_code
         filing['filing']['amalgamationOut']['foreignJurisdiction']['country'] = 'US'
         filing['filing']['amalgamationOut']['foreignJurisdiction']['region'] = 'NONE'
 
-    mocker.patch(validate_active_cco_path, return_value=[])
+    mocker.patch(validate_active_cao_path, return_value=[])
     err = validate(business, filing)
 
     # validate outcomes
@@ -137,7 +137,7 @@ def test_valid_foreign_jurisdiction(session, mocker):
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'amalgamationOut'
-    mocker.patch(validate_active_cco_path, return_value=[])
+    mocker.patch(validate_active_cao_path, return_value=[])
 
     for country in pycountry.countries:
         filing['filing']['amalgamationOut'] = copy.deepcopy(AMALGAMATION_OUT)
@@ -177,7 +177,7 @@ def test_amalgamation_out_court_order(session, mocker, test_status, file_number,
     else:
         del filing['filing']['amalgamationOut']['courtOrder']['fileNumber']
 
-    mocker.patch(validate_active_cco_path, return_value=[])
+    mocker.patch(validate_active_cao_path, return_value=[])
     err = validate(business, filing)
 
     # validate outcomes
