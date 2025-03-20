@@ -340,7 +340,7 @@ def format_filings_data(data: dict) -> dict:
     for x in filings_data:
         event_file_type = x['event_file_type']
         # skip event_file_type that we don't need to support
-        if event_file_type in SKIPPED_EVENT_FILE_TYPES:
+        if event_file_type in SKIPPED_EVENT_FILE_TYPES or event_file_type in NO_FILING_EVENT_FILE_TYPES:
             print(f'💡 Skip event filing type: {event_file_type}')
             continue
         # TODO: build a new complete filing event mapper (WIP)
