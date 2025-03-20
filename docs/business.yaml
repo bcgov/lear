@@ -3073,28 +3073,28 @@ paths:
                 incorporation-application-success-response:
                   summary: Incorporation Application Response  
                   value:
-                    errors:
-                      - null
                     filing:
                       business:
-                        identifier: Tqcbbbc157  
+                        identifier: T12345678  
                       header:
-                        accountId: 6164
+                        accountId: 12345
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: API Specs
                         colinIds: []
                         comments: []
-                        date: '2024-07-25'
+                        date: '2025-03-20T21:29:35.662445+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-25T16:17:57.191129+00:00'
-                        email: no_one@never.get
-                        filingId: 150333
+                        effectiveDate: '2025-03-20T16:17:57.191129+00:00'
+                        filingId: 123456
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         name: incorporationApplication
-                        status: DRAFT
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
                         submitter: mocked submitter
                       incorporationApplication:
                         contactPoint:
@@ -3103,6 +3103,7 @@ paths:
                         nameRequest:
                           legalType: BEN
                           nrNumber: 'NR 1345876'
+                        nameTranslations: []
                         offices:
                           recordsOffice:
                             deliveryAddress:
@@ -3131,48 +3132,45 @@ paths:
                               postalCode: H0H0H0
                               streetAddress: mailing_address - address line one
                         parties:
-                          - mailingAddress:
-                              addressCity: Victoria
+                        - officer:
+                          - firstName: BCREGTEST
+                            lastName: TEST
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-20'
+                          - roleType: Incorporator
+                            appointmentDate: '2025-03-20'
+                          - roleType: Director
+                            appointmentDate: '2025-03-20'
+                        - mailingAddress: 
+                          - addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
+                        - deliveryAddress:
+                            - addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
-                              streetAddressAdditional: ''
-                            officer:
-                              email: severin@example.com
-                              firstName: BCREGTEST Lucille
-                              id: 'p90x2145'
-                              lastName: TWENTY
-                              middleName: ''
-                              organizationName: '' 
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2024-07-24'
-                                roleType: Completing Party
-                          - deliveryAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5E 1R9
-                              streetAddress: 6767 Burford St
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5E 1R9
-                              streetAddress: 6767 Burford St
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Director
-                              id: 'p90x2145'
-                              lastName: Test
-                              middleName: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2024-07-24'
-                                roleType: Director
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                      shareStructure:
+                        shareClasses:
+                          - name: Sample Shares
+                            priority: 1
+                            hasMaximumShares: false
+                            maxNumberOfShares: null
+                            hasParValue: false
+                            parValue: null
+                            currency: null
+                            hasRightsOrRestrictions: false
+                            series: []
                 registration-sucess-response:
                   summary: Registartion Response
                   value:
@@ -3738,10 +3736,9 @@ paths:
                   filing:
                     header:
                       certifiedBy: API Specs
-                      email: no_one@never.get
                       name: incorporationApplication
-                      date: '2024-07-25'
-                      accountId: 6164
+                      date: '2025-03-20'
+                      accountId: 12345
                     incorporationApplication:
                       nameRequest:
                         legalType: BEN
@@ -3777,46 +3774,47 @@ paths:
                         email: no_one@never.get
                         phone: 123-456-7890
                       parties:
-                        - mailingAddress:
-                            addressCity: Victoria
+                        - officer:
+                          - firstName: BCREGTEST
+                            lastName: TEST
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-20'
+                          - roleType: Incorporator
+                            appointmentDate: '2025-03-20'
+                          - roleType: Director
+                            appointmentDate: '2025-03-20'
+                        - mailingAddress: 
+                          - addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
-                            streetAddressAdditional: ''
-                          officer:
-                            email: severin@example.com
-                            firstName: BCREGTEST Lucille
-                            lastName: TWENTY
-                            middleName: ''
-                            organizationName: ''
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-24'
-                              roleType: Completing Party
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
                         - deliveryAddress:
-                            addressCity: Burnaby
-                            addressCountry: CA
-                            addressRegion: BC
-                            postalCode: V5E 1R9
-                            streetAddress: 6767 Burford St
-                            streetAddressAdditional: ''
-                          mailingAddress:
-                            addressCity: Burnaby
-                            addressCountry: CA
-                            addressRegion: BC
-                            postalCode: V5E 1R9
-                            streetAddress: 6767 Burford St
-                            streetAddressAdditional: ''
-                          officer:
-                            firstName: Director
-                            lastName: Test
-                            middleName: ''
-                            organizationName: ''
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-24'
-                              roleType: Director
+                            - addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                      shareStructure:
+                        shareClasses:
+                          - name: Sample Shares
+                            priority: 1
+                            hasMaximumShares: false
+                            maxNumberOfShares: null
+                            hasParValue: false
+                            parValue: null
+                            currency: null
+                            hasRightsOrRestrictions: false
+                            series: []
+                      incorporationAgreement:
+                        agreementType: sample
               registration-request:
                 summary: Registration Request
                 value:
