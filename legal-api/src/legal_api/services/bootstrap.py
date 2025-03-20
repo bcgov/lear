@@ -27,6 +27,7 @@ from sqlalchemy.orm.exc import FlushError  # noqa: I001
 
 from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
 from legal_api.services import flags  # noqa: D204, I003, I001;# due to babel cast above
+from legal_api.services.flags import Flags
 
 
 class RegistrationBootstrapService:
@@ -180,7 +181,7 @@ class AccountService:
         # Create an account:business affiliation
         # headers with conditional sandbox override
         headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
-        if flags and flags.is_on('enable-sandbox'):
+        if flags and isinstance(flags, Flags) and flags.is_on('enable-sandbox'):
             current_app.logger.info('Appending Environment-Override = sandbox header to create affiliation call')
             headers['Environment-Override'] = 'sandbox'
 
@@ -280,7 +281,7 @@ class AccountService:
 
         # headers with conditional sandbox override
         headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
-        if flags and flags.is_on('enable-sandbox'):
+        if flags and isinstance(flags, Flags) and flags.is_on('enable-sandbox'):
             current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
             headers['Environment-Override'] = 'sandbox'
         res = requests.get(url=url, headers=headers)
