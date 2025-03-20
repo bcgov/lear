@@ -15,13 +15,12 @@
 from contextlib import suppress
 from typing import Dict
 
-import datedelta
 import dpath
 from legal_api.models import Business, ConsentContinuationOut, Filing
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import filings
+from consent_continuation_out import get_expiry_date
 
 
 def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
@@ -53,19 +52,3 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
         'region': region,
         'expiry': expiry_date.isoformat()
     }
-
-
-def get_expiry_date(filing: Filing):
-    """Get expiry after 6 months from consent amalgamation out."""
-    effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date)
-    _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
-    _date += datedelta.datedelta(months=6)
-
-    # Setting legislation timezone again after adding 6 months to recalculate the UTC offset and DST info
-    _date = LegislationDatetime.as_legislation_timezone(_date)
-
-    # Adjust day light savings. Handle DST +-1 hour changes
-    dst_offset_diff = effective_date.dst() - _date.dst()
-    _date += dst_offset_diff
-
-    return LegislationDatetime.as_utc_timezone(_date)
