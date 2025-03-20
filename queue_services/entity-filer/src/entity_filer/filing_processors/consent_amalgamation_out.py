@@ -19,8 +19,8 @@ import dpath
 from legal_api.models import Business, ConsentContinuationOut, Filing
 
 from entity_filer.filing_meta import FilingMeta
+from entity_filer.filing_processors.consent_continuation_out import get_expiry_date
 from entity_filer.filing_processors.filing_components import filings
-from consent_continuation_out import get_expiry_date
 
 
 def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
