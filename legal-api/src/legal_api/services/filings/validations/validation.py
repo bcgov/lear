@@ -173,7 +173,7 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['consentAmalgamationOut'].get('name'):
                     err = consent_amalgamation_out_validate(business, filing_json)
-                
+
                 elif k == Filing.FILINGS['amalgamationOut'].get('name'):
                     err = amalgamation_out_validate(business, filing_json)
 
