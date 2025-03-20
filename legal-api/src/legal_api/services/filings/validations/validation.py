@@ -26,6 +26,7 @@ from .agm_extension import validate as agm_extension_validate
 from .agm_location_change import validate as agm_location_change_validate
 from .alteration import validate as alteration_validate
 from .amalgamation_application import validate as amalgamation_application_validate
+from .amalgamation_out import validate as amalgamation_out_validate
 from .annual_report import validate as annual_report_validate
 from .appoint_receiver import validate as appoint_receiver_validate
 from .cease_receiver import validate as cease_receiver_validate
@@ -172,6 +173,9 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['consentAmalgamationOut'].get('name'):
                     err = consent_amalgamation_out_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['amalgamationOut'].get('name'):
+                    err = amalgamation_out_validate(business, filing_json)
 
                 elif k == Filing.FILINGS['consentContinuationOut'].get('name'):
                     err = consent_continuation_out_validate(business, filing_json)
