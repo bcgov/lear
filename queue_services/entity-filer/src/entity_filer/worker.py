@@ -79,6 +79,7 @@ from entity_filer.filing_processors import (
     change_of_directors,
     change_of_name,
     change_of_registration,
+    consent_amalgamation_out,
     consent_continuation_out,
     continuation_in,
     continuation_out,
@@ -357,6 +358,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('adminFreeze'):
                     admin_freeze.process(business, filing, filing_submission, filing_meta)
+
+                elif filing.get('consentAmalgamationOut'):
+                    consent_amalgamation_out.process(business, filing_submission, filing, filing_meta)
 
                 elif filing.get('consentContinuationOut'):
                     consent_continuation_out.process(business, filing_submission, filing, filing_meta)
