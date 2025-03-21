@@ -1603,6 +1603,269 @@ paths:
           name: only_validate
           description: This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.
         - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/filings/{filing_id}':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+      - $ref: '#/components/parameters/filingId'
+    put:
+      summary: updating filings
+      tags:
+        - business
+      operationId: put-businesses-identifier-filings-filingId
+      responses:
+        '202':
+          description: ACCEPTED
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                continuation-in-after-approved-response:
+                  summary: Complete Continuation In After Approved Response
+                  value:
+                    filing:
+                      business:
+                        identifier: TO12345678
+                        legalType: C
+                      continuationIn:
+                        authorization:
+                          files:
+                            - fileKey: 123456-mock-value-1234.pdf
+                              fileName: Example_PDF.pdf
+                        contactPoint:
+                          email: test@test.com
+                          phone: 1234567890
+                        foreignJurisdiction:
+                          country: US
+                          identifier: TEST1234
+                          incorporationDate: '2024-05-01'
+                          legalName: Test business
+                          region: CA
+                        isApproved: true
+                        nameRequest:
+                          legalName: TEST CONT IN LTD.
+                          nrNumber: NR 1234567
+                          legalType: C
+                        nameTranslations: []
+                        offices:
+                          recordsOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                          registeredOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                        parties:
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-21'
+                          - roleType: Director
+                            appointmentDate: '2025-03-21'
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
+                          deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                      shareStructure:
+                        shareClasses:
+                          - name: Sample Shares
+                            priority: 1
+                            hasMaximumShares: false
+                            maxNumberOfShares: null
+                            hasParValue: false
+                            parValue: null
+                            currency: null
+                            hasRightsOrRestrictions: false
+                            series: []
+                      header:
+                        accountId: 12345
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: First Last
+                        colinIds: []
+                        comments: []
+                        date: '2025-03-21T17:36:49.462409+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2025-03-21T17:36:49.462451+00:00'
+                        filingId: 1234567
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: false
+                        name: continuationIn
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '1234567'
+                        status: PENDING
+                        submitter: mock submitter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Filing'
+            examples:
+              continuation-in-after-approved-request:
+                summary: Complete Continuation In After Approved Request
+                value:
+                  filing:
+                    header:
+                      accountId: 12345
+                      certifiedBy: First Last
+                      date: '2025-03-21'
+                      name: continuationIn
+                    continuationIn:
+                        authorization:
+                          files:
+                            - fileKey: 123456-mock-value-1234.pdf
+                              fileName: Example_PDF.pdf
+                        contactPoint:
+                          email: test@test.com
+                          phone: 1234567890
+                        foreignJurisdiction:
+                          country: US
+                          identifier: TEST1234
+                          incorporationDate: '2024-05-01'
+                          legalName: Test business
+                          region: CA
+                        nameRequest:
+                          legalName: TEST CONT IN LTD.
+                          nrNumber: NR 1234567
+                          legalType: C
+                        nameTranslations: []
+                        offices:
+                          recordsOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                          registeredOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              addressType: null
+                              deliveryInstructions: ""
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                        parties:
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-21'
+                          - roleType: Director
+                            appointmentDate: '2025-03-21'
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
+                          deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                        shareStructure:
+                          shareClasses:
+                            - name: Sample Shares
+                              priority: 1
+                              hasMaximumShares: false
+                              maxNumberOfShares: null
+                              hasParValue: false
+                              parValue: null
+                              currency: null
+                              hasRightsOrRestrictions: false
+                              series: []
   '/businesses/{identifier}/filings/{filingId}/documents':
     parameters:
       - $ref: '#/components/parameters/identifier'
@@ -2935,15 +3198,14 @@ paths:
                         status: PENDING
                         submitter: mocked submitter
                 continuation-in-success-response:
-                  summary: Continuation In Response
+                  summary: Continuation In - To Be Approved Response
                   value:
                     filing:
                       continuationIn: 
                         authorization: 
-                            date: '2024-07-01'
                             files: 
-                              - fileKey: 0d41f3b2-f711-4733-88fd-8169646c7dbe.pdf
-                                fileName: TestPDFfile.pdf
+                              - fileKey: 123456-mock-value-1234.pdf.pdf
+                                fileName: Example_PDF.pdf
                         contactPoint: 
                             email: test@test.com
                             phone: 1234567890
@@ -2952,123 +3214,29 @@ paths:
                             identifier: TEST1234
                             incorporationDate: '2024-06-01'
                             legalName: Test business
-                            region: AL
+                            region: CA
                         nameRequest: 
                             legalName: TEST CONT IN LTD.
                             legalType: C
                             nrNumber: NR 1234567
-                        nameTranslations: []
-                        offices: 
-                          recordsOffice: 
-                            deliveryAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional: 
-                            mailingAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional: 
-                          registeredOffice: 
-                            deliveryAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional: 
-                            mailingAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional:
-                        parties:
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Joe
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Completing Party
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          deliveryAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Director
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Director
-                        shareStructure: 
-                          shareClasses:
-                            - name: Classic 1 Shares
-                              priority: 0
-                              maxNumberOfShares: 0
-                              parValue: 0
-                              currency: string
-                              hasMaximumShares: true
-                              hasParValue: true
-                              hasRightsOrRestrictions: true
-                              series:
-                                - name: string
-                                  priority: 0
-                                  hasMaximumShares: true
-                                  hasRightsOrRestrictions: true
                       business: 
                         identifier: TO12345678
                       header:
-                        accountId: 1234
+                        accountId: 123456
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-25'
+                        date: '2025-03-21T19:54:02.949764+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-25T19:54:02.949764+00:00'
-                        email: no_one@never.get
-                        filingId: 150338
+                        effectiveDate: '2025-03-21T19:54:02.949764+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         name: continuationIn
-                        status: DRAFT
+                        status: AWAITING_REVIEW
                         submitter: mocked submitter
                 incorporation-application-success-response:
                   summary: Incorporation Application Response  
@@ -3132,13 +3300,6 @@ paths:
                               postalCode: H0H0H0
                               streetAddress: mailing_address - address line one
                         parties:
-                        - officer:
-                          - firstName: First
-                            lastName: Last
-                            middleName: ""
-                            organizationName: ""
-                            partyType: "person"
-                            email: "apiSpec@example.com"
                         - roles:
                           - roleType: Completing Party
                             appointmentDate: '2025-03-20'
@@ -3146,15 +3307,22 @@ paths:
                             appointmentDate: '2025-03-20'
                           - roleType: Director
                             appointmentDate: '2025-03-20'
-                        - mailingAddress: 
-                          - addressCity: mailing_address city
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             postalCode: H0H0H0
                             streetAddress: mailing_address - address line one
                             streetAddressAdditional: ""
-                        - deliveryAddress:
-                            - addressCity: delivery_address city
+                          deliveryAddress:
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               postalCode: H0H0H0
@@ -3613,25 +3781,19 @@ paths:
                               series: []
                       type: vertical
               continuation-in-request:
-                summary: Continuation In Request
+                summary: Continuation In - To Be Approved Request
                 value:
                   filing:
                     header: 
-                      accountId: 1234
-                      certifiedBy: full name
-                      email: 'no_one@never.get'
-                      date: '2024-07-26'
+                      accountId: 123456
+                      certifiedBy: First Last
+                      date: '2025-03-21'
                       name: continuationIn
                     continuationIn:
                       authorization: 
-                          date: '2024-07-01'
                           files: 
-                            - file:
-                                lastModified: 1667594705083
-                                name: TestPDFfile.pdf
-                                size: 83186
-                              fileKey: 0d41f3b2-f711-4733-88fd-8169646c7dbe.pdf
-                              fileName: TestPDFfile.pdf
+                              - fileKey: 123456-mock-value-1234.pdf
+                                fileName: Example_PDF.pdf
                       contactPoint: 
                           email: test@test.com
                           phone: 1234567890
@@ -3640,96 +3802,11 @@ paths:
                           identifier: TEST1234
                           incorporationDate: '2024-06-01'
                           legalName: Test business
-                          region: AL
+                          region: CA
                       nameRequest: 
                           nrNumber: NR 1234567
                           legalName: TEST CONT IN LTD.
                           legalType: C
-                      nameTranslations: []
-                      offices: 
-                        recordsOffice: 
-                          deliveryAddress: 
-                            streetAddress: delivery_address - address line one
-                            addressCity: delivery_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            addressCity: mailing_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                        registeredOffice: 
-                          deliveryAddress: 
-                            streetAddress: delivery_address - address line one
-                            addressCity: delivery_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            addressCity: mailing_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                      parties:
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Joe
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Completing Party
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          deliveryAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Director
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Director
-                      shareStructure: 
-                        shareClasses:
-                          - name: Classic 1 Shares
-                            priority: 0
-                            maxNumberOfShares: 0
-                            parValue: 0
-                            currency: string
-                            hasMaximumShares: true
-                            hasParValue: true
-                            hasRightsOrRestrictions: true
-                            series:
-                              - name: string
-                                priority: 0
-                                hasMaximumShares: true
-                                hasRightsOrRestrictions: true
               incorporation-application-request:
                 summary: Incorporation Application Request
                 value:
@@ -3774,13 +3851,6 @@ paths:
                         email: no_one@never.get
                         phone: 123-456-7890
                       parties:
-                        - officer:
-                          - firstName: First
-                            lastName: Last
-                            middleName: ""
-                            organizationName: ""
-                            partyType: "person"
-                            email: "apiSpec@example.com"
                         - roles:
                           - roleType: Completing Party
                             appointmentDate: '2025-03-20'
@@ -3788,15 +3858,22 @@ paths:
                             appointmentDate: '2025-03-20'
                           - roleType: Director
                             appointmentDate: '2025-03-20'
-                        - mailingAddress: 
-                          - addressCity: mailing_address city
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             postalCode: H0H0H0
                             streetAddress: mailing_address - address line one
                             streetAddressAdditional: ""
-                        - deliveryAddress:
-                            - addressCity: delivery_address city
+                          deliveryAddress:
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               postalCode: H0H0H0
