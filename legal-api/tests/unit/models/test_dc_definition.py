@@ -41,7 +41,8 @@ def test_find_by_credential_type(session):
     """Assert that the method returns correct value."""
     definition = create_dc_definition()
 
-    res = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
+    res = DCDefinition.find_by_credential_type(
+        DCDefinition.CredentialType.business)
 
     assert res
     assert res.schema_id == definition.schema_id
@@ -56,7 +57,8 @@ def test_deactivate(session):
     res = DCDefinition.find_by_id(definition.id)
     assert res.is_deleted
 
-    res = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
+    res = DCDefinition.find_by_credential_type(
+        DCDefinition.CredentialType.business)
     assert not res
 
 
@@ -66,8 +68,7 @@ def test_find_by(session):
 
     res = DCDefinition.find_by(credential_type=DCDefinition.CredentialType.business,
                                schema_id='test_schema_id',
-                               credential_definition_id='test_credential_definition_id',
-                               )
+                               credential_definition_id='test_credential_definition_id')
     assert res
     assert res.id == definition.id
 
