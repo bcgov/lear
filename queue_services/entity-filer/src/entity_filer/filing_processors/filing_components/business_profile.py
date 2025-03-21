@@ -13,6 +13,7 @@
 # limitations under the License.
 """Manages the type of Business."""
 import json
+import traceback
 from http import HTTPStatus
 from typing import Dict
 
@@ -22,13 +23,18 @@ from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 from legal_api.models import Business, Filing, RegistrationBootstrap
+from legal_api.services import Flags
 from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_processors.filing_components import business_info
 
 
-def update_business_profile(business: Business, filing: Filing, filing_type: str = None):
+def update_business_profile(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
     """Update business profile."""
+    if flags.is_on('enable-sandbox'):
+        current_app.logger.info('Skip updating business profile')
+        return
+
     filing_type = filing_type if filing_type else filing.filing_type
     if contact_point := filing.filing_json['filing'][filing_type].get('contactPoint'):
         if err := _update_business_profile(business, contact_point):
@@ -92,9 +98,10 @@ def _update_business_profile(business: Business, profile_info: Dict) -> Dict:
     return error
 
 
-def update_affiliation(business: Business, filing: Filing):
+def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
+        current_app.logger.info('Updating affiliation for business')
         bootstrap = RegistrationBootstrap.find_by_identifier(filing.temp_reg)
 
         pass_code = ''
@@ -117,11 +124,13 @@ def update_affiliation(business: Business, filing: Filing):
             business_name=business.legal_name,
             corp_type_code=business.legal_type,
             pass_code=pass_code,
-            details=details
+            details=details,
+            flags=flags
         )
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):
             deaffiliation = AccountService.delete_affiliation(bootstrap.account, business.identifier)
+            current_app.logger.error(f'Unable to affiliate business:{business.identifier} for filing:{filing.id}')
             sentry_sdk.capture_message(
                 f'Queue Error: Unable to affiliate business:{business.identifier} for filing:{filing.id}',
                 level='error'
@@ -140,6 +149,8 @@ def update_affiliation(business: Business, filing: Filing):
                 or ('bootstrap_update' in locals() and bootstrap_update != HTTPStatus.OK)):
             raise QueueException
     except Exception as err:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+        current_app.logger.error(f'Affiliation error for filing:{filing.id}, with err:{err}')
+        current_app.logger.debug(traceback.format_exc())
         sentry_sdk.capture_message(
             f'Queue Error: Affiliation error for filing:{filing.id}, with err:{err}',
             level='error'

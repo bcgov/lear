@@ -17,7 +17,8 @@ from typing import Dict
 
 import dpath
 import sentry_sdk
-from entity_queue_common.service_utils import QueueException, logger
+from entity_queue_common.service_utils import QueueException
+from flask import current_app
 from legal_api.models import BatchProcessing, Business, Document, Filing, db
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
@@ -36,10 +37,10 @@ from entity_filer.utils import replace_file_with_certified_copy
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta, flag_on: bool = False):
     """Render the dissolution filing unto the model objects."""
     if not (dissolution_filing := filing.get('dissolution')):
-        logger.error('Could not find Dissolution in: %s', filing)
+        current_app.logger.error('Could not find Dissolution in: %s', filing)
         raise QueueException(f'legal_filing:Dissolution missing from {filing}')
 
-    logger.debug('processing dissolution: %s', filing)
+    current_app.logger.debug('processing dissolution: %s', filing)
 
     filing_meta.dissolution = {}
     dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
@@ -75,7 +76,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         if office := create_office(business, 'custodialOffice', custodial_office):
             business.offices.append(office)
         else:
-            logger.error('Could not create custodial office for Dissolution in: %s', filing)
+            current_app.logger.error('Could not create custodial office for Dissolution in: %s', filing)
             sentry_sdk.capture_message(
                 f'Queue Error: Could not create custodial office for Dissolution filing:{filing.id}',
                 level='error')

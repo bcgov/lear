@@ -97,7 +97,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
-    {where_clause}        
+    {where_clause}
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
@@ -616,10 +616,10 @@ def get_filings_query(corp_num):
             cn_new.corp_name        as new_corp_name,
             
             -- continuation out
-            co.can_jur_typ_cd as cont_out_can_jur_typ_cd,
+            co.can_jur_typ_cd as out_can_jur_typ_cd,
             to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
-            co.othr_juri_desc as cont_out_othr_juri_desc,
-            co.home_company_nme as cont_out_home_company_nme
+            co.othr_juri_desc as out_othr_juri_desc,
+            co.home_company_nme as out_home_company_nme
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
@@ -764,9 +764,10 @@ def get_offices_held_query(corp_num):
     return query
 
 
-def get_cont_out_query(corp_num):
+def get_out_data_query(corp_num):
     query = f"""
     select
+        cs.state_type_cd,
         co.can_jur_typ_cd,
         to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
         co.othr_juri_desc,
@@ -795,7 +796,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'business_comments': get_business_comments_query(corp_num),
         'filing_comments': get_filing_comments_query(corp_num),
         'in_dissolution': get_in_dissolution_query(corp_num),
-        'cont_out': get_cont_out_query(corp_num),
+        'out_data': get_out_data_query(corp_num),  # continuation/amalgamation out
     }
 
     return queries
