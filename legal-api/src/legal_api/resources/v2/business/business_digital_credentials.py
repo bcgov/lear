@@ -104,6 +104,7 @@ def create_invitation(identifier):
             )
             connection.save()
         except Exception as err:
+            current_app.logger.error(err)
             return jsonify({'message': 'Unable to create a connection.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     return jsonify(connection.json), HTTPStatus.OK
@@ -196,8 +197,8 @@ def delete_active_connection(identifier):
 @cross_origin(origin='*')
 @jwt.requires_auth
 @can_access_digital_credentials
-def get_issued_credentials(identifier):
-    """Get all issued credentials."""
+def get_credentials(identifier):
+    """Get all credentials."""
     business_user, error_response, error_status = get_business_user(identifier)
     if error_response:
         return error_response, error_status
@@ -205,18 +206,18 @@ def get_issued_credentials(identifier):
     if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
-    if not (issued_credential := DCCredential.find_by_connection_id(connection_id=connection.id)):
+    if not (credential := DCCredential.find_by_connection_id(connection_id=connection.id)):
         return jsonify({'issuedCredentials': []}), HTTPStatus.OK
 
     response = []
     response.append({
         'legalName': business_user.business.legal_name,
         'businessIdentifier': business_user.business.identifier,
-        'credentialType': issued_credential.definition.credential_type.name,
-        'credentialId': issued_credential.credential_id,
-        'isIssued': issued_credential.is_issued,
-        'dateOfIssue': issued_credential.date_of_issue.isoformat() if issued_credential.date_of_issue else '',
-        'isRevoked': issued_credential.is_revoked
+        'credentialType': credential.definition.credential_type.name,
+        'credentialId': credential.credential_id,
+        'isIssued': credential.is_issued,
+        'dateOfIssue': credential.date_of_issue.isoformat() if credential.date_of_issue else '',
+        'isRevoked': credential.is_revoked
     })
     return jsonify({'issuedCredentials': response}), HTTPStatus.OK
 
@@ -225,8 +226,8 @@ def get_issued_credentials(identifier):
 @cross_origin(origin='*')
 @jwt.requires_auth
 @can_access_digital_credentials
-def send_credential(identifier, credential_type):
-    """Issue credentials to the connection."""
+def send_credential(identifier, credential_type):  # pylint: disable=too-many-locals
+    """Issue a credential to the connection."""
     business_user, error_response, error_status = get_business_user(identifier)
     if error_response:
         return error_response, error_status
@@ -242,14 +243,16 @@ def send_credential(identifier, credential_type):
                                       digital_credentials.business_schema_id,
                                       digital_credentials.business_cred_def_id)
 
-    issued_credentials = DCCredential.find_by_filters([
+    credentials = DCCredential.find_by_filters([
         DCCredential.connection_id == connection.id,
         DCCredential.definition_id == definition.id
     ])
-    if issued_credentials and issued_credentials[0].credential_exchange_id:
+    if credentials and credentials[0].credential_exchange_id:
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     json_input = request.get_json()
+    has_preconditions = bool(len(rules.get_preconditions(
+        business_user.user, business_user.business)) > 0)
     preconditions_met = json_input.get(
         'preconditionsMet', None) if json_input else None
 
@@ -265,16 +268,22 @@ def send_credential(identifier, credential_type):
     )):
         return jsonify({'message': 'Failed to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    issued_credential = DCCredential(
-        credential_id=credential_id,
-        connection_id=connection.id,
-        credential_exchange_id=response['cred_ex_id'],
-        definition_id=definition.id,
-        # FIXME: this constraint needs to be enforced in the DB
-        business_user_id=business_user.id,
+    try:
+        issued_credential = DCCredential(
+            credential_id=credential_id,
+            connection_id=connection.id,
+            credential_exchange_id=response['cred_ex_id'],
+            definition_id=definition.id,
+            # FIXME: this constraint needs to be enforced in the DB
+            business_user_id=business_user.id,
+            credential_json=credential_data,
+            is_role_self_attested=preconditions_met if has_preconditions else None,
 
-    )
-    issued_credential.save()
+        )
+        issued_credential.save()
+    except Exception as err:
+        current_app.logger.error(err)
+        return jsonify({'message': 'Failed to save issued credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     return jsonify(issued_credential.json), HTTPStatus.OK
 
@@ -293,22 +302,23 @@ def revoke_credential(identifier, credential_id):
     if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
-    issued_credential = DCCredential.find_by_credential_id(
+    credential = DCCredential.find_by_credential_id(
         credential_id=credential_id)
-    if not issued_credential or issued_credential.is_revoked:
+    if not credential or credential.is_revoked:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
     reissue = request.get_json().get('reissue', False)
     reason = DCRevocationReason.SELF_REISSUANCE if reissue else DCRevocationReason.SELF_REVOCATION
 
     if digital_credentials.revoke_credential(connection.connection_id,
-                                             issued_credential.credential_revocation_id,
-                                             issued_credential.revocation_registry_id,
+                                             credential.credential_revocation_id,
+                                             credential.revocation_registry_id,
                                              reason) is None:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    issued_credential.is_revoked = True
-    issued_credential.save()
+    credential.date_of_issue = datetime.utcnow()
+    credential.is_revoked = True
+    credential.save()
     return jsonify({'message': 'Credential has been revoked.'}), HTTPStatus.OK
 
 
@@ -321,14 +331,14 @@ def delete_credential(identifier, credential_id):
     if not Business.find_by_identifier(identifier):
         return jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    if not (issued_credential := DCCredential.find_by_credential_id(credential_id=credential_id)):
+    if not (credential := DCCredential.find_by_credential_id(credential_id=credential_id)):
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
-    if (digital_credentials.fetch_credential_exchange_record(issued_credential.credential_exchange_id) is not None and
-            digital_credentials.remove_credential_exchange_record(issued_credential.credential_exchange_id) is None):
+    if (digital_credentials.fetch_credential_exchange_record(credential.credential_exchange_id) is not None and
+            digital_credentials.remove_credential_exchange_record(credential.credential_exchange_id) is None):
         return jsonify({'message': 'Failed to remove credential exchange record.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    issued_credential.delete()
+    credential.delete()
     return jsonify({'message': 'Credential has been deleted.'}), HTTPStatus.OK
 
 
@@ -352,18 +362,18 @@ def webhook_notification(topic_name: str):
                     connection.save()
         elif topic_name == 'issuer_cred_rev' and state == 'issued':
             cred_ex_id = json_input.get('cred_ex_id', None)
-            if cred_ex_id and (issued_credential := DCCredential.find_by_credential_exchange_id(
+            if cred_ex_id and (credential := DCCredential.find_by_credential_exchange_id(
                     cred_ex_id)):
-                issued_credential.credential_revocation_id = json_input['cred_rev_id']
-                issued_credential.revocation_registry_id = json_input['rev_reg_id']
-                issued_credential.save()
+                credential.credential_revocation_id = json_input['cred_rev_id']
+                credential.revocation_registry_id = json_input['rev_reg_id']
+                credential.save()
         elif topic_name == 'issue_credential_v2_0' and state == 'done':
             cred_ex_id = json_input.get('cred_ex_id', None)
-            if (issued_credential := DCCredential.find_by_credential_exchange_id(
+            if (credential := DCCredential.find_by_credential_exchange_id(
                     cred_ex_id)):
-                issued_credential.date_of_issue = datetime.utcnow()
-                issued_credential.is_issued = True
-                issued_credential.save()
+                credential.date_of_issue = datetime.utcnow()
+                credential.is_issued = True
+                credential.save()
         elif topic_name == 'present_proof_v2_0' and state == 'done':
             connection_id = json_input.get('connection_id', None)
             verified = json_input.get('verified', 'false') == 'true'

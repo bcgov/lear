@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from typing import Any, List
 
+from sqlalchemy.dialects.postgresql import JSONB
+
 from .db import db
 
 
@@ -33,13 +35,19 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
     definition_id = db.Column('definition_id', db.Integer, db.ForeignKey(
         'dc_definitions.id'), nullable=False)
 
-    is_issued = db.Column('is_issued', db.Boolean, default=False)
-    date_of_issue = db.Column('date_of_issue', db.DateTime(timezone=True))
-    is_revoked = db.Column('is_revoked', db.Boolean, default=False)
     credential_revocation_id = db.Column(
         'credential_revocation_id', db.String(10))
     revocation_registry_id = db.Column(
         'revocation_registry_id', db.String(200))
+
+    credential_json = db.Column('raw_data', JSONB)
+    is_role_self_attested = db.Column('is_role_self_attested', db.Boolean)
+
+    is_issued = db.Column('is_issued', db.Boolean, default=False)
+    date_of_issue = db.Column('date_of_issue', db.DateTime(timezone=True))
+    is_revoked = db.Column('is_revoked', db.Boolean, default=False)
+    date_of_revocation = db.Column(
+        'date_of_revocation', db.DateTime(timezone=True))
 
     business_user_id = db.Column('business_user_id', db.Integer, db.ForeignKey(
         'dc_business_users.id'), nullable=False)
