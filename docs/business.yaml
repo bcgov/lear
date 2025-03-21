@@ -3080,7 +3080,7 @@ paths:
                         accountId: 12345
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: API Specs
+                        certifiedBy: BCREGTEST TEST
                         colinIds: []
                         comments: []
                         date: '2025-03-20T21:29:35.662445+00:00'
@@ -3735,7 +3735,7 @@ paths:
                 value:
                   filing:
                     header:
-                      certifiedBy: API Specs
+                      certifiedBy: BCREGTEST TEST
                       name: incorporationApplication
                       date: '2025-03-20'
                       accountId: 12345
@@ -6311,11 +6311,13 @@ components:
                   $ref: '#/components/schemas/Office'
             parties:
               type: array
-              description: 'Persons having a role in the corporation eg: company officer.'
+              description: 'Persons having a role in the corporation eg: company director.'
               items:
                 $ref: '#/components/schemas/party'
             shareStructure:
               $ref: '#/components/schemas/Share_structure'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
       required:
         - incorporationApplication
     Filing_documents:
@@ -7431,8 +7433,8 @@ components:
       type: oauth2
       flows:
         password:
-          tokenUrl: ''
-          refreshUrl: ''
+          tokenUrl: ' '
+          refreshUrl: ' '
           scopes: {}
       description: ''
   headers:
