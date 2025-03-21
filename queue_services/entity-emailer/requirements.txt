@@ -78,7 +78,7 @@ webcolors==1.13
 Werkzeug==1.0.1
 yarl==1.8.2
 zipp==3.15.0
-git+https://github.com/bcgov/business-schemas.git@2.18.33#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.18.39#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
 git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning

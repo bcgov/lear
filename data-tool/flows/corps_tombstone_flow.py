@@ -262,6 +262,11 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
                 comment['staff_id'] = staff_id
                 load_data(conn, 'comments', comment)
 
+        if cco_data := data['consent_continuation_out']:
+            cco_data['business_id'] = business_id
+            cco_data['filing_id'] = filing_id
+            load_data(conn, 'consent_continuation_outs', cco_data)
+
     # load epoch filing
     epoch_filing_data = build_epoch_filing(business_id)
     load_data(conn, 'filings', epoch_filing_data)

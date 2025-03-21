@@ -13,13 +13,13 @@
 from typing import Dict
 
 from dateutil.parser import parse
-from entity_queue_common.service_utils import logger
+from flask import current_app
 from legal_api.models import Business, Filing, Party, Resolution
 
 
 def process(business: Business, filing: Dict, filing_rec: Filing):
     """Render the special resolution filing unto the model objects."""
-    logger.debug('Processing Special Resolution : %s', filing)
+    current_app.logger.debug('Processing Special Resolution : %s', filing)
     if (resolution_filing := filing.get('specialResolution')):
         resolution = Resolution(
             resolution=resolution_filing.get('resolution'),

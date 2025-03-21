@@ -59,6 +59,7 @@ from legal_api.services import (
     MinioService,
     RegistrationBootstrapService,
     authorized,
+    flags,
     namex,
     queue,
 )
@@ -427,7 +428,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             effective_date = filing.json['filing']['header'].get('effectiveDate', None)
             if effective_date:
                 effective_date = datetime.datetime.fromisoformat(effective_date)
-            if nr_number:
+            if (nr_number and not flags.is_on('enable-sandbox')):
                 nr_response = namex.query_nr_number(nr_number)
                 # If there is an effective date, check if we need to extend the NR expiration
                 if effective_date and namex.is_date_past_expiration(nr_response.json(), effective_date):
@@ -961,10 +962,12 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             token = user_jwt.get_token_auth_header()
             headers = {'Authorization': 'Bearer ' + token,
                        'Content-Type': 'application/json'}
+            current_app.logger.debug(f'Pay api call - url: {payment_svc_url}, payload: {payload}')
             rv = requests.post(url=payment_svc_url,
                                json=payload,
                                headers=headers,
                                timeout=20.0)
+            current_app.logger.debug(f'Pay api call - result: {rv}')
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(f'Payment connection failure for {business.identifier}: filing:{filing.id}', err)
             return {'message': 'unable to create invoice for payment.'}, HTTPStatus.PAYMENT_REQUIRED
@@ -1122,6 +1125,10 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         review.save()
 
         filing.submit_filing_to_awaiting_review(submission_date)
+
+        if flags.is_on('enable-sandbox'):
+            current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
+            return
 
         # emailer notification
         queue.publish_json(

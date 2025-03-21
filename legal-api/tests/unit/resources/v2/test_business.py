@@ -585,6 +585,10 @@ def test_get_could_file(session, client, jwt):
             "type": "horizontal"
         },
         {
+            "displayName": "Amalgamation Out",
+            "name": "amalgamationOut"
+        },
+        {
             "displayName": "Annual Report",
             "name": "annualReport"
         },
@@ -599,10 +603,6 @@ def test_get_could_file(session, client, jwt):
         {
             "displayName": "Address Change",
             "name": "changeOfAddress"
-        },
-        {
-            "displayName": "Amalgamation Out",
-            "name": "amalgamationOut"
         },
         {
             "displayName": "Director Change",

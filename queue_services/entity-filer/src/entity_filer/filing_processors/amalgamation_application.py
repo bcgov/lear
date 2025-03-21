@@ -18,6 +18,7 @@ from typing import Dict
 from entity_queue_common.service_utils import QueueException
 from legal_api import db
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, OfficeType, PartyRole
+from legal_api.services import Flags
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import (
@@ -62,7 +63,8 @@ def dissolve_amalgamating_business(business: Business, filing_rec: Filing):
 def process(business: Business,  # pylint: disable=too-many-branches, too-many-locals
             filing: Dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta):
+            filing_meta: FilingMeta,
+            flags: Flags):
     """Process the incoming amalgamation application filing."""
     # Extract the filing information for amalgamation
     amalgamation_filing = filing.get('filing', {}).get('amalgamationApplication')
@@ -78,7 +80,7 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
     business_info_obj = amalgamation_filing.get('nameRequest')
 
     # Reserve the Corp Number for this entity
-    corp_num = business_info.get_next_corp_num(business_info_obj['legalType'])
+    corp_num = business_info.get_next_corp_num(business_info_obj['legalType'], flags)
     if not corp_num:
         raise QueueException(
             f'amalgamationApplication {filing_rec.id} unable to get a business amalgamationApplication number.')

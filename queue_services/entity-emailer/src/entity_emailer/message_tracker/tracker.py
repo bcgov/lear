@@ -97,7 +97,7 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
             message_id = f'{etype}_{option}_{ar_year}_{business_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
 
-        if etype in ('agmLocationChange', 'agmExtension', 'noticeOfWithdrawal') \
+        if etype in ('agmLocationChange', 'agmExtension', 'noticeOfWithdrawal', 'ceaseReceiver') \
                 and (option := email.get('option', None)) \
                 and option == 'COMPLETED' \
                 and (filing_id := email.get('filingId', None)):
