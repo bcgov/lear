@@ -270,117 +270,102 @@ paths:
                   value:
                     filing:
                       annualReport:
-                        annualReportDate: '2024-07-24'
+                        annualReportDate: '2025-02-22'
                         directors:
-                          - actions: []
-                            appointmentDate: '2024-07-23'
+                            appointmentDate: '2024-02-23'
                             cessationDate: null
-                            deliveryAddress:
-                              addressCity: Victoria
+                            deliveryAddress: 
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
+                              addressType: delivery
                               deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
                               streetAddressAdditional: ''
-                            id: 1
-                            isDirectorActionable: true
-                            isFeeApplied: false
                             mailingAddress:
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
+                              addressType: mailing
                               deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
                               streetAddressAdditional: ''
                             officer:
                               email: api.specs@api.specs
                               firstName: firstName
-                              id: 584282
                               lastName: lastName
                               partyType: person
                               middleInitial: ''
-                              prevFirstName: firstName
-                              prevLastName: lastName
+                              prevFirstName: ''
+                              prevLastName: ''
                               prevMiddleInitial: ''
-                            role: director
-                        nextARDate: '2024-07-24'
                         offices:
                           recordsOffice:
                             deliveryAddress: 
-                              actions: []
-                              addressCity: Victoria
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               addressType: delivery
                               deliveryInstructions: ''
-                              id: 2908346
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
                               streetAddressAdditional: ''
                             mailingAddress:
-                              actions: []
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
                               addressType: mailing
                               deliveryInstructions: ''
-                              id: 2908345
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
                               streetAddressAdditional: ''
                           registeredOffice:
                             deliveryAddress: 
-                              actions: []
-                              addressCity: Victoria
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               addressType: delivery
                               deliveryInstructions: ''
-                              id: 2908348
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
                               streetAddressAdditional: ''
                             mailingAddress:
-                              actions: [] 
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
                               addressType: mailing
                               deliveryInstructions: ''
-                              id: 2908347
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
                               streetAddressAdditional: ''
                       business:
-                        foundingDate: '2023-07-21T23:13:48.000+00:00'
-                        identifier: BC0883312
-                        legalName: 0883312 B.C. LTD.
+                        foundingDate: '2024-02-21T23:13:48.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
                         legalType: BEN
                       header:
-                        ARFilingYear: 2024
+                        accountId: 12345
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-24T16:22:13.256843+00:00'
+                        date: '2025-03-21T16:22:13.256843+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-24T07:00:00+00:00'
-                        email: api.specs@api.specs
-                        filingId: 150312
+                        effectiveDate: '2025-03-21T07:00:00+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: annualReport
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
-                        waiveFees: false
                 change-of-address-success-response:
                   summary: Change Of Address Response
                   value:
@@ -1124,101 +1109,85 @@ paths:
                   filing:
                     header:
                       name: annualReport
-                      certifiedBy: Sample Certified Person
-                      email: api.specs@api.specs
-                      date: '2024-07-24'
-                      ARFilingYear: 2024
-                      effectiveDate: '2024-07-24T07:00:00.000+00:00'
-                      waiveFees: false
+                      certifiedBy: First Last
+                      date: '2025-03-21'
+                      accountId: 12345
                     business:
-                      foundingDate: '2023-07-21T23:13:48.000+00:00'
-                      identifier: BC0883312
-                      legalName: 0883312 B.C. LTD.
+                      foundingDate: '2024-02-21T18:05:47.466120+00:00'
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
                       legalType: BEN
                     annualReport:
-                      annualReportDate: '2024-07-24'
-                      nextARDate: '2024-07-24'
+                      annualReportDate: '2025-02-22'
                       offices:
                         registeredOffice:
                           deliveryAddress: 
-                            addressCity: Victoria
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
                             addressType: delivery
                             deliveryInstructions: ''
-                            id: 2908348
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             addressType: mailing
                             deliveryInstructions: ''
-                            id: 2908347
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                         recordsOffice:
                           deliveryAddress: 
-                            addressCity: Victoria
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
                             addressType: delivery
                             deliveryInstructions: ''
-                            id: 2908346
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             addressType: mailing
                             deliveryInstructions: ''
-                            id: 2908345
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                       directors:
                         - officer:
                             email: api.specs@api.specs
-                            firstName: firstName
-                            id: 584282
-                            lastName: lastName
+                            firstName: First
+                            lastName: Last
                             partyType: person
                             middleInitial: ''
-                            prevFirstName: firstName
-                            prevLastName: lastName
+                            prevFirstName: ''
+                            prevLastName: ''
                             prevMiddleInitial: ''
-                          appointmentDate: '2024-07-23'
+                          appointmentDate: '2024-02-23'
                           cessationDate: null
-                          deliveryAddress:
-                            addressCity: Victoria
+                          deliveryAddress: 
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
+                            addressType: delivery
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
+                            addressType: mailing
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                          role: director
-                          id: 1
-                          isFeeApplied: false
-                          isDirectorActionable: true
-                          actions: []
               change-of-address-request:
                 summary: Change Of Address
                 value:
