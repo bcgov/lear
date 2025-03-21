@@ -3080,7 +3080,7 @@ paths:
                         accountId: 12345
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: BCREGTEST TEST
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: '2025-03-20T21:29:35.662445+00:00'
@@ -3133,8 +3133,8 @@ paths:
                               streetAddress: mailing_address - address line one
                         parties:
                         - officer:
-                          - firstName: BCREGTEST
-                            lastName: TEST
+                          - firstName: First
+                            lastName: Last
                             middleName: ""
                             organizationName: ""
                             partyType: "person"
@@ -3735,7 +3735,7 @@ paths:
                 value:
                   filing:
                     header:
-                      certifiedBy: BCREGTEST TEST
+                      certifiedBy: First Last
                       name: incorporationApplication
                       date: '2025-03-20'
                       accountId: 12345
@@ -3775,8 +3775,8 @@ paths:
                         phone: 123-456-7890
                       parties:
                         - officer:
-                          - firstName: BCREGTEST
-                            lastName: TEST
+                          - firstName: First
+                            lastName: Last
                             middleName: ""
                             organizationName: ""
                             partyType: "person"
