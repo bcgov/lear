@@ -1,7 +1,16 @@
-# Business Registry Common
-This library includes BaseEnum, date utils and base exception types used frequently across apis
 
 
+
+
+# Business Registry Dissolution
+
+This library provides the dissolution service, previously available as part of the legal api
+
+## Required env values to use
+AUTH_SVC_URL
+ACCOUNT_SVC_AUTH_URL
+ACCOUNT_SVC_CLIENT_ID
+ACCOUNT_SVC_CLIENT_SECRET
 
 ## Technology Stack Used
 * Python3
