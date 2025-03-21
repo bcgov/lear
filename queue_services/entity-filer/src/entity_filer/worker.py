@@ -72,6 +72,7 @@ from entity_filer.filing_processors import (
     agm_location_change,
     alteration,
     amalgamation_application,
+    amalgamation_out,
     annual_report,
     appoint_receiver,
     cease_receiver,
@@ -361,6 +362,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('consentAmalgamationOut'):
                     consent_amalgamation_out.process(business, filing_submission, filing, filing_meta)
+
+                elif filing.get('amalgamationOut'):
+                    amalgamation_out.process(business, filing_submission, filing, filing_meta)
 
                 elif filing.get('consentContinuationOut'):
                     consent_continuation_out.process(business, filing_submission, filing, filing_meta)
