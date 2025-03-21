@@ -15,41 +15,36 @@
 
 from typing import List, Union
 
-from legal_api.models import (
-    Business,
-    DCConnection,
-    DCDefinition,
-    DCIssuedBusinessUserCredential,
-    DCIssuedCredential,
-    DCRevocationReason,
-    User,
-)
+from legal_api.models import Business, DCBusinessUser, DCConnection, DCCredential, DCDefinition, DCRevocationReason
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data
 
 
-def get_issued_digital_credentials(business: Business) -> Union[List[DCIssuedCredential], None]:
-    """Get issued digital credentials for a business."""
+def get_all_digital_credentials_for_business(business: Business) -> Union[List[DCCredential], None]:
+    """
+    Get issued digital credentials for a business.
+
+    TODO: Once DCCredential references DCBusinessUser, this function can be refactored
+    """
     try:
-        # pylint: disable=superfluous-parens
-        if not (connection := DCConnection.find_active_by(business_id=business.id)):
-            # pylint: disable=broad-exception-raised
-            raise Exception(
-                f'{business.identifier} active connection not found.')
+        credentials = []
+        for business_user in business.business_users:
+            active_connections = list(filter(lambda connection: connection.is_active,
+                                             business_user.connections))
+            if active_connections and len(active_connections) == 1:
+                active_connection = active_connections[0]
+                for credential in list(filter(lambda credential: (credential.is_issued and not credential.is_revoked),
+                                              active_connection.credentials)):
+                    credentials.append(credential)
 
-        # pylint: disable=superfluous-parens
-        if not (issued_credentials := DCIssuedCredential.find_by(dc_connection_id=connection.id)):
-            return []
-
-        return issued_credentials
+        return credentials
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err
 
 
-def issue_digital_credential(business: Business,
-                             user: User,
-                             credential_type: DCDefinition.CredentialType) -> Union[DCIssuedCredential, None]:
+def issue_digital_credential(business_user: DCBusinessUser,
+                             credential_type: DCDefinition.CredentialType) -> Union[DCCredential, None]:
     """Issue a digital credential for a business to a user."""
     try:
         if not (definition := DCDefinition.find_by(DCDefinition.CredentialType[credential_type],
@@ -60,13 +55,13 @@ def issue_digital_credential(business: Business,
                 f'Definition not found for credential type: {credential_type}.')
 
         # pylint: disable=superfluous-parens
-        if not (connection := DCConnection.find_active_by(business_id=business.id)):
+        if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
             # pylint: disable=broad-exception-raised
             raise Exception(
-                f'{business.identifier} active connection not found.')
+                f'Active connection not found for business user with ID: {business_user.id}.')
 
         credential_data = get_digital_credential_data(
-            user, business, definition.credential_type)
+            business_user, definition.credential_type)
         credential_id = next(
             (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
@@ -74,12 +69,11 @@ def issue_digital_credential(business: Business,
                                                                  definition=definition,
                                                                  data=credential_data)):
             # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Failed to issue credential.')
+            raise Exception('Failed to issue credential.')
 
-        issued_credential = DCIssuedCredential(
-            dc_definition_id=definition.id,
-            dc_connection_id=connection.id,
+        issued_credential = DCCredential(
+            definition_id=definition.id,
+            connection_id=connection.id,
             credential_exchange_id=response['cred_ex_id'],
             credential_id=credential_id
         )
@@ -91,32 +85,30 @@ def issue_digital_credential(business: Business,
         raise err
 
 
-def revoke_issued_digital_credential(business: Business,
-                                     issued_credential: DCIssuedCredential,
-                                     reason: DCRevocationReason) -> Union[dict, None]:
-    """Revoke an issued digital credential for a business."""
+def revoke_digital_credential(credential: DCCredential,
+                              reason: DCRevocationReason) -> Union[dict, None]:
+    """Revoke an issued digital credential."""
     try:
-        if not issued_credential.is_issued or issued_credential.is_revoked:
+        if not credential.is_issued or credential.is_revoked:
             # pylint: disable=broad-exception-raised
             raise Exception(
                 'Credential is not issued yet or is revoked already.')
 
         # pylint: disable=superfluous-parens
-        if not (connection := DCConnection.find_active_by(business_id=business.id)):
+        if not (connection := credential.connection) or not connection.is_active:
             # pylint: disable=broad-exception-raised
             raise Exception(
-                f'{business.identifier} active connection not found.')
+                f'Active connection not found for credential with ID: {credential.credential_id}.')
 
         if (revoked := digital_credentials.revoke_credential(connection.connection_id,
-                                                             issued_credential.credential_revocation_id,
-                                                             issued_credential.revocation_registry_id,
+                                                             credential.credential_revocation_id,
+                                                             credential.revocation_registry_id,
                                                              reason) is None):
             # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Failed to revoke credential.')
+            raise Exception('Failed to revoke credential.')
 
-        issued_credential.is_revoked = True
-        issued_credential.save()
+        credential.is_revoked = True
+        credential.save()
 
         return revoked
     # pylint: disable=broad-exception-raised
@@ -125,38 +117,23 @@ def revoke_issued_digital_credential(business: Business,
 
 
 # pylint: disable=too-many-arguments
-def replace_issued_digital_credential(business: Business,
-                                      issued_credential: DCIssuedCredential,
-                                      credential_type: DCDefinition.CredentialType,
-                                      reason: DCRevocationReason) -> Union[DCIssuedCredential, None]:
+def replace_digital_credential(credential: DCCredential,
+                               credential_type: DCDefinition.CredentialType,
+                               reason: DCRevocationReason) -> Union[DCCredential, None]:
     """Replace an issued digital credential for a business."""
     try:
-        if issued_credential.is_issued and not issued_credential.is_revoked:
-            revoke_issued_digital_credential(
-                business, issued_credential, reason)
+        if credential.is_issued and not credential.is_revoked:
+            revoke_digital_credential(credential, reason)
 
-        if (digital_credentials.fetch_credential_exchange_record(
-                issued_credential.credential_exchange_id) is not None and
-                digital_credentials.remove_credential_exchange_record(
-                    issued_credential.credential_exchange_id) is None):
+        if (digital_credentials.fetch_credential_exchange_record(credential.credential_exchange_id) is not None
+                and digital_credentials.remove_credential_exchange_record(credential.credential_exchange_id) is None):
             # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Failed to remove credential exchange record.')
+            raise Exception('Failed to remove credential exchange record.')
 
-        if not (issued_business_user_credential := DCIssuedBusinessUserCredential.find_by_id(
-                dc_issued_business_user_id=issued_credential.credential_id)):
-            # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Unable to find business user for issued credential.')
+        credential.delete()
 
-        if not (user := User.find_by_id(issued_business_user_credential.user_id)):  # pylint: disable=superfluous-parens
-            # pylint: disable=broad-exception-raised
-            raise Exception(
-                'Unable to find user for issued business user credential.')
-
-        issued_credential.delete()
-
-        return issue_digital_credential(business, user, credential_type)
+        return issue_digital_credential(credential.connection.business_user,
+                                        credential_type)  # pylint: disable=too-many-function-args
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err

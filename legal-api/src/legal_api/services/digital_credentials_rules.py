@@ -61,7 +61,8 @@ class DigitalCredentialsRulesService:
         if business.legal_type in [Business.LegalTypes.SOLE_PROP.value,
                                    Business.LegalTypes.PARTNERSHIP.value,
                                    Business.LegalTypes.BCOMP.value]:
-            return True
+            return (self.has_party_role(user, business, business_party_role_mapping[business.legal_type])
+                    or self.is_completing_party(user, business))
 
         logging.debug('No specific access rules are met.')
         return False

@@ -20,7 +20,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from legal_api.models import DCDefinition, DCIssuedBusinessUserCredential, Party, PartyRole
+from legal_api.models import DCDefinition, DCBusinessUser, Party, PartyRole
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials import DigitalCredentialsService
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data
@@ -219,19 +219,18 @@ def test_data_helper_user_is_not_completing_party(app, session, test_data, expec
         party_role.business_id = business.id
         party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
-        business_id=business.id, user_id=user.id)
-    issued_business_user_credential.save()
+    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
+    business_user.save()
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
         # Act
         credential_data = get_digital_credential_data(
-            user, business, credential_type)
+            business_user, credential_type)
 
         # Assert
         for item in credential_data:
             if item['name'] == 'credential_id':
-                assert item['value'] == f'{issued_business_user_credential.id:08}'
+                assert item['value'] == f'{business_user.id:08}'
             else:
                 assert item in expected
 
@@ -422,19 +421,18 @@ def test_data_helper_user_is_completing_party(app, session, test_data, expected)
         party_role.business_id = business.id
         party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
-        business_id=business.id, user_id=user.id)
-    issued_business_user_credential.save()
+    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
+    business_user.save()
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
         # Act
         credential_data = get_digital_credential_data(
-            user, business, credential_type)
+            business_user, credential_type)
 
         # Assert
         for item in credential_data:
             if item['name'] == 'credential_id':
-                assert item['value'] == f'{issued_business_user_credential.id:08}'
+                assert item['value'] == f'{business_user.id:08}'
             else:
                 assert item in expected
 
@@ -468,14 +466,13 @@ def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
     party_role.business_id = business.id
     party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
-        business_id=business.id, user_id=user.id)
-    issued_business_user_credential.save()
+    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
+    business_user.save()
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
         credential_data = get_digital_credential_data(
-            user, business, credential_type, False)
+            business_user, credential_type, False)
 
         # Assert
         assert {'name': 'role', 'value': ''} in credential_data
@@ -510,16 +507,13 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
     party_role.business_id = business.id
     party_role.save()
 
-    issued_business_user_credential = DCIssuedBusinessUserCredential(
-        business_id=business.id, user_id=user.id)
-    issued_business_user_credential.save()
+    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
+    business_user.save()
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
         credential_data = get_digital_credential_data(
-            user, business, credential_type, True)
-
-        print(credential_data)
+            business_user, credential_type, True)
 
         # Assert
         assert {'name': 'role', 'value': 'Director'} in credential_data

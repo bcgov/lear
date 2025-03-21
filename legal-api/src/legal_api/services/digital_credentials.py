@@ -98,11 +98,9 @@ class DigitalCredentialsService:
                                  ' must be available in Traction tenant storage')
 
             # Check for the current Business definition.
-            definition = DCDefinition.find_by(
-                credential_type=DCDefinition.CredentialType.business,
-                schema_id=self.business_schema_id,
-                credential_definition_id=self.business_cred_def_id
-            )
+            definition = DCDefinition.find_by(credential_type=DCDefinition.CredentialType.business,
+                                              schema_id=self.business_schema_id,
+                                              credential_definition_id=self.business_cred_def_id)
             if definition and not definition.is_deleted:
                 return None
 
