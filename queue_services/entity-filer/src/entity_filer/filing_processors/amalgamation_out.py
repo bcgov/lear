@@ -33,6 +33,7 @@ def process(business: Business, amalgamation_out_filing: Filing, filing: Dict, f
     amalgamation_out_json = filing['amalgamationOut']
 
     legal_name = amalgamation_out_json.get('legalName')
+    details = amalgamation_out_json.get('details')
     amalgamation_out_date_str = amalgamation_out_json.get('amalgamationOutDate')
     amalgamation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(amalgamation_out_date_str)
     foreign_jurisdiction = amalgamation_out_json.get('foreignJurisdiction')
@@ -56,5 +57,6 @@ def process(business: Business, amalgamation_out_filing: Filing, filing: Dict, f
         'country': foreign_jurisdiction_country,
         'region': foreign_jurisdiction_region,
         'legalName': legal_name,
+        'details': details,
         'amalgamationOutDate': amalgamation_out_date_str
     }

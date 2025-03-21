@@ -47,6 +47,7 @@ async def test_worker_amalgamation_out(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(amalgamation_out_filing.id)
+    details = filing_json['filing']['amalgamationOut']['details']
     foreign_jurisdiction_json = filing_json['filing']['amalgamationOut']['foreignJurisdiction']
     amalgamation_out_date_str = filing_json['filing']['amalgamationOut']['amalgamationOutDate']
     amalgamation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(amalgamation_out_date_str)
@@ -64,4 +65,5 @@ async def test_worker_amalgamation_out(app, session):
     assert filing_meta.amalgamation_out['country'] == foreign_jurisdiction_json['country']
     assert filing_meta.amalgamation_out['region'] == foreign_jurisdiction_json['region']
     assert filing_meta.amalgamation_out['amalgamationOutDate'] == amalgamation_out_date_str
+    assert filing_meta.amalgamation_out['details'] == details
     assert filing_meta.amalgamation_out['legalName'] == filing_json['filing']['amalgamationOut']['legalName']
