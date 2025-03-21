@@ -1445,7 +1445,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         # If it's February 29 and the filing year is not a leap year, use February 28 instead
         if month == 2 and day == 29:
-            is_leap_year = (int(filing_year) % 4 == 0 and int(filing_year) % 100 != 0) or (int(filing_year) % 400 == 0)
+            is_leap_year = int(filing_year) % 4 == 0 and (int(filing_year) % 100 != 0 or (int(filing_year) % 400 == 0))
             if not is_leap_year:
                 day = 28
 
