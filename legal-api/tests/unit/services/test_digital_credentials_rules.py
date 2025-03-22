@@ -276,17 +276,17 @@ def test_has_specific_access_true_when_correct_business_type_and_party_role(mock
 
 
 @patch('legal_api.models.Filing.get_filings_by_types', return_value=[])
-def test_is_completing_party_false_when_no_valid_filing(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_no_valid_filing(app, session, caplog, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
     caplog.set_level(logging.DEBUG)
 
-    assert rules.is_completing_party(user, business) is False
+    assert rules.user_is_completing_party(user, business) is False
     assert 'No registration or incorporation filing found for the business.' in caplog.text
 
 
-def test_is_completing_party_false_when_no_completing_parties(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_no_completing_parties(app, session, caplog, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -300,7 +300,7 @@ def test_is_completing_party_false_when_no_completing_parties(app, session, capl
     filing.save()
     caplog.set_level(logging.DEBUG)
 
-    assert rules.is_completing_party(user, business) is False
+    assert rules.user_is_completing_party(user, business) is False
     assert 'No completing parties found for the registration or incorporation filing.' in caplog.text
 
 
@@ -320,11 +320,11 @@ def test_is_compleing_party_false_when_user_not_completing_party(app, session, c
     filing.save()
     caplog.set_level(logging.DEBUG)
 
-    assert rules.is_completing_party(user, business) is False
+    assert rules.user_is_completing_party(user, business) is False
     assert 'User is not the completing party.' in caplog.text
 
 
-def test_is_completing_party_false_when_user_is_not_submitter(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_user_is_not_submitter(app, session, caplog, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -342,13 +342,13 @@ def test_is_completing_party_false_when_user_is_not_submitter(app, session, capl
     filing.save()
     caplog.set_level(logging.DEBUG)
 
-    assert rules.is_completing_party(user, business) is False
+    assert rules.user_is_completing_party(user, business) is False
     assert 'User is not the filing submitter.' in caplog.text
 
 
 @patch('legal_api.models.PartyRole.get_party_roles_by_filing',
        return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
-def test_is_completing_party_false_when_user_not_in_completing_party(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_user_not_in_completing_party(app, session, caplog, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -362,12 +362,12 @@ def test_is_completing_party_false_when_user_not_in_completing_party(app, sessio
     filing.save()
     caplog.set_level(logging.DEBUG)
 
-    assert rules.is_completing_party(user, business) is False
+    assert rules.user_is_completing_party(user, business) is False
     assert 'User is not the completing party.' in caplog.text
 
 
 @pytest.mark.parametrize('user, party', invalid_data)
-def test_is_completing_party_false_when_user_not_matching_completing_party(app, session, caplog, user, party, rules):
+def test_user_is_completing_party_false_when_user_not_matching_completing_party(app, session, caplog, user, party, rules):
     user = factory_user(**user)
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -385,7 +385,7 @@ def test_is_completing_party_false_when_user_not_matching_completing_party(app, 
     filing.save()
     caplog.set_level(logging.DEBUG)
 
-    assert rules.is_completing_party(user, business) is False
+    assert rules.user_is_completing_party(user, business) is False
     assert 'User is not the completing party.' in caplog.text
 
 

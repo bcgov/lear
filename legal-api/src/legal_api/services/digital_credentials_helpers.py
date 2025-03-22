@@ -18,7 +18,6 @@ from typing import List, Union
 
 from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
-from legal_api.services.digital_credentials_utils import business_party_role_mapping, user_party_role
 
 
 def get_digital_credential_data(business_user: DCBusinessUser,
@@ -126,23 +125,19 @@ def get_roles(user: User,
               business: Business,
               rules: DigitalCredentialsRulesService,
               preconditions_met: Union[bool, None]) -> List[str]:
-    """TODO: Get roles for the user in the business."""
+    """Get roles for the user in the business."""
     roles = []
     preconditions = rules.get_preconditions(user, business)
     can_attach_role = (preconditions is None) or (len(preconditions) == 0) or (
         len(preconditions) and preconditions_met is True)
 
-    if business.legal_type in business_party_role_mapping:
-        party_role_type = business_party_role_mapping[business.legal_type]
-        if rules.has_party_role(user, business, party_role_type) and can_attach_role:
-            party_role = user_party_role(user, business, party_role_type)
-            roles.append((party_role.role or '').replace('_', ' ').title())
+    if can_attach_role:
+        if rules.user_has_business_party_role(user, business):
+            roles += rules.user_business_party_roles(user, business)
+        if rules.user_has_filing_party_role(user, business):
+            roles += rules.user_filing_party_roles(user, business)
 
-    if business.legal_type == Business.LegalTypes.BCOMP.value:
-        if rules.is_completing_party(user, business) and can_attach_role:
-            roles.append('incorporator'.title())
-
-    return roles
+    return list(map(lambda party_role: party_role.role.replace('_', ' ').title(), roles))
 
 
 def extract_invitation_message_id(json_message: dict) -> str:
