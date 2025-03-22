@@ -161,6 +161,22 @@ def setup_filing_and_roles(business, user, test_business_type):
     filing.save()
 
 
+def setup_business_user(business, user):
+    """Helper function to set up a business user."""
+    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
+    business_user.save()
+    return business_user
+
+
+def assert_credential_data(credential_data, business_user, expected):
+    """Helper function to assert credential data."""
+    for item in credential_data:
+        if item['name'] == 'credential_id':
+            assert item['value'] == f'{business_user.id:08}'
+        else:
+            assert item in expected
+
+
 @pytest.mark.parametrize('test_data, expected', [
     # In this first test the user has a business party role
     ({
@@ -239,8 +255,7 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
     user, business = setup_user_and_business(test_data)
     setup_parties_and_roles(business, test_data['parties'])
 
-    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
-    business_user.save()
+    business_user = setup_business_user(business, user)
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
         # Act
@@ -248,11 +263,7 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
             business_user, credential_type)
 
         # Assert
-        for item in credential_data:
-            if item['name'] == 'credential_id':
-                assert item['value'] == f'{business_user.id:08}'
-            else:
-                assert item in expected
+        assert_credential_data(credential_data, business_user, expected)
 
 
 @pytest.mark.parametrize('test_data, expected', [
@@ -335,8 +346,7 @@ def test_data_helper_user_has_filing_party_role(app, session, test_data, expecte
         business, user, test_data['business']['entity_type'])
     setup_parties_and_roles(business, test_data['parties'])
 
-    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
-    business_user.save()
+    business_user = setup_business_user(business, user)
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
         # Act
@@ -344,11 +354,7 @@ def test_data_helper_user_has_filing_party_role(app, session, test_data, expecte
             business_user, credential_type)
 
         # Assert
-        for item in credential_data:
-            if item['name'] == 'credential_id':
-                assert item['value'] == f'{business_user.id:08}'
-            else:
-                assert item in expected
+        assert_credential_data(credential_data, business_user, expected)
 
 
 def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
@@ -389,8 +395,7 @@ def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
         role=PartyRole.RoleTypes.INCORPORATOR.value, party=party))
     filing.submitter_id = user.id
 
-    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
-    business_user.save()
+    business_user = setup_business_user(business, user)
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
@@ -439,8 +444,7 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
         role=PartyRole.RoleTypes.INCORPORATOR.value, party=party))
     filing.submitter_id = user.id
 
-    business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
-    business_user.save()
+    business_user = setup_business_user(business, user)
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
