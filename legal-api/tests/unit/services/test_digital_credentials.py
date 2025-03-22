@@ -114,6 +114,53 @@ def test_init_app(app, session):
     assert not definition.is_deleted
 
 
+def setup_user_and_business(test_data):
+    """Helper function to set up user and business."""
+    user = factory_user(**test_data['user'])
+    user.middlename = test_data['user_extra']['middlename']
+    user.save()
+
+    business_data = test_data['business']
+    business_extra_data = test_data['business_extra']
+
+    business = factory_business(**business_data)
+    business.legal_name = business_extra_data['legal_name']
+    business.tax_id = business_extra_data['tax_id']
+    business.save()
+
+    return user, business
+
+
+def setup_parties_and_roles(business, parties):
+    """Helper function to set up parties and roles."""
+    for party in parties:
+        party_role = PartyRole(role=party['role'])
+        party_role.party = Party(
+            **{k: v for k, v in party.items() if k != 'role'})
+        party_role.business_id = business.id
+        party_role.save()
+
+
+def setup_filing_and_roles(business, user, test_business_type):
+    """Helper function to set up filing and roles."""
+    filer = create_test_user(first_name=user.firstname,
+                             last_name=user.lastname,
+                             middle_initial=user.middlename)
+    filing = factory_completed_filing(
+        business=business,
+        data_dict={'filing': {'header': {
+            'name': 'registration' if test_business_type == 'SP' else 'incorporationApplication'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='registration' if test_business_type == 'SP' else 'incorporationApplication'
+    )
+    filing.filing_party_roles.append(create_party_role(
+        PartyRole.RoleTypes.COMPLETING_PARTY, **filer))
+    if test_business_type == 'BEN':
+        filing.filing_party_roles.append(
+            create_party_role(PartyRole.RoleTypes.INCORPORATOR, **filer))
+    filing.submitter_id = user.id
+    filing.save()
+
+
 @pytest.mark.parametrize('test_data, expected', [
     # In this first test the user has a business party role
     ({
@@ -189,24 +236,8 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
     # Arrange
     credential_type = DCDefinition.CredentialType.business
 
-    user = factory_user(**test_data['user'])
-    user.middlename = test_data['user_extra']['middlename']
-    user.save()
-
-    test_business_data = test_data['business']
-    test_business_extra_data = test_data['business_extra']
-
-    business = factory_business(**test_business_data)
-    business.legal_name = test_business_extra_data['legal_name']
-    business.tax_id = test_business_extra_data['tax_id']
-    business.save()
-
-    for party in test_data['parties']:
-        party_role = PartyRole(role=party['role'])
-        party_role.party = Party(
-            **{k: v for k, v in party.items() if k != 'role'})
-        party_role.business_id = business.id
-        party_role.save()
+    user, business = setup_user_and_business(test_data)
+    setup_parties_and_roles(business, test_data['parties'])
 
     business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
     business_user.save()
@@ -299,43 +330,10 @@ def test_data_helper_user_has_filing_party_role(app, session, test_data, expecte
     # Arrange
     credential_type = DCDefinition.CredentialType.business
 
-    user = factory_user(**test_data['user'])
-    user.middlename = test_data['user_extra']['middlename']
-    user.save()
-
-    test_business_data = test_data['business']
-    test_business_type = test_business_data['entity_type']
-    test_business_extra_data = test_data['business_extra']
-
-    business = factory_business(**test_business_data)
-    business.legal_name = test_business_extra_data['legal_name']
-    business.tax_id = test_business_extra_data['tax_id']
-    business.save()
-
-    filer = create_test_user(first_name=user.firstname,
-                             last_name=user.lastname,
-                             middle_initial=user.middlename)
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {
-            'name': 'registration' if test_business_type == 'SP' else 'incorporationApplication'}}},
-        filing_date=datetime.now(timezone.utc), filing_type='registration' if test_business_type == 'SP' else 'incorporationApplication'
-    )
-    # User also has filing party role
-    filing.filing_party_roles.append(create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY, **filer))
-    if test_business_type == 'BEN':
-        filing.filing_party_roles.append(
-            create_party_role(PartyRole.RoleTypes.INCORPORATOR, **filer))
-    filing.submitter_id = user.id
-    filing.save()
-
-    for party in test_data['parties']:
-        party_role = PartyRole(role=party['role'])
-        party_role.party = Party(
-            **{k: v for k, v in party.items() if k != 'role'})
-        party_role.business_id = business.id
-        party_role.save()
+    user, business = setup_user_and_business(test_data)
+    setup_filing_and_roles(
+        business, user, test_data['business']['entity_type'])
+    setup_parties_and_roles(business, test_data['parties'])
 
     business_user = DCBusinessUser(business_id=business.id, user_id=user.id)
     business_user.save()
