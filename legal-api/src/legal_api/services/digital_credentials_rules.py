@@ -14,16 +14,16 @@
 
 """This provides the service for determining access rules to digital credentials."""
 
+from datetime import datetime, timezone
 import logging
 import os
 from enum import Enum
 from typing import List
 
-from legal_api.models import Business, PartyRole, User
+from legal_api.models import Business, Filing, Party, PartyRole, User
 from legal_api.services.digital_credentials_utils import (
+    FormattedUser,
     business_party_role_mapping,
-    user_completing_party_role,
-    user_party_role,
 )
 from legal_api.utils.logging import setup_logging
 
@@ -35,9 +35,50 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(
 class DigitalCredentialsRulesService:
     """Digital Credentials Rules service."""
 
+    class FilingTypes(Enum):
+        """Filing Types Enum."""
+
+        REGISTRATION = 'registration'
+        INCORPORATION_APPLICATION = 'incorporationApplication'
+
+    valid_filing_types = [
+        FilingTypes.REGISTRATION.value,
+        FilingTypes.INCORPORATION_APPLICATION.value,
+    ]
+
+    valid_business_types = [
+        Business.LegalTypes.SOLE_PROP.value,
+        Business.LegalTypes.PARTNERSHIP.value,
+        Business.LegalTypes.BCOMP.value,
+    ]
+
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
         """Return True if the user is allowed to access digital credentials."""
         return self._has_general_access(user) and self._has_specific_access(user, business)
+
+    def get_preconditions(self, user: User, business: Business) -> List[str]:
+        """TODO: Return the preconditions for digital credentials."""
+
+        class PreconditionsEnum(Enum):
+            """Digital Credentials Preconditions Enum."""
+
+            BUSINESS_ROLE = 'attest_business_role'
+            INCORPORATOR_ROLE = 'attest_incorporator_role'
+
+        role = None
+        if business.legal_type in business_party_role_mapping:
+            role = business_party_role_mapping[business.legal_type]
+        preconditions = []
+        if (self.has_party_role(user, business, role)
+                and not self.is_completing_party(user, business)):
+            preconditions.append(PreconditionsEnum.BUSINESS_ROLE.value)
+
+        if (business.legal_type == Business.LegalTypes.BCOMP
+            and self.is_completing_party(user, business)
+                and not self.has_party_role(user, business, role)):
+            preconditions.append(PreconditionsEnum.INCORPORATOR_ROLE.value)
+
+        return preconditions
 
     def _has_general_access(self, user: User) -> bool:
         """Return Ture if general access rules are met."""
@@ -58,48 +99,97 @@ class DigitalCredentialsRulesService:
             logging.debug('No buisiness is provided.')
             return False
 
-        if business.legal_type in [Business.LegalTypes.SOLE_PROP.value,
-                                   Business.LegalTypes.PARTNERSHIP.value,
-                                   Business.LegalTypes.BCOMP.value]:
-            return (self.has_party_role(user, business, business_party_role_mapping[business.legal_type])
-                    or self.is_completing_party(user, business))
+        if business.legal_type in self.valid_business_types:
+            return (self.user_has_filing_party_role(user, business)
+                    or self.user_has_business_party_role(user, business))
 
         logging.debug('No specific access rules are met.')
         return False
 
-    def is_completing_party_and_has_party_role(self, user, business, role: PartyRole.RoleTypes) -> bool:
-        """Return True if the user is the completing party and has a valid party role business."""
-        return (self.is_completing_party(user, business)
-                and self.has_party_role(user, business, role))
-
     def is_completing_party(self, user: User, business: Business) -> bool:
         """Return True if the user is the completing party."""
-        return user_completing_party_role(user, business) is not None
+        if len(filings := self.valid_filings(business)) <= 0:
+            logging.debug(
+                'No registration or incorporation filing found for the business.')
+            return False
 
-    def has_party_role(self, user: User, business: Business, role: PartyRole.RoleTypes) -> bool:
-        """Return True if the user has a party role in the business."""
-        return user_party_role(user, business, role) is not None
+        filing = filings.pop(0)
+        return self.user_submitted_filing(user, filing) and self.user_matches_completing_party(user, filing)
 
-    def get_preconditions(self, user: User, business: Business) -> List[str]:
-        """Return the preconditions for digital credentials."""
+    def user_has_filing_party_role(self, user: User, business: Business) -> bool:
+        """
+        Return True if the user has a filing party role in the business. Excludes the completing party role.
 
-        class PreconditionsEnum(Enum):
-            """Digital Credentials Preconditions Enum."""
+        For example: if a user is an incorporator.
+        """
+        return len(self.user_filing_party_roles(user, business)) > 0
 
-            BUSINESS_ROLE = 'attest_party_role'
-            COMPLETOR_ROLE = 'attest_completor_role'
+    def user_has_business_party_role(self, user: User, business: Business) -> bool:
+        """
+        Return True if the user has a business party role in the business.
 
-        role = None
-        if business.legal_type in business_party_role_mapping:
-            role = business_party_role_mapping[business.legal_type]
-        preconditions = []
-        if (self.has_party_role(user, business, role)
-                and not self.is_completing_party(user, business)):
-            preconditions.append(PreconditionsEnum.BUSINESS_ROLE.value)
+        For example: if a user is a director.
+        """
+        return len(self.user_business_party_roles(user, business)) > 0
 
-        if (business.legal_type == Business.LegalTypes.BCOMP
-            and self.is_completing_party(user, business)
-                and not self.has_party_role(user, business, role)):
-            preconditions.append(PreconditionsEnum.COMPLETOR_ROLE.value)
+    def user_filing_party_roles(self, user: User, business: Business) -> List[PartyRole]:
+        """Return the filing roles of the user for the business, if any."""
+        if len(filings := self.valid_filings(business)) <= 0:
+            logging.debug(
+                'No registration or incorporation filing found for the business.')
+            return []
 
-        return preconditions
+        filing = filings.pop(0)
+        roles = filing.filing_party_roles.filter(
+            PartyRole.role != PartyRole.RoleTypes.COMPLETING_PARTY.value).all()
+        return list(filter(lambda role: self.user_matches_party(user, role.party), roles))
+
+    def user_business_party_roles(self, user: User, business: Business) -> List[PartyRole]:
+        """Return the party roles of the user for the business, if any."""
+        roles = business.party_roles.all()
+        return list(filter(lambda role: self.user_matches_party(user, role.party), roles))
+
+    def user_submitted_filing(self, user: User, filing: Filing) -> bool:
+        """Return True if the user submitted the filing."""
+        did_user_submit_filing = user.id == filing.submitter_id
+        if not did_user_submit_filing:
+            logging.debug('User is not the filing submitter.')
+        return did_user_submit_filing
+
+    def user_matches_completing_party(self, user: User, filing: Filing) -> bool:
+        """Return the True if the user matches a completing party."""
+        if len(roles := self.completing_party_roles(filing)) <= 0:
+            logging.debug(
+                'No completing parties found for the registration or incorporation filing.')
+            return False
+
+        is_user_completing_party = len(
+            list(filter(lambda role: self.user_matches_party(user, role.party), roles))) > 0
+        if not is_user_completing_party:
+            logging.debug('User is not the completing party.')
+        return is_user_completing_party
+
+    def user_matches_party(self, user: User, party: Party) -> bool:
+        """Return True if the user matches the party."""
+        u = FormattedUser(user)
+        p = FormattedUser(party)
+        return u.first_name == p.first_name and u.last_name == p.last_name
+
+    def valid_filings(self, business: Business) -> List[Filing]:
+        """Return the registration or incorporation filings for the business."""
+        return Filing.get_filings_by_types(business.id, self.valid_filing_types)
+
+    def completing_party_roles(self, filing: Filing) -> List[PartyRole]:
+        """Return the completing parties of a filing."""
+        return PartyRole.get_party_roles_by_filing(
+            filing.id,
+            datetime.now(timezone.utc),
+            PartyRole.RoleTypes.COMPLETING_PARTY.value,
+        )
+
+    def filing_party_roles(self, filing: Filing) -> List[PartyRole]:
+        """Return the party roles of a filing."""
+        return PartyRole.get_party_roles_by_filing(
+            filing.id,
+            datetime.now(timezone.utc),
+        )

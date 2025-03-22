@@ -16,10 +16,9 @@
 
 import logging
 import os
-from datetime import datetime
 from typing import List, Union
 
-from legal_api.models import Business, Filing, Party, PartyRole, User
+from legal_api.models import Business, Party, PartyRole, User
 from legal_api.utils.logging import setup_logging
 
 
@@ -61,74 +60,13 @@ class FormattedUser:
         return first_name, last_name
 
 
-def _registration_filings(business: Business) -> List[Filing]:
-    """Return the registration filings for the business."""
-    return Filing.get_filings_by_types(business.id, ['registration'])
-
-
-def _registration_filing(business: Business) -> Filing:
-    """Return the registration filing for the business."""
-    if len(filings := _registration_filings(business)) <= 0:
-        return None
-
-    return filings[0]
-
-
-def _incorporation_filings(business: Business) -> List[Filing]:
-    """Return the incorporation filings for the business."""
-    return Filing.get_filings_by_types(business.id, ['incorporationApplication'])
-
-
-def _incorporation_filing(business: Business) -> Filing:
-    """Return the incorporation filing for the business."""
-    if len(filings := _incorporation_filings(business)) <= 0:
-        return None
-
-    return filings[0]
-
-
 def _parties_by_role(business: Business, role: PartyRole.RoleTypes) -> List[PartyRole]:
-    """Return the party roles of a role type the business."""
+    """DEPRECATED: Return the party roles of a role type the business."""
     return PartyRole.get_parties_by_role(business.id, role)
 
 
-def _completing_parties(registration_filing: Filing) -> List[PartyRole]:
-    """Return the completing parties of the registration filing."""
-    return PartyRole.get_party_roles_by_filing(
-        registration_filing.id,
-        datetime.utcnow(),
-        PartyRole.RoleTypes.COMPLETING_PARTY.value,
-    )
-
-
-def user_completing_party_role(user: User, business: Business) -> Union[PartyRole, None]:
-    """Return the PartyRole if the user is the completing party."""
-    if not (filing := _registration_filing(business) or _incorporation_filing(business)):
-        logging.debug(
-            'No registration or incorporation filing found for the business.')
-        return None
-
-    if len(party_roles := _completing_parties(filing)) <= 0:
-        logging.debug(
-            'No completing parties found for the registration filing.')
-        return None
-
-    for party_role in party_roles:
-        if (party := party_role.party) is None:
-            continue
-
-        cp = FormattedUser(party)
-        u = FormattedUser(user)
-        if (user.id == filing.submitter_id and
-                u.first_name == cp.first_name and u.last_name == cp.last_name):
-            return party_role
-
-    logging.debug('No completing party found for the registration filing.')
-    return None
-
-
 def user_party_role(user: User, business: Business, role: PartyRole.RoleTypes) -> Union[PartyRole, None]:
-    """Return the PartyRole if the user has a party role in the business."""
+    """DEPRECATED: Return the PartyRole if the user has a party role in the business."""
     if len(parties := _parties_by_role(business, role)) <= 0:
         logging.debug('No parties found for the business with role: %s.', role)
         return None

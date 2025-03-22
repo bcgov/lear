@@ -16,20 +16,48 @@
 Test suite to ensure that the Digital Credentials Rules service is working as expected.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import jwt as pyjwt
 import pytest
 
 from legal_api.models.business import Business
-from legal_api.models.party import Party
 from legal_api.models.party_role import PartyRole
 from legal_api.models.user import User
 from legal_api.services import DigitalCredentialsRulesService
 from legal_api.services.authz import PUBLIC_USER
 from tests.unit.models import factory_completed_filing, factory_user
 from tests.unit.services.utils import create_business, create_party_role, create_test_user, helper_create_jwt
+
+invalid_data = [
+    ({'username': 'test', 'firstname': 'Test1', 'lastname': 'User1'},
+     {'first_name': 'Test2', 'last_name': 'User2'}),
+    ({'username': 'test', 'firstname': 'Test1 TU1', 'lastname': 'User1'},
+     {'first_name': 'Test2', 'middle_initial': 'TU2', 'last_name': 'User2'}),
+    #  Test when party uses middle name field and user does not
+    ({'username': 'test', 'firstname': 'Test1', 'lastname': 'User1', },
+     {'first_name': 'Test1', 'middle_initial': 'TU1', 'last_name': 'User1'}),
+    #  Test when user uses middle name field and party does not
+    ({'username': 'test', 'firstname': 'Test1 TU1', 'lastname': 'User1', },
+     {'first_name': 'Test1', 'last_name': 'User1'})
+]
+
+valid_data = [
+    ({'username': 'test', 'firstname': 'Test', 'lastname': 'User'},
+     {'first_name': 'Test', 'last_name': 'User'}),
+    ({'username': 'test', 'firstname': 'TEST', 'lastname': 'USER'},
+     {'first_name': 'Test', 'last_name': 'User'}),
+    ({'username': 'test', 'firstname': 'Test', 'lastname': 'User'},
+     {'first_name': 'TEST', 'last_name': 'USER'}),
+    # Test when user and party have middle name field
+    ({'username': 'test', 'firstname': 'Test TU', 'lastname': 'User'},
+     {'first_name': 'Test', 'middle_initial': 'TU', 'last_name': 'User'}),
+    ({'username': 'test', 'firstname': 'TEST TU', 'lastname': 'USER'},
+     {'first_name': 'Test', 'middle_initial': 'TU', 'last_name': 'User'}),
+    ({'username': 'test', 'firstname': 'Test TU', 'lastname': 'User'},
+     {'first_name': 'TEST', 'middle_initial': 'TU', 'last_name': 'USER'}),
+]
 
 
 @pytest.fixture(scope='module')
@@ -102,9 +130,10 @@ def test_has_general_access_true(monkeypatch, app, session, jwt, caplog, rules):
 
 @patch('legal_api.models.User.find_by_jwt_token',
        return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'has_party_role', return_value=True)
-@patch.object(DigitalCredentialsRulesService, 'is_completing_party', return_value=True)
-def test_has_specific_access_false_when_no_business(mock_is_completing_party, mock_has_party_role,
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
+def test_has_specific_access_false_when_no_business(mock_user_has_business_party_role,
+                                                    mock_user_has_filing_party_role,
                                                     monkeypatch, app, session, caplog, jwt, rules):
     token_json = {'username': 'test'}
     token = helper_create_jwt(
@@ -127,9 +156,10 @@ def test_has_specific_access_false_when_no_business(mock_is_completing_party, mo
 
 @patch('legal_api.models.User.find_by_jwt_token',
        return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'has_party_role', return_value=True)
-@patch.object(DigitalCredentialsRulesService, 'is_completing_party', return_value=True)
-def test_has_specific_access_false_when_wrong_business_type(mock_is_completing_party, mock_has_party_role,
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
+def test_has_specific_access_false_when_wrong_business_type(mock_user_has_business_party_role,
+                                                            mock_user_has_filing_party_role,
                                                             monkeypatch, app, session, caplog, jwt, rules):
     token_json = {'username': 'test'}
     token = helper_create_jwt(
@@ -159,10 +189,11 @@ def test_has_specific_access_false_when_wrong_business_type(mock_is_completing_p
 ])
 @patch('legal_api.models.User.find_by_jwt_token',
        return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'has_party_role', return_value=False)
-@patch.object(DigitalCredentialsRulesService, 'is_completing_party', return_value=False)
-def test_has_specific_access_true_when_correct_business_type_and_wrong_role(mock_is_completing_party, mock_has_party_role,
-                                                                            monkeypatch, app, session, legal_type, caplog, jwt, rules):
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
+def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_user_has_business_party_role,
+                                                                          mock_user_has_filing_party_role,
+                                                                          monkeypatch, app, session, legal_type, caplog, jwt, rules):
     token_json = {'username': 'test'}
     token = helper_create_jwt(
         jwt, roles=[PUBLIC_USER], username=token_json['username'])
@@ -191,10 +222,11 @@ def test_has_specific_access_true_when_correct_business_type_and_wrong_role(mock
 ])
 @patch('legal_api.models.User.find_by_jwt_token',
        return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'has_party_role', return_value=False)
-@patch.object(DigitalCredentialsRulesService, 'is_completing_party', return_value=True)
-def test_has_specific_access_true_when_correct_business_type_and_is_completing_party(mock_is_completing_party, mock_has_party_role,
-                                                                                     monkeypatch, app, session, legal_type, jwt, rules):
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
+def test_has_specific_access_true_when_correct_business_type_and_filing_role(mock_user_has_business_party_role,
+                                                                             mock_user_has_filing_party_role,
+                                                                             monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
     token = helper_create_jwt(
         jwt, roles=[PUBLIC_USER], username=token_json['username'])
@@ -220,10 +252,11 @@ def test_has_specific_access_true_when_correct_business_type_and_is_completing_p
 ])
 @patch('legal_api.models.User.find_by_jwt_token',
        return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'has_party_role', return_value=True)
-@patch.object(DigitalCredentialsRulesService, 'is_completing_party', return_value=False)
-def test_has_specific_access_true_when_correct_business_type_and_has_party_role(mock_is_completing_party, mock_has_party_role,
-                                                                                monkeypatch, app, session, legal_type, jwt, rules):
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
+def test_has_specific_access_true_when_correct_business_type_and_party_role(mock_user_has_business_party_role,
+                                                                            mock_user_has_filing_party_role,
+                                                                            monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
     token = helper_create_jwt(
         jwt, roles=[PUBLIC_USER], username=token_json['username'])
@@ -243,7 +276,7 @@ def test_has_specific_access_true_when_correct_business_type_and_has_party_role(
 
 
 @patch('legal_api.models.Filing.get_filings_by_types', return_value=[])
-def test_is_completing_party_false_when_no_registration_filing(app, session, caplog, rules):
+def test_is_completing_party_false_when_no_valid_filing(app, session, caplog, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -261,19 +294,19 @@ def test_is_completing_party_false_when_no_completing_parties(app, session, capl
     filing = factory_completed_filing(
         business=business,
         data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=datetime.utcnow(), filing_type='registration'
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
     )
     filing.submitter_id = user.id
     filing.save()
     caplog.set_level(logging.DEBUG)
 
     assert rules.is_completing_party(user, business) is False
-    assert 'No completing parties found for the registration filing.' in caplog.text
+    assert 'No completing parties found for the registration or incorporation filing.' in caplog.text
 
 
 @patch('legal_api.models.PartyRole.get_party_roles_by_filing',
        return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
-def test_is_completing_party_false_when_no_completing_party(app, session, caplog, rules):
+def test_is_compleing_party_false_when_user_not_completing_party(app, session, caplog, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -281,46 +314,14 @@ def test_is_completing_party_false_when_no_completing_party(app, session, caplog
     filing = factory_completed_filing(
         business=business,
         data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=datetime.utcnow(), filing_type='registration'
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
     )
     filing.submitter_id = user.id
     filing.save()
     caplog.set_level(logging.DEBUG)
 
     assert rules.is_completing_party(user, business) is False
-    assert 'No completing party found for the registration filing.' in caplog.text
-
-
-@pytest.mark.parametrize('user, party', [
-    ({'username': 'test', 'firstname': 'Test1', 'lastname': 'User1'},
-     {'first_name': 'Test2', 'last_name': 'User2'}),
-    ({'username': 'test', 'firstname': 'Test1 TU1', 'lastname': 'User1'},
-     {'first_name': 'Test2', 'middle_initial': 'TU2', 'last_name': 'User2'}),
-    #  Test when proprietor uses middle name field and user does not
-    ({'username': 'test', 'firstname': 'Test1', 'lastname': 'User1', },
-     {'first_name': 'Test1', 'middle_initial': 'TU1', 'last_name': 'User1'}),
-    #  Test when user uses middle name field and proprietor does not
-    ({'username': 'test', 'firstname': 'Test1 TU1', 'lastname': 'User1', },
-     {'first_name': 'Test1', 'last_name': 'User1'})
-])
-def test_is_completing_party_false_when_user_name_not_matching_completing_party_name(app, session, user, party, rules):
-    user = factory_user(**user)
-    business = create_business(
-        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user(**party, default_middle=False)
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    assert rules.is_completing_party(user, business) is False
+    assert 'User is not the completing party.' in caplog.text
 
 
 def test_is_completing_party_false_when_user_is_not_submitter(app, session, caplog, rules):
@@ -334,84 +335,39 @@ def test_is_completing_party_false_when_user_is_not_submitter(app, session, capl
     filing = factory_completed_filing(
         business=business,
         data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=datetime.utcnow(), filing_type='registration'
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
     )
     filing.filing_party_roles.append(completing_party_role)
     # Skip setting the submitter
     filing.save()
+    caplog.set_level(logging.DEBUG)
 
     assert rules.is_completing_party(user, business) is False
+    assert 'User is not the filing submitter.' in caplog.text
 
 
-def test_has_party_role_false_when_no_proprietors(app, session, caplog, rules):
+@patch('legal_api.models.PartyRole.get_party_roles_by_filing',
+       return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
+def test_is_completing_party_false_when_user_not_in_completing_party(app, session, caplog, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
-    # Skip creating a proprietor
-    caplog.set_level(logging.DEBUG)
-
-    assert rules.has_party_role(
-        user, business, PartyRole.RoleTypes.PROPRIETOR.value) is False
-    assert 'No parties found for the business with role: proprietor' in caplog.text
-
-
-@patch('legal_api.models.PartyRole.get_parties_by_role',
-       return_value=[PartyRole(role=PartyRole.RoleTypes.PROPRIETOR.value)])
-def test_has_party_role_false_when_no_proprietor(app, session, caplog, rules):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business(
-        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
-    # Skip creating a proprietor
-    caplog.set_level(logging.DEBUG)
-
-    assert rules.has_party_role(
-        user, business, PartyRole.RoleTypes.PROPRIETOR.value) is False
-    assert 'No party found for the business with role: proprietor' in caplog.text
-
-
-@pytest.mark.parametrize('user, proprietor', [
-    ({'username': 'test', 'firstname': 'Test1', 'lastname': 'User1'},
-     {'first_name': 'Test2', 'last_name': 'User2'}),
-    ({'username': 'test', 'firstname': 'Test1 TU1', 'lastname': 'User1'},
-     {'first_name': 'Test2', 'middle_initial': 'TU2', 'last_name': 'User2'}),
-    #  Test when proprietor uses middle name field and user does not
-    ({'username': 'test', 'firstname': 'Test1', 'lastname': 'User1', },
-     {'first_name': 'Test1', 'middle_initial': 'TU1', 'last_name': 'User1'}),
-    #  Test when user uses middle name field and proprietor does not
-    ({'username': 'test', 'firstname': 'Test1 TU1', 'lastname': 'User1', },
-     {'first_name': 'Test1', 'last_name': 'User1'})
-])
-def test_has_party_role_false_when_user_name_not_matching_proprietor_name(app, session, user, proprietor, rules):
-    user = factory_user(**user)
-    business = create_business(
-        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user(**proprietor, default_middle=False)
+    # Skip creating a completing party
+    filing = factory_completed_filing(
+        business=business,
+        data_dict={'filing': {'header': {'name': 'registration'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
     )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
+    filing.submitter_id = user.id
+    filing.save()
+    caplog.set_level(logging.DEBUG)
 
-    assert rules.has_party_role(
-        user, business, PartyRole.RoleTypes.PROPRIETOR.value) is False
+    assert rules.is_completing_party(user, business) is False
+    assert 'User is not the completing party.' in caplog.text
 
 
-@pytest.mark.parametrize('user, party', [
-    ({'username': 'test', 'firstname': 'Test', 'lastname': 'User'},
-     {'first_name': 'Test', 'last_name': 'User'}),
-    ({'username': 'test', 'firstname': 'TEST', 'lastname': 'USER'},
-     {'first_name': 'Test', 'last_name': 'User'}),
-    ({'username': 'test', 'firstname': 'Test', 'lastname': 'User'},
-     {'first_name': 'TEST', 'last_name': 'USER'}),
-    # Test when user and party have middle name field
-    ({'username': 'test', 'firstname': 'Test TU', 'lastname': 'User'},
-     {'first_name': 'Test', 'middle_initial': 'TU', 'last_name': 'User'}),
-    ({'username': 'test', 'firstname': 'TEST TU', 'lastname': 'USER'},
-     {'first_name': 'Test', 'middle_initial': 'TU', 'last_name': 'User'}),
-    ({'username': 'test', 'firstname': 'Test TU', 'lastname': 'User'},
-     {'first_name': 'TEST', 'middle_initial': 'TU', 'last_name': 'USER'}),
-])
-def test_is_completing_party_and_has_party_role_true(app, session, user, party, rules):
+@pytest.mark.parametrize('user, party', invalid_data)
+def test_is_completing_party_false_when_user_not_matching_completing_party(app, session, caplog, user, party, rules):
     user = factory_user(**user)
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -422,17 +378,132 @@ def test_is_completing_party_and_has_party_role_true(app, session, user, party, 
     filing = factory_completed_filing(
         business=business,
         data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=datetime.utcnow(), filing_type='registration'
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
     )
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
+    caplog.set_level(logging.DEBUG)
+
+    assert rules.is_completing_party(user, business) is False
+    assert 'User is not the completing party.' in caplog.text
+
+
+def test_user_has_business_party_role_false_when_no_proprietors(app, session, caplog, rules):
+    user = factory_user(username='test', firstname='Test', lastname='User')
+    business = create_business(
+        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+    # Skip creating a proprietor
+
+    assert rules.user_has_business_party_role(user, business) is False
+
+
+@patch('legal_api.models.PartyRole.get_parties_by_role',
+       return_value=[PartyRole(role=PartyRole.RoleTypes.PROPRIETOR.value)])
+def test_user_has_business_party_role_false_when_no_proprietor(app, session, caplog, rules):
+    user = factory_user(username='test', firstname='Test', lastname='User')
+    business = create_business(
+        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+    # Skip creating a proprietor
+
+    assert rules.user_has_business_party_role(user, business) is False
+
+
+@pytest.mark.parametrize('user, proprietor', invalid_data)
+def test_user_has_business_party_role_false_when_user_not_matching_proprietor(app, session, user, proprietor, rules):
+    user = factory_user(**user)
+    business = create_business(
+        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+    proprietor_role = create_party_role(
+        PartyRole.RoleTypes.PROPRIETOR,
+        **create_test_user(**proprietor, default_middle=False)
+    )
+    proprietor_role.business_id = business.id
+    proprietor_role.save()
+
+    assert rules.user_has_business_party_role(user, business) is False
+
+
+@pytest.mark.parametrize('user, proprietor', valid_data)
+def test_user_has_business_party_role_true(app, session, user, proprietor, rules):
+    user = factory_user(**user)
+    business = create_business(
+        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
     proprietor_party_role = create_party_role(
         PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user(**party, default_middle=False)
+        **create_test_user(**proprietor, default_middle=False)
     )
     proprietor_party_role.business_id = business.id
     proprietor_party_role.save()
 
-    assert rules.is_completing_party_and_has_party_role(
-        user, business, PartyRole.RoleTypes.PROPRIETOR.value) is True
+    assert rules.user_has_business_party_role(user, business) is True
+
+
+@pytest.mark.parametrize('user, party', invalid_data)
+def test_user_has_filing_party_role_false_when_user_not_matching_filer(app, session, user, party, rules):
+    user = factory_user(**user)
+    business = create_business(
+        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+    incoroporator_role = create_party_role(
+        PartyRole.RoleTypes.INCORPORATOR,
+        **create_test_user(**party, default_middle=False)
+    )
+    filing = factory_completed_filing(
+        business=business,
+        data_dict={'filing': {'header': {'name': 'registration'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
+    )
+    filing.filing_party_roles.append(incoroporator_role)
+    filing.submitter_id = user.id
+    filing.save()
+
+    assert rules.user_has_filing_party_role(user, business) is False
+
+
+@pytest.mark.parametrize('user, party', valid_data)
+def test_user_has_filing_party_role_true(app, session, user, party, rules):
+    user = factory_user(**user)
+    business = create_business(
+        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+    incoroporator_role = create_party_role(
+        PartyRole.RoleTypes.INCORPORATOR,
+        **create_test_user(**party, default_middle=False)
+    )
+    filing = factory_completed_filing(
+        business=business,
+        data_dict={'filing': {'header': {'name': 'registration'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
+    )
+    filing.filing_party_roles.append(incoroporator_role)
+    filing.submitter_id = user.id
+    filing.save()
+
+    assert rules.user_has_filing_party_role(user, business) is True
+
+
+@pytest.mark.parametrize('user, party', valid_data)
+def test_user_has_filing_party_role_and_user_has_business_party_role_true(app, session, user, party, rules):
+    user = factory_user(**user)
+    business = create_business(
+        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+    incorporator_role = create_party_role(
+        PartyRole.RoleTypes.INCORPORATOR,
+        **create_test_user(**party, default_middle=False)
+    )
+    filing = factory_completed_filing(
+        business=business,
+        data_dict={'filing': {'header': {'name': 'registration'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
+    )
+    filing.filing_party_roles.append(incorporator_role)
+    filing.submitter_id = user.id
+    filing.save()
+    proprietor_role = create_party_role(
+        PartyRole.RoleTypes.PROPRIETOR,
+        **create_test_user(**party, default_middle=False)
+    )
+    proprietor_role.business_id = business.id
+    proprietor_role.save()
+
+    assert rules.user_has_filing_party_role(user, business) is True
+    assert rules.user_has_business_party_role(user, business) is True

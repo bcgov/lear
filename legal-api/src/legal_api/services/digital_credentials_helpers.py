@@ -126,7 +126,7 @@ def get_roles(user: User,
               business: Business,
               rules: DigitalCredentialsRulesService,
               preconditions_met: Union[bool, None]) -> List[str]:
-    """Get roles for the user in the business."""
+    """TODO: Get roles for the user in the business."""
     roles = []
     preconditions = rules.get_preconditions(user, business)
     can_attach_role = (preconditions is None) or (len(preconditions) == 0) or (
