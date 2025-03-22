@@ -65,9 +65,8 @@ def rules():
     return DigitalCredentialsRulesService()
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
-def test_has_general_access_false_when_no_user(monkeypatch, app, session, caplog, jwt, rules):
-    token_json = {'username': 'test'}
+def setup_mock_auth(monkeypatch, jwt, token_json):
+    """Helper function to set up mock authentication."""
     token = helper_create_jwt(
         jwt, roles=[PUBLIC_USER], username=token_json['username'])
     headers = {'Authorization': 'Bearer ' + token}
@@ -75,105 +74,73 @@ def test_has_general_access_false_when_no_user(monkeypatch, app, session, caplog
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        caplog.set_level(logging.DEBUG)
-        user = User.find_by_jwt_token(jwt)
+    jwt.get_token_auth_header = MagicMock(return_value=token)
+    pyjwt.decode = MagicMock(return_value=token_json)
+    monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    return token
 
+
+@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+def test_has_general_access_false_when_no_user(monkeypatch, app, session, caplog, jwt, rules):
+    token_json = {'username': 'test'}
+    setup_mock_auth(monkeypatch, jwt, token_json)
+    caplog.set_level(logging.DEBUG)
+
+    with app.test_request_context():
+        user = User.find_by_jwt_token(jwt)
         assert rules._has_general_access(user) is False
         assert 'No user is provided.' in caplog.text
 
 
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=User(id=1, login_source='NOT_BCSC'))
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='NOT_BCSC'))
 def test_has_general_access_false_when_login_source_not_bcsc(monkeypatch, app, session, caplog, jwt, rules):
     token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    setup_mock_auth(monkeypatch, jwt, token_json)
+    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        caplog.set_level(logging.DEBUG)
         user = User.find_by_jwt_token(jwt)
-
         assert rules._has_general_access(user) is False
         assert 'User is not logged in with BCSC.' in caplog.text
 
 
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=User(id=1, login_source='BCSC'))
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 def test_has_general_access_true(monkeypatch, app, session, jwt, caplog, rules):
     token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    setup_mock_auth(monkeypatch, jwt, token_json)
 
     with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
         user = User.find_by_jwt_token(jwt)
-
         assert rules._has_general_access(user) is True
 
 
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=User(id=1, login_source='BCSC'))
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
 def test_has_specific_access_false_when_no_business(mock_user_has_business_party_role,
                                                     mock_user_has_filing_party_role,
                                                     monkeypatch, app, session, caplog, jwt, rules):
     token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    setup_mock_auth(monkeypatch, jwt, token_json)
+    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        caplog.set_level(logging.DEBUG)
         user = User.find_by_jwt_token(jwt)
-
         assert rules._has_specific_access(user, None) is False
         assert 'No buisiness is provided.' in caplog.text
 
 
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=User(id=1, login_source='BCSC'))
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
 def test_has_specific_access_false_when_wrong_business_type(mock_user_has_business_party_role,
                                                             mock_user_has_filing_party_role,
                                                             monkeypatch, app, session, caplog, jwt, rules):
     token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    setup_mock_auth(monkeypatch, jwt, token_json)
+    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        caplog.set_level(logging.DEBUG)
         user = User.find_by_jwt_token(jwt)
         business = create_business(
             Business.LegalTypes.COMP.value, Business.State.ACTIVE)
@@ -187,26 +154,17 @@ def test_has_specific_access_false_when_wrong_business_type(mock_user_has_busine
     Business.LegalTypes.PARTNERSHIP.value,
     Business.LegalTypes.BCOMP.value,
 ])
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=User(id=1, login_source='BCSC'))
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
 def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_user_has_business_party_role,
                                                                           mock_user_has_filing_party_role,
                                                                           monkeypatch, app, session, legal_type, caplog, jwt, rules):
     token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    setup_mock_auth(monkeypatch, jwt, token_json)
+    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        caplog.set_level(logging.DEBUG)
         user = User.find_by_jwt_token(jwt)
         business = create_business(
             Business.LegalTypes.COMP.value, Business.State.ACTIVE)
@@ -220,25 +178,16 @@ def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_u
     Business.LegalTypes.PARTNERSHIP.value,
     Business.LegalTypes.BCOMP.value,
 ])
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=User(id=1, login_source='BCSC'))
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
 def test_has_specific_access_true_when_correct_business_type_and_filing_role(mock_user_has_business_party_role,
                                                                              mock_user_has_filing_party_role,
                                                                              monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    setup_mock_auth(monkeypatch, jwt, token_json)
 
     with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
         user = User.find_by_jwt_token(jwt)
         business = create_business(legal_type, Business.State.ACTIVE)
 
@@ -250,25 +199,16 @@ def test_has_specific_access_true_when_correct_business_type_and_filing_role(moc
     Business.LegalTypes.PARTNERSHIP.value,
     Business.LegalTypes.BCOMP.value,
 ])
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=User(id=1, login_source='BCSC'))
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
 def test_has_specific_access_true_when_correct_business_type_and_party_role(mock_user_has_business_party_role,
                                                                             mock_user_has_filing_party_role,
                                                                             monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    setup_mock_auth(monkeypatch, jwt, token_json)
 
     with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
         user = User.find_by_jwt_token(jwt)
         business = create_business(legal_type, Business.State.ACTIVE)
 
