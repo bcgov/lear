@@ -443,6 +443,27 @@ def test_user_has_business_party_role_true(app, session, user, proprietor, rules
 def test_user_has_filing_party_role_false_when_user_not_matching_filer(app, session, user, party, rules):
     user = factory_user(**user)
     business = create_business(
+        Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
+    incoroporator_role = create_party_role(
+        PartyRole.RoleTypes.INCORPORATOR,
+        **create_test_user(**party, default_middle=False)
+    )
+    filing = factory_completed_filing(
+        business=business,
+        data_dict={'filing': {'header': {'name': 'registration'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='registration'
+    )
+    filing.filing_party_roles.append(incoroporator_role)
+    filing.submitter_id = user.id
+    filing.save()
+
+    assert rules.user_has_filing_party_role(user, business) is False
+
+
+@pytest.mark.parametrize('user, party', valid_data)
+def test_user_has_filing_party_role_false_invalid_business_type(app, session, user, party, rules):
+    user = factory_user(**user)
+    business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
     incoroporator_role = create_party_role(
         PartyRole.RoleTypes.INCORPORATOR,
@@ -464,15 +485,15 @@ def test_user_has_filing_party_role_false_when_user_not_matching_filer(app, sess
 def test_user_has_filing_party_role_true(app, session, user, party, rules):
     user = factory_user(**user)
     business = create_business(
-        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+        Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
     incoroporator_role = create_party_role(
         PartyRole.RoleTypes.INCORPORATOR,
         **create_test_user(**party, default_middle=False)
     )
     filing = factory_completed_filing(
         business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=datetime.now(timezone.utc), filing_type='registration'
+        data_dict={'filing': {'header': {'name': 'incorporationApplication'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='incorporationApplication'
     )
     filing.filing_party_roles.append(incoroporator_role)
     filing.submitter_id = user.id
@@ -485,25 +506,25 @@ def test_user_has_filing_party_role_true(app, session, user, party, rules):
 def test_user_has_filing_party_role_and_user_has_business_party_role_true(app, session, user, party, rules):
     user = factory_user(**user)
     business = create_business(
-        Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+        Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
     incorporator_role = create_party_role(
         PartyRole.RoleTypes.INCORPORATOR,
         **create_test_user(**party, default_middle=False)
     )
     filing = factory_completed_filing(
         business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=datetime.now(timezone.utc), filing_type='registration'
+        data_dict={'filing': {'header': {'name': 'incorporationApplication'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='incorporationApplication'
     )
     filing.filing_party_roles.append(incorporator_role)
     filing.submitter_id = user.id
     filing.save()
-    proprietor_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
+    director_role = create_party_role(
+        PartyRole.RoleTypes.DIRECTOR,
         **create_test_user(**party, default_middle=False)
     )
-    proprietor_role.business_id = business.id
-    proprietor_role.save()
+    director_role.business_id = business.id
+    director_role.save()
 
     assert rules.user_has_filing_party_role(user, business) is True
     assert rules.user_has_business_party_role(user, business) is True
