@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """API endpoints for managing an Digital Credentials resource."""
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Tuple, Union
 
@@ -316,7 +316,7 @@ def revoke_credential(identifier, credential_id):
                                              reason) is None:
         return jsonify({'message': 'Failed to revoke credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential.date_of_issue = datetime.utcnow()
+    credential.date_of_issue = datetime.now(timezone.utc)
     credential.is_revoked = True
     credential.save()
     return jsonify({'message': 'Credential has been revoked.'}), HTTPStatus.OK
@@ -371,7 +371,7 @@ def webhook_notification(topic_name: str):
             cred_ex_id = json_input.get('cred_ex_id', None)
             if (credential := DCCredential.find_by_credential_exchange_id(
                     cred_ex_id)):
-                credential.date_of_issue = datetime.utcnow()
+                credential.date_of_issue = datetime.now(timezone.utc)
                 credential.is_issued = True
                 credential.save()
         elif topic_name == 'present_proof_v2_0' and state == 'done':
@@ -380,7 +380,7 @@ def webhook_notification(topic_name: str):
             if connection_id and (connection := DCConnection.find_by_connection_id(
                     connection_id)):
                 connection.is_attested = verified
-                connection.last_attested = datetime.utcnow()
+                connection.last_attested = datetime.now(timezone.utc)
                 connection.save()
     except Exception as err:
         current_app.logger.error(err)

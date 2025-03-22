@@ -17,7 +17,7 @@
 Test-Suite to ensure that the /digitalCredentials endpoint is working as expected.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -154,7 +154,7 @@ def test_send_credential(app, session, client, jwt):  # pylint:disable=unused-ar
 
     with patch.object(DCDefinition, 'find_by', return_value=definition):
         with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=True,
-                                                                                                     last_attested=datetime.utcnow())):
+                                                                                                     last_attested=datetime.now(timezone.utc))):
             with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
                 rv = client.post(
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
@@ -199,7 +199,7 @@ def test_send_credential_attestation_fail(app, session, client, jwt):  # pylint:
 
     with patch.object(DCDefinition, 'find_by', return_value=definition):
         with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=False,
-                                                                                                     last_attested=datetime.utcnow())):
+                                                                                                     last_attested=datetime.now(timezone.utc))):
             with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
                 rv = client.post(
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',

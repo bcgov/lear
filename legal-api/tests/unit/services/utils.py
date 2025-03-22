@@ -15,7 +15,7 @@
 
 from flask_jwt_oidc import JwtManager
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Union
 from legal_api.models.address import Address
 from legal_api.models.business import Business
@@ -75,7 +75,7 @@ def create_business(legal_type: str, state: Business.State):
     business = factory_business(identifier=identifier,
                                 entity_type=legal_type,
                                 state=state,
-                                founding_date=datetime.now())
+                                founding_date=datetime.now(timezone.utc),)
     return business
 
 
@@ -96,7 +96,7 @@ def create_party_role(role=PartyRole.RoleTypes.COMPLETING_PARTY,
         completing_party_address,
         None,
         officer,
-        datetime.utcnow(),
+        datetime.now(timezone.utc),
         None,
         role
     )
