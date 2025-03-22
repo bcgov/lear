@@ -32,9 +32,14 @@ from tests.unit.services.utils import create_party_role, create_test_user
 schema_id = 'test_schema_id'
 cred_def_id = 'test_credential_definition_id'
 
-business_extra = {
-    'legal_name': 'Test Business',
-    'tax_id': '000000000000001',
+identifier = 'FM1234567'
+founding_date = '2010-01-01'
+active_state = 'ACTIVE'
+
+business = {
+    'identifier': identifier,
+    'founding_date': founding_date,
+    'state': active_state,
 }
 
 business_extra_empty = {
@@ -42,23 +47,25 @@ business_extra_empty = {
     'tax_id': '',
 }
 
+
+business_extra = {
+    'legal_name': 'Test Business',
+    'tax_id': '000000000000001',
+}
+
+
 bcomp_business = {
-    'identifier': 'FM1234567',
+    **business,
     'entity_type': 'BEN',
-    'founding_date': '2010-01-01',
-    'state': 'ACTIVE',
 }
 
 sp_business = {
-    'identifier': 'FM1234567',
+    **business,
     'entity_type': 'SP',
-    'founding_date': '2010-01-01',
-    'state': 'ACTIVE',
 }
 
 sp_business_historical = {
-    'identifier': 'FM1234567',
-    'entity_type': 'SP',
+    **sp_business,
     'founding_date': '1970-01-01',
     'state': 'HISTORICAL',
 }
@@ -69,13 +76,14 @@ user = {
     'firstname': 'First',
 }
 
+user_extra_empty = {
+    'middlename': '',
+}
+
 user_extra = {
     'middlename': 'Middle',
 }
 
-user_extra_empty = {
-    'middlename': '',
-}
 
 party_one = {
     'first_name': 'First',
@@ -95,6 +103,8 @@ base_expected = [
     {'name': 'cra_business_number', 'value': '000000000000001'},
     {'name': 'registered_on_dateint', 'value': '20100101'},
     {'name': 'company_status', 'value': 'ACTIVE'},
+    {'name': 'family_name', 'value': 'LAST'},
+    {'name': 'given_names', 'value': 'FIRST MIDDLE'},
 ]
 
 
@@ -205,8 +215,6 @@ def assert_credential_data(credential_data, business_user, expected):
         'user_extra': user_extra
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
-        {'name': 'family_name', 'value': 'LAST'},
-        {'name': 'given_names', 'value': 'FIRST MIDDLE'},
         {'name': 'role', 'value': 'Proprietor'}
     ]),
     # In this second test the user does not have a business party role
@@ -221,8 +229,6 @@ def assert_credential_data(credential_data, business_user, expected):
         'user_extra': user_extra
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
-        {'name': 'family_name', 'value': 'LAST'},
-        {'name': 'given_names', 'value': 'FIRST MIDDLE'},
         {'name': 'role', 'value': ''}
     ]),
     ({
@@ -294,8 +300,6 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         'user_extra': user_extra,
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
-        {'name': 'family_name', 'value': 'LAST'},
-        {'name': 'given_names', 'value': 'FIRST MIDDLE'},
         {'name': 'role', 'value': 'Proprietor'}
     ]),
     # In this second test the user does not have a business party role but has a filing party role
@@ -310,8 +314,6 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         'user_extra': user_extra,
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
-        {'name': 'family_name', 'value': 'LAST'},
-        {'name': 'given_names', 'value': 'FIRST MIDDLE'},
         {'name': 'role', 'value': 'Incorporator'}
     ]),
     ({
