@@ -19,10 +19,8 @@ Test-Suite to ensure that the Authorization Service is working as expected.
 import random
 
 import copy
-from datetime import datetime as _datetime
 from enum import Enum
 from http import HTTPStatus
-from typing import Union
 
 import jwt as pyjwt
 import pytest
@@ -47,10 +45,7 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from legal_api.models import Filing
-from legal_api.models.business import Business
-
-from legal_api.models.user import User
+from legal_api.models import Business, Filing, User
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, PUBLIC_USER, STAFF_ROLE, \
     are_digital_credentials_allowed, authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
 from legal_api.services.warnings.business.business_checks import WarningType

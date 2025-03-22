@@ -16,7 +16,7 @@
 
 
 import json
-import random
+import secrets
 from contextlib import suppress
 from datetime import datetime
 from typing import Optional
@@ -169,7 +169,7 @@ class DigitalCredentialsService:
         try:
             current_timestamp = int(datetime.now().timestamp())
             # Generate a random nonce
-            nonce = str(random.randint(1000000000, 9999999999))
+            nonce = str(secrets.randbelow(10**10))
 
             response = requests.post(self.api_url + '/present-proof-2.0/send-request',
                                      headers=self._get_headers(),
