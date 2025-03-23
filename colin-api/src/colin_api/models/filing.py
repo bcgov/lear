@@ -1439,7 +1439,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             convert_to_pacific_time(founding_date_str)
         ).date()
 
-        last_ar_filed_dt = f'{filing_year}-{pacific_founding_date.month:02}-{pacific_founding_date.day:02}'
+        # Handle February 29 leap year edge case
+        month = pacific_founding_date.month
+        day = pacific_founding_date.day
+
+        # If it's February 29 and the filing year is not a leap year, use February 28 instead
+        if month == 2 and day == 29:
+            is_leap_year = int(filing_year) % 4 == 0 and (int(filing_year) % 100 != 0 or (int(filing_year) % 400 == 0))
+            if not is_leap_year:
+                day = 28
+
+        last_ar_filed_dt = f'{filing_year}-{month:02}-{day:02}'
         return last_ar_filed_dt
 
     @classmethod
