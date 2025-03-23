@@ -47,10 +47,8 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     last_attested = db.Column('last_attested', db.DateTime, default=None)
 
     # DEPRECATED: use business_user_id instead, remove when all references are removed
-    business_id = db.Column('business_id', db.Integer,
-                            db.ForeignKey('businesses.id'), nullable=False)
-    business_user_id = db.Column('business_user_id', db.Integer,
-                                 db.ForeignKey('dc_business_users.id'), nullable=False)
+    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    business_user_id = db.Column('business_user_id', db.Integer, db.ForeignKey('dc_business_users.id'), nullable=False)
 
     # relationships
     business_user = db.relationship(
@@ -95,8 +93,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the connection_id."""
         dc_connection = None
         if connection_id:
-            dc_connection = cls.query.filter(
-                DCConnection.connection_id == connection_id).one_or_none()
+            dc_connection = cls.query.filter(DCConnection.connection_id == connection_id).one_or_none()
         return dc_connection
 
     @classmethod
@@ -104,24 +101,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential connection matching the business_user_id."""
         dc_connection = None
         if business_user_id:
-            dc_connection = cls.query.filter(
-                DCConnection.business_user_id == business_user_id).one_or_none()
-        return dc_connection
-
-    @classmethod
-    def find_active_by(cls, business_id: str) -> DCConnection:
-        """
-        Return the active digital credential connection matching the business_id.
-
-        DEPRECATED: use find_active_by_business_user_id instead.
-        """
-        dc_connection = None
-        if business_id:
-            dc_connection = (
-                cls.query
-                   .filter(DCConnection.business_id == business_id)
-                   .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
-                   .one_or_none())
+            dc_connection = cls.query.filter(DCConnection.business_user_id == business_user_id).one_or_none()
         return dc_connection
 
     @classmethod
@@ -147,26 +127,6 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
                    .filter(DCConnection.connection_state == connection_state)
                    .one_or_none())
         return dc_connection
-
-    @classmethod
-    def find_by(cls,
-                business_id: int = None,
-                connection_state: str = None) -> List[DCConnection]:
-        """
-        Return the digital credential connection matching the filter.
-
-        DEPRECATED: use find_by_filters instead.
-        """
-        query = db.session.query(DCConnection)
-
-        if business_id:
-            query = query.filter(DCConnection.business_id == business_id)
-
-        if connection_state:
-            query = query.filter(
-                DCConnection.connection_state == connection_state)
-
-        return query.all()
 
     @classmethod
     def find_by_filters(cls, filters: List[Any] = None) -> List[DCConnection]:

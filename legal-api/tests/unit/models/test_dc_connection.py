@@ -60,29 +60,6 @@ def test_find_dc_connection_by_connection_id(session):
     assert res.id == connection.id
 
 
-def test_find_active_by(session):
-    """DEPRECATED: Assert that the method returns correct value."""
-    business, user, business_user = setup_business_and_user()
-    create_dc_connection(business_user, is_active=True)
-
-    res = DCConnection.find_active_by(business.id)
-
-    assert res
-    assert res.connection_state == DCConnection.State.ACTIVE.value
-
-
-def test_find_by(session):
-    """DEPRECATED: Assert that the method returns correct value."""
-    business, user, business_user = setup_business_and_user()
-    connection = create_dc_connection(business_user)
-
-    res = DCConnection.find_by(
-        business_id=business.id, connection_state=DCConnection.State.INVITATION_SENT.value)
-
-    assert len(res) == 1
-    assert res[0].id == connection.id
-
-
 def test_find_active_by_business_user_id(session):
     """Assert that the method returns correct value."""
     business, user, business_user = setup_business_and_user()
