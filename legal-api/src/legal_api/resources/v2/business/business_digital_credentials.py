@@ -36,6 +36,7 @@ from legal_api.services.digital_credentials_helpers import (
     extract_invitation_message_id,
     get_digital_credential_data,
     get_or_create_business_user,
+    get_roles,
 )
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.utils.auth import jwt
@@ -251,9 +252,12 @@ def send_credential(identifier, credential_type):  # pylint: disable=too-many-lo
 
     json_input = request.get_json()
     has_preconditions = bool(len(rules.get_preconditions(business_user.user, business_user.business)) > 0)
-    preconditions_met = json_input.get('preconditionsMet', None) if json_input else None
+    preconditions_resolved = json_input.get('preconditionsResolved', None) if json_input else None
+    self_attested_roles = preconditions_resolved.get('selfAttestedRoles', None) if preconditions_resolved else None
+    system_attested_roles = get_roles(business_user.user, business_user.business, rules, self_attested_roles)
 
-    credential_data = get_digital_credential_data(business_user, definition.credential_type, preconditions_met)
+    credential_data = get_digital_credential_data(business_user, definition.credential_type, self_attested_roles)
+
     credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
     if not (response := digital_credentials.issue_credential(
@@ -272,7 +276,7 @@ def send_credential(identifier, credential_type):  # pylint: disable=too-many-lo
             # FIXME: this constraint needs to be enforced in the DB
             business_user_id=business_user.id,
             credential_json=credential_data,
-            is_role_self_attested=preconditions_met if has_preconditions else None,
+            self_attested_roles=system_attested_roles if has_preconditions else None,
 
         )
         issued_credential.save()

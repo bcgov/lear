@@ -59,14 +59,18 @@ class DigitalCredentialsRulesService:
         return self._has_general_access(user) and self._has_specific_access(user, business)
 
     def get_preconditions(self, user: User, business: Business) -> List[str]:
-        """Return the preconditions for digital credentials."""
+        """
+        Return the preconditions for digital credentials.
+
+        These are simply just a list of roles a user must attest to.
+        """
         preconditions = []
         if not self.user_is_completing_party(user, business):
             if self.user_has_business_party_role(user, business):
                 preconditions += self.user_business_party_roles(user, business)
             if self.user_has_filing_party_role(user, business):
                 preconditions += self.user_filing_party_roles(user, business)
-        return list(map(lambda party_role: 'attest_' + party_role.role, preconditions))
+        return list(map(lambda party_role: party_role.role, preconditions))
 
     def _has_general_access(self, user: User) -> bool:
         """Return Ture if general access rules are met."""

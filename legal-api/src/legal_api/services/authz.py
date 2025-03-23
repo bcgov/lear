@@ -17,7 +17,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 from http import HTTPStatus
-from typing import List
+from typing import Dict, List
 from urllib.parse import urljoin
 
 import jwt as pyjwt
@@ -995,16 +995,16 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool
     return rules.are_digital_credentials_allowed(user, business)
 
 
-def get_digital_credentials_preconditions(business: Business, jwt: JwtManager) -> List[str]:
+def get_digital_credentials_preconditions(business: Business, jwt: JwtManager) -> Dict[str, List[str]]:
     """Return the preconditions for digital credentials."""
     if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return []
+        return {}
 
     if not (user := User.find_by_jwt_token(token)):
-        return []
+        return {}
 
     rules = DigitalCredentialsRulesService()
-    return rules.get_preconditions(user, business)
+    return {'attestRoles': rules.get_preconditions(user, business)}
 
 
 def get_account_id(_, account_id: str = None) -> str:

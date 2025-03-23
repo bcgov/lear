@@ -22,7 +22,7 @@ from legal_api.services.digital_credentials_rules import DigitalCredentialsRules
 
 def get_digital_credential_data(business_user: DCBusinessUser,
                                 credential_type: DCDefinition.CredentialType,
-                                preconditions_met: Union[bool, None] = None) -> List[str]:
+                                self_attested_roles: Union[List[str], None] = None) -> List[str]:
     """Get the data for a digital credential."""
     if credential_type == DCDefinition.CredentialType.business:
         rules = DigitalCredentialsRulesService()
@@ -36,7 +36,7 @@ def get_digital_credential_data(business_user: DCBusinessUser,
         company_status = get_company_status(business)
         family_name = get_family_name(user)
         given_names = get_given_names(user)
-        roles = get_roles(user, business, rules, preconditions_met)
+        roles = get_roles(user, business, rules, self_attested_roles)
 
         return [
             {
@@ -124,20 +124,33 @@ def get_given_names(user: User) -> str:
 def get_roles(user: User,
               business: Business,
               rules: DigitalCredentialsRulesService,
-              preconditions_met: Union[bool, None]) -> List[str]:
+              self_attested_roles: Union[List[str], None]) -> List[str]:
     """Get roles for the user in the business."""
-    roles = []
+
+    def valid_party_role_filter(party_role) -> bool:
+        """Filter party roles in both preconditions and self-attested roles."""
+        return party_role.role in preconditions and party_role.role in self_attested_roles
+
+    party_roles = []
     preconditions = rules.get_preconditions(user, business)
-    can_attach_role = (preconditions is None) or (len(preconditions) == 0) or (
-        len(preconditions) and preconditions_met is True)
 
-    if can_attach_role:
+    has_preconditions = preconditions is not None and len(preconditions)
+    only_use_self_attested_roles = (has_preconditions
+                                    and self_attested_roles is not None
+                                    and len(self_attested_roles))
+    may_attach_role = not has_preconditions or only_use_self_attested_roles
+
+    if may_attach_role:
         if rules.user_has_business_party_role(user, business):
-            roles += rules.user_business_party_roles(user, business)
+            party_roles += rules.user_business_party_roles(user, business)
         if rules.user_has_filing_party_role(user, business):
-            roles += rules.user_filing_party_roles(user, business)
+            party_roles += rules.user_filing_party_roles(user, business)
 
-    return list(map(lambda party_role: party_role.role.replace('_', ' ').title(), roles))
+        if only_use_self_attested_roles:
+            # Ensures that the user cant attach roles that are not stated in the preconditions
+            party_roles = list(filter(valid_party_role_filter, party_roles))
+
+    return list(map(lambda party_role: party_role.role.replace('_', ' ').title(), party_roles))
 
 
 def extract_invitation_message_id(json_message: dict) -> str:
