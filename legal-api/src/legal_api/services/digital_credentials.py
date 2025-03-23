@@ -55,8 +55,7 @@ class DigitalCredentialsService:
         self.public_issuer_did = app.config.get('TRACTION_PUBLIC_ISSUER_DID')
 
         self.business_schema_name = app.config.get('BUSINESS_SCHEMA_NAME')
-        self.business_schema_version = app.config.get(
-            'BUSINESS_SCHEMA_VERSION')
+        self.business_schema_version = app.config.get('BUSINESS_SCHEMA_VERSION')
         self.business_schema_id = app.config.get('BUSINESS_SCHEMA_ID')
         self.business_cred_def_id = app.config.get('BUSINESS_CRED_DEF_ID')
 
@@ -69,16 +68,12 @@ class DigitalCredentialsService:
         """Fetch schema and credential definition and save a Business definition."""
         try:
             if not self.business_schema_id:
-                self.app.logger.error(
-                    'Environment variable: BUSINESS_SCHEMA_ID must be configured')
-                raise ValueError(
-                    'Environment variable: BUSINESS_SCHEMA_ID must be configured')
+                self.app.logger.error('Environment variable: BUSINESS_SCHEMA_ID must be configured')
+                raise ValueError('Environment variable: BUSINESS_SCHEMA_ID must be configured')
 
             if not self.business_cred_def_id:
-                self.app.logger.error(
-                    'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
-                raise ValueError(
-                    'Environment variable: BUSINESS_CRED_DEF_ID must be configured')
+                self.app.logger.error('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
+                raise ValueError('Environment variable: BUSINESS_CRED_DEF_ID must be configured')
 
             ###
             # The following just a sanity check to make sure the schema and
@@ -128,8 +123,7 @@ class DigitalCredentialsService:
             response.raise_for_status()
             return response.json().get('schema', None).get('id', None)
         except Exception as err:
-            self.app.logger.error(
-                f'Failed to fetch schema with id: {schema_id} from Traction tenant storage')
+            self.app.logger.error(f'Failed to fetch schema with id: {schema_id} from Traction tenant storage')
             self.app.logger.error(err)
             raise err
 
@@ -220,8 +214,7 @@ class DigitalCredentialsService:
     def issue_credential(self,
                          connection_id: str,
                          definition: DCDefinition,
-                         # list of { 'name': 'business_name', 'value': 'test_business' }
-                         data: list,
+                         data: list,  # list of { 'name': 'business_name', 'value': 'test_business' }
                          comment: str = '') -> Optional[dict]:
         """Send holder a credential, automating entire flow."""
         try:

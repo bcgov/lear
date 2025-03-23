@@ -111,12 +111,10 @@ base_expected = [
 def test_init_app(app, session):
     """Assert that the init app register schema and credential definition."""
     DigitalCredentialsService._fetch_schema = MagicMock(return_value=schema_id)
-    DigitalCredentialsService._fetch_credential_definition = MagicMock(
-        return_value=cred_def_id)
+    DigitalCredentialsService._fetch_credential_definition = MagicMock(return_value=cred_def_id)
 
     digital_credentials.init_app(app)
-    definition = DCDefinition.find_by_credential_type(
-        DCDefinition.CredentialType.business)
+    definition = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
     assert definition.schema_id == schema_id
     assert definition.schema_name == digital_credentials.business_schema_name
     assert definition.schema_version == digital_credentials.business_schema_version
@@ -260,13 +258,11 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
 
     user, business = setup_user_and_business(test_data)
     setup_parties_and_roles(business, test_data['parties'])
-
     business_user = setup_business_user(business, user)
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
         # Act
-        credential_data = get_digital_credential_data(
-            business_user, credential_type)
+        credential_data = get_digital_credential_data(business_user, credential_type)
 
         # Assert
         assert_credential_data(credential_data, business_user, expected)
@@ -356,8 +352,7 @@ def test_data_helper_user_has_filing_party_role(app, session, test_data, expecte
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=None):
         # Act
-        credential_data = get_digital_credential_data(
-            business_user, credential_type)
+        credential_data = get_digital_credential_data(business_user, credential_type)
 
         # Assert
         assert_credential_data(credential_data, business_user, expected)
@@ -387,8 +382,7 @@ def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
-        credential_data = get_digital_credential_data(
-            business_user, credential_type, False)
+        credential_data = get_digital_credential_data(business_user, credential_type, False)
 
         # Assert
         assert {'name': 'role', 'value': ''} in credential_data
@@ -418,9 +412,7 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
-        credential_data = get_digital_credential_data(
-            business_user, credential_type, True)
+        credential_data = get_digital_credential_data(business_user, credential_type, True)
 
         # Assert
-        assert {'name': 'role',
-                'value': 'Director, Incorporator'} in credential_data
+        assert {'name': 'role', 'value': 'Director, Incorporator'} in credential_data
