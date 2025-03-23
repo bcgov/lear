@@ -1,4 +1,4 @@
-# Copyright © 2025 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,32 +17,30 @@ from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCDefinition, DCRevocationReason
 
 from entity_digital_credentials.helpers import (
-    get_all_digital_credentials_for_business,
-    replace_digital_credential,
-    revoke_digital_credential,
+    get_issued_digital_credentials,
+    replace_issued_digital_credential,
+    revoke_issued_digital_credential,
 )
 
 
-async def process(business: Business, filing_sub_type: str) -> None:
+async def process(business: Business, filing_sub_type: str):
     """Process dissolution actions."""
-    credentials = get_all_digital_credentials_for_business(business=business)
+    issued_credentials = get_issued_digital_credentials(business=business)
 
-    if not (credentials and len(credentials)):
-        logger.warning(
-            'No issued credentials found for business: %s', business.identifier)
+    if not (issued_credentials and len(issued_credentials)):
+        logger.warning('No issued credentials found for business: %s', business.identifier)
         return None
 
     if filing_sub_type == 'voluntary':  # pylint: disable=no-else-return
         reason = DCRevocationReason.VOLUNTARY_DISSOLUTION
-        credential_type = DCDefinition.CredentialType.business.name
-        for credential in credentials:
-            replace_digital_credential(
-                credential=credential, credential_type=credential_type, reason=reason)
-        return None
+        return replace_issued_digital_credential(business=business,
+                                                 issued_credential=issued_credentials[0],
+                                                 credential_type=DCDefinition.CredentialType.business.name,
+                                                 reason=reason)
     elif filing_sub_type == 'administrative':
         reason = DCRevocationReason.ADMINISTRATIVE_DISSOLUTION
-        for credential in credentials:
-            revoke_digital_credential(credential=credential, reason=reason)
-        return None
+        return revoke_issued_digital_credential(business=business,
+                                                issued_credential=issued_credentials[0],
+                                                reason=reason)
     else:
         raise Exception('Invalid filing sub type.')  # pylint: disable=broad-exception-raised
