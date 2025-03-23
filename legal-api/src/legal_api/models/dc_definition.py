@@ -37,10 +37,8 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
     schema_id = db.Column('schema_id', db.String(100))
     schema_name = db.Column('schema_name', db.String(50))
     schema_version = db.Column('schema_version', db.String(10))
-    credential_definition_id = db.Column(
-        'credential_definition_id', db.String(100))
-    credential_type = db.Column(
-        'credential_type', db.Enum(CredentialType), nullable=False)
+    credential_definition_id = db.Column('credential_definition_id', db.String(100))
+    credential_type = db.Column('credential_type', db.Enum(CredentialType), nullable=False)
 
     is_deleted = db.Column('is_deleted', db.Boolean, default=False)
 
@@ -101,5 +99,4 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def deactivate(cls, credential_type: CredentialType):
         """Deactivate all definition for the specific credential type."""
-        db.session.execute(
-            f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'")
+        db.session.execute(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'")
