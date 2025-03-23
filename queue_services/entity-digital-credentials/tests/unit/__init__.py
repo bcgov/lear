@@ -13,32 +13,22 @@
 # limitations under the License.
 """The Unit Tests and the helper routines."""
 
-from legal_api.models import Business, DCConnection, DCCredential, DCDefinition, Filing
+from legal_api.models import Business, DCConnection, DCDefinition, DCIssuedCredential, Filing
 from legal_api.models.db import VersioningProxy
-from legal_api.models.dc_business_user import DCBusinessUser
-from legal_api.models.user import User
 
 
 def create_business(identifier):
     """Return a test business."""
-    business = Business(identifier=identifier,
-                        legal_type=Business.LegalTypes.SOLE_PROP,
-                        legal_name='test_business')
+    business = Business()
+    business.identifier = identifier
+    business.legal_type = Business.LegalTypes.SOLE_PROP
+    business.legal_name = 'test_business'
     business.save()
     return business
 
 
-def create_user(username='test_user', firstname='Test', lastname='User'):
-    """Return a test user."""
-    user = User(username=username, firstname=firstname, lastname=lastname)
-    user.save()
-    return user
-
-
-def create_filing(session,
-                  business_id=None,
-                  filing_json=None,
-                  filing_type=None,
+def create_filing(session,  business_id=None,
+                  filing_json=None, filing_type=None,
                   filing_status=Filing.Status.COMPLETED.value):
     """Return a test filing."""
     filing = Filing()
@@ -58,16 +48,6 @@ def create_filing(session,
     return filing
 
 
-def create_dc_business_user(business, user) -> DCBusinessUser:
-    """Create new dc_business_user object."""
-    business_user = DCBusinessUser(
-        business_id=business.id,
-        user_id=user.id
-    )
-    business_user.save()
-    return business_user
-
-
 def create_dc_definition():
     """Create new dc_definition object."""
     definition = DCDefinition(
@@ -81,7 +61,7 @@ def create_dc_definition():
     return definition
 
 
-def create_dc_connection(business_user: DCBusinessUser, is_active=False) -> DCConnection:
+def create_dc_connection(business, is_active=False):
     """Create new dc_connection object."""
     connection = DCConnection(
         connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
@@ -90,31 +70,27 @@ def create_dc_connection(business_user: DCBusinessUser, is_active=False) -> DCCo
 LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFyc2lKWjY
 iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE2OC42NS4zOjgwMjAifQ==""",
         is_active=is_active,
-        connection_state=DCConnection.State.ACTIVE.value if is_active else DCConnection.State.INVITATION_SENT.value,
-        business_user_id=business_user.id,
-        # Kept for legacy reasons, remove when possible
-        business_id=business_user.business_id
+        connection_state='active' if is_active else 'invitation',
+        business_id=business.id
     )
     connection.save()
     return connection
 
 
-def create_dc_credential(business_user=None,
-                         credential_exchange_id='test_credential_exchange_id',
-                         credential_revocation_id='123',
-                         revocation_registry_id='123',
-                         is_issued=True,
-                         is_revoked=False) -> DCCredential:
-    """Create new dc_credential object."""
-    if not business_user:
+def create_dc_issued_credential(business=None,
+                                credential_exchange_id='test_credential_exchange_id',
+                                credential_revocation_id='123',
+                                revocation_registry_id='123',
+                                is_issued=True, is_revoked=False):
+    """Create new dc_issued_credential object."""
+    if not business:
         identifier = 'FM1234567'
-        business_user = create_dc_business_user(
-            create_business(identifier), create_user())
+        business = create_business(identifier)
     definition = create_dc_definition()
-    connection = create_dc_connection(business_user, is_active=True)
-    issued_credential = DCCredential(
-        definition_id=definition.id,
-        connection_id=connection.id,
+    connection = create_dc_connection(business, is_active=True)
+    issued_credential = DCIssuedCredential(
+        dc_definition_id=definition.id,
+        dc_connection_id=connection.id,
         credential_exchange_id=credential_exchange_id,
         credential_revocation_id=credential_revocation_id,
         revocation_registry_id=revocation_registry_id,
