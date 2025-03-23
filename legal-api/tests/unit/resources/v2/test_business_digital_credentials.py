@@ -22,9 +22,8 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import jwt as pyjwt
-import pytest
 from legal_api.services.authz import BASIC_USER
-from legal_api.models import Business, DCConnection, DCDefinition, User
+from legal_api.models import DCConnection, DCDefinition, User
 from legal_api.services.digital_credentials import DigitalCredentialsService
 
 from tests.unit.models import factory_business
@@ -96,14 +95,10 @@ def test_get_connections(app, session, client, jwt):  # pylint:disable=unused-ar
                     headers=headers, content_type=content_type)
 
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json.get('connections')[0].get(
-        'invitationUrl') == connection.invitation_url
-    assert rv.json.get('connections')[0].get(
-        'connectionId') == connection.connection_id
-    assert rv.json.get('connections')[0].get(
-        'isActive') == connection.is_active
-    assert rv.json.get('connections')[0].get(
-        'connectionState') == connection.connection_state
+    assert rv.json.get('connections')[0].get('invitationUrl') == connection.invitation_url
+    assert rv.json.get('connections')[0].get('connectionId') == connection.connection_id
+    assert rv.json.get('connections')[0].get('isActive') == connection.is_active
+    assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
@@ -135,8 +130,7 @@ def test_attest_connection_fail(app, session, client, jwt):  # pylint:disable=un
         rv = client.post(f'/api/v2/businesses/{identifier}/digitalCredentials/connections/{connection.connection_id}/attest',
                          headers=headers, content_type=content_type)
         assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert rv.json.get(
-            'message') == 'Unable to request connection attestation.'
+        assert rv.json.get('message') == 'Unable to request connection attestation.'
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
@@ -182,8 +176,7 @@ def test_send_credential_attestation_not_complete_fail(app, session, client, jwt
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
                     headers=headers, content_type=content_type)
                 assert rv.status_code == HTTPStatus.UNAUTHORIZED
-                assert rv.json.get(
-                    'message') == 'Connection not attested.'
+                assert rv.json.get('message') == 'Connection not attested.'
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
@@ -205,8 +198,7 @@ def test_send_credential_attestation_fail(app, session, client, jwt):  # pylint:
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
                     headers=headers, content_type=content_type)
                 assert rv.status_code == HTTPStatus.UNAUTHORIZED
-                assert rv.json.get(
-                    'message') == 'Connection failed attestation.'
+                assert rv.json.get('message') == 'Connection failed attestation.'
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
@@ -218,16 +210,12 @@ def test_get_issued_credentials(app, session, client, jwt):  # pylint:disable=un
     user = User.create_from_jwt_token(decode_auth_header_token(headers))
     issued_credential = create_dc_credential(business=business, user=user)
 
-    rv = client.get(
-        f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
+    rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('issuedCredentials')) == 1
-    assert rv.json.get('issuedCredentials')[0].get(
-        'legalName') == business.legal_name
-    assert rv.json.get('issuedCredentials')[0].get(
-        'credentialType') == DCDefinition.CredentialType.business.name
-    assert rv.json.get('issuedCredentials')[0].get(
-        'credentialId') == issued_credential.credential_id
+    assert rv.json.get('issuedCredentials')[0].get('legalName') == business.legal_name
+    assert rv.json.get('issuedCredentials')[0].get('credentialType') == DCDefinition.CredentialType.business.name
+    assert rv.json.get('issuedCredentials')[0].get('credentialId') == issued_credential.credential_id
     assert not rv.json.get('issuedCredentials')[0].get('isIssued')
     assert rv.json.get('issuedCredentials')[0].get('dateOfIssue') == ''
     assert not rv.json.get('issuedCredentials')[0].get('isRevoked')
@@ -255,10 +243,8 @@ def test_webhook_connections_notification(app, session, client, jwt):  # pylint:
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connections',
                     headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json.get('connections')[0].get(
-        'isActive') == connection.is_active
-    assert rv.json.get('connections')[0].get(
-        'connectionState') == connection.connection_state
+    assert rv.json.get('connections')[0].get('isActive') == connection.is_active
+    assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
@@ -313,5 +299,4 @@ def test_webhook_connection_attest_notification(app, session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert rv.json.get('connections')[0].get('isAttested') == True
     assert rv.json.get('connections')[0].get('lastAttested') != ''
-    assert rv.json.get('connections')[0].get(
-        'connectionState') == connection.connection_state
+    assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state

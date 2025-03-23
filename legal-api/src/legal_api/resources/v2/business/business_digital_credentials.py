@@ -43,10 +43,10 @@ from legal_api.utils.auth import jwt
 from .bp import bp
 
 
-rules = DigitalCredentialsRulesService()
-
 bp_dc = Blueprint('DIGITAL_CREDENTIALS', __name__,
                   url_prefix='/api/v2/digitalCredentials')  # Blueprint for webhook
+
+rules = DigitalCredentialsRulesService()
 
 
 def get_business_user(identifier) -> Tuple[Union[DCBusinessUser, None], Union[dict, None], Union[HTTPStatus, None]]:
@@ -232,8 +232,7 @@ def send_credential(identifier, credential_type):  # pylint: disable=too-many-lo
     if error_response:
         return error_response, error_status
 
-    connection = DCConnection.find_active_by_business_user_id(
-        business_user_id=business_user.id)
+    connection = DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)
     if not connection.last_attested:
         return jsonify({'message': 'Connection not attested.'}), HTTPStatus.UNAUTHORIZED
     elif not connection.is_attested:
@@ -251,15 +250,11 @@ def send_credential(identifier, credential_type):  # pylint: disable=too-many-lo
         return jsonify({'message': 'Already requested to issue credential.'}), HTTPStatus.INTERNAL_SERVER_ERROR
 
     json_input = request.get_json()
-    has_preconditions = bool(len(rules.get_preconditions(
-        business_user.user, business_user.business)) > 0)
-    preconditions_met = json_input.get(
-        'preconditionsMet', None) if json_input else None
+    has_preconditions = bool(len(rules.get_preconditions(business_user.user, business_user.business)) > 0)
+    preconditions_met = json_input.get('preconditionsMet', None) if json_input else None
 
-    credential_data = get_digital_credential_data(
-        business_user, definition.credential_type, preconditions_met)
-    credential_id = next(
-        (item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
+    credential_data = get_digital_credential_data(business_user, definition.credential_type, preconditions_met)
+    credential_id = next((item['value'] for item in credential_data if item['name'] == 'credential_id'), None)
 
     if not (response := digital_credentials.issue_credential(
         connection_id=connection.connection_id,
@@ -302,8 +297,7 @@ def revoke_credential(identifier, credential_id):
     if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
         return jsonify({'message': f'{identifier} active connection not found.'}), HTTPStatus.NOT_FOUND
 
-    credential = DCCredential.find_by_credential_id(
-        credential_id=credential_id)
+    credential = DCCredential.find_by_credential_id(credential_id=credential_id)
     if not credential or credential.is_revoked:
         return jsonify({'message': f'{identifier} issued credential not found.'}), HTTPStatus.NOT_FOUND
 
@@ -362,23 +356,20 @@ def webhook_notification(topic_name: str):
                     connection.save()
         elif topic_name == 'issuer_cred_rev' and state == 'issued':
             cred_ex_id = json_input.get('cred_ex_id', None)
-            if cred_ex_id and (credential := DCCredential.find_by_credential_exchange_id(
-                    cred_ex_id)):
+            if cred_ex_id and (credential := DCCredential.find_by_credential_exchange_id(cred_ex_id)):
                 credential.credential_revocation_id = json_input['cred_rev_id']
                 credential.revocation_registry_id = json_input['rev_reg_id']
                 credential.save()
         elif topic_name == 'issue_credential_v2_0' and state == 'done':
             cred_ex_id = json_input.get('cred_ex_id', None)
-            if (credential := DCCredential.find_by_credential_exchange_id(
-                    cred_ex_id)):
+            if (credential := DCCredential.find_by_credential_exchange_id(cred_ex_id)):
                 credential.date_of_issue = datetime.now(timezone.utc)
                 credential.is_issued = True
                 credential.save()
         elif topic_name == 'present_proof_v2_0' and state == 'done':
             connection_id = json_input.get('connection_id', None)
             verified = json_input.get('verified', 'false') == 'true'
-            if connection_id and (connection := DCConnection.find_by_connection_id(
-                    connection_id)):
+            if connection_id and (connection := DCConnection.find_by_connection_id(connection_id)):
                 connection.is_attested = verified
                 connection.last_attested = datetime.now(timezone.utc)
                 connection.save()
