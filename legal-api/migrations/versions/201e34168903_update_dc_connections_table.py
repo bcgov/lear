@@ -1,22 +1,27 @@
 """update_dc_connections_table
 
-Revision ID: e6a6e9e25fb9
+Revision ID: 201e34168903
 Revises: 0dc8127c32d9
-Create Date: 2025-03-15 21:56:11.895597
+Create Date: 2025-02-27 00:52:44.233035
 
 """
 from alembic import op
 import sqlalchemy as sa
 
-
 # revision identifiers, used by Alembic.
-revision = 'e6a6e9e25fb9'
+revision = '201e34168903'
 down_revision = '0dc8127c32d9'
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
+    op.add_column('dc_connections', sa.Column(
+        'is_attested',  sa.Boolean, default=False))
+    op.add_column('dc_connections', sa.Column(
+        'last_attested', sa.DateTime, default=None))
+    op.execute(
+        'UPDATE dc_connections SET connection_state = \'invitation-sent\' WHERE connection_state = \'invitation\'')
     # Add a column business_user_id to the dc_connections table that is a foreign key to the dc_business_users table
     op.add_column('dc_connections', sa.Column('business_user_id',
                   sa.Integer, sa.ForeignKey('dc_business_users.id')))
@@ -32,3 +37,7 @@ def upgrade():
 def downgrade():
     # Drop the business_user_id column from the dc_connections table
     op.drop_column('dc_connections', 'business_user_id')
+    op.execute(
+        'UPDATE dc_connections SET connection_state = \'invitation\' WHERE connection_state = \'invitation-sent\'')
+    op.drop_column('dc_connections', 'is_attested')
+    op.drop_column('dc_connections', 'last_attested')

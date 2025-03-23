@@ -1,7 +1,7 @@
 """update_dc_issued_business_user_credentials_table
 
 Revision ID: 0dc8127c32d9
-Revises: 201e34168903
+Revises: fe158a53151f
 Create Date: 2025-03-15 20:59:54.812748
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '0dc8127c32d9'
-down_revision = '201e34168903'
+down_revision = 'fe158a53151f'
 branch_labels = None
 depends_on = None
 
