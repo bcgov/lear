@@ -22,9 +22,8 @@ import copy
 from enum import Enum
 from http import HTTPStatus
 
-import jwt as pyjwt
 import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import patch, PropertyMock
 from flask import jsonify
 from registry_schemas.example_data import (
     AGM_EXTENSION,
@@ -45,9 +44,9 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from legal_api.models import Business, Filing, User
-from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, PUBLIC_USER, STAFF_ROLE, \
-    are_digital_credentials_allowed, authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
+from legal_api.models import Business, Filing
+from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, \
+    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
@@ -3110,85 +3109,6 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
             allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected
 
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is True
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_token(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=None)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_user(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed_false_when_user_is_staff(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
 
 def create_incomplete_filing(business,
                              filing_name,
