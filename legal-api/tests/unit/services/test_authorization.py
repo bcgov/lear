@@ -342,8 +342,7 @@ EXPECTED_DATA_CONT_IN = {
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()
 BLOCKER_FILING_STATUSES_AND_ADDITIONAL = factory_incomplete_statuses(['unknown_status_1',
                                                                       'unknown_status_2'])
-BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG = [
-    Filing.Status.PENDING.value, Filing.Status.PAID.value]
+BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG = [Filing.Status.PENDING.value, Filing.Status.PAID.value]
 BLOCKER_FILING_TYPES = ['alteration', 'correction']
 
 AGM_EXTENSION_FILING_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
@@ -425,6 +424,7 @@ def test_authorized_user(monkeypatch, app_request, jwt,
                          test_name, identifier, username, roles, allowed_actions, requested_actions, expected):
     """Assert that the type of user authorization is correct, based on the expected outcome."""
     from requests import Response
+    print(test_name)
 
     # mocks, the get and json calls for requests.Response
     def mock_get(*args, **kwargs):  # pylint: disable=unused-argument; mocks of library methods
@@ -450,8 +450,7 @@ def test_authorized_user(monkeypatch, app_request, jwt,
     headers = {'Authorization': 'Bearer ' + token}
 
     # test it
-    rv = app_request.test_client().get(
-        f'/fake_jwt_route/{identifier}', headers=headers)
+    rv = app_request.test_client().get(f'/fake_jwt_route/{identifier}', headers=headers)
 
     # check it
     assert rv.status_code == expected
@@ -571,8 +570,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         # active business
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'correction', 'courtOrder',
-          {'dissolution': ['voluntary', 'administrative']
-           }, 'incorporationApplication',
+          {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
@@ -600,13 +598,12 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('user_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['agmExtension', 'agmLocationChange', 'alteration', {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
           'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut',
-          {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition', {'transparencyRegister': ['annual', 'change', 'initial']}]),
+          {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition', {'transparencyRegister': ['annual','change','initial']}]),
         ('user_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'general', [BASIC_USER],
          ['agmExtension', 'agmLocationChange', 'alteration', {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
           'annualReport', 'changeOfAddress', 'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
-          {'dissolution': ['voluntary']}, 'transition', {'transparencyRegister': ['annual', 'change', 'initial']}]),
-        ('user_active_llc', Business.State.ACTIVE,
-         ['LLC'], 'general', [BASIC_USER], []),
+          {'dissolution': ['voluntary']}, 'transition', {'transparencyRegister': ['annual','change','initial']}]),
+        ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('user_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          ['changeOfRegistration', {'dissolution': ['voluntary']}, 'registration']),
 
@@ -619,13 +616,11 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         ('staff_historical_continue_in_corps', Business.State.HISTORICAL, ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder',
          {'restoration': ['fullRestoration', 'limitedRestoration']}]),
-        ('staff_historical_llc', Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['courtOrder', 'putBackOn', 'registrarsNotation', 'registrarsOrder']),
 
-        ('user_historical', Business.State.HISTORICAL, [
-         'BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [BASIC_USER], [])
+        ('user_historical', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [BASIC_USER], [])
     ]
 )
 def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, username, roles, expected):
@@ -732,8 +727,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('staff_active', Business.State.ACTIVE, 'restoration', 'limitedRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE], False),
 
-        ('staff_active_allowed', Business.State.ACTIVE,
-         'specialResolution', None, ['CP'], 'staff', [STAFF_ROLE], True),
+        ('staff_active_allowed', Business.State.ACTIVE, 'specialResolution', None, ['CP'], 'staff', [STAFF_ROLE], True),
         ('staff_active', Business.State.ACTIVE, 'specialResolution', None,
          ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'staff', [STAFF_ROLE], False),
 
@@ -829,8 +823,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         ('user_active', Business.State.ACTIVE, 'restoration', 'limitedRestoration',
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'C', 'CBEN', 'CUL', 'CCC'], 'general', [BASIC_USER], False),
 
-        ('user_active_allowed', Business.State.ACTIVE,
-         'specialResolution', None, ['CP'], 'general', [BASIC_USER], True),
+        ('user_active_allowed', Business.State.ACTIVE, 'specialResolution', None, ['CP'], 'general', [BASIC_USER], True),
         ('user_active', Business.State.ACTIVE, 'specialResolution', None,
          ['BC', 'BEN', 'CC', 'ULC', 'LLC'], 'general', [BASIC_USER], False),
 
@@ -930,8 +923,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
          ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'C', 'CBEN', 'CUL', 'CCC'], 'general', [BASIC_USER], False),
 
         ('user_historical', Business.State.HISTORICAL, 'dissolution', None,
-         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP',
-             'GP', 'SP', 'GP', 'C', 'CBEN', 'CUL', 'CCC'],
+         ['CP', 'BC', 'BEN', 'CC', 'ULC', 'LLC', 'SP', 'GP', 'SP', 'GP', 'C', 'CBEN', 'CUL', 'CCC'],
          'general', [BASIC_USER], False),
 
         ('user_historical', Business.State.HISTORICAL, 'incorporationApplication', None,
@@ -978,8 +970,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         for legal_type in legal_types:
             business = create_business(legal_type, state)
-            filing_types = is_allowed(
-                business, state, filing_type, legal_type, jwt, sub_filing_type, None)
+            filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, None)
             assert filing_types == expected
 
 
@@ -1046,8 +1037,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
                                             FilingKey.TRANSITION])),
-        ('staff_active_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
@@ -1099,8 +1089,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                                             FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                                             FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                                             FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.VOL_DISS_FIRMS])),
@@ -1126,8 +1115,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1135,18 +1123,14 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
         ('general_user_historical_continue_in_corps', True, Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'],
          'general', [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
-        ('comp_auth_corps', True, Business.State.ACTIVE, [
-         'BC', 'BEN', 'CC', 'ULC'], 'comp-auth', [BASIC_USER], [])
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('comp_auth_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'comp-auth', [BASIC_USER], [])
     ]
 )
 def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
@@ -1167,8 +1151,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
         account_products_mock = []
         if is_comp_auth:
             # add CA_SEARCH to account products mock
-            account_products_mock.append(
-                {'code': 'CA_SEARCH', 'subscriptionStatus': 'ACTIVE'})
+            account_products_mock.append({'code': 'CA_SEARCH', 'subscriptionStatus': 'ACTIVE'})
 
         requests_mock.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
                           json=account_products_mock,
@@ -1239,8 +1222,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                                             FilingKey.AMALGAMATION_HORIZONTAL,
                                             FilingKey.CONTINUATION_IN_CUL,
                                             FilingKey.NOTICE_OF_WITHDRAWAL])),
-        ('staff_no_business_llc', False, Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.REG_SP])),
         ('staff_no_business_gp', False, Business.State.ACTIVE, ['GP'], 'staff', [STAFF_ROLE],
@@ -1294,8 +1276,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                           FilingKey.AMALGAMATION_VERTICAL,
                           FilingKey.AMALGAMATION_HORIZONTAL,
                           FilingKey.IA_ULC])),
-        ('general_user_no_business_llc', False,
-         Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_no_business_llc', False, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_no_business_sp', False, Business.State.ACTIVE, ['SP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.REG_SP])),
         ('general_user_no_business_gp', False, Business.State.ACTIVE, ['GP'], 'general', [BASIC_USER],
@@ -1362,8 +1343,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
                                             FilingKey.TRANSITION])),
-        ('staff_active_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
@@ -1416,8 +1396,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                                             FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                                             FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                                             FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.VOL_DISS_FIRMS])),
@@ -1429,16 +1408,14 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_corps', True, Business.State.HISTORICAL,
-         ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN',
-             'CCC', 'CUL'], 'staff', [STAFF_ROLE],
+         ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1446,15 +1423,12 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_historical_corps', True, Business.State.HISTORICAL,
          ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'], 'general',
          [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username, roles, expected):
@@ -1472,8 +1446,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
             business = None
             if business_exists:
                 business = create_business(legal_type, state)
-            filing_types = get_allowed_filings(
-                business, state, legal_type, jwt)
+            filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert filing_types == expected
 
 
@@ -1504,8 +1477,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
@@ -1515,16 +1487,13 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', True, Business.State.ACTIVE,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.TRANSITION])),
         ('general_user_continue_in_corps', True, Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.TRANSITION])),
-        ('general_user_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_firms', True, Business.State.ACTIVE,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
 
         # historical business - staff user
         ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
@@ -1547,8 +1516,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1556,16 +1524,13 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
         ('general_user_historical_continue_in_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'],
          'general', [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt, test_name, business_exists, state,
@@ -1583,14 +1548,12 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
         for legal_type in legal_types:
             business = None
             if business_exists:
-                identifier = (
-                    f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+                identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
                 business = factory_business(identifier=identifier,
                                             entity_type=legal_type,
                                             state=state,
                                             admin_freeze=True)
-            filing_types = get_allowed_filings(
-                business, state, legal_type, jwt)
+            filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert filing_types == expected
 
 
@@ -1616,8 +1579,7 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1625,16 +1587,13 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
         ('general_user_historical_continue_in_corps', True, Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'],
          'general', [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app, session, jwt, test_name, business_exists, state,
@@ -1657,8 +1616,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
                                         state=state)
 
             with patch.object(Business, 'get_amalgamated_into', return_value={'identifier': 'BC1234567'}):
-                filing_types = get_allowed_filings(
-                    business, state, legal_type, jwt)
+                filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
 
@@ -1711,8 +1669,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
-        ('staff_active_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
@@ -1746,8 +1703,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
                           FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                           FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                           FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
 
@@ -1772,8 +1728,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -1781,16 +1736,13 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
         ('general_user_historical_continue_in_corps', True, Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'],
          'general', [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, session, jwt, test_name, business_exists, state,
@@ -1813,8 +1765,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
                                         state=state)
             with patch.object(type(business), 'good_standing', new_callable=PropertyMock) as mock_good_standing:
                 mock_good_standing.return_value = False
-                filing_types = get_allowed_filings(
-                    business, state, legal_type, jwt)
+                filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
 
@@ -1843,8 +1794,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
                                             FilingKey.TRANSITION])),
-        ('staff_active_llc', Business.State.ACTIVE, [
-         'LLC'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES, []),
+        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES, []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE], BLOCKER_FILING_STATUSES,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
@@ -1853,8 +1803,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', Business.State.ACTIVE, [
-         'CP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
+        ('general_user_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          BLOCKER_FILING_STATUSES, expected_lookup([FilingKey.TRANSITION,
                                                    FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
@@ -1866,8 +1815,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
                                             FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                                             FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                                             FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', Business.State.ACTIVE, [
-         'LLC'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
+        ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES, []),
         ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], BLOCKER_FILING_STATUSES,
          []),
 
@@ -1938,8 +1886,7 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
                 create_incomplete_filing(business=business,
                                          filing_name='unknownFiling',
                                          filing_status=filing_status)
-                filing_types = get_allowed_filings(
-                    business, state, legal_type, jwt)
+                filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
 
@@ -2071,8 +2018,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                                              filing_status=filing_status,
                                              filing_dict=filing_dict,
                                              filing_type=filing_type)
-                    allowed_filing_types = get_allowed_filings(
-                        business, state, legal_type, jwt)
+                    allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
                     assert allowed_filing_types == expected
 
 
@@ -2081,8 +2027,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
     [
         # active business - staff user
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
-         ['dissolution.voluntary',
-             'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
+         ['dissolution.voluntary', 'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_OFF,
@@ -2090,8 +2035,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE],
-         ['dissolution.voluntary',
-             'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
+         ['dissolution.voluntary', 'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_OFF,
@@ -2101,15 +2045,13 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
 
         # active business - general user
         ('general_user_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
-         ['dissolution.voluntary',
-             'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
+         ['dissolution.voluntary', 'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
          expected_lookup([FilingKey.TRANSITION,
                           FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                           FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                           FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
         ('general_usere_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'general', [BASIC_USER],
-         ['dissolution.voluntary',
-             'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
+         ['dissolution.voluntary', 'dissolution.administrative'], BLOCKER_DISSOLUTION_STATUSES_FOR_AMALG, True,
          expected_lookup([FilingKey.TRANSITION,
                           FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                           FilingKey.TRANSPARENCY_REGISTER_CHANGE,
@@ -2145,13 +2087,11 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                              filing_type=filing_type,
                                              filing_sub_type=filing_sub_type,
                                              is_future_effective=is_fed)
-                    allowed_filing_types = get_allowed_filings(
-                        business, state, legal_type, jwt)
+                    allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
 
                     current_expected = expected.copy()
                     if username == 'staff' and filing_status == Filing.Status.PAID.value:
-                        notice_of_withdrawal = expected_lookup(
-                            [FilingKey.NOTICE_OF_WITHDRAWAL])[0]
+                        notice_of_withdrawal = expected_lookup([FilingKey.NOTICE_OF_WITHDRAWAL])[0]
                         if notice_of_withdrawal not in current_expected:
                             current_expected.append(notice_of_withdrawal)
                     assert allowed_filing_types == current_expected
@@ -2219,8 +2159,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
                                             FilingKey.TRANSITION])),
-        ('staff_active_llc', Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONV_FIRMS,
@@ -2267,10 +2206,8 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                             FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                                             FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                                             FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', Business.State.ACTIVE,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_firms', Business.State.ACTIVE,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], []),
 
         # historical business - staff user
         ('staff_historical_cp', Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
@@ -2293,8 +2230,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -2302,16 +2238,13 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', Business.State.HISTORICAL,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_historical_corps', Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
         ('general_user_historical_continue_in_corps', Business.State.HISTORICAL, ['C', 'CBEN', 'CCC', 'CUL'], 'general',
          [BASIC_USER], []),
-        ('general_user_historical_llc', Business.State.HISTORICAL,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', Business.State.HISTORICAL,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, state, legal_types, username, roles, expected):
@@ -2328,8 +2261,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
             business = create_business(legal_type, state)
             if legal_type in ('SP', 'GP') and state == Business.State.ACTIVE:
                 business.warnings = MISSING_BUSINESS_INFO_WARNINGS
-            filing_types = get_allowed_filings(
-                business, state, legal_type, jwt)
+            filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert filing_types == expected
 
 
@@ -2353,8 +2285,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.SPECIAL_RESOLUTION])),
 
         ('staff_active_corps_valid_state_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], ['restoration', 'restoration'], [
-             'limitedRestoration', 'limitedRestorationExtension'],
+         [STAFF_ROLE], ['restoration', 'restoration'], ['limitedRestoration', 'limitedRestorationExtension'],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AGM_EXTENSION,
                           FilingKey.AGM_LOCATION_CHANGE,
@@ -2381,8 +2312,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.RESTRN_LTD_TO_FULL_CORPS])),
         ('staff_active_continue_in_corps_valid_state_filing_success', Business.State.ACTIVE,
          ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE],
-         ['restoration', 'restoration'], [
-             'limitedRestoration', 'limitedRestorationExtension'],
+         ['restoration', 'restoration'], ['limitedRestoration', 'limitedRestorationExtension'],
          expected_lookup_continue_in_corps([FilingKey.ADMN_FRZE,
                                             FilingKey.AGM_EXTENSION,
                                             FilingKey.AGM_LOCATION_CHANGE,
@@ -2432,8 +2362,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
         ('staff_active_continue_in_corps_valid_state_filing_fail', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'],
-         'staff', [STAFF_ROLE], [None, 'restoration'], [
-             None, 'fullRestoration'],
+         'staff', [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup_continue_in_corps([FilingKey.ADMN_FRZE,
                                             FilingKey.AGM_EXTENSION,
                                             FilingKey.AGM_LOCATION_CHANGE,
@@ -2598,8 +2527,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
         ('staff_historical_continue_in_corps_invalid_state_filing_fail', Business.State.HISTORICAL,
-         ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [
-             STAFF_ROLE], ['continuationOut'], [None, None],
+         ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE], ['continuationOut'], [None, None],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
@@ -2651,12 +2579,10 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
                 business = create_business(legal_type, state)
                 state_filing_sub_type = state_filing_sub_types[idx]
                 if state_filing_type:
-                    state_filing = create_filing(
-                        business, state_filing_type, state_filing_sub_type)
+                    state_filing = create_filing(business, state_filing_type, state_filing_sub_type)
                     business.state_filing_id = state_filing.id
                     business.save()
-                allowed_filing_types = get_allowed_filings(
-                    business, state, legal_type, jwt)
+                allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert allowed_filing_types == expected
 
 
@@ -2703,8 +2629,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                                               filing_status=filing_status,
                                               filing_dict=filing_dict,
                                               filing_type=filing_type)
-            filing_types = is_allowed(
-                business, state, filing_type, legal_type, jwt, sub_filing_type, filing)
+            filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, filing)
             assert filing_types == expected
 
 
@@ -2741,8 +2666,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                                           filing_type=filing_type)
         filing.save()
 
-        filing_types = is_allowed(
-            None, Business.State.ACTIVE, filing_type, 'CBEN', jwt, None, filing)
+        filing_types = is_allowed(None, Business.State.ACTIVE, filing_type, 'CBEN', jwt, None, filing)
         assert filing_types == expected
 
 
@@ -2751,8 +2675,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
     [
         # active business - staff user
         ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], ['consentContinuationOut',
-                        'consentContinuationOut'], [None, None], [True, True],
+         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [True, True],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AGM_EXTENSION,
                           FilingKey.AGM_LOCATION_CHANGE,
@@ -2777,8 +2700,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
         ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [
-             None, None], [True, False],
+         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [True, False],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CONTINUATION_OUT,
                           FilingKey.COURT_ORDER,
@@ -2821,8 +2743,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION])),
         ('staff_active_corps_completed_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
-         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [
-             None, None], [False, False],
+         [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [False, False],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_OFF,
@@ -2887,8 +2808,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                     if is_completed[idx]:
                         create_filing(business, filing_type, filing_sub_type)
                     else:
-                        filing_dict = FILING_DATA.get(
-                            filing_type, filing_sub_type)
+                        filing_dict = FILING_DATA.get(filing_type, filing_sub_type)
                         create_incomplete_filing(business=business,
                                                  filing_name='unknown',
                                                  filing_status=Filing.Status.DRAFT.value,
@@ -2896,8 +2816,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                                                  filing_type=filing_type,
                                                  filing_sub_type=filing_sub_type)
 
-            allowed_filing_types = get_allowed_filings(
-                business, state, legal_type, jwt)
+            allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected
 
 
@@ -2931,8 +2850,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION,
                           ])),
-        ('staff_active_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
@@ -2956,8 +2874,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                           FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                           FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', True, Business.State.ACTIVE,
-         ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
 
@@ -2974,8 +2891,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'staff', [STAFF_ROLE], []),
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
@@ -2983,14 +2899,11 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL,
-         ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
         ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
          [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL,
-         ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL,
-         ['SP', 'GP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
     ]
 )
 def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, jwt, test_name, business_exists, state,
@@ -3013,8 +2926,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                                         state=state)
             with patch.object(type(business), 'in_dissolution', new_callable=PropertyMock) as mock_in_dissolution:
                 mock_in_dissolution.return_value = True
-                filing_types = get_allowed_filings(
-                    business, state, legal_type, jwt)
+                filing_types = get_allowed_filings(business, state, legal_type, jwt)
                 assert filing_types == expected
 
 
@@ -3035,8 +2947,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.SPECIAL_RESOLUTION])),
         ('staff_active_corps',
-         Business.State.ACTIVE, ['BC', 'BEN', 'CC',
-                                 'ULC'], 'staff', [STAFF_ROLE], None,
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], None,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.ALTERATION,
                           FilingKey.AR_CORPS,
@@ -3054,8 +2965,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                           FilingKey.TRANSITION,
                           ])),
         ('staff_active_corps_with_FED',
-         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [
-             STAFF_ROLE], 'FUTURE_EFFECTIVE',
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'FUTURE_EFFECTIVE',
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_OFF,
@@ -3065,8 +2975,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                           FilingKey.NOTICE_OF_WITHDRAWAL
                           ])),
         ('staff_active_corps_business_frozen',
-         Business.State.ACTIVE, ['BC', 'BEN', 'CC',
-                                 'ULC'], 'staff', [STAFF_ROLE], 'FROZEN',
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'FROZEN',
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.ADM_DISS,
@@ -3076,8 +2985,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                           FilingKey.TRANSITION,
                           ])),
         ('staff_active_corps_with_draft_filing',
-         Business.State.ACTIVE, ['BC', 'BEN', 'CC',
-                                 'ULC'], 'staff', [STAFF_ROLE], 'DRAFT',
+         Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'DRAFT',
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_OFF,
@@ -3103,8 +3011,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
              FilingKey.REGISTRARS_NOTATION,
              FilingKey.REGISTRARS_ORDER,
              FilingKey.TRANSITION])),
-        ('staff_active_llc', Business.State.ACTIVE,
-         ['LLC'], 'staff', [STAFF_ROLE], None, []),
+        ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], None, []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE], None,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
@@ -3138,8 +3045,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                           FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                           FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                           FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', Business.State.ACTIVE, [
-         'LLC'], 'general', [BASIC_USER], None, []),
+        ('general_user_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], None, []),
         ('general_user_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], None,
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.VOL_DISS_FIRMS])),
@@ -3201,10 +3107,88 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
                                          filing_status='PAID',
                                          is_future_effective=True)
 
-            allowed_filing_types = get_allowed_filings(
-                business, state, legal_type, jwt)
+            allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected
 
+
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
+       return_value=True)
+def test_are_digital_credentials_allowed(monkeypatch, app, session, jwt):
+    token_json = {'username': 'test'}
+    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        jwt.get_token_auth_header = MagicMock(return_value=token)
+        pyjwt.decode = MagicMock(return_value=token_json)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        business = create_business('SP', Business.State.ACTIVE)
+        assert are_digital_credentials_allowed(business, jwt) is True
+
+
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
+       return_value=True)
+def test_are_digital_credentials_allowed_false_when_no_token(monkeypatch, app, session, jwt):
+    token_json = {'username': 'test'}
+    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        jwt.get_token_auth_header = MagicMock(return_value=token)
+        pyjwt.decode = MagicMock(return_value=None)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        business = create_business('SP', Business.State.ACTIVE)
+        assert are_digital_credentials_allowed(business, jwt) is False
+
+
+@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
+       return_value=True)
+def test_are_digital_credentials_allowed_false_when_no_user(monkeypatch, app, session, jwt):
+    token_json = {'username': 'test'}
+    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        jwt.get_token_auth_header = MagicMock(return_value=token)
+        pyjwt.decode = MagicMock(return_value=token_json)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        business = create_business('SP', Business.State.ACTIVE)
+        assert are_digital_credentials_allowed(business, jwt) is False
+
+
+@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
+       return_value=True)
+def test_are_digital_credentials_allowed_false_when_user_is_staff(monkeypatch, app, session, jwt):
+    token_json = {'username': 'test'}
+    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username=token_json['username'])
+    headers = {'Authorization': 'Bearer ' + token}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        jwt.get_token_auth_header = MagicMock(return_value=token)
+        pyjwt.decode = MagicMock(return_value=token_json)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+
+        business = create_business('SP', Business.State.ACTIVE)
+        assert are_digital_credentials_allowed(business, jwt) is False
 
 def create_incomplete_filing(business,
                              filing_name,
@@ -3236,96 +3220,10 @@ def create_filing(business, filing_type, filing_sub_type=None):
     filing_dict = copy.deepcopy(FILING_DATA.get(filing_key, None))
     filing_dict['filing']['header']['name'] = filing_type
     if filing_sub_type:
-        filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(
-            filing_type, None)
+        filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, None)
         filing_dict['filing'][filing_type][filing_sub_type_key] = filing_sub_type
     filing = factory_completed_filing(business=business,
                                       data_dict=filing_dict,
                                       filing_type=filing_type,
                                       filing_sub_type=filing_sub_type)
     return filing
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is True
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_token(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=None)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token',
-       return_value=None)
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_user(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
-@patch('legal_api.services.digital_credentials_rules.DigitalCredentialsRulesService.are_digital_credentials_allowed',
-       return_value=True)
-def test_are_digital_credentials_allowed_false_when_user_is_staff(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[STAFF_ROLE], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
