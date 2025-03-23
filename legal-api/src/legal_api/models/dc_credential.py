@@ -125,25 +125,6 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         return dc_credential
 
     @classmethod
-    def find_by(cls,
-                definition_id: int = None,
-                connection_id: int = None) -> List[DCCredential]:
-        """
-        Return the digital credential matching the filter.
-
-        DEPRECATED: use find_by_filters instead.
-        """
-        query = db.session.query(DCCredential)
-
-        if definition_id:
-            query = query.filter(DCCredential.definition_id == definition_id)
-
-        if connection_id:
-            query = query.filter(DCCredential.connection_id == connection_id)
-
-        return query.all()
-
-    @classmethod
     def find_by_filters(cls, filters: List[Any] = None) -> List[DCCredential]:
         """Return the digital credential matching any provided filter."""
         query = db.session.query(DCCredential)
