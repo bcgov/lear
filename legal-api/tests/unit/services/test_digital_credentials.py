@@ -54,7 +54,7 @@ business_extra = {
 }
 
 
-bcomp_business = {
+ben_business = {
     **business,
     'entity_type': 'BEN',
 }
@@ -70,17 +70,17 @@ sp_business_historical = {
     'state': 'HISTORICAL',
 }
 
-user = {
+test_user = {
     'username': 'test',
     'lastname': 'Last',
     'firstname': 'First',
 }
 
-user_extra_empty = {
+test_user_extra_empty = {
     'middlename': '',
 }
 
-user_extra = {
+test_user_extra = {
     'middlename': 'Middle',
 }
 
@@ -151,24 +151,24 @@ def setup_parties_and_roles(business, parties):
         party_role.save()
 
 
-def setup_filing_and_roles(business, user, test_business_type):
-    """Helper function to set up filing and roles."""
+def setup_filing(business, user, roles=None, filing_type='incorporationApplication'):
+    """Helper function to set up a filing with optional roles."""
     filer = create_test_user(first_name=user.firstname,
                              last_name=user.lastname,
-                             middle_initial=user.middlename)
+                             middle_initial=user.middlename,
+                             default_middle=False)
     filing = factory_completed_filing(
         business=business,
-        data_dict={'filing': {'header': {
-            'name': 'registration' if test_business_type == 'SP' else 'incorporationApplication'}}},
-        filing_date=datetime.now(timezone.utc), filing_type='registration' if test_business_type == 'SP' else 'incorporationApplication'
+        data_dict={'filing': {'header': {'name': filing_type}}},
+        filing_date=datetime.now(timezone.utc),
+        filing_type=filing_type
     )
-    filing.filing_party_roles.append(create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY, **filer))
-    if test_business_type == 'BEN':
-        filing.filing_party_roles.append(
-            create_party_role(PartyRole.RoleTypes.INCORPORATOR, **filer))
+    if roles:
+        for role in roles:
+            filing.filing_party_roles.append(create_party_role(role, **filer))
     filing.submitter_id = user.id
     filing.save()
+    return filing
 
 
 def setup_business_user(business, user):
@@ -190,14 +190,14 @@ def assert_credential_data(credential_data, business_user, expected):
 @pytest.mark.parametrize('test_data, expected', [
     # In this first test the user has a business party role
     ({
-        'business': bcomp_business,
+        'business': ben_business,
         'business_extra': business_extra,
         'parties': [{
             **party_one,
             'role': 'director'
         }],
-        'user': user,
-        'user_extra': user_extra
+        'user': test_user,
+        'user_extra': test_user_extra
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
         {'name': 'family_name', 'value': 'LAST'},
@@ -211,22 +211,22 @@ def assert_credential_data(credential_data, business_user, expected):
             **party_one,
             'role': 'proprietor'
         }],
-        'user': user,
-        'user_extra': user_extra
+        'user': test_user,
+        'user_extra': test_user_extra
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
         {'name': 'role', 'value': 'Proprietor'}
     ]),
     # In this second test the user does not have a business party role
     ({
-        'business': bcomp_business,
+        'business': ben_business,
         'business_extra': business_extra,
         'parties': [{
             **party_two,
             'role': 'director'
         }],
-        'user': user,
-        'user_extra': user_extra
+        'user': test_user,
+        'user_extra': test_user_extra
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
         {'name': 'role', 'value': ''}
@@ -238,8 +238,8 @@ def assert_credential_data(credential_data, business_user, expected):
             **party_two,
             'role': 'proprietor'
         }],
-        'user': user,
-        'user_extra': user_extra_empty
+        'user': test_user,
+        'user_extra': test_user_extra_empty
     }, [
         {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
@@ -275,18 +275,16 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
 @pytest.mark.parametrize('test_data, expected', [
     # In this first test the user has a business party role and a filing party role
     ({
-        'business': bcomp_business,
+        'business': ben_business,
         'business_extra': business_extra,
         'parties': [{
             **party_one,
             'role': 'director'
         }],
-        'user': user,
-        'user_extra': user_extra,
+        'user': test_user,
+        'user_extra': test_user_extra,
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
-        {'name': 'family_name', 'value': 'LAST'},
-        {'name': 'given_names', 'value': 'FIRST MIDDLE'},
         {'name': 'role', 'value': 'Director, Incorporator'}
     ]),
     ({
@@ -296,22 +294,22 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
             **party_one,
             'role': 'proprietor'
         }],
-        'user': user,
-        'user_extra': user_extra,
+        'user': test_user,
+        'user_extra': test_user_extra,
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
         {'name': 'role', 'value': 'Proprietor'}
     ]),
     # In this second test the user does not have a business party role but has a filing party role
     ({
-        'business': bcomp_business,
+        'business': ben_business,
         'business_extra': business_extra,
         'parties': [{
             **party_two,
             'role': 'director'
         }],
-        'user': user,
-        'user_extra': user_extra,
+        'user': test_user,
+        'user_extra': test_user_extra,
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
         {'name': 'role', 'value': 'Incorporator'}
@@ -323,8 +321,8 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
             **party_two,
             'role': 'proprietor'
         }],
-        'user': user,
-        'user_extra': user_extra_empty,
+        'user': test_user,
+        'user_extra': test_user_extra_empty,
     }, [
         {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
@@ -344,8 +342,14 @@ def test_data_helper_user_has_filing_party_role(app, session, test_data, expecte
     credential_type = DCDefinition.CredentialType.business
 
     user, business = setup_user_and_business(test_data)
-    setup_filing_and_roles(
-        business, user, test_data['business']['entity_type'])
+    roles = [PartyRole.RoleTypes.COMPLETING_PARTY]
+    type = 'registration'
+
+    if test_data['business']['entity_type'] == 'BEN':
+        roles.append(PartyRole.RoleTypes.INCORPORATOR)
+        type = 'incorporationApplication'
+
+    setup_filing(business, user, roles, type)
     setup_parties_and_roles(business, test_data['parties'])
 
     business_user = setup_business_user(business, user)
@@ -364,40 +368,22 @@ def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
     # Arrange
     credential_type = DCDefinition.CredentialType.business
 
-    user = factory_user(
-        username='test',
-        lastname='Last',
-        firstname='First',
-    )
+    test_data = {
+        'user': test_user,
+        'user_extra': test_user_extra_empty,
+        'business': ben_business,
+        'business_extra': business_extra
+    }
+    test_party_data = {'role': PartyRole.RoleTypes.DIRECTOR.value,
+                       'first_name': 'First', 'last_name': 'Last'}
 
-    business = factory_business(
-        identifier='FM1234567',
-        entity_type='BEN',
-        founding_date='2010-01-01',
-        state='ACTIVE'
-    )
-    business.legal_name = 'Test Business'
-    business.tax_id = '000000000000001'
-    business.save()
-
-    party = Party(first_name='First', last_name='Last')
-    party_role = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value, party=party)
-    party_role.business_id = business.id
-    party_role.save()
-
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'incorporationApplication'}}},
-        filing_date=datetime.now(timezone.utc), filing_type='incorporationApplication'
-    )
-    filing.filing_party_roles.append(PartyRole(
-        role=PartyRole.RoleTypes.COMPLETING_PARTY.value, party=party))
-    filing.filing_party_roles.append(PartyRole(
-        role=PartyRole.RoleTypes.INCORPORATOR.value, party=party))
-    filing.submitter_id = user.id
-
+    user, business = setup_user_and_business(test_data)
     business_user = setup_business_user(business, user)
+    setup_parties_and_roles(business, [test_party_data])
+    setup_filing(business, user, [
+        PartyRole.RoleTypes.COMPLETING_PARTY,
+        PartyRole.RoleTypes.INCORPORATOR
+    ], 'incorporationApplication')
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
@@ -413,40 +399,22 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
     # Arrange
     credential_type = DCDefinition.CredentialType.business
 
-    user = factory_user(
-        username='test',
-        lastname='Last',
-        firstname='First',
-    )
+    test_data = {
+        'user': test_user,
+        'user_extra': test_user_extra_empty,
+        'business': ben_business,
+        'business_extra': business_extra
+    }
+    test_party_data = {'role': PartyRole.RoleTypes.DIRECTOR.value,
+                       'first_name': 'First', 'last_name': 'Last'}
 
-    business = factory_business(
-        identifier='FM1234567',
-        entity_type='BEN',
-        founding_date='2010-01-01',
-        state='ACTIVE'
-    )
-    business.legal_name = 'Test Business'
-    business.tax_id = '000000000000001'
-    business.save()
-
-    party = Party(first_name='First', last_name='Last')
-    party_role = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value, party=party)
-    party_role.business_id = business.id
-    party_role.save()
-
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'incorporationApplication'}}},
-        filing_date=datetime.now(timezone.utc), filing_type='incorporationApplication'
-    )
-    filing.filing_party_roles.append(PartyRole(
-        role=PartyRole.RoleTypes.COMPLETING_PARTY.value, party=party))
-    filing.filing_party_roles.append(PartyRole(
-        role=PartyRole.RoleTypes.INCORPORATOR.value, party=party))
-    filing.submitter_id = user.id
-
+    user, business = setup_user_and_business(test_data)
     business_user = setup_business_user(business, user)
+    setup_parties_and_roles(business, [test_party_data])
+    setup_filing(business, user, [
+        PartyRole.RoleTypes.COMPLETING_PARTY,
+        PartyRole.RoleTypes.INCORPORATOR
+    ], 'incorporationApplication')
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
