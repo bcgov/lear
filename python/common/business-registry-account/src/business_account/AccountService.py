@@ -40,15 +40,17 @@ class AccountService:
             return None
 
     @classmethod
-    # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name;
+    # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name, disable=redefined-outer-name;
     def create_affiliation(cls, account: int,
                            business_registration: str,
                            business_name: str = None,
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None,
                            pass_code: str = '',
-                           details: dict = None):
+                           details: dict = None,
+                           flags: any = None):
         """Affiliate a business to an account."""
+        current_app.logger.info(f'Creating affiliation of {business_registration} for {account}')
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_entity_url = f'{auth_url}/entities'
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
@@ -56,6 +58,7 @@ class AccountService:
         token = cls.get_bearer_token()
 
         if not token:
+            current_app.logger.info('Missing token for affiliation call')
             return HTTPStatus.UNAUTHORIZED
 
         # Create an entity record
@@ -76,6 +79,12 @@ class AccountService:
         )
 
         # Create an account:business affiliation
+        # headers with conditional sandbox override
+        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
+        if flags and isinstance(flags, Flags) and flags.is_on('enable-sandbox'):
+            current_app.logger.info('Appending Environment-Override = sandbox header to create affiliation call')
+            headers['Environment-Override'] = 'sandbox'
+
         affiliate_data = {
             'businessIdentifier': business_registration,
             'passCode': pass_code
@@ -84,8 +93,7 @@ class AccountService:
             affiliate_data['entityDetails'] = details
         affiliate = requests.post(
             url=account_svc_affiliate_url,
-            headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+            headers=headers,
             data=json.dumps(affiliate_data),
             timeout=cls.timeout
         )
