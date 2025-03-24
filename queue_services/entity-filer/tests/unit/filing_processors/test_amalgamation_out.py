@@ -68,4 +68,4 @@ async def test_worker_amalgamation_out(app, session):
     assert filing_meta.amalgamation_out['legalName'] == filing_json['filing']['amalgamationOut']['legalName']
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1
-    assert filing_comments[0].comment == filing_json['filing']['amalgamationOut']['details']
+    assert filing_comments[0].comment == details
