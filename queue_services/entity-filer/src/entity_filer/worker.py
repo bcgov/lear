@@ -449,8 +449,10 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                 if not flags.is_on('enable-sandbox'):
                     for filing_type in filing_meta.legal_filings:
                         if filing_type in [
+                            FilingCore.FilingTypes.AMALGAMATIONOUT,
                             FilingCore.FilingTypes.ALTERATION,
                             FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                            FilingCore.FilingTypes.CONTINUATIONOUT,
                             FilingCore.FilingTypes.CORRECTION,
                             FilingCore.FilingTypes.DISSOLUTION,
                             FilingCore.FilingTypes.PUTBACKON,
