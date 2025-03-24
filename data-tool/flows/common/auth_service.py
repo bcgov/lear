@@ -71,6 +71,9 @@ class AuthService:
         if corp_sub_type_code:
             entity_data['corpSubTypeCode'] = corp_sub_type_code
 
+        if pass_code:
+            entity_data['passCode'] = pass_code
+
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
@@ -94,7 +97,10 @@ class AuthService:
             timeout=cls.get_time_out(config)
         )
 
-        if affiliate.status_code != HTTPStatus.CREATED or entity_record.status_code != HTTPStatus.CREATED:
+        if (
+            affiliate.status_code != HTTPStatus.CREATED
+            or entity_record.status_code not in (HTTPStatus.ACCEPTED, HTTPStatus.CREATED)
+        ):
             return HTTPStatus.BAD_REQUEST
         return HTTPStatus.OK
 
@@ -103,7 +109,8 @@ class AuthService:
                       config,
                       business_registration: str,
                       business_name: str,
-                      corp_type_code: str):
+                      corp_type_code: str,
+                      pass_code: str = ''):
         """Update an entity."""
         auth_url = config.AUTH_SVC_URL
         account_svc_entity_url = f'{auth_url}/entities'
@@ -119,6 +126,9 @@ class AuthService:
             'corpTypeCode': corp_type_code,
             'name': business_name
         }
+
+        if pass_code:
+            entity_data['passCode'] = pass_code
 
         entity_record = requests.post(
             url=account_svc_entity_url,

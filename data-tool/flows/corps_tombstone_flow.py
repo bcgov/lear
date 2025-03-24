@@ -307,30 +307,18 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
     """Create auth entity and affiliate as required."""
     # Note: affiliation to an account does not need to happen.  only entity creation in auth is req'd.
     #  used for testing purposes to see how things look in entity dashboard
-    if config.AFFILIATE_ENTITY:
-        business_data = tombstone_data['businesses']
-        account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
-        affiliation_status = AuthService.create_affiliation(
-            config=config,
-            account=account_id,
-            business_registration=business_data['identifier'],
-            business_name=business_data['legal_name'],
-            corp_type_code=business_data['legal_type']
-        )
-        if affiliation_status != HTTPStatus.OK:
-            with contextlib.suppress(Exception):
-                AuthService.delete_affiliation(
-                    config=config,
-                    account=account_id,
-                    business_registration=business_data['identifier'])
-            raise Exception(f"""Failed to affiliate business {business_data['identifier']}""")
+    pass_code = tombstone_data.get('pass_code')
+    if config.USE_CUSTOM_PASSCODE:
+        pass_code = config.CUSTOM_PASSCODE
+
     if config.UPDATE_ENTITY:
         business_data = tombstone_data['businesses']
         entity_status = AuthService.create_entity(
             config=config,
             business_registration=business_data['identifier'],
             business_name=business_data['legal_name'],
-            corp_type_code=business_data['legal_type']
+            corp_type_code=business_data['legal_type'],
+            pass_code=pass_code
         )
 
         admin_email = tombstone_data.get('admin_email')
@@ -347,6 +335,25 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
                 raise Exception(f"""Failed to update admin email in auth {business_data['identifier']}""")
         else:
             raise Exception(f"""Failed to create entity in auth {business_data['identifier']}""")
+
+    if config.AFFILIATE_ENTITY:
+        business_data = tombstone_data['businesses']
+        account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
+        affiliation_status = AuthService.create_affiliation(
+            config=config,
+            account=account_id,
+            business_registration=business_data['identifier'],
+            business_name=business_data['legal_name'],
+            corp_type_code=business_data['legal_type'],
+            pass_code=pass_code
+        )
+        if affiliation_status != HTTPStatus.OK:
+            with contextlib.suppress(Exception):
+                AuthService.delete_affiliation(
+                    config=config,
+                    account=account_id,
+                    business_registration=business_data['identifier'])
+            raise Exception(f"""Failed to affiliate business {business_data['identifier']}""")
 
 
 @task(name='1-Migrate-Corp-Users-Task')

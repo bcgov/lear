@@ -277,7 +277,8 @@ def get_business_query(corp_num, suffix):
             then true
             else false
         end admin_freeze,
-        c.admin_email
+        c.admin_email,
+        c.corp_password as pass_code
     from corporation c
     left outer join event e on e.corp_num = c.corp_num and e.event_type_cd IN ('CONVICORP', 'CONVAMAL') -- need to add other event like CONVCIN...
     where 1 = 1

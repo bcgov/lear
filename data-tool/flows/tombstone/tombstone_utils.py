@@ -734,6 +734,8 @@ def formatted_data_cleanup(data: dict) -> dict:
 
     data['admin_email'] = data['businesses']['admin_email']
     del data['businesses']['admin_email']
+    data['pass_code'] = data['businesses']['pass_code']
+    del data['businesses']['pass_code']
 
     data['businesses'].update(data['out_data'])
     return data
