@@ -65,5 +65,7 @@ async def test_worker_amalgamation_out(app, session):
     assert filing_meta.amalgamation_out['country'] == foreign_jurisdiction_json['country']
     assert filing_meta.amalgamation_out['region'] == foreign_jurisdiction_json['region']
     assert filing_meta.amalgamation_out['amalgamationOutDate'] == amalgamation_out_date_str
-    assert filing_meta.amalgamation_out['details'] == details
     assert filing_meta.amalgamation_out['legalName'] == filing_json['filing']['amalgamationOut']['legalName']
+    filing_comments = final_filing.comments.all()
+    assert len(filing_comments) == 1
+    assert filing_comments[0].comment == amalgamation_out_filing['filing']['amalgamationOut']['details']

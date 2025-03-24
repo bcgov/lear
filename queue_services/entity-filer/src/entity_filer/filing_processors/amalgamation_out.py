@@ -16,7 +16,7 @@ from contextlib import suppress
 from typing import Dict
 
 import dpath
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Comment, Filing
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
@@ -57,6 +57,13 @@ def process(business: Business, amalgamation_out_filing: Filing, filing: Dict, f
         'country': foreign_jurisdiction_country,
         'region': foreign_jurisdiction_region,
         'legalName': legal_name,
-        'details': details,
         'amalgamationOutDate': amalgamation_out_date_str
     }
+
+    # add comment to the filing
+    amalgamation_out_filing.comments.append(
+        Comment(
+            comment=details,
+            staff_id=amalgamation_out_filing.submitter_id
+        )
+    )
