@@ -17,8 +17,7 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Tuple, Union
 
-import jwt as pyjwt
-from flask import Blueprint, current_app, jsonify, request
+from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.decorators import can_access_digital_credentials
@@ -52,13 +51,10 @@ rules = DigitalCredentialsRulesService()
 
 def get_business_user(identifier) -> Tuple[Union[DCBusinessUser, None], Union[dict, None], Union[HTTPStatus, None]]:
     """Get the business, user, and business user if they exist and the user is authorized."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return None, jsonify({'message': 'Unable to decode JWT'}), HTTPStatus.UNAUTHORIZED
-
     if not (business := Business.find_by_identifier(identifier)):
         return None, jsonify({'message': f'{identifier} not found.'}), HTTPStatus.NOT_FOUND
 
-    if not (user := User.find_by_jwt_token(token)):
+    if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
         return None, jsonify({'message': 'User not found'}), HTTPStatus.NOT_FOUND
 
     if not (business_user := get_or_create_business_user(business=business, user=user)):

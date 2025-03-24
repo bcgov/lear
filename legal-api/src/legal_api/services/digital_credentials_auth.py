@@ -16,7 +16,7 @@
 
 from typing import Dict, List
 
-import jwt as pyjwt
+from flask import g
 from flask_jwt_oidc import JwtManager
 
 from legal_api.models.business import Business
@@ -29,15 +29,12 @@ STAFF_ROLE = 'staff'
 
 def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool:
     """Return True if the business is allowed to have/view digital credentials."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return False
-
-    if not (user := User.find_by_jwt_token(token)):
-        return False
-
     is_staff = jwt.contains_role([STAFF_ROLE])
     if is_staff:
         # Staff do not have digital credentials
+        return False
+
+    if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
         return False
 
     rules = DigitalCredentialsRulesService()
@@ -46,10 +43,7 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool
 
 def get_digital_credentials_preconditions(business: Business, jwt: JwtManager) -> Dict[str, List[str]]:
     """Return the preconditions for digital credentials."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return {}
-
-    if not (user := User.find_by_jwt_token(token)):
+    if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
         return {}
 
     rules = DigitalCredentialsRulesService()

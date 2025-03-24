@@ -23,14 +23,16 @@ from legal_api.models.party_role import PartyRole
 from tests.unit.models import factory_business, factory_party_role
 
 
-def helper_create_jwt(jwt_manager: JwtManager, roles: List[str] = [], username: str = 'test-user'):
-    """Create a jwt bearer token with the correct keys, roles and username."""
-    token_header = {
-        'alg': 'RS256',
-        'typ': 'JWT',
-        'kid': 'flask-jwt-oidc-test-client'
-    }
-    claims = {
+jwt_json_token_header = {
+    'alg': 'RS256',
+    'typ': 'JWT',
+    'kid': 'flask-jwt-oidc-test-client'
+}
+
+
+def helper_create_jwt_json_token_claims(roles: List[str] = [], username: str = 'test-user'):
+    """Create a jwt token claims"""
+    return {
         'iss': 'https://example.localdomain/auth/realms/example',
         'sub': '43e6a245-0bf7-4ccf-9bd0-e7fb85fd18cc',
         'aud': 'example',
@@ -45,7 +47,13 @@ def helper_create_jwt(jwt_manager: JwtManager, roles: List[str] = [], username: 
             'roles': [] + roles
         }
     }
-    return jwt_manager.create_jwt(claims, token_header)
+
+
+def helper_create_jwt(jwt_manager: JwtManager, roles: List[str] = [], username: str = 'test-user'):
+    """Create a jwt bearer token with the correct keys, roles and username."""
+    token_header = jwt_json_token_header
+    token_claims = helper_create_jwt_json_token_claims(roles=roles, username=username)
+    return jwt_manager.create_jwt(token_claims, token_header)
 
 
 def create_header(jwt_manager, roles: List[str] = [], username: str = 'test-user', **kwargs):
