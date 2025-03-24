@@ -35,16 +35,9 @@ info:
     name: BSD-3-Clause
     url: 'https://opensource.org/license/bsd-3-clause'
 servers:
-  - url: 'https://bcregistry-sandbox.apigee.net/business/api/v2'
-    description: sandbox
-  - url: 'http://localhost:3000/business/api/v2'
-    description: local
-  - url: 'https://bcregistry-dev.apigee.net/business/api/v2'
-    description: dev
-  - url: 'https://bcregistry-test.apigee.net/business/api/v2'
-    description: test
-  - url: 'https://bcregistry-prod.apigee.net/business/api/v2'
-    description: prod
+  - url: 'https://sandbox.api.connect.gov.bc.ca/business/api/v2'
+    description: Test
+  - url: 'https://api.connect.gov.bc.ca/business/api/v2'
 paths:
   '/businesses/{identifier}':
     parameters:

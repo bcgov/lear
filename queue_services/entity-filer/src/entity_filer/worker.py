@@ -291,7 +291,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('annualReport'):
                     flag_on = flags.is_on('enable-involuntary-dissolution')
-                    current_app.loggerlogger.debug('enable-involuntary-dissolution flag on: %s', flag_on)
+                    current_app.logger.debug('enable-involuntary-dissolution flag on: %s', flag_on)
                     annual_report.process(business, filing, filing_meta, flag_on)
 
                 elif filing.get('changeOfAddress'):
@@ -327,8 +327,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                     business, filing_submission = conversion.process(business,
                                                                      filing_core_submission.json,
                                                                      filing_submission,
-                                                                     filing_meta,
-                                                                     flags)
+                                                                     filing_meta)
 
                 elif filing.get('courtOrder'):
                     court_order.process(business, filing_submission, filing, filing_meta)
