@@ -1,0 +1,42 @@
+[project]
+name = "business-model"
+version = "3.0.0"
+description = ""
+authors = [
+    {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = "^3.9"
+dependencies = [
+    "flask-sqlalchemy (==2.5.1)",
+    "flask-migrate (==2.7.0)",
+    "pg8000 (>=1.31.2,<2.0.0)",
+    "pydantic (==1.10.2)",
+    "flask (==1.1.2)",
+    "markupsafe (==1.1.1)",
+    "itsdangerous (==1.1.0)",
+    "werkzeug (==1.0.1)",
+    "sql-versioning @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/sql-versioning-s1",
+    "pycountry (==20.7.3)",
+    "datedelta (==1.3)",
+    "pytz (==2024.1)",
+    "flask-babel (==2.0.0)",
+    "registry-schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.39",
+    "croniter (==2.0.5)",
+    "python-dotenv (==0.17.1)"
+]
+
+[tool.poetry]
+packages = [{include = "business_model", from = "src"},
+            {include = "business_model_migrations", from = "src"}
+           ]
+
+[tool.poetry.group.dev.dependencies]
+flask = "1.1.2"
+freezegun = "^1.5.1"
+pytest = "^8.3.5"
+jinja2 = "2.11.3"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
