@@ -701,6 +701,7 @@ def prep_notice_of_withdraw_filing(
     """Return a new Notice of Withdrawal filing prepped for email notification."""
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'noticeOfWithdrawal'
+    filing_template['filing']['header']['documentOptionalEmail'] = 'completing_party@email.com'
 
     filing_template['filing']['noticeOfWithdrawal'] = copy.deepcopy(NOTICE_OF_WITHDRAWAL)
     filing_template['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing.id
@@ -716,6 +717,7 @@ def prep_notice_of_withdraw_filing(
         filing_json=filing_template,
         business_id=business_id,
     )
+    filing.submitter_roles = 'staff'
     # populate NoW related properties
     filing.withdrawn_filing_id = withdrawn_filing.id
     filing.save()
