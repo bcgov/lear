@@ -1,0 +1,31 @@
+[project]
+name = "sql-versioning"
+version = "0.5.0"
+description = ""
+authors = [
+    {name = "Hongjing Chen",email = "Hongjing.Chen@gov.bc.ca"},
+    {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+
+dependencies = [
+    "sqlalchemy (==1.4.44)"
+]
+
+[tool.poetry]
+packages = [{include = "sql_versioning", from = "src"}]
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+testcontainers = {extras = ["postgres"], version = "^4.9.2"}
+pg8000 = "^1.31.2"
+zimports = "^0.6.1"
+black = "^25.1.0"
+python-dotenv = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
