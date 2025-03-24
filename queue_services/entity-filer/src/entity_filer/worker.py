@@ -326,8 +326,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                     business, filing_submission = conversion.process(business,
                                                                      filing_core_submission.json,
                                                                      filing_submission,
-                                                                     filing_meta,
-                                                                     flags)
+                                                                     filing_meta)
 
                 elif filing.get('courtOrder'):
                     court_order.process(business, filing_submission, filing, filing_meta)
