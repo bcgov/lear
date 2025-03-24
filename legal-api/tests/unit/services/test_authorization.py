@@ -1145,6 +1145,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
         return headers[one]
 
     with app.test_request_context():
+        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         account_products_mock = []
