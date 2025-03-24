@@ -191,7 +191,7 @@ class AccountService:
             return None
 
     @classmethod
-    def get_affiliations(cls, account: int,):
+    def get_affiliations(cls, account: int):
         """Affiliate a business to an account."""
         auth_url = current_app.config.get('AUTH_SVC_URL')
         account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
