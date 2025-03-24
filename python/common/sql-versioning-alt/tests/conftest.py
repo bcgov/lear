@@ -18,6 +18,7 @@ import time
 import pytest
 from dotenv import find_dotenv, load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
 
@@ -70,5 +71,5 @@ def clear_tables(session):
     """Clear tables and reset transaction sequence."""
     for table in reversed(Base.metadata.sorted_tables):
         session.execute(table.delete())
-    session.execute('ALTER SEQUENCE transaction_id_seq RESTART WITH 1')
+    session.execute(text('ALTER SEQUENCE transaction_id_seq RESTART WITH 1'))
     session.commit()

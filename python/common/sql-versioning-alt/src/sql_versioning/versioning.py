@@ -247,9 +247,13 @@ class TransactionManager:
         
         :return: None
         """
-        if self.session.transaction.nested:
-            return
-        self.session.info.pop('current_transaction_id', None)
+        if 'current_transaction_id' in self.session.info:
+            is_active = self.session.transaction.is_active
+            has_parent = self.session.transaction._parent
+
+            if is_active and has_parent is not None:
+                return
+            self.session.info.pop('current_transaction_id', None)
 
 
 # ---------- Event Listeners ----------
