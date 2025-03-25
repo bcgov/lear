@@ -274,7 +274,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
         # pylint: disable=too-many-nested-blocks, disable=too-many-function-args;
         if legal_filings := filing_core_submission.legal_filings():
-            VersioningProxy.get_transaction_id(db.session())
+            transaction_id = VersioningProxy.get_transaction_id(db.session())
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
@@ -408,7 +408,6 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
-            transaction_id = VersioningProxy.get_transaction_id(db.session())
             filing_submission.transaction_id = transaction_id
 
             business_type = business.legal_type if business \
