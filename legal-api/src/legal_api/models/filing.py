@@ -1253,7 +1253,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     @staticmethod
     def is_filing_after_tombstone(filing_id: int, business_id: int) -> bool:
-        """Determine if a filing with the given filing_id's transaction ID was after a TOMBSTONE filing's transaction ID.
+        """Determine if a filing with the given filing_id's transaction ID was after TOMBSTONE filing's transaction ID.
 
         Args:
             filing_id (int): The filing ID to check.
@@ -1282,7 +1282,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         # Compare the transaction IDs
         return filing.transaction_id > tombstone_filing.transaction_id
-
 
     @staticmethod
     def get_filings_sub_type(filing_type: str, filing_json: dict):
