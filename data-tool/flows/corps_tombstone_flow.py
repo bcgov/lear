@@ -269,6 +269,8 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 
     # load epoch filing
     epoch_filing_data = build_epoch_filing(business_id)
+    transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()})
+    epoch_filing_data['transaction_id'] = transaction_id
     load_data(conn, 'filings', epoch_filing_data)
 
     # load updates for business
