@@ -1355,6 +1355,7 @@ paths:
           description: This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.
         - $ref: '#/components/parameters/accountId'
   '/businesses/{identifier}/filings/{filingId}':
+    description: to update a filing 
     parameters:
       - $ref: '#/components/parameters/identifier'
       - $ref: '#/components/parameters/filingId'
