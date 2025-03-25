@@ -531,9 +531,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: changeOfDirectors
-                        paymentAccount: 12345
+                        paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
-                        paymentToken: 12345678
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 consent-continuation-out-success-response:
@@ -541,10 +541,10 @@ paths:
                   value:
                     filing:
                       business:
-                        legalName: 0882848 B.C. LTD.
-                        legalType: BEN
-                        identifier: BC0882848
-                        foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
+                        identifier: BC1234567
+                        foundingDate: '2025-03-25T15:34:57.844764+00:00'
                       consentContinuationOut:
                         foreignJurisdiction:
                           country: CA
@@ -553,25 +553,24 @@ paths:
                           fileNumber: '12345'
                           effectOfOrder: planOfArrangement
                       header:
+                        accountId: 12345
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: "string"
+                        certifiedBy: "First Last"
                         colinIds: []
                         comments: []
-                        date: '2024-07-18'
+                        date: '2025-03-25'
                         deletionLocked: false
-                        documentOptionalEmail: "user@example.com"
-                        effectiveDate: '2024-07-18T07:00:42.552434+00:00'
-                        email: "user@example.com"
-                        filingId: 150056
+                        effectiveDate: '2025-03-25T07:00:42.552434+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: consentContinuationOut
-                        paymentAccount: '1234'
-                        paymentStatusCode: 'CREATED'
-                        paymentToken: '12345'
+                        paymentAccount: '12345'
+                        paymentStatusCode: 'COMPLETED'
+                        paymentToken: '12345678'
                         status: 'PENDING'
                         submitter: 'mocked submitter'
                 notice-of-withdrawal-success-response:
@@ -1229,15 +1228,14 @@ paths:
                   filing:
                     header:
                       name: consentContinuationOut
-                      date: '2024-07-18'
-                      certifiedBy: "string"
-                      email: "user@example.com"
-                      documentOptionalEmail: "user@example.com"
+                      date: '2025-03-25'
+                      certifiedBy: "First Last"
+                      accountId: 12345
                     business:
-                      legalName: 0882848 B.C. LTD.
-                      legalType: BEN
-                      identifier: BC0882848
-                      foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
+                      identifier: BC1234567
+                      foundingDate: '2025-03-25T15:34:57.844764+00:00'
                     consentContinuationOut:
                       foreignJurisdiction:
                         country: CA
