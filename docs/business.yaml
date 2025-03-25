@@ -1354,7 +1354,7 @@ paths:
           name: only_validate
           description: This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.
         - $ref: '#/components/parameters/accountId'
-  '/businesses/{identifier}/filings/{filing_id}':
+  '/businesses/{identifier}/filings/{filingId}':
     parameters:
       - $ref: '#/components/parameters/identifier'
       - $ref: '#/components/parameters/filingId'
@@ -7256,8 +7256,8 @@ components:
       type: oauth2
       flows:
         password:
-          tokenUrl: ' '
-          refreshUrl: ' '
+          tokenUrl: ''
+          refreshUrl: ''
           scopes: {}
       description: ''
   headers:
