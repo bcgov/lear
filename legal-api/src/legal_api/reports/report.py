@@ -640,7 +640,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['cco_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
 
         filing['offices'] = VersionedBusinessDetailsService.\
-            get_office_revision(self._filing.transaction_id, self._business.id)
+            get_office_revision(self._filing.id, self._filing.transaction_id, self._business.id)
 
         with suppress(KeyError):
             self._format_address(filing['offices']['registeredOffice']['deliveryAddress'])
@@ -675,7 +675,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['extended_agm_date'] = date_approved_obj.strftime(OUTPUT_DATE_FORMAT)
 
         filing['offices'] = VersionedBusinessDetailsService.\
-            get_office_revision(self._filing.transaction_id, self._business.id)
+            get_office_revision(self._filing.id, self._filing.transaction_id, self._business.id)
         with suppress(KeyError):
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
 
@@ -685,7 +685,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['location'] = self._filing.filing_json['filing'].get('agmLocationChange', {}).get('agmLocation', '')
 
         filing['offices'] = VersionedBusinessDetailsService.\
-            get_office_revision(self._filing.transaction_id, self._business.id)
+            get_office_revision(self._filing.id, self._filing.transaction_id, self._business.id)
 
         with suppress(KeyError):
             self._format_address(filing['offices']['registeredOffice']['mailingAddress'])
@@ -820,6 +820,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # copy director
         if self._filing.transaction_id:
             parties_version = VersionedBusinessDetailsService.get_party_role_revision(
+                self._filing.id,
                 self._filing.transaction_id,
                 primary_or_holding_business.id,
                 role=PartyRole.RoleTypes.DIRECTOR.value)
@@ -847,6 +848,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         offices = {}
         if self._filing.transaction_id:
             offices = VersionedBusinessDetailsService.get_office_revision(
+                self._filing.id,
                 self._filing.transaction_id,
                 primary_or_holding_business.id)
         else:
@@ -915,6 +917,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['offices'] = {}
             filing['offices']['businessOffice'] = business_office
             offices_json = VersionedBusinessDetailsService.get_office_revision(
+                prev_completed_filing.id,
                 prev_completed_filing.transaction_id,
                 self._filing.business_id)
             filing['offices']['businessOffice']['mailingAddress']['changed'] = \
@@ -961,7 +964,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.transaction_id, self._business.id, True)
+                prev_completed_filing.id, prev_completed_filing.transaction_id, self._business.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
@@ -1116,7 +1119,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_office_data(self, filing, prev_completed_filing: Filing):
         filing['offices'] = {}
         if offices := filing.get('correction').get('offices'):
-            offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing.transaction_id,
+            offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing.id,
+                                                                               prev_completed_filing.transaction_id,
                                                                                self._filing.business_id)
             if registered_office := offices.get('registeredOffice'):
                 filing['offices']['registeredOffice'] = registered_office
@@ -1180,7 +1184,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.transaction_id, self._business.id, True)
+                prev_completed_filing.id, prev_completed_filing.transaction_id, self._business.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 

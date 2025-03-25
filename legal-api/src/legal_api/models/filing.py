@@ -1250,6 +1250,43 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         exists_stmt = query.exists()
         filing_exists = db.session.query(exists_stmt).scalar()
         return filing_exists
+    
+    @staticmethod
+    def is_filing_after_tombstone(filing_id: int, business_id: int) -> bool:
+        """Determine if a filing with the given filing_id's effective date was after a TOMBSTONE filing's effective date.
+        
+        Args:
+            filing_id (int): The filing ID to check.
+            business_id (int): The business ID to check.
+            
+        Returns:
+            bool: True if the filing's effective date was after a TOMBSTONE filing's effective date, False otherwise.
+                  If no TOMBSTONE filing exists, returns False.
+        """
+        # Get the TOMBSTONE filing(s)
+        tombstone_filings = Filing.get_filings_by_status(business_id, [Filing.Status.TOMBSTONE])
+        
+        if not tombstone_filings:
+            # No TOMBSTONE filing
+            return False
+        
+        # Get the most recent TOMBSTONE filing effective date (in case there are multiple)
+        tombstone_date = max((f.effective_date for f in tombstone_filings if f.effective_date), default=None)
+        
+        if not tombstone_date:
+            # TOMBSTONE filing has no effective date, assume any filing is after
+            return True
+        
+        # Get the filing with the given filing_id
+        filing = Filing.find_by_id(filing_id)
+        
+        if not filing or not filing.effective_date or filing.business_id != business_id:
+            # Filing not found, has no effective date, or belongs to a different business
+            return False
+        
+        # Compare the effective dates
+        return filing.effective_date > tombstone_date  
+
 
     @staticmethod
     def get_filings_sub_type(filing_type: str, filing_json: dict):
