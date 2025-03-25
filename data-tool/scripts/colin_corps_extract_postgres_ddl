@@ -45,6 +45,7 @@ create table if not exists corporation
             unique,
     corp_frozen_type_cd varchar(1),
     corp_type_cd        varchar(3),
+    corp_password       varchar(300),
     recognition_dts     timestamp with time zone,
     bn_9                varchar(9),
     bn_15               varchar(15),
