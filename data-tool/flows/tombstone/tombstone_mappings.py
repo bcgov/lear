@@ -17,8 +17,7 @@ class EventFilings(str, Enum):
     FILE_AM_LI = 'FILE_AM_LI'
     FILE_AM_RM = 'FILE_AM_RM'
     FILE_AM_SS = 'FILE_AM_SS'
-
-    # TODO: FILE_AM_AR = 'FILE_AM_AR'
+    FILE_AM_AR = 'FILE_AM_AR'
 
     FILE_IAMGO = 'FILE_IAMGO'
     FILE_AMALO = 'FILE_AMALO'
@@ -183,6 +182,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AM_LI: 'alteration',
     EventFilings.FILE_AM_RM: 'alteration',
     EventFilings.FILE_AM_SS: 'alteration',
+    EventFilings.FILE_AM_AR: 'alteration',
 
     EventFilings.FILE_IAMGO: 'consentAmalgamationOut',
     EventFilings.FILE_AMALO: 'amalgamationOut',
@@ -308,6 +308,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AM_LI: 'Amendment - Ledger Information',
     EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
+    EventFilings.FILE_AM_AR: 'Amendment - Annual Report',
 
     EventFilings.FILE_IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted',
     EventFilings.FILE_AMALO: 'Record of Amalgamation',
