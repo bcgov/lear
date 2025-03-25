@@ -194,6 +194,36 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     assert registry_schemas.validate(rv.json, 'business')
 
 
+@pytest.mark.parametrize('test_name, slim_version', [
+    ('slim business request', True),
+    ('regular business request', False)
+])
+def test_get_business_with_unauthoized_role(app, session, client, jwt, requests_mock, test_name, slim_version):
+    """
+    Assert that the public users with no 'view' role cannot access the full business info.
+    But they can access the slim data.
+    """
+    identifier = 'CP7654321'
+    legal_name = identifier + ' legal name'
+    factory_business_model(legal_name=legal_name,
+                           identifier=identifier,
+                           founding_date=datetime.utcfromtimestamp(0),
+                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
+                           fiscal_year_end_date=None,
+                           tax_id=None,
+                           dissolution_date=None)
+
+    headers = create_header(jwt, [PUBLIC_USER], identifier)
+    if slim_version:
+        rv = client.get('/api/v2/businesses/' + identifier + '?slim=true', headers=headers)
+        assert rv.status_code == HTTPStatus.OK
+    else:
+        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+        rv = client.get('/api/v2/businesses/' + identifier, headers=headers)
+        assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
 def test_get_business_with_correction_filings(session, client, jwt):
     """Assert that the business info sets hasCorrections property."""
     identifier = 'CP7654321'
@@ -551,7 +581,7 @@ def test_get_could_file(session, client, jwt):
     identifier = 'BC0000001'
     rv = client.get('/api/v2/businesses/allowable/BC/ACTIVE',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
-    
+
     expected = [
         {
             "displayName": "Admin Freeze",

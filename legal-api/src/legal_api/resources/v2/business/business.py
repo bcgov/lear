@@ -33,6 +33,7 @@ from legal_api.services import (  # noqa: I001;
     AccountService,
     RegistrationBootstrapService,
     check_warnings,
+    authorized
 )  # noqa: I001;
 from legal_api.services.authz import get_allowable_actions, get_allowed, get_could_files
 from legal_api.utils.auth import jwt
@@ -52,11 +53,6 @@ def get_businesses(identifier: str):
 
     if not business:
         return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
-    # check authorization -- need to implement workaround for business search users before using this #22143
-    # if not authorized(identifier, jwt, action=['view']):
-    #     return jsonify({'message':
-    #                     f'You are not authorized to view business {identifier}.'}), \
-    #         HTTPStatus.UNAUTHORIZED
 
     # getting all business info is expensive so returning the slim version is desirable for some flows
     # - (i.e. business/person search updates)
@@ -66,6 +62,14 @@ def get_businesses(identifier: str):
         business_json['alternateNames'] = business.get_alternate_names()
 
         return jsonify(business=business_json)
+
+    auth_check_required = not current_app.config.get('BUSINESS_V2_PUBLIC')
+
+    # check authorization -- need to implement workaround for business search users before using this #22143
+    if auth_check_required and not authorized(identifier, jwt, action=['view']):
+        return jsonify({'message':
+                        f'You are not authorized to view business {identifier}.'}), \
+            HTTPStatus.UNAUTHORIZED
 
     warnings = check_warnings(business)
     # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
