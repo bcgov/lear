@@ -454,189 +454,86 @@ paths:
                   value:
                     filing:
                       business:
-                        foundingDate: '2024-07-08T07:00:00.000+00:00'
-                        identifier: BC0871442
-                        legalName: JIA TEST BC TO ULC
-                        legalType: ULC
+                        foundingDate: '2025-03-25T07:00:00.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
                       changeOfDirectors:
                         directors:
-                          - actions:
+                        - officer:
+                            firstName: NEW
+                            lastName: DIRECTOR
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: ''
+                            addressCity: delivery_address city
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H0H0
+                            addressCountry: CA
+                          mailingAddress:
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ''
+                            addressCity: mailing_address city
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H0H0
+                            addressCountry: CA
+                          appointmentDate: '2025-03-25'
+                          cessationDate: null
+                          actions:
                             - appointed
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Doe
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
-                            - appointed
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Bob
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
-                            - appointed
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Jane
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
-                            - ceased
-                            appointmentDate: '2024-07-09'
-                            cessationDate: '2024-07-21'
-                            deliveryAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Doe
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
+                        - officer:
+                            firstName: UPDATED
+                            lastName: DIRECTOR
+                            middleInitial: ''
+                            prevFirstName: 'PREVIOUS'
+                            prevLastName: 'NAME'
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            addressCity: Vancouver
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H0H0
+                            streetAddress: 200 Changed Address
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Vancouver
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H0H0
+                            streetAddress: 200 Changed Address
+                            streetAddressAdditional: ''
+                          appointmentDate: '2025-03-25'
+                          cessationDate: null
+                          actions:
                             - addressChanged
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5C 3V8
-                              streetAddress: 3765 1st Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5C 3V8
-                              streetAddress: 3765 1st Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Jane
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
                             - nameChanged
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: API
-                              lastName: Specs
-                              middleInitial: ''
-                              prevFirstName: Bob
-                              prevLastName: Smith
-                              prevMiddleInitial: ''
                       header:
+                        accountId: 12345
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-09T21:39:11.950027+00:00'
+                        date: '2025-03-25T21:39:11.950027+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-09T07:00:00+00:00'
-                        email: "no_one@never.get"
-                        filingId: 150373
+                        effectiveDate: '2025-03-25T07:00:00+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: changeOfDirectors
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
+                        paymentAccount: 12345
+                        paymentStatusCode: COMPLETED
+                        paymentToken: 12345678
                         status: PENDING
                         submitter: mocked submitter
                 consent-continuation-out-success-response:
@@ -1261,174 +1158,70 @@ paths:
                   filing:
                     header:
                       name: changeOfDirectors
-                      certifiedBy: Sample Certified Person
-                      email: no_one@never.get
-                      date: '2024-07-09'
-                      effectiveDate: '2024-07-09T07:00:00+00:00'
+                      certifiedBy: First last
+                      date: '2025-03-25'
+                      effectiveDate: '2025-03-25T07:00:00+00:00'
                     business:
                       foundingDate: '2024-07-08T07:00:00.000+00:00'
-                      identifier: BC0871442
-                      legalName: JIA TEST BC TO ULC
-                      legalType: ULC
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
                     changeOfDirectors:
                       directors:
                         - officer:
-                            firstName: Doe
-                            lastName: Smith
+                            firstName: NEW
+                            lastName: DIRECTOR
                             middleInitial: ''
                             prevFirstName: ''
                             prevLastName: ''
                             prevMiddleInitial: ''
                           deliveryAddress:
-                            streetAddress: 10300 4th Ave
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
-                            addressCity: Richmond
+                            addressCity: delivery_address city
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V7E 1V2
+                            postalCode: H0H0H0
                             addressCountry: CA
                           mailingAddress:
-                            streetAddress: 10300 4th Ave
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                            addressCity: Richmond
+                            addressCity: mailing_address city
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V7E 1V2
+                            postalCode: H0H0H0
                             addressCountry: CA
-                          appointmentDate: '2024-07-09'
+                          appointmentDate: '2025-03-25'
                           cessationDate: null
                           actions:
                             - appointed
                         - officer:
-                            firstName: Bob
-                            lastName: Smith
+                            firstName: UPDATED
+                            lastName: DIRECTOR
                             middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
+                            prevFirstName: 'PREVIOUS'
+                            prevLastName: 'NAME'
                             prevMiddleInitial: ''
                           deliveryAddress:
-                            addressCity: Victoria
+                            addressCity: Vancouver
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H0H0
+                            streetAddress: 200 Changed Address
                             streetAddressAdditional: ''
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: Vancouver
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H0H0
+                            streetAddress: 200 Changed Address
                             streetAddressAdditional: ''
-                          appointmentDate: '2024-07-09'
-                          cessationDate: null
-                          actions:
-                            - appointed
-                        - officer:
-                            firstName: Jane
-                            lastName: Smith
-                            middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          mailingAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          appointmentDate: '2024-07-09'
-                          cessationDate: null
-                          actions:
-                            - appointed
-                        - officer:
-                            firstName: Doe
-                            lastName: Smith
-                            middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          mailingAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          appointmentDate: '2024-07-09'
-                          cessationDate: '2024-07-21'
-                          actions:
-                            - ceased
-                        - officer:
-                            firstName: Jane
-                            lastName: Smith
-                            middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            streetAddress: 3765 1st Ave
-                            streetAddressAdditional: ''
-                            addressCity: Burnaby
-                            addressRegion: BC
-                            postalCode: V5C 3V8
-                            addressCountry: CA
-                          mailingAddress:
-                            streetAddress: 3765 1st Ave
-                            streetAddressAdditional: ''
-                            addressCity: Burnaby
-                            addressRegion: BC
-                            postalCode: V5C 3V8
-                            addressCountry: CA
-                          appointmentDate: '2024-07-09'
+                          appointmentDate: '2025-03-25'
                           cessationDate: null
                           actions:
                             - addressChanged
-                        - officer:
-                            firstName: API
-                            lastName: Specs
-                            middleInitial: ''
-                            prevFirstName: Bob
-                            prevLastName: Smith
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            addressCity: Victoria
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
-                            streetAddressAdditional: ''
-                          mailingAddress:
-                            addressCity: Victoria
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
-                            streetAddressAdditional: ''
-                          appointmentDate: '2024-07-09'
-                          cessationDate: null
-                          actions:
                             - nameChanged
               consent-continuation-out-request:
                 summary: Consent Continuation Out Request
