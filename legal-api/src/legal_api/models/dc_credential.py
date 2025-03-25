@@ -41,7 +41,7 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         'revocation_registry_id', db.String(200))
 
     credential_json = db.Column('raw_data', JSONB)
-    is_role_self_attested = db.Column('is_role_self_attested', db.Boolean)
+    self_attested_roles = db.Column('self_attested_roles', JSONB)
 
     is_issued = db.Column('is_issued', db.Boolean, default=False)
     date_of_issue = db.Column('date_of_issue', db.DateTime(timezone=True))

@@ -20,7 +20,6 @@ from http import HTTPStatus
 from typing import List
 from urllib.parse import urljoin
 
-import jwt as pyjwt
 from flask import Response, current_app, request
 from flask_caching import Cache
 from flask_jwt_oidc import JwtManager
@@ -28,8 +27,11 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from legal_api.models import Business, Filing, User
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
+from legal_api.models import Business, Filing
+from legal_api.services.digital_credentials_auth import (
+    are_digital_credentials_allowed,
+    get_digital_credentials_preconditions,
+)
 from legal_api.services.warnings.business.business_checks import WarningType
 
 
@@ -976,35 +978,6 @@ def add_allowable_filing_type(is_allowable: bool = False,
         allowable_filing_types.append(allowable_filing_type)
 
     return allowable_filing_types
-
-
-def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool:
-    """Return True if the business is allowed to have/view digital credentials."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return False
-
-    if not (user := User.find_by_jwt_token(token)):
-        return False
-
-    is_staff = jwt.contains_role([STAFF_ROLE])
-    if is_staff:
-        # Staff do not have digital credentials
-        return False
-
-    rules = DigitalCredentialsRulesService()
-    return rules.are_digital_credentials_allowed(user, business)
-
-
-def get_digital_credentials_preconditions(business: Business, jwt: JwtManager) -> List[str]:
-    """Return the preconditions for digital credentials."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return []
-
-    if not (user := User.find_by_jwt_token(token)):
-        return []
-
-    rules = DigitalCredentialsRulesService()
-    return rules.get_preconditions(user, business)
 
 
 def get_account_id(_, account_id: str = None) -> str:

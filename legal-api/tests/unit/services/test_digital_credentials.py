@@ -382,7 +382,7 @@ def test_data_helper_role_not_added_if_preconditions_not_met(app, session):
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
         # Act
-        credential_data = get_digital_credential_data(business_user, credential_type, False)
+        credential_data = get_digital_credential_data(business_user, credential_type, [])
 
         # Assert
         assert {'name': 'role', 'value': ''} in credential_data
@@ -393,6 +393,10 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
     # Arrange
     credential_type = DCDefinition.CredentialType.business
 
+    test_preconditions = [
+        PartyRole.RoleTypes.DIRECTOR.value,
+        PartyRole.RoleTypes.INCORPORATOR.value
+    ]
     test_data = {
         'user': test_user,
         'user_extra': test_user_extra_empty,
@@ -410,9 +414,43 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
         PartyRole.RoleTypes.INCORPORATOR
     ], 'incorporationApplication')
 
-    with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['test']):
+    with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=test_preconditions):
         # Act
-        credential_data = get_digital_credential_data(business_user, credential_type, True)
+        credential_data = get_digital_credential_data(business_user, credential_type, test_preconditions)
 
         # Assert
         assert {'name': 'role', 'value': 'Director, Incorporator'} in credential_data
+
+
+def test_data_helper_role_added_if_preconditions_met(app, session):
+    """Assert that the data helper returns the correct data only when data in preconditions met."""
+    # Arrange
+    credential_type = DCDefinition.CredentialType.business
+
+    test_preconditions = [
+        PartyRole.RoleTypes.INCORPORATOR.value
+    ]
+    test_data = {
+        'user': test_user,
+        'user_extra': test_user_extra_empty,
+        'business': ben_business,
+        'business_extra': business_extra
+    }
+    test_party_data = {'role': PartyRole.RoleTypes.DIRECTOR.value,
+                       'first_name': 'First', 'last_name': 'Last'}
+
+    user, business = setup_user_and_business(test_data)
+    business_user = setup_business_user(business, user)
+    setup_parties_and_roles(business, [test_party_data])
+    setup_filing(business, user, [
+        PartyRole.RoleTypes.COMPLETING_PARTY,
+        PartyRole.RoleTypes.INCORPORATOR
+    ], 'incorporationApplication')
+
+    with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=test_preconditions):
+        # Act
+        credential_data = get_digital_credential_data(business_user, credential_type, test_preconditions + [PartyRole.RoleTypes.DIRECTOR.value])
+
+        # Assert
+        assert {'name': 'role', 'value': 'Incorporator'} in credential_data
+        assert {'name': 'role', 'value': 'Director, Incorporator'} not in credential_data
