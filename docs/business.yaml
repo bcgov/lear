@@ -609,83 +609,79 @@ paths:
                   value:
                     filing:
                       business:
-                        foundingDate: '2023-07-12T17:31:58.000+00:00'
-                        identifier: BC0882365
-                        legalName: 882365 B.C. LTD.
+                        foundingDate: '2025-03-25T17:31:58.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
                         legalType: BC
                       dissolution:
-                        affidavitConfirmed: true
                         courtOrder:
-                          effectOfOrder: ''
                           fileNumber: '12345'
                           hasPlanOfArrangement: false
                         custodialOffice:
                           deliveryAddress:
-                            addressCity: Victoria
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                        dissolutionDate: '2024-07-18'
+                        dissolutionDate: '2025-03-25'
                         dissolutionType: voluntary
                         parties:
                           - party:
                               deliveryAddress:
-                                addressCity: Victoria
+                                addressCity: delivery_address city
                                 addressCountry: CA
                                 addressRegion: BC
                                 deliveryInstructions: ''
-                                postalCode: V8W 3E6
-                                streetAddress: 200-940 Blanshard St
+                                postalCode: H0H0H0
+                                streetAddress: delivery_address - address line one
                               inheritMailingAddress: true
                               mailingAddress:
-                                addressCity: Victoria
+                                addressCity: mailing_address city
                                 addressCountry: CA
                                 addressRegion: BC
                                 deliveryInstructions: ''
-                                postalCode: V8W 3E6
-                                streetAddress: 200-940 Blanshard St
+                                postalCode: H0H0H0
+                                streetAddress: mailing_address - address line one
                               officer:
                                 email: api.specs@example.com
-                                firstName: Firstname
-                                lastName: Lastname
+                                firstName: First
+                                lastName: Last
                                 middleName: ''
                                 organizationName: ''
                                 partyType: person
                               roles:
-                                - appointmentDate: '2024-07-18'
+                                - appointmentDate: '2025-03-25'
                                   roleType: Custodian
-                        resolution:
-                          resolutionConfirmed: true
                       header:
+                        accountId: 12345
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-18T15:36:26.345331+00:00'
+                        date: '2025-03-25T15:36:26.345331+00:00'
                         deletionLocked: false
-                        effectiveDate: '2027-07-21T07:00:00.000+00:00'
-                        filingId: 149994
+                        effectiveDate: '2025-03-25T07:00:00.000+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: dissolution
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
-                        priority: false
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
         '400':
@@ -1287,69 +1283,64 @@ paths:
                 value:
                   filing:
                     header:
-                      date: '2024-07-18'
-                      effectiveDate: '2027-07-21T07:00:00.000+00:00'
+                      date: '2025-03-25'
                       name: dissolution
-                      certifiedBy: Sample Certified Person
-                      priority: false
+                      certifiedBy: First Last
+                      accountId: 12345
                     business:
                       foundingDate: '2023-07-12T17:31:58.000+00:00'
-                      identifier: BC0882365
-                      legalName: 882365 B.C. LTD.
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
                       legalType: BC
                     dissolution:
-                      dissolutionDate: '2024-07-18'
-                      affidavitConfirmed: true
+                      dissolutionDate: '2025-03-25'
                       custodialOffice:
                         deliveryAddress:
-                          addressCity: Victoria
+                          addressCity: delivery_address city
                           addressCountry: CA
                           addressRegion: BC
                           deliveryInstructions: ''
-                          postalCode: V8W 3E6
-                          streetAddress: 200-940 Blanshard St
+                          postalCode: H0H0H0
+                          streetAddress: delivery_address - address line one
                           streetAddressAdditional: ''
                         mailingAddress:
-                          addressCity: Victoria
+                          addressCity: mailing_address city
                           addressCountry: CA
                           addressRegion: BC
                           deliveryInstructions: ''
-                          postalCode: V8W 3E6
-                          streetAddress: 200-940 Blanshard St
+                          postalCode: H0H0H0
+                          streetAddress: mailing_address - address line one
                           streetAddressAdditional: ''
                       dissolutionType: voluntary
                       parties:
                         - party:
                             deliveryAddress:
-                              addressCity: Victoria
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               deliveryInstructions: ''
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H0H0
+                              streetAddress: delivery_address - address line one
                             inheritMailingAddress: true
                             mailingAddress:
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
                               deliveryInstructions: ''
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H0H0
+                              streetAddress: mailing_address - address line one
                             officer:
                               email: api.specs@example.com
-                              firstName: Firstname
-                              lastName: Lastname
+                              firstName: First
+                              lastName: Last
                               middleName: ''
                               organizationName: ''
                               partyType: person
                             roles:
-                              - appointmentDate: '2024-07-18'
+                              - appointmentDate: '2025-03-25'
                                 roleType: Custodian
-                      resolution:
-                        resolutionConfirmed: true
                       courtOrder:
                         fileNumber: '12345'
-                        effectOfOrder: ''
                         hasPlanOfArrangement: false
       parameters:
         - schema:
