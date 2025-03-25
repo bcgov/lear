@@ -17,10 +17,13 @@ depends_on = None
 
 
 def upgrade():
-    meta = MetaData(bind=op.get_bind())
-    meta.reflect(only=('corp_types',))
+    # meta = MetaData(bind=op.get_bind())
+    # meta.reflect(only=('corp_types',))
+    # corp_types_table = Table('corp_types', meta)
 
-    corp_types_table = Table('corp_types', meta)
+    bind = op.get_bind()
+    meta = MetaData()
+    corp_types_table = Table('corp_types', meta, autoload_with=bind)
 
     op.bulk_insert(
         corp_types_table,

@@ -24,6 +24,7 @@ import pytz
 from flask import current_app
 from pg8000.exceptions import InterfaceError
 from sql_versioning import Versioned
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
@@ -617,7 +618,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions,
-            'alternateNames': self.get_alternate_names()
+            # TODO: fix alternate names
+            # 'alternateNames': self.get_alternate_names()
         }
         self._extend_json(d)
 
@@ -936,7 +938,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'FM': 'business_identifier_sp_gp',
         }
         if sequence_name := sequence_mapping.get(business_type, None):
-            return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
+            return db.session.execute(text(f"SELECT nextval('{sequence_name}')")).scalar()
         return None
 
     @staticmethod

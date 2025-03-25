@@ -15,14 +15,14 @@
 
 These will get initialized by the application using the models
 """
-from datetime import datetime
-from datetime import timezone
-
-from flask_sqlalchemy import SignallingSession, SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.session import Session
 from sql_versioning import TransactionManager
 from sql_versioning import enable_versioning
 from sql_versioning import version_class as _new_version_class
-from sqlalchemy import event, orm
+from sqlalchemy import event
+from sqlalchemy import func
+from sqlalchemy import orm
 
 
 # by convention in the Flask community these are lower case,
@@ -43,7 +43,7 @@ class Transaction(db.Model):
             )
     remote_addr = db.Column(db.String(50), nullable=True)
     issued_at = db.Column(db.DateTime,
-                          default=datetime.now(timezone.utc),
+                          default=func.utc_timestamp(),
                           nullable=True)
 
 
@@ -122,12 +122,12 @@ def setup_versioning():
 
     :return: None
     """
-    # use SignallingSession to skip events for continuum's internal session/txn operations
-    @event.listens_for(SignallingSession, 'after_transaction_create')
+    # use Session to skip events for continuum's internal session/txn operations
+    @event.listens_for(Session, 'after_transaction_create')
     def after_transaction_create(session, transaction):
         VersioningProxy.lock_versioning(session, transaction)
 
-    @event.listens_for(SignallingSession, 'after_transaction_end')
+    @event.listens_for(Session, 'after_transaction_end')
     def clear_transaction(session, transaction):
         VersioningProxy.unlock_versioning(session, transaction)
 

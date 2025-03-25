@@ -17,7 +17,9 @@ import datetime
 from sqlalchemy import (BigInteger, Column, DateTime, Integer, SmallInteger,
                         String, and_, event, func, insert, inspect, select,
                         update)
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
+# from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Session, mapper, relationships
 
 from .relationship_builder import RelationshipBuilder
@@ -247,7 +249,7 @@ class TransactionManager:
         
         :return: None
         """
-        if 'current_transaction_id' in self.session.info:
+        if 'transaction' in self.session.info:
             is_active = self.session.transaction.is_active
             has_parent = self.session.transaction._parent
 

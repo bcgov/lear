@@ -188,73 +188,38 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
         )
 
 
-# @pytest.fixture(scope="function")
-# def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
-#     """Return a function-scoped session."""
-#     with app.app_context():
-#         conn = db.engine.connect()
-#         txn = conn.begin()
-
-#         try:
-#             options = dict(bind=conn, binds={})
-#             # sess = db.create_scoped_session(options=options)
-#             sess = db._make_scoped_session(options=options)
-#         except Exception as err:
-#             print(err)
-#             print("done")
-
-#         # establish  a SAVEPOINT just before beginning the test
-#         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
-#         sess.begin_nested()
-
-#         @event.listens_for(sess(), "after_transaction_end")
-#         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
-#             # Detecting whether this is indeed the nested transaction of the test
-#             if (
-#                 trans.nested and not trans._parent.nested
-#             ):  # pylint: disable=protected-access
-#                 # Handle where test DOESN'T session.commit(),
-#                 sess2.expire_all()
-#                 sess.begin_nested()
-
-#         db.session = sess
-
-#         sql = text("select 1")
-#         sess.execute(sql)
-
-#         yield sess
-
-#         # Cleanup
-#         sess.remove()
-#         # This instruction rollsback any commit that were executed in the tests.
-#         txn.rollback()
-#         conn.close()
-
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a function-scoped session."""
     with app.app_context():
         conn = db.engine.connect()
         txn = conn.begin()
 
-        options = dict(bind=conn, binds={})
-        sess = db.create_scoped_session(options=options)
+        try:
+            options = dict(bind=conn, binds={})
+            # sess = db.create_scoped_session(options=options)
+            sess = db._make_scoped_session(options=options)
+        except Exception as err:
+            print(err)
+            print("done")
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
         sess.begin_nested()
 
-        @event.listens_for(sess(), 'after_transaction_end')
+        @event.listens_for(sess(), "after_transaction_end")
         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
             # Detecting whether this is indeed the nested transaction of the test
-            if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
+            if (
+                trans.nested and not trans._parent.nested
+            ):  # pylint: disable=protected-access
                 # Handle where test DOESN'T session.commit(),
                 sess2.expire_all()
                 sess.begin_nested()
 
         db.session = sess
 
-        sql = text('select 1')
+        sql = text("select 1")
         sess.execute(sql)
 
         yield sess
@@ -264,3 +229,38 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         # This instruction rollsback any commit that were executed in the tests.
         txn.rollback()
         conn.close()
+
+# @pytest.fixture(scope='function')
+# def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
+#     """Return a function-scoped session."""
+#     with app.app_context():
+#         conn = db.engine.connect()
+#         txn = conn.begin()
+
+#         options = dict(bind=conn, binds={})
+#         sess = db.create_scoped_session(options=options)
+
+#         # establish  a SAVEPOINT just before beginning the test
+#         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
+#         sess.begin_nested()
+
+#         @event.listens_for(sess(), 'after_transaction_end')
+#         def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
+#             # Detecting whether this is indeed the nested transaction of the test
+#             if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
+#                 # Handle where test DOESN'T session.commit(),
+#                 sess2.expire_all()
+#                 sess.begin_nested()
+
+#         db.session = sess
+
+#         sql = text('select 1')
+#         sess.execute(sql)
+
+#         yield sess
+
+#         # Cleanup
+#         sess.remove()
+#         # This instruction rollsback any commit that were executed in the tests.
+#         txn.rollback()
+#         conn.close()
