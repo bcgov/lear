@@ -3014,7 +3014,6 @@ paths:
                           phone: 123-456-7890
                         nameRequest:
                           legalType: BEN
-                          nrNumber: 'NR 1345876'
                         nameTranslations: []
                         offices:
                           recordsOffice:
@@ -3563,7 +3562,6 @@ paths:
                     incorporationApplication:
                       nameRequest:
                         legalType: BEN
-                        nrNumber: NR 1234567
                       offices:
                         registeredOffice:
                           deliveryAddress:
