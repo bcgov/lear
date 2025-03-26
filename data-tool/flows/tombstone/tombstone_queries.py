@@ -459,7 +459,7 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
         and cp.end_event_id is null
-        and cp.party_typ_cd in ('INC', 'DIR', 'OFF')
+        and cp.party_typ_cd in ('DIR', 'OFF')
     --order by e.event_id
     order by cp_full_name, e.event_id
     ;

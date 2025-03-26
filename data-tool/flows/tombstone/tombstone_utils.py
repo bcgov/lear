@@ -116,7 +116,6 @@ def format_parties_data(data: dict) -> list[dict]:
 
     # Map role codes to role names
     role_mapping = {
-        'INC': 'incorporator',
         'DIR': 'director',
         'OFF': 'officer'
         # Additional roles can be added here in the future
