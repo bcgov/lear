@@ -122,6 +122,7 @@ def test_find_furnishing_by(session, params):
     )
 
     furnishing.save()
+    params['batch_id'] = batch.id
 
     res = Furnishing.find_by(**params)
 

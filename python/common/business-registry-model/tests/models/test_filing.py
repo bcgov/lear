@@ -529,12 +529,12 @@ def test_get_completed_filings_for_colin(session):
     from business_model.models.colin_event_id import ColinEventId
     from tests.models import factory_completed_filing
     # setup
-    identifier = 'CP4445467'
+    identifier = 'CP0045467'
     b = factory_business(identifier)
     filing = factory_completed_filing(b, ANNUAL_REPORT)
     assert filing.status == Filing.Status.COMPLETED.value
     colin_event_id = ColinEventId()
-    colin_event_id.colin_event_id = 12346789
+    colin_event_id.colin_event_id = 1234678987
     filing.colin_event_ids.append(colin_event_id)
     filing.save()
     filings = Filing.get_completed_filings_for_colin()

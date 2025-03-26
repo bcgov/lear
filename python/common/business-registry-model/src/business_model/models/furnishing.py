@@ -18,6 +18,7 @@ from enum import auto
 from typing import List
 
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import func
 
 from business_model.utils.base import BaseEnum
 from business_model.utils.datetime import datetime
@@ -65,8 +66,8 @@ class Furnishing(db.Model):
     status = db.Column('status', db.Enum(FurnishingStatus), nullable=False)
     notes = db.Column('notes', db.String(150), default='', nullable=True)
     meta_data = db.Column('meta_data', JSONB, nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=func.now())
     email = db.Column('email', db.String(254), default='', nullable=True)
     last_name = db.Column('last_name', db.String(30), default='', nullable=True)
     first_name = db.Column('first_name', db.String(30), default='', nullable=True)
