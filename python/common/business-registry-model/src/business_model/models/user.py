@@ -20,6 +20,7 @@ from datetime import datetime
 from enum import auto
 
 from flask import current_app
+from sqlalchemy import func
 from sql_versioning import Versioned
 
 from business_model.exceptions import BusinessException
@@ -64,7 +65,7 @@ class User(db.Model, Versioned):
     iss = db.Column(db.String(1024))
     idp_userid = db.Column(db.String(256), index=True)
     login_source = db.Column(db.String(200), nullable=True)
-    creation_date = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    creation_date = db.Column(db.DateTime(timezone=True), default=func.now())
 
     @property
     def display_name(self):

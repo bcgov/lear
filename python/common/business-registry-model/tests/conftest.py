@@ -22,7 +22,7 @@ import pytest
 import sqlalchemy
 from flask import Flask
 from flask_migrate import Migrate, upgrade
-from sqlalchemy import event, inspect, text
+from sqlalchemy import event, func, inspect, text
 
 from business_model.models import db as _db
 

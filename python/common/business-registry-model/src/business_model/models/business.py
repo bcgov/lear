@@ -24,6 +24,7 @@ import pytz
 from flask import current_app
 from pg8000.exceptions import InterfaceError
 from sql_versioning import Versioned
+from sqlalchemy import func
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -231,17 +232,17 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     last_ledger_id = db.Column('last_ledger_id', db.Integer)
     last_remote_ledger_id = db.Column('last_remote_ledger_id', db.Integer, default=0)
-    last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=func.now())
     last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True))
     last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True))
     last_coa_date = db.Column('last_coa_date', db.DateTime(timezone=True))
     last_cod_date = db.Column('last_cod_date', db.DateTime(timezone=True))
     legal_name = db.Column('legal_name', db.String(1000), index=True)
     legal_type = db.Column('legal_type', db.String(10))
-    founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=func.now())
     start_date = db.Column('start_date', db.DateTime(timezone=True))
     restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
@@ -249,7 +250,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     amalgamation_out_date = db.Column('amalgamation_out_date', db.DateTime(timezone=True))
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
-    fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=func.now())
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
     last_ar_year = db.Column('last_ar_year', db.Integer)
     last_ar_reminder_year = db.Column('last_ar_reminder_year', db.Integer)

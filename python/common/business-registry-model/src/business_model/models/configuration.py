@@ -14,12 +14,13 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
-from enum import Enum
+# from enum import Enum
 from typing import List
 
 from croniter import croniter
 from sqlalchemy import event
 
+from business_model.utils.base import BaseEnum
 from .db import db
 
 
@@ -35,13 +36,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
 
     __tablename__ = 'configurations'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column('name', db.String(100), unique=True, nullable=False)
-    val = db.Column('val', db.String(100), nullable=False)
-    short_description = db.Column('short_description', db.String(150), nullable=True)
-    full_description = db.Column('full_description', db.String(1000), nullable=True)
-
-    class Names(Enum):
+    class Names(BaseEnum):
         """Render an Enum of the name of configuration."""
 
         NUM_DISSOLUTIONS_ALLOWED = 'NUM_DISSOLUTIONS_ALLOWED'
@@ -50,6 +45,14 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         DISSOLUTIONS_STAGE_2_SCHEDULE = 'DISSOLUTIONS_STAGE_2_SCHEDULE'
         DISSOLUTIONS_STAGE_3_SCHEDULE = 'DISSOLUTIONS_STAGE_3_SCHEDULE'
 
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column('name', db.Enum(Names), unique=True, nullable=False)
+    val = db.Column('val', db.String(100), nullable=False)
+    short_description = db.Column('short_description', db.String(150), nullable=True)
+    full_description = db.Column('full_description', db.String(1000), nullable=True)
+
+ 
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
@@ -84,7 +87,11 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the configuration matching the name."""
         configuration = None
         if config_name:
-            configuration = cls.query.filter_by(name=config_name).one_or_none()
+            try:
+                configuration = cls.query.filter_by(name=config_name).one_or_none()
+            except Exception as exc:
+                print(exc)
+                raise exc
         return configuration
 
     @classmethod

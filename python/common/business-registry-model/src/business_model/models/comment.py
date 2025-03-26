@@ -19,6 +19,7 @@ from datetime import datetime
 from http import HTTPStatus
 
 from sqlalchemy import event
+from sqlalchemy import func
 from sqlalchemy.orm import backref
 
 from business_model.exceptions import BusinessException
@@ -37,7 +38,7 @@ class Comment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     comment = db.Column(db.String(4096))
-    timestamp = db.Column('timestamp', db.DateTime(timezone=True), default=datetime.utcnow)
+    timestamp = db.Column('timestamp', db.DateTime(timezone=True), default=func.now())
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
