@@ -33,9 +33,9 @@ from legal_api.services import (  # noqa: I001;
     AccountService,
     RegistrationBootstrapService,
     check_warnings,
-    authorized
+    flags,
 )  # noqa: I001;
-from legal_api.services.authz import get_allowable_actions, get_allowed, get_could_files
+from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -63,10 +63,14 @@ def get_businesses(identifier: str):
 
         return jsonify(business=business_json)
 
-    auth_check_required = not current_app.config.get('BUSINESS_V2_PUBLIC')
-
-    # check authorization -- need to implement workaround for business search users before using this #22143
-    if auth_check_required and not authorized(identifier, jwt, action=['view']):
+    # check authorization if required
+    if flags.is_on('enable-auth-v2-business') and not authorized(identifier, jwt, action=['view']):
+        current_app.logger.warning(
+            'Unauthorized request for business: %s, from username: %s, accountId: %s, app-name: %s',
+            identifier,
+            g.jwt_oidc_token_info.get('preferred_username'),
+            request.args.get('account'),
+            request.headers.get('app-name'))
         return jsonify({'message':
                         f'You are not authorized to view business {identifier}.'}), \
             HTTPStatus.UNAUTHORIZED
