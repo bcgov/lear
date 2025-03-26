@@ -274,6 +274,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         For migrated (tombstone) businesses, if no versioning data exists and the filing is after
         the tombstone filing, the current office data will be used.
         """
+        # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         offices_json = {}
         address_version = VersioningProxy.version_class(db.session(), Address)
         offices_version = VersioningProxy.version_class(db.session(), Office)
@@ -318,15 +319,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 offices_json[office.office_type] = {}
                 addresses = office.addresses.all()
                 for address in addresses:
-                    offices_json[office.office_type][f'{address.address_type}Address'] = {
-                        'streetAddress': address.street,
-                        'streetAddressAdditional': address.street_additional,
-                        'addressCity': address.city,
-                        'addressRegion': address.region,
-                        'addressCountry': address.country,
-                        'postalCode': address.postal_code,
-                        'deliveryInstructions': address.delivery_instructions
-                    }
+                    offices_json[office.office_type][f'{address.address_type}Address'] = \
+                        VersionedBusinessDetailsService.address_revision_json(address)
 
         return offices_json
 
@@ -344,6 +338,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             is_ia_or_after (bool): Flag for incorporation application or after
             role (str): Optional role filter
         """
+        # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
         parties = []
         versioned_party_role_ids = set()
@@ -557,7 +552,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return member
 
     @staticmethod
-    def party_revision_json(transaction_id, party, is_ia_or_after) -> dict:
+    def party_revision_json(transaction_id, party, is_ia_or_after) -> dict:  # pylint: disable=too-many-branches
         """Return the party member as a json object."""
         member = VersionedBusinessDetailsService.party_revision_type_json(party, is_ia_or_after)
 
@@ -574,16 +569,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                     member['deliveryAddress'] = member_address
         else:
             # Non-versioned party
-            if party.delivery_address:
-                member_address = {
-                    'streetAddress': party.delivery_address.street,
-                    'streetAddressAdditional': party.delivery_address.street_additional,
-                    'addressCity': party.delivery_address.city,
-                    'addressRegion': party.delivery_address.region,
-                    'addressCountry': party.delivery_address.country,
-                    'postalCode': party.delivery_address.postal_code,
-                    'deliveryInstructions': party.delivery_address.delivery_instructions
-                }
+            if (party_da := party.delivery_address) and party_da.postal_code:
+                member_address = VersionedBusinessDetailsService.address_revision_json(party_da)
+                if 'addressType' in member_address:
+                    del member_address['addressType']
                 member['deliveryAddress'] = member_address
 
         # Handle mailing address
@@ -597,17 +586,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                     del member_mailing_address['addressType']
                 member['mailingAddress'] = member_mailing_address
         else:
-            if party.mailing_address:
-                member_mailing_address = {
-                    'streetAddress': party.mailing_address.street,
-                    'streetAddressAdditional': party.mailing_address.street_additional,
-                    'addressCity': party.mailing_address.city,
-                    'addressRegion': party.mailing_address.region,
-                    'addressCountry': party.mailing_address.country,
-                    'postalCode': party.mailing_address.postal_code,
-                    'deliveryInstructions': party.mailing_address.delivery_instructions
-                }
-                member['mailingAddress'] = member_mailing_address
+            if (party_ma := party.mailing_address) and party_ma.postal_code:
+                member_address = VersionedBusinessDetailsService.address_revision_json(party_ma)
+                if 'addressType' in member_address:
+                    del member_address['addressType']
+                member['mailingAddress'] = member_address
 
         # If no mailing address but has delivery address, use delivery as mailing
         if 'mailingAddress' not in member and 'deliveryAddress' in member:
@@ -640,14 +623,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if address_revision.country:
             country_description = pycountry.countries.search_fuzzy(address_revision.country)[0].name
         return {
-            'streetAddress': address_revision.street,
+            'streetAddress': address_revision.street or '',
             'streetAddressAdditional': address_revision.street_additional or '',
             'addressType': address_revision.address_type,
-            'addressCity': address_revision.city,
+            'addressCity': address_revision.city or '',
             'addressRegion': address_revision.region or '',
-            'addressCountry': address_revision.country,
+            'addressCountry': address_revision.country or '',
             'addressCountryDescription': country_description,
-            'postalCode': address_revision.postal_code,
+            'postalCode': address_revision.postal_code or '',
             'deliveryInstructions': address_revision.delivery_instructions or ''
         }
 
