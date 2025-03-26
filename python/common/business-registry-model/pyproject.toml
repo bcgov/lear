@@ -8,7 +8,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.9,<4"
 dependencies = [
-    "sql-versioning @ file:////Users/leodube-work/repos/lear/python/common/sql-versioning-alt",
+    "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning-alt",
     "registry-schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.39",
     "flask-migrate (>=4.1.0,<5.0.0)",
     "pg8000 (>=1.31.2,<2.0.0)",
