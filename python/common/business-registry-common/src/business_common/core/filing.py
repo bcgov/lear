@@ -1,3 +1,6 @@
+from enum import Enum
+from typing import Final
+
 class Filing:
     class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
