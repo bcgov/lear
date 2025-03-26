@@ -18,7 +18,7 @@ Test-Suite to ensure that the versioning extension is working as expected.
 import pytest
 
 from sql_versioning import (version_class)
-from tests import (Model, User, Address, Location, Email, Item, Transaction)
+from tests import (Base, Model, User, Address, Location, Email, Item, Transaction)
 
 
 @pytest.mark.parametrize('test_name', ['CLASS','INSTANCE'])
@@ -36,6 +36,7 @@ def test_version_class(session, test_name):
 
     user_version = version_class(user)
     assert user_version
+    assert user_version.__table__ in Base.metadata.sorted_tables
 
 
 def test_versioned_obj(session):

@@ -18,9 +18,8 @@ from sqlalchemy import (BigInteger, Column, DateTime, Integer, SmallInteger,
                         String, and_, event, func, insert, inspect, select,
                         update)
 # from sqlalchemy.ext.declarative import declarative_base, declared_attr
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import Session, mapper, relationships
+from sqlalchemy.orm import declarative_base, declared_attr
+from sqlalchemy.orm import Session, Mapper, relationships
 
 from .relationship_builder import RelationshipBuilder
 
@@ -255,7 +254,7 @@ class TransactionManager:
 
             if is_active and has_parent is not None:
                 return
-            self.session.info.pop('current_transaction_id', None)
+        self.session.info.pop('current_transaction_id', None)
 
 
 # ---------- Event Listeners ----------
@@ -312,11 +311,12 @@ class Versioned:
 
         :return: The versioned class.
         """
-        return cls.get_or_create_version_class()
+        return cls._version_cls
+
 
     @classmethod
-    def get_or_create_version_class(cls):
-        """Create a versioned class.
+    def __declare_first__(cls):
+        """Trigger before configured. Create a versioned class.
 
         :return: The versioned class.
         """
@@ -340,22 +340,9 @@ class Versioned:
                 cls._pending_version_classes = []
             cls._pending_version_classes.append(cls)
 
-        return cls._version_cls
 
     @classmethod
-    def __init_subclass__(cls, **kwargs):
-        """
-        Initialize subclass and register a listener to configure versioned 
-        classes after mapper configuration.
-
-        :param kwargs: Arguments for the subclass.
-        :return: None
-        """
-        super().__init_subclass__(**kwargs)
-        event.listen(mapper, 'after_configured', cls._after_configured)
-
-    @classmethod
-    def _after_configured(cls):
+    def __declare_last__(cls):
         """
         Trigger after configured. Add columns from the original table to 
         the versioned class.
@@ -376,7 +363,13 @@ class Versioned:
 
             # Build relationships
             for prop in inspect(cls).iterate_properties:
-                if type(prop) == relationships.RelationshipProperty:
+                if type(prop) in [
+                    relationships.RelationshipProperty,
+                    # TODO: Figure out why relationship props are not fully intialized 
+                    # after first configuration. We should eventually try to move away 
+                    # from using this internal SA type.
+                    relationships._RelationshipDeclared
+                ]:
                     builder = RelationshipBuilder(cls, prop)
                     builder()
 
