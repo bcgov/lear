@@ -208,7 +208,7 @@ def format_offices_held_data(data: dict) -> list[dict]:
 
 def format_share_series_data(share_series_data: dict) -> dict:
     formatted_series = {
-        'name': share_series_data['srs_series_nme'],
+        'name': format_share_name(share_series_data['srs_series_nme']),
         'priority': int(share_series_data['srs_series_id']) if share_series_data['srs_series_id'] else None,
         'max_share_flag': share_series_data['srs_max_share_ind'],
         'max_shares': int(share_series_data['srs_share_quantity']) if share_series_data['srs_share_quantity'] else None,
@@ -245,7 +245,7 @@ def format_share_classes_data(data: dict) -> list[dict]:
                 currency = 'OTHER'  # TODO: to confirm the code used in LEAR in the end
                 currency_additioanl = other_currency
 
-        share_class['share_classes']['name'] = share_class_info['ssc_class_nme']
+        share_class['share_classes']['name'] = format_share_name(share_class_info['ssc_class_nme'])
         share_class['share_classes']['priority'] = priority
         share_class['share_classes']['max_share_flag'] = share_class_info['ssc_max_share_ind']
         share_class['share_classes']['max_shares'] = max_shares
@@ -264,6 +264,17 @@ def format_share_classes_data(data: dict) -> list[dict]:
         formatted_share_classes.append(share_class)
 
     return formatted_share_classes
+
+
+def format_share_name(name: str):
+    expected_suffix = ' Shares'
+    if not name or name.endswith(expected_suffix):
+        return name
+
+    if name.endswith(' shares'):
+        name = name.removesuffix(' shares')
+    
+    return f'{name}{expected_suffix}'
 
 
 def format_aliases_data(data: dict) -> list[dict]:
