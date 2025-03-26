@@ -179,9 +179,6 @@ paths:
                 agm-location-change-success-response:
                   summary: AGM Location Change Response
                   value:
-                    errors: [
-                      null
-                    ]
                     filing:
                       agmLocationChange:
                         agmLocation: Victoria, BC, Canada
@@ -193,9 +190,10 @@ paths:
                         legalName: 882365 B.C. LTD.
                         legalType: BC
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: '2024-07-18T15:36:26.345331+00:00'
@@ -203,8 +201,12 @@ paths:
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: agmLocationChange
-                        status: DRAFT
+                        paymentAccount: 1234
+                        paymentStatusCode: COMPLETED
+                        paymentToken: 20000000
+                        status: PENDING
                         submitter: mocked submitter
                 alteration-success-response:
                   summary: Alteration Response
@@ -1066,7 +1068,8 @@ paths:
                     header:
                       date: '2024-07-18'
                       name: agmLocationChange
-                      certifiedBy: Sample Certified Person
+                      certifiedBy: First Last
+                      accountId: 1234
                     business:
                       foundingDate: '2023-07-12T17:31:58.000+00:00'
                       identifier: BC0882365
