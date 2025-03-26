@@ -33,6 +33,7 @@ def format_business_data(data: dict) -> dict:
 
     if last_ar_date := business_data['last_ar_date']:
         last_ar_year = int(last_ar_date.split('-')[0])
+        last_ar_date = last_ar_date + ' 00:00:00+00:00'
     else:
         last_ar_date = None
         last_ar_year = None
@@ -160,8 +161,17 @@ def format_parties_data(data: dict) -> list[dict]:
 
             party_role = copy.deepcopy(PARTY_ROLE)
             party_role['role'] = role
-            party_role['appointment_date'] = r['cp_appointment_dt_str']
-            party_role['cessation_date'] = r['cp_cessation_dt_str']
+
+            appointment_date = None
+            if appointment_date := r['cp_appointment_dt_str']:
+                appointment_date = appointment_date + ' 00:00:00+00:00'
+            party_role['appointment_date'] = appointment_date
+
+            cessation_date = None
+            if cessation_date := r['cp_cessation_dt_str']:
+                cessation_date = cessation_date + ' 00:00:00+00:00'
+            party_role['cessation_date'] = cessation_date
+
             formatted_party_roles.append(party_role)
 
         formatted_parties.append(party)

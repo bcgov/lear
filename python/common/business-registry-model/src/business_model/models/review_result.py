@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from typing import List
 
+from sqlalchemy import func
 from sqlalchemy.orm import backref
 
 from business_model.utils.datetime import datetime
@@ -38,7 +39,7 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
                                backref=backref('reviewer', uselist=False),
                                foreign_keys=[reviewer_id])
 
-    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=func.now())
     submission_date = db.Column('submission_date', db.DateTime(timezone=True))  # submission/re-submission date
 
     # parent keys

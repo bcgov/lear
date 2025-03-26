@@ -159,7 +159,7 @@ def upgrade():
     )
     op.create_table('configurations',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('name', sa.Enum('NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED', 'DISSOLUTIONS_STAGE_1_SCHEDULE', 'DISSOLUTIONS_STAGE_2_SCHEDULE', 'DISSOLUTIONS_STAGE_3_SCHEDULE', name='names'), nullable=False),
     sa.Column('val', sa.String(length=100), nullable=False),
     sa.Column('short_description', sa.String(length=150), nullable=True),
     sa.Column('full_description', sa.String(length=1000), nullable=True),
@@ -415,7 +415,7 @@ def upgrade():
     )
     op.create_table('businesses',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('last_modified', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('last_modified', sa.DateTime(timezone=True), nullable=True, onupdate=sa.func.now()),
     sa.Column('last_ledger_id', sa.Integer(), nullable=True),
     sa.Column('last_remote_ledger_id', sa.Integer(), nullable=True),
     sa.Column('last_ledger_timestamp', sa.DateTime(timezone=True), nullable=True),

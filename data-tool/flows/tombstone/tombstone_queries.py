@@ -270,7 +270,7 @@ def get_business_query(corp_num, suffix):
     --
         c.send_ar_ind,
         c.last_ar_reminder_year,
-        to_char(c.last_ar_filed_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as last_ar_date,
+        to_char(c.last_ar_filed_dt, 'YYYY-MM-DD') as last_ar_date,
     -- admin_freeze
         case
             when c.corp_frozen_type_cd = 'C'

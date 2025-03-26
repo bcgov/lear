@@ -18,6 +18,7 @@ The RegistrationBoostrap class and Schema are held in this module
 from datetime import datetime
 
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import func
 
 from business_model.exceptions import BusinessException
 
@@ -40,7 +41,7 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
 
     _identifier = db.Column('identifier', db.String(10), primary_key=True)
     account = db.Column('account', db.Integer, index=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=func.now())
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
