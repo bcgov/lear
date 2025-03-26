@@ -85,7 +85,10 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
         err_path = '/filing/{0}/shareClasses/{1}/series/{2}'.format(filing_type, index, series_index)
         if series['name'] in memoize_names:
             msg.append({'error': 'Share series %s name already used in a share class or series.' % series['name'],
-                        'path': err_path})
+                        'path': f'{err_path}/name'})
+        elif not series['name'].endswith(' Shares'):
+            msg.append({'error': "Share series %s name must end with ' Shares'." % series['name'],
+                        'path': f'{err_path}/name'})
         else:
             memoize_names.append(series['name'])
 
@@ -109,24 +112,26 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
 def validate_shares(item, memoize_names, filing_type, index) -> Error:
     """Validate a wellformed share structure."""
     msg = []
+    err_path = '/filing/{0}/shareClasses/{1}'.format(filing_type, index)
     if item['name'] in memoize_names:
-        err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
         msg.append({'error': 'Share class %s name already used in a share class or series.' % item['name'],
-                    'path': err_path})
+                    'path': f'{err_path}/name'})
+    elif not item['name'].endswith(' Shares'):
+        msg.append({'error': "Share class %s name must end with ' Shares'." % item['name'],
+                    'path': f'{err_path}/name'})
     else:
         memoize_names.append(item['name'])
 
     if item['hasMaximumShares'] and not item.get('maxNumberOfShares', None):
-        err_path = '/filing/{0}/shareClasses/{1}/maxNumberOfShares/'.format(filing_type, index)
         msg.append({'error': 'Share class %s must provide value for maximum number of shares' % item['name'],
-                    'path': err_path})
+                    'path': f'{err_path}/maxNumberOfShares'})
     if item['hasParValue']:
         if not item.get('parValue', None):
-            err_path = '/filing/{0}/shareClasses/{1}/parValue/'.format(filing_type, index)
-            msg.append({'error': 'Share class %s must specify par value' % item['name'], 'path': err_path})
+            msg.append({'error': 'Share class %s must specify par value' % item['name'],
+                        'path': f'{err_path}/parValue'})
         if not item.get('currency', None):
-            err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
-            msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
+            msg.append({'error': 'Share class %s must specify currency' % item['name'],
+                        'path': f'{err_path}/currency'})
 
     series_msg = validate_series(item, memoize_names, filing_type, index)
     if series_msg:
