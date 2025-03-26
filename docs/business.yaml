@@ -2563,9 +2563,9 @@ paths:
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
-                        courtApproval: null
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
                         offices: 
@@ -2574,79 +2574,74 @@ paths:
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional: 
+                              streetAddressAdditional: ''
                             mailingAddress: 
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: null
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional:
+                              streetAddressAdditional: ''
                           registeredOffice: 
                             deliveryAddress: 
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional: 
+                              streetAddressAdditional: ''
                             mailingAddress: 
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: null
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional:
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
                               partyType: person
                               middleName: ''
                               organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
-                          - deliveryAddress:
+                          - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
-                            mailingAddress:
+                            deliveryAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Director
-                              lastName: Tester
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
                               partyType: person
                             roles:
                               - appointmentDate: '2024-07-24'
@@ -2654,18 +2649,14 @@ paths:
                         shareStructure: 
                           shareClasses:
                             - name: Classic 1 Shares
-                              priority: 0
-                              maxNumberOfShares: 0
-                              parValue: 0
-                              currency: string
-                              hasMaximumShares: true
-                              hasParValue: true
-                              hasRightsOrRestrictions: true
-                              series:
-                                - name: string
-                                  priority: 0
-                                  hasMaximumShares: true
-                                  hasRightsOrRestrictions: true
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: regular
                       business: 
                         identifier: TO12345678
@@ -2673,19 +2664,22 @@ paths:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: 2024-07-25T19:54:02.949741+00:00
                         deletionLocked: false
                         effectiveDate: 2024-07-25T19:54:02.949764+00:00
-                        email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: amalgamationApplication
-                        status: DRAFT
+                        paymentAccount: 1234
+                        paymentStatusCode: COMPLETED
+                        paymentToken: 20000000
+                        status: PENDING
                         submitter: mocked submitter
                 amalgamation-short-form-horizontal-success-response:
                   summary: Amalgamation Short Form Horizontal Response
@@ -2698,28 +2692,100 @@ paths:
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
                               partyType: person
+                              middleName: ''
+                              organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Director
+                        shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: horizontal
                       business: 
                         identifier: TO12345678
@@ -2727,19 +2793,22 @@ paths:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: 2024-07-25T19:54:02.949741+00:00
                         deletionLocked: false
                         effectiveDate: 2024-07-25T19:54:02.949764+00:00
-                        email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: amalgamationApplication
-                        status: DRAFT
+                        paymentAccount: 1234
+                        paymentStatusCode: COMPLETED
+                        paymentToken: 20000000
+                        status: PENDING
                         submitter: mocked submitter
                 amalgamation-short-form-vertical-success-response:
                   summary: Amalgamation Short Form Vertical Response
@@ -2752,28 +2821,100 @@ paths:
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
                               partyType: person
+                              middleName: ''
+                              organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Director
+                        shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: vertical
                       business: 
                         identifier: TO12345678
@@ -2781,19 +2922,22 @@ paths:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: 2024-07-25T19:54:02.949741+00:00
                         deletionLocked: false
                         effectiveDate: 2024-07-25T19:54:02.949764+00:00
-                        email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: amalgamationApplication
-                        status: DRAFT
+                        paymentAccount: 1234
+                        paymentStatusCode: COMPLETED
+                        paymentToken: 20000000
+                        status: PENDING
                         submitter: mocked submitter
                 continuation-in-success-response:
                   summary: Continuation In Response
@@ -3148,8 +3292,7 @@ paths:
                   filing:
                     header:
                       accountId: 1234
-                      certifiedBy: full name
-                      email: "no_one@never.get"
+                      certifiedBy: First Last
                       date: '2024-07-26'
                       name: amalgamationApplication
                     amalgamationApplication:
@@ -3159,9 +3302,9 @@ paths:
                         - identifier: BC0883230
                           role: amalgamating
                       contactPoint: 
-                        email: "contact@example.com"
+                        email: no_one@never.get
                         phone: (555) 555-5555
-                      courtApproval: null
+                      courtApproval: false
                       nameRequest: 
                           legalType: BC
                       offices: 
@@ -3170,49 +3313,49 @@ paths:
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional:
+                            streetAddressAdditional: ''
                           mailingAddress: 
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional:
+                            streetAddressAdditional: ''
                         registeredOffice: 
                           deliveryAddress: 
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional: 
+                            streetAddressAdditional: ''
                           mailingAddress: 
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional:
+                            streetAddressAdditional: ''
                       parties:
                         - mailingAddress:
                             addressCity: Victoria
-                            addressCountry: Canada
-                            addressCountryDescription: Canada
+                            addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: ''
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
                             postalCode: V8Z 5C5
                             streetAddress: 3950 Helen Rd
                             streetAddressAdditional: ''
                           officer:
-                            email: null
-                            firstName: Completing
-                            lastName: Party
+                            firstName: First
+                            lastName: Last
                             middleName: ''
                             organizationName: ''
                             partyType: person
@@ -3221,17 +3364,23 @@ paths:
                               roleType: Completing Party
                         - mailingAddress:
                             addressCity: Victoria
-                            addressCountry: Canada
-                            addressCountryDescription: Canada
+                            addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: ''
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
                             postalCode: V8Z 5C5
                             streetAddress: 3950 Helen Rd
                             streetAddressAdditional: ''
                           officer:
-                            email: null
-                            firstName: Director
-                            lastName: Tester
+                            firstName: First
+                            lastName: Director
+                            middleName: ''
+                            organizationName: ''
                             partyType: person
                           roles:
                             - appointmentDate: '2024-07-24'
@@ -3239,18 +3388,14 @@ paths:
                       shareStructure: 
                         shareClasses:
                           - name: Classic 1 Shares
-                            priority: 0
-                            maxNumberOfShares: 0
-                            parValue: 0
-                            currency: string
-                            hasMaximumShares: true
-                            hasParValue: true
-                            hasRightsOrRestrictions: true
-                            series:
-                              - name: string
-                                priority: 0
-                                hasMaximumShares: true
-                                hasRightsOrRestrictions: true
+                            priority: 1
+                            maxNumberOfShares: null
+                            parValue: null
+                            currency: null
+                            hasMaximumShares: false
+                            hasParValue: false
+                            hasRightsOrRestrictions: false
+                            series: []
                       type: regular
               amalgamation-short-form-horizontal-request:
                   summary: Amalgamation Short Form Horizontal Request
@@ -3258,39 +3403,110 @@ paths:
                     filing:
                       header:
                         accountId: 1234
-                        certifiedBy: full name
-                        email: "no_one@never.get"
+                        certifiedBy: First Last
                         date: '2024-07-26'
                         name: amalgamationApplication
                       amalgamationApplication:
                         amalgamatingBusinesses:
                           - identifier: BC0883189
-                            role: holding
+                            role: primary
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
+                              middleName: ''
+                              organizationName: ''
                               partyType: person
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Director
+                        shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: horizontal
               amalgamation-short-form-vertical-request:
                 summary: Amalgamation Short Form Vertical Request
@@ -3298,40 +3514,110 @@ paths:
                   filing:
                     header:
                       accountId: 1234
-                      certifiedBy: full name
-                      email: "no_one@never.get"
+                      certifiedBy: First Last
                       date: '2024-07-26'
                       name: amalgamationApplication
                     amalgamationApplication:
                       amalgamatingBusinesses:
                         - identifier: BC0883189
-                          role: primary
+                          role: holding
                         - identifier: BC0883230
                           role: amalgamating
                       contactPoint: 
-                        email: "contact@example.com"
+                        email: no_one@never.get
                         phone: (555) 555-5555
-                      courtApproval: null,
+                      courtApproval: false
                       nameRequest: 
                           legalType: BC
+                      offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                       parties:
-                        - mailingAddress:
-                            addressCity: Victoria
-                            addressCountry: Canada
-                            addressCountryDescription: Canada
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8Z 5C5
-                            streetAddress: 3950 Helen Rd
-                            streetAddressAdditional: ''
-                          officer:
-                            email: null
-                            firstName: Completing
-                            lastName: Party
-                            partyType: person
-                          roles:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Last
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
                             - appointmentDate: '2024-07-24'
-                              roleType: Completing Party
+                              roleType: Director
+                      shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                       type: vertical
               continuation-in-request:
                 summary: Continuation In Request
