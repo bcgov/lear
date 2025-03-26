@@ -43,7 +43,7 @@ class Transaction(db.Model):
             )
     remote_addr = db.Column(db.String(50), nullable=True)
     issued_at = db.Column(db.DateTime,
-                          default=func.utc_timestamp(),
+                           default=func.now(),
                           nullable=True)
 
 

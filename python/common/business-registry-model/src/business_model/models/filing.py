@@ -640,7 +640,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     id = db.Column(db.Integer, primary_key=True)
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
-    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=func.now())
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_sub_type = db.Column('filing_sub_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
@@ -653,7 +653,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     colin_only = db.Column('colin_only', db.Boolean, unique=False, default=False)
     payment_account = db.Column('payment_account', db.String(30))
-    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=func.now())
     submitter_roles = db.Column('submitter_roles', db.String(200))
     tech_correction_json = db.Column('tech_correction_json', JSONB)
     court_order_file_number = db.Column('court_order_file_number', db.String(20))

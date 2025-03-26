@@ -17,6 +17,8 @@ from __future__ import annotations
 from enum import auto
 from typing import List
 
+from sqlalchemy import func
+
 from business_model.utils.base import BaseEnum
 from business_model.utils.datetime import datetime
 from business_model.utils.legislation_datetime import LegislationDatetime
@@ -52,8 +54,8 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
     response_object = db.Column(db.Text)
     retry_number = db.Column('retry_number', db.Integer, default=0, nullable=False)
     service_name = db.Column('service_name', db.Enum(ServiceName), nullable=False)
-    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=func.now())
     is_admin = db.Column('is_admin', db.Boolean, default=False)
     message_id = db.Column('message_id', db.String(60))
 
