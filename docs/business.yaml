@@ -278,7 +278,6 @@ paths:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
@@ -287,7 +286,6 @@ paths:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
@@ -307,7 +305,6 @@ paths:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
@@ -316,7 +313,6 @@ paths:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
@@ -326,7 +322,6 @@ paths:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
@@ -335,7 +330,6 @@ paths:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
@@ -386,7 +380,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 2
@@ -398,7 +391,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST M 2
@@ -411,7 +403,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 1
@@ -423,7 +414,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST M 1
@@ -616,7 +606,6 @@ paths:
                       dissolution:
                         courtOrder:
                           fileNumber: '12345'
-                          hasPlanOfArrangement: false
                         custodialOffice:
                           deliveryAddress:
                             addressCity: delivery_address city
@@ -1017,7 +1006,6 @@ paths:
                             addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: delivery
                             deliveryInstructions: ''
                             postalCode: H0H 0H0
                             streetAddress: delivery_address - address line one
@@ -1026,7 +1014,6 @@ paths:
                             addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: mailing
                             deliveryInstructions: ''
                             postalCode: H0H 0H0
                             streetAddress: mailing_address - address line one
@@ -1036,7 +1023,6 @@ paths:
                             addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: delivery
                             deliveryInstructions: ''
                             postalCode: H0H 0H0
                             streetAddress: delivery_address - address line one
@@ -1045,7 +1031,6 @@ paths:
                             addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: mailing
                             deliveryInstructions: ''
                             postalCode: H0H 0H0
                             streetAddress: mailing_address - address line one
@@ -1066,7 +1051,6 @@ paths:
                             addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: delivery
                             deliveryInstructions: ''
                             postalCode: H0H 0H0
                             streetAddress: delivery_address - address line one
@@ -1075,7 +1059,6 @@ paths:
                             addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: mailing
                             deliveryInstructions: ''
                             postalCode: H0H 0H0
                             streetAddress: mailing_address - address line one
@@ -1105,7 +1088,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST D 2
@@ -1117,7 +1099,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST M 2
@@ -1130,7 +1111,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST D 1
@@ -1142,7 +1122,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST M 1
@@ -1156,6 +1135,7 @@ paths:
                       certifiedBy: First last
                       date: '2025-03-25'
                       effectiveDate: '2025-03-25T07:00:00+00:00'
+                      accountId: 1234
                     business:
                       foundingDate: '2024-07-08T07:00:00.000+00:00'
                       identifier: BC1234567
@@ -1341,7 +1321,6 @@ paths:
                                 roleType: Custodian
                       courtOrder:
                         fileNumber: '12345'
-                        hasPlanOfArrangement: false
       parameters:
         - schema:
             type: boolean
@@ -1815,7 +1794,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2334725
                           postalCode: V8Z 5C5
@@ -1825,7 +1803,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2334724
                           postalCode: V8Z 5C5
@@ -1837,7 +1814,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317157
                           postalCode: V8Z 5C5
@@ -1848,7 +1824,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317156
                           postalCode: V8Z 5C5
@@ -1860,7 +1835,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317159
                           postalCode: V8Z 5C5
@@ -1871,7 +1845,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317158
                           postalCode: V8Z 5C5
@@ -2186,7 +2159,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2334725
                           postalCode: V8Z 5C5
@@ -2196,7 +2168,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2334724
                           postalCode: V8Z 5C5
@@ -2208,7 +2179,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317157
                           postalCode: V8Z 5C5
@@ -2219,7 +2189,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317156
                           postalCode: V8Z 5C5
@@ -2231,7 +2200,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317159
                           postalCode: V8Z 5C5
@@ -2242,7 +2210,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317158
                           postalCode: V8Z 5C5
@@ -2470,7 +2437,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 38012
                           postalCode: H4E 1G8
@@ -2481,9 +2447,7 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
-                          id: 38011
                           postalCode: H4E 1G8
                           streetAddress: 4-1900 Av De l'Église
                           streetAddressAdditional: ''
@@ -2493,9 +2457,7 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
-                          id: 38014
                           postalCode: H4E 1G8
                           streetAddress: 4-1900 Av De l'Église
                           streetAddressAdditional: ''
@@ -2504,9 +2466,7 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
-                          id: 38013
                           postalCode: H4E 1G8
                           streetAddress: 4-1900 Av De l'Église
                           streetAddressAdditional: ''
@@ -3002,6 +2962,7 @@ paths:
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: incorporationApplication
                         paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
