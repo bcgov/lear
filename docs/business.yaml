@@ -217,23 +217,14 @@ paths:
                           identifier: BC0883028
                           legalType: BEN
                         contactPoint:
-                          email: APISpecs@gov.bc.ca
+                          email: no_one@never.get
                           phone: (111) 111-1111
-                        courtOrder:
-                          effectOfOrder: planOfArrangement
-                          fileNumber: '12345'
-                          hasPlanOfArrangement: true
                         nameRequest:
-                          expirationDate: '2024-09-10T06:59:00+00:00'
                           legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
                           legalType: BEN
                           nrNumber: NR 9684750
-                          submittedDate: '2024-07-15T21:57:31+00:00'
-                          submitter_userid: ''
-                          userId: user@example
                         nameTranslations:
                           - name: API Specs Trans
-                        provisionsRemoved: false
                         shareStructure:
                         resolutionDates: [
                           '2024-07-12'
@@ -247,14 +238,21 @@ paths:
                             name: Class1 Shares
                             parValue: 10
                             priority: 1
-                            series: []
-                            type: Class
+                            series:
+                              - name: Series1 Shares
+                                priority: 1
+                                hasMaximumShares: true
+                                hasRightsOrRestrictions: true
+                                maxNumberOfShares: 11
+                                hasParValue: true
+                                parValue: 10
                       business:
                         foundingDate: '2024-07-12T20:19:33.556441+00:00'
                         identifier: BC0883028
                         legalName: 0883028 B.C. LTD.
                         legalType: BC
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: API Specs
@@ -267,11 +265,11 @@ paths:
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
-                        isPaymentActionRequired: true
+                        isPaymentActionRequired: false
                         name: alteration
                         paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
+                        paymentStatusCode: COMPLETED
+                        paymentToken: 20000000
                         status: PENDING
                         submitter: mocked submitter
                 annual-report-success-response:
@@ -1085,8 +1083,9 @@ paths:
                   filing:
                     header:
                       name: alteration
-                      certifiedBy: Sample Certified Person
+                      certifiedBy: First Last
                       date: '2024-07-25'
+                      accountId: 1234
                     business:
                       foundingDate: '2024-07-12T20:19:33.556441+00:00'
                       identifier: BC0883028
@@ -1098,17 +1097,12 @@ paths:
                         legalType: BEN
                       nameRequest:
                         legalType: BEN
-                        expirationDate: '2024-09-10T06:59:00+00:00'
-                        submittedDate: '2024-07-15T21:57:31+00:00'
-                        submitter_userid: ''
-                        userId: user@example
                         legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
                         nrNumber: NR 9684750
                       nameTranslations:
                         - name: API Specs Trans
-                      provisionsRemoved: false
                       contactPoint:
-                        email: APISpecs@gov.bc.ca
+                        email: no_one@never.get
                         phone: '(111) 111-1111'
                       shareStructure:
                         resolutionDates: [
@@ -1123,12 +1117,14 @@ paths:
                             name: Class1 Shares
                             parValue: 10
                             priority: 1
-                            series: []
-                            type: Class
-                      courtOrder:
-                        fileNumber: '12345'
-                        effectOfOrder: planOfArrangement
-                        hasPlanOfArrangement: true
+                            series:
+                              - name: Series1 Shares
+                                priority: 1
+                                hasMaximumShares: true
+                                hasRightsOrRestrictions: true
+                                maxNumberOfShares: 11
+                                hasParValue: true
+                                parValue: 10
               annual-report-request:
                 summary: Annual Report Request
                 value:
