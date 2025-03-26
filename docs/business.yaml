@@ -171,9 +171,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: false
                         name: agmExtension
-                        paymentAccount: 1234
+                        paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
-                        paymentToken: 20000000
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 agm-location-change-success-response:
@@ -203,9 +203,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: false
                         name: agmLocationChange
-                        paymentAccount: 1234
+                        paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
-                        paymentToken: 20000000
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 alteration-success-response:
@@ -267,9 +267,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: false
                         name: alteration
-                        paymentAccount: 1234
+                        paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
-                        paymentToken: 20000000
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 annual-report-success-response:
@@ -2678,9 +2678,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: false
                         name: amalgamationApplication
-                        paymentAccount: 1234
+                        paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
-                        paymentToken: 20000000
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 amalgamation-short-form-horizontal-success-response:
@@ -2807,9 +2807,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: false
                         name: amalgamationApplication
-                        paymentAccount: 1234
+                        paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
-                        paymentToken: 20000000
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 amalgamation-short-form-vertical-success-response:
@@ -2936,9 +2936,9 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: false
                         name: amalgamationApplication
-                        paymentAccount: 1234
+                        paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
-                        paymentToken: 20000000
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 continuation-in-success-response:
