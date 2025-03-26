@@ -131,9 +131,6 @@ paths:
                 agm-extension-success-response:
                   summary: AGM Extension Response
                   value:
-                    errors: [
-                      null
-                    ]
                     filing:
                       agmExtension:
                         agmDueDate: '2026-06-20'
@@ -159,9 +156,10 @@ paths:
                         legalName: 882365 B.C. LTD.
                         legalType: BC
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: '2024-07-10T17:56:10.782107+00:00'
@@ -171,8 +169,12 @@ paths:
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: agmExtension
-                        status: DRAFT
+                        paymentAccount: 1234
+                        paymentStatusCode: COMPLETED
+                        paymentToken: 20000000
+                        status: PENDING
                         submitter: mocked submitter
                 agm-location-change-success-response:
                   summary: AGM Location Change Response
@@ -1031,8 +1033,9 @@ paths:
                   filing:
                     header:
                       name: agmExtension
-                      certifiedBy: Sample Certified Person
+                      certifiedBy: First Last
                       date: '2024-07-21'
+                      accountId: 1234
                     business:
                       foundingDate: '2024-06-20T17:31:58.000+00:00'
                       identifier: BC0882365
