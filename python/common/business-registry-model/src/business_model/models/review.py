@@ -16,7 +16,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import auto
-from typing import List
 
 from sqlalchemy import func
 
@@ -143,7 +142,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     class ReviewFilter:
         """Used for filtering and sorting reviews."""
 
-        status: List[str] = field()
+        status: list[str] = field()
         start_date: str = ''
         end_date: str = ''
         nr_number: str = ''

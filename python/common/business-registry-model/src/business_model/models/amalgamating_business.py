@@ -21,8 +21,9 @@ from enum import auto
 from sql_versioning import Versioned
 from sqlalchemy import or_
 
-from ..utils.base import BaseEnum
-from .db import db, VersioningProxy  # noqa: I001
+from business_model.utils.base import BaseEnum
+
+from .db import VersioningProxy, db
 
 
 class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -66,7 +67,7 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
             .filter(amalgamating_businesses_version.transaction_id <= transaction_id) \
             .filter(amalgamating_businesses_version.operation_type == 0) \
             .filter(amalgamating_businesses_version.amalgamation_id == amalgamation_id) \
-            .filter(or_(amalgamating_businesses_version.end_transaction_id == None,  # noqa: E711;
+            .filter(or_(amalgamating_businesses_version.end_transaction_id == None,
                         amalgamating_businesses_version.end_transaction_id > transaction_id)) \
             .order_by(amalgamating_businesses_version.transaction_id).all()
         return amalgamating_businesses

@@ -15,28 +15,17 @@
 """Tests to assure the AlternateName Model.
 Test-Suite to ensure that the AlternateName Model is working as expected.
 """
-from tests.models import (
-    factory_business,
-    factory_business_mailing_address,
-    factory_completed_filing,
-    factory_filing,
-    factory_user,
-)
-from business_model.models import Filing
-from business_model.models import Business
-from business_model.models import Amalgamation
-from registry_schemas.example_data import (
-    ALTERATION_FILING_TEMPLATE,
-    ANNUAL_REPORT,
-    CHANGE_OF_DIRECTORS,
-    CORRECTION_AR,
-    COURT_ORDER,
-    FILING_HEADER,
-    SPECIAL_RESOLUTION,
-)
 from datetime import datetime
 
-from business_model.models import amalgamation
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+)
+
+from business_model.models import Amalgamation
+from tests.models import (
+    factory_business,
+    factory_filing,
+)
 
 
 def test_valid_amalgamation_save(session):

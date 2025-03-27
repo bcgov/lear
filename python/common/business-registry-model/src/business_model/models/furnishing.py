@@ -15,13 +15,11 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import List
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import JSONB
 
 from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime
 
 from .db import db
 from .furnishing_group import FurnishingGroup
@@ -99,14 +97,14 @@ class Furnishing(db.Model):
         return furnishing
 
     @classmethod
-    def find_by(cls,  # pylint: disable=too-many-arguments
+    def find_by(cls,  # noqa: PLR0913
                 batch_id: int = None,
                 business_id: int = None,
                 furnishing_name: str = None,
                 furnishing_type: str = None,
                 status: str = None,
                 furnishing_group_id: int = None
-                ) -> List[Furnishing]:
+                ) -> list[Furnishing]:
         """Return the Furnishing entries matching the filter."""
         query = db.session.query(Furnishing)
 

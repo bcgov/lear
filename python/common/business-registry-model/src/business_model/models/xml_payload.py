@@ -14,8 +14,6 @@
 """This module holds data for xml payloads."""
 from __future__ import annotations
 
-from datetime import datetime
-
 from sqlalchemy import func
 
 from business_model.models.custom_db_types import PostgreSQLXML

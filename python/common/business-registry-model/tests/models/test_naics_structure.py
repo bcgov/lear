@@ -16,9 +16,9 @@
 
 Test-Suite to ensure that the NaicsStructure Model is working as expected.
 """
-import json
 
 from business_model.models import NaicsStructure
+
 
 def test_naics_find_by_search_term(session):
     """Assert matching naics search results are returned.
@@ -39,7 +39,7 @@ def test_naics_find_by_search_term(session):
     assert len(results_with_3_elements) == 2
 
 
-def test_exact_match_search_naics(app, session, client, jwt):
+def test_exact_match_search_naics(app, session, client):
     """Assert that search results are returned when searching with exact search term."""
 
     # test
@@ -53,7 +53,7 @@ def test_exact_match_search_naics(app, session, client, jwt):
     assert results[0].version == int(app.config.get('NAICS_VERSION'))
 
 
-def test_non_exact_match_search_naics(session, client, jwt):
+def test_non_exact_match_search_naics(session, client):
     """Assert that search results are returned when searching with non-exact search term."""
 
     # test

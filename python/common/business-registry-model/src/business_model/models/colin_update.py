@@ -15,9 +15,9 @@
 
 The ColinLastUpdate class and Schema are held in this module.
 """
-from datetime import datetime
 
 from sqlalchemy import func
+
 from .db import db
 
 

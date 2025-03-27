@@ -19,14 +19,16 @@ Test-Suite to ensure that the Business Model is working as expected.
 import base64
 import copy
 import uuid
-from datetime import datetime, timedelta
-from datetime import timezone
-from unittest.mock import patch
+from datetime import datetime, timezone
 
 import datedelta
 import pytest
 from flask import current_app
-from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
+from registry_schemas.example_data import (
+    FILING_HEADER,
+    RESTORATION,
+    TRANSITION_FILING_TEMPLATE,
+)
 
 from business_model.exceptions import BusinessException
 from business_model.models import (
@@ -41,13 +43,11 @@ from business_model.models import (
     db,
 )
 from business_model.models.db import VersioningProxy
+
 # from business_model.services import flags
-from business_model.utils.legislation_datetime import LegislationDatetime
-from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
-from tests import has_expected_date_str_format
-from tests.models import factory_batch
+from tests import EPOCH_DATETIME
+from tests.models import factory_batch, factory_completed_filing, factory_party_role
 from tests.models import factory_business as factory_business_from_tests
-from tests.models import factory_completed_filing, factory_party_role
 
 
 def random_str():
@@ -142,8 +142,8 @@ def test_business_find_by_legal_name_fail(session):
         founding_date=datetime.fromtimestamp(0, timezone.utc),
         last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
         dissolution_date=datetime.fromtimestamp(0, timezone.utc),
-        identifier=f"CP3435367",
-        tax_id=f"BN0000001",
+        identifier="CP3435367",
+        tax_id="BN0000001",
         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
     )
     session.add(business)
@@ -768,7 +768,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
     business_json = existing_business.json()
 
     if test_name == 'EXIST':
-        assert not 'stateFiling' in business_json
+        assert 'stateFiling' not in business_json
         assert 'amalgamatedInto' in business_json
         assert business_json['amalgamatedInto']['amalgamationDate'] == amalgamation.amalgamation_date.isoformat()
         assert business_json['amalgamatedInto']['amalgamationType'] == amalgamation.amalgamation_type.name
@@ -776,7 +776,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         assert business_json['amalgamatedInto']['identifier'] == business.identifier
         assert business_json['amalgamatedInto']['legalName'] == business.legal_name
     else:
-        assert not 'amalgamatedInto' in business_json
+        assert 'amalgamatedInto' not in business_json
 
 
 @pytest.mark.parametrize('test_name, legal_type', [
@@ -845,11 +845,10 @@ def test_firm_business_json(session, test_name, legal_type):
     ]:
         if legal_type == Business.LegalTypes.SOLE_PROP.value:
             assert business_json['legalName'] == 'JANE A DOE'
+        elif 'MORE_PARTNERS' in test_name:
+            assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE, et al'
         else:
-            if 'MORE_PARTNERS' in test_name:
-                assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE, et al'
-            else:
-                assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
+            assert business_json['legalName'] == 'JANE A DOE, JOHN B DOE'
     else:
         assert business_json['legalName'] == 'TEST ABC'
 

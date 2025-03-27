@@ -18,6 +18,7 @@ Test-Suite to ensure that the Furnishing Group Model is working as expected.
 """
 from business_model.models import FurnishingGroup, XmlPayload
 
+
 def test_valid_furnishing_save(session):
     """Assert that a valid furnishing_group can be saved."""
     xml_payload = XmlPayload(

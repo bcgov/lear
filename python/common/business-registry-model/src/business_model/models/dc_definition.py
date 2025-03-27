@@ -75,7 +75,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         if credential_type:
             dc_definition = (
                 cls.query
-                   .filter(DCDefinition.is_deleted == False)  # noqa: E712 # pylint: disable=singleton-comparison
+                   .filter(DCDefinition.is_deleted == False)  # pylint: disable=singleton-comparison
                    .filter(DCDefinition.credential_type == credential_type)
                    .one_or_none())
         return dc_definition
@@ -89,7 +89,7 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the digital credential definition matching the filter."""
         query = (
             db.session.query(DCDefinition)
-                      .filter(DCDefinition.is_deleted == False)  # noqa: E712 # pylint: disable=singleton-comparison
+                      .filter(DCDefinition.is_deleted == False)  # pylint: disable=singleton-comparison
                       .filter(DCDefinition.credential_type == credential_type)
                       .filter(DCDefinition.schema_id == schema_id)
                       .filter(DCDefinition.credential_definition_id == credential_definition_id))

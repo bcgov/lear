@@ -18,12 +18,12 @@ Test-Suite to ensure that the Review Result Model is working as expected.
 """
 import copy
 from datetime import datetime, timezone
+
 from registry_schemas.example_data import (
     CONTINUATION_IN,
 )
 
 from business_model.models import Review, ReviewResult, ReviewStatus, User
-
 from tests.models import factory_filing
 
 

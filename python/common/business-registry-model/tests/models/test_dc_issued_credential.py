@@ -18,7 +18,6 @@ Test-Suite to ensure that the DCIssuedCredential Model is working as expected.
 """
 
 from business_model.models import DCIssuedCredential
-
 from tests.models import factory_business
 from tests.models.test_dc_connection import create_dc_connection
 from tests.models.test_dc_definition import create_dc_definition

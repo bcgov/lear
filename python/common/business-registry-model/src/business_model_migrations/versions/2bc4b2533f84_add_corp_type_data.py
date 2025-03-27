@@ -6,7 +6,6 @@ Create Date: 2021-06-19 04:49:53.498323
 
 """
 from alembic import op
-import sqlalchemy as sa
 from sqlalchemy.sql.schema import MetaData, Table
 
 # revision identifiers, used by Alembic.

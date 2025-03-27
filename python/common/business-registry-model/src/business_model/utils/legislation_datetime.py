@@ -20,7 +20,7 @@ from flask import current_app
 from .datetime import date, datetime, timedelta, timezone
 
 
-class LegislationDatetime():
+class LegislationDatetime:
     """Date utility using legislation timezone for reporting and future effective dates."""
 
     @staticmethod

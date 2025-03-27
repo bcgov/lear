@@ -17,8 +17,10 @@
 Test-Suite to ensure that the Furnishing Model is working as expected.
 """
 import pytest
+
 from business_model.models import Furnishing
-from tests.models import factory_business, factory_batch, factory_furnishing_group
+from tests.models import factory_batch, factory_business, factory_furnishing_group
+
 
 def test_valid_furnishing_save(session):
     """Assert that a valid furnishing can be saved."""
