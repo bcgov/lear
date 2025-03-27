@@ -17,13 +17,9 @@ These will get initialized by the application using the models
 """
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.session import Session
-from sql_versioning import TransactionManager
-from sql_versioning import enable_versioning
+from sql_versioning import TransactionManager, enable_versioning
 from sql_versioning import version_class as _new_version_class
-from sqlalchemy import event
-from sqlalchemy import func
-from sqlalchemy import orm
-
+from sqlalchemy import event, func, orm
 
 # by convention in the Flask community these are lower case,
 # whereas pylint wants them upper case
@@ -132,7 +128,6 @@ def setup_versioning():
         VersioningProxy.unlock_versioning(session, transaction)
 
     enable_versioning(transaction_cls=Transaction)
-    # make_versioned(user_cls=None, manager=versioning_manager)
 
 
 setup_versioning()

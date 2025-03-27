@@ -20,22 +20,13 @@ Test-Suite to ensure that the AlternateName Model is working as expected.
 from datetime import datetime
 
 from registry_schemas.example_data import (
-    ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
-    CHANGE_OF_DIRECTORS,
-    CORRECTION_AR,
-    COURT_ORDER,
-    FILING_HEADER,
-    SPECIAL_RESOLUTION,
 )
 
-from business_model.models import AmalgamatingBusiness, Business, Amalgamation
+from business_model.models import AmalgamatingBusiness, Amalgamation
 from tests.models import (
     factory_business,
-    factory_business_mailing_address,
-    factory_completed_filing,
     factory_filing,
-    factory_user,
 )
 
 

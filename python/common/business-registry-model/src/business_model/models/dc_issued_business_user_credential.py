@@ -14,8 +14,6 @@
 """This module holds data for issued credential."""
 from __future__ import annotations
 
-from typing import List
-
 from .db import db
 
 
@@ -45,7 +43,7 @@ class DCIssuedBusinessUserCredential(db.Model):  # pylint: disable=too-many-inst
     @classmethod
     def find_by(cls,
                 business_id: int = None,
-                user_id: int = None) -> List[DCIssuedBusinessUserCredential]:
+                user_id: int = None) -> list[DCIssuedBusinessUserCredential]:
         """Return the issued business user credential matching the user_id and buisness_id."""
         dc_issued_business_user_credential = None
         if business_id and user_id:

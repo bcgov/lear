@@ -22,8 +22,9 @@ from enum import auto
 from sql_versioning import Versioned
 from sqlalchemy import or_
 
-from ..utils.base import BaseEnum
-from .db import db, VersioningProxy  # noqa: I001
+from business_model.utils.base import BaseEnum
+
+from .db import VersioningProxy, db
 
 
 class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -96,7 +97,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
                 .filter(amalgamation_version.transaction_id <= transaction_id) \
                 .filter(amalgamation_version.operation_type == 0) \
                 .filter(amalgamation_version.id == amalgamation_id) \
-                .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
+                .filter(or_(amalgamation_version.end_transaction_id == None,
                             amalgamation_version.end_transaction_id > transaction_id)) \
                 .order_by(amalgamation_version.transaction_id).one_or_none()
         return amalgamation
@@ -110,7 +111,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
             .filter(amalgamation_version.transaction_id <= transaction_id) \
             .filter(amalgamation_version.operation_type == 0) \
             .filter(amalgamation_version.business_id == business_id) \
-            .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
+            .filter(or_(amalgamation_version.end_transaction_id == None,
                         amalgamation_version.end_transaction_id > transaction_id)) \
             .order_by(amalgamation_version.transaction_id).one_or_none()
         return amalgamation

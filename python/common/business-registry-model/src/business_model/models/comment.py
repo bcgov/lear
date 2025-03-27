@@ -15,11 +15,9 @@
 
 The Comments class and Schema are held in this module.
 """
-from datetime import datetime
 from http import HTTPStatus
 
-from sqlalchemy import event
-from sqlalchemy import func
+from sqlalchemy import event, func
 from sqlalchemy.orm import backref
 
 from business_model.exceptions import BusinessException
@@ -53,7 +51,9 @@ class Comment(db.Model):
     @property
     def json(self):
         """Return the json repressentation of a comment."""
-        from .types.constants import REDACTED_STAFF_SUBMITTER  # pylint: disable=import-outside-toplevel
+        from .types.constants import (
+            REDACTED_STAFF_SUBMITTER,  # pylint: disable=import-outside-toplevel
+        )
         user = User.find_by_id(self.staff_id)
         return {
             'comment': {
