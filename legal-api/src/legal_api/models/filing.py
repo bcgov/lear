@@ -963,7 +963,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
-                json_submission['filing']['header']['submitter'] = self.filing_submitter.username
+                json_submission['filing']['header']['submitter'] = self.filing_submitter.firstname
             if self.payment_account:
                 json_submission['filing']['header']['paymentAccount'] = self.payment_account
 
