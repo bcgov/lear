@@ -1132,7 +1132,7 @@ paths:
                   filing:
                     header:
                       name: changeOfDirectors
-                      certifiedBy: First last
+                      certifiedBy: First Last
                       date: '2025-03-25'
                       effectiveDate: '2025-03-25T07:00:00+00:00'
                       accountId: 1234
