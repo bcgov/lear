@@ -5,11 +5,12 @@ Revises:
 Create Date: 2025-03-22 23:15:49.039060
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 from business_model.models.custom_db_types import PostgreSQLXML
+
 # revision identifiers, used by Alembic.
 revision = '1a45bff11567'
 down_revision = None
@@ -159,7 +160,7 @@ def upgrade():
     )
     op.create_table('configurations',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('name', sa.Enum('NUM_DISSOLUTIONS_ALLOWED', 'MAX_DISSOLUTIONS_ALLOWED', 'DISSOLUTIONS_STAGE_1_SCHEDULE', 'DISSOLUTIONS_STAGE_2_SCHEDULE', 'DISSOLUTIONS_STAGE_3_SCHEDULE', name='names'), nullable=False),
     sa.Column('val', sa.String(length=100), nullable=False),
     sa.Column('short_description', sa.String(length=150), nullable=True),
     sa.Column('full_description', sa.String(length=1000), nullable=True),
@@ -415,7 +416,7 @@ def upgrade():
     )
     op.create_table('businesses',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('last_modified', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('last_modified', sa.DateTime(timezone=True), nullable=True, onupdate=sa.func.now()),
     sa.Column('last_ledger_id', sa.Integer(), nullable=True),
     sa.Column('last_remote_ledger_id', sa.Integer(), nullable=True),
     sa.Column('last_ledger_timestamp', sa.DateTime(timezone=True), nullable=True),

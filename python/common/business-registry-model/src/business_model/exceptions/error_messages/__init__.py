@@ -20,7 +20,6 @@ status_code - where possible use HTTP Error Codes
 from .codes import ErrorCode
 from .utils import get_error_message
 
-
 __all__ = (
     'ErrorCode',
     'get_error_message',

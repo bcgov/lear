@@ -33,6 +33,7 @@ def format_business_data(data: dict) -> dict:
 
     if last_ar_date := business_data['last_ar_date']:
         last_ar_year = int(last_ar_date.split('-')[0])
+        last_ar_date = last_ar_date + ' 00:00:00+00:00'
     else:
         last_ar_date = None
         last_ar_year = None
@@ -116,7 +117,6 @@ def format_parties_data(data: dict) -> list[dict]:
 
     # Map role codes to role names
     role_mapping = {
-        'INC': 'incorporator',
         'DIR': 'director',
         'OFF': 'officer'
         # Additional roles can be added here in the future
@@ -160,8 +160,17 @@ def format_parties_data(data: dict) -> list[dict]:
 
             party_role = copy.deepcopy(PARTY_ROLE)
             party_role['role'] = role
-            party_role['appointment_date'] = r['cp_appointment_dt_str']
-            party_role['cessation_date'] = r['cp_cessation_dt_str']
+
+            appointment_date = None
+            if appointment_date := r['cp_appointment_dt_str']:
+                appointment_date = appointment_date + ' 00:00:00+00:00'
+            party_role['appointment_date'] = appointment_date
+
+            cessation_date = None
+            if cessation_date := r['cp_cessation_dt_str']:
+                cessation_date = cessation_date + ' 00:00:00+00:00'
+            party_role['cessation_date'] = cessation_date
+
             formatted_party_roles.append(party_role)
 
         formatted_parties.append(party)
@@ -199,7 +208,7 @@ def format_offices_held_data(data: dict) -> list[dict]:
 
 def format_share_series_data(share_series_data: dict) -> dict:
     formatted_series = {
-        'name': share_series_data['srs_series_nme'],
+        'name': format_share_name(share_series_data['srs_series_nme']),
         'priority': int(share_series_data['srs_series_id']) if share_series_data['srs_series_id'] else None,
         'max_share_flag': share_series_data['srs_max_share_ind'],
         'max_shares': int(share_series_data['srs_share_quantity']) if share_series_data['srs_share_quantity'] else None,
@@ -236,7 +245,7 @@ def format_share_classes_data(data: dict) -> list[dict]:
                 currency = 'OTHER'  # TODO: to confirm the code used in LEAR in the end
                 currency_additioanl = other_currency
 
-        share_class['share_classes']['name'] = share_class_info['ssc_class_nme']
+        share_class['share_classes']['name'] = format_share_name(share_class_info['ssc_class_nme'])
         share_class['share_classes']['priority'] = priority
         share_class['share_classes']['max_share_flag'] = share_class_info['ssc_max_share_ind']
         share_class['share_classes']['max_shares'] = max_shares
@@ -255,6 +264,17 @@ def format_share_classes_data(data: dict) -> list[dict]:
         formatted_share_classes.append(share_class)
 
     return formatted_share_classes
+
+
+def format_share_name(name: str):
+    expected_suffix = ' Shares'
+    if not name or name.endswith(expected_suffix):
+        return name
+
+    if name.endswith(' shares'):
+        name = name.removesuffix(' shares')
+    
+    return f'{name}{expected_suffix}'
 
 
 def format_aliases_data(data: dict) -> list[dict]:

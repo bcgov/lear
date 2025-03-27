@@ -22,8 +22,10 @@ from sqlalchemy import event
 
 from business_model.exceptions import BusinessException
 
-from .address import Address  # noqa: I001,I003,F401 pylint: disable=unused-import; needed by the SQLAlchemy rel
-from .db import db  # noqa: I001
+from .address import (
+    Address,
+)
+from .db import db
 
 
 class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -103,9 +105,8 @@ class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
             if 'addressType' in member_mailing_address:
                 del member_mailing_address['addressType']
             member['mailingAddress'] = member_mailing_address
-        else:
-            if self.delivery_address:
-                member['mailingAddress'] = member['deliveryAddress']
+        elif self.delivery_address:
+            member['mailingAddress'] = member['deliveryAddress']
 
         return member
 

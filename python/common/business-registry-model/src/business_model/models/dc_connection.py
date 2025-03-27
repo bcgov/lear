@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List
 
 from .db import db
 
@@ -43,7 +42,6 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     is_active = db.Column('is_active', db.Boolean, default=False)
 
     # connection_state values we recieve in webhook, but we may not need all of it
-    # [init / invitation / request / response / active / error / inactive]
     connection_state = db.Column('connection_state', db.String(50))
 
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
@@ -95,14 +93,14 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
             dc_connection = (
               cls.query
                  .filter(DCConnection.business_id == business_id)
-                 .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
+                 .filter(DCConnection.is_active == True)  # pylint: disable=singleton-comparison
                  .one_or_none())
         return dc_connection
 
     @classmethod
     def find_by(cls,
                 business_id: int = None,
-                connection_state: str = None) -> List[DCConnection]:
+                connection_state: str = None) -> list[DCConnection]:
         """Return the digital credential connection matching the filter."""
         query = db.session.query(DCConnection)
 

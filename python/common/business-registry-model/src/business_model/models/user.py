@@ -16,11 +16,11 @@
 Actual user data is kept in the OIDC and IDP services, this data is
 here as a convenience for audit and db reporting.
 """
-from datetime import datetime
 from enum import auto
 
 from flask import current_app
 from sql_versioning import Versioned
+from sqlalchemy import func
 
 from business_model.exceptions import BusinessException
 from business_model.utils.base import BaseEnum
@@ -31,12 +31,12 @@ from .db import db
 class UserRoles(BaseEnum):
     """Enum of the roles used across the domain."""
 
-    #pragma warning disable S5720; # noqa: E265
+    #pragma warning disable S5720;
     # disable sonar cloud complaining about this signature
     def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
         """Return the name of the key."""
         return name
-    #pragma warning enable S5720; # noqa: E265
+    #pragma warning enable S5720;
 
     # pylint: disable=invalid-name
     admin_edit = auto()
@@ -64,7 +64,7 @@ class User(db.Model, Versioned):
     iss = db.Column(db.String(1024))
     idp_userid = db.Column(db.String(256), index=True)
     login_source = db.Column(db.String(200), nullable=True)
-    creation_date = db.Column(db.DateTime(timezone=True), default=datetime.utcnow)
+    creation_date = db.Column(db.DateTime(timezone=True), default=func.now())
 
     @property
     def display_name(self):
@@ -114,7 +114,7 @@ class User(db.Model, Versioned):
                 idp_userid=token['idp_userid'],
                 login_source=token['loginSource']
             )
-            current_app.logger.debug('Creating user from JWT:{}; User:{}'.format(token, user))
+            current_app.logger.debug(f'Creating user from JWT:{token}; User:{user}')
             db.session.add(user)
             db.session.commit()
             return user

@@ -172,7 +172,8 @@ def has_party_changed(filing: Filing) -> bool:
         return True
 
     # Has existing party modified
-    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing.id,
+                                                                          filing.transaction_id,
                                                                           filing.business_id,
                                                                           role=PartyRole.RoleTypes.DIRECTOR.value)
 
@@ -250,13 +251,14 @@ def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
     amalgamation_filing['nameRequest']['legalName'] = primary_or_holding_business.legal_name
 
     _set_parties(primary_or_holding_business, filing, amalgamation_filing)
-    _set_offices(primary_or_holding_business, amalgamation_filing, filing.transaction_id)
+    _set_offices(primary_or_holding_business, amalgamation_filing, filing.id, filing.transaction_id)
     _set_shares(primary_or_holding_business, amalgamation_filing, filing.transaction_id)
 
 
 def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
     parties = []
-    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing.id,
+                                                                              filing.transaction_id,
                                                                               primary_or_holding_business.id,
                                                                               role=PartyRole.RoleTypes.DIRECTOR.value)
     # copy director
@@ -277,9 +279,10 @@ def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
     amalgamation_filing['parties'] = parties
 
 
-def _set_offices(primary_or_holding_business, amalgamation_filing, transaction_id):
+def _set_offices(primary_or_holding_business, amalgamation_filing, filing_id, transaction_id):
     # copy offices
-    amalgamation_filing['offices'] = VersionedBusinessDetailsService.get_office_revision(transaction_id,
+    amalgamation_filing['offices'] = VersionedBusinessDetailsService.get_office_revision(filing_id,
+                                                                                         transaction_id,
                                                                                          primary_or_holding_business.id)
 
 

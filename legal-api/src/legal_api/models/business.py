@@ -433,8 +433,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 ar_max_date = datetime(next_ar_year + 1, 4, 30).date()
         elif self.legal_type in self.CORPS:
             # For BCOMP min date is next anniversary date.
-            no_of_years_to_add = next_ar_year - self.founding_date.year
-            ar_min_date = self.founding_date.date() + datedelta.datedelta(years=no_of_years_to_add)
+            _founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date)
+            no_of_years_to_add = next_ar_year - _founding_date.year
+            ar_min_date = _founding_date.date() + datedelta.datedelta(years=no_of_years_to_add)
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
 
         ar_max_date = min(ar_max_date, datetime.utcnow().date())  # ar_max_date cannot be in future

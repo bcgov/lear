@@ -14,10 +14,10 @@
 """This module holds data for batch processing."""
 from enum import auto
 
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import JSONB
 
 from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime
 
 from .db import db
 
@@ -49,9 +49,9 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
     step = db.Column('step', db.Enum(BatchProcessingStep), nullable=False)
     status = db.Column('status', db.Enum(BatchProcessingStatus), nullable=False)
     notes = db.Column('notes', db.String(150), default='', nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
     trigger_date = db.Column('trigger_date', db.DateTime(timezone=True), nullable=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=func.now())
     meta_data = db.Column('meta_data', JSONB, nullable=True)
 
     # parent keys

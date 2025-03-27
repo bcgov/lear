@@ -18,7 +18,6 @@ Test-Suite to ensure that the DCConnection Model is working as expected.
 """
 
 from business_model.models import DCConnection
-
 from tests.models import factory_business
 
 

@@ -16,11 +16,9 @@
 
 Test-Suite to ensure that the ConsentContinuationOut Model is working as expected.
 """
-import datedelta
 import copy
-import pytz
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
+
+import datedelta
 from registry_schemas.example_data import (
     CONSENT_CONTINUATION_OUT,
     FILING_HEADER,
@@ -28,7 +26,6 @@ from registry_schemas.example_data import (
 
 from business_model.models.consent_continuation_out import ConsentContinuationOut
 from business_model.utils.legislation_datetime import LegislationDatetime
-
 from tests.models import (
     factory_business,
     factory_completed_filing,

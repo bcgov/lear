@@ -15,7 +15,8 @@
 
 The ColinLastUpdate class and Schema are held in this module.
 """
-from datetime import datetime
+
+from sqlalchemy import func
 
 from .db import db
 
@@ -26,5 +27,5 @@ class ColinLastUpdate(db.Model):  # pylint: disable=too-few-public-methods
     __tablename__ = 'colin_last_update'
 
     id = db.Column(db.Integer, primary_key=True)
-    last_update = db.Column('last_update', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_update = db.Column('last_update', db.DateTime(timezone=True), default=func.now())
     last_event_id = db.Column('last_event_id', db.Integer, unique=False, nullable=False)
