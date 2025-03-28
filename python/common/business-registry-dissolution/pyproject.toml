@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "business-registry-dissolution"
+version = "0.1.0"
+description = ""
+authors = ["BrandonSharratt <brandon@daxiom.com>"]
+readme = "README.md"
+packages = [{include = "dissolution_service", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+flask = "^3.1.0"
+sqlalchemy = "^2.0.39"
+datedelta = "^1.4"
+business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
+business-registry-account = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account"}
+business-registry-common = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common"}
+flask-migrate = {version = ">=4.1.0,<5.0.0"}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+black = "^25.1.0"
+flake8 = "^7.1.2"
+psycopg2 = "^2.9.10"
+freezegun = "^1.5.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
