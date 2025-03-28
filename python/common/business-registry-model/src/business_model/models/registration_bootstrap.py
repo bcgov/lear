@@ -15,15 +15,19 @@
 
 The RegistrationBoostrap class and Schema are held in this module
 """
-from datetime import datetime
 
+from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from business_model.exceptions import BusinessException
 
 from .db import db
-from .filing import Filing  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .filing import (
+    Filing,
+)
+from .user import (
+    User,
+)
 
 
 class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attributes
@@ -40,7 +44,7 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
 
     _identifier = db.Column('identifier', db.String(10), primary_key=True)
     account = db.Column('account', db.Integer, index=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=func.now())
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
@@ -86,7 +90,11 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
         """Validate the identifier is a temporary format."""
-        if identifier[:1] == 'T' and len(identifier) <= 10:
+        max_identifier_length = 10
+        if len(identifier) > max_identifier_length:
+            return False
+            
+        if identifier[:1] == 'T' and len(identifier) <= max_identifier_length:
             return True
 
         return False

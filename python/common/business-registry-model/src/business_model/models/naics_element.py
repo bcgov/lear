@@ -19,7 +19,7 @@ from enum import auto
 
 from business_model.utils.base import BaseEnum
 
-from .db import db  # noqa: I001
+from .db import db
 
 
 class NaicsElement(db.Model):

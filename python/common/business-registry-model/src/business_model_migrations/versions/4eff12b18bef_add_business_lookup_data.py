@@ -6,9 +6,7 @@ Create Date: 2021-12-01 12:32:41.850361
 
 """
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
-from sqlalchemy import Table, MetaData
+from sqlalchemy import MetaData, Table
 
 # revision identifiers, used by Alembic.
 revision = '4eff12b18bef'
@@ -18,10 +16,7 @@ depends_on = None
 
 
 def upgrade():
-    # meta = MetaData(bind=op.get_bind())
-    # meta.reflect(only=('office_types', 'configurations',))
-    # office_types_table = Table('office_types', meta)
-
+    """Load all of the lookup data."""
     bind = op.get_bind()
     meta = MetaData()
     office_types_table = Table('office_types', meta, autoload_with=bind)
@@ -44,49 +39,42 @@ def upgrade():
         ]
     )
 
-    # bind = op.get_bind()
-    # meta = MetaData()
-    # configurations_table = Table('configurations', meta)
-    # op.bulk_insert(
-    #     configurations_table,
-    #     [
-    #         {
-    #             # 'id': 1,
-    #             'name': 'NUM_DISSOLUTIONS_ALLOWED',
-    #             'val': '2',
-    #             'short_description': 'Number of involuntary dissolutions per day.',
-    #             'full_description': 'Number of involuntary dissolutions per day.'
-    #         },
-    #         {
-    #             # 'id': 2,
-    #             'name': 'MAX_DISSOLUTIONS_ALLOWED',
-    #             'val': '2500',
-    #             'short_description': 'Max number of involuntary dissolutions permitted per day.',
-    #             'full_description': 'Max number of involuntary dissolutions permitted per day. This is used to validate the upper limit for NUM_DISSOLUTIONS_ALLOWED.'
-    #         },
-    #         {
-    #             # 'id': 3,
-    #             'name': 'DISSOLUTIONS_STAGE_1_SCHEDULE',
-    #             'val': '* * * * * ',
-    #             'short_description': 'Cron string for which days new involuntary dissolutions can be initiated.',
-    #             'full_description': 'Cron string for which days new involuntary dissolutions can be initiated.'
-    #         },
-    #         {
-    #             # 'id': 4,
-    #             'name': 'DISSOLUTIONS_STAGE_2_SCHEDULE',
-    #             'val': '* * * * * ',
-    #             'short_description': 'Schedule for running stage 2 of dissolution process.',
-    #             'full_description': 'Schedule for running stage 2 of dissolution process.'
-    #         },
-    #         {
-    #             # 'id': 5,
-    #             'name': 'DISSOLUTIONS_STAGE_3_SCHEDULE',
-    #             'val': '* * * * * ',
-    #             'short_description': 'Schedule for running stage 3 of dissolution process.',
-    #             'full_description': 'Schedule for running stage 3 of dissolution process.'
-    #         },
-    #     ]
-    # )
+    configurations_table = Table('configurations', meta, autoload_with=bind)
+    op.bulk_insert(
+        configurations_table,
+        [
+            {
+                'name': 'NUM_DISSOLUTIONS_ALLOWED',
+                'val': '2',
+                'short_description': 'Number of involuntary dissolutions per day.',
+                'full_description': 'Number of involuntary dissolutions per day.'
+            },
+            {
+                'name': 'MAX_DISSOLUTIONS_ALLOWED',
+                'val': '2500',
+                'short_description': 'Max number of involuntary dissolutions permitted per day.',
+                'full_description': 'Max number of involuntary dissolutions permitted per day. This is used to validate the upper limit for NUM_DISSOLUTIONS_ALLOWED.'
+            },
+            {
+                'name': 'DISSOLUTIONS_STAGE_1_SCHEDULE',
+                'val': '* * * * * ',
+                'short_description': 'Cron string for which days new involuntary dissolutions can be initiated.',
+                'full_description': 'Cron string for which days new involuntary dissolutions can be initiated.'
+            },
+            {
+                'name': 'DISSOLUTIONS_STAGE_2_SCHEDULE',
+                'val': '* * * * * ',
+                'short_description': 'Schedule for running stage 2 of dissolution process.',
+                'full_description': 'Schedule for running stage 2 of dissolution process.'
+            },
+            {
+                'name': 'DISSOLUTIONS_STAGE_3_SCHEDULE',
+                'val': '* * * * * ',
+                'short_description': 'Schedule for running stage 3 of dissolution process.',
+                'full_description': 'Schedule for running stage 3 of dissolution process.'
+            },
+        ]
+    )
 
 
 def downgrade():

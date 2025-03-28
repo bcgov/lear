@@ -14,8 +14,6 @@
 """This module holds data for furnishing groups."""
 from __future__ import annotations
 
-from typing import List
-
 from .db import db
 
 
@@ -49,7 +47,7 @@ class FurnishingGroup(db.Model):
     @classmethod
     def find_by(cls,  # pylint: disable=too-many-arguments
                 xml_payload_id: int = None
-                ) -> List[FurnishingGroup]:
+                ) -> list[FurnishingGroup]:
         """Return the Furnishing entries matching the filter."""
         query = db.session.query(FurnishingGroup)
 

@@ -16,7 +16,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import auto
-from typing import List
+
+from sqlalchemy import func
 
 from business_model.utils.base import BaseEnum
 from business_model.utils.datetime import datetime
@@ -47,8 +48,8 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     status = db.Column('status', db.Enum(ReviewStatus), nullable=False)
     submission_date = db.Column('submission_date',
                                 db.DateTime(timezone=True),
-                                default=datetime.utcnow)  # last submission date
-    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=datetime.utcnow)
+                                default=func.now())  # last submission date
+    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=func.now())
 
     # parent keys
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False)
@@ -141,7 +142,7 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     class ReviewFilter:
         """Used for filtering and sorting reviews."""
 
-        status: List[str] = field()
+        status: list[str] = field()
         start_date: str = ''
         end_date: str = ''
         nr_number: str = ''

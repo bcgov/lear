@@ -15,7 +15,7 @@ from contextlib import suppress
 from datetime import date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
-from typing import Final, List
+from typing import Final
 
 from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
@@ -24,13 +24,12 @@ from sqlalchemy.orm import backref
 
 from business_model.exceptions import BusinessException
 from business_model.models.colin_event_id import ColinEventId
-from business_model.schemas import rsbc_schemas
-from business_model.schemas import build_schema_error_response
+from business_model.schemas import build_schema_error_response, rsbc_schemas
 
-from .db import db  # noqa: I001
-
-
-from .comment import Comment  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by SQLAlchemy relationship
+from .comment import (
+    Comment,
+)
+from .db import db
 
 
 class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -640,7 +639,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     id = db.Column(db.Integer, primary_key=True)
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
-    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=func.now())
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_sub_type = db.Column('filing_sub_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
@@ -653,7 +652,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
     colin_only = db.Column('colin_only', db.Boolean, unique=False, default=False)
     payment_account = db.Column('payment_account', db.String(30))
-    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=func.now())
     submitter_roles = db.Column('submitter_roles', db.String(200))
     tech_correction_json = db.Column('tech_correction_json', JSONB)
     court_order_file_number = db.Column('court_order_file_number', db.String(20))
@@ -761,9 +760,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if self.locked or \
                 (self._payment_token and self._filing_json):
             self._payment_completion_date = value
-            # if self.effective_date is None or \
-            #         self.effective_date <= self._payment_completion_date:
-            #     self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",
@@ -957,7 +953,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
 
             if self.effective_date:  # pylint: disable=using-constant-test
-                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()  # noqa: E501 pylint: disable=no-member, line-too-long
+                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
             if self._payment_status_code:
                 json_submission['filing']['header']['paymentStatusCode'] = self.payment_status_code
             if self._payment_token:
@@ -981,7 +977,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['isCorrectionPending'] = self.is_correction_pending
 
             return json_submission
-        except Exception as err:  # noqa: B901, E722
+        except Exception as err:
             raise KeyError from err
 
     @classmethod
@@ -1178,20 +1174,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing._status == Filing.Status.COMPLETED.value). \
             order_by(Filing.id.desc())
 
-        # As the JSON query is new for most, leaving the debug stmnt
-        # that dumps the query for easier debugging.
-        # current_app.logger.debug(
-        #     str(filing.statement.compile(
-        #         dialect=dialect(),
-        #         compile_kwargs={'literal_binds': True}))
-        # )
-
         return filing.first()
 
     @staticmethod
     def get_completed_filings_for_colin(limit=20, offset=0):
         """Return the filings based on limit and offset."""
-        from .business import Business  # noqa: F401; pylint: disable=import-outside-toplevel
+        from .business import (
+            Business,
+        )
         excluded_filings = [
             'lear_epoch',
             'adminFreeze',
@@ -1214,7 +1204,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_future_effective_filing_ids() -> List[int]:
+    def get_future_effective_filing_ids() -> list[int]:
         """Return filing ids which should be effective now."""
         filings = db.session.query(Filing.id). \
             filter(Filing._status == Filing.Status.PAID.value). \
@@ -1326,11 +1316,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         self.resubmission_date = submission_date
         self.save()
 
-    def legal_filings(self) -> List:
+    def legal_filings(self) -> list:
         """Return a list of the filings extracted from this filing submission.
 
         Returns: {
-            List: or None of the Legal Filing JSON segments.
+            list: or None of the Legal Filing JSON segments.
             }
         """
         if not self.filing_json:

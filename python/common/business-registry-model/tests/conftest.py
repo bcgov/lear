@@ -13,19 +13,15 @@
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
 import contextlib
-import datetime
-import time
-from contextlib import contextmanager, suppress
-from typing import Final
+from contextlib import contextmanager
 
 import pytest
 import sqlalchemy
 from flask import Flask
 from flask_migrate import Migrate, upgrade
-from sqlalchemy import event, inspect, text
+from sqlalchemy import event, text
 
 from business_model.models import db as _db
-
 from config import Testing
 
 # from . import FROZEN_DATETIME
@@ -176,7 +172,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
             app,
             _db,
             directory="src/business_model_migrations",
-            **{"dialect_name": "postgres"},
+            dialect_name="postgres",
         )
         upgrade()
 

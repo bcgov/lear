@@ -14,8 +14,6 @@
 """This module holds data for issued credential."""
 from __future__ import annotations
 
-from typing import List
-
 from .db import db
 
 
@@ -94,7 +92,7 @@ class DCIssuedCredential(db.Model):  # pylint: disable=too-many-instance-attribu
     @classmethod
     def find_by(cls,
                 dc_definition_id: int = None,
-                dc_connection_id: int = None) -> List[DCIssuedCredential]:
+                dc_connection_id: int = None) -> list[DCIssuedCredential]:
         """Return the issued credential matching the filter."""
         query = db.session.query(DCIssuedCredential)
 

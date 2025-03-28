@@ -14,14 +14,12 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
-from enum import Enum
-from typing import List
-
 from croniter import croniter
 from sqlalchemy import event
 
-from .db import db
+from business_model.utils.base import BaseEnum
 
+from .db import db
 
 EMAIL_PATTERN = (r'^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|'
                  r'(".+"))@'
@@ -35,13 +33,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
 
     __tablename__ = 'configurations'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column('name', db.String(100), unique=True, nullable=False)
-    val = db.Column('val', db.String(100), nullable=False)
-    short_description = db.Column('short_description', db.String(150), nullable=True)
-    full_description = db.Column('full_description', db.String(1000), nullable=True)
-
-    class Names(Enum):
+    class Names(BaseEnum):
         """Render an Enum of the name of configuration."""
 
         NUM_DISSOLUTIONS_ALLOWED = 'NUM_DISSOLUTIONS_ALLOWED'
@@ -50,6 +42,14 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         DISSOLUTIONS_STAGE_2_SCHEDULE = 'DISSOLUTIONS_STAGE_2_SCHEDULE'
         DISSOLUTIONS_STAGE_3_SCHEDULE = 'DISSOLUTIONS_STAGE_3_SCHEDULE'
 
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column('name', db.Enum(Names), unique=True, nullable=False)
+    val = db.Column('val', db.String(100), nullable=False)
+    short_description = db.Column('short_description', db.String(150), nullable=True)
+    full_description = db.Column('full_description', db.String(1000), nullable=True)
+
+ 
     def save(self):
         """Save the object to the database immediately."""
         db.session.add(self)
@@ -67,7 +67,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         return configuration
 
     @classmethod
-    def all(cls) -> List[Configuration]:
+    def all(cls) -> list[Configuration]:
         """Return the configuration matching the id."""
         return cls.query.all()
 
@@ -88,7 +88,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         return configuration
 
     @classmethod
-    def find_by_names(cls, config_names: List[str]) -> List[Configuration]:
+    def find_by_names(cls, config_names: list[str]) -> list[Configuration]:
         """Return the configurations matching the names."""
         return cls.query.filter(cls.name.in_(config_names)).all()
 

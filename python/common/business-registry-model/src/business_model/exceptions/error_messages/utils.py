@@ -15,7 +15,7 @@
 from string import Formatter
 from typing import Optional
 
-from flask_babel import _ as babel  # noqa: N813,I005
+from flask_babel import _ as babel
 
 from .codes import ErrorCode
 from .messages import ERROR_MESSAGES

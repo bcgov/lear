@@ -46,7 +46,6 @@ from business_model.models.db import VersioningProxy
 from business_model.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
-
 AR_FILING = {
     'filing': {
         'header': {

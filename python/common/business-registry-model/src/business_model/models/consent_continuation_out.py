@@ -19,7 +19,8 @@ from typing import Optional
 
 from sqlalchemy.orm import backref
 
-from ..utils.base import BaseEnum
+from business_model.utils.base import BaseEnum
+
 from .db import db
 
 
@@ -74,7 +75,7 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
         return query.all()
 
     @staticmethod
-    def get_by_filing_id(filing_id) -> Optional[ConsentContinuationOut]:
+    def get_by_filing_id(filing_id) -> ConsentContinuationOut | None:
         """Get consent continuation out by filing_id."""
         return db.session.query(ConsentContinuationOut). \
             filter(ConsentContinuationOut.filing_id == filing_id).one_or_none()

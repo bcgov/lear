@@ -4,8 +4,8 @@ rsbc_schemas = SchemaServices()  # pylint: disable=invalid-name
 
 
 __all__ = (
-    "rsbc_schemas",
     "build_schema_error_response",
+    "rsbc_schemas",
 )
 
 

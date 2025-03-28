@@ -49,7 +49,11 @@ def update_signatory(business: Business, signatory: Dict) -> Optional[Dict]:
     party = Party(
         first_name=signatory.get('givenName', '').upper(),
         last_name=signatory.get('familyName', '').upper(),
-        middle_initial=(signatory.get('additionalName', '') or '').upper()
+        middle_initial=(signatory.get('additionalName', '') or '').upper(),
+        title='',
+        organization_name='',
+        email='',
+        identifier=''
     )
     largest_resolution.party = party
     return largest_resolution

@@ -15,10 +15,10 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import List
+
+from sqlalchemy import func
 
 from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime
 
 from .db import db
 
@@ -46,7 +46,7 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
     batch_type = db.Column('batch_type', db.Enum(BatchType), nullable=False)
     status = db.Column('status', db.Enum(BatchStatus), nullable=False)
     size = db.Column('size', db.Integer, nullable=True)
-    start_date = db.Column('start_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    start_date = db.Column('start_date', db.DateTime(timezone=True),  default=func.now())
     end_date = db.Column('end_date', db.DateTime(timezone=True), nullable=True)
     notes = db.Column('notes', db.String(150), default='', nullable=True)
     max_size = db.Column('max_size', db.Integer, nullable=True)
@@ -67,7 +67,7 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def find_by(cls,  # pylint: disable=too-many-arguments
                 batch_type: BatchType = None,
-                status: BatchStatus = None) -> List[Batch]:
+                status: BatchStatus = None) -> list[Batch]:
         """Return the batch matching."""
         query = db.session.query(Batch)
         batches = []
