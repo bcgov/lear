@@ -38,6 +38,7 @@ servers:
   - url: 'https://sandbox.api.connect.gov.bc.ca/business/api/v2'
     description: Test
   - url: 'https://api.connect.gov.bc.ca/business/api/v2'
+    description: Production
 paths:
   '/businesses/{identifier}':
     parameters:
@@ -1343,6 +1344,7 @@ paths:
       tags:
         - business
       operationId: put-businesses-identifier-filings-filingId
+      description: Update a filing or a filing draft
       responses:
         '202':
           description: ACCEPTED
@@ -7212,14 +7214,6 @@ components:
       description: API Gateway assigned API key for a user with the Business Registry API privilege. Required for all requests.
       name: x-apikey
       in: header
-    jwt:
-      type: oauth2
-      flows:
-        password:
-          tokenUrl: ''
-          refreshUrl: ''
-          scopes: {}
-      description: ''
   headers:
     AccessControlAllowOrigin:
       schema:
