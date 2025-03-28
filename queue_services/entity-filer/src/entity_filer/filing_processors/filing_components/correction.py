@@ -41,125 +41,119 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     """Render the correction filing onto the business model objects."""
     filing_meta.correction = {}
 
-    # check if empty correction and set commentOnly value in filing_meta
-    comment_only = dpath.util.get(correction_filing, '/correction/commentOnly', default=None)
-    if comment_only:
-        with suppress(IndexError, KeyError, TypeError):
-            filing_meta.correction = {**filing_meta.correction, **{'commentOnly': comment_only}}
-    else:
-        # Update business legalName if present
-        with suppress(IndexError, KeyError, TypeError):
-            name_request_json = dpath.util.get(correction_filing, '/correction/nameRequest')
-            from_legal_name = business.legal_name
-            business_info.set_legal_name(business.identifier, business, name_request_json)
-            if from_legal_name != business.legal_name:
-                filing_meta.correction = {**filing_meta.correction,
-                                          **{'fromLegalName': from_legal_name,
-                                             'toLegalName': business.legal_name}}
+    # Update business legalName if present
+    with suppress(IndexError, KeyError, TypeError):
+        name_request_json = dpath.util.get(correction_filing, '/correction/nameRequest')
+        from_legal_name = business.legal_name
+        business_info.set_legal_name(business.identifier, business, name_request_json)
+        if from_legal_name != business.legal_name:
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'fromLegalName': from_legal_name,
+                                         'toLegalName': business.legal_name}}
 
-        # Update cooperativeAssociationType if present
-        with suppress(IndexError, KeyError, TypeError):
-            coop_association_type = dpath.util.get(correction_filing, '/correction/cooperativeAssociationType')
-            from_association_type = business.association_type
-            if coop_association_type:
-                business_info.set_association_type(business, coop_association_type)
-                filing_meta.correction = {**filing_meta.correction,
-                                          **{'fromCooperativeAssociationType': from_association_type,
-                                             'toCooperativeAssociationType': business.association_type}}
+    # Update cooperativeAssociationType if present
+    with suppress(IndexError, KeyError, TypeError):
+        coop_association_type = dpath.util.get(correction_filing, '/correction/cooperativeAssociationType')
+        from_association_type = business.association_type
+        if coop_association_type:
+            business_info.set_association_type(business, coop_association_type)
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'fromCooperativeAssociationType': from_association_type,
+                                         'toCooperativeAssociationType': business.association_type}}
 
-        # Update Nature of Business
-        if naics := correction_filing.get('correction', {}).get('business', {}).get('naics'):
-            to_naics_code = naics.get('naicsCode')
-            to_naics_description = naics.get('naicsDescription')
-            if business.naics_description != to_naics_description:
-                filing_meta.correction = {
-                    **filing_meta.correction,
-                    **{'fromNaicsCode': business.naics_code,
-                       'toNaicsCode': to_naics_code,
-                       'naicsDescription': to_naics_description}}
-                business_info.update_naics_info(business, naics)
+    # Update Nature of Business
+    if naics := correction_filing.get('correction', {}).get('business', {}).get('naics'):
+        to_naics_code = naics.get('naicsCode')
+        to_naics_description = naics.get('naicsDescription')
+        if business.naics_description != to_naics_description:
+            filing_meta.correction = {
+                **filing_meta.correction,
+                **{'fromNaicsCode': business.naics_code,
+                   'toNaicsCode': to_naics_code,
+                   'naicsDescription': to_naics_description}}
+            business_info.update_naics_info(business, naics)
 
-        # update name translations, if any
-        with suppress(IndexError, KeyError, TypeError):
-            alias_json = dpath.util.get(correction_filing, '/correction/nameTranslations')
-            aliases.update_aliases(business, alias_json)
+    # update name translations, if any
+    with suppress(IndexError, KeyError, TypeError):
+        alias_json = dpath.util.get(correction_filing, '/correction/nameTranslations')
+        aliases.update_aliases(business, alias_json)
 
-        # Update offices if present
-        with suppress(IndexError, KeyError, TypeError):
-            offices_structure = dpath.util.get(correction_filing, '/correction/offices')
-            _update_addresses(offices_structure)
+    # Update offices if present
+    with suppress(IndexError, KeyError, TypeError):
+        offices_structure = dpath.util.get(correction_filing, '/correction/offices')
+        _update_addresses(offices_structure)
 
-        # Update parties
-        with suppress(IndexError, KeyError, TypeError):
-            party_json = dpath.util.get(correction_filing, '/correction/parties')
-            update_parties(business, party_json, correction_filing_rec)
+    # Update parties
+    with suppress(IndexError, KeyError, TypeError):
+        party_json = dpath.util.get(correction_filing, '/correction/parties')
+        update_parties(business, party_json, correction_filing_rec)
 
-        # update court order, if any is present
-        with suppress(IndexError, KeyError, TypeError):
-            court_order_json = dpath.util.get(correction_filing, '/correction/courtOrder')
-            filings.update_filing_court_order(correction_filing_rec, court_order_json)
+    # update court order, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        court_order_json = dpath.util.get(correction_filing, '/correction/courtOrder')
+        filings.update_filing_court_order(correction_filing_rec, court_order_json)
 
-        # update business start date, if any is present
-        with suppress(IndexError, KeyError, TypeError):
-            business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
-            if business_start_date:
-                business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
+    # update business start date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
+        if business_start_date:
+            business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
 
-        # update share structure and resolutions, if any
-        with suppress(IndexError, KeyError, TypeError):
-            share_structure = dpath.util.get(correction_filing, '/correction/shareStructure')
-            shares.update_share_structure_correction(business, share_structure)
+    # update share structure and resolutions, if any
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.util.get(correction_filing, '/correction/shareStructure')
+        shares.update_share_structure_correction(business, share_structure)
 
-        # update resolution, if any
-        with suppress(IndexError, KeyError, TypeError):
-            resolution = dpath.util.get(correction_filing, '/correction/resolution')
-            resolutions.update_resolution(business, resolution)
-            if resolution:
-                filing_meta.correction = {**filing_meta.correction, **{'hasResolution': True}}
+    # update resolution, if any
+    with suppress(IndexError, KeyError, TypeError):
+        resolution = dpath.util.get(correction_filing, '/correction/resolution')
+        resolutions.update_resolution(business, resolution)
+        if resolution:
+            filing_meta.correction = {**filing_meta.correction, **{'hasResolution': True}}
 
-        # update signatory, if any
-        with suppress(IndexError, KeyError, TypeError):
-            signatory = dpath.util.get(correction_filing, '/correction/signatory')
-            resolutions.update_signatory(business, signatory)
+    # update signatory, if any
+    with suppress(IndexError, KeyError, TypeError):
+        signatory = dpath.util.get(correction_filing, '/correction/signatory')
+        resolutions.update_signatory(business, signatory)
 
-        # update business signing date, if any is present
-        with suppress(IndexError, KeyError, TypeError):
-            signing_date = dpath.util.get(correction_filing, '/correction/signingDate')
-            resolutions.update_signing_date(business, signing_date)
+    # update business signing date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        signing_date = dpath.util.get(correction_filing, '/correction/signingDate')
+        resolutions.update_signing_date(business, signing_date)
 
-        # update business resolution date, if any is present
-        with suppress(IndexError, KeyError, TypeError):
-            resolution_date = dpath.util.get(correction_filing, '/correction/resolutionDate')
-            resolutions.update_resolution_date(business, resolution_date)
+    # update business resolution date, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        resolution_date = dpath.util.get(correction_filing, '/correction/resolutionDate')
+        resolutions.update_resolution_date(business, resolution_date)
 
-        # update rules, if any
-        with suppress(IndexError, KeyError, TypeError):
-            rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
-            rules_file_name = dpath.util.get(correction_filing, '/correction/rulesFileName')
-            if rules_file_key:
-                rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
-                filing_meta.correction = {**filing_meta.correction,
-                                          **{'uploadNewRules': True}}
+    # update rules, if any
+    with suppress(IndexError, KeyError, TypeError):
+        rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
+        rules_file_name = dpath.util.get(correction_filing, '/correction/rulesFileName')
+        if rules_file_key:
+            rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'uploadNewRules': True}}
 
-        # update memorandum, if any
-        with suppress(IndexError, KeyError, TypeError):
-            memorandum_file_key = dpath.util.get(correction_filing, '/correction/memorandumFileKey')
-            memorandum_file_name = dpath.util.get(correction_filing, '/correction/memorandumFileName')
-            if memorandum_file_key:
-                rules_and_memorandum.update_memorandum(business, correction_filing_rec,
-                                                       memorandum_file_key, memorandum_file_name)
-                filing_meta.correction = {**filing_meta.correction,
-                                          **{'uploadNewMemorandum': True}}
+    # update memorandum, if any
+    with suppress(IndexError, KeyError, TypeError):
+        memorandum_file_key = dpath.util.get(correction_filing, '/correction/memorandumFileKey')
+        memorandum_file_name = dpath.util.get(correction_filing, '/correction/memorandumFileName')
+        if memorandum_file_key:
+            rules_and_memorandum.update_memorandum(business, correction_filing_rec,
+                                                   memorandum_file_key, memorandum_file_name)
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'uploadNewMemorandum': True}}
 
-        with suppress(IndexError, KeyError, TypeError):
-            if dpath.util.get(correction_filing, '/correction/memorandumInResolution'):
-                filing_meta.correction = {**filing_meta.correction,
-                                          **{'memorandumInResolution': True}}
+    with suppress(IndexError, KeyError, TypeError):
+        if dpath.util.get(correction_filing, '/correction/memorandumInResolution'):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'memorandumInResolution': True}}
 
-        with suppress(IndexError, KeyError, TypeError):
-            if dpath.util.get(correction_filing, '/correction/rulesInResolution'):
-                filing_meta.correction = {**filing_meta.correction,
-                                          **{'rulesInResolution': True}}
+    with suppress(IndexError, KeyError, TypeError):
+        if dpath.util.get(correction_filing, '/correction/rulesInResolution'):
+            filing_meta.correction = {**filing_meta.correction,
+                                      **{'rulesInResolution': True}}
 
 
 def update_parties(business: Business, parties: list, correction_filing_rec: Filing):

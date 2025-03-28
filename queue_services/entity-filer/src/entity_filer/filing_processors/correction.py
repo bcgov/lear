@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the correction filing."""
+from contextlib import suppress
 from typing import Dict
 
+import dpath
 import pytz
 from legal_api.models import Business, Comment, Filing
 
@@ -28,6 +30,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     # link to original filing
     original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])
     original_filing.parent_filing = correction_filing
+
+    filing_meta.correction = {}
 
     # add comment to the original filing
     original_filing.comments.append(
@@ -47,6 +51,15 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     )
 
     corrected_filing_type = filing['correction']['correctedFilingType']
+
+    # check if empty correction and set commentOnly value in filing_meta
+    with suppress(IndexError, KeyError, TypeError):
+        if comment_only := dpath.util.get(filing, '/correction/commentOnly', default=None):
+            if comment_only:
+                filing_meta.correction = {**filing_meta.correction, **{'commentOnly': comment_only}}
+                return correction_filing
+
+    # Skip all other data checks if commentOnly correction
     if corrected_filing_type != 'conversion':
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
