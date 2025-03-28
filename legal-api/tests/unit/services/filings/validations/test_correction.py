@@ -21,7 +21,7 @@ from legal_api.services.filings import validate
 from tests.unit.models import factory_business, factory_completed_filing, factory_filing
 
 
-def test_valid_correction(session):
+def test_valid_correction(mocker, session):
     """Test that a valid correction passes validation."""
     # setup
     identifier = 'CP1234567'
@@ -32,6 +32,8 @@ def test_valid_correction(session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
+
     err = validate(business, f)
     if err:
         print(err.msg)
@@ -40,7 +42,7 @@ def test_valid_correction(session):
     assert None is err
 
 
-def test_correction__does_not_own_corrected_filing(session):
+def test_correction__does_not_own_corrected_filing(mocker, session):
     """Check that a business cannot correct a different business' filing."""
     # setup
     identifier = 'CP1234567'
@@ -52,6 +54,8 @@ def test_correction__does_not_own_corrected_filing(session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
+
     err = validate(business, f)
     if err:
         print(err.msg)
@@ -61,7 +65,7 @@ def test_correction__does_not_own_corrected_filing(session):
     assert 'Corrected filing is not a valid filing for this business.' == err.msg[0]['error']
 
 
-def test_correction__corrected_filing_does_not_exist(session):
+def test_correction__corrected_filing_does_not_exist(mocker, session):
     """Check that a correction fails on a filing that does not exist."""
     # setup
     identifier = 'CP1234567'
@@ -70,6 +74,8 @@ def test_correction__corrected_filing_does_not_exist(session):
     f = copy.deepcopy(CORRECTION_AR)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = 1
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     err = validate(business, f)
     if err:
@@ -80,7 +86,7 @@ def test_correction__corrected_filing_does_not_exist(session):
     assert 'Corrected filing is not a valid filing.' == err.msg[0]['error']
 
 
-def test_correction__corrected_filing_is_not_complete(session):
+def test_correction__corrected_filing_is_not_complete(mocker, session):
     """Check that a correction fails on a filing that is not complete."""
     # setup
     identifier = 'CP1234567'
@@ -90,6 +96,8 @@ def test_correction__corrected_filing_is_not_complete(session):
     f = copy.deepcopy(CORRECTION_AR)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     err = validate(business, f)
     if err:
