@@ -30,7 +30,7 @@ INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)
 
 
-def test_valid_ia_correction(session):
+def test_valid_ia_correction(mocker, session):
     """Test that a valid IA without NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -41,6 +41,8 @@ def test_valid_ia_correction(session):
     f = copy.deepcopy(CORRECTION)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     err = validate(business, f)
 
@@ -57,7 +59,7 @@ def test_valid_ia_correction(session):
      'Name Request legal type is not same as the business legal type.'),
     ('nr_not_approved', 'BEN', 'CP', 'BECV', 'Name Request is not approved.')
 ])
-def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+def test_nr_correction(mocker, session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -88,6 +90,8 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
         }]
     }
     nr_response = MockResponse(nr_response_json)
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
         err = validate(business, f)
@@ -133,7 +137,7 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     ('no_roles', 'CC', 'STAFF',
      [{'error': 'Must have a minimum of 3 Director', 'path': '/filing/correction/parties/roles'}]),
 ])
-def test_parties_correction(session, test_name, legal_type, correction_type, err_msg):
+def test_parties_correction(mocker, session, test_name, legal_type, correction_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -177,6 +181,8 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
         }]
     }
     nr_response = MockResponse(nr_response_json)
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
         err = validate(business, f)

@@ -22,7 +22,7 @@ from flask_babel import _
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services import STAFF_ROLE, NaicsService
+from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
@@ -43,7 +43,7 @@ from legal_api.services.filings.validations.special_resolution import (
 )
 from legal_api.utils.auth import jwt
 
-from ...utils import get_date, get_str
+from ...utils import get_bool, get_date, get_str
 
 
 def validate(business: Business, filing: Dict) -> Error:
@@ -51,6 +51,14 @@ def validate(business: Business, filing: Dict) -> Error:
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
+
+    is_comment_only_correction = get_bool(filing, '/filing/correction/commentOnly')
+    is_staff_or_system_role = jwt.validate_roles([STAFF_ROLE]) or jwt.validate_roles([SYSTEM_ROLE])
+
+    # check if comment only correction filed by staff or system
+    if is_comment_only_correction and not is_staff_or_system_role:
+        path = '/filing/correction/commentOnly'
+        msg.append({'error': _('Only staff can file comment only Corrections.'), 'path': path})
 
     # confirm corrected filing ID is a valid complete filing
     corrected_filing = Filing.find_by_id(filing['filing']['correction']['correctedFilingId'])
@@ -64,14 +72,16 @@ def validate(business: Business, filing: Dict) -> Error:
         path = '/filing/correction/correctedFilingId'
         msg.append({'error': _('Corrected filing is not a valid filing for this business.'), 'path': path})
 
-    # validations for firms
-    if legal_type := filing.get('filing', {}).get('business', {}).get('legalType'):
-        if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-            _validate_firms_correction(business, filing, legal_type, msg)
-        elif legal_type in Business.CORPS:
-            _validate_corps_correction(filing, legal_type, msg)
-        elif legal_type in [Business.LegalTypes.COOP.value]:
-            _validate_special_resolution_correction(filing, legal_type, msg)
+    # skip all the other validation checks if comment only correction
+    if not is_comment_only_correction:
+        # validations for firms
+        if legal_type := filing.get('filing', {}).get('business', {}).get('legalType'):
+            if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+                _validate_firms_correction(business, filing, legal_type, msg)
+            elif legal_type in Business.CORPS:
+                _validate_corps_correction(filing, legal_type, msg)
+            elif legal_type in [Business.LegalTypes.COOP.value]:
+                _validate_special_resolution_correction(filing, legal_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

@@ -25,7 +25,7 @@ from tests.unit.services.filings.validations import lists_are_equal
 
 CP_SPECIAL_RESOLUTION_APPLICATION = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
 
-def test_valid_special_resolution_correction(session):
+def test_valid_special_resolution_correction(mocker, session):
     """Test that a valid SPECIAL_RESOLUTION correction passes validation."""
     # setup
     identifier = 'CP1234567'
@@ -38,6 +38,8 @@ def test_valid_special_resolution_correction(session):
     f = copy.deepcopy(correction_data)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     err = validate(business, f)
 
@@ -70,7 +72,7 @@ def test_valid_special_resolution_correction(session):
      [{'error': 'Should not provide completing party when correction type is STAFF', 'path': '/filing/correction/parties/roles'},
       {'error': 'Must have a minimum of three Directors', 'path': '/filing/correction/parties/roles'}]),
 ])
-def test_parties_special_resolution_correction(session, test_name, legal_type, correction_type, err_msg):
+def test_parties_special_resolution_correction(mocker, session, test_name, legal_type, correction_type, err_msg):
     """Test parties for SPECIAL_RESOLUTION correction."""
     # setup
     identifier = 'BC1234567'
@@ -101,6 +103,8 @@ def test_parties_special_resolution_correction(session, test_name, legal_type, c
     elif test_name == 'valid_parties':
         if correction_type == 'STAFF':
             del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     err = validate(business, f)
     if err:

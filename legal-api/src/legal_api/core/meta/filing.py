@@ -871,6 +871,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certifiedMemorandum')
             if correction.get('hasResolution'):
                 outputs.add('specialResolution')
+            if correction.get('commentOnly'):
+                outputs.remove('noticeOfArticles')
         return outputs
 
     @staticmethod
