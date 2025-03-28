@@ -42,6 +42,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
         )
     )
 
+    original_filing.save_to_session()
+
     # add comment to the correction filing
     correction_filing.comments.append(
         Comment(
@@ -68,5 +70,4 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
         correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
         setattr(correction_filing, 'skip_status_listener', True)
 
-    original_filing.save_to_session()
     return correction_filing
