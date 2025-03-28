@@ -383,9 +383,9 @@ def get_parties_and_addresses_query(corp_num):
             else null
         end), 'YYYY-MM-DD') as cp_appointment_dt_str,
         to_char(cp.cessation_dt, 'YYYY-MM-DD')     as cp_cessation_dt_str,
-        cp.last_name              as cp_last_name,
-        cp.middle_name            as cp_middle_name,
-        cp.first_name             as cp_first_name,
+        cp.last_name                                as cp_last_name,
+        nullif(trim(cp.middle_name), '')            as cp_middle_name,
+        cp.first_name                               as cp_first_name,
         concat_ws(' ', nullif(trim(cp.first_name),''), nullif(trim(cp.middle_name),''), nullif(trim(cp.last_name),'')) as cp_full_name,
         trim(cp.business_name)    as cp_business_name,
         -- TODO: need to figure it out, thougth according to the spreadsheet, it converts to identifier
