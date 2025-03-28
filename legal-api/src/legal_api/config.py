@@ -185,9 +185,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Transparency Register
     TR_START_DATE = os.getenv('TR_START_DATE', '').strip()  # i.e. '2025-02-01'
 
-    # Flag to control if the business endpoint v2 is open to the public (no auth check)
-    BUSINESS_V2_PUBLIC = False
-
     TESTING = False
     DEBUG = False
 

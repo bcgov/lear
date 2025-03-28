@@ -26,6 +26,7 @@ from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_OR
 
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services import flags
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit.models import factory_business, factory_pending_filing
@@ -33,6 +34,7 @@ from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_completed_filing
 
+from unittest.mock import MagicMock
 
 def factory_business_model(legal_name,
                            identifier,
@@ -194,15 +196,29 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     assert registry_schemas.validate(rv.json, 'business')
 
 
-@pytest.mark.parametrize('test_name, slim_version', [
-    ('slim business request', True),
-    ('regular business request', False)
+@pytest.mark.parametrize('test_name, slim_version, auth_check_on', [
+    ('slim business request', True, True),
+    ('regular business request', False, True),
+    ('regular business request with the auth-check flag turned off', False, False)
 ])
-def test_get_business_with_unauthoized_role(app, session, client, jwt, requests_mock, test_name, slim_version):
+def test_get_business_with_unauthoized_role(app, session, client, jwt, requests_mock, test_name, slim_version, auth_check_on):
     """
     Assert that the public users with no 'view' role cannot access the full business info.
     But they can access the slim data.
     """
+    # original function that check if a feature flag is on
+    is_feature_flag_on = flags.is_on
+
+    # mocked feature flag check function:
+    # when the flag is 'enable-auth-v2-business', whether it is on is controlled by 'auth_check_on'
+    def check_feature_flag(flag_name):
+        if flag_name == 'enable-auth-v2-business':
+            return auth_check_on
+        else:
+            return is_feature_flag_on(flag_name)
+
+    flags.is_on = MagicMock(side_effect=check_feature_flag)
+
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'
     factory_business_model(legal_name=legal_name,
@@ -215,13 +231,15 @@ def test_get_business_with_unauthoized_role(app, session, client, jwt, requests_
                            dissolution_date=None)
 
     headers = create_header(jwt, [PUBLIC_USER], identifier)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
     if slim_version:
         rv = client.get('/api/v2/businesses/' + identifier + '?slim=true', headers=headers)
         assert rv.status_code == HTTPStatus.OK
     else:
-        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
         rv = client.get('/api/v2/businesses/' + identifier, headers=headers)
-        assert rv.status_code == HTTPStatus.UNAUTHORIZED
+        assert flags.is_on('enable-auth-v2-business') == auth_check_on
+        assert rv.status_code == (HTTPStatus.UNAUTHORIZED if auth_check_on else HTTPStatus.OK)
 
 
 def test_get_business_with_correction_filings(session, client, jwt):
