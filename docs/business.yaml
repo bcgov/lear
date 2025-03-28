@@ -1344,6 +1344,7 @@ paths:
       tags:
         - business
       operationId: put-businesses-identifier-filings-filingId
+      description: Update a filing or a filing draft
       responses:
         '202':
           description: ACCEPTED
