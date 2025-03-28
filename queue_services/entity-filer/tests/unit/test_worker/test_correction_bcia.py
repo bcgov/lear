@@ -228,7 +228,8 @@ BC_CORRECTION_SHORT = {
             'details': 'First correction',
             'correctedFilingId': '123456',
             'correctedFilingType': 'incorporationApplication',
-            'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system'
+            'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system',
+            'commentOnly': True
         }
     }
 }
