@@ -7,6 +7,7 @@
         "enable-sandbox": false,
         "enable-involuntary-dissolution-filter": false,
         "enable-new-ben-statements": false,
+        "enable-auth-v2-business": true,
         "involuntary-dissolution-filter": {
             "include-accounts": [],
             "exclude-accounts": []
