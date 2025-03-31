@@ -127,8 +127,11 @@ class PartyRole(db.Model, Versioned):
     @staticmethod
     def get_party_roles(business_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
+        # TODO: remove hardcoded officer exclude filter when we know how to deal with imported officer data.
+        #       If we don't do this, it results in deletion of officer data via things like correction filing
         party_roles = db.session.query(PartyRole). \
-            filter(PartyRole.business_id == business_id)
+            filter(PartyRole.business_id == business_id). \
+            filter(PartyRole.role != 'officer')
 
         if end_date is not None:
             party_roles = party_roles.filter(cast(PartyRole.appointment_date, Date) <= end_date). \

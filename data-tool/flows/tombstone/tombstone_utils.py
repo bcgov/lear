@@ -123,7 +123,12 @@ def format_parties_data(data: dict) -> list[dict]:
     }
 
     df = pd.DataFrame(parties_data)
-    grouped_parties = df.groupby('cp_full_name')
+    # Modify grouping to consider both name and whether party is an officer.
+    # If officer, we want a separate party_role entry in LEAR
+    df['group_key'] = df.apply(lambda x: f"{x['cp_full_name']}_{x['cp_party_typ_cd']}"
+                                         if x['cp_party_typ_cd'] == 'OFF' else x['cp_full_name'], axis=1)
+    grouped_parties = df.groupby('group_key')
+
     for _, group in grouped_parties:
         party = copy.deepcopy(PARTY)
         party_info = group.iloc[0].to_dict()
@@ -278,7 +283,7 @@ def format_share_name(name: str):
 
     if name.endswith(' shares'):
         name = name.removesuffix(' shares')
-    
+
     return f'{name}{expected_suffix}'
 
 

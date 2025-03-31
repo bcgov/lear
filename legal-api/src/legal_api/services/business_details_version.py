@@ -339,6 +339,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             role (str): Optional role filter
         """
         # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
+        # TODO: remove hardcoded officer exclude filter when we know how to deal with imported officer data.
+        #       If we don't do this, it may return officer data unexpectly for things like outputs
         party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
         parties = []
         versioned_party_role_ids = set()
@@ -348,6 +350,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(party_role_version.transaction_id <= transaction_id) \
             .filter(party_role_version.operation_type != 2) \
             .filter(party_role_version.business_id == business_id) \
+            .filter(party_role_version.role != 'officer') \
             .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
@@ -371,6 +374,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             # Query current party role data for any roles not found in versioning
             current_party_roles = db.session.query(PartyRole).filter(
                 PartyRole.business_id == business_id,
+                PartyRole.role != 'officer',
                 PartyRole.id.notin_(versioned_party_role_ids) if versioned_party_role_ids else True
             )
             if role:
