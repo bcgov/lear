@@ -123,7 +123,8 @@ def format_parties_data(data: dict) -> list[dict]:
     }
 
     df = pd.DataFrame(parties_data)
-    grouped_parties = df.groupby('cp_full_name')
+    df['group_by_key'] = df['cp_full_name'] + '_' + df['cp_party_typ_cd'] 
+    grouped_parties = df.groupby('group_by_key')
     for _, group in grouped_parties:
         party = copy.deepcopy(PARTY)
         party_info = group.iloc[0].to_dict()
