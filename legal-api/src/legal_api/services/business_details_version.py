@@ -353,7 +353,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > transaction_id)) \
-            .filter(party_role_version.role != 'officer') \
+            .filter(party_role_version.role != PartyRole.RoleTypes.OFFICER.value) \
             .order_by(party_role_version.transaction_id).all()
 
         # Process versioned party roles
