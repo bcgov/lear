@@ -343,6 +343,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         parties = []
         versioned_party_role_ids = set()
 
+        # TODO: remove filter that excludes officer when we have plans to deal with it
         # Get versioned party roles
         versioned_party_roles = db.session.query(party_role_version)\
             .filter(party_role_version.transaction_id <= transaction_id) \
@@ -352,6 +353,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > transaction_id)) \
+            .filter(party_role_version.role != 'officer') \
             .order_by(party_role_version.transaction_id).all()
 
         # Process versioned party roles
@@ -371,7 +373,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             # Query current party role data for any roles not found in versioning
             current_party_roles = db.session.query(PartyRole).filter(
                 PartyRole.business_id == business_id,
-                PartyRole.id.notin_(versioned_party_role_ids) if versioned_party_role_ids else True
+                PartyRole.id.notin_(versioned_party_role_ids) if versioned_party_role_ids else True,
+                PartyRole.role != PartyRole.RoleTypes.OFFICER.value
             )
             if role:
                 current_party_roles = current_party_roles.filter(PartyRole.role == role)
