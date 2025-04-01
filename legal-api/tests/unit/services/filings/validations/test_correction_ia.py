@@ -16,15 +16,16 @@
 import copy
 from http import HTTPStatus
 from unittest.mock import patch
-from tests.unit import MockResponse
 
 import pytest
 from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
+from tests.unit import MockResponse
 from tests.unit.models import factory_business, factory_completed_filing
 from tests.unit.services.filings.validations import lists_are_equal
+
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)

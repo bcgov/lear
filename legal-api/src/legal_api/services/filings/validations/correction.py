@@ -22,8 +22,7 @@ from flask_babel import _
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services import STAFF_ROLE, NaicsService
-from legal_api.services.authz import SYSTEM_ROLE
+from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
