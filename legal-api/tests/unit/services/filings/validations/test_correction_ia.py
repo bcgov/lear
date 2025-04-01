@@ -158,6 +158,7 @@ def test_parties_correction(mocker, session, test_name, legal_type, correction_t
     f['filing']['correction']['nameRequest']['legalName'] = 'test'
     f['filing']['correction']['nameRequest']['legalType'] = legal_type
     f['filing']['business']['legalType'] = legal_type
+    del f['filing']['correction']['commentOnly']
 
     if test_name == 'no_roles':
         f['filing']['correction']['parties'][0]['roles'] = []
@@ -183,7 +184,10 @@ def test_parties_correction(mocker, session, test_name, legal_type, correction_t
     }
     nr_response = MockResponse(nr_response_json)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
+    if correction_type == 'CLIENT':
+        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
+    else:
+        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
         err = validate(business, f)
