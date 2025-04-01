@@ -78,6 +78,7 @@ def test_nr_correction(mocker, session, new_name, legal_type, nr_legal_type, nr_
     f['filing']['correction']['nameRequest']['legalName'] = new_name
     f['filing']['correction']['nameRequest']['legalType'] = legal_type
     f['filing']['business']['legalType'] = legal_type
+    del f['filing']['correction']['commentOnly']
 
     nr_response_json = {
         'state': 'INPROGRESS' if new_name == 'nr_not_approved' else 'APPROVED',
