@@ -820,8 +820,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # copy director
         if self._filing.transaction_id:
             parties_version = VersionedBusinessDetailsService.get_party_role_revision(
-                self._filing.id,
-                self._filing.transaction_id,
+                self._filing,
                 primary_or_holding_business.id,
                 role=PartyRole.RoleTypes.DIRECTOR.value)
             for director_json in parties_version:
@@ -946,7 +945,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     parties_to_edit.append(str(party['officer'].get('id')))
                     prev_party =\
                         VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing.transaction_id, party['officer'].get('id'))
+                            prev_completed_filing, party['officer'].get('id'))
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing.transaction_id, prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
@@ -964,7 +963,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.id, prev_completed_filing.transaction_id, self._business.id, True)
+                prev_completed_filing, self._business.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
@@ -1166,7 +1165,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     parties_to_edit.append(str(party_id))
                     prev_party =\
                         VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing.transaction_id, party_id)
+                            prev_completed_filing, party_id)
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing.transaction_id, prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
@@ -1184,7 +1183,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.id, prev_completed_filing.transaction_id, self._business.id, True)
+                prev_completed_filing, self._business.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 

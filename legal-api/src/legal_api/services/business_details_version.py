@@ -89,8 +89,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json['incorporationApplication']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.id, filing.transaction_id, business.id)
         ia_json['incorporationApplication']['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.id,
-                                                                    filing.transaction_id,
+            VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                     business.id,
                                                                     is_ia_or_after=True)
         ia_json['incorporationApplication']['nameRequest'] = \
@@ -128,8 +127,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         cod_json['changeOfDirectors'] = {}
         cod_json['changeOfDirectors']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.id,
-                                                                    filing.transaction_id,
+            VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                     business.id, role='director')
         return cod_json
 
@@ -167,8 +165,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             ar_json['annualReport']['nextARDate'] = filing.json['filing']['annualReport']['nextARDate']
 
         ar_json['annualReport']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.id,
-                                                                    filing.transaction_id,
+            VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                     business.id, role='director')
         ar_json['annualReport']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.id, filing.transaction_id, business.id)
@@ -200,7 +197,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         company_profile_json['business'] = \
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         company_profile_json['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.id, filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_party_role_revision(filing, business_id)
         company_profile_json['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing_id, filing.transaction_id, business_id)
         company_profile_json['shareClasses'] = \
@@ -325,7 +322,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return offices_json
 
     @staticmethod
-    def get_party_role_revision(filing_id, transaction_id, business_id, is_ia_or_after=False, role=None) -> dict:
+    def get_party_role_revision(filing, business_id, is_ia_or_after=False, role=None) -> dict:
         """Consolidates all party changes up to the given transaction id.
 
         For migrated (tombstone) businesses, if no versioning data exists and the filing is after
@@ -346,13 +343,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         # TODO: remove filter that excludes officer when we have plans to deal with it
         # Get versioned party roles
         versioned_party_roles = db.session.query(party_role_version)\
-            .filter(party_role_version.transaction_id <= transaction_id) \
+            .filter(party_role_version.transaction_id <= filing.transaction_id) \
             .filter(party_role_version.operation_type != 2) \
             .filter(party_role_version.business_id == business_id) \
             .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        party_role_version.end_transaction_id > transaction_id)) \
+                        party_role_version.end_transaction_id > filing.transaction_id)) \
             .filter(party_role_version.role != PartyRole.RoleTypes.OFFICER.value) \
             .order_by(party_role_version.transaction_id).all()
 
@@ -360,7 +357,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         for party_role in versioned_party_roles:
             versioned_party_role_ids.add(party_role.id)
             if party_role.cessation_date is None:
-                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
+                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(filing,
                                                                                            party_role, is_ia_or_after)
                 if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
                                                                   == party_role_json['officer']['id']), None)):
@@ -369,7 +366,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                     parties.append(party_role_json)
 
         # Check if this is a tombstone business and if the filing is after the tombstone filing
-        if Filing.is_filing_after_tombstone(filing_id=filing_id, business_id=business_id):
+        if Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id):
             # Query current party role data for any roles not found in versioning
             current_party_roles = db.session.query(PartyRole).filter(
                 PartyRole.business_id == business_id,
@@ -380,7 +377,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 current_party_roles = current_party_roles.filter(PartyRole.role == role)
 
             for party_role in current_party_roles.all():
-                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
+                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(filing,
                                                                                            party_role, is_ia_or_after)
                 if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
                                                                   == party_role_json['officer']['id']), None)):
@@ -483,19 +480,20 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return resolutions_arr
 
     @staticmethod
-    def party_role_revision_json(transaction_id, party_role, is_ia_or_after) -> dict:
+    def party_role_revision_json(filing, party_role, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
         cessation_date = datetime.date(party_role.cessation_date).isoformat() if party_role.cessation_date else None
 
         # For both versioned and non-versioned cases, get party data through party_revision_json
         if isinstance(party_role, VersioningProxy.version_class(db.session(), PartyRole)):
             # Versioned party role
-            party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id, party_role.party_id)
+            party_revision = VersionedBusinessDetailsService.get_party_revision(filing, party_role.party_id)
         else:
             # Non-versioned party role - use current party
             party_revision = party_role.party
 
-        party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision, is_ia_or_after)
+        party = VersionedBusinessDetailsService.party_revision_json(filing.transaction_id,
+                                                                    party_revision, is_ia_or_after)
 
         if is_ia_or_after:
             party['roles'] = [{
@@ -513,16 +511,21 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return party
 
     @staticmethod
-    def get_party_revision(transaction_id, party_id) -> dict:
+    def get_party_revision(filing, party_id) -> dict:
         """Consolidates all party changes upto the given transaction id."""
         party_version = VersioningProxy.version_class(db.session(), Party)
         party = db.session.query(party_version) \
-            .filter(party_version.transaction_id <= transaction_id) \
+            .filter(party_version.transaction_id <= filing.transaction_id) \
             .filter(party_version.operation_type != 2) \
             .filter(party_version.id == party_id) \
             .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        party_version.end_transaction_id > transaction_id)) \
+                        party_version.end_transaction_id > filing.transaction_id)) \
             .order_by(party_version.transaction_id).one_or_none()
+
+        if not party and Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=filing.business_id):
+            # Query current party data if party not found in versioning
+            party = Party.find_by_id(party_id)
+
         return party
 
     @staticmethod

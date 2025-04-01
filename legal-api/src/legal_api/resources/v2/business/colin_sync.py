@@ -172,8 +172,7 @@ def has_party_changed(filing: Filing) -> bool:
         return True
 
     # Has existing party modified
-    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing.id,
-                                                                          filing.transaction_id,
+    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                           filing.business_id,
                                                                           role=PartyRole.RoleTypes.DIRECTOR.value)
 
@@ -187,7 +186,7 @@ def has_party_changed(filing: Filing) -> bool:
         if db.session.query(parties_query).scalar():  # Modified party
             return True
 
-        party = VersionedBusinessDetailsService.get_party_revision(filing.transaction_id, party_role['id'])
+        party = VersionedBusinessDetailsService.get_party_revision(filing, party_role['id'])
         address_version = VersioningProxy.version_class(db.session(), Address)
         # Has party delivery/mailing address modified
         address_query = (db.session.query(address_version)
@@ -257,8 +256,7 @@ def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
 
 def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
     parties = []
-    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing.id,
-                                                                              filing.transaction_id,
+    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                               primary_or_holding_business.id,
                                                                               role=PartyRole.RoleTypes.DIRECTOR.value)
     # copy director
