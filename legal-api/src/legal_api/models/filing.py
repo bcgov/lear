@@ -995,8 +995,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
         """Return a filing by the temp id and filing id (if applicable)."""
-        print("get temp")
-
         if not filing_id:
             return db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id).one_or_none()
 
