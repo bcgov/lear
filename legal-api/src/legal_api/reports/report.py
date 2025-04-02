@@ -1079,15 +1079,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return corp_type.full_desc if corp_type else None
 
     def _format_correction_data(self, filing):
-        if self._business.legal_type in ['SP', 'GP']:
-            self._format_change_of_registration_data(filing, 'correction')
-        else:
-            prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
-            versioned_business = VersionedBusinessDetailsService.\
-                get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
+        is_comment_only_correction = filing.get('correction', {}).get('commentOnly', '')
+        if not is_comment_only_correction:
+            if self._business.legal_type in ['SP', 'GP']:
+                self._format_change_of_registration_data(filing, 'correction')
+            else:
+                prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+                versioned_business = VersionedBusinessDetailsService.\
+                    get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
 
-            is_comment_only_correction = filing.get('correction', {}).get('commentOnly', '')
-            if not is_comment_only_correction:
                 self._format_name_request_data(filing, versioned_business)
                 self._format_name_translations_data(filing, prev_completed_filing)
                 self._format_office_data(filing, prev_completed_filing)

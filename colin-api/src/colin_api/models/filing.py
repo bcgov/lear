@@ -2004,6 +2004,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
 
+            if not filings_added:  # if no filing created
+                raise GenericException(  # pylint: disable=broad-exception-raised
+                    f'No filing created for this correction identifier:{corp_num}.',
+                    HTTPStatus.NOT_IMPLEMENTED
+                )
+
             return filings_added
 
         except Exception as err:
