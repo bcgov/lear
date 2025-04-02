@@ -309,18 +309,12 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing_json = rv.json
         # get temp user details 
         if (identifier.startswith('T')):
-        # submitter (bscs/xyz idir@xyz)
             submitter = filing_json['filing']['header']['submitter']
-            # find user by username
-            t_user = User.find_by_username(submitter)
-            # find userRole as its null for t businesses
-            t_user_role = User.create_user_role_by_login_source(submitter) 
-            # encode the submitter
-            if rv.redact_submitter(t_user_role, jwt):
-                submitter_displayname = REDACTED_STAFF_SUBMITTER
-            else:
-                submitter_displayname = t_user.display_name or submitter
-
+            if submitter and jwt:
+                    if rv.redact_submitter(rv.storage.submitter_roles, jwt):
+                        submitter_displayname = REDACTED_STAFF_SUBMITTER
+                    else:
+                        submitter_displayname = User.find_by_username(submitter).display_name or submitter
             filing_json['filing']['header']['submitter'] = submitter_displayname
 
         if rv.status == Filing.Status.PENDING.value:

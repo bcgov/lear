@@ -361,7 +361,9 @@ class Filing:  # pylint: disable=too-many-public-methods
     @staticmethod
     def redact_submitter(submitter_roles: list, jwt: JwtManager) -> Optional[bool]:
         """Redact the submitter of the filing."""
-        if not (submitter_roles or jwt):
+        if not (submitter_roles):
+            return False
+        if not (jwt):
             return None
 
         with suppress(KeyError, TypeError):
