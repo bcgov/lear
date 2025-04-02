@@ -374,7 +374,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             current_party_roles = db.session.query(PartyRole).filter(
                 PartyRole.business_id == business_id,
                 PartyRole.id.notin_(versioned_party_role_ids) if versioned_party_role_ids else True,
-                PartyRole.role != PartyRole.RoleTypes.OFFICER.value
+                PartyRole.role != PartyRole.RoleTypes.OFFICER.value,
+                PartyRole.cessation_date.is_(None),
             )
             if role:
                 current_party_roles = current_party_roles.filter(PartyRole.role == role)
