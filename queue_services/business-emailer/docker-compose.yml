@@ -1,0 +1,29 @@
+version: "3"
+services:
+  tracker:
+    image: "postgres:11"
+    volumes:
+      - tracker_vol:/var/lib/postgresql
+    container_name: "tracker-db"
+    ports:
+      - "${TRACKER_DATABASE_TEST_PORT}:5432"
+    environment:
+      LC_ALL: "C.UTF-8"
+      POSTGRES_DB: "${TRACKER_DATABASE_TEST_NAME}"
+      POSTGRES_USER: "${TRACKER_DATABASE_TEST_USERNAME}"
+      POSTGRES_PASSWORD: "${TRACKER_DATABASE_TEST_PASSWORD}"
+  lear:
+    image: "postgres:11"
+    volumes:
+      - lear_vol:/var/lib/postgresql
+    container_name: "lear-test"
+    ports:
+      - "${DATABASE_TEST_PORT}:5432"
+    environment:
+      LC_ALL: "C.UTF-8"
+      POSTGRES_DB: "${DATABASE_TEST_NAME}"
+      POSTGRES_USER: "${DATABASE_TEST_USERNAME}"
+      POSTGRES_PASSWORD: "${DATABASE_TEST_PASSWORD}"
+volumes:
+  tracker_vol: {}
+  lear_vol: {}
