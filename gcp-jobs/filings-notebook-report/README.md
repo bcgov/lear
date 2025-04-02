@@ -2,6 +2,9 @@
 
 Generate notebook report
 
+## NOTE ABOUT REQS
+This job is on python 3.12 instead of 3.13 because spacy won't work as of the time of writing on python 3.13
+
 ## Development Environment
 
 Follow the instructions of the [Development Readme](https://github.com/bcgov/entity/blob/master/docs/development.md)
@@ -22,56 +25,28 @@ to setup your local development environment.
 
 1. Run `python -m pytest` or `pytest` command.
 
-### Build API - can be done in VS Code
+## NOTE ABOUT REQS
+This job is on python 3.12 instead of 3.13 because spacy won't work as of the time of writing on python 3.13
 
-1. Login to openshift
+## Poetry
+You may prefer to have the vitrual-environment in the project home. To do that, tell poetry to use a local .venv before installing.
+```shell
+poetry config virtualenvs.in-project true
+```
+```shell
+poetry install
+```
 
-   ```sh
-   oc login xxxxxxx
-   ```
+You can issue any command in the current environment, via poetry's shell
+```shell
+poetry shell
+```
 
-2. switch to tools namespace
-
-   ```sh
-   oc project cc892f-tools
-   ```
-
-3. Create build image with a tag 'latest'.
-
-   ```sh   
-   oc process -f openshift/templates/bc.yaml \
-   -p GIT_REPO_URL=https://github.com/bcgov/lear.git \
-   -p GIT_REF=main \
-   -o yaml \
-   | oc apply -f - -n cc892f-tools  
-   ```
-4. Checking log for building process at Console => Administrator => Builds => Builds => click image 'filings-notebook-report' => logs
-
-5. Tag image to dev: 'oc tag filings-notebook-report:latest filings-notebook-report:dev'
+### Aside: faster local dev?
+change the git installed services to the local versions and rebuild the lockfile
+```bash
+poetry lock
+```
+remember to switch them back before the final PR
 
 
-### Create cron
-
-1. Login to openshift
-
-   ```sh
-   oc login xxxxxxx
-   ```
-
-2. switch to dev namespace
-
-   ```sh
-   oc project cc892f-dev
-   ```
-
-3. Create cron
-
-   ```sh
-   oc process -f openshift/templates/cronjob.yaml \
-  -p TAG=dev \
-  -p SCHEDULE="30 14 * * *" \
-  -o yaml \
-  | oc apply -f - -n cc892f-dev
-  ```
-
-4. Create a job to run and test it: 'oc create job filings-notebook-report-dev-1 --from=cronjob/filings-notebook-report-dev -n cc892f-dev'
