@@ -314,7 +314,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             # find user by username
             t_user = User.find_by_username(submitter)
             # find userRole as its null for t businesses
-            t_user_role = User.create_userRole_by_loginsource(submitter) 
+            t_user_role = User.create_user_role_by_login_source(submitter) 
             # encode the submitter
             if rv.redact_submitter(t_user_role, jwt):
                 submitter_displayname = REDACTED_STAFF_SUBMITTER
@@ -501,14 +501,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         """Return a NoW by the withdrawn filing id."""
         filing = db.session.query(Filing). \
             filter(Filing.withdrawn_filing_id == filing_id).one_or_none()
-
-        return filing
-
-    @staticmethod
-    def testing(filing_id: str = None):
-        """Return a NoW by the withdrawn filing id."""
-        filing = db.session.query(Filing). \
-            filter(Filing.id == filing_id).one_or_none()
 
         return filing
 

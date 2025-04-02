@@ -145,7 +145,7 @@ class User(db.Model, Versioned):
         return cls.query.filter_by(username=username).order_by(User.creation_date.desc()).first()
 
     @classmethod
-    def create_userRole_by_loginsource(cls, username):
+    def create_user_role_by_login_source(cls, username):
         """Return user roles from login_source is 'bscs', otherwise 'staff'."""
         user = cls.query.filter_by(username=username).order_by(User.creation_date.desc()).first()
         
