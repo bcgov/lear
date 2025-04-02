@@ -1079,7 +1079,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return corp_type.full_desc if corp_type else None
 
     def _format_correction_data(self, filing):
-        if bool(filing.get('correction', {}).get('commentOnly', 'False')):
+        if bool(filing.get('correction', {}).get('commentOnly', False)):
             return
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
