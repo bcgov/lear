@@ -1,0 +1,12 @@
+gunicorn
+Flask
+Flask-Script
+Flask-Moment
+Flask-RESTplus
+asyncio-nats-client
+asyncio-nats-streaming
+flask-jwt-oidc>=0.1.5
+nest_asyncio
+python-dotenv
+sentry-sdk[flask]
+werkzeug
