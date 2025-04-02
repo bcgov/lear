@@ -107,6 +107,7 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
 
     message['Subject'] = subject
     server = smtplib.SMTP(os.getenv('EMAIL_SMTP', ''))
+    server.connect()
     email_list = recipients.strip('][').split(', ')
     logging.info('Email recipients list is: %s', email_list)
     server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
@@ -134,6 +135,7 @@ def processnotebooks(notebookdirectory, data_directory):
 
     # For monthly tasks, we only run on the specified days
     if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):
+        notebookdirectory = os.path.join(os.path.dirname(__file__), notebookdirectory)
         logging.info('Processing: %s', notebookdirectory)
 
         num_files = len(os.listdir(notebookdirectory))
