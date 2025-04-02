@@ -125,6 +125,8 @@ class EventFilings(str, Enum):
 
     # TODO: Liquidation - unsupported
     # FILE_ADCOL = 'FILE_ADCOL'
+    FILE_NOARM = 'FILE_NOARM'
+    FILE_NOCER = 'FILE_NOCER'
 
     # TODO: Notice of Withdrawal - unsupported
     FILE_NWITH = 'FILE_NWITH'
@@ -269,6 +271,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AM_TR: 'legacyOther',
 
     # TODO: Liquidation - unsupported
+    EventFilings.FILE_NOARM: 'appointReceiver',
+    EventFilings.FILE_NOCER: 'ceaseReceiver',
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
 
@@ -388,8 +392,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     # NOCEL: 'Notice of Ceasing to Act as Liquidator'
     # LIQUR: 'Liquidation Report'
     # LQWOS: 'Notice of Withdrawal Statement of Intent to Liquidate'
-    # NOARM: 'Notice of Appointment of Receiver or Receiver Manager'
-    # NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager'
+    EventFilings.FILE_NOARM: 'Notice of Appointment of Receiver or Receiver Manager',
+    EventFilings.FILE_NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager',
     # LQSIN: 'Statement of Intent to Liquidate'
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
