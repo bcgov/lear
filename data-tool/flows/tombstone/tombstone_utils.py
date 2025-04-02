@@ -75,13 +75,13 @@ def format_address_data(address_data: dict, prefix: str) -> dict:
 
     formatted_address = {
         'address_type': address_type,
-        'street': street,
-        'street_additional': street_additional,
-        'city': address_data[f'{prefix}city'],
-        'region': address_data[f'{prefix}province'],
+        'street': street or '',
+        'street_additional': street_additional or '',
+        'city': address_data[f'{prefix}city'] or '',
+        'region': address_data[f'{prefix}province'] or '',
         'country': address_data[f'{prefix}country_typ_cd'],
-        'postal_code': address_data[f'{prefix}postal_cd'],
-        'delivery_instructions': delivery_instructions
+        'postal_code': address_data[f'{prefix}postal_cd'] or '',
+        'delivery_instructions': delivery_instructions or ''
     }
     return formatted_address
 
@@ -123,15 +123,20 @@ def format_parties_data(data: dict) -> list[dict]:
     }
 
     df = pd.DataFrame(parties_data)
-    grouped_parties = df.groupby('cp_full_name')
+    df['group_by_key'] = df['cp_full_name'] + '_' + df['cp_party_typ_cd'] 
+    grouped_parties = df.groupby('group_by_key')
     for _, group in grouped_parties:
         party = copy.deepcopy(PARTY)
         party_info = group.iloc[0].to_dict()
         party['parties']['cp_full_name'] = party_info['cp_full_name']
-        party['parties']['first_name'] = party_info['cp_first_name']
-        party['parties']['middle_initial'] = party_info['cp_middle_name']
-        party['parties']['last_name'] = party_info['cp_last_name']
+        party['parties']['first_name'] = party_info['cp_first_name'] or ''
+        party['parties']['middle_initial'] = party_info['cp_middle_name'] or ''
+        party['parties']['last_name'] = party_info['cp_last_name'] or ''
         party['parties']['party_type'] = 'person'
+        party['parties']['title'] = ''
+        party['parties']['organization_name'] = ''
+        party['parties']['email'] = ''
+        party['parties']['identifier'] = ''
 
         # Note: can be index 0
         if (ma_index := group['cp_mailing_addr_id'].first_valid_index()) is not None:
@@ -207,11 +212,12 @@ def format_offices_held_data(data: dict) -> list[dict]:
 
 
 def format_share_series_data(share_series_data: dict) -> dict:
+    max_shares = int(share_series_data['srs_share_quantity']) if share_series_data['srs_share_quantity'] else None
     formatted_series = {
         'name': format_share_name(share_series_data['srs_series_nme']),
         'priority': int(share_series_data['srs_series_id']) if share_series_data['srs_series_id'] else None,
-        'max_share_flag': share_series_data['srs_max_share_ind'],
-        'max_shares': int(share_series_data['srs_share_quantity']) if share_series_data['srs_share_quantity'] else None,
+        'max_share_flag': (max_shares > 0 if max_shares else False),
+        'max_shares': max_shares if (max_shares and max_shares > 0) else None,
         'special_rights_flag': share_series_data['srs_spec_right_ind']
     }
 
@@ -247,10 +253,10 @@ def format_share_classes_data(data: dict) -> list[dict]:
 
         share_class['share_classes']['name'] = format_share_name(share_class_info['ssc_class_nme'])
         share_class['share_classes']['priority'] = priority
-        share_class['share_classes']['max_share_flag'] = share_class_info['ssc_max_share_ind']
-        share_class['share_classes']['max_shares'] = max_shares
-        share_class['share_classes']['par_value_flag'] = share_class_info['ssc_par_value_ind']
-        share_class['share_classes']['par_value'] = par_value
+        share_class['share_classes']['max_share_flag'] = (max_shares > 0 if max_shares else False)
+        share_class['share_classes']['max_shares'] = max_shares if (max_shares and max_shares > 0) else None
+        share_class['share_classes']['par_value_flag'] = (par_value > 0 if par_value else False)
+        share_class['share_classes']['par_value'] = par_value if (par_value and par_value > 0) else None
         share_class['share_classes']['currency'] = currency
         share_class['share_classes']['currency_additional'] = currency_additioanl
         share_class['share_classes']['special_rights_flag'] = share_class_info['ssc_spec_rights_ind']

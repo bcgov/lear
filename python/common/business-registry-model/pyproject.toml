@@ -35,6 +35,10 @@ zimports = "^0.6.1"
 black = "^25.1.0"
 pytest-cov = "^6.0.0"
 
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -46,12 +50,6 @@ exclude = [
     "devops",
     ".history"
 ]
-
-[tool.poetry.dependencies]
-sql-versioning = {develop = true}
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
 
 
 # Same as Black.

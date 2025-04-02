@@ -442,7 +442,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                     business_profile.update_affiliation(business, filing_submission, flags)
 
                 name_request.consume_nr(business, filing_submission, flags=flags)
-                business_profile.update_business_profile(business, filing_submission, flags)
+                business_profile.update_business_profile(business, filing_submission, flags=flags)
                 await publish_mras_email(filing_submission)
             else:
                 if not flags.is_on('enable-sandbox'):
