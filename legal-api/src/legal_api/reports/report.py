@@ -1086,12 +1086,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             versioned_business = VersionedBusinessDetailsService.\
                 get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
 
-            self._format_name_request_data(filing, versioned_business)
-            self._format_name_translations_data(filing, prev_completed_filing)
-            self._format_office_data(filing, prev_completed_filing)
-            self._format_party_data(filing, prev_completed_filing)
-            self._format_share_class_data(filing, prev_completed_filing)
-            self._format_resolution_data(filing)
+            is_comment_only_correction = filing.get('correction', {}).get('commentOnly', '')
+            if not is_comment_only_correction:
+                self._format_name_request_data(filing, versioned_business)
+                self._format_name_translations_data(filing, prev_completed_filing)
+                self._format_office_data(filing, prev_completed_filing)
+                self._format_party_data(filing, prev_completed_filing)
+                self._format_share_class_data(filing, prev_completed_filing)
+                self._format_resolution_data(filing)
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})

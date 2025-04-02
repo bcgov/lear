@@ -109,7 +109,7 @@ def _get_pdfs(
                 attach_order += 1
         elif legal_type in Business.CORPS:
             # add notice of articles
-            if not bool(filing.filing_json['filing']['correction']['commentOnly']):
+            if not bool(filing.filing_json['filing']['correction'].get('commentOnly', False)):
                 noa_pdf_type = 'noticeOfArticles'
                 noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
                 if noa_encoded:
