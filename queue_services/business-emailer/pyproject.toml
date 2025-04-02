@@ -109,6 +109,7 @@ business-registry-account = {git = "https://github.com/bcgov/lear.git", subdirec
 #business-registry-common = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common"}
 flask-migrate = {version = ">=4.1.0,<5.0.0"}
 entity-queue-common = {git = "https://github.com/bcgov/lear.git", subdirectory = "queue_services/common"}
+pytest-mock = "^3.14.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
