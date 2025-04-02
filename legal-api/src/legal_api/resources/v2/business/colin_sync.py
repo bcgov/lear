@@ -115,6 +115,9 @@ def get_completed_filings_for_colin():
 
 def set_correction_flags(filing_json, filing: Filing):
     """Set what section changed in this correction."""
+    if filing.meta_data.get('commentOnly', False):
+        return
+
     if filing.meta_data.get('toLegalName'):
         filing_json['filing']['correction']['nameChanged'] = True
 

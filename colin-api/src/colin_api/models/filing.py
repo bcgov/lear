@@ -1996,13 +1996,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
 
-            if not filings_added:  # only comment added
+            if bool(filing.body.get('commentOnly', False)):  # only comment added
                 filing_type_code = Filing.FILING_TYPES[filing.filing_type][f'{sub_type}_COMMENT_ONLY']
                 event_id = cls._process_comment_correction(cursor, filing, corp_num, filing_type_code)
 
                 filings_added.append({'event_id': event_id,
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
+
+            if not filings_added:  # if no filing created
+                raise GenericException(  # pylint: disable=broad-exception-raised
+                    f'No filing created for this correction identifier:{corp_num}.',
+                    HTTPStatus.NOT_IMPLEMENTED
+                )
 
             return filings_added
 
