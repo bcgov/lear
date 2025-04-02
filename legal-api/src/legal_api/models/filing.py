@@ -963,7 +963,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             if self._payment_token:
                 json_submission['filing']['header']['paymentToken'] = self.payment_token
             if self.submitter_id:
-                json_submission['filing']['header']['submitter'] = self.filing_submitter.firstname
+                json_submission['filing']['header']['submitter'] = self.filing_submitter.username
             if self.payment_account:
                 json_submission['filing']['header']['paymentAccount'] = self.payment_account
 
@@ -995,6 +995,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @staticmethod
     def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
         """Return a filing by the temp id and filing id (if applicable)."""
+        print("get temp")
+
         if not filing_id:
             return db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id).one_or_none()
 

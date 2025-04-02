@@ -307,6 +307,22 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             return legal_api.reports.get_pdf(rv.storage, report_type)
 
         filing_json = rv.json
+        # get temp user details 
+        if (identifier.startswith('T')):
+        # submitter (bscs/xyz idir@xyz)
+            submitter = filing_json['filing']['header']['submitter']
+            # find user by username
+            t_user = User.find_by_username(submitter)
+            # find userRole as its null for t businesses
+            t_user_role = User.create_userRole_by_loginsource(submitter) 
+            # encode the submitter
+            if rv.redact_submitter(t_user_role, jwt):
+                submitter_displayname = REDACTED_STAFF_SUBMITTER
+            else:
+                submitter_displayname = t_user.display_name or submitter
+
+            filing_json['filing']['header']['submitter'] = submitter_displayname
+
         if rv.status == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
         if (rv.status == Filing.Status.WITHDRAWN.value or rv.storage.withdrawal_pending) and identifier.startswith('T'):
@@ -485,6 +501,14 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         """Return a NoW by the withdrawn filing id."""
         filing = db.session.query(Filing). \
             filter(Filing.withdrawn_filing_id == filing_id).one_or_none()
+
+        return filing
+
+    @staticmethod
+    def testing(filing_id: str = None):
+        """Return a NoW by the withdrawn filing id."""
+        filing = db.session.query(Filing). \
+            filter(Filing.id == filing_id).one_or_none()
 
         return filing
 

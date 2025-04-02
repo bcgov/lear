@@ -145,6 +145,20 @@ class User(db.Model, Versioned):
         return cls.query.filter_by(username=username).order_by(User.creation_date.desc()).first()
 
     @classmethod
+    def create_userRole_by_loginsource(cls, username):
+        """Return user roles from login_source is 'bscs', otherwise 'staff'."""
+        user = cls.query.filter_by(username=username).order_by(User.creation_date.desc()).first()
+        
+        if user:
+            if user.login_source == 'BCSC':
+                return UserRoles.public_user.name
+            elif user.login_source == 'SYSTEM':
+                return UserRoles.system.name
+            else:
+                return UserRoles.staff.name
+        return None
+
+    @classmethod
     def find_by_sub(cls, sub):
         """Return a User based on the unique sub field."""
         return cls.query.filter_by(sub=sub).one_or_none()
