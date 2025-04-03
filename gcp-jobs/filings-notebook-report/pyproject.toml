@@ -126,15 +126,13 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["search_api", "flask_jwt_oidc", "structured_logging", "gcp_queue"]
+known-first-party = ["structured_logging"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]  # used for imports
-"**/business_solr/doc_models/*" = ["N815"]  # camel naming to match doc dataclasses to solr after converting with 'asdict'
-"**/exceptions/__init__.py" = ["N818"]  # we use 'exception' suffix instead across bc registries
 
 [build-system]
 requires = ["poetry-core"]
