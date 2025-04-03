@@ -11,9 +11,10 @@ on:
       app_name:
         required: true
         type: string
+        default: "filings-notebook-report"
       working_directory:
         type: string
-        default: "."
+        default: ".gcp-jobs/filings-notebook-report"
       codecov_flag:
         type: string
       skip_isort:

@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "gcp-jobs/**"
+      - "gcp-jobs/filings-notebook-report/**"
   workflow_dispatch:
     inputs:
       target:
@@ -15,10 +15,10 @@ on:
       app_name:
         required: true
         type: string
-        default: "lear"
+        default: "filings-notebook-report"
       working_directory:
         type: string
-        default: "./gcp-jobs"
+        default: "./gcp-jobs/filings-notebook-report"
       redeploy:
         type: string
         default: "false"

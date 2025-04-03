@@ -3,6 +3,7 @@
 import ast
 import fnmatch
 import os
+import shutil
 import smtplib
 import sys
 import time
@@ -16,9 +17,9 @@ from email.mime.text import MIMEText
 
 import papermill as pm
 from dateutil.relativedelta import relativedelta
-from structured_logging import StructuredLogging
+from dotenv import find_dotenv, load_dotenv
 
-from dotenv import load_dotenv, find_dotenv
+from structured_logging import StructuredLogging
 
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
@@ -35,46 +36,46 @@ def findfiles(directory, pattern):
 def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: disable-msg=too-many-locals
     """Send email for results."""
     message = MIMEMultipart()
-    date = datetime.strftime(datetime.now() - timedelta(1), '%Y-%m-%d')
+    date = datetime.strftime(datetime.now() - timedelta(1), "%Y-%m-%d")
     last_month = datetime.now() - relativedelta(months=1)
-    ext = ''
-    filename = ''
-    if not os.getenv('ENVIRONMENT', '') == 'prod':
-        ext = ' on ' + os.getenv('ENVIRONMENT', '')
+    ext = ""
+    filename = ""
+    if os.getenv("ENVIRONMENT", "") != "prod":
+        ext = " on " + os.getenv("ENVIRONMENT", "")
 
-    if emailtype == 'ERROR':
+    if emailtype == "ERROR":
         subject = "Jupyter Notebook Error Notification from LEAR for processing '" \
             + note_book + "' on " + date + ext
-        recipients = os.getenv('ERROR_EMAIL_RECIPIENTS', '')
-        message.attach(MIMEText('ERROR!!! \n' + errormessage, 'plain'))
+        recipients = os.getenv("ERROR_EMAIL_RECIPIENTS", "")
+        message.attach(MIMEText("ERROR!!! \n" + errormessage, "plain"))
     else:
-        file_processing = note_book.split('.ipynb')[0]
+        file_processing = note_book.split(".ipynb")[0]
 
-        if file_processing == 'incorpfilings':
-            subject = 'Incorporation Filings Daily Stats ' + date + ext
-            filename = 'incorporation_filings_daily_stats_' + date + '.csv'
-            recipients = os.getenv('INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS', '')
-        elif file_processing == 'coopfilings':
-            subject = 'COOP Filings Monthly Stats for ' + format(last_month, '%B %Y') + ext
-            filename = 'coop_filings_monthly_stats_for_' + format(last_month, '%B_%Y') + '.csv'
-            recipients = os.getenv('COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS', '')
-        elif file_processing == 'cooperative':
-            subject = 'Cooperative Monthly Stats for ' + format(last_month, '%B %Y') + ext
-            filename = 'cooperative_monthly_stats_for_' + format(last_month, '%B_%Y') + '.csv'
-            recipients = os.getenv('COOPERATIVE_MONTHLY_REPORT_RECIPIENTS', '')
-        elif file_processing == 'firm-registration-filings':
-            subject = 'BC STATS FIRMS for ' + format(last_month, '%B %Y') + ext
-            filename = 'bc_stats_firms_for_' + format(last_month, '%B_%Y') + '.csv'
-            recipients = os.getenv('BC_STATS_MONTHLY_REPORT_RECIPIENTS', '')
+        if file_processing == "incorpfilings":
+            subject = "Incorporation Filings Daily Stats " + date + ext
+            filename = "incorporation_filings_daily_stats_" + date + ".csv"
+            recipients = os.getenv("INCORPORATION_FILINGS_DAILY_REPORT_RECIPIENTS", "")
+        elif file_processing == "coopfilings":
+            subject = "COOP Filings Monthly Stats for " + format(last_month, "%B %Y") + ext
+            filename = "coop_filings_monthly_stats_for_" + format(last_month, "%B_%Y") + ".csv"
+            recipients = os.getenv("COOP_FILINGS_MONTHLY_REPORT_RECIPIENTS", "")
+        elif file_processing == "cooperative":
+            subject = "Cooperative Monthly Stats for " + format(last_month, "%B %Y") + ext
+            filename = "cooperative_monthly_stats_for_" + format(last_month, "%B_%Y") + ".csv"
+            recipients = os.getenv("COOPERATIVE_MONTHLY_REPORT_RECIPIENTS", "")
+        elif file_processing == "firm-registration-filings":
+            subject = "BC STATS FIRMS for " + format(last_month, "%B %Y") + ext
+            filename = "bc_stats_firms_for_" + format(last_month, "%B_%Y") + ".csv"
+            recipients = os.getenv("BC_STATS_MONTHLY_REPORT_RECIPIENTS", "")
 
         # Add body to email
-        message.attach(MIMEText('Please see the attachment(s).', 'plain'))
+        message.attach(MIMEText("Please see the attachment(s).", "plain"))
 
         # Open file in binary mode
-        with open(data_directory+filename, 'rb') as attachment:
+        with open(data_directory+filename, "rb") as attachment:
             # Add file as application/octet-stream
             # Email client can usually download this automatically as attachment
-            part = MIMEBase('application', 'octet-stream')
+            part = MIMEBase("application", "octet-stream")
             part.set_payload(attachment.read())
 
         # Encode file in ASCII characters to send by email
@@ -82,70 +83,70 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
 
         # Add header as key/value pair to attachment part
         part.add_header(
-            'Content-Disposition',
-            f'attachment; filename= {filename}',
+            "Content-Disposition",
+            f"attachment; filename= {filename}",
         )
 
         # Add attachment to message and convert message to string
         message.attach(part)
 
-    message['Subject'] = subject
-    server = smtplib.SMTP(os.getenv('EMAIL_SMTP', ''))
+    message["Subject"] = subject
+    server = smtplib.SMTP(os.getenv("EMAIL_SMTP", ""))
     server.connect()
-    email_list = recipients.strip('][').split(', ')
-    logging.info('Email recipients list is: %s', email_list)
-    server.sendmail(os.getenv('SENDER_EMAIL', ''), email_list, message.as_string())
-    logging.info('Email with subject %s has been sent successfully!', subject)
+    email_list = recipients.strip("][").split(", ")
+    logging.info("Email recipients list is: %s", email_list)
+    server.sendmail(os.getenv("SENDER_EMAIL", ""), email_list, message.as_string())
+    logging.info("Email with subject %s has been sent successfully!", subject)
     server.quit()
-    if filename != '':
-        os.remove(os.path.join(os.getcwd(), r'data/')+filename)
+    if filename != "":
+        os.remove(os.path.join(os.getcwd(), r"data/")+filename)
 
 
 def processnotebooks(notebookdirectory, data_directory):
     """Process Notebook."""
     status = False
     now = datetime.now()
-    warnings.filterwarnings('ignore', category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     try:
-        retry_times = int(os.getenv('RETRY_TIMES', '1'))
-        retry_interval = int(os.getenv('RETRY_INTERVAL', '60'))
-        if notebookdirectory == 'monthly':
-            days = ast.literal_eval(os.getenv('MONTH_REPORT_DATES', ''))
-    except Exception:  # noqa: B902
-        logging.exception('Error processing notebook for %s', notebookdirectory)
-        send_email(notebookdirectory, data_directory, 'ERROR', traceback.format_exc())
+        retry_times = int(os.getenv("RETRY_TIMES", "1"))
+        retry_interval = int(os.getenv("RETRY_INTERVAL", "60"))
+        if notebookdirectory == "monthly":
+            days = ast.literal_eval(os.getenv("MONTH_REPORT_DATES", ""))
+    except Exception:
+        logging.exception("Error processing notebook for %s", notebookdirectory)
+        send_email(notebookdirectory, data_directory, "ERROR", traceback.format_exc())
         return status
 
     # For monthly tasks, we only run on the specified days
-    if notebookdirectory == 'daily' or (notebookdirectory == 'monthly' and now.day in days):
+    if notebookdirectory == "daily" or (notebookdirectory == "monthly" and now.day in days):
         notebookdirectory = os.path.join(os.path.dirname(__file__), notebookdirectory)
-        logging.info('Processing: %s', notebookdirectory)
+        logging.info("Processing: %s", notebookdirectory)
 
         num_files = len(os.listdir(notebookdirectory))
         file_processed = 0
 
-        for file in findfiles(notebookdirectory, '*.ipynb'):
+        for file in findfiles(notebookdirectory, "*.ipynb"):
             file_processed += 1
             note_book = os.path.basename(file)
             for attempt in range(retry_times):
                 try:
-                    pm.execute_notebook(file, data_directory+'temp.ipynb', parameters=None)
-                    send_email(note_book, data_directory, '', '')
-                    os.remove(data_directory+'temp.ipynb')
+                    pm.execute_notebook(file, data_directory+"temp.ipynb", parameters=None)
+                    send_email(note_book, data_directory, "", "")
+                    os.remove(data_directory+"temp.ipynb")
                     status = True
                     break
-                except Exception:  # noqa: B902
+                except Exception:
                     if attempt + 1 == retry_times:
                         # If any errors occur with the notebook processing they will be logged to the log file
                         logging.exception(
-                            'Error processing notebook %s at %s/%s try.', notebookdirectory, attempt + 1,
+                            "Error processing notebook %s at %s/%s try.", notebookdirectory, attempt + 1,
                             retry_times)
-                        send_email(notebookdirectory, data_directory, 'ERROR', traceback.format_exc())
+                        send_email(notebookdirectory, data_directory, "ERROR", traceback.format_exc())
                     else:
                         # If any errors occur with the notebook processing they will be logged to the log file
-                        logging.exception('Error processing notebook %s at %s/%s try. '
-                                          'Sleeping for %s secs before next try', notebookdirectory, attempt + 1,
+                        logging.exception("Error processing notebook %s at %s/%s try. "
+                                          "Sleeping for %s secs before next try", notebookdirectory, attempt + 1,
                                           retry_times, retry_interval)
                         time.sleep(retry_interval)
                         continue
@@ -154,21 +155,21 @@ def processnotebooks(notebookdirectory, data_directory):
     return status
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     start_time = datetime.now(UTC)
 
-    data_dir = os.path.join(os.getcwd(), r'data/')
+    data_dir = os.path.join(os.getcwd(), r"data/")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
     # Check if the subfolders for notebooks exist, and create them if they don't
-    for subdir in ['daily', 'monthly']:
+    for subdir in ["daily", "monthly"]:
         if not os.path.isdir(subdir):
             os.mkdir(subdir)
 
         processnotebooks(subdir, data_dir)
 
-    # shutil.rmtree(data_dir)
+    shutil.rmtree(data_dir)
     end_time = datetime.now(UTC)
-    logging.info('job - jupyter notebook report completed in: %s', end_time - start_time)
+    logging.info("job - jupyter notebook report completed in: %s", end_time - start_time)
     sys.exit()

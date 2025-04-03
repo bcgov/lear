@@ -57,7 +57,9 @@ exclude = [
     "migrations",
     "devops",
     ".history",
-    "tests"
+    "tests",
+    "daily",
+    "monthly"
 ]
 
 # Same as Black.
