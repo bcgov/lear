@@ -1,0 +1,40 @@
+name: GCP Jobs CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "gcp-jobs/**"
+  workflow_dispatch:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      working_directory:
+        type: string
+        default: "."
+      codecov_flag:
+        type: string
+      skip_isort:
+        type: string
+        default: "false"
+      skip_black:
+        type: string
+        default: "false"
+
+jobs:
+  setup:
+    # Only allow run the CD flow in protected branch
+    if: github.ref_protected == true
+
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout code
+      - name: CI
+        uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main

@@ -2,9 +2,6 @@
 
 Generate notebook report
 
-## NOTE ABOUT REQS
-This job is on python 3.12 instead of 3.13 because spacy won't work as of the time of writing on python 3.13
-
 ## Development Environment
 
 Follow the instructions of the [Development Readme](https://github.com/bcgov/entity/blob/master/docs/development.md)
