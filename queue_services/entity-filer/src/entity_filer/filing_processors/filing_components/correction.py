@@ -39,8 +39,6 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
                           correction_filing: Dict,
                           filing_meta: FilingMeta):
     """Render the correction filing onto the business model objects."""
-    filing_meta.correction = {}
-
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.util.get(correction_filing, '/correction/nameRequest')

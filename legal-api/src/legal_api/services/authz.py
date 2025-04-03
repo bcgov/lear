@@ -207,7 +207,7 @@ def get_allowable_filings_dict():
                 'amalgamationOut': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.NOT_IN_GOOD_STANDING],
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING],
                         'completedFilings': ['consentAmalgamationOut']
                     }
                 },
@@ -268,7 +268,7 @@ def get_allowable_filings_dict():
                 'continuationOut': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
-                        'business': [BusinessBlocker.NOT_IN_GOOD_STANDING],
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING],
                         'completedFilings': ['consentContinuationOut']
                     }
                 },
@@ -467,6 +467,12 @@ def get_allowable_filings_dict():
                     'blockerChecks': {
                         'warningTypes': [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                         'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'consentAmalgamationOut': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
                 'consentContinuationOut': {
