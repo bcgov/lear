@@ -674,9 +674,18 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     arrangement_ind=arrangement_ind,
                     court_order_num=court_order_num
                 )
-            elif filing_type_code in ['OTVDS', 'ADVD2', 'OTSPE']:
+            elif filing_type_code in ['OTSPE']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'S')"
+                cursor.execute(
+                    insert_stmnt + values_stmnt,
+                    event_id=filing.event_id,
+                    filing_type_code=filing_type_code,
+                    effective_dt=filing.effective_date
+                )
+            elif filing_type_code in ['OTVDS', 'ADVD2']:
+                insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
+                values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
