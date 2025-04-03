@@ -6,6 +6,11 @@ import pytest
 import ast
 from notebookreport import processnotebooks
 
+from dotenv import load_dotenv, find_dotenv
+
+# this will load all the envars from a .env file located in the project root (api)
+load_dotenv(find_dotenv())
+
 
 def test_connection_failed():
     status = False

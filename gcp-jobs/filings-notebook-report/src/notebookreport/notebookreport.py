@@ -2,7 +2,6 @@
 
 import ast
 import fnmatch
-import logging
 import os
 import smtplib
 import sys
@@ -17,28 +16,14 @@ from email.mime.text import MIMEText
 
 import papermill as pm
 from dateutil.relativedelta import relativedelta
-from flask import Flask, current_app
+from structured_logging import StructuredLogging
 
-from .config import Config
-from .util.logging import setup_logging
+from dotenv import load_dotenv, find_dotenv
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
+# this will load all the envars from a .env file located in the project root (api)
+load_dotenv(find_dotenv())
 
-# Notebook Scheduler
-# ---------------------------------------
-# This script helps with the automated processing of Jupyter Notebooks via
-# papermill (https://github.com/nteract/papermill/)
-
-
-def create_app(config=Config):
-    """Create app."""
-    app = Flask(__name__)
-    app.config.from_object(config)
-    app.app_context().push()
-    current_app.logger.debug('created the Flask App and pushed the App Context')
-
-    return app
-
+logging = StructuredLogging().get_logger()
 
 def findfiles(directory, pattern):
     """Find files matched."""
@@ -170,7 +155,6 @@ def processnotebooks(notebookdirectory, data_directory):
 
 
 if __name__ == '__main__':
-    application = create_app()
     start_time = datetime.now(UTC)
 
     data_dir = os.path.join(os.getcwd(), r'data/')

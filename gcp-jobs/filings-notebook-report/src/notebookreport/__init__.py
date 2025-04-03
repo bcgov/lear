@@ -1,1 +1,1 @@
-from .notebookreport import create_app, processnotebooks
+from .notebookreport import processnotebooks
