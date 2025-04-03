@@ -15,3 +15,4 @@ migrations
 pre-hook-update-db.sh
 requirements
 tests
+flags.json
