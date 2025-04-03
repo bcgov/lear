@@ -33,4 +33,4 @@ ENV PYTHONPATH=/opt/app-root/src
 
 EXPOSE 8080
 
-CMD [ "python", "/opt/app-root/notebookreport.py" ]
+CMD [ "python", "/opt/app-root/src/notebookreport/notebookreport.py" ]

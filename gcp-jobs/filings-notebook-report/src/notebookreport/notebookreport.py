@@ -9,7 +9,7 @@ import sys
 import time
 import traceback
 import warnings
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -170,7 +170,8 @@ def processnotebooks(notebookdirectory, data_directory):
 
 
 if __name__ == '__main__':
-    start_time = datetime.utcnow()
+    application = create_app()
+    start_time = datetime.now(UTC)
 
     data_dir = os.path.join(os.getcwd(), r'data/')
     if not os.path.exists(data_dir):
@@ -184,6 +185,6 @@ if __name__ == '__main__':
         processnotebooks(subdir, data_dir)
 
     # shutil.rmtree(data_dir)
-    end_time = datetime.utcnow()
+    end_time = datetime.now(UTC)
     logging.info('job - jupyter notebook report completed in: %s', end_time - start_time)
     sys.exit()
