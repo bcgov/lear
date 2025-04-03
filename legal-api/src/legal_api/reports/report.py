@@ -154,6 +154,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/correctedOnCertificate',
             'common/style',
             'common/styleLetterOverride',
+            'common/styleWithWatermark',
             'common/businessDetails',
             'common/footerMOCS',
             'common/directors',
@@ -260,6 +261,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_completing_party(filing)
 
         filing['enable_new_ben_statements'] = flags.is_on('enable-new-ben-statements')
+        filing['enable_sandbox'] = flags.is_on('enable-sandbox')
 
         return filing
 
