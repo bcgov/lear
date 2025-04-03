@@ -110,7 +110,7 @@ def revoke_digital_credential(credential: DCCredential,
         credential.is_revoked = True
         credential.save()
 
-        return revoked
+        return None
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err
@@ -130,10 +130,12 @@ def replace_digital_credential(credential: DCCredential,
             # pylint: disable=broad-exception-raised
             raise Exception('Failed to remove credential exchange record.')
 
+        issue_digital_credential(credential.connection.business_user,
+                                 credential_type)  # pylint: disable=too-many-function-args
+        # We delete the old credential after issuing the new one so that the connection is not lost
         credential.delete()
 
-        return issue_digital_credential(credential.connection.business_user,
-                                        credential_type)  # pylint: disable=too-many-function-args
+        return None
     # pylint: disable=broad-exception-raised
     except Exception as err:  # noqa: B902
         raise err

@@ -23,4 +23,5 @@ Werkzeug==1.0.1
 git+https://github.com/bcgov/business-schemas.git@2.18.15#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
 git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
-git+https://github.com/petridishdev/lear.git@refactor/dbc2#egg=legal_api&subdirectory=legal-api
+# TODO: Replace with the correct repo and branch once the PR is merged
+git+https://github.com/petridishdev/lear.git@feature/dbc2#egg=legal_api&subdirectory=legal-api
