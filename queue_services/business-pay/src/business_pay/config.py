@@ -134,7 +134,7 @@ class Config:  # pylint: disable=too-few-public-methods
         "subject": os.getenv("NATS_EMAILER_SUBJECT", "entity.email"),
     }
 
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "prod")
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
