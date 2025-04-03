@@ -257,14 +257,15 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     ('BCOMP no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.BCOMP.value, 0),
     ('BCOMP 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.BCOMP.value, 3),
     ('BCOMP current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.BCOMP.value, 0),
-    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),    
+    ('COOP founded in the end of the year', 'CP1234567', '2021-12-31', None, Business.LegalTypes.COOP.value, 1),
     ('COOP current year AR pending', 'CP1234567', '1900-07-01', '2021-03-03', Business.LegalTypes.COOP.value, 1),
-    ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),    
+    ('COOP 3 ARs overdue', 'CP1234567', '2019-05-15', None, Business.LegalTypes.COOP.value, 3),
 ])
 def test_construct_task_list(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type, tasks_length):
     """Assert that construct_task_list returns the correct number of AR to be filed."""
     from legal_api.resources.v1.business import TaskListResource
     previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
+    founding_date = datetime.fromisoformat(founding_date + 'T12:00:00+00:00')
     business = factory_business(
         identifier, founding_date, previous_ar_datetime, legal_type)
     tasks = TaskListResource.construct_task_list(business)

@@ -39,6 +39,7 @@ class PartyRole(db.Model, Versioned):
         PROPRIETOR = 'proprietor'
         PARTNER = 'partner'
         RECEIVER = 'receiver'
+        OFFICER = 'officer'
 
     __versioned__ = {}
     __tablename__ = 'party_roles'
@@ -127,8 +128,10 @@ class PartyRole(db.Model, Versioned):
     @staticmethod
     def get_party_roles(business_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
+        # TODO: remove filter that excludes officer when we have plans to deal with it
         party_roles = db.session.query(PartyRole). \
-            filter(PartyRole.business_id == business_id)
+            filter(PartyRole.business_id == business_id). \
+            filter(PartyRole.role != PartyRole.RoleTypes.OFFICER.value)
 
         if end_date is not None:
             party_roles = party_roles.filter(cast(PartyRole.appointment_date, Date) <= end_date). \

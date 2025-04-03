@@ -14,6 +14,7 @@
 """File processing rules and actions for the correction filing."""
 from typing import Dict
 
+import dpath
 import pytz
 from legal_api.models import Business, Comment, Filing
 
@@ -29,6 +30,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])
     original_filing.parent_filing = correction_filing
 
+    filing_meta.correction = {}
+
     # add comment to the original filing
     original_filing.comments.append(
         Comment(
@@ -37,6 +40,8 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
             staff_id=correction_filing.submitter_id
         )
     )
+
+    original_filing.save_to_session()
 
     # add comment to the correction filing
     correction_filing.comments.append(
@@ -47,6 +52,13 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     )
 
     corrected_filing_type = filing['correction']['correctedFilingType']
+
+    # check if empty correction and set commentOnly value in filing_meta
+    if bool(dpath.util.get(filing, '/correction/commentOnly', default=None)):
+        filing_meta.correction = {**filing_meta.correction, 'commentOnly': True}
+        return correction_filing
+
+    # Skip all other data checks if commentOnly correction
     if corrected_filing_type != 'conversion':
         correct_business_data(business, correction_filing, filing, filing_meta)
     else:
@@ -55,5 +67,4 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
         correction_filing._status = Filing.Status.PENDING_CORRECTION.value  # pylint: disable=protected-access
         setattr(correction_filing, 'skip_status_listener', True)
 
-    original_filing.save_to_session()
     return correction_filing

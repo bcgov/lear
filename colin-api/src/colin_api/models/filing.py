@@ -674,9 +674,18 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     arrangement_ind=arrangement_ind,
                     court_order_num=court_order_num
                 )
-            elif filing_type_code in ['OTVDS', 'ADVD2', 'OTSPE']:
+            elif filing_type_code in ['OTSPE']:
                 insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
                 values_stmnt = values_stmnt + ", 'N', 'S')"
+                cursor.execute(
+                    insert_stmnt + values_stmnt,
+                    event_id=filing.event_id,
+                    filing_type_code=filing_type_code,
+                    effective_dt=filing.effective_date
+                )
+            elif filing_type_code in ['OTVDS', 'ADVD2']:
+                insert_stmnt = insert_stmnt + ', arrangement_ind, ods_typ_cd) '
+                values_stmnt = values_stmnt + ", 'N', 'F')"
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
@@ -1996,13 +2005,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
 
-            if not filings_added:  # only comment added
+            if bool(filing.body.get('commentOnly', False)):  # only comment added
                 filing_type_code = Filing.FILING_TYPES[filing.filing_type][f'{sub_type}_COMMENT_ONLY']
                 event_id = cls._process_comment_correction(cursor, filing, corp_num, filing_type_code)
 
                 filings_added.append({'event_id': event_id,
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
+
+            if not filings_added:  # if no filing created
+                raise GenericException(  # pylint: disable=broad-exception-raised
+                    f'No filing created for this correction identifier:{corp_num}.',
+                    HTTPStatus.NOT_IMPLEMENTED
+                )
 
             return filings_added
 

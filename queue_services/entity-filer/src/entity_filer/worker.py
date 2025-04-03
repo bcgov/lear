@@ -72,6 +72,7 @@ from entity_filer.filing_processors import (
     agm_location_change,
     alteration,
     amalgamation_application,
+    amalgamation_out,
     annual_report,
     appoint_receiver,
     cease_receiver,
@@ -273,7 +274,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
         # pylint: disable=too-many-nested-blocks, disable=too-many-function-args;
         if legal_filings := filing_core_submission.legal_filings():
-            VersioningProxy.get_transaction_id(db.session())
+            transaction_id = VersioningProxy.get_transaction_id(db.session())
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
@@ -361,6 +362,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                 elif filing.get('consentAmalgamationOut'):
                     consent_amalgamation_out.process(business, filing_submission, filing, filing_meta)
 
+                elif filing.get('amalgamationOut'):
+                    amalgamation_out.process(business, filing_submission, filing, filing_meta)
+
                 elif filing.get('consentContinuationOut'):
                     consent_continuation_out.process(business, filing_submission, filing, filing_meta)
 
@@ -404,7 +408,6 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
-            transaction_id = VersioningProxy.get_transaction_id(db.session())
             filing_submission.transaction_id = transaction_id
 
             business_type = business.legal_type if business \
@@ -439,14 +442,16 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                     business_profile.update_affiliation(business, filing_submission, flags)
 
                 name_request.consume_nr(business, filing_submission, flags=flags)
-                business_profile.update_business_profile(business, filing_submission, flags)
+                business_profile.update_business_profile(business, filing_submission, flags=flags)
                 await publish_mras_email(filing_submission)
             else:
                 if not flags.is_on('enable-sandbox'):
                     for filing_type in filing_meta.legal_filings:
                         if filing_type in [
+                            FilingCore.FilingTypes.AMALGAMATIONOUT,
                             FilingCore.FilingTypes.ALTERATION,
                             FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                            FilingCore.FilingTypes.CONTINUATIONOUT,
                             FilingCore.FilingTypes.CORRECTION,
                             FilingCore.FilingTypes.DISSOLUTION,
                             FilingCore.FilingTypes.PUTBACKON,

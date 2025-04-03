@@ -285,11 +285,12 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     ('GP no AR', 'FM1234567', '2019-05-15', None, Business.LegalTypes.PARTNERSHIP.value, 0)
 ])
 def test_construct_task_list_ar(session, client, jwt, test_name, identifier, founding_date, previous_ar_date, legal_type,
-                             tasks_length):
+                                tasks_length):
     """Assert that construct_task_list returns the correct number of AR to be filed."""
     from legal_api.resources.v2.business.business_tasks import construct_task_list
     with patch('legal_api.resources.v2.business.business_tasks.check_warnings', return_value=[]):
         previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
+        founding_date = datetime.fromisoformat(founding_date + 'T12:00:00+00:00')
         business = factory_business(
             identifier, founding_date, previous_ar_datetime, legal_type)
         tasks = construct_task_list(business)
@@ -383,6 +384,7 @@ def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier
 
     # Reset this to empty string so it doesn't interfere with other tests
     app.config['TR_START_DATE'] = ''
+
 
 @pytest.mark.parametrize('test_name, legal_type, identifier, has_missing_business_info, conversion_task_expected', [
     ('CONVERSION_TODO_EXISTS_MISSING_DATA', 'SP', 'FM0000001', True, True),
