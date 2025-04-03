@@ -146,7 +146,7 @@ def test_ar_dates(
         # setup
         previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
         business = factory_business('CP1234567',
-                                    datetime.fromisoformat(founding_date),
+                                    datetime.fromisoformat(founding_date + 'T12:00:00+00:00'),
                                     previous_ar_datetime,
                                     legal_type)
         ar_min_date, ar_max_date = business.get_ar_dates(next_year)

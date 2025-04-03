@@ -270,14 +270,15 @@ def get_business_query(corp_num, suffix):
     --
         c.send_ar_ind,
         c.last_ar_reminder_year,
-        to_char(c.last_ar_filed_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as last_ar_date,
+        to_char(c.last_ar_filed_dt, 'YYYY-MM-DD') as last_ar_date,
     -- admin_freeze
         case
             when c.corp_frozen_type_cd = 'C'
             then true
             else false
         end admin_freeze,
-        c.admin_email
+        c.admin_email,
+        c.corp_password as pass_code
     from corporation c
     left outer join event e on e.corp_num = c.corp_num and e.event_type_cd IN ('CONVICORP', 'CONVAMAL') -- need to add other event like CONVCIN...
     where 1 = 1
@@ -382,9 +383,9 @@ def get_parties_and_addresses_query(corp_num):
             else null
         end), 'YYYY-MM-DD') as cp_appointment_dt_str,
         to_char(cp.cessation_dt, 'YYYY-MM-DD')     as cp_cessation_dt_str,
-        cp.last_name              as cp_last_name,
-        cp.middle_name            as cp_middle_name,
-        cp.first_name             as cp_first_name,
+        cp.last_name                                as cp_last_name,
+        nullif(trim(cp.middle_name), '')            as cp_middle_name,
+        cp.first_name                               as cp_first_name,
         concat_ws(' ', nullif(trim(cp.first_name),''), nullif(trim(cp.middle_name),''), nullif(trim(cp.last_name),'')) as cp_full_name,
         trim(cp.business_name)    as cp_business_name,
         -- TODO: need to figure it out, thougth according to the spreadsheet, it converts to identifier
@@ -457,8 +458,8 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0006247' -- OFF, DIR, RCC
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
-        and cp.end_event_id is null
-        and cp.party_typ_cd in ('INC', 'DIR', 'OFF')
+        and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null))
+        and cp.party_typ_cd in ('DIR', 'OFF')
     --order by e.event_id
     order by cp_full_name, e.event_id
     ;

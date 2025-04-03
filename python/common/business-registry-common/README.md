@@ -1,5 +1,5 @@
-
-
+# Business Registry Common
+This library includes BaseEnum, date utils and base exception types used frequently across apis
 
 
 

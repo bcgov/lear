@@ -87,10 +87,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         ia_json['incorporationApplication'] = {}
         ia_json['incorporationApplication']['offices'] = \
-            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
+            VersionedBusinessDetailsService.get_office_revision(filing.id, filing.transaction_id, business.id)
         ia_json['incorporationApplication']['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
-                                                                    business.id, is_ia_or_after=True)
+            VersionedBusinessDetailsService.get_party_role_revision(filing,
+                                                                    business.id,
+                                                                    is_ia_or_after=True)
         ia_json['incorporationApplication']['nameRequest'] = \
             VersionedBusinessDetailsService.get_name_request_revision(filing)
         ia_json['incorporationApplication']['contactPoint'] = \
@@ -126,7 +127,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         cod_json['changeOfDirectors'] = {}
         cod_json['changeOfDirectors']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+            VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                     business.id, role='director')
         return cod_json
 
@@ -139,7 +140,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         coa_json['changeOfAddress'] = {}
         coa_json['changeOfAddress']['offices'] = \
-            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
+            VersionedBusinessDetailsService.get_office_revision(filing.id, filing.transaction_id, business.id)
         coa_json['changeOfAddress']['legalType'] = coa_json['business']['legalType']
         return coa_json
 
@@ -164,10 +165,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             ar_json['annualReport']['nextARDate'] = filing.json['filing']['annualReport']['nextARDate']
 
         ar_json['annualReport']['directors'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id,
+            VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                     business.id, role='director')
         ar_json['annualReport']['offices'] = \
-            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business.id)
+            VersionedBusinessDetailsService.get_office_revision(filing.id, filing.transaction_id, business.id)
 
         # legal_type CP may need changeOfDirectors/changeOfAddress
         if 'changeOfDirectors' in filing.json['filing']:
@@ -196,9 +197,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         company_profile_json['business'] = \
             VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
         company_profile_json['parties'] = \
-            VersionedBusinessDetailsService.get_party_role_revision(filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_party_role_revision(filing, business_id)
         company_profile_json['offices'] = \
-            VersionedBusinessDetailsService.get_office_revision(filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_office_revision(filing_id, filing.transaction_id, business_id)
         company_profile_json['shareClasses'] = \
             VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business_id)
         company_profile_json['nameTranslations'] = \
@@ -264,13 +265,19 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
-    def get_office_revision(transaction_id, business_id) -> dict:
-        """Consolidates all office changes upto the given transaction id."""
+    def get_office_revision(filing_id, transaction_id, business_id) -> dict:
+        """Consolidates all office changes up to the given transaction id.
+
+        For migrated (tombstone) businesses, if no versioning data exists and the filing is after
+        the tombstone filing, the current office data will be used.
+        """
+        # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         offices_json = {}
         address_version = VersioningProxy.version_class(db.session(), Address)
         offices_version = VersioningProxy.version_class(db.session(), Office)
 
-        offices = db.session.query(offices_version) \
+        # Get versioned office data
+        versioned_offices = db.session.query(offices_version) \
             .filter(offices_version.transaction_id <= transaction_id) \
             .filter(offices_version.operation_type != 2) \
             .filter(offices_version.business_id == business_id) \
@@ -278,7 +285,12 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         offices_version.end_transaction_id > transaction_id)) \
             .order_by(offices_version.transaction_id).all()
 
-        for office in offices:
+        # Track office IDs found in versioning to avoid duplicates
+        versioned_office_ids = set()
+
+        # Process versioned offices
+        for office in versioned_offices:
+            versioned_office_ids.add(office.id)
             offices_json[office.office_type] = {}
             addresses_list = db.session.query(address_version) \
                 .filter(address_version.transaction_id <= transaction_id) \
@@ -291,25 +303,82 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 offices_json[office.office_type][f'{address.address_type}Address'] = \
                     VersionedBusinessDetailsService.address_revision_json(address)
 
+        # Check if this is a tombstone business and if the filing is after the tombstone filing
+        if Filing.is_filing_after_tombstone(filing_id=filing_id, business_id=business_id):
+            # Query current office data for any offices not found in versioning
+            current_offices = db.session.query(Office).filter(
+                Office.business_id == business_id,
+                Office.id.notin_(versioned_office_ids) if versioned_office_ids else True
+            ).all()
+
+            # Add non-versioned office data
+            for office in current_offices:
+                offices_json[office.office_type] = {}
+                addresses = office.addresses.all()
+                for address in addresses:
+                    offices_json[office.office_type][f'{address.address_type}Address'] = \
+                        VersionedBusinessDetailsService.address_revision_json(address)
+
         return offices_json
 
     @staticmethod
-    def get_party_role_revision(transaction_id, business_id, is_ia_or_after=False, role=None) -> dict:
-        """Consolidates all party changes upto the given transaction id."""
+    def get_party_role_revision(filing, business_id, is_ia_or_after=False, role=None) -> dict:
+        """Consolidates all party changes up to the given transaction id.
+
+        For migrated (tombstone) businesses, if no versioning data exists and the filing is after
+        the tombstone filing, the current party data will be used.
+
+        Args:
+            filing_id (int): The filing ID to check against tombstone filing
+            transaction_id (int): The transaction ID for versioning queries
+            business_id (int): The business ID to check
+            is_ia_or_after (bool): Flag for incorporation application or after
+            role (str): Optional role filter
+        """
+        # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
-        party_roles = db.session.query(party_role_version)\
-            .filter(party_role_version.transaction_id <= transaction_id) \
+        parties = []
+        versioned_party_role_ids = set()
+
+        # TODO: remove filter that excludes officer when we have plans to deal with it
+        # Get versioned party roles
+        versioned_party_roles = db.session.query(party_role_version)\
+            .filter(party_role_version.transaction_id <= filing.transaction_id) \
             .filter(party_role_version.operation_type != 2) \
             .filter(party_role_version.business_id == business_id) \
             .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        party_role_version.end_transaction_id > transaction_id)) \
+                        party_role_version.end_transaction_id > filing.transaction_id)) \
+            .filter(party_role_version.role != PartyRole.RoleTypes.OFFICER.value) \
             .order_by(party_role_version.transaction_id).all()
-        parties = []
-        for party_role in party_roles:
+
+        # Process versioned party roles
+        for party_role in versioned_party_roles:
+            versioned_party_role_ids.add(party_role.id)
             if party_role.cessation_date is None:
-                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(transaction_id,
+                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(filing,
+                                                                                           party_role, is_ia_or_after)
+                if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
+                                                                  == party_role_json['officer']['id']), None)):
+                    party['roles'].extend(party_role_json['roles'])
+                else:
+                    parties.append(party_role_json)
+
+        # Check if this is a tombstone business and if the filing is after the tombstone filing
+        if Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id):
+            # Query current party role data for any roles not found in versioning
+            current_party_roles = db.session.query(PartyRole).filter(
+                PartyRole.business_id == business_id,
+                PartyRole.id.notin_(versioned_party_role_ids) if versioned_party_role_ids else True,
+                PartyRole.role != PartyRole.RoleTypes.OFFICER.value,
+                PartyRole.cessation_date.is_(None),
+            )
+            if role:
+                current_party_roles = current_party_roles.filter(PartyRole.role == role)
+
+            for party_role in current_party_roles.all():
+                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(filing,
                                                                                            party_role, is_ia_or_after)
                 if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
                                                                   == party_role_json['officer']['id']), None)):
@@ -412,41 +481,52 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return resolutions_arr
 
     @staticmethod
-    def party_role_revision_json(transaction_id, party_role_revision, is_ia_or_after) -> dict:
+    def party_role_revision_json(filing, party_role, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
-        cessation_date = datetime.date(party_role_revision.cessation_date).isoformat()\
-            if party_role_revision.cessation_date else None
-        party_revision = VersionedBusinessDetailsService.get_party_revision(transaction_id,
-                                                                            party_role_revision.party_id)
-        party = VersionedBusinessDetailsService.party_revision_json(transaction_id, party_revision, is_ia_or_after)
+        cessation_date = datetime.date(party_role.cessation_date).isoformat() if party_role.cessation_date else None
+
+        # For both versioned and non-versioned cases, get party data through party_revision_json
+        if isinstance(party_role, VersioningProxy.version_class(db.session(), PartyRole)):
+            # Versioned party role
+            party_revision = VersionedBusinessDetailsService.get_party_revision(filing, party_role.party_id)
+        else:
+            # Non-versioned party role - use current party
+            party_revision = party_role.party
+
+        party = VersionedBusinessDetailsService.party_revision_json(filing.transaction_id,
+                                                                    party_revision, is_ia_or_after)
 
         if is_ia_or_after:
             party['roles'] = [{
-                'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
-                'roleType': ' '.join(r.capitalize() for r in party_role_revision.role.split('_')),
-                # This id is required to find diff
-                'id': ' '.join(r.capitalize() for r in party_role_revision.role.split('_'))
+                'appointmentDate': datetime.date(party_role.appointment_date).isoformat(),
+                'roleType': ' '.join(r.capitalize() for r in party_role.role.split('_')),
+                'id': ' '.join(r.capitalize() for r in party_role.role.split('_'))
             }]
         else:
             party.update({
-                'appointmentDate': datetime.date(party_role_revision.appointment_date).isoformat(),
+                'appointmentDate': datetime.date(party_role.appointment_date).isoformat(),
                 'cessationDate': cessation_date,
-                'role': party_role_revision.role
+                'role': party_role.role
             })
 
         return party
 
     @staticmethod
-    def get_party_revision(transaction_id, party_id) -> dict:
+    def get_party_revision(filing, party_id) -> dict:
         """Consolidates all party changes upto the given transaction id."""
         party_version = VersioningProxy.version_class(db.session(), Party)
         party = db.session.query(party_version) \
-            .filter(party_version.transaction_id <= transaction_id) \
+            .filter(party_version.transaction_id <= filing.transaction_id) \
             .filter(party_version.operation_type != 2) \
             .filter(party_version.id == party_id) \
             .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        party_version.end_transaction_id > transaction_id)) \
+                        party_version.end_transaction_id > filing.transaction_id)) \
             .order_by(party_version.transaction_id).one_or_none()
+
+        if not party and Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=filing.business_id):
+            # Query current party data if party not found in versioning
+            party = Party.find_by_id(party_id)
+
         return party
 
     @staticmethod
@@ -479,34 +559,54 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return member
 
     @staticmethod
-    def party_revision_json(transaction_id, party_revision, is_ia_or_after) -> dict:
+    def party_revision_json(transaction_id, party, is_ia_or_after) -> dict:  # pylint: disable=too-many-branches
         """Return the party member as a json object."""
-        member = VersionedBusinessDetailsService.party_revision_type_json(party_revision, is_ia_or_after)
-        if party_revision.delivery_address_id:
-            address_revision = VersionedBusinessDetailsService.get_address_revision(
-                transaction_id, party_revision.delivery_address_id)
-            # This condition can be removed once we correct data in address and address_version table
-            # by removing empty address entry.
-            if address_revision and address_revision.postal_code:
-                member_address = VersionedBusinessDetailsService.address_revision_json(address_revision)
+        member = VersionedBusinessDetailsService.party_revision_type_json(party, is_ia_or_after)
+
+        # Handle delivery address
+        if isinstance(party, VersioningProxy.version_class(db.session(), Party)):
+            # Versioned party
+            if party.delivery_address_id:
+                address_revision = VersionedBusinessDetailsService.get_address_revision(
+                    transaction_id, party.delivery_address_id)
+                if address_revision and address_revision.postal_code:
+                    member_address = VersionedBusinessDetailsService.address_revision_json(address_revision)
+                    if 'addressType' in member_address:
+                        del member_address['addressType']
+                    member['deliveryAddress'] = member_address
+        else:
+            # Non-versioned party
+            if (party_da := party.delivery_address) and party_da.postal_code:
+                member_address = VersionedBusinessDetailsService.address_revision_json(party_da)
                 if 'addressType' in member_address:
                     del member_address['addressType']
                 member['deliveryAddress'] = member_address
-        if party_revision.mailing_address_id:
-            member_mailing_address = \
-                VersionedBusinessDetailsService.address_revision_json(
-                    VersionedBusinessDetailsService.get_address_revision
-                    (transaction_id, party_revision.mailing_address_id))
-            if 'addressType' in member_mailing_address:
-                del member_mailing_address['addressType']
-            member['mailingAddress'] = member_mailing_address
-        elif party_revision.delivery_address_id:
+
+        # Handle mailing address
+        if isinstance(party, VersioningProxy.version_class(db.session(), Party)):
+            if party.mailing_address_id:
+                member_mailing_address = \
+                    VersionedBusinessDetailsService.address_revision_json(
+                        VersionedBusinessDetailsService.get_address_revision
+                        (transaction_id, party.mailing_address_id))
+                if 'addressType' in member_mailing_address:
+                    del member_mailing_address['addressType']
+                member['mailingAddress'] = member_mailing_address
+        else:
+            if (party_ma := party.mailing_address) and party_ma.postal_code:
+                member_address = VersionedBusinessDetailsService.address_revision_json(party_ma)
+                if 'addressType' in member_address:
+                    del member_address['addressType']
+                member['mailingAddress'] = member_address
+
+        # If no mailing address but has delivery address, use delivery as mailing
+        if 'mailingAddress' not in member and 'deliveryAddress' in member:
             member['mailingAddress'] = member['deliveryAddress']
 
         if is_ia_or_after:
-            member['officer']['id'] = str(party_revision.id)
+            member['officer']['id'] = str(party.id)
 
-        member['id'] = str(party_revision.id)  # This is required to find diff
+        member['id'] = str(party.id)
 
         return member
 
@@ -530,14 +630,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if address_revision.country:
             country_description = pycountry.countries.search_fuzzy(address_revision.country)[0].name
         return {
-            'streetAddress': address_revision.street,
+            'streetAddress': address_revision.street or '',
             'streetAddressAdditional': address_revision.street_additional or '',
             'addressType': address_revision.address_type,
-            'addressCity': address_revision.city,
+            'addressCity': address_revision.city or '',
             'addressRegion': address_revision.region or '',
-            'addressCountry': address_revision.country,
+            'addressCountry': address_revision.country or '',
             'addressCountryDescription': country_description,
-            'postalCode': address_revision.postal_code,
+            'postalCode': address_revision.postal_code or '',
             'deliveryInstructions': address_revision.delivery_instructions or ''
         }
 

@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "business-registry-account"
+version = "0.1.0"
+description = ""
+authors = ["BrandonSharratt <brandon@daxiom.com>"]
+readme = "README.md"
+packages = [{include = "business_account", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+datedelta = "^1.4"
+pytz = "^2025.1"
+flask = "^3.1.0"
+requests = "^2.32.3"
+flask-jwt-oidc = "^0.8.0"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+black = "^25.1.0"
+flake8 = "^7.1.2"
+freezegun = "^1.5.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

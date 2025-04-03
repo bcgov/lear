@@ -1252,6 +1252,38 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing_exists
 
     @staticmethod
+    def is_filing_after_tombstone(filing_id: int, business_id: int) -> bool:
+        """Determine if a filing with the given filing_id's transaction ID was after TOMBSTONE filing's transaction ID.
+
+        Args:
+            filing_id (int): The filing ID to check.
+            business_id (int): The business ID to check.
+
+        Returns:
+            bool: True if the filing's transaction ID was after a TOMBSTONE filing's transaction ID, False otherwise.
+                  If no TOMBSTONE filing exists, returns False.
+        """
+        # Get the TOMBSTONE filing
+        tombstone_filing = db.session.query(Filing).\
+            filter(Filing.business_id == business_id).\
+            filter(Filing._status == Filing.Status.TOMBSTONE).\
+            one_or_none()
+
+        if not tombstone_filing or not tombstone_filing.transaction_id:
+            # No TOMBSTONE filing or it has no transaction ID
+            return False
+
+        # Get the filing with the given filing_id
+        filing = Filing.find_by_id(filing_id)
+
+        if not filing or not filing.transaction_id or filing.business_id != business_id:
+            # Filing not found, has no transaction ID, or belongs to a different business
+            return False
+
+        # Compare the transaction IDs
+        return filing.transaction_id > tombstone_filing.transaction_id
+
+    @staticmethod
     def get_filings_sub_type(filing_type: str, filing_json: dict):
         """Return sub-type from filing json if sub-type exists for filing type."""
         filing_sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type)
