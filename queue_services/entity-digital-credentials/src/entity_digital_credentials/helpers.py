@@ -100,10 +100,10 @@ def revoke_digital_credential(credential: DCCredential,
             raise Exception(
                 f'Active connection not found for credential with ID: {credential.credential_id}.')
 
-        if (revoked := digital_credentials.revoke_credential(connection.connection_id,
-                                                             credential.credential_revocation_id,
-                                                             credential.revocation_registry_id,
-                                                             reason) is None):
+        if (digital_credentials.revoke_credential(connection.connection_id,
+                                                  credential.credential_revocation_id,
+                                                  credential.revocation_registry_id,
+                                                  reason) is None):
             # pylint: disable=broad-exception-raised
             raise Exception('Failed to revoke credential.')
 
