@@ -25,7 +25,7 @@ from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService
+from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -106,6 +106,7 @@ class BusinessDocument:
             'common/certificateSeal',
             'common/certificateStyle',
             'common/courtOrder',
+            'common/watermark',
             'footer',
             'logo',
             'macros',
@@ -124,6 +125,9 @@ class BusinessDocument:
             # get document data
             business_json['reportType'] = self._document_key
             business_json['business'] = self._business.json()
+
+            # set FFs config
+            business_json['enable_sandbox'] = flags.is_on('enable-sandbox')
 
             # legal name easy fix
             if not get_json:
