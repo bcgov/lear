@@ -1,17 +1,22 @@
-# platform=linux/amd64
-FROM python:3.13.0-buster AS development_build
+FROM python:3.13-bullseye AS development_build
+
+USER root
 
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"
 
 ENV VCS_REF=${VCS_REF}
 ENV BUILD_DATE=${BUILD_DATE}
+ENV PORT=8080
 
 LABEL org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.build-date=${BUILD_DATE}
 
-USER root
-
+ARG APP_ENV \
+  # Needed for fixing permissions of files created by Docker:
+  UID=1000 \
+  GID=1000
+  
 ENV APP_ENV=${APP_ENV} \
   # python:
   PYTHONFAULTHANDLER=1 \
@@ -48,28 +53,35 @@ RUN apt-get update && apt-get upgrade -y \
 && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
 && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-# Create working directory
-RUN mkdir /opt/app-root && chmod 755 /opt/app-root
-RUN mkdir /opt/app-root/data && chmod 777 /opt/app-root/data
-WORKDIR /opt/app-root
+WORKDIR /code
 
-# Install the requirements
-COPY ./pyproject.toml .
-COPY ./poetry.lock .
+RUN groupadd -g "${GID}" -r web \
+  && useradd -d '/code' -g web -l -r -u "${UID}" web \
+  && chown web:web -R '/code'
 
-#RUN pip install --upgrade pip
-RUN poetry install
+# Copy only requirements, to cache them in docker layer
+COPY --chown=web:web ./poetry.lock ./pyproject.toml /code/
 
-COPY . .
+COPY --chown=web:web ./src /code/src
+COPY --chown=web:web ./README.md /code
 
+RUN mkdir /code/cache && chown web:web /code/cache
+
+# Project initialization:
+RUN --mount=type=cache,target="$POETRY_CACHE_DIR" \
+  echo "$APP_ENV" \
+  && poetry version \
+  # Install deps:
+  && poetry run pip install -U pip \
+  && poetry install \
+    $(if [ -z ${APP_ENV+x} ] | [ "$APP_ENV" = 'production' ]; then echo '--only main'; fi) \
+    --no-interaction --no-ansi
+
+# Running as non-root user:
+USER web
+
+# The following stage is only for production:
 FROM development_build AS production_build
-COPY --chown=1001:1001 . /opt/app-root
+COPY --chown=web:web . /code
 
-USER 1001
-
-# Set Python path
-ENV PYTHONPATH=/opt/app-root/src
-
-EXPOSE 8080
-
-CMD [ "python", "/opt/app-root/src/notebookreport/notebookreport.py" ]
+CMD [ "python", "/code/src/notebookreport/notebookreport.py" ]
