@@ -1501,9 +1501,7 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 
         rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
                         headers=create_header(jwt, [jwt_role], identifier))
-        # Print debug info to inspect the response and roles
-        print(f"Submitter roles: {submitter_role}, JWT roles: {jwt_role}")
-        print(f"Response JSON: {rv.json}")
+        
     except Exception as err:
         print(err)
 
