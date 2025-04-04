@@ -1,4 +1,4 @@
-name: GCP Jobs CD
+name: GCP Filings Notebook Report CD
 
 on:
   push:

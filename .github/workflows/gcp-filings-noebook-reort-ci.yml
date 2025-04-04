@@ -1,5 +1,5 @@
-name: GCP Jobs CI
-
+name: GCP Filings Notebook Report CI
+#Note job will fail tests as a default db is not setup
 on:
   push:
     branches:
@@ -39,3 +39,6 @@ jobs:
       # Checkout code
       - name: CI
         uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+        with:
+          app_name: ${{ inputs.app_name }}
+          working_directory: ${{ inputs.working_directory }}
