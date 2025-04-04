@@ -307,13 +307,12 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             return legal_api.reports.get_pdf(rv.storage, report_type)
 
         filing_json = rv.json
-        if identifier.startswith('T'):
-            submitter_displayname = REDACTED_STAFF_SUBMITTER
-            if (submitter := rv.storage.filing_submitter) and submitter.username and \
-                    not rv.redact_submitter(rv.storage.submitter_roles, jwt):
-                submitter_displayname = submitter.display_name or submitter.username
+        submitter_displayname = REDACTED_STAFF_SUBMITTER
+        if (submitter := rv.storage.filing_submitter) and submitter.username and \
+                not rv.redact_submitter(rv.storage.submitter_roles, jwt):
+            submitter_displayname = submitter.display_name or submitter.username
 
-            filing_json['filing']['header']['submitter'] = submitter_displayname
+        filing_json['filing']['header']['submitter'] = submitter_displayname
         if rv.status == Filing.Status.PENDING.value:
             ListFilingResource.get_payment_update(filing_json)
         if (rv.status == Filing.Status.WITHDRAWN.value or rv.storage.withdrawal_pending) and identifier.startswith('T'):
