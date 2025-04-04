@@ -25,8 +25,7 @@ from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService
-from legal_api.services import flags
+from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
