@@ -18,16 +18,15 @@ from unittest.mock import patch
 import pytest
 from legal_api.models import DCRevocationReason
 
-from entity_digital_credentials.digital_credentials_processors.put_back_on import process
+from entity_digital_credentials.digital_credentials_processors import put_back_on
 from tests.unit import create_business
 
 
 @pytest.mark.asyncio
-@patch('entity_digital_credentials.digital_credentials_processors.put_back_on.get_issued_digital_credentials',
-       return_value=[])
-@patch('entity_digital_credentials.digital_credentials_processors.put_back_on.logger')
-@patch('entity_digital_credentials.digital_credentials_processors.put_back_on.revoke_issued_digital_credential')
-async def test_processor_does_not_run_if_no_issued_credential(mock_revoke_issued_digital_credential,
+@patch.object(put_back_on, 'get_all_digital_credentials_for_business', return_value=[])
+@patch.object(put_back_on, 'logger')
+@patch.object(put_back_on, 'revoke_digital_credential')
+async def test_processor_does_not_run_if_no_issued_credential(mock_revoke_digital_credential,
                                                               mock_logger,
                                                               mock_get_issued_digital_credentials,
                                                               app, session):
@@ -36,31 +35,31 @@ async def test_processor_does_not_run_if_no_issued_credential(mock_revoke_issued
     business = create_business(identifier='FM0000001')
 
     # Act
-    await process(business)
+    await put_back_on.process(business)
 
     # Assert
-    mock_get_issued_digital_credentials.assert_called_once_with(business=business)
-    mock_logger.warning.assert_called_once_with('No issued credentials found for business: %s', 'FM0000001')
-    mock_revoke_issued_digital_credential.assert_not_called()
+    mock_get_issued_digital_credentials.assert_called_once_with(
+        business=business)
+    mock_logger.warning.assert_called_once_with(
+        'No issued credentials found for business: %s', 'FM0000001')
+    mock_revoke_digital_credential.assert_not_called()
 
 
 @pytest.mark.asyncio
-@patch('entity_digital_credentials.digital_credentials_processors.put_back_on.get_issued_digital_credentials',
-       return_value=[{'id': 1}])
-@patch('entity_digital_credentials.digital_credentials_processors.put_back_on.revoke_issued_digital_credential')
-async def test_processor_revokes_issued_credential(mock_revoke_issued_digital_credential,
-                                                   mock_get_issued_digital_credentials,
+@patch.object(put_back_on, 'get_all_digital_credentials_for_business', return_value=[{'id': 1}])
+@patch.object(put_back_on, 'revoke_digital_credential')
+async def test_processor_revokes_issued_credential(mock_revoke_digital_credential,
+                                                   mock_get_all_digital_credentials_for_business,
                                                    app, session):
     """Assert that the processor revokes the issued credential if it exists."""
     # Arrange
     business = create_business(identifier='FM0000001')
 
     # Act
-    await process(business)
+    await put_back_on.process(business)
 
     # Assert
-    mock_get_issued_digital_credentials.assert_called_once_with(business=business)
-    mock_revoke_issued_digital_credential.assert_called_once_with(
-        business=business,
-        issued_credential={'id': 1},
-        reason=DCRevocationReason.PUT_BACK_ON)
+    mock_get_all_digital_credentials_for_business.assert_called_once_with(
+        business=business)
+    mock_revoke_digital_credential.assert_called_once_with(
+        credential={'id': 1}, reason=DCRevocationReason.PUT_BACK_ON)

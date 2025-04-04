@@ -66,8 +66,7 @@ def test_find_by(session):
 
     res = DCDefinition.find_by(credential_type=DCDefinition.CredentialType.business,
                                schema_id='test_schema_id',
-                               credential_definition_id='test_credential_definition_id',
-                               )
+                               credential_definition_id='test_credential_definition_id')
     assert res
     assert res.id == definition.id
 

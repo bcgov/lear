@@ -20,7 +20,6 @@ from http import HTTPStatus
 from typing import List
 from urllib.parse import urljoin
 
-import jwt as pyjwt
 from flask import Response, current_app, request
 from flask_caching import Cache
 from flask_jwt_oidc import JwtManager
@@ -28,7 +27,11 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from legal_api.models import Business, Filing, PartyRole, User
+from legal_api.models import Business, Filing
+from legal_api.services.digital_credentials_auth import (
+    are_digital_credentials_allowed,
+    get_digital_credentials_preconditions,
+)
 from legal_api.services.warnings.business.business_checks import WarningType
 
 
@@ -610,6 +613,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
             'filingTypes': allowed_filings
         },
         'digitalBusinessCard': are_digital_credentials_allowed(business, jwt),
+        'digitalBusinessCardPreconditions': get_digital_credentials_preconditions(business, jwt),
         'viewAll': is_competent_authority
     }
     return result
@@ -980,71 +984,6 @@ def add_allowable_filing_type(is_allowable: bool = False,
         allowable_filing_types.append(allowable_filing_type)
 
     return allowable_filing_types
-
-
-def are_digital_credentials_allowed(business: Business, jwt: JwtManager):
-    """Return True if the business is allowed to have/view a digital business card."""
-    if not (token := pyjwt.decode(jwt.get_token_auth_header(), options={'verify_signature': False})):
-        return False
-
-    if not (user := User.find_by_jwt_token(token)):
-        return False
-
-    is_staff = jwt.contains_role([STAFF_ROLE])
-
-    is_sole_prop = business and business.legal_type == Business.LegalTypes.SOLE_PROP.value
-
-    is_login_source_bcsc = user.login_source == 'BCSC'
-
-    is_owner_operator = is_self_registered_owner_operator(business, user)
-
-    return is_login_source_bcsc and is_sole_prop and is_owner_operator and not is_staff
-
-
-def is_self_registered_owner_operator(business, user):
-    """Return True if the user is the owner operator of the business."""
-    if not (registration_filing := get_registration_filing(business)):
-        return False
-
-    if len(proprietors := PartyRole.get_parties_by_role(
-            business.id, PartyRole.RoleTypes.PROPRIETOR.value)) <= 0:
-        return False
-
-    if len(completing_parties := PartyRole.get_party_roles_by_filing(
-            registration_filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)) <= 0:
-        return False
-
-    if not (proprietor := proprietors[0].party):
-        return False
-
-    if not (completing_party := completing_parties[0].party):
-        return False
-
-    completing_party_first_name = (completing_party.first_name or '').lower()
-    completing_party_last_name = (completing_party.last_name or '').lower()
-    proprietor_first_name = (proprietor.first_name or '').lower()
-    proprietor_middle_initial = (proprietor.middle_initial or '').lower()
-    if proprietor_middle_initial:
-        proprietor_first_name = f'{proprietor_first_name} {proprietor_middle_initial}'
-    proprietor_last_name = (proprietor.last_name or '').lower()
-    user_first_name = (user.firstname or '').lower()
-    user_last_name = (user.lastname or '').lower()
-
-    return (
-        registration_filing.submitter_id == user.id and
-        completing_party_first_name == proprietor_first_name and
-        completing_party_last_name == proprietor_last_name and
-        proprietor_first_name == user_first_name and
-        proprietor_last_name == user_last_name
-    )
-
-
-def get_registration_filing(business):
-    """Return the registration filing for the business."""
-    if len(registration_filings := Filing.get_filings_by_types(business.id, ['registration'])) <= 0:
-        return None
-
-    return registration_filings[0]
 
 
 def get_account_id(_, account_id: str = None) -> str:

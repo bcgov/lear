@@ -54,7 +54,7 @@ async def run(loop, identifier, filing_id, filing_type):  # pylint: disable=too-
     # Connection and Queue configuration.
     def nats_connection_options():
         return {
-            'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
+            'servers': os.getenv('NATS_SERVERS', 'nats://localhost:4222').split(','),
             'io_loop': loop,
             'error_cb': error_cb,
             'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.tester')
