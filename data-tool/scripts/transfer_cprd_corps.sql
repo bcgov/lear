@@ -878,7 +878,7 @@ from (select e.event_id, -- SELECT BY EVENT
       from event e
          , CORP_INVOLVED ci
          , corporation_cte c
-         , corporation_cte c2
+         , corporation c2
          , filing f
       where e.event_id = ci.event_id
         and c.corp_num = e.corp_num
