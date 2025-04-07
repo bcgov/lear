@@ -21,13 +21,13 @@ import pytz
 import requests
 from flask import current_app
 
-from business_account import AccountService
+from business_account.AccountService import AccountService
 
 from business_model.models import Filing
 from business_common.utils.filing import get_str_from_json_filing
 
 
-class NameXService():
+class NameXService:
     """Provides services to use the namex-api."""
 
     DATE_FORMAT = '%Y-%m-%dT%H:%M:%S%z'

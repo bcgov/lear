@@ -20,7 +20,6 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, Filing, UserRoles
@@ -33,7 +32,7 @@ from entity_emailer.email_processors import (
     get_user_email_from_auth,
     substitute_template_parts,
 )
-
+from entity_emailer.services import logger
 
 FILING_TYPE_CONVERTER = {
     'incorporationApplication': 'IA',
@@ -45,12 +44,13 @@ FILING_TYPE_CONVERTER = {
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the incorporation output."""
     pdfs = []
@@ -66,7 +66,7 @@ def _get_pdfs(
         filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing.filing_type, token)
         if filing_pdf_encoded:
             file_name = filing.filing_type[0].upper() + \
-                ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+                        ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
             if ar_date := filing.filing_json['filing'].get('annualReport', {}).get('annualReportDate'):
                 file_name = f'{ar_date[:4]} {file_name}'
 
@@ -191,7 +191,7 @@ def _get_pdfs(
 
 
 def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-branches
-        email_info: dict, token: str) -> dict:
+    email_info: dict, token: str) -> dict:
     """Build the email for Business Number notification."""
     logger.debug('filing_notification: %s', email_info)
     # get template and fill in parts

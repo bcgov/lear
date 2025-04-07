@@ -21,13 +21,15 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, Filing
 
 from entity_emailer.email_processors import get_filing_document, get_filing_info, substitute_template_parts
 from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs
+from entity_emailer.filing_helper import is_special_resolution_correction_by_filing_json
+from entity_emailer.services import logger
+
 
 # copied and pasted from legal_api.core.filing_helper
 def _is_special_resolution_correction_by_meta_data(filing):
@@ -44,14 +46,15 @@ def _is_special_resolution_correction_by_meta_data(filing):
                 return True
     return False
 
+
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str,
-        name_changed: bool) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str,
+    name_changed: bool) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the outputs for the correction notification."""
     pdfs = []
@@ -191,7 +194,7 @@ def get_subject(status: str, prefix: str, business: dict) -> str:
     """Return subject."""
     subjects = {
         Filing.Status.PAID.value: 'Confirmation of correction' if prefix == 'CP-SR' else
-                                  'Confirmation of Filing from the Business Registry',
+        'Confirmation of Filing from the Business Registry',
         Filing.Status.COMPLETED.value: 'Correction Documents from the Business Registry'
     }
 
@@ -224,7 +227,7 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
         if original_filing_type in ['annualReport', 'changeOfAddress', 'changeOfDirectors']:
             return None
     elif legal_type == 'CP' and is_special_resolution_correction_by_filing_json(
-            filing.filing_json['filing']
+        filing.filing_json['filing']
     ):
         prefix = 'CP-SR'
         name_changed = 'requestType' in filing.filing_json['filing']['correction'].get('nameRequest', {})

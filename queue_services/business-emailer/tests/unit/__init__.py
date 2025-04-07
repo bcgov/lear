@@ -15,7 +15,8 @@
 import copy
 import json
 from datetime import datetime, timedelta
-from random import randrange
+from random import randrange, choices
+
 from unittest.mock import Mock
 
 from business_model.models import Batch, Business, Filing, Furnishing, Party, PartyRole, RegistrationBootstrap, User
@@ -46,6 +47,7 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
+from helpers import generate_temp_filing
 from tests import EPOCH_DATETIME
 
 
@@ -119,10 +121,7 @@ def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None)
                 party['officer']['email'] = 'comp_party@email.com'
     filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
 
-    temp_identifier = 'Tb31yQIuBw'
-    temp_reg = RegistrationBootstrap()
-    temp_reg._identifier = temp_identifier
-    temp_reg.save()
+    temp_identifier = generate_temp_filing()
     filing = create_filing(token=payment_id, filing_json=filing_template,
                            business_id=business.id, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date
@@ -649,10 +648,7 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
                 party['officer']['email'] = 'comp_party@email.com'
     filing_template['filing']['amalgamationApplication']['contactPoint']['email'] = 'test@test.com'
 
-    temp_identifier = 'Tb31yQIuBw'
-    temp_reg = RegistrationBootstrap()
-    temp_reg._identifier = temp_identifier
-    temp_reg.save()
+    temp_identifier = generate_temp_filing()
     filing = create_filing(token=payment_id, filing_json=filing_template,
                            business_id=business.id, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date
@@ -676,10 +672,7 @@ def prep_continuation_in_filing(session, identifier, payment_id, option):
                 party['officer']['email'] = 'comp_party@email.com'
     filing_template['filing']['continuationIn']['contactPoint']['email'] = 'test@test.com'
 
-    temp_identifier = 'Tb31yQIuBw'
-    temp_reg = RegistrationBootstrap()
-    temp_reg._identifier = temp_identifier
-    temp_reg.save()
+    temp_identifier = generate_temp_filing()
     filing = create_filing(token=payment_id, filing_json=filing_template,
                            business_id=business.id, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date

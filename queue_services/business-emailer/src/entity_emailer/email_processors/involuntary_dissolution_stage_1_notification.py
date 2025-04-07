@@ -20,12 +20,12 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, Furnishing
 
 from entity_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
+from entity_emailer.services import logger
 
 
 PROCESSABLE_FURNISHING_NAMES = [
@@ -47,7 +47,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get template
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-STAGE-1.html'
-    ).read_text()
+    ).read_text(encoding='utf-8')
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)

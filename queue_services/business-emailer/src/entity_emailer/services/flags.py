@@ -34,14 +34,14 @@ class FileDataSource(UpdateProcessor):
 
         The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
         """
-        return lambda config, store, ready: _FileDataSource(store, ready,
+        return lambda config, store, ready: _FileDataSource(store, None, ready,
                                                             paths=kwargs.get('paths'),
                                                             auto_update=kwargs.get('auto_update', False),
                                                             poll_interval=kwargs.get('poll_interval', 1),
                                                             force_polling=kwargs.get('force_polling', False))
 
 
-class Flags():
+class Flags:
     """Wrapper around the feature flag system.
 
     calls FAIL to FALSE

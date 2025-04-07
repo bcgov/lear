@@ -17,7 +17,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Filing, UserRoles
@@ -29,6 +28,7 @@ from entity_emailer.email_processors import (
     substitute_template_parts,
 )
 from entity_emailer.email_processors.special_resolution_helper import get_completed_pdfs, get_paid_pdfs
+from entity_emailer.services import logger
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
@@ -56,7 +56,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+                             (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type,
         name_changed=name_changed,

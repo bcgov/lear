@@ -16,11 +16,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
+from entity_emailer.services import logger
 
 
 def process(email_msg: dict) -> dict:

@@ -26,14 +26,8 @@ from flask import Flask
 from flask_jwt_oidc import JwtManager
 from flask_migrate import Migrate, upgrade
 from entity_emailer.config import get_named_config  # noqa: I001
-from tracker.config import get_named_config as get_tracker_named_config  # noqa: I001
-from tracker.models import db as _tracker_db  # noqa: I001
-from entity_emailer import worker  # noqa: I001
 from business_model.models.db import db as _db
-from nats.aio.client import Client as Nats
 from sqlalchemy import event, text
-from sqlalchemy.schema import DropConstraint, MetaData
-from stan.aio.client import Client as Stan
 
 import business_model_migrations
 
@@ -75,18 +69,6 @@ def app():
     _db.init_app(_app)
 
     return _app
-
-
-@pytest.fixture(scope='session')
-def tracker_app():
-    """Return a session-wide tracker app instance configured in TEST mode.
-
-    This is used only to reset the tracker test db.
-    """
-    _tracker_app = Flask(__name__)
-    _tracker_app.config.from_object(get_tracker_named_config('testing'))
-    _tracker_db.init_app(_tracker_app)
-    return _tracker_app
 
 
 @pytest.fixture
@@ -167,6 +149,7 @@ def create_test_db(
         print(err)  # used in the test suite, so on failure print something
         return False
 
+
 def drop_test_db(
     user: str = None,
     password: str = None,
@@ -196,6 +179,7 @@ def drop_test_db(
             conn.execute(text(close_all))
             conn.execute(text(f"DROP DATABASE {database}"))
 
+
 @pytest.fixture(scope='session')
 def db(app):  # pylint: disable=redefined-outer-name, invalid-name
     """Return a session-wide initialised database.
@@ -224,48 +208,6 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
             database=app.config.get("DB_NAME"),
             database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
         )
-
-
-@pytest.fixture(scope='session')
-def tracker_db(tracker_app):  # pylint: disable=redefined-outer-name, invalid-name
-    """Return a session-wide initialised database.
-
-    Drops all existing tables - Meta follows Postgres FKs
-    """
-    with tracker_app.app_context():
-        # Clear out any existing tables
-        metadata = MetaData(_tracker_db.engine)
-        metadata.reflect()
-        for table in metadata.tables.values():
-            for fk in table.foreign_keys:  # pylint: disable=invalid-name
-                _tracker_db.engine.execute(DropConstraint(fk.constraint))
-        metadata.drop_all()
-        _tracker_db.drop_all()
-
-        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
-                          WHERE sequence_schema='public'
-                       """
-
-        sess = _tracker_db.session()
-        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
-            try:
-                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
-                print('DROP SEQUENCE public.%s ' % seq)
-            except Exception as err:  # pylint: disable=broad-except # noqa: B902
-                print(f'Error: {err}')
-        sess.commit()
-
-        # ############################################
-        # There are 2 approaches, an empty database, or the same one that the app will use
-        #     create the tables
-        #     _db.create_all()
-        # or
-        # Use Alembic to load all of the DB revisions including supporting lookup data
-        # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
-        Migrate(tracker_app, _tracker_db)
-        upgrade()
-
-        return _tracker_db
 
 
 @pytest.fixture(scope="function")
@@ -394,8 +336,10 @@ def create_mock_coro(mocker, monkeypatch):
 @pytest.fixture(autouse=True)
 def mock_settings_env_vars(app, db, monkeypatch):
     """Mock FLASK_APP and db to use test instances for worker.py."""
-    monkeypatch.setattr(worker, 'FLASK_APP', app)
-    monkeypatch.setattr(worker, 'db', db)
+    # monkeypatch.setattr(worker, 'FLASK_APP', app)
+    # monkeypatch.setattr(worker, 'db', db)
+    # todo: fix this
+    pass
 
 
 @pytest.fixture(autouse=True)
@@ -405,4 +349,5 @@ def run_around_tests(db):
     # run after each test
     db.session.rollback()
     db.session.execute(text(f'TRUNCATE TABLE batches CASCADE'))
+    db.session.execute(text(f'TRUNCATE TABLE businesses CASCADE'))
     db.session.commit()

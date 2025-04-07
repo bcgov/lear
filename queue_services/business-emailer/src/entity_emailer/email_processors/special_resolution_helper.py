@@ -16,20 +16,21 @@ import base64
 from http import HTTPStatus
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from business_model.models import Business, Filing
 
 from entity_emailer.email_processors import get_filing_document
+from entity_emailer.services import logger
 
 
 def get_completed_pdfs(
-        token: str,
-        business: dict,
-        filing: Filing,
-        name_changed: bool,
-        rules_changed=False,
-        memorandum_changed=False) -> list:
+    token: str,
+    business: dict,
+    filing: Filing,
+    name_changed: bool,
+    rules_changed=False,
+    memorandum_changed=False
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the completed pdfs for the special resolution output."""
     pdfs = []
@@ -102,11 +103,11 @@ def get_completed_pdfs(
 
 
 def get_paid_pdfs(
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the paid pdfs for the special resolution output."""
     pdfs = []

@@ -20,7 +20,6 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, Filing, UserRoles
@@ -31,14 +30,16 @@ from entity_emailer.email_processors import (
     get_recipient_from_auth,
     substitute_template_parts,
 )
+from entity_emailer.services import logger
 
 
 def _get_pdfs(
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the Consent Continuation Out output."""
     pdfs = []
@@ -116,7 +117,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+                             (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )

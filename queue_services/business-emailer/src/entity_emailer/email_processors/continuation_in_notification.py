@@ -21,7 +21,6 @@ from pathlib import Path
 
 import pycountry
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, Filing, ReviewResult
@@ -33,15 +32,17 @@ from entity_emailer.email_processors import (
     get_recipients,
     substitute_template_parts,
 )
+from entity_emailer.services import logger
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the outputs for the Continuation In notification."""
     pdfs = []
@@ -173,7 +174,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     foreign_jurisdiction = f'{region.name}, {country.name}' if region else country.name
 
     # get template and fill in parts
-    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/CONT-IN-{status}.html').read_text()
+    template = (Path(f'{current_app.config.get("TEMPLATE_PATH")}/CONT-IN-{status}.html')
+                .read_text(encoding='utf-8'))
     filled_template = substitute_template_parts(template)
     jnja_template = Template(filled_template, autoescape=True)
 

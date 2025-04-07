@@ -11,8 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Exceptions defined for the Queue Service."""
 
-"""This exports all of the models and schemas used by the application."""
-from .message_processing_service import MessageProcessingService
 
-__all__ = ('MessageProcessingService')
+class QueueException(Exception):
+    """Base exception for the Queue Services."""
+
+
+class FilingException(Exception):
+    """No filing found to match queue payload."""
+
+
+class EmailException(Exception):
+    """No email processor to match queue payload."""

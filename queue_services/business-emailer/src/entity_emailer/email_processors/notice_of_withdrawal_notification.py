@@ -18,7 +18,6 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from entity_emailer.meta.filing import FilingMeta
@@ -30,9 +29,10 @@ from entity_emailer.email_processors import (
     get_recipient_from_auth,
     substitute_template_parts,
 )
+from entity_emailer.services import logger
 
 
-def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-locals
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals
     """Build the email for Notice of Withdrawal notification."""
     logger.debug('notice_of_withdrawal_notification: %s', email_info)
     # get template and fill in parts
@@ -81,7 +81,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         effective_date_time=leg_tmz_effective_date,
         withdrawnFilingType=withdrawn_filing_display_name,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+                             (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
@@ -113,11 +113,11 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
 
 
 def _get_pdfs(
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str) -> list:
     """Get the PDFs for the Notice of Withdrawal output."""
     pdfs = []
     attach_order = 1

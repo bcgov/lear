@@ -17,11 +17,12 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 
 from entity_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
+from entity_emailer.services import logger
+
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
@@ -47,7 +48,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+                             (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
