@@ -19,13 +19,13 @@ from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
 
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from entity_emailer.services.namex import NameXService
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer.email_processors import substitute_template_parts
+from entity_emailer.services import logger
 
 
 class Option(Enum):

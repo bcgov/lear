@@ -15,3 +15,36 @@
 
 This module is the service worker for sending emails about entity related events.
 """
+import sentry_sdk
+from flask import Flask
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+from .config import Config, ProdConfig
+from business_model.models.db import db
+from .resources import register_endpoints
+from .services import flags
+from .services import gcp_queue
+
+
+def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
+    """Return a configured Flask App using the Factory method."""
+    app = Flask(__name__)
+    app.config.from_object(environment)
+
+    # Configure Sentry
+    if dsn := app.config.get("SENTRY_DSN", None):
+        sentry_sdk.init(
+            dsn=dsn,
+            integrations=[FlaskIntegration()],
+            send_default_pii=False,
+        )
+
+    # Configure LaunchDarkly
+    if app.config.get("LD_SDK_KEY", None):
+        flags.init_app(app)
+
+    db.init_app(app)
+    register_endpoints(app)
+    gcp_queue.init_app(app)
+
+    return app

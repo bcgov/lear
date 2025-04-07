@@ -37,7 +37,7 @@ clean-test: ## clean test files
 	rm -fr htmlcov/
 
 build-req: clean ## Upgrade requirements
-	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
+	test -f venv/bin/activate || python3.13 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install pip==20.1.1 ;\
 	pip install -Ur requirements/prod.txt ;\
@@ -46,7 +46,7 @@ build-req: clean ## Upgrade requirements
 	pip install -Ur requirements/bcregistry-libraries.txt
 
 install: clean ## Install python virtual environment
-	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
+	test -f venv/bin/activate || python3.13 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install pip==20.1.1 ;\
 	pip install -Ur requirements.txt
@@ -61,13 +61,13 @@ install-dev: ## Install application for local development
 #################################################################################
 ci: pylint flake8 test ## CI flow
 
+lint: pylint flake8
+
 pylint: ## Linting with pylint
 	. venv/bin/activate && pylint --rcfile=setup.cfg src/$(PROJECT_NAME)
 
 flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME) tests
-
-lint: pylint flake8 ## run all lint type scripts
 
 test: ## Unit testing
 	. venv/bin/activate && pytest
@@ -103,6 +103,8 @@ endif
 
 build: ## Build the docker container
 	docker build . -t $(DOCKER_NAME) \
+	    --platform linux/amd64 \
+		--build-arg APP_ENV=production \
 		--build-arg VCS_REF=$(shell git rev-parse --short HEAD) \
 		--build-arg BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
 

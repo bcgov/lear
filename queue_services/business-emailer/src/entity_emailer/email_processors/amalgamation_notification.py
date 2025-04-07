@@ -20,10 +20,10 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
+from entity_emailer.services import logger
 
 from entity_emailer.email_processors import (
     get_entity_dashboard_url,

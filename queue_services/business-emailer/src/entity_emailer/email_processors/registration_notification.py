@@ -20,7 +20,6 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, CorpType, Filing
@@ -31,15 +30,16 @@ from entity_emailer.email_processors import (
     get_filing_info,
     substitute_template_parts,
 )
+from entity_emailer.services import logger
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the registration output."""
     pdfs = []

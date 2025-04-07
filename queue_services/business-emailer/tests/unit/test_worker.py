@@ -16,13 +16,11 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from entity_queue_common.service_utils import EmailException, QueueException
 from business_model.models import Business, Furnishing
 from entity_emailer.services.namex import NameXService
-from business_account import AccountService
+from business_account.AccountService import AccountService
 from business_model.utils.legislation_datetime import LegislationDatetime
 
-from entity_emailer import worker
 from entity_emailer.email_processors import (
     ar_reminder_notification,
     correction_notification,
@@ -31,6 +29,9 @@ from entity_emailer.email_processors import (
     nr_notification,
     special_resolution_notification,
 )
+from entity_emailer.exceptions import EmailException, QueueException
+from entity_emailer.resources import business_emailer as worker
+
 from tests import MockResponse
 from tests.unit import (
     create_business,
@@ -40,17 +41,6 @@ from tests.unit import (
     prep_incorp_filing,
     prep_maintenance_filing,
 )
-
-
-def test_process_filing_missing_app(app, session):
-    """Assert that an email will fail with no flask app supplied."""
-    # setup
-    email_msg = {'email': {'type': 'bn'}}
-
-    # TEST
-    with pytest.raises(Exception):
-        worker.process_email(email_msg, flask_app=None)
-
 
 @pytest.mark.parametrize('option', [
     ('PAID'),
@@ -69,7 +59,7 @@ def test_process_incorp_email(app, session, mocker, option):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
-                    {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}}, app)
+                    {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}})
 
                 assert mock_get_pdfs.call_args[0][0] == option
                 assert mock_get_pdfs.call_args[0][1] == token
@@ -84,10 +74,10 @@ def test_process_incorp_email(app, session, mocker, option):
                 if option == 'PAID':
                     assert 'comp_party@email.com' in mock_send_email.call_args[0][0]['recipients']
                     assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                        'Confirmation of Filing from the Business Registry'
+                           'Confirmation of Filing from the Business Registry'
                 else:
                     assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                        'Incorporation Documents from the Business Registry'
+                           'Incorporation Documents from the Business Registry'
                 assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
                 assert mock_send_email.call_args[0][0]['content']['body']
                 assert mock_send_email.call_args[0][0]['content']['attachments'] == []
@@ -110,10 +100,10 @@ def test_maintenance_notification(app, session, status, filing_type):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
-                    as mock_get_recipients:
+                as mock_get_recipients:
                 with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                     worker.process_email(
-                        {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}, app)
+                        {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}})
 
                     assert mock_get_pdfs.call_args[0][0] == status
                     assert mock_get_pdfs.call_args[0][1] == token
@@ -151,7 +141,7 @@ def test_skips_notification(app, session, status, filing_type, identifier):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
-                    {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}, app)
+                    {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}})
 
                 assert not mock_send_email.call_args
 
@@ -165,7 +155,7 @@ def test_process_mras_email(app, session):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
             worker.process_email(
-                {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'}}, app)
+                {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'}})
 
             # check vals
             assert mock_send_email.call_args[0][0]['content']['subject'] == 'BC Business Registry Partner Information'
@@ -193,7 +183,7 @@ def test_process_special_resolution_email(app, session, option, submitter_role):
                                   return_value='user@email.com'):
                     with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                         worker.process_email(
-                            {'email': {'filingId': filing.id, 'type': 'specialResolution', 'option': option}}, app)
+                            {'email': {'filingId': filing.id, 'type': 'specialResolution', 'option': option}})
 
                         assert mock_get_pdfs.call_args[0][0] == token
                         assert mock_get_pdfs.call_args[0][1]['identifier'] == 'CP1234567'
@@ -201,10 +191,10 @@ def test_process_special_resolution_email(app, session, option, submitter_role):
 
                         if option == 'PAID':
                             assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                                'TEST - Confirmation of Special Resolution from the Business Registry'
+                                   'TEST - Confirmation of Special Resolution from the Business Registry'
                         else:
                             assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                                'TEST - Special Resolution Documents from the Business Registry'
+                                   'TEST - Special Resolution Documents from the Business Registry'
                         assert 'recipient@email.com' in mock_send_email.call_args[0][0]['recipients']
                         if submitter_role:
                             assert f'{submitter_role}@email.com' in mock_send_email.call_args[0][0]['recipients']
@@ -232,14 +222,14 @@ def test_process_correction_cp_sr_email(app, session, option):
         with patch.object(correction_notification, '_get_pdfs', return_value=[]):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
-                    {'email': {'filingId': filing.id, 'type': 'correction', 'option': option}}, app)
+                    {'email': {'filingId': filing.id, 'type': 'correction', 'option': option}})
 
                 if option == 'PAID':
                     assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                        'TEST - Confirmation of correction'
+                           'TEST - Confirmation of correction'
                 else:
                     assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                        'TEST - Correction Documents from the Business Registry'
+                           'TEST - Correction Documents from the Business Registry'
                 assert 'cp_sr@test.com' in mock_send_email.call_args[0][0]['recipients']
                 assert mock_send_email.call_args[0][0]['content']['body']
                 assert mock_send_email.call_args[0][0]['content']['attachments'] == []
@@ -264,7 +254,7 @@ def test_process_ar_reminder_email(app, session):
                     'businessId': filing.business_id,
                     'type': 'annualReport', 'option': 'reminder',
                     'arFee': '100', 'arYear': '2021'
-                }}, app)
+                }})
 
                 call_args = mock_send_email.call_args
                 assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
@@ -289,14 +279,13 @@ def test_process_bn_email(app, session):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
             worker.process_email(
-                {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'}},
-                app
+                {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'}}
             )
             # check email values
             assert 'comp_party@email.com' in mock_send_email.call_args[0][0]['recipients']
             assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
             assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                f'{business.legal_name} - Business Number Information'
+                   f'{business.legal_name} - Business Number Information'
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
@@ -306,17 +295,25 @@ default_names_array = [{'name': default_legal_name, 'state': 'NE'}]
 
 
 @pytest.mark.parametrize(['option', 'nr_number', 'subject', 'expiration_date', 'refund_value',
-                         'expected_legal_name', 'names'], [
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST2 Company Name',
-        [{'name': 'TEST Company Name', 'state': 'NE'}, {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
-    ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None, 'TEST3 Company Name',
-        [{'name': 'TEST3 Company Name', 'state': 'CONDITION'}, {'name': 'TEST4 Company Name', 'state': 'NE'}]),
-    ('expired', 'NR 1234567', 'Expired', None, None, 'TEST4 Company Name',
-        [{'name': 'TEST5 Company Name', 'state': 'NE'}, {'name': 'TEST4 Company Name', 'state': 'APPROVED'}]),
-    ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None, None, default_names_array),
-    ('upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
-    ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None, default_names_array)
-])
+                          'expected_legal_name', 'names'], [
+                             ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None,
+                              'TEST2 Company Name',
+                              [{'name': 'TEST Company Name', 'state': 'NE'},
+                               {'name': 'TEST2 Company Name', 'state': 'APPROVED'}]),
+                             ('before-expiry', 'NR 1234567', 'Expiring Soon', '2021-07-20T00:00:00+00:00', None,
+                              'TEST3 Company Name',
+                              [{'name': 'TEST3 Company Name', 'state': 'CONDITION'},
+                               {'name': 'TEST4 Company Name', 'state': 'NE'}]),
+                             ('expired', 'NR 1234567', 'Expired', None, None, 'TEST4 Company Name',
+                              [{'name': 'TEST5 Company Name', 'state': 'NE'},
+                               {'name': 'TEST4 Company Name', 'state': 'APPROVED'}]),
+                             ('renewal', 'NR 1234567', 'Confirmation of Renewal', '2021-07-20T00:00:00+00:00', None,
+                              None, default_names_array),
+                             (
+                             'upgrade', 'NR 1234567', 'Confirmation of Upgrade', None, None, None, default_names_array),
+                             ('refund', 'NR 1234567', 'Refund request confirmation', None, '123.45', None,
+                              default_names_array)
+                         ])
 def test_nr_notification(app, session, option, nr_number, subject, expiration_date, refund_value,
                          expected_legal_name, names):
     """Assert that the nr notification can be processed."""
@@ -334,7 +331,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
     # run worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
-                as mock_query_nr_number:
+            as mock_query_nr_number:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email({
                     'id': '123456789',
@@ -348,7 +345,7 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
                             'refundValue': refund_value
                         }
                     }
-                }, app)
+                })
 
                 call_args = mock_send_email.call_args
                 assert call_args[0][0]['content']['subject'] == f'{nr_number} - {subject}'
@@ -392,7 +389,7 @@ def test_nr_receipt_notification(app, session):
     # run worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
-                as mock_query_nr_number:
+            as mock_query_nr_number:
             with patch.object(name_request, 'get_nr_bearer_token', return_value=token):
                 with patch.object(name_request, '_get_pdfs', return_value=pdfs) as mock_pdf:
                     with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
@@ -408,7 +405,7 @@ def test_nr_receipt_notification(app, session):
                                     'statusCode': 'DRAFT'  # not used
                                 }
                             }
-                        }, app)
+                        })
 
                         assert mock_pdf.call_args[0][0] == nr_id
                         assert mock_pdf.call_args[0][1] == payment_token
@@ -516,9 +513,9 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
             session.expunge_all()
             if exception:
                 with pytest.raises(exception):
-                    worker.process_email(message_payload, app)
+                    worker.process_email(message_payload)
             else:
-                worker.process_email(message_payload, app)
+                worker.process_email(message_payload)
 
             call_args = mock_send_email.call_args
             if furnishing_name == 'INVALID_NAME':

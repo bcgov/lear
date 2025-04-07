@@ -31,31 +31,34 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Services used by Business-Pay."""
-from gcp_queue import GcpQueue
+"""GCP Auth Services."""
+from flask import current_app
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from structured_logging import StructuredLogging
 
-from .flags import Flags
-from .gcp_auth import verify_gcp_jwt
-from .gcp_auth import logger
-
-flags = Flags()
-gcp_queue = GcpQueue()
+logger = StructuredLogging.get_logger()
 
 
-def create_filing_msg(identifier):
-    """Create the filing payload."""
-    filing_msg = {"filing": {"id": identifier}}
-    return filing_msg
+def verify_gcp_jwt(flask_request):
+    """Verify the bearer token as sign by gcp oauth."""
+    msg = ""
+    try:
+        bearer_token = flask_request.headers.get("Authorization")
+        logger.debug('bearer_token %s', bearer_token)
+        token = bearer_token.split(" ")[1]
+        audience = current_app.config.get("SUB_AUDIENCE")
+        logger.debug('audience %s', audience)
+        claim = id_token.verify_oauth2_token(
+            token, requests.Request(), audience=audience
+        )
+        sa_email = current_app.config.get("SUB_SERVICE_ACCOUNT")
+        logger.debug('sa_email %s', sa_email)
+        if not claim["email_verified"] or claim["email"] != sa_email:
+            msg = f"Invalid service account or email not verified for email: {claim['email']}\n"
+        logger.debug('claim %s', claim)
 
-
-def create_gcp_filing_msg(identifier):
-    """Create the GCP filing payload."""
-    filing_msg = {"filingMessage": {"filingIdentifier": identifier}}
-    return filing_msg
-
-
-def create_email_msg(identifier, filing_type):
-    """Create the email message payload."""
-    # TODO change OPTION to use a common Enum
-    email_msg = {"email": {"filingId": identifier, "type": filing_type, "option": "PAID"}}
-    return email_msg
+    except Exception as err:
+        msg = f"Invalid token: {err}\n"
+    finally:
+        return msg

@@ -22,8 +22,8 @@ from tests.unit import prep_amalgamation_filing
 
 
 @pytest.mark.parametrize('status', [
-    (Filing.Status.PAID.value),
-    (Filing.Status.COMPLETED.value)
+    Filing.Status.PAID.value,
+    Filing.Status.COMPLETED.value
 ])
 def test_amalgamation_notification(app, session, mocker, status):
     """Assert Amalgamation notification is created."""

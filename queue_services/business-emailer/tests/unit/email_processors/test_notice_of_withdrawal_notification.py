@@ -26,6 +26,7 @@ from registry_schemas.example_data import (
 )
 
 from entity_emailer.email_processors import notice_of_withdrawal_notification
+from helpers import generate_temp_filing
 from tests.unit import create_business, create_future_effective_filing, prep_notice_of_withdraw_filing
 
 
@@ -44,10 +45,7 @@ def test_notice_of_withdrawal_notification(
     """Assert that the notice of withdrawal email processor works as expected."""
     business = None
     if is_temp:
-        identifier = 'Tb31yQIuBw'
-        temp_reg = RegistrationBootstrap()
-        temp_reg._identifier = identifier
-        temp_reg.save()
+        identifier = generate_temp_filing()
     else:
         identifier = 'BC1234567'
         business = create_business(identifier, legal_type, legal_name)

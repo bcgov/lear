@@ -52,7 +52,7 @@ def get_named_config(config_name: str = 'production'):
     return config
 
 
-class _Config():  # pylint: disable=too-few-public-methods
+class Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
 
     Used as the base for all the other configurations.
@@ -150,14 +150,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     SOCIETIES_URL = os.getenv('SOCIETIES_URL', '')
 
 
-class DevConfig(_Config):  # pylint: disable=too-few-public-methods
+class DevConfig(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""
 
     TESTING = False
     DEBUG = True
 
 
-class TestConfig(_Config):  # pylint: disable=too-few-public-methods
+class TestConfig(Config):  # pylint: disable=too-few-public-methods
     """In support of testing only.
 
     Used by the py.test suite
@@ -200,7 +200,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     }
 
 
-class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
+class ProdConfig(Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
 
     TESTING = False

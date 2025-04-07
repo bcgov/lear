@@ -31,31 +31,28 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Services used by Business-Pay."""
-from gcp_queue import GcpQueue
+"""Entity-Pay module.
 
-from .flags import Flags
-from .gcp_auth import verify_gcp_jwt
-from .gcp_auth import logger
+Provides the service that applies payments to filings.
+If the Filing is not a FED, then it places a processing message on the Filer Q
+"""
+from flask import Flask
 
-flags = Flags()
-gcp_queue = GcpQueue()
-
-
-def create_filing_msg(identifier):
-    """Create the filing payload."""
-    filing_msg = {"filing": {"id": identifier}}
-    return filing_msg
+from .ops import bp as ops_endpoint
+from .business_emailer import bp as business_emailer_endpoint
 
 
-def create_gcp_filing_msg(identifier):
-    """Create the GCP filing payload."""
-    filing_msg = {"filingMessage": {"filingIdentifier": identifier}}
-    return filing_msg
+def register_endpoints(app: Flask):
+    """Register endpoints with the flask application"""
+    # Allow base route to match with, and without a trailing slash
+    app.url_map.strict_slashes = False
 
+    app.register_blueprint(
+        url_prefix="/",
+        blueprint=business_emailer_endpoint,
+    )
 
-def create_email_msg(identifier, filing_type):
-    """Create the email message payload."""
-    # TODO change OPTION to use a common Enum
-    email_msg = {"email": {"filingId": identifier, "type": filing_type, "option": "PAID"}}
-    return email_msg
+    app.register_blueprint(
+        url_prefix="/ops",
+        blueprint=ops_endpoint,
+    )

@@ -24,10 +24,10 @@ from pathlib import Path
 from typing import Tuple
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from business_model.models import Business, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
+from entity_emailer.services import logger
 
 
 def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:
@@ -61,13 +61,13 @@ def get_recipients(option: str, filing_json: dict, token: str = None, filing_typ
     if filing_json['filing'].get(filing_type):
         recipients = filing_json['filing'][filing_type]['contactPoint']['email']
         if option in [Filing.Status.PAID.value, 'bn'] and \
-                filing_json['filing']['header']['name'] == filing_type:
+            filing_json['filing']['header']['name'] == filing_type:
             parties = filing_json['filing'][filing_type].get('parties')
             comp_party_email = None
             for party in parties:
                 for role in party['roles']:
                     if role['roleType'] == 'Completing Party' and \
-                            (comp_party_email := party['officer'].get('email')):
+                        (comp_party_email := party['officer'].get('email')):
                         recipients = f'{recipients}, {comp_party_email}'
                         break
     else:
@@ -197,7 +197,8 @@ def substitute_template_parts(template_code: str) -> str:
 
     # substitute template parts - marked up by [[filename]]
     for template_part in template_parts:
-        template_part_code = Path(f'{current_app.config.get("TEMPLATE_PATH")}/common/{template_part}.html').read_text()
+        template_part_code = (Path(f'{current_app.config.get("TEMPLATE_PATH")}/common/{template_part}.html')
+                              .read_text(encoding='utf-8'))
         template_code = template_code.replace('[[{}.html]]'.format(template_part), template_part_code)
 
     return template_code

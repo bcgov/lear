@@ -1,4 +1,4 @@
-# Copyright © 2024 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
 # Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,31 +31,14 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Services used by Business-Pay."""
-from gcp_queue import GcpQueue
+"""Provides the WSGI entry point for running the application
+"""
+import os
 
-from .flags import Flags
-from .gcp_auth import verify_gcp_jwt
-from .gcp_auth import logger
+from entity_emailer import create_app
 
-flags = Flags()
-gcp_queue = GcpQueue()
+app = create_app()
 
-
-def create_filing_msg(identifier):
-    """Create the filing payload."""
-    filing_msg = {"filing": {"id": identifier}}
-    return filing_msg
-
-
-def create_gcp_filing_msg(identifier):
-    """Create the GCP filing payload."""
-    filing_msg = {"filingMessage": {"filingIdentifier": identifier}}
-    return filing_msg
-
-
-def create_email_msg(identifier, filing_type):
-    """Create the email message payload."""
-    # TODO change OPTION to use a common Enum
-    email_msg = {"email": {"filingId": identifier, "type": filing_type, "option": "PAID"}}
-    return email_msg
+if __name__ == "__main__":
+    server_port = os.environ.get("PORT", "8080")
+    app.run(debug=False, port=server_port, host="0.0.0.0")

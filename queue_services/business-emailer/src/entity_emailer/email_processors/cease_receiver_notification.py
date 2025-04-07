@@ -18,10 +18,10 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, Filing
+from entity_emailer.services import logger
 
 from entity_emailer.email_processors import (
     get_filing_document,
@@ -31,7 +31,8 @@ from entity_emailer.email_processors import (
 )
 
 
-def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-locals
+
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals
     """Build the email for Cease Receiver notification."""
     logger.debug('cease_receiver: %s', email_info)
     # get template and fill in parts
@@ -55,7 +56,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+                             (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
@@ -89,11 +90,11 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
 
 
 def _get_pdfs(
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str) -> list:
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str) -> list:
     """Get the PDFs for the Cease Receiver output."""
     pdfs = []
     attach_order = 1
