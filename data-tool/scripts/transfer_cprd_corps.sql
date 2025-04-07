@@ -62,21 +62,24 @@ alter table share_series
 -- corporation
 transfer public.corporation from cprd using
 with corporation_cte as (
-       select c.*
-       from corporation c
-       where c.CORP_NUM not in (
-           select c.corp_num
-           from corporation c
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
                 , event e
                 , filing f
+                , filing_user u
             where e.CORP_NUM = c.CORP_NUM
-                and f.EVENT_ID = e.EVENT_ID
-                and f.FILING_TYP_CD = 'BEINC'
-       )
-      and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-          -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-          -- and rownum <= 5
-      )
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
+)
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
            else c.CORP_NUM
@@ -113,20 +116,23 @@ order by corp_num;
 -- event
 transfer public.event from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        case
@@ -148,20 +154,23 @@ order by e.event_id desc;
 -- corp_name
 transfer public.corp_name from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -181,20 +190,23 @@ order by c.corp_num, start_event_id;
 -- corp_state
 transfer public.corp_state from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -216,20 +228,23 @@ order by c.corp_num, start_event_id;
 -- filing
 transfer public.filing from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        f.filing_typ_cd    as filing_type_cd,
@@ -263,20 +278,23 @@ order by e.event_id;
 -- filing_user
 transfer public.filing_user from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        u.user_id,
@@ -298,20 +316,23 @@ order by e.event_id;
 -- office
 transfer public.office from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -332,20 +353,23 @@ vset cli.settings.transfer_threads=3
 -- address
 transfer public.address from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select distinct ADDR_ID,
                 PROVINCE,
@@ -412,20 +436,23 @@ vset cli.settings.transfer_threads=8
 -- corp_comments
 transfer public.corp_comments from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select cc.comment_dts,
        case
@@ -448,20 +475,23 @@ order by c.corp_num, comment_dts;
 -- ledger_text
 transfer public.ledger_text from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        l.notation,
@@ -479,20 +509,23 @@ order by e.event_id;
 -- corp_party
 transfer public.corp_party from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select p.corp_party_id,
        p.mailing_addr_id,
@@ -524,20 +557,23 @@ order by c.corp_num, corp_party_id;
 -- corp_party_relationship
 transfer public.CORP_PARTY_RELATIONSHIP from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select cpr.CORP_PARTY_ID, cpr.RELATIONSHIP_TYP_CD
 from CORP_PARTY_RELATIONSHIP cpr,
@@ -553,20 +589,23 @@ order by c.corp_num, corp_party_id;
 -- offices_held
 transfer public.OFFICES_HELD from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select oh.CORP_PARTY_ID, oh.OFFICER_TYP_CD
 from OFFICES_HELD oh,
@@ -582,20 +621,23 @@ order by c.corp_num, corp_party_id;
 -- completing_party
 transfer public.completing_party from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        cp.MAILING_ADDR_ID,
@@ -615,20 +657,23 @@ order by e.event_id;
 -- submitting_party
 transfer public.SUBMITTING_PARTY from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        sp.MAILING_ADDR_ID,
@@ -656,20 +701,23 @@ order by e.event_id;
 -- corp_flag
 transfer public.corp_flag from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -688,20 +736,23 @@ order by c.corp_num, cf.start_event_id;
 -- cont_out
 transfer public.CONT_OUT from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -723,20 +774,23 @@ order by c.corp_num, co.start_event_id;
 -- conv_event
 transfer public.CONV_EVENT from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        ce.effective_dt,
@@ -762,20 +816,23 @@ order by e.event_id;
 -- conv_ledger
 transfer public.CONV_LEDGER from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
     cl.LEDGER_TITLE_TXT,
@@ -792,20 +849,23 @@ order by e.event_id;
 -- corp_involved - amalgamaTING_businesses
 transfer public.corp_involved_amalgamating from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select *
 from (select e.event_id, -- SELECT BY EVENT
@@ -873,20 +933,23 @@ order by event_id;
 -- corp_involved - continue_in_historical_xpro
 transfer public.corp_involved_cont_in from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        case
@@ -908,20 +971,23 @@ order by e.event_id;
 -- corp_restriction
 transfer public.CORP_RESTRICTION from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -944,20 +1010,23 @@ order by c.corp_num, cr.start_event_id;
 -- correction
 transfer public.CORRECTION from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        case
@@ -977,20 +1046,23 @@ order by e.event_id;
 -- continued_in_from_jurisdiction
 transfer public.jurisdiction from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1014,20 +1086,23 @@ order by c.corp_num, j.start_event_id;
 -- resolution
 transfer public.RESOLUTION from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1047,20 +1122,23 @@ order by c.corp_num, r.start_event_id;
 -- share_struct
 transfer public.SHARE_STRUCT from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1078,20 +1156,23 @@ order by c.corp_num, ss.start_event_id;
 --share_struct_cls
 transfer public.SHARE_STRUCT_CLS from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1129,20 +1210,23 @@ order by c.corp_num, ssc.start_event_id;
 --share_series
 transfer public.SHARE_SERIES from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1173,20 +1257,23 @@ order by c.corp_num, ss.start_event_id;
 -- notification
 transfer public.NOTIFICATION from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        n.METHOD_TYP_CD,
@@ -1209,20 +1296,23 @@ order by e.event_id;
 -- notification_resend
 transfer public.NOTIFICATION_RESEND from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select e.event_id,
        nr.METHOD_TYP_CD,
@@ -1245,20 +1335,23 @@ order by e.event_id;
 -- party_notification
 transfer public.PARTY_NOTIFICATION from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select pn.PARTY_ID,
        pn.METHOD_TYP_CD,
@@ -1282,20 +1375,23 @@ order by c.corp_num;
 -- payment
 transfer public.payment from cprd using
 with corporation_cte as (
-select c.*
-from corporation c
-where c.CORP_NUM not in (
-    select c.corp_num
-    from corporation c
-        , event e
-        , filing f
-    where e.CORP_NUM = c.CORP_NUM
-        and f.EVENT_ID = e.EVENT_ID
-        and f.FILING_TYP_CD = 'BEINC'
-    )
-and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-      -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
-      -- and rownum <= 5
+    select c.*
+        from corporation c
+        where c.CORP_NUM not in (
+            select c.corp_num
+            from corporation c
+                , event e
+                , filing f
+                , filing_user u
+            where e.CORP_NUM = c.CORP_NUM
+                and f.event_id = e.event_id
+                and u.event_id = e.event_id
+                and u.user_id = 'BCOMPS'
+                and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
+        )
+    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        -- and c.corp_num in ('1396310', '1396309', '1396308', '1396307', '1396306', '1396890', '1396889', '1396885', '1396883', '1396878','1396597', '1396143', '1395925', '1395116', '1394990', '1246445', '1216743', '1396508', '1396505', '1396488', '1396401', '1396387', '1396957', '1355943', '1340611', '1335427', '1327193', '1393945', '1208648', '1117024', '1120292', '1127373', '1135492')
+        -- and rownum <= 5
 )
 select p.event_id,
        p.payment_typ_cd,
