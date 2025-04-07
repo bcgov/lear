@@ -1,0 +1,51 @@
+name: GCP Filings Notebook Report CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "gcp-jobs/filings-notebook-report/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        required: true
+        type: string
+        default: "dev"
+      app_name:
+        required: true
+        type: string
+        default: "filings-notebook-report"
+      working_directory:
+        type: string
+        default: "./gcp-jobs/filings-notebook-report"
+      redeploy:
+        type: string
+        default: "false"
+
+jobs:
+  deploy:
+    # Only allow run the CD flow in protected branch
+    if: github.ref_protected == true
+
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        shell: bash
+
+    # Allow add the tag in the repo.
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'write'
+      id-token: 'none'
+
+    steps:
+      - name: Deploy filings-notebook-report to GCP
+        uses: bcgov/bcregistry-sre/.github/workflows/backend-job-cd@main
+        with:
+          environment: ${{ inputs.target }}
+          app_name: ${{ inputs.app_name }}
+          target: ${{ inputs.target }}
+          working_directory: ${{ inputs.working_directory }}
+          redeploy: ${{ inputs.redeploy }}
