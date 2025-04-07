@@ -72,8 +72,7 @@ def get_completed_filings_for_colin():
 
         if not filing_json['filing'].get('business'):
             if filing.transaction_id:
-                business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
-                    filing.transaction_id, business.id)
+                business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business.id)
                 filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
                     business_revision, business.json())
             else:
@@ -247,8 +246,7 @@ def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
                                                AmalgamatingBusiness.Role.primary.name])
 
     ting_business = Business.find_by_identifier(primary_or_holding['identifier'])
-    primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing.transaction_id,
-                                                                                            ting_business.id)
+    primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing, ting_business.id)
 
     amalgamation_filing['nameRequest']['legalName'] = primary_or_holding_business.legal_name
 
