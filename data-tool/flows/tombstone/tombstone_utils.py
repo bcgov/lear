@@ -118,7 +118,8 @@ def format_parties_data(data: dict) -> list[dict]:
     # Map role codes to role names
     role_mapping = {
         'DIR': 'director',
-        'OFF': 'officer'
+        'OFF': 'officer',
+        'RCM': 'receiver',
         # Additional roles can be added here in the future
     }
 
@@ -134,9 +135,9 @@ def format_parties_data(data: dict) -> list[dict]:
         party['parties']['first_name'] = party_info['cp_first_name'] or ''
         party['parties']['middle_initial'] = party_info['cp_middle_name'] or ''
         party['parties']['last_name'] = party_info['cp_last_name'] or ''
-        party['parties']['party_type'] = 'person'
+        party['parties']['party_type'] = 'person' if party_info['cp_full_name'] else 'organization'
         party['parties']['title'] = ''
-        party['parties']['organization_name'] = ''
+        party['parties']['organization_name'] = party_info['cp_business_name'] or ''
         party['parties']['email'] = ''
         party['parties']['identifier'] = ''
 
@@ -160,7 +161,7 @@ def format_parties_data(data: dict) -> list[dict]:
 
         formatted_party_roles = party['party_roles']
         for _, r in group.iterrows():
-            if (role_code := r['cp_party_typ_cd']) not in ['INC', 'DIR', 'OFF']:
+            if (role_code := r['cp_party_typ_cd']) not in ['DIR', 'OFF', 'RCM']:
                 continue
 
             role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
