@@ -20,9 +20,9 @@ from datetime import datetime
 
 import pytest
 from datedelta import datedelta
-from legal_api.models import BatchProcessing, Business, Furnishing
 
-from furnishings.stage_processors.stage_two import process
+from business_model.models import BatchProcessing, Business, Furnishing
+from furnishings.services import stage_two_process
 
 from .. import factory_batch, factory_batch_processing, factory_business, factory_furnishing
 
@@ -78,7 +78,7 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
             business_name=business.legal_name
         )
 
-    process(app, {})
+    stage_two_process({})
 
     furnishings = Furnishing.find_by(business_id=business.id)
     if new_entry:

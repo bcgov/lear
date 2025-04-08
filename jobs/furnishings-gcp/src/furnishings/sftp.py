@@ -20,7 +20,7 @@ from typing import Callable
 
 import paramiko
 
-from furnishings.utils.base import BaseEnum
+from business_common.utils.base import BaseEnum
 
 
 class PublicKeyAlgorithms(BaseEnum):
@@ -33,7 +33,7 @@ class PublicKeyAlgorithms(BaseEnum):
 class SftpConnection:
     """SFTP Connection object."""
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
             self,
             host: str,
             port: int,

@@ -19,9 +19,11 @@ import uuid
 from datedelta import datedelta
 from freezegun import freeze_time
 
-from legal_api.models import Address, Batch, BatchProcessing, Business, Filing, Furnishing, db
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.db import VersioningProxy
+from business_model.models import Address, Batch, BatchProcessing, Business, Filing, Furnishing, db
+from business_model.models.colin_event_id import ColinEventId
+from business_model.models.db import VersioningProxy
+
+from .test_data.gotenburg_response import GOTENBURG_RESPONSE
 
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
@@ -164,7 +166,7 @@ def factory_address(address_type: str,
                     region='akjsdf',
                     business_id=None,
                     furnishings_id=None):
-    """Create an address entry."""
+    """Create an address entrXy."""
     address = Address(
         address_type=address_type,
         street=street,
@@ -176,3 +178,11 @@ def factory_address(address_type: str,
         furnishings_id=furnishings_id)
     address.save()
     return address
+
+def factory_mras_response(identifier: str = 'BC1234567',
+                          jurisdictions: dict[str, str] = {'AB': 'Alberta', 'MB': 'Manitoba'}):
+    xml_string = '<Jurisdictions xmlns="http://mras.ca/schema/v1">'
+    for jur_id, jur_name in jurisdictions.items():
+        xml_string += f'<Jurisdiction><JurisdictionID>{jur_id}</JurisdictionID><NameEn>{jur_name}</NameEn><NameFr>{jur_name}</NameFr><RedirectUrl>https://redirect.test.ca</RedirectUrl><TargetProfileID>0{identifier}</TargetProfileID></Jurisdiction>'
+    xml_string += '</Jurisdictions>'
+    return bytes(xml_string, 'utf-8')

@@ -12,63 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job worker functionality is contained here."""
-import logging
-import os
 from datetime import datetime
 
 import pytz
-import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from croniter import croniter
-from flask import Flask
-from legal_api.models import Configuration
-from legal_api.models.db import init_db
-from legal_api.services.flags import Flags
-from legal_api.services.queue import QueueService
-from sentry_sdk.integrations.logging import LoggingIntegration
+from flask import current_app
 
-from furnishings.config import get_named_config  # pylint: disable=import-error
-from furnishings.stage_processors import post_processor, stage_one, stage_three, stage_two
-from furnishings.utils.logging import setup_logging  # pylint: disable=import-error
-
-
-setup_logging(
-    os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))
-
-SENTRY_LOGGING = LoggingIntegration(
-    event_level=logging.ERROR  # send errors as events
-)
-
-flags = Flags()
-
-
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
-    """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.config.from_object(get_named_config(run_mode))
-    init_db(app)
-
-    # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[SENTRY_LOGGING]
-        )
-
-    if app.config.get('LD_SDK_KEY', None):
-        flags.init_app(app)
-
-    register_shellcontext(app)
-
-    return app
-
-
-def register_shellcontext(app):
-    """Register shell context objects."""
-    def shell_context():
-        """Shell context objects."""
-        return {'app': app}
-
-    app.shell_context_processor(shell_context)
+from business_model.models import Configuration
+from furnishings.services import post_processor, stage_one_processor, stage_three_process, stage_two_process
+from furnishings.services.flags import Flags
 
 
 def can_run_today(cron_value: str):
@@ -98,38 +50,41 @@ def check_run_schedule():
     return cron_valid_1, cron_valid_2, cron_valid_3
 
 
-async def run(application: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
+def run():
     """Run the stage 1-3 to manage and track notifications for dissolving businesses."""
-    with application.app_context():
-        flag_on = flags.is_on('enable-involuntary-dissolution')
-        application.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
-        if flag_on:
-            # check if job can be run today
-            stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
-            application.logger.debug(
-                f'Run schedule check: stage_1: {stage_1_valid}, stage_2: {stage_2_valid}, stage_3: {stage_3_valid}'
+    flag_on = Flags.is_on('enable-involuntary-dissolution')
+    current_app.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
+    if flag_on:
+        # check if job can be run today
+        stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
+        current_app.logger.debug(
+            f'Run schedule check: stage_1: {stage_1_valid}, stage_2: {stage_2_valid}, stage_3: {stage_3_valid}'
+        )
+        if not any([stage_1_valid, stage_2_valid, stage_3_valid]):
+            current_app.logger.debug(
+                'Skipping job run since current day of the week does not match any cron schedule.'
             )
-            if not any([stage_1_valid, stage_2_valid, stage_3_valid]):
-                application.logger.debug(
-                    'Skipping job run since current day of the week does not match any cron schedule.'
-                )
-                return
+            return
 
-            xml_furnishings_dict = {}
+        xml_furnishings_dict = {}
 
-            if stage_1_valid:
-                application.logger.debug('Entering stage 1 of furnishings job.')
-                await stage_one.process(application, qsm)
-                application.logger.debug('Exiting stage 1 of furnishings job.')
-            if stage_2_valid:
-                application.logger.debug('Entering stage 2 of furnishings job.')
-                stage_two.process(application, xml_furnishings_dict)
-                application.logger.debug('Exiting stage 2 of furnishings job.')
-            if stage_3_valid:
-                application.logger.debug('Entering stage 3 of furnishings job.')
-                stage_three.process(application, xml_furnishings_dict)
-                application.logger.debug('Exiting stage 3 of furnishings job.')
+        if stage_1_valid:
+            current_app.logger.debug('Entering stage 1 of furnishings job.')
+            # NOTE: This stage is a two step process
+            # 1. Send email (if available), completion dependent on business-emailer updating status
+            # 2. Send mail (will only happen after step 1 is completed)
+            stage_one_processor.process()
+            current_app.logger.debug('Exiting stage 1 of furnishings job.')
+        if stage_2_valid:
+            current_app.logger.debug('Entering stage 2 of furnishings job.')
+            # NOTE: Entering this stage is dependent on Involuntary Dissolution job updating the BatchProcessing.step
+            stage_two_process(xml_furnishings_dict)
+            current_app.logger.debug('Exiting stage 2 of furnishings job.')
+        if stage_3_valid:
+            current_app.logger.debug('Entering stage 3 of furnishings job.')
+            stage_three_process(xml_furnishings_dict)
+            current_app.logger.debug('Exiting stage 3 of furnishings job.')
 
-            application.logger.debug('Entering post processing for the furnishings job.')
-            post_processor.process(application, xml_furnishings_dict)
-            application.logger.debug('Exiting post processing for the furnishings job.')
+        current_app.logger.debug('Entering post processing for the furnishings job.')
+        post_processor.post_process(xml_furnishings_dict)
+        current_app.logger.debug('Exiting post processing for the furnishings job.')

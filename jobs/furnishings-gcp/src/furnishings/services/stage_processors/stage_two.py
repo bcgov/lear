@@ -14,12 +14,13 @@
 """Furnishings job processing rules for stage two of involuntary dissolution."""
 from datetime import datetime
 
-from flask import Flask
-from legal_api.models import Batch, BatchProcessing, Business, Furnishing, db
+from flask import current_app
 from sqlalchemy import exists, not_
 
+from business_model.models import Batch, BatchProcessing, Business, Furnishing, db
 
-def process(app: Flask, xml_furnishings: dict):
+
+def process(xml_furnishings: dict):
     """Run process to manage and track notifications for dissolution stage two process."""
     try:
         furnishing_subquery = exists().where(
@@ -62,7 +63,7 @@ def process(app: Flask, xml_furnishings: dict):
                 business_name=business.legal_name
             )
             new_furnishing.save()
-            app.logger.debug(
+            current_app.logger.debug(
                 f'Created intent to dissolve furnishing entry for {new_furnishing.business_identifier} '
                 f'with ID: {new_furnishing.id}'
             )
@@ -79,4 +80,4 @@ def process(app: Flask, xml_furnishings: dict):
             xml_furnishings[Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO] = ep_furnishings
 
     except Exception as err:
-        app.logger.error(err)
+        current_app.logger.error(err)

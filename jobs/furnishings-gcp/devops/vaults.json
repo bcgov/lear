@@ -1,8 +1,10 @@
 [
     {
-        "vault": "shared",
+        "vault": "gcp-queue",
         "application": [
-            "nats"
+            "base",
+            "topics",
+            "a083gt"
         ]
     },
     {
@@ -11,7 +13,6 @@
             "postgres-legal",
             "sentry",
             "launchdarkly",
-            "nats-furnishings",
             "entity-service-account",
             "furnishings",
             "sftp-bclaws",

@@ -15,3 +15,43 @@
 
 This module is the job worker for involuntary dissolution furnishing tasks.
 """
+import os
+
+from flask import Flask
+
+from business_model.models import db
+from furnishings.config import DevelopmentConfig, ProductionConfig, UnitTestingConfig
+from furnishings.services import flags, gcp_queue, stage_one_processor, post_processor
+from structured_logging import StructuredLogging
+
+CONFIG_MAP = {
+    "development": DevelopmentConfig,
+    "testing": UnitTestingConfig,
+    "production": ProductionConfig
+}
+
+def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **kwargs):
+    """Return a configured Flask App using the Factory method."""
+    app = Flask(__name__)
+    app.logger = StructuredLogging(app).get_logger()
+    app.config.from_object(CONFIG_MAP.get(environment, "production"))
+    flags.init_app(app, kwargs.get("ld_test_data"))
+    db.init_app(app)
+    gcp_queue.init_app(app)
+    stage_one_processor.init_app(app, gcp_queue)
+    post_processor.init_app(app)
+    register_shellcontext(app)
+
+    return app
+
+
+def register_shellcontext(app: Flask):
+    """Register shell context objects."""
+    def shell_context():
+        """Shell context objects."""
+        return {
+            "app": app,
+            "db": db
+        }
+
+    app.shell_context_processor(shell_context)

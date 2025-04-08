@@ -21,49 +21,20 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
 
-CONFIGURATION = {
-    'development': 'config.DevConfig',
-    'testing': 'config.TestConfig',
-    'production': 'config.ProdConfig',
-    'default': 'config.ProdConfig'
-}
 
-
-def get_named_config(config_name: str = 'production'):
-    """Return the configuration object based on the name."""
-    if config_name in ['production', 'staging', 'default']:
-        config = ProdConfig()
-    elif config_name == 'testing':
-        config = TestConfig()
-    elif config_name == 'development':
-        config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration '{config_name}'")
-    return config
-
-
-class _Config:  # pylint: disable=too-few-public-methods
+class _Config:
     """Base class configuration."""
 
     # used to identify versioning flag
     SERVICE_NAME = 'furnishings-job'
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
-    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
-    AUTH_URL = os.getenv('AUTH_URL', None)
+    AUTH_URL = os.getenv('AUTH_API_URL', '') + os.getenv('AUTH_API_VERSION', '')
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
-    AUTH_SVC_URL = os.getenv('AUTH_URL', 'http://')
-
-    NATS_SERVERS = os.getenv('NATS_SERVERS', None)
-    NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)
-    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', None)
-    NATS_ENTITY_EVENTS_SUBJECT = os.getenv('NATS_ENTITY_EVENTS_SUBJECT', 'entity.events')
-    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
 
     SECRET_KEY = 'a secret'
 
@@ -84,6 +55,16 @@ class _Config:  # pylint: disable=too-few-public-methods
         port=int(DB_PORT),
         name=DB_NAME,
     )
+    
+    # Pub/Sub
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    AUDIENCE = os.getenv(
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+    )
+    BUSINESS_EMAILER_TOPIC = os.getenv('BUSINESS_EMAILER_TOPIC')
 
     # BCLaws SFTP
     BCLAWS_SFTP_STORAGE_DIRECTORY = os.getenv('BCLAWS_SFTP_STORAGE_DIRECTORY', None)
@@ -119,14 +100,14 @@ class _Config:  # pylint: disable=too-few-public-methods
     MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
 
 
-class DevConfig(_Config):  # pylint: disable=too-few-public-methods
+class DevelopmentConfig(_Config):  # pylint: disable=too-few-public-methods
     """Development environment configuration."""
 
     TESTING = False
     DEBUG = True
 
 
-class TestConfig(_Config):  # pylint: disable=too-few-public-methods
+class UnitTestingConfig(_Config):  # pylint: disable=too-few-public-methods
     """In support of testing only used by the py.test suite."""
 
     DEBUG = True
@@ -149,13 +130,21 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     # BCLaws SFTP
     BCLAWS_SFTP_STORAGE_DIRECTORY = 'bclaws'
     BCLAWS_SFTP_PRIVATE_KEY = ''
+    BCLAWS_SFTP_HOST = None
 
     # BCMail+ SFTP
     BCMAIL_SFTP_STORAGE_DIRECTORY = 'bcmail'
     BCMAIL_SFTP_PRIVATE_KEY = ''
+    BCMAIL_SFTP_HOST = None
+    
+    # Mocked urls
+    AUTH_URL = 'http://test-AUTH_URL.fake'
+    ACCOUNT_SVC_AUTH_URL = 'http://test-ACCOUNT_SVC_AUTH_URL.fake'
+    REPORT_API_GOTENBERG_URL = 'http://test-REPORT_API_GOTENBERG_URL.fake'
+    MRAS_SVC_URL = 'http://test-MRAS_SVC_URL.fake'
 
 
-class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
+class ProductionConfig(_Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
 
     SECRET_KEY = os.getenv('SECRET_KEY', None)

@@ -1,4 +1,4 @@
-# Copyright © 2021 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,16 +11,4 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Centralized setup of logging for the service."""
-import logging.config
-import sys
-from os import path
-
-
-def setup_logging(conf):
-    """Create the services logger."""
-    if conf and path.isfile(conf):
-        logging.config.fileConfig(conf)
-        print('Configure logging, from conf:{}'.format(conf), file=sys.stdout)
-    else:
-        print('Unable to configure logging, attempted conf:{}'.format(conf), file=sys.stderr)
+"""Module to manage the calls and content to the reporting service."""

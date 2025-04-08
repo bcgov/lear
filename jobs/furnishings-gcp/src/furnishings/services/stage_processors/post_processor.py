@@ -21,16 +21,15 @@ from typing import Final
 
 from flask import Flask, current_app
 from jinja2 import Template
-from legal_api.models import Furnishing, FurnishingGroup, XmlPayload
-from legal_api.services.flags import Flags
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Furnishing, FurnishingGroup, XmlPayload
+from business_common.utils.legislation_datetime import LegislationDatetime
 from paramiko.ssh_exception import AuthenticationException, NoValidConnectionsError
 
+from furnishings.services.flags import Flags
 from furnishings.sftp import SftpConnection
 
 
 XML_DATE_FORMAT: Final = '%B %-d, %Y'
-flags = Flags()
 
 
 class XmlMeta:
@@ -93,12 +92,24 @@ class XmlMeta:
 class PostProcessor:
     """Processor after stage run of furnishings job."""
 
-    def __init__(self, app, furnishings_dict):
+    def __init__(self, app: Flask | None = None):
         """Create post process helper instance."""
+        self._app = None
+        self._furnishings_dict = None
+        self._processed_date = None
+        self._disable_bclaws_sftp = None
+        self._bclaws_sftp_connection = None
+        if app:
+            self.init_app(app)
+        
+    
+    def init_app(self, app: Flask):
+        """Initialize for the Flask app instance."""
         self._app = app
-        self._furnishings_dict = furnishings_dict
-        self._processed_date = LegislationDatetime.now()
-        self._disable_bclaws_sftp = flags.is_on('disable-dissolution-sftp-bclaws')
+        self._disable_bclaws_sftp = False
+        with app.app_context():
+            self._processed_date = LegislationDatetime.now()
+            self._disable_bclaws_sftp = Flags.is_on('disable-dissolution-sftp-bclaws')
 
         # setup the sftp connection objects
         self._bclaws_sftp_connection = SftpConnection(
@@ -197,20 +208,20 @@ class PostProcessor:
             f'Furnishing records with group id: {furnishing_group.id} marked as processed')
 
 
-def process(app: Flask, furnishings_dict: dict):
-    """Run postprocess after stage run to upload files to external resources."""
-    try:
-        processor = PostProcessor(app, furnishings_dict)
-        processor.process()
-    except AuthenticationException as err:
-        notes = 'SFTP Error: Unable to authenticate.'
-        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
-        app.logger.error(err)
-    except (NoValidConnectionsError, IOError) as err:
-        notes = f'SFTP Error: {os.strerror(err.errno)}.'
-        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
-        app.logger.error(err)
-    except Exception as err:
-        notes = 'Unnexpected error during post-processing.'
-        processor.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
-        app.logger.error(err)
+    def post_process(self, furnishings_dict: dict):
+        """Run postprocess after stage run to upload files to external resources."""
+        try:
+            self._furnishings_dict = furnishings_dict
+            self.process()
+        except AuthenticationException as err:
+            notes = 'SFTP Error: Unable to authenticate.'
+            self.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
+            self._app.logger.error(err)
+        except (NoValidConnectionsError, IOError) as err:
+            notes = f'SFTP Error: {os.strerror(err.errno)}.'
+            self.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
+            self._app.logger.error(err)
+        except Exception as err:
+            notes = 'Unnexpected error during post-processing.'
+            self.update_furnishings_status(Furnishing.FurnishingStatus.FAILED, notes=notes)
+            self._app.logger.error(err)

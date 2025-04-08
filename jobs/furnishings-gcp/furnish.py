@@ -12,19 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job."""
-import asyncio
-
-from legal_api.services.queue import QueueService
-
-from furnishings.worker import create_app, run
+from furnishings import create_app
+from furnishings.worker import run
 
 
 if __name__ == '__main__':
     application = create_app()
-    try:
-        event_loop = asyncio.get_event_loop()
-        queue_service = QueueService(app=application, loop=event_loop)
-        event_loop.run_until_complete(run(application, queue_service))
-    except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
-        application.logger.error(err)  # pylint: disable=no-member
-        raise err
+    with application.app_context():
+        try:
+            run()
+        except Exception as err:
+            application.logger.error(err)
+            raise err

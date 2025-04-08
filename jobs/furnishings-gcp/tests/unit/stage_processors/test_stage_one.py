@@ -21,22 +21,22 @@ import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
-import requests
-from legal_api.models import Address, Business, Furnishing
-from legal_api.services.bootstrap import AccountService
-from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
-from legal_api.utils.datetime import datetime as datetime_util
+
+from business_common.utils.datetime import datetime as datetime_util
+from business_model.models import Address, Business, Furnishing
+from furnishings.services.furnishing_documents_service import FurnishingDocumentsService
+from furnishings.services.stage_processors.stage_one import StageOneProcessor
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
-from furnishings.stage_processors.stage_one import StageOneProcessor, process
-
 from .. import (
+    GOTENBURG_RESPONSE,
     factory_address,
     factory_batch,
     factory_batch_processing,
     factory_business,
     factory_completed_filing,
     factory_furnishing,
+    factory_mras_response,
 )
 
 
@@ -50,21 +50,19 @@ RESTORATION_FILING['filing']['restoration'] = RESTORATION
         ('NO_EMAIL', {'contacts': []})
     ]
 )
-def test_get_email_address_from_auth(session, test_name, mock_return):
+def test_get_email_address_from_auth(requests_mock, app, session, test_name, mock_return):
     """Assert that email address is returned."""
-    token = 'token'
-    mock_response = MagicMock()
-    mock_response.json.return_value = mock_return
-    with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(requests, 'get', return_value=mock_response):
-            email = StageOneProcessor._get_email_address_from_auth('BC1234567')
-            if test_name == 'NO_EMAIL':
-                assert email is None
-            else:
-                assert email == 'test@no-reply.com'
+    identifier = 'BC1234567'
+    requests_mock.post(app.config.get('ACCOUNT_SVC_AUTH_URL'), json={'access_token': 'token'})
+    requests_mock.get(f"{app.config.get('AUTH_URL')}/entities/{identifier}", json=mock_return)
+    
+    email = StageOneProcessor._get_email_address_from_auth(identifier)
+    if test_name == 'NO_EMAIL':
+        assert email is None
+    else:
+        assert email == 'test@no-reply.com'
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'test_name, entity_type, email, expected_furnishing_name', [
         (
@@ -93,12 +91,12 @@ def test_get_email_address_from_auth(session, test_name, mock_return):
         )
     ]
 )
-async def test_process_first_notification(app, session, test_name, entity_type, email, expected_furnishing_name):
+def test_process_first_notification(requests_mock, app, session, test_name, entity_type, email, expected_furnishing_name):
     """Assert that the first notification furnishing entry is created correctly."""
-    business = factory_business(identifier='BC1234567', entity_type=entity_type)
+    business = factory_business(identifier='BC0006718', entity_type=entity_type)
     mailing_address = factory_address(address_type=Address.MAILING, business_id=business.id)
     batch = factory_batch()
-    batch_processing = factory_batch_processing(
+    factory_batch_processing(
         batch_id=batch.id,
         business_id=business.id,
         identifier=business.identifier,
@@ -106,12 +104,20 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
     if 'TRANSITION' in test_name:
         factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
 
+    mras_url = f"{app.config['MRAS_SVC_URL']}/api/v1/xpr/jurisdictions/{business.identifier}"
+    mras_mock = requests_mock.get(mras_url, content=factory_mras_response(business.identifier))
+    gotenburg_url = f"{app.config['REPORT_API_GOTENBERG_URL']}/forms/chromium/convert/html"
+    report_gotenburg_mock = requests_mock.post(gotenburg_url, content=GOTENBURG_RESPONSE)
     qsm = MagicMock()
     with patch.object(StageOneProcessor, '_get_email_address_from_auth', return_value=email):
         with patch.object(StageOneProcessor, '_send_email', return_value=None) as mock_send_email:
+            # NOTE: this test also expects ldarkly flag 'disable-dissolution-sftp-bcmail' to evaluate 'true'
             processor = StageOneProcessor(app, qsm)
-            await processor.process(batch_processing)
+            processor.process()
 
+            should_have_got_pdfs = not email and entity_type != Business.LegalTypes.EXTRA_PRO_A.value
+            assert mras_mock.called == should_have_got_pdfs
+            assert report_gotenburg_mock.called == should_have_got_pdfs
             if email:
                 mock_send_email.assert_called()
                 furnishings = Furnishing.find_by(business_id=business.id)
@@ -143,7 +149,6 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
                 assert furnishing_address.business_id == None
                 assert furnishing_address.office_id == None
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'test_name, has_email_furnishing, has_mail_furnishing, is_email_elapsed', [
         (
@@ -166,7 +171,7 @@ async def test_process_first_notification(app, session, test_name, entity_type, 
         ),
     ]
 )
-async def test_process_second_notification(app, session, test_name, has_email_furnishing, has_mail_furnishing, is_email_elapsed):
+def test_process_second_notification(app, session, test_name, has_email_furnishing, has_mail_furnishing, is_email_elapsed):
     """Assert that the second notification furnishing entry is created correctly."""
     business = factory_business(identifier='BC1234567')
     mailing_address = factory_address(address_type=Address.MAILING, business_id=business.id)
@@ -205,7 +210,7 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
 
     qsm = MagicMock()
     processor = StageOneProcessor(app, qsm)
-    await processor.process(batch_processing)
+    processor.process()
 
     furnishings = Furnishing.find_by(business_id=business.id)
 
@@ -230,7 +235,6 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
         assert len(furnishings) == existing_furnishings
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
         'test_name, entity_type', [
             ('TEST_FIRST_ROUND_BC', Business.LegalTypes.COMP.value),
@@ -240,7 +244,7 @@ async def test_process_second_notification(app, session, test_name, has_email_fu
             ('TEST_NO_GENERATION', Business.LegalTypes.COMP.value)
         ]
 )
-async def test_generate_paper_letters(app, session, test_name, entity_type):
+def test_generate_paper_letters(app, session, test_name, entity_type):
     """Assert that the merged paper letter is generated correctly."""
     business = factory_business(identifier='BC1234567', entity_type=entity_type)
     factory_address(address_type=Address.MAILING, business_id=business.id)
@@ -277,21 +281,20 @@ async def test_generate_paper_letters(app, session, test_name, entity_type):
     qsm = MagicMock()
     with patch.object(StageOneProcessor, '_get_email_address_from_auth', return_value=email):
         with patch.object(FurnishingDocumentsService, 'get_merged_furnishing_document', return_value=b'TEST') as mock_get_document:
-            await process(app, qsm)
+            StageOneProcessor(app, qsm).process()
             if test_name == 'TEST_NO_GENERATION':
                 mock_get_document.assert_not_called()
             else:
                 mock_get_document.assert_called()
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
         'test_name, entity_type', [
             ('BC_BATCH_LETTER_SFTP', Business.LegalTypes.COMP.value),
             ('XPRO_BATCH_LETTER_SFTP', Business.LegalTypes.EXTRA_PRO_A.value),
         ]
 )
-async def test_process_paper_letters(app, session, sftpserver, sftpconnection, test_name, entity_type):
+def test_process_paper_letters(app, session, sftpserver, sftpconnection, test_name, entity_type):
     """Assert that SFTP of PDFs is working correctly."""
     business = factory_business(identifier='BC1234567', entity_type=entity_type)
     factory_address(address_type=Address.MAILING, business_id=business.id)

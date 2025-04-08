@@ -15,7 +15,7 @@
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from legal_api.models import Configuration
+from business_model.models import Configuration
 
 from furnishings.worker import check_run_schedule
 

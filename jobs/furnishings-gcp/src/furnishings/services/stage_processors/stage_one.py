@@ -14,36 +14,33 @@
 """Furnishings job processing rules for stage one of involuntary dissolution."""
 import base64
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from io import BytesIO
 
 import pytz
 import requests
 from flask import Flask, current_app
-from legal_api.models import Address, Batch, BatchProcessing, Business, Furnishing, db  # noqa: I001
-from legal_api.reports.report_v2 import ReportTypes
-from legal_api.services.bootstrap import AccountService
-from legal_api.services.flags import Flags
-from legal_api.services.furnishing_documents_service import FurnishingDocumentsService
-from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
-from legal_api.services.queue import QueueService
-from legal_api.utils.datetime import datetime as datetime_util
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
+from business_account.AccountService import AccountService
+from business_common.utils.datetime import datetime as datetime_util
+from business_model.models import Address, Batch, BatchProcessing, Business, Furnishing, db
+from dissolution_service import InvoluntaryDissolutionService
+from furnishings.services.flags import Flags
+from furnishings.services.furnishing_documents_service import FurnishingDocumentsService
+from furnishings.services.reports.report_v2 import ReportTypes
 from furnishings.sftp import SftpConnection
-
-
-flags = Flags()
+from gcp_queue import GcpQueue
 
 
 class StageOneProcessor:
     """Processor for stage one of furnishings job."""
 
-    def __init__(self, app, qsm):
+    def __init__(self, app: Flask | None = None, queue: GcpQueue | None = None):
         """Create stage one process helper instance."""
-        self._app = app
-        self._qsm = qsm
+        self._app = None
+        self._qsm = None
 
-        self._second_notice_delay = app.config.get('SECOND_NOTICE_DELAY')
         self._email_furnishing_group_id = None
         self._mail_furnishing_group_id = None
 
@@ -51,7 +48,20 @@ class StageOneProcessor:
         self._xpro_mail_furnishings = []
         self._bc_letters = None
         self._xpro_letters = None
-        self._disable_bcmail_sftp = flags.is_on('disable-dissolution-sftp-bcmail')
+        self._disable_bcmail_sftp = None
+
+        self._bcmail_sftp_connection = None
+
+        if app and queue:
+            self.init_app(app, queue)
+    
+    def init_app(self, app: Flask, queue: GcpQueue):
+        """Initialize for the Flask app instance."""
+        self._app = app
+        self._qsm = queue
+        self._second_notice_delay = app.config.get('SECOND_NOTICE_DELAY')
+        with app.app_context():
+            self._disable_bcmail_sftp = Flags.is_on('disable-dissolution-sftp-bcmail')
 
         # setup the sftp connection objects
         self._bcmail_sftp_connection = SftpConnection(
@@ -63,14 +73,36 @@ class StageOneProcessor:
             private_key_passphrase=app.config.get('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE')
         )
 
-    async def process(self, batch_processing: BatchProcessing):
+    def process(self):
+        """Run process to manage and track notifications for dissolution stage one process."""
+        try:
+            batch_processings = (
+                db.session.query(BatchProcessing)
+                .filter(BatchProcessing.status == BatchProcessing.BatchProcessingStatus.PROCESSING)
+                .filter(BatchProcessing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1)
+                .filter(Batch.id == BatchProcessing.batch_id)
+                .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
+                .filter(Batch.status == Batch.BatchStatus.PROCESSING)
+            ).all()
+            print(1)
+            for batch_processing in batch_processings:
+                self.process_batch(batch_processing)
+            print(2)
+            self.generate_paper_letters()
+            print(3)
+            self.process_paper_letters()
+
+        except (IOError, Exception) as err:
+            current_app.logger.error(err)
+
+    def process_batch(self, batch_processing: BatchProcessing):
         """Process batch_processing entry."""
         furnishings = Furnishing.find_by(
                 batch_id=batch_processing.batch_id,
                 business_id=batch_processing.business_id
                 )
         if not furnishings:
-            await self._send_first_round_notification(batch_processing, batch_processing.business)
+            self._send_first_round_notification(batch_processing, batch_processing.business)
         else:
             # send paper letter if business is still not in good standing after 5 days of email letter sent out
             valid_furnishing_names = [
@@ -95,7 +127,7 @@ class StageOneProcessor:
             )
 
             if has_elapsed_email_entry and not has_mail_entry:
-                await self._send_second_round_notification(batch_processing)
+                self._send_second_round_notification(batch_processing)
 
     def generate_paper_letters(self):
         """Generate merged paper letter with cover for BC/XPRO businesses."""
@@ -177,16 +209,14 @@ class StageOneProcessor:
                 )
                 self._app.logger.debug(f'SFTP error of XPRO batch letter: {err}')
 
-    async def _send_first_round_notification(self, batch_processing: BatchProcessing, business: Business):
+    def _send_first_round_notification(self, batch_processing: BatchProcessing, business: Business):
         """Process first round of notification(email/letter)."""
         _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
             batch_processing.business_identifier,
             InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False)
         )
-
         if not eligible_details:
             return
-
         # send email/letter notification for the first time
         email = self._get_email_address_from_auth(batch_processing.business_identifier)
         business = Business.find_by_identifier(batch_processing.business_identifier)
@@ -205,9 +235,10 @@ class StageOneProcessor:
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
             self._app.logger.debug(f'Created address (first round) with furnishing ID: {new_furnishing.id}')
+
         if email:
             # send email letter
-            await self._send_email(new_furnishing)
+            self._send_email(new_furnishing)
             self._app.logger.debug(
                 f'Successfully put email message on the queue for furnishing entry with ID: {new_furnishing.id}')
         else:
@@ -223,7 +254,7 @@ class StageOneProcessor:
 
             new_furnishing.save()
 
-    async def _send_second_round_notification(self, batch_processing: BatchProcessing):
+    def _send_second_round_notification(self, batch_processing: BatchProcessing):
         """Send paper letter if business is still not in good standing after 5 days of email letter sent out."""
         _, eligible_details = InvoluntaryDissolutionService.check_business_eligibility(
             batch_processing.business_identifier,
@@ -317,28 +348,27 @@ class StageOneProcessor:
 
         return furnishing_address
 
-    async def _send_email(self, furnishing: Furnishing):
+    def _send_email(self, furnishing: Furnishing):
         """Put email message on the queue for all email furnishing entries."""
         try:
-            subject = self._app.config['NATS_EMAILER_SUBJECT']
-            payload = {
-                'specversion': '1.x-wip',
-                'type': 'bc.registry.dissolution',
-                'source': 'furnishingsJob',
-                'id': str(uuid.uuid4()),
-                'time': datetime.utcnow().isoformat(),
-                'datacontenttype': 'application/json',
-                'identifier': furnishing.business_identifier,
-                'data': {
+            # TODO: update this
+            topic = self._app.config['BUSINESS_EMAILER_TOPIC']
+            ce = SimpleCloudEvent(
+                id=str(uuid.uuid4()),
+                source='furnishingsJob',
+                subject='filing',
+                time=datetime.now(UTC),
+                type='bc.registry.dissolution',
+                data = {
                     'furnishing': {
                         'type': 'INVOLUNTARY_DISSOLUTION',
                         'furnishingId': furnishing.id,
                         'furnishingName': furnishing.furnishing_name.name
                     }
                 }
-            }
-            await self._qsm.publish_json_to_subject(payload, subject)
-            self._app.logger.debug('Publish queue message %s: furnishing.id=%s', subject, furnishing.id)
+            )
+            self._qsm.publish(topic, to_queue_message(ce))
+            self._app.logger.debug('Publish queue message %s: furnishing.id=%s', topic, furnishing.id)
         except Exception as err:
             self._app.logger.error('Queue Error: furnishing.id=%s, %s', furnishing.id, err, exc_info=True)
 
@@ -382,26 +412,3 @@ class StageOneProcessor:
         if not contacts or not contacts[0].get('email'):
             return None
         return contacts[0]['email']
-
-
-async def process(app: Flask, qsm: QueueService):  # pylint: disable=redefined-outer-name
-    """Run process to manage and track notifications for dissolution stage one process."""
-    try:
-        batch_processings = (
-            db.session.query(BatchProcessing)
-            .filter(BatchProcessing.status == BatchProcessing.BatchProcessingStatus.PROCESSING)
-            .filter(BatchProcessing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1)
-            .filter(Batch.id == BatchProcessing.batch_id)
-            .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
-            .filter(Batch.status == Batch.BatchStatus.PROCESSING)
-        ).all()
-
-        processor = StageOneProcessor(app, qsm)
-
-        for batch_processing in batch_processings:
-            await processor.process(batch_processing)
-        processor.generate_paper_letters()
-        processor.process_paper_letters()
-
-    except (IOError, Exception) as err:
-        app.logger.error(err)
