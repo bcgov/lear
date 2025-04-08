@@ -287,7 +287,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_restoration_data(filing)
         elif self._report_key == 'restoration':
             self._format_restoration_data(filing)
-        elif self._report_key == 'letterOfConsent':
+        elif self._report_key == 'letterOfConsent' or self._report_key == 'letterOfConsentAmalgamationOut':
             self._format_consent_continuation_out_data(filing)
         elif self._report_key == 'correction':
             self._format_correction_data(filing)
@@ -1486,6 +1486,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'letterOfConsent': {
             'filingDescription': 'Letter Of Consent',
             'fileName': 'letterOfConsent'
+        },
+        'letterOfConsentAmalgamationOut': {
+            'filingDescription': 'Letter Of Consent',
+            'fileName': 'letterOfConsentAmalgamationOut'
         },
         'letterOfAgmExtension': {
             'filingDescription': 'Letter Of AGM Extension',
