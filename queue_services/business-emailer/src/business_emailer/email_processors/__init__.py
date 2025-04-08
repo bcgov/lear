@@ -55,7 +55,7 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
 
-def get_recipients(option: str, filing_json: dict, token: str = None, filing_type: str = None) -> str:
+def get_recipients(option: str, filing_json: dict, token: str | None = None, filing_type: str | None = None) -> str:
     """Get the recipients for the email output."""
     recipients = ""
     filing_type = filing_type if filing_type else "incorporationApplication"
@@ -73,7 +73,7 @@ def get_recipients(option: str, filing_json: dict, token: str = None, filing_typ
                         break
     else:
         identifier = filing_json["filing"]["business"]["identifier"]
-        if not identifier[:2] == "CP":
+        if identifier[:2] != "CP":
             # only add recipients if not coop
             recipients = get_recipient_from_auth(identifier, token)
 

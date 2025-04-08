@@ -248,7 +248,7 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
         elif etype == "ceaseReceiver" and option == Filing.Status.COMPLETED.value:
             email = cease_receiver_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
+        elif etype in filing_notification.FILING_TYPE_CONVERTER:
             if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
                 logger.debug("No email to send for: %s", email_msg)
             else:
