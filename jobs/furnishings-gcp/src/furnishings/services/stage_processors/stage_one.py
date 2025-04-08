@@ -14,7 +14,8 @@
 """Furnishings job processing rules for stage one of involuntary dissolution."""
 import base64
 import uuid
-from datetime import datetime, UTC
+from datetime import UTC, datetime
+from http import HTTPStatus
 from io import BytesIO
 
 import pytz
@@ -59,18 +60,18 @@ class StageOneProcessor:
         """Initialize for the Flask app instance."""
         self._app = app
         self._qsm = queue
-        self._second_notice_delay = app.config.get('SECOND_NOTICE_DELAY')
+        self._second_notice_delay = app.config.get("SECOND_NOTICE_DELAY")
         with app.app_context():
-            self._disable_bcmail_sftp = Flags.is_on('disable-dissolution-sftp-bcmail')
+            self._disable_bcmail_sftp = Flags.is_on("disable-dissolution-sftp-bcmail")
 
         # setup the sftp connection objects
         self._bcmail_sftp_connection = SftpConnection(
-            username=app.config.get('BCMAIL_SFTP_USERNAME'),
-            host=app.config.get('BCMAIL_SFTP_HOST'),
-            port=app.config.get('BCMAIL_SFTP_PORT'),
-            private_key=base64.b64decode(app.config.get('BCMAIL_SFTP_PRIVATE_KEY')).decode('utf-8'),
-            private_key_algorithm=app.config.get('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM'),
-            private_key_passphrase=app.config.get('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE')
+            username=app.config.get("BCMAIL_SFTP_USERNAME"),
+            host=app.config.get("BCMAIL_SFTP_HOST"),
+            port=app.config.get("BCMAIL_SFTP_PORT"),
+            private_key=base64.b64decode(app.config.get("BCMAIL_SFTP_PRIVATE_KEY")).decode("utf-8"),
+            private_key_algorithm=app.config.get("BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM"),
+            private_key_passphrase=app.config.get("BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE")
         )
 
     def process(self):
@@ -84,15 +85,12 @@ class StageOneProcessor:
                 .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
                 .filter(Batch.status == Batch.BatchStatus.PROCESSING)
             ).all()
-            print(1)
             for batch_processing in batch_processings:
                 self.process_batch(batch_processing)
-            print(2)
             self.generate_paper_letters()
-            print(3)
             self.process_paper_letters()
 
-        except (IOError, Exception) as err:
+        except (OSError, Exception) as err:
             current_app.logger.error(err)
 
     def process_batch(self, batch_processing: BatchProcessing):
@@ -111,7 +109,7 @@ class StageOneProcessor:
                 Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
                 Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO
             ]
-            tz = pytz.timezone('UTC')
+            tz = pytz.timezone("UTC")
             today_date = tz.localize(datetime.today())
 
             has_elapsed_email_entry = any(
@@ -131,20 +129,20 @@ class StageOneProcessor:
 
     def generate_paper_letters(self):
         """Generate merged paper letter with cover for BC/XPRO businesses."""
-        self._app.logger.debug('Start generating batch letters.')
+        self._app.logger.debug("Start generating batch letters.")
         try:
-            document_service = FurnishingDocumentsService(ReportTypes.DISSOLUTION, 'greyscale')
+            document_service = FurnishingDocumentsService(ReportTypes.DISSOLUTION, "greyscale")
             if self._bc_mail_furnishings:
-                self._app.logger.debug('Start generating BC batch letter.')
+                self._app.logger.debug("Start generating BC batch letter.")
                 self._bc_letters = document_service.get_merged_furnishing_document(self._bc_mail_furnishings)
-                self._app.logger.debug('Finish generating BC batch letter.')
+                self._app.logger.debug("Finish generating BC batch letter.")
             if self._xpro_mail_furnishings:
-                self._app.logger.debug('Start generating XPRO batch letter.')
+                self._app.logger.debug("Start generating XPRO batch letter.")
                 self._xpro_letters = document_service.get_merged_furnishing_document(self._xpro_mail_furnishings)
-                self._app.logger.debug('Finish generating XPRO batch letter.')
+                self._app.logger.debug("Finish generating XPRO batch letter.")
         except Exception as e:
-            self._app.logger.error(f'Error generating batch letters: {e}')
-        self._app.logger.debug('Finish generating batch letters.')
+            self._app.logger.error(f"Error generating batch letters: {e}")
+        self._app.logger.debug("Finish generating batch letters.")
 
     def upload_to_sftp(self, client, data, filename):
         """SFTP data to targeted destination."""
@@ -165,49 +163,49 @@ class StageOneProcessor:
         """Process the generated paper letts of BC and XPRO businesses (SFTP)."""
         # Skip SFTPing PDF files to BCMail+ if flag is on
         if self._disable_bcmail_sftp:
-            self._app.logger.debug(f'disable-dissolution-sftp-bcmail flag on: {self._disable_bcmail_sftp}')
+            self._app.logger.debug(f"disable-dissolution-sftp-bcmail flag on: {self._disable_bcmail_sftp}")
             return
 
         current_date = datetime_util.now()
         if self._bc_mail_furnishings:
             try:
-                filename = current_date.strftime('DIS1_LETTER_BC_%b.%d.%Y.pdf')
+                filename = current_date.strftime("DIS1_LETTER_BC_%b.%d.%Y.pdf")
                 # SFTP BC batch letter PDF to BCMail+
                 with self._bcmail_sftp_connection as client:
                     resp = self.upload_to_sftp(client, self._bc_letters, filename)
                 self.update_notes_and_status(
                     self._bc_mail_furnishings,
                     Furnishing.FurnishingStatus.PROCESSED,
-                    'SFTP of BC batch letter was a success.'
+                    "SFTP of BC batch letter was a success."
                 )
-                self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (BC letter)')
+                self._app.logger.debug(f"Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (BC letter)")
             except Exception as err:
                 self.update_notes_and_status(
                     self._bc_mail_furnishings,
                     Furnishing.FurnishingStatus.FAILED,
-                    'SFTP error of BC batch letter.'
+                    "SFTP error of BC batch letter."
                 )
-                self._app.logger.debug(f'SFTP error of BC batch letter: {err}')
+                self._app.logger.debug(f"SFTP error of BC batch letter: {err}")
 
         if self._xpro_mail_furnishings:
             try:
-                filename = current_date.strftime('DIS1_LETTER_EP_%b.%d.%Y.pdf')
+                filename = current_date.strftime("DIS1_LETTER_EP_%b.%d.%Y.pdf")
                 # SFTP XPRO batch letter PDF to BCMail+
                 with self._bcmail_sftp_connection as client:
                     resp = self.upload_to_sftp(client, self._xpro_letters, filename)
                 self.update_notes_and_status(
                     self._xpro_mail_furnishings,
                     Furnishing.FurnishingStatus.PROCESSED,
-                    'SFTP of XPRO batch letter was a success.'
+                    "SFTP of XPRO batch letter was a success."
                 )
-                self._app.logger.debug(f'Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (XPRO letter)')
+                self._app.logger.debug(f"Successfully uploaded {resp.st_size} bytes to BCMAIL+ SFTP (XPRO letter)")
             except Exception as err:
                 self.update_notes_and_status(
                     self._xpro_mail_furnishings,
                     Furnishing.FurnishingStatus.FAILED,
-                    'SFTP error of XPRO batch letter.'
+                    "SFTP error of XPRO batch letter."
                 )
-                self._app.logger.debug(f'SFTP error of XPRO batch letter: {err}')
+                self._app.logger.debug(f"SFTP error of XPRO batch letter: {err}")
 
     def _send_first_round_notification(self, batch_processing: BatchProcessing, business: Business):
         """Process first round of notification(email/letter)."""
@@ -229,23 +227,23 @@ class StageOneProcessor:
                 email
                 )
         self._app.logger.debug(
-            f'New furnishing has been created for {business.identifier} with ID (first round): {new_furnishing.id}')
+            f"New furnishing has been created for {business.identifier} with ID (first round): {new_furnishing.id}")
 
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
-            self._app.logger.debug(f'Created address (first round) with furnishing ID: {new_furnishing.id}')
+            self._app.logger.debug(f"Created address (first round) with furnishing ID: {new_furnishing.id}")
 
         if email:
             # send email letter
             self._send_email(new_furnishing)
             self._app.logger.debug(
-                f'Successfully put email message on the queue for furnishing entry with ID: {new_furnishing.id}')
+                f"Successfully put email message on the queue for furnishing entry with ID: {new_furnishing.id}")
         else:
             # send paper letter if business doesn't have email address
             new_furnishing.furnishing_type = Furnishing.FurnishingType.MAIL
             new_furnishing.save()
-            self._app.logger.debug(f'Changed furnishing type to MAIL for funishing with ID: {new_furnishing.id}')
+            self._app.logger.debug(f"Changed furnishing type to MAIL for funishing with ID: {new_furnishing.id}")
 
             if business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value:
                 self._xpro_mail_furnishings.append(new_furnishing)
@@ -273,12 +271,12 @@ class StageOneProcessor:
             business.legal_name
         )
         self._app.logger.debug(
-            f'New furnishing has been created for {business.identifier} with ID (second round): {new_furnishing.id}')
+            f"New furnishing has been created for {business.identifier} with ID (second round): {new_furnishing.id}")
 
         mailing_address = business.mailing_address.one_or_none()
         if mailing_address:
             self._create_furnishing_address(mailing_address, new_furnishing.id)
-            self._app.logger.debug(f'Created address (second round) with furnishing ID: {new_furnishing.id}')
+            self._app.logger.debug(f"Created address (second round) with furnishing ID: {new_furnishing.id}")
 
         if business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value:
             self._xpro_mail_furnishings.append(new_furnishing)
@@ -287,14 +285,14 @@ class StageOneProcessor:
 
         new_furnishing.save()
 
-    def _create_new_furnishing(  # pylint: disable=too-many-arguments
+    def _create_new_furnishing(  # noqa: PLR0913
             self,
             batch_processing: BatchProcessing,
             eligible_details: InvoluntaryDissolutionService.EligibilityDetails,
             furnishing_type: Furnishing.FurnishingType,
             last_ar_date: datetime,
             business_name: str,
-            email: str = None
+            email: str | None = None
             ) -> Furnishing:
         """Create new furnishing entry."""
         business = batch_processing.business
@@ -352,25 +350,25 @@ class StageOneProcessor:
         """Put email message on the queue for all email furnishing entries."""
         try:
             # TODO: update this
-            topic = self._app.config['BUSINESS_EMAILER_TOPIC']
+            topic = self._app.config["BUSINESS_EMAILER_TOPIC"]
             ce = SimpleCloudEvent(
                 id=str(uuid.uuid4()),
-                source='furnishingsJob',
-                subject='filing',
+                source="furnishingsJob",
+                subject="filing",
                 time=datetime.now(UTC),
-                type='bc.registry.dissolution',
+                type="bc.registry.dissolution",
                 data = {
-                    'furnishing': {
-                        'type': 'INVOLUNTARY_DISSOLUTION',
-                        'furnishingId': furnishing.id,
-                        'furnishingName': furnishing.furnishing_name.name
+                    "furnishing": {
+                        "type": "INVOLUNTARY_DISSOLUTION",
+                        "furnishingId": furnishing.id,
+                        "furnishingName": furnishing.furnishing_name.name
                     }
                 }
             )
             self._qsm.publish(topic, to_queue_message(ce))
-            self._app.logger.debug('Publish queue message %s: furnishing.id=%s', topic, furnishing.id)
+            self._app.logger.debug("Publish queue message %s: furnishing.id=%s", topic, furnishing.id)
         except Exception as err:
-            self._app.logger.error('Queue Error: furnishing.id=%s, %s', furnishing.id, err, exc_info=True)
+            self._app.logger.error("Queue Error: furnishing.id=%s, %s", furnishing.id, err, exc_info=True)
 
     def _get_furnishing_group_id(self, furnishing_type: Furnishing.FurnishingType) -> int:
         """Return furnishing group id based on furnishing type."""
@@ -390,8 +388,8 @@ class StageOneProcessor:
         """Return email address from auth for notification, return None if it doesn't have one."""
         token = AccountService.get_bearer_token()
         headers = {
-            'Accept': 'application/json',
-            'Authorization': f'Bearer {token}'
+            "Accept": "application/json",
+            "Authorization": f"Bearer {token}"
         }
 
         url = f'{current_app.config.get("AUTH_URL")}/entities/{identifier}'
@@ -399,16 +397,16 @@ class StageOneProcessor:
             contact_info = requests.get(url, headers=headers)
             contact_info.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
-                current_app.logger.info(f'No entity found for identifier: {identifier}')
+            if e.response.status_code == HTTPStatus.NOT_FOUND:
+                current_app.logger.info(f"No entity found for identifier: {identifier}")
             else:
-                current_app.logger.error(f'HTTP error occurred: {e}, URL: {url}, Status code: {e.response.status_code}')
+                current_app.logger.error(f"HTTP error occurred: {e}, URL: {url}, Status code: {e.response.status_code}")
             return None
         except requests.exceptions.RequestException as e:
-            current_app.logger.error(f'Request failed: {e}, URL: {url}')
+            current_app.logger.error(f"Request failed: {e}, URL: {url}")
             return None
 
-        contacts = contact_info.json().get('contacts', [])
-        if not contacts or not contacts[0].get('email'):
+        contacts = contact_info.json().get("contacts", [])
+        if not contacts or not contacts[0].get("email"):
             return None
-        return contacts[0]['email']
+        return contacts[0]["email"]

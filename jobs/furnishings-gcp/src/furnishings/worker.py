@@ -25,7 +25,7 @@ from furnishings.services.flags import Flags
 
 def can_run_today(cron_value: str):
     """Check if cron string is valid for today."""
-    tz = pytz.timezone('US/Pacific')
+    tz = pytz.timezone("US/Pacific")
     today = tz.localize(datetime.today())
     result = croniter.match(cron_value, datetime(today.year, today.month, today.day))
     return result
@@ -52,39 +52,39 @@ def check_run_schedule():
 
 def run():
     """Run the stage 1-3 to manage and track notifications for dissolving businesses."""
-    flag_on = Flags.is_on('enable-involuntary-dissolution')
-    current_app.logger.debug(f'enable-involuntary-dissolution flag on: {flag_on}')
+    flag_on = Flags.is_on("enable-involuntary-dissolution")
+    current_app.logger.debug(f"enable-involuntary-dissolution flag on: {flag_on}")
     if flag_on:
         # check if job can be run today
         stage_1_valid, stage_2_valid, stage_3_valid = check_run_schedule()
         current_app.logger.debug(
-            f'Run schedule check: stage_1: {stage_1_valid}, stage_2: {stage_2_valid}, stage_3: {stage_3_valid}'
+            f"Run schedule check: stage_1: {stage_1_valid}, stage_2: {stage_2_valid}, stage_3: {stage_3_valid}"
         )
         if not any([stage_1_valid, stage_2_valid, stage_3_valid]):
             current_app.logger.debug(
-                'Skipping job run since current day of the week does not match any cron schedule.'
+                "Skipping job run since current day of the week does not match any cron schedule."
             )
             return
 
         xml_furnishings_dict = {}
 
         if stage_1_valid:
-            current_app.logger.debug('Entering stage 1 of furnishings job.')
+            current_app.logger.debug("Entering stage 1 of furnishings job.")
             # NOTE: This stage is a two step process
             # 1. Send email (if available), completion dependent on business-emailer updating status
             # 2. Send mail (will only happen after step 1 is completed)
             stage_one_processor.process()
-            current_app.logger.debug('Exiting stage 1 of furnishings job.')
+            current_app.logger.debug("Exiting stage 1 of furnishings job.")
         if stage_2_valid:
-            current_app.logger.debug('Entering stage 2 of furnishings job.')
+            current_app.logger.debug("Entering stage 2 of furnishings job.")
             # NOTE: Entering this stage is dependent on Involuntary Dissolution job updating the BatchProcessing.step
             stage_two_process(xml_furnishings_dict)
-            current_app.logger.debug('Exiting stage 2 of furnishings job.')
+            current_app.logger.debug("Exiting stage 2 of furnishings job.")
         if stage_3_valid:
-            current_app.logger.debug('Entering stage 3 of furnishings job.')
+            current_app.logger.debug("Entering stage 3 of furnishings job.")
             stage_three_process(xml_furnishings_dict)
-            current_app.logger.debug('Exiting stage 3 of furnishings job.')
+            current_app.logger.debug("Exiting stage 3 of furnishings job.")
 
-        current_app.logger.debug('Entering post processing for the furnishings job.')
+        current_app.logger.debug("Entering post processing for the furnishings job.")
         post_processor.post_process(xml_furnishings_dict)
-        current_app.logger.debug('Exiting post processing for the furnishings job.')
+        current_app.logger.debug("Exiting post processing for the furnishings job.")

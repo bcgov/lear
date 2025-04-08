@@ -14,6 +14,7 @@
 """Common setup and fixtures for the pytest suite used by this service."""
 import contextlib
 
+import business_model_migrations
 import pytest
 import sqlalchemy
 from flask import Flask
@@ -22,22 +23,21 @@ from flask_sqlalchemy import SQLAlchemy
 from ldclient.integrations.test_data import TestData
 from sqlalchemy import event, text
 
-import business_model_migrations
 from business_model.models import db as _db
 from furnishings import create_app
 from furnishings.sftp import SftpConnection
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def ld():
     """LaunchDarkly TestData source."""
     td = TestData.data_source()
     yield td
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app(ld):
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing', **{'ld_test_data': ld})
+    _app = create_app("testing", ld_test_data=ld)
     
     with _app.app_context():
         yield _app
@@ -82,22 +82,19 @@ def create_test_db(
         : bool
             If the create database succeeded.
     """
-    if database_uri:
-        DATABASE_URI = database_uri
-    else:
-        DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
+    db_uri = database_uri if database_uri else f"postgresql://{user}:{password}@{host}:{port}/{user}"
 
-    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
+    db_uri = db_uri[: db_uri.rfind("/")] + "/postgres"
 
     try:
         with sqlalchemy.create_engine(
-            DATABASE_URI, isolation_level="AUTOCOMMIT"
+            db_uri, isolation_level="AUTOCOMMIT"
         ).connect() as conn:
             conn.execute(text(f"CREATE DATABASE {database}"))
 
         return True
     except sqlalchemy.exc.ProgrammingError as err:
-        print(err)  # used in the test suite, so on failure print something
+        print(err)  # noqa: T201
         return False
 
 
@@ -110,12 +107,9 @@ def drop_test_db(
     database_uri: str = None,
 ) -> bool:
     """Delete the database in our .devcontainer launched postgres DB."""
-    if database_uri:
-        DATABASE_URI = database_uri
-    else:
-        DATABASE_URI = f"postgresql://{user}:{password}@{host}:{port}/{user}"
+    db_uri = database_uri if database_uri else f"postgresql://{user}:{password}@{host}:{port}/{user}"
 
-    DATABASE_URI = DATABASE_URI[: DATABASE_URI.rfind("/")] + "/postgres"
+    db_uri = db_uri[: db_uri.rfind("/")] + "/postgres"
 
     close_all = f"""
         SELECT pg_terminate_backend(pg_stat_activity.pid)
@@ -123,12 +117,10 @@ def drop_test_db(
         WHERE pg_stat_activity.datname = '{database}'
         AND pid <> pg_backend_pid();
     """
-    with contextlib.suppress(sqlalchemy.exc.ProgrammingError, Exception):
-        with sqlalchemy.create_engine(
-            DATABASE_URI, isolation_level="AUTOCOMMIT"
-        ).connect() as conn:
-            conn.execute(text(close_all))
-            conn.execute(text(f"DROP DATABASE {database}"))
+    with contextlib.suppress(sqlalchemy.exc.ProgrammingError, Exception), \
+        sqlalchemy.create_engine(db_uri, isolation_level="AUTOCOMMIT").connect() as conn:
+        conn.execute(text(close_all))
+        conn.execute(text(f"DROP DATABASE {database}"))
 
 
 @pytest.fixture(scope="session")
@@ -170,12 +162,11 @@ def session(app: Flask, db: SQLAlchemy):
         txn = conn.begin()
 
         try:
-            options = dict(bind=conn, binds={})
-            # sess = db.scoped_session(options=options)
+            options = {"bind": conn, "binds":{}}
             sess = db._make_scoped_session(options=options)
         except Exception as err:
-            print(err)
-            print("done")
+            app.logger.debug(err)
+            app.logger.debug("done")
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
@@ -211,6 +202,6 @@ def run_around_tests(db: SQLAlchemy):
     yield
     # run after each test
     db.session.rollback()
-    db.session.execute(text(f'TRUNCATE TABLE businesses CASCADE'))
-    db.session.execute(text(f'TRUNCATE TABLE batches CASCADE'))
+    db.session.execute(text("TRUNCATE TABLE businesses CASCADE"))
+    db.session.execute(text("TRUNCATE TABLE batches CASCADE"))
     db.session.commit()

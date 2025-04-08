@@ -18,7 +18,6 @@ import sys
 
 from dotenv import find_dotenv, load_dotenv
 
-
 load_dotenv(find_dotenv())
 
 
@@ -26,35 +25,29 @@ class _Config:
     """Base class configuration."""
 
     # used to identify versioning flag
-    SERVICE_NAME = 'furnishings-job'
+    SERVICE_NAME = "furnishings-job"
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
+    LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
 
-    AUTH_URL = os.getenv('AUTH_API_URL', '') + os.getenv('AUTH_API_VERSION', '')
-    ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
+    AUTH_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
 
-    SECRET_KEY = 'a secret'
+    SECRET_KEY = "a secret"
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    ALEMBIC_INI = 'migrations/alembic.ini'
+    ALEMBIC_INI = "migrations/alembic.ini"
 
     # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_NAME', '')
-    DB_HOST = os.getenv('DATABASE_HOST', '')
-    DB_PORT = os.getenv('DATABASE_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
-    )
+    DB_USER = os.getenv("DATABASE_USERNAME", "")
+    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
+    DB_NAME = os.getenv("DATABASE_NAME", "")
+    DB_HOST = os.getenv("DATABASE_HOST", "")
+    DB_PORT = os.getenv("DATABASE_PORT", "5432")
+    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
     
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
@@ -64,94 +57,88 @@ class _Config:
     PUBLISHER_AUDIENCE = os.getenv(
         "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
     )
-    BUSINESS_EMAILER_TOPIC = os.getenv('BUSINESS_EMAILER_TOPIC')
+    BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC")
 
     # BCLaws SFTP
-    BCLAWS_SFTP_STORAGE_DIRECTORY = os.getenv('BCLAWS_SFTP_STORAGE_DIRECTORY', None)
-    BCLAWS_SFTP_HOST = os.getenv('BCLAWS_SFTP_HOST', None)
-    BCLAWS_SFTP_PORT = os.getenv('BCLAWS_SFTP_PORT', None)
-    BCLAWS_SFTP_USERNAME = os.getenv('BCLAWS_SFTP_USERNAME', None)
-    BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM', 'ED25519')
-    BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv('BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE', None)
-    BCLAWS_SFTP_PRIVATE_KEY = os.getenv('BCLAWS_SFTP_PRIVATE_KEY', None)
+    BCLAWS_SFTP_STORAGE_DIRECTORY = os.getenv("BCLAWS_SFTP_STORAGE_DIRECTORY", None)
+    BCLAWS_SFTP_HOST = os.getenv("BCLAWS_SFTP_HOST", None)
+    BCLAWS_SFTP_PORT = os.getenv("BCLAWS_SFTP_PORT", None)
+    BCLAWS_SFTP_USERNAME = os.getenv("BCLAWS_SFTP_USERNAME", None)
+    BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv("BCLAWS_SFTP_PRIVATE_KEY_ALGORITHM", "ED25519")
+    BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv("BCLAWS_SFTP_PRIVATE_KEY_PASSPHRASE", None)
+    BCLAWS_SFTP_PRIVATE_KEY = os.getenv("BCLAWS_SFTP_PRIVATE_KEY", None)
 
     # BCMail+ SFTP
-    BCMAIL_SFTP_STORAGE_DIRECTORY = os.getenv('BCMAIL_SFTP_STORAGE_DIRECTORY', None)
-    BCMAIL_SFTP_HOST = os.getenv('BCMAIL_SFTP_HOST', None)
-    BCMAIL_SFTP_PORT = os.getenv('BCMAIL_SFTP_PORT', None)
-    BCMAIL_SFTP_USERNAME = os.getenv('BCMAIL_SFTP_USERNAME', None)
-    BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM', 'RSA')
-    BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv('BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE', None)
-    BCMAIL_SFTP_PRIVATE_KEY = os.getenv('BCMAIL_SFTP_PRIVATE_KEY', None)
+    BCMAIL_SFTP_STORAGE_DIRECTORY = os.getenv("BCMAIL_SFTP_STORAGE_DIRECTORY", None)
+    BCMAIL_SFTP_HOST = os.getenv("BCMAIL_SFTP_HOST", None)
+    BCMAIL_SFTP_PORT = os.getenv("BCMAIL_SFTP_PORT", None)
+    BCMAIL_SFTP_USERNAME = os.getenv("BCMAIL_SFTP_USERNAME", None)
+    BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM = os.getenv("BCMAIL_SFTP_PRIVATE_KEY_ALGORITHM", "RSA")
+    BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE = os.getenv("BCMAIL_SFTP_PRIVATE_KEY_PASSPHRASE", None)
+    BCMAIL_SFTP_PRIVATE_KEY = os.getenv("BCMAIL_SFTP_PRIVATE_KEY", None)
 
     TESTING = False
     DEBUG = False
 
-    SECOND_NOTICE_DELAY = int(os.getenv('SECOND_NOTICE_DELAY', '5'))
-    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
-    XML_TEMPLATE_PATH = os.getenv('XML_TEMPLATE_PATH', 'furnishings-templates')
+    SECOND_NOTICE_DELAY = int(os.getenv("SECOND_NOTICE_DELAY", "5"))
+    LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
+    XML_TEMPLATE_PATH = os.getenv("XML_TEMPLATE_PATH", "furnishings-templates")
 
     # Letter - GCP Gotenberg report service
-    REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
-    REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
-    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
+    REPORT_API_GOTENBERG_AUDIENCE = os.getenv("REPORT_API_GOTENBERG_AUDIENCE", "")
+    REPORT_API_GOTENBERG_URL = os.getenv("REPORT_API_GOTENBERG_URL", "https://")
+    REPORT_TEMPLATE_PATH = os.getenv("REPORT_PATH", "report-templates")
     # Letter - MRAS
-    MRAS_SVC_URL = os.getenv('MRAS_SVC_URL')
-    MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
+    MRAS_SVC_URL = os.getenv("MRAS_SVC_URL")
+    MRAS_SVC_API_KEY = os.getenv("MRAS_SVC_API_KEY")
 
 
-class DevelopmentConfig(_Config):  # pylint: disable=too-few-public-methods
+class DevelopmentConfig(_Config):
     """Development environment configuration."""
 
     TESTING = False
     DEBUG = True
 
 
-class UnitTestingConfig(_Config):  # pylint: disable=too-few-public-methods
+class UnitTestingConfig(_Config):
     """In support of testing only used by the py.test suite."""
 
     DEBUG = True
     TESTING = True
 
     # POSTGRESQL
-    DB_USER = os.getenv('DATABASE_TEST_USERNAME', '')
-    DB_PASSWORD = os.getenv('DATABASE_TEST_PASSWORD', '')
-    DB_NAME = os.getenv('DATABASE_TEST_NAME', '')
-    DB_HOST = os.getenv('DATABASE_TEST_HOST', '')
-    DB_PORT = os.getenv('DATABASE_TEST_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
-    )
+    DB_USER = os.getenv("DATABASE_TEST_USERNAME", "")
+    DB_PASSWORD = os.getenv("DATABASE_TEST_PASSWORD", "")
+    DB_NAME = os.getenv("DATABASE_TEST_NAME", "")
+    DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
+    DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
+    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
     # BCLaws SFTP
-    BCLAWS_SFTP_STORAGE_DIRECTORY = 'bclaws'
-    BCLAWS_SFTP_PRIVATE_KEY = ''
+    BCLAWS_SFTP_STORAGE_DIRECTORY = "bclaws"
+    BCLAWS_SFTP_PRIVATE_KEY = ""
     BCLAWS_SFTP_HOST = None
 
     # BCMail+ SFTP
-    BCMAIL_SFTP_STORAGE_DIRECTORY = 'bcmail'
-    BCMAIL_SFTP_PRIVATE_KEY = ''
+    BCMAIL_SFTP_STORAGE_DIRECTORY = "bcmail"
+    BCMAIL_SFTP_PRIVATE_KEY = ""
     BCMAIL_SFTP_HOST = None
     
     # Mocked urls
-    AUTH_URL = 'http://test-AUTH_URL.fake'
-    ACCOUNT_SVC_AUTH_URL = 'http://test-ACCOUNT_SVC_AUTH_URL.fake'
-    REPORT_API_GOTENBERG_URL = 'http://test-REPORT_API_GOTENBERG_URL.fake'
-    MRAS_SVC_URL = 'http://test-MRAS_SVC_URL.fake'
+    AUTH_URL = "http://test-AUTH_URL.fake"
+    ACCOUNT_SVC_AUTH_URL = "http://test-ACCOUNT_SVC_AUTH_URL.fake"
+    REPORT_API_GOTENBERG_URL = "http://test-REPORT_API_GOTENBERG_URL.fake"
+    MRAS_SVC_URL = "http://test-MRAS_SVC_URL.fake"
 
 
-class ProductionConfig(_Config):  # pylint: disable=too-few-public-methods
+class ProductionConfig(_Config):
     """Production environment configuration."""
 
-    SECRET_KEY = os.getenv('SECRET_KEY', None)
+    SECRET_KEY = os.getenv("SECRET_KEY", None)
 
     if not SECRET_KEY:
         SECRET_KEY = os.urandom(24)
-        print('WARNING: SECRET_KEY being set as a one-shot', file=sys.stderr)
+        print("WARNING: SECRET_KEY being set as a one-shot", file=sys.stderr)  # noqa: T201
 
     TESTING = False
     DEBUG = False

@@ -28,27 +28,27 @@ from .. import factory_batch, factory_batch_processing, factory_business, factor
 
 
 @pytest.mark.parametrize(
-        'test_name, entity_type, step, new_entry', [
+        "test_name, entity_type, step, new_entry", [
             (
-                'BC_NEW_FURNISHING',
+                "BC_NEW_FURNISHING",
                 Business.LegalTypes.COMP.value,
                 BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
                 True
             ),
             (
-                'XPRO_NEW_FURNISHING',
+                "XPRO_NEW_FURNISHING",
                 Business.LegalTypes.EXTRA_PRO_A.value,
                 BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
                 True
             ),
             (
-                'STAGE_2_ALREADY_RUN',
+                "STAGE_2_ALREADY_RUN",
                 Business.LegalTypes.COMP.value,
                 BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
                 False
             ),
             (
-                'NOT_IN_STAGE_2',
+                "NOT_IN_STAGE_2",
                 Business.LegalTypes.COMP.value,
                 BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                 False
@@ -57,7 +57,7 @@ from .. import factory_batch, factory_batch_processing, factory_business, factor
 )
 def test_process_create_furnishings(app, session, test_name, entity_type, step, new_entry):
     """Assert that new furnishing entries are created correctly."""
-    business = factory_business(identifier='BC1234567', entity_type=entity_type)
+    business = factory_business(identifier="BC1234567", entity_type=entity_type)
     batch = factory_batch()
     factory_batch_processing(
         batch_id=batch.id,
@@ -66,7 +66,7 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
         step=step
     )
 
-    if test_name == 'STAGE_2_ALREADY_RUN':
+    if test_name == "STAGE_2_ALREADY_RUN":
         existing_furnishing = factory_furnishing(
             batch_id=batch.id,
             business_id=business.id,
@@ -90,10 +90,9 @@ def test_process_create_furnishings(app, session, test_name, entity_type, step, 
             assert furnishing.furnishing_name == Furnishing.FurnishingName.INTENT_TO_DISSOLVE_XPRO
         else:
             assert furnishing.furnishing_name == Furnishing.FurnishingName.INTENT_TO_DISSOLVE
+    elif test_name == "STAGE_2_ALREADY_RUN":
+        assert len(furnishings) == 1
+        furnishing = furnishings[0]
+        assert furnishing == existing_furnishing
     else:
-        if test_name == 'STAGE_2_ALREADY_RUN':
-            assert len(furnishings) == 1
-            furnishing = furnishings[0]
-            assert furnishing == existing_furnishing
-        else:
-            assert len(furnishings) == 0
+        assert len(furnishings) == 0

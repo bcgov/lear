@@ -32,12 +32,12 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Services used by furnishings."""
-from gcp_queue import GcpQueue
 from furnishings.services.flags import Flags
 from furnishings.services.stage_processors.post_processor import PostProcessor
 from furnishings.services.stage_processors.stage_one import StageOneProcessor
 from furnishings.services.stage_processors.stage_three import process as stage_three_process
 from furnishings.services.stage_processors.stage_two import process as stage_two_process
+from gcp_queue import GcpQueue
 
 flags = Flags()
 gcp_queue = GcpQueue()

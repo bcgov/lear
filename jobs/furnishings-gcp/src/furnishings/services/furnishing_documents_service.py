@@ -25,11 +25,10 @@ from sqlalchemy import text
 from business_model.models import Furnishing, db
 from furnishings.services.reports.report_v2 import ReportTypes, ReportV2
 
+COVER_REPORT_DATE_FORMAT: Final = "%B %d, %Y %I:%M:%S %p"
 
-COVER_REPORT_DATE_FORMAT: Final = '%B %d, %Y %I:%M:%S %p'
 
-
-class FurnishingDocumentsService():
+class FurnishingDocumentsService:
     """Provides services to get document(s) for furnishing entry."""
 
     def __init__(self, document_key=None, variant=None):
@@ -46,8 +45,8 @@ class FurnishingDocumentsService():
         pdfs = self._get_batch_furnishing_documents(furnishings)
         cover = self._get_batch_cover(pdfs)
         files = {
-            'cover': cover,
-            'contents': pdfs
+            "cover": cover,
+            "contents": pdfs
         }
         return self._merge_documents(files)
 
@@ -59,7 +58,7 @@ class FurnishingDocumentsService():
             pdf = self._report.get_pdf()
             if not pdf:
                 current_app.logger.error(
-                    f'Error generating PDF for furnishing {f.id}, business {f.business.id}, skip.'
+                    f"Error generating PDF for furnishing {f.id}, business {f.business.id}, skip."
                 )
                 continue
             pdfs.append(pdf)
@@ -68,26 +67,26 @@ class FurnishingDocumentsService():
     def _get_batch_cover(self, files: list) -> bytes:
         self._report._document_key = ReportTypes.DISSOLUTION_COVER
         self._report._report_data = {
-            'letterCount': len(files),
-            'reportDate': self._report._report_date_time.strftime(
+            "letterCount": len(files),
+            "reportDate": self._report._report_date_time.strftime(
                 COVER_REPORT_DATE_FORMAT
             ),
-            'customBatchId': self._get_batch_custom_identifier(),
-            'pageCount': len(files) * 2 + 1,
-            'environment': current_app.config.get('ENV')
+            "customBatchId": self._get_batch_custom_identifier(),
+            "pageCount": len(files) * 2 + 1,
+            "environment": current_app.config.get("ENV")
         }
         cover = self._report.get_pdf()
         if not cover:
-            current_app.logger.error('Error generating cover PDF.')
+            current_app.logger.error("Error generating cover PDF.")
         return cover
 
     @staticmethod
     def _merge_documents(files: dict) -> bytes:
         try:
             merger = PyPDF2.PdfMerger()
-            if files['cover']:
-                merger.append(io.BytesIO(files['cover']))
-            contents = files['contents']
+            if files["cover"]:
+                merger.append(io.BytesIO(files["cover"]))
+            contents = files["contents"]
             for _, pdf in enumerate(contents):
                 merger.append(io.BytesIO(pdf))
             writer_buffer = io.BytesIO()
@@ -95,7 +94,7 @@ class FurnishingDocumentsService():
             merger.close()
             return writer_buffer.getvalue()
         except Exception as e:
-            current_app.logger.error(f'Error merging PDF:{e}')
+            current_app.logger.error(f"Error merging PDF:{e}")
             return None
 
     @staticmethod

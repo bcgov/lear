@@ -15,8 +15,7 @@
 from furnishings import create_app
 from furnishings.worker import run
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     application = create_app()
     with application.app_context():
         try:

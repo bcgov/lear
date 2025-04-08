@@ -16,22 +16,21 @@ from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 from business_model.models import Configuration
-
 from furnishings.worker import check_run_schedule
 
 
 def test_check_run_schedule():
     """Assert that schedule check validates the day of run based on cron string in config."""
-    with patch.object(Configuration, 'find_by_name') as mock_find_by_name:
+    with patch.object(Configuration, "find_by_name") as mock_find_by_name:
         mock_stage_1_config = MagicMock()
         mock_stage_2_config = MagicMock()
         mock_stage_3_config = MagicMock()
-        mock_stage_1_config.val = '0 0 * * 1-2'
-        mock_stage_2_config.val = '0 0 * * 2'
-        mock_stage_3_config.val = '0 0 * * 3'
+        mock_stage_1_config.val = "0 0 * * 1-2"
+        mock_stage_2_config.val = "0 0 * * 2"
+        mock_stage_3_config.val = "0 0 * * 3"
         mock_find_by_name.side_effect = [mock_stage_1_config, mock_stage_2_config, mock_stage_3_config]
 
-        with patch('furnishings.worker.datetime', wraps=datetime) as mock_datetime:
+        with patch("furnishings.worker.datetime", wraps=datetime) as mock_datetime:
             mock_datetime.today.return_value = datetime(2024, 6, 4, 1, 2, 3, 4)
             cron_valid_1, cron_valid_2, cron_valid_3 = check_run_schedule()
 

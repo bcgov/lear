@@ -21,7 +21,7 @@ from flask import Flask
 
 from business_model.models import db
 from furnishings.config import DevelopmentConfig, ProductionConfig, UnitTestingConfig
-from furnishings.services import flags, gcp_queue, stage_one_processor, post_processor
+from furnishings.services import flags, gcp_queue, post_processor, stage_one_processor
 from structured_logging import StructuredLogging
 
 CONFIG_MAP = {

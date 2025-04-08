@@ -16,11 +16,15 @@ from __future__ import annotations
 
 import io
 from enum import auto
-from typing import Callable
+from typing import TYPE_CHECKING
 
 import paramiko
+from flask import current_app
 
 from business_common.utils.base import BaseEnum
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class PublicKeyAlgorithms(BaseEnum):
@@ -33,14 +37,14 @@ class PublicKeyAlgorithms(BaseEnum):
 class SftpConnection:
     """SFTP Connection object."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
             self,
             host: str,
             port: int,
             username: str,
-            password: str = None,
-            private_key: str = None,
-            private_key_passphrase: str = None,
+            password: str | None = None,
+            private_key: str | None = None,
+            private_key_passphrase: str | None = None,
             private_key_algorithm: str = PublicKeyAlgorithms.ED25519.value
     ):
         """Initialize the SFTP Connection object.
@@ -95,10 +99,10 @@ class SftpConnection:
 
             self.sftp_handler = paramiko.SFTPClient.from_transport(self.ssh_connection.get_transport())
 
-            print('sftp_connection successful')
+            current_app.logger.debug("sftp_connection successful")
             return self.sftp_handler
-        except Exception as e:  # noqa: B902
-            print(e)
+        except Exception as e:
+            current_app.logger.debug(e)
             raise e
 
     def __exit__(self, exc_type, exc_value, traceback):

@@ -24,7 +24,7 @@ from ldclient import Config, Context, LDClient
 from ldclient.integrations.test_data import TestData
 
 
-class Flags():
+class Flags:
     """Wrapper around the feature flag system.
 
     calls FAIL to FALSE
@@ -55,10 +55,10 @@ class Flags():
         self.sdk_key = app.config.get("LD_SDK_KEY")
         if td:
             client = LDClient(config=Config("testing", update_processor_class=td))
-            with open('flags.json', 'r') as file:
+            with open("flags.json") as file:
                 data = file.read()
                 test_flags: dict[str, dict] = json.loads(data)
-                for flag_name, flag_value in test_flags['flagValues'].items():
+                for flag_name, flag_value in test_flags["flagValues"].items():
                     # NOTE: should check if isinstance dict and if so, apply each variation
                     td.update(td.flag(flag_name).variation_for_all(flag_value))
 
@@ -99,16 +99,16 @@ class Flags():
         return {"key": "anonymous"}
 
     @staticmethod
-    def is_on(flag: str, user: dict = None) -> bool:
+    def is_on(flag: str, user: dict | None = None) -> bool:
         """Assert that the flag is set for this user."""
         try:
             return bool(Flags.value(flag, user))
         except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            current_app.logger.error("Unable to read flags: %s", repr(err), exc_info=True)
             return False
 
     @staticmethod
-    def value(flag: str, user: dict = None):
+    def value(flag: str, user: dict | None = None):
         """Retrieve the value  of the (flag, user) tuple."""
         try:
             client = Flags.get_client()

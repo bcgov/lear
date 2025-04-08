@@ -72,8 +72,8 @@ def process(xml_furnishings: dict):
             )
             new_furnishing.save()
             current_app.logger.debug(
-                f'Created corp dissolved furnishing entry for {new_furnishing.business_identifier} '
-                f'with ID: {new_furnishing.id}'
+                f"Created corp dissolved furnishing entry for {new_furnishing.business_identifier} "
+                f"with ID: {new_furnishing.id}"
             )
 
             if business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value:

@@ -13,8 +13,8 @@
 # limitations under the License.
 """The Test-Suite used to ensure that the Furnishings Job is working correctly."""
 import base64
-import datetime
 import uuid
+from datetime import UTC, datetime
 
 from datedelta import datedelta
 from freezegun import freeze_time
@@ -25,9 +25,8 @@ from business_model.models.db import VersioningProxy
 
 from .test_data.gotenburg_response import GOTENBURG_RESPONSE
 
-
-EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
-FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362).replace(tzinfo=datetime.timezone.utc)
+EPOCH_DATETIME = datetime.utcfromtimestamp(0).replace(tzinfo=UTC)
+FROZEN_DATETIME = datetime(2001, 8, 5, 7, 7, 58, 272362).replace(tzinfo=UTC)
 
 
 def factory_business(identifier,
@@ -41,7 +40,7 @@ def factory_business(identifier,
     last_ar_year = None
     if last_ar_date:
         last_ar_year = last_ar_date.year
-    business = Business(legal_name=f'legal_name-{identifier}',
+    business = Business(legal_name=f"legal_name-{identifier}",
                         founding_date=founding_date,
                         last_ar_date=last_ar_date,
                         last_ar_year=last_ar_year,
@@ -57,7 +56,7 @@ def factory_business(identifier,
 def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                   status=Batch.BatchStatus.PROCESSING,
                   size=3,
-                  notes=''):
+                  notes=""):
     """Create a batch."""
     batch = Batch(
         batch_type=batch_type,
@@ -74,10 +73,10 @@ def factory_batch_processing(batch_id,
                              identifier,
                              step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                              status=BatchProcessing.BatchProcessingStatus.PROCESSING,
-                             created_date=datetime.datetime.utcnow(),
-                             trigger_date=datetime.datetime.utcnow()+datedelta(days=42),
-                             last_modified=datetime.datetime.utcnow(),
-                             notes=''):
+                             created_date=datetime.now(UTC),
+                             trigger_date=datetime.now(UTC)+datedelta(days=42),
+                             last_modified=datetime.now(UTC),
+                             notes=""):
     """Create a batch processing entry."""
     batch_processing = BatchProcessing(
         batch_id=batch_id,
@@ -103,7 +102,7 @@ def factory_completed_filing(business,
                              filing_sub_type=None):
     """Create a completed filing."""
     if not payment_token:
-        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
+        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace("=", "")
 
     with freeze_time(filing_date):
 
@@ -137,8 +136,8 @@ def factory_furnishing(batch_id,
                        furnishing_name=Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR,
                        furnishing_type=Furnishing.FurnishingType.EMAIL,
                        status=Furnishing.FurnishingStatus.QUEUED,
-                       created_date=datetime.datetime.utcnow(),
-                       last_modified=datetime.datetime.utcnow(),
+                       created_date=datetime.now(UTC),
+                       last_modified=datetime.now(UTC),
                        last_ar_date=None,
                        business_name=None
                        ):
@@ -159,11 +158,11 @@ def factory_furnishing(batch_id,
     return furnishing
 
 def factory_address(address_type: str,
-                    street='some street',
-                    city='victoria',
-                    country='CA',
-                    postal_code='v512a9',
-                    region='akjsdf',
+                    street="some street",
+                    city="victoria",
+                    country="CA",
+                    postal_code="v512a9",
+                    region="akjsdf",
                     business_id=None,
                     furnishings_id=None):
     """Create an address entrXy."""
@@ -179,10 +178,12 @@ def factory_address(address_type: str,
     address.save()
     return address
 
-def factory_mras_response(identifier: str = 'BC1234567',
-                          jurisdictions: dict[str, str] = {'AB': 'Alberta', 'MB': 'Manitoba'}):
+def factory_mras_response(identifier: str = "BC1234567",
+                          jurisdictions: dict[str, str] = None):
+    if not jurisdictions:
+        jurisdictions = {"AB": "Alberta", "MB": "Manitoba"}
     xml_string = '<Jurisdictions xmlns="http://mras.ca/schema/v1">'
     for jur_id, jur_name in jurisdictions.items():
-        xml_string += f'<Jurisdiction><JurisdictionID>{jur_id}</JurisdictionID><NameEn>{jur_name}</NameEn><NameFr>{jur_name}</NameFr><RedirectUrl>https://redirect.test.ca</RedirectUrl><TargetProfileID>0{identifier}</TargetProfileID></Jurisdiction>'
-    xml_string += '</Jurisdictions>'
-    return bytes(xml_string, 'utf-8')
+        xml_string += f"<Jurisdiction><JurisdictionID>{jur_id}</JurisdictionID><NameEn>{jur_name}</NameEn><NameFr>{jur_name}</NameFr><RedirectUrl>https://redirect.test.ca</RedirectUrl><TargetProfileID>0{identifier}</TargetProfileID></Jurisdiction>"
+    xml_string += "</Jurisdictions>"
+    return bytes(xml_string, "utf-8")

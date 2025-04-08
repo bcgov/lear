@@ -21,38 +21,38 @@ from flask import current_app
 class RegistrarInfo:
     """Utility to get the relevant registrar info for a filing."""
 
-    registrar_info = [
+    registrar_info = [  # noqa: RUF012
         {
-            'name': 'RON TOWNSHEND',
-            'title': 'Registrar of Companies',
-            'signatureImage': 'registrar_signature_1.png',
-            'signatureImageAndText': '',
-            'startDate': '1970-01-01T00:00:00',
-            'endDate': '2012-05-31T23:59:59'
+            "name": "RON TOWNSHEND",
+            "title": "Registrar of Companies",
+            "signatureImage": "registrar_signature_1.png",
+            "signatureImageAndText": "",
+            "startDate": "1970-01-01T00:00:00",
+            "endDate": "2012-05-31T23:59:59"
         },
         {
-            'name': 'ANGELO COCCO',
-            'title': 'A/Registrar of Companies',
-            'signatureImage': 'registrar_signature_2.png',
-            'signatureImageAndText': '',
-            'startDate': '2012-06-01T00:00:00',
-            'endDate': '2012-07-12T23:59:59'
+            "name": "ANGELO COCCO",
+            "title": "A/Registrar of Companies",
+            "signatureImage": "registrar_signature_2.png",
+            "signatureImageAndText": "",
+            "startDate": "2012-06-01T00:00:00",
+            "endDate": "2012-07-12T23:59:59"
         },
         {
-            'name': 'CAROL PREST',
-            'title': 'Registrar of Companies',
-            'signatureImage': 'registrar_signature_3.png',
-            'signatureImageAndText': 'registrar_signature_and_text_3.png',
-            'startDate': '2012-07-13T00:00:00',
-            'endDate': '2022-05-31T23:59:59'
+            "name": "CAROL PREST",
+            "title": "Registrar of Companies",
+            "signatureImage": "registrar_signature_3.png",
+            "signatureImageAndText": "registrar_signature_and_text_3.png",
+            "startDate": "2012-07-13T00:00:00",
+            "endDate": "2022-05-31T23:59:59"
         },
         {
-            'name': 'T.K. SPARKS',
-            'title': 'Registrar of Companies',
-            'signatureImage': 'registrar_signature_4.png',
-            'signatureImageAndText': 'registrar_signature_and_text_4.png',
-            'startDate': '2022-06-01T00:00:00',
-            'endDate': None
+            "name": "T.K. SPARKS",
+            "title": "Registrar of Companies",
+            "signatureImage": "registrar_signature_4.png",
+            "signatureImageAndText": "registrar_signature_and_text_4.png",
+            "startDate": "2022-06-01T00:00:00",
+            "endDate": None
         }
     ]
 
@@ -60,22 +60,22 @@ class RegistrarInfo:
     def get_registrar_info(filing_effective_date) -> dict:
         """Return the registrar for a filing."""
         filing_effective_date = filing_effective_date.replace(tzinfo=None)
-        registrar = [x for x in RegistrarInfo.registrar_info if
-                     (filing_effective_date >= datetime.datetime.strptime(x['startDate'], '%Y-%m-%dT%H:%M:%S') and
-                      (x['endDate'] is None or
-                       filing_effective_date <= datetime.datetime.strptime(x['endDate'], '%Y-%m-%dT%H:%M:%S')))][0]
-        signature = RegistrarInfo.encode_registrar_signature(registrar['signatureImage'])
-        registrar['signature'] = f'data:image/png;base64,{signature}'
-        if registrar['signatureImageAndText']:
-            signature_and_text = RegistrarInfo.encode_registrar_signature(registrar['signatureImageAndText'])
-            registrar['signatureAndText'] = f'data:image/png;base64,{signature_and_text}'
+        registrar = next(x for x in RegistrarInfo.registrar_info
+                          if (filing_effective_date >= datetime.datetime.strptime(x["startDate"], "%Y-%m-%dT%H:%M:%S") and
+                              (x["endDate"] is None or
+                               filing_effective_date <= datetime.datetime.strptime(x["endDate"], "%Y-%m-%dT%H:%M:%S"))))
+        signature = RegistrarInfo.encode_registrar_signature(registrar["signatureImage"])
+        registrar["signature"] = f"data:image/png;base64,{signature}"
+        if registrar["signatureImageAndText"]:
+            signature_and_text = RegistrarInfo.encode_registrar_signature(registrar["signatureImageAndText"])
+            registrar["signatureAndText"] = f"data:image/png;base64,{signature_and_text}"
         return registrar
 
     @staticmethod
     def encode_registrar_signature(signature_image) -> str:
         """Return the encoded registrar signature."""
-        template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-        image_path = f'{template_path}/registrar_signatures/{signature_image}'
-        with open(image_path, 'rb') as image_file:
+        template_path = current_app.config.get("REPORT_TEMPLATE_PATH")
+        image_path = f"{template_path}/registrar_signatures/{signature_image}"
+        with open(image_path, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read())
-            return encoded_string.decode('utf-8')
+            return encoded_string.decode("utf-8")
