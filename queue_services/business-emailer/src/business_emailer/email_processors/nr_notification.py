@@ -102,13 +102,12 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
     societies_url = current_app.config.get("SOCIETIES_URL")
 
     file_name_suffix = option.upper()
-    if option == Option.BEFORE_EXPIRY.value:
-        if "entity_type_cd" in nr_data:
-            legal_type = nr_data["entity_type_cd"]
-            group = __get_instruction_group(legal_type)
-            if group:
-                instruction_group = "-" + group
-                file_name_suffix += instruction_group.upper()
+    if option == Option.BEFORE_EXPIRY.value and "entity_type_cd" in nr_data:
+        legal_type = nr_data["entity_type_cd"]
+        group = __get_instruction_group(legal_type)
+        if group:
+            instruction_group = "-" + group
+            file_name_suffix += instruction_group.upper()
 
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-{file_name_suffix}.html').read_text()
     filled_template = substitute_template_parts(template)

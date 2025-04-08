@@ -118,28 +118,22 @@ class Flags:
         """Assert that the flag is set for this user."""
         client = self._get_client()
 
-        if user:
-            flag_user = self._user_as_key(user)
-        else:
-            flag_user = self._get_anonymous_user()
+        flag_user = self._user_as_key(user) if user else self._get_anonymous_user()
 
         try:
             return bool(client.variation(flag, flag_user, None))
         except Exception as err:
-            current_app.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
+            current_app.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
             return False
 
     def value(self, flag: str, user: User = None) -> bool:
         """Retrieve the value  of the (flag, user) tuple."""
         client = self._get_client()
 
-        if user:
-            flag_user = self._user_as_key(user)
-        else:
-            flag_user = self._get_anonymous_user()
+        flag_user = self._user_as_key(user) if user else self._get_anonymous_user()
 
         try:
             return client.variation(flag, flag_user, None)
         except Exception as err:
-            current_app.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
+            current_app.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
             return False

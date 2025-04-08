@@ -24,6 +24,4 @@ def is_special_resolution_correction_by_filing_json(filing: dict):
     for key in sr_correction_keys:
         if key in filing.get("correction"):
             return True
-    if "requestType" in filing.get("correction", {}).get("nameRequest", {}):
-        return True
-    return False
+    return "requestType" in filing.get("correction", {}).get("nameRequest", {})

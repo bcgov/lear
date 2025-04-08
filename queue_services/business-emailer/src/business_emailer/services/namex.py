@@ -183,9 +183,7 @@ class NameXService:
         except ValueError:
             expiration_date = datetime.strptime(nr_json["expirationDate"], NameXService.DATE_FORMAT_WITH_MILLISECONDS)
         expiration_date = expiration_date.astimezone(pytz.timezone("GMT"))
-        if expiration_date < date_time:
-            return True
-        return False
+        return expiration_date < date_time
 
     @staticmethod
     def get_approved_name(nr_json) -> str:

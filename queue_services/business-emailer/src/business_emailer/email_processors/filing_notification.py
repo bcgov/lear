@@ -250,7 +250,7 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
         if filing_type == "incorporationApplication":
             subject = "Confirmation of Filing from the Business Registry"
         elif filing_type in ["changeOfAddress", "changeOfDirectors"]:
-            address_director = [x for x in ["Address", "Director"] if x in filing_type][0]
+            address_director = next(x for x in ["Address", "Director"] if x in filing_type)
             subject = f"Confirmation of {address_director} Change"
         elif filing_type == "annualReport":
             subject = "Confirmation of Annual Report"

@@ -802,10 +802,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, business.id)):
             business_revision = bus_rev_temp
 
-        if isinstance(names, MutableMapping):
-            name = names.get(business_revision.legal_type)
-        else:
-            name = names
+        name = names.get(business_revision.legal_type) if isinstance(names, MutableMapping) else names
 
         if filing.filing_type in ("annualReport") and (year := FilingMeta.get_effective_display_year(filing.meta_data)):
             name = f"{name} ({year})"
@@ -855,9 +852,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     @staticmethod
     def alter_outputs_alteration(filing, outputs):
         """Handle output file list modification for alterations."""
-        if filing.filing_type == "alteration":
-            if filing.meta_data.get("alteration", {}).get("toLegalName"):
-                outputs.add("certificateOfNameChange")
+        if filing.filing_type == "alteration" and filing.meta_data.get("alteration", {}).get("toLegalName"):
+            outputs.add("certificateOfNameChange")
         return outputs
 
     @staticmethod
@@ -920,7 +916,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return outputs
 
     @staticmethod
-    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str = None) -> str:
+    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str | None = None) -> str:
         """Return display name for filing."""
         filing_dict = FILINGS.get(filing_type, None)
 
