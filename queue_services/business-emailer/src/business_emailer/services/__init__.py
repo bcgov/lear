@@ -35,8 +35,7 @@
 from gcp_queue import GcpQueue
 
 from .flags import Flags
-from .gcp_auth import verify_gcp_jwt
-from .gcp_auth import logger
+from .gcp_auth import logger, verify_gcp_jwt
 
 flags = Flags()
 gcp_queue = GcpQueue()

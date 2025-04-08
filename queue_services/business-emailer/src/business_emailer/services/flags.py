@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
+from business_model.models import User
 from flask import current_app
-from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
-from ldclient.config import Config  # noqa: I005
+from ldclient import get as ldclient_get
+from ldclient import set_config as ldclient_set_config
+from ldclient.config import Config
 from ldclient.impl.integrations.files.file_data_source import _FileDataSource
 from ldclient.interfaces import UpdateProcessor
-
-from business_model.models import User
 
 
 class FileDataSource(UpdateProcessor):
@@ -35,10 +35,10 @@ class FileDataSource(UpdateProcessor):
         The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
         """
         return lambda config, store, ready: _FileDataSource(store, ready,
-                                                            paths=kwargs.get('paths'),
-                                                            auto_update=kwargs.get('auto_update', False),
-                                                            poll_interval=kwargs.get('poll_interval', 1),
-                                                            force_polling=kwargs.get('force_polling', False))
+                                                            paths=kwargs.get("paths"),
+                                                            auto_update=kwargs.get("auto_update", False),
+                                                            poll_interval=kwargs.get("poll_interval", 1),
+                                                            force_polling=kwargs.get("force_polling", False))
 
 
 class Flags:
@@ -64,14 +64,14 @@ class Flags:
     def init_app(self, app):
         """Initialize the Feature Flag environment."""
         self.app = app
-        self.sdk_key = app.config.get('LD_SDK_KEY')
+        self.sdk_key = app.config.get("LD_SDK_KEY")
 
-        if self.sdk_key or app.env != 'production':
+        if self.sdk_key or app.env != "production":
 
-            if app.env == 'production':
+            if app.env == "production":
                 config = Config(sdk_key=self.sdk_key)
             else:
-                factory = FileDataSource.factory(paths=['flags.json'],
+                factory = FileDataSource.factory(paths=["flags.json"],
                                                  auto_update=True)
                 config = Config(sdk_key=self.sdk_key,
                                 update_processor_class=factory,
@@ -80,20 +80,20 @@ class Flags:
             ldclient_set_config(config)
             client = ldclient_get()
 
-            app.extensions['featureflags'] = client
+            app.extensions["featureflags"] = client
 
     def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
         """Destroy all objects created by this extension."""
-        client = current_app.extensions['featureflags']
+        client = current_app.extensions["featureflags"]
         client.close()
 
     def _get_client(self):
         try:
-            client = current_app.extensions['featureflags']
+            client = current_app.extensions["featureflags"]
         except KeyError:
             try:
                 self.init_app(current_app)
-                client = current_app.extensions['featureflags']
+                client = current_app.extensions["featureflags"]
             except KeyError:
                 client = None
 
@@ -102,15 +102,15 @@ class Flags:
     @staticmethod
     def _get_anonymous_user():
         return {
-            'key': 'anonymous'
+            "key": "anonymous"
         }
 
     @staticmethod
     def _user_as_key(user: User):
         user_json = {
-            'key': user.sub,
-            'firstName': user.firstname,
-            'lastName': user.lastname
+            "key": user.sub,
+            "firstName": user.firstname,
+            "lastName": user.lastname
         }
         return user_json
 
@@ -126,7 +126,7 @@ class Flags:
         try:
             return bool(client.variation(flag, flag_user, None))
         except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            current_app.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
             return False
 
     def value(self, flag: str, user: User = None) -> bool:
@@ -141,5 +141,5 @@ class Flags:
         try:
             return client.variation(flag, flag_user, None)
         except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            current_app.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
             return False

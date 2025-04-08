@@ -16,14 +16,13 @@
 This module is the service worker for sending emails about entity related events.
 """
 import sentry_sdk
+from business_model.models.db import db
 from flask import Flask
 from sentry_sdk.integrations.flask import FlaskIntegration
 
 from .config import Config, ProdConfig
-from business_model.models.db import db
 from .resources import register_endpoints
-from .services import flags
-from .services import gcp_queue
+from .services import flags, gcp_queue
 
 
 def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:

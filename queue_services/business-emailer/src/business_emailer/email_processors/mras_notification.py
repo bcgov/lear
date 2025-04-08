@@ -25,34 +25,34 @@ from business_emailer.services import logger
 
 def process(email_msg: dict) -> dict:
     """Build the email for mras notification."""
-    logger.debug('mras_notification: %s', email_msg)
-    filing_type = email_msg['type']
+    logger.debug("mras_notification: %s", email_msg)
+    filing_type = email_msg["type"]
     # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()
     filled_template = substitute_template_parts(template)
     # get template info from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg['filingId'])
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_msg["filingId"])
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     html_out = jnja_template.render(
         business=business,
-        filing=(filing.json)['filing'][filing_type],
-        header=(filing.json)['filing']['header'],
+        filing=(filing.json)["filing"][filing_type],
+        header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         filing_type=filing_type
     )
 
     # get recipients
-    recipients = get_recipients(email_msg['option'], filing.filing_json, filing_type=filing_type)
+    recipients = get_recipients(email_msg["option"], filing.filing_json, filing_type=filing_type)
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': 'BC Business Registry Partner Information',
-            'body': f'{html_out}',
-            'attachments': []
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {
+            "subject": "BC Business Registry Partner Information",
+            "body": f"{html_out}",
+            "attachments": []
         }
     }

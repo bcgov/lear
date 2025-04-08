@@ -17,9 +17,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from business_model.models import Filing, UserRoles
 from flask import current_app
 from jinja2 import Template
-from business_model.models import Filing, UserRoles
 
 from business_emailer.email_processors import (
     get_filing_info,
@@ -33,12 +33,12 @@ from business_emailer.services import logger
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
     """Build the email for Special Resolution notification."""
-    logger.debug('special_resolution_notification: %s', email_info)
+    logger.debug("special_resolution_notification: %s", email_info)
     # get template and fill in parts
-    filing_type, status = email_info['type'], email_info['option']
+    filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
-    filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/SR-CP-{status}.html'
@@ -46,17 +46,17 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)['filing'][f'{filing_type}']
-    name_changed = filing.filing_json['filing'].get('changeOfName')
-    rules_changed = bool(filing.filing_json['filing'].get('alteration', {}).get('rulesFileKey'))
+    filing_data = (filing.json)["filing"][f"{filing_type}"]
+    name_changed = filing.filing_json["filing"].get("changeOfName")
+    rules_changed = bool(filing.filing_json["filing"].get("alteration", {}).get("rulesFileKey"))
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
-        header=(filing.json)['filing']['header'],
+        header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-                             (filing.json)['filing']['business'].get('identifier', ''),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") +
+                             (filing.json)["filing"]["business"].get("identifier", ""),
         email_header=filing_name.upper(),
         filing_type=filing_type,
         name_changed=name_changed,
@@ -70,35 +70,35 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         pdfs = get_completed_pdfs(token, business, filing, name_changed, rules_changed)
 
     # get recipients
-    identifier = filing.filing_json['filing']['business']['identifier']
+    identifier = filing.filing_json["filing"]["business"]["identifier"]
     recipients = []
     recipients.append(get_recipient_from_auth(identifier, token))
 
     if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
         # when staff file a dissolution documentOptionalEmail may contain completing party email
-        recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
+        recipients.append(filing.filing_json["filing"]["header"].get("documentOptionalEmail"))
     else:
         recipients.append(get_user_email_from_auth(filing.filing_submitter.username, token))
 
     recipients = list(set(recipients))
-    recipients = ', '.join(filter(None, recipients)).strip()
+    recipients = ", ".join(filter(None, recipients)).strip()
 
     # assign subject
-    subject = ''
+    subject = ""
     if status == Filing.Status.PAID.value:
-        subject = 'Confirmation of Special Resolution from the Business Registry'
+        subject = "Confirmation of Special Resolution from the Business Registry"
     elif status == Filing.Status.COMPLETED.value:
-        subject = 'Special Resolution Documents from the Business Registry'
+        subject = "Special Resolution Documents from the Business Registry"
 
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - {subject}' if legal_name else subject
+    legal_name = business.get("legalName", None)
+    subject = f"{legal_name} - {subject}" if legal_name else subject
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': pdfs
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {
+            "subject": subject,
+            "body": f"{html_out}",
+            "attachments": pdfs
         }
     }

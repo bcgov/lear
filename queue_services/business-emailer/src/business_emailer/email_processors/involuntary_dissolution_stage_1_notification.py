@@ -20,13 +20,12 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
+from business_model.models import Business, Furnishing
 from flask import current_app
 from jinja2 import Template
-from business_model.models import Business, Furnishing
 
 from business_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
 from business_emailer.services import logger
-
 
 PROCESSABLE_FURNISHING_NAMES = [
     Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR.name,
@@ -38,16 +37,16 @@ PROCESSABLE_FURNISHING_NAMES = [
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Involuntary dissolution notification."""
-    logger.debug('involuntary_dissolution_stage_1_notification: %s', email_info)
+    logger.debug("involuntary_dissolution_stage_1_notification: %s", email_info)
     # get business
-    furnishing_id = email_info['data']['furnishing']['furnishingId']
+    furnishing_id = email_info["data"]["furnishing"]["furnishingId"]
     furnishing = Furnishing.find_by_id(furnishing_id)
     business = furnishing.business
     business_identifier = business.identifier
     # get template
     template = Path(
         f'{current_app.config.get("TEMPLATE_PATH")}/INVOL-DIS-STAGE-1.html'
-    ).read_text(encoding='utf-8')
+    ).read_text(encoding="utf-8")
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -72,21 +71,21 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients.append(furnishing.email)  # furnishing email
 
     recipients = list(set(recipients))
-    recipients = ', '.join(filter(None, recipients)).strip()
+    recipients = ", ".join(filter(None, recipients)).strip()
 
     # get attachments
     pdfs = _get_pdfs(token, business, furnishing)
 
     legal_name = business.legal_name
-    subject = f'Attention {business_identifier} - {legal_name}'
+    subject = f"Attention {business_identifier} - {legal_name}"
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': pdfs
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {
+            "subject": subject,
+            "body": f"{html_out}",
+            "attachments": pdfs
         }
     }
 
@@ -95,11 +94,11 @@ def get_extra_provincials(response: dict):
     """Get extra provincials name."""
     extra_provincials = []
     if response:
-        jurisdictions = response.get('jurisdictions', [])
+        jurisdictions = response.get("jurisdictions", [])
         # List of NWPTA jurisdictions
-        nwpta_jurisdictions = ['Alberta', 'British Columbia', 'Manitoba', 'Saskatchewan']
+        nwpta_jurisdictions = ["Alberta", "British Columbia", "Manitoba", "Saskatchewan"]
         for jurisdiction in jurisdictions:
-            name = jurisdiction.get('name')
+            name = jurisdiction.get("name")
             if name and (name in nwpta_jurisdictions):
                 extra_provincials.append(name)
         extra_provincials.sort()
@@ -108,13 +107,13 @@ def get_extra_provincials(response: dict):
 
 def post_process(email_msg: dict, status: str):
     """Update corresponding furnishings entry as PROCESSED or FAILED depending on notification status."""
-    furnishing_id = email_msg['data']['furnishing']['furnishingId']
+    furnishing_id = email_msg["data"]["furnishing"]["furnishingId"]
     furnishing = Furnishing.find_by_id(furnishing_id)
     furnishing.status = status
     furnishing.processed_date = datetime.utcnow()
     furnishing.last_modified = datetime.utcnow()
     if status == Furnishing.FurnishingStatus.FAILED:
-        furnishing.notes = 'Failure to send email'
+        furnishing.notes = "Failure to send email"
     furnishing.save()
 
 
@@ -128,8 +127,8 @@ def _get_pdfs(
     if furnishing.furnishing_name.name not in PROCESSABLE_FURNISHING_NAMES:
         return []
     headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
+        "Accept": "application/pdf",
+        "Authorization": f"Bearer {token}"
     }
 
     furnishing_pdf = requests.get(
@@ -139,21 +138,21 @@ def _get_pdfs(
     )
 
     if furnishing_pdf.status_code != HTTPStatus.OK:
-        logger.error('Failed to get pdf for furnishing: %s', furnishing.id)
+        logger.error("Failed to get pdf for furnishing: %s", furnishing.id)
         return []
 
     if furnishing.furnishing_name in \
         [Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO,
          Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR_XPRO]:
-        filename = 'Notice of Commencement of Cancellation.pdf'
+        filename = "Notice of Commencement of Cancellation.pdf"
     else:
-        filename = 'Notice of Commencement of Dissolution.pdf'
+        filename = "Notice of Commencement of Dissolution.pdf"
 
     furnishing_pdf_encoded = base64.b64encode(furnishing_pdf.content)
 
     return [{
-        'fileName': filename,
-        'fileBytes': furnishing_pdf_encoded.decode('utf-8'),
-        'fileUrl': '',
-        'attachOrder': '1'
+        "fileName": filename,
+        "fileBytes": furnishing_pdf_encoded.decode("utf-8"),
+        "fileUrl": "",
+        "attachOrder": "1"
     }]
