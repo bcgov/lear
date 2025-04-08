@@ -14,13 +14,13 @@
 """Exceptions defined for the Queue Service."""
 
 
-class QueueException(Exception):
+class QueueException(Exception): # noqa: N818
     """Base exception for the Queue Services."""
 
 
-class FilingException(Exception):
+class FilingException(Exception): # noqa: N818
     """No filing found to match queue payload."""
 
 
-class EmailException(Exception):
+class EmailException(Exception): # noqa: N818
     """No email processor to match queue payload."""

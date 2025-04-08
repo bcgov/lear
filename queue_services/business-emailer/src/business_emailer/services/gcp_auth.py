@@ -62,4 +62,4 @@ def verify_gcp_jwt(flask_request):
     except Exception as err:
         msg = f"Invalid token: {err}\n"
     finally:
-        return msg
+        return msg # we want to silence exception # noqa: B012

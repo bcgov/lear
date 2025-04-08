@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """This provides the service for namex-api calls."""
+import http
 from datetime import datetime
 from enum import Enum
 
@@ -92,7 +93,7 @@ class NameXService:
             "Content-Type": "application/x-www-form-urlencoded"}, data={"grant_type": "client_credentials"})
 
         # Return the auth response if an error occurs
-        if auth.status_code != 200:
+        if auth.status_code != http.HTTPStatus.OK.value:
             return auth.json()
 
         token = dict(auth.json())["access_token"]

@@ -21,7 +21,6 @@ import base64
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Tuple
 
 import requests
 from business_model.models import Business, Filing
