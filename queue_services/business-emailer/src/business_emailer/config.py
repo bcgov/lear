@@ -104,45 +104,6 @@ class Config:  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
-    TRACKER_DB_USER = os.getenv('TRACKER_DATABASE_USERNAME', '')
-    TRACKER_DB_PASSWORD = os.getenv('TRACKER_DATABASE_PASSWORD', '')
-    TRACKER_DB_NAME = os.getenv('TRACKER_DATABASE_NAME', '')
-    TRACKER_DB_HOST = os.getenv('TRACKER_DATABASE_HOST', '')
-    TRACKER_DB_PORT = os.getenv('TRACKER_DATABASE_PORT', '5432')
-    TRACKER_SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=TRACKER_DB_USER,
-        password=TRACKER_DB_PASSWORD,
-        host=TRACKER_DB_HOST,
-        port=int(TRACKER_DB_PORT),
-        name=TRACKER_DB_NAME,
-    )
-
-    SQLALCHEMY_BINDS = {
-        'tracker': TRACKER_SQLALCHEMY_DATABASE_URI
-    }
-
-    NATS_CONNECTION_OPTIONS = {
-        'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
-        'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.worker')
-
-    }
-    STAN_CONNECTION_OPTIONS = {
-        'cluster_id': os.getenv('NATS_CLUSTER_ID', 'test-cluster'),
-        'client_id': str(random.SystemRandom().getrandbits(0x58)),
-        'ping_interval': 1,
-        'ping_max_out': 5,
-    }
-
-    SUBSCRIPTION_OPTIONS = {
-        'subject': os.getenv('NATS_EMAILER_SUBJECT', 'error'),
-        'queue': os.getenv('NATS_QUEUE', 'error'),
-        'durable_name': os.getenv('NATS_QUEUE', 'error') + '_durable',
-    }
-
-    ENTITY_EVENT_PUBLISH_OPTIONS = {
-        'subject': os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events'),
-    }
-
     NAME_REQUEST_URL = os.getenv('NAME_REQUEST_URL', '')
     DECIDE_BUSINESS_URL = os.getenv('DECIDE_BUSINESS_URL', '')
     COLIN_URL = os.getenv('COLIN_URL', '')
@@ -181,23 +142,6 @@ class TestConfig(Config):  # pylint: disable=too-few-public-methods
         port=int(DB_PORT),
         name=DB_NAME,
     )
-
-    TRACKER_DB_USER = os.getenv('TRACKER_DATABASE_TEST_USERNAME', '')
-    TRACKER_DB_PASSWORD = os.getenv('TRACKER_DATABASE_TEST_PASSWORD', '')
-    TRACKER_DB_NAME = os.getenv('TRACKER_DATABASE_TEST_NAME', '')
-    TRACKER_DB_HOST = os.getenv('TRACKER_DATABASE_TEST_HOST', '')
-    TRACKER_DB_PORT = os.getenv('TRACKER_DATABASE_TEST_PORT', '5432')
-    TRACKER_SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=TRACKER_DB_USER,
-        password=TRACKER_DB_PASSWORD,
-        host=TRACKER_DB_HOST,
-        port=int(TRACKER_DB_PORT),
-        name=TRACKER_DB_NAME,
-    )
-
-    SQLALCHEMY_BINDS = {
-        'tracker': TRACKER_SQLALCHEMY_DATABASE_URI
-    }
 
 
 class ProdConfig(Config):  # pylint: disable=too-few-public-methods

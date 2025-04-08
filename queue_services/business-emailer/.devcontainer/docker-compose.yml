@@ -40,12 +40,5 @@ services:
     # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
 
-  nats:
-    image: nats-streaming
-    restart: always
-    labels:
-      - entity.services=nats
-    tty: true
-
 volumes:
   postgres-data: null

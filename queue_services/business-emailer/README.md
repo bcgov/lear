@@ -4,10 +4,10 @@
 
 # Application Name
 
-BC Registries Names Entity Filer Service
+BC Registries Names Business Filer Service
 
 ## Technology Stack Used
-* NATS-streaming
+* poetry
 * Python, Flask
 * Postgres -  SQLAlchemy, psycopg2-binary & alembic
 
