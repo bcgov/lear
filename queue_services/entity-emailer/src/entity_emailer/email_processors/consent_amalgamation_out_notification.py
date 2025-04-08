@@ -49,7 +49,7 @@ def _get_pdfs(
     }
 
     # add filing PDF
-    filing_pdf_type = 'consentOfAmalgamationOut'
+    filing_pdf_type = 'consentAmalgamationOut'
     filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
     if filing_pdf_encoded:
         pdfs.append(
@@ -63,7 +63,7 @@ def _get_pdfs(
         attach_order += 1
 
     # add Letter of Consent pdf
-    filing_pdf_type = 'letterOfConsent'
+    filing_pdf_type = 'letterOfConsentAmalgamationOut'
     filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
     if filing_pdf_encoded:
         pdfs.append(
