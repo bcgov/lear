@@ -38,8 +38,8 @@ If the Filing is not a FED, then it places a processing message on the Filer Q
 """
 from flask import Flask
 
-from .ops import bp as ops_endpoint
 from .business_emailer import bp as business_emailer_endpoint
+from .ops import bp as ops_endpoint
 
 
 def register_endpoints(app: Flask):

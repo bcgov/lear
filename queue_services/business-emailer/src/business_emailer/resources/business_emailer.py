@@ -35,16 +35,14 @@
 """This Module processes simple cloud event messages for the emailer.
 """
 import json
-import requests
 from http import HTTPStatus
 
+import requests
 from business_account.AccountService import AccountService
-from flask import Blueprint, current_app, request
-from business_emailer.services import logger
-from simple_cloudevent import SimpleCloudEvent
 from business_model.models import Filing, Furnishing
+from flask import Blueprint, current_app, request
+from simple_cloudevent import SimpleCloudEvent
 
-from business_emailer.services import gcp_queue
 from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
@@ -70,8 +68,7 @@ from business_emailer.email_processors import (
     special_resolution_notification,
 )
 from business_emailer.exceptions import EmailException, QueueException
-from business_emailer.services import verify_gcp_jwt
-from business_emailer.services import flags
+from business_emailer.services import flags, gcp_queue, logger, verify_gcp_jwt
 
 bp = Blueprint("worker", __name__)
 
@@ -90,32 +87,32 @@ async def worker():
             logger.info(msg)
             return {}, HTTPStatus.FORBIDDEN
 
-        logger.info(f"Incoming raw msg: {str(request.data)}")
+        logger.info(f"Incoming raw msg: {request.data!s}")
 
         # 1. Get cloud event
         if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)) and not isinstance(ce, SimpleCloudEvent):
             # todo: verify this ? this is how it is done in other GCP pub sub consumers
             # Decision here is to return a 200,
             # so the event is removed from the Queue
-            logger.debug(f"ignoring message, raw payload: {str(ce)}")
+            logger.debug(f"ignoring message, raw payload: {ce!s}")
             return {}, HTTPStatus.OK
 
-        logger.info(f"received ce: {str(ce)}")
+        logger.info(f"received ce: {ce!s}")
 
-        email_msg = json.loads(msg.data.decode('utf-8'))
-        logger.debug('Extracted email msg: %s', email_msg)
+        email_msg = json.loads(msg.data.decode("utf-8"))
+        logger.debug("Extracted email msg: %s", email_msg)
 
         process_email(email_msg)
 
     except QueueException as err:  # noqa B902; pylint: disable=W0703;
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        logger.error('Queue Error: %s', json.dumps(email_msg), exc_info=True)
+        logger.error("Queue Error: %s", json.dumps(email_msg), exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
     except (EmailException, Exception) as err:
         message_id = ce.id if ce else None
-        logger.error('Queue Error - Generic exception: %s \n %s',
-                     f'\n\nMessage with id: {message_id} has been put back on the queue for reprocessing.',
+        logger.error("Queue Error - Generic exception: %s \n %s",
+                     f"\n\nMessage with id: {message_id} has been put back on the queue for reprocessing.",
                      str(err),
                      exc_info=True)
         return {}, HTTPStatus.INTERNAL_SERVER_ERROR
@@ -125,41 +122,41 @@ def send_email(email: dict, token: str):
     """Send the email."""
     # stop processing email when payload is incompleted.
     if not email \
-        or 'recipients' not in email \
-        or 'content' not in email \
-        or 'body' not in email['content']:
-        logger.debug('Send email: email object(s) is empty')
-        raise QueueException('Unsuccessful sending email - required email object(s) is empty.')
+        or "recipients" not in email \
+        or "content" not in email \
+        or "body" not in email["content"]:
+        logger.debug("Send email: email object(s) is empty")
+        raise QueueException("Unsuccessful sending email - required email object(s) is empty.")
 
-    if not email['recipients'] \
-        or not email['content'] \
-        or not email['content']['body']:
-        logger.debug('Send email: email object(s) is missing')
-        raise QueueException('Unsuccessful sending email - required email object(s) is missing. ')
+    if not email["recipients"] \
+        or not email["content"] \
+        or not email["content"]["body"]:
+        logger.debug("Send email: email object(s) is missing")
+        raise QueueException("Unsuccessful sending email - required email object(s) is missing. ")
 
     try:
         resp = requests.post(
-            f'{current_app.config.NOTIFY_API_URL}',
+            f"{current_app.config.NOTIFY_API_URL}",
             json=email,
             headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {token}'
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}"
             }
         )
         if resp.status_code != HTTPStatus.OK:
             raise EmailException
-    except Exception:  # noqa B902; pylint: disable=W0703; we don't want to fail out the email, so ignore all.
+    except Exception:
         # this should log the error and put the email msg back on the queue
-        raise EmailException('Unsuccessful response when sending email.')
+        raise EmailException("Unsuccessful response when sending email.")
 
 
 def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-many-statements
     """Process the email contained in the submission."""
-    logger.debug('Attempting to process email: %s', email_msg)
+    logger.debug("Attempting to process email: %s", email_msg)
     token = AccountService.get_bearer_token()
-    etype = email_msg.get('type', None)
-    if etype and etype == 'bc.registry.names.request':
-        option = email_msg.get('data', {}).get('request', {}).get('option', None)
+    etype = email_msg.get("type")
+    if etype and etype == "bc.registry.names.request":
+        option = email_msg.get("data", {}).get("request", {}).get("option", None)
         if option and option in [nr_notification.Option.BEFORE_EXPIRY.value,
                                  nr_notification.Option.EXPIRED.value,
                                  nr_notification.Option.RENEWAL.value,
@@ -170,15 +167,15 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
         else:
             email = name_request.process(email_msg)
         send_email(email, token)
-    elif etype and etype == 'bc.registry.affiliation':
+    elif etype and etype == "bc.registry.affiliation":
         email = affiliation_notification.process(email_msg, token)
         send_email(email, token)
-    elif etype and etype == 'bc.registry.bnmove':
+    elif etype and etype == "bc.registry.bnmove":
         email = bn_notification.process_bn_move(email_msg, token)
         send_email(email, token)
-    elif etype and etype == 'bc.registry.dissolution':
+    elif etype and etype == "bc.registry.dissolution":
         # Confirm the data.furnishingName
-        furnishing_name = email_msg.get('data', {}).get('furnishing', {}).get('furnishingName', None)
+        furnishing_name = email_msg.get("data", {}).get("furnishing", {}).get("furnishingName", None)
         if furnishing_name \
             and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
             email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
@@ -187,79 +184,79 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
                 # Update corresponding furnishings entry as PROCESSED
                 involuntary_dissolution_stage_1_notification.post_process(email_msg,
                                                                           Furnishing.FurnishingStatus.PROCESSED)
-            except Exception as _:  # noqa B902; pylint: disable=W0703
+            except Exception as _:
                 # Update corresponding furnishings entry as FAILED
                 involuntary_dissolution_stage_1_notification.post_process(email_msg,
                                                                           Furnishing.FurnishingStatus.FAILED)
                 raise
         else:
-            logger.debug('Furnishing name is not valid. Skipping processing of email_msg: %s', email_msg)
+            logger.debug("Furnishing name is not valid. Skipping processing of email_msg: %s", email_msg)
     else:
-        etype = email_msg['email']['type']
-        option = email_msg['email']['option']
-        if etype == 'businessNumber':
-            email = bn_notification.process(email_msg['email'])
+        etype = email_msg["email"]["type"]
+        option = email_msg["email"]["option"]
+        if etype == "businessNumber":
+            email = bn_notification.process(email_msg["email"])
             send_email(email, token)
-        elif etype in ['amalgamationApplication',
-                       'continuationIn',
-                       'incorporationApplication'] and option == 'mras':
-            email = mras_notification.process(email_msg['email'])
+        elif etype in ["amalgamationApplication",
+                       "continuationIn",
+                       "incorporationApplication"] and option == "mras":
+            email = mras_notification.process(email_msg["email"])
             send_email(email, token)
-        elif etype == 'annualReport' and option == 'reminder':
-            flag_on = flags.is_on('disable-specific-service-provider')
-            email = ar_reminder_notification.process(email_msg['email'], token, flag_on)
+        elif etype == "annualReport" and option == "reminder":
+            flag_on = flags.is_on("disable-specific-service-provider")
+            email = ar_reminder_notification.process(email_msg["email"], token, flag_on)
             send_email(email, token)
-        elif etype == 'agmLocationChange' and option == Filing.Status.COMPLETED.value:
-            email = agm_location_change_notification.process(email_msg['email'], token)
+        elif etype == "agmLocationChange" and option == Filing.Status.COMPLETED.value:
+            email = agm_location_change_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'agmExtension' and option == Filing.Status.COMPLETED.value:
-            email = agm_extension_notification.process(email_msg['email'], token)
+        elif etype == "agmExtension" and option == Filing.Status.COMPLETED.value:
+            email = agm_extension_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'dissolution':
-            email = dissolution_notification.process(email_msg['email'], token)
+        elif etype == "dissolution":
+            email = dissolution_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'registration':
-            email = registration_notification.process(email_msg['email'], token)
+        elif etype == "registration":
+            email = registration_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'restoration':
-            email_object = restoration_notification.process(email_msg['email'], token)
+        elif etype == "restoration":
+            email_object = restoration_notification.process(email_msg["email"], token)
             send_email(email_object, token)
-        elif etype == 'changeOfRegistration':
-            email = change_of_registration_notification.process(email_msg['email'], token)
+        elif etype == "changeOfRegistration":
+            email = change_of_registration_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'correction':
-            email = correction_notification.process(email_msg['email'], token)
+        elif etype == "correction":
+            email = correction_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'consentContinuationOut':
-            email = consent_continuation_out_notification.process(email_msg['email'], token)
+        elif etype == "consentContinuationOut":
+            email = consent_continuation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'continuationOut':
-            email = continuation_out_notification.process(email_msg['email'], token)
+        elif etype == "continuationOut":
+            email = continuation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'specialResolution':
-            email = special_resolution_notification.process(email_msg['email'], token)
+        elif etype == "specialResolution":
+            email = special_resolution_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'amalgamationApplication':
-            email = amalgamation_notification.process(email_msg['email'], token)
+        elif etype == "amalgamationApplication":
+            email = amalgamation_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'continuationIn':
-            email = continuation_in_notification.process(email_msg['email'], token)
+        elif etype == "continuationIn":
+            email = continuation_in_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'noticeOfWithdrawal' and option == Filing.Status.COMPLETED.value:
-            email = notice_of_withdrawal_notification.process(email_msg['email'], token)
+        elif etype == "noticeOfWithdrawal" and option == Filing.Status.COMPLETED.value:
+            email = notice_of_withdrawal_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == 'ceaseReceiver' and option == Filing.Status.COMPLETED.value:
-            email = cease_receiver_notification.process(email_msg['email'], token)
+        elif etype == "ceaseReceiver" and option == Filing.Status.COMPLETED.value:
+            email = cease_receiver_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
-            if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:
-                logger.debug('No email to send for: %s', email_msg)
+            if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
+                logger.debug("No email to send for: %s", email_msg)
             else:
-                email = filing_notification.process(email_msg['email'], token)
+                email = filing_notification.process(email_msg["email"], token)
                 if email:
                     send_email(email, token)
                 else:
                     # should only be if this was for a coops filing
-                    logger.debug('No email to send for: %s', email_msg)
+                    logger.debug("No email to send for: %s", email_msg)
         else:
-            logger.debug('No email to send for: %s', email_msg)
+            logger.debug("No email to send for: %s", email_msg)

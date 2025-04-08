@@ -16,8 +16,8 @@ import base64
 from http import HTTPStatus
 
 import requests
-from flask import current_app
 from business_model.models import Business, Filing
+from flask import current_app
 
 from business_emailer.email_processors import get_filing_document
 from business_emailer.services import logger
@@ -37,64 +37,64 @@ def get_completed_pdfs(
     attach_order = 1
 
     # specialResolution
-    special_resolution_pdf_type = 'specialResolution'
-    special_resolution_encoded = get_filing_document(business['identifier'], filing.id,
+    special_resolution_pdf_type = "specialResolution"
+    special_resolution_encoded = get_filing_document(business["identifier"], filing.id,
                                                      special_resolution_pdf_type, token)
     if special_resolution_encoded:
         pdfs.append(
             {
-                'fileName': 'Special Resolution.pdf',
-                'fileBytes': special_resolution_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': str(attach_order)
+                "fileName": "Special Resolution.pdf",
+                "fileBytes": special_resolution_encoded.decode("utf-8"),
+                "fileUrl": "",
+                "attachOrder": str(attach_order)
             }
         )
         attach_order += 1
 
     # Change of Name
     if name_changed:
-        certified_name_change_pdf_type = 'certificateOfNameChange'
-        certified_name_change_encoded = get_filing_document(business['identifier'], filing.id,
+        certified_name_change_pdf_type = "certificateOfNameChange"
+        certified_name_change_encoded = get_filing_document(business["identifier"], filing.id,
                                                             certified_name_change_pdf_type, token)
 
         if certified_name_change_encoded:
             pdfs.append(
                 {
-                    'fileName': 'Certificate of Name Change.pdf',
-                    'fileBytes': certified_name_change_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': str(attach_order)
+                    "fileName": "Certificate of Name Change.pdf",
+                    "fileBytes": certified_name_change_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": str(attach_order)
                 }
             )
             attach_order += 1
 
     # Certified Rules
     if rules_changed:
-        rules_pdf_type = 'certifiedRules'
-        certified_rules_encoded = get_filing_document(business['identifier'], filing.id, rules_pdf_type, token)
+        rules_pdf_type = "certifiedRules"
+        certified_rules_encoded = get_filing_document(business["identifier"], filing.id, rules_pdf_type, token)
         if certified_rules_encoded:
             pdfs.append(
                 {
-                    'fileName': 'Certified Rules.pdf',
-                    'fileBytes': certified_rules_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': str(attach_order)
+                    "fileName": "Certified Rules.pdf",
+                    "fileBytes": certified_rules_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": str(attach_order)
                 }
             )
             attach_order += 1
 
     # Certified Memorandum
     if memorandum_changed:
-        certified_memorandum_pdf_type = 'certifiedMemorandum'
-        certified_memorandum_encoded = get_filing_document(business['identifier'], filing.id,
+        certified_memorandum_pdf_type = "certifiedMemorandum"
+        certified_memorandum_encoded = get_filing_document(business["identifier"], filing.id,
                                                            certified_memorandum_pdf_type, token)
         if certified_memorandum_encoded:
             pdfs.append(
                 {
-                    'fileName': 'Certified Memorandum.pdf',
-                    'fileBytes': certified_memorandum_encoded.decode('utf-8'),
-                    'fileUrl': '',
-                    'attachOrder': str(attach_order)
+                    "fileName": "Certified Memorandum.pdf",
+                    "fileBytes": certified_memorandum_encoded.decode("utf-8"),
+                    "fileUrl": "",
+                    "attachOrder": str(attach_order)
                 }
             )
             attach_order += 1
@@ -113,49 +113,49 @@ def get_paid_pdfs(
     pdfs = []
     attach_order = 1
     headers = {
-        'Accept': 'application/pdf',
-        'Authorization': f'Bearer {token}'
+        "Accept": "application/pdf",
+        "Authorization": f"Bearer {token}"
     }
 
     # add filing pdf
-    sr_filing_pdf_type = 'specialResolutionApplication'
-    sr_filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, sr_filing_pdf_type, token)
+    sr_filing_pdf_type = "specialResolutionApplication"
+    sr_filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, sr_filing_pdf_type, token)
     if sr_filing_pdf_encoded:
         pdfs.append(
             {
-                'fileName': 'Special Resolution Application.pdf',
-                'fileBytes': sr_filing_pdf_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': str(attach_order)
+                "fileName": "Special Resolution Application.pdf",
+                "fileBytes": sr_filing_pdf_encoded.decode("utf-8"),
+                "fileUrl": "",
+                "attachOrder": str(attach_order)
             }
         )
         attach_order += 1
 
-    legal_name = business.get('legalName')
+    legal_name = business.get("legalName")
     origin_business = Business.find_by_internal_id(filing.business_id)
 
     sr_receipt = requests.post(
         f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
         json={
-            'corpName': legal_name,
-            'filingDateTime': filing_date_time,
-            'effectiveDateTime': effective_date if effective_date != filing_date_time else '',
-            'filingIdentifier': str(filing.id),
-            'businessNumber': origin_business.tax_id if origin_business and origin_business.tax_id else ''
+            "corpName": legal_name,
+            "filingDateTime": filing_date_time,
+            "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
+            "filingIdentifier": str(filing.id),
+            "businessNumber": origin_business.tax_id if origin_business and origin_business.tax_id else ""
         },
         headers=headers
     )
 
     if sr_receipt.status_code != HTTPStatus.CREATED:
-        logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+        logger.error("Failed to get receipt pdf for filing: %s", filing.id)
     else:
         receipt_encoded = base64.b64encode(sr_receipt.content)
         pdfs.append(
             {
-                'fileName': 'Receipt.pdf',
-                'fileBytes': receipt_encoded.decode('utf-8'),
-                'fileUrl': '',
-                'attachOrder': str(attach_order)
+                "fileName": "Receipt.pdf",
+                "fileBytes": receipt_encoded.decode("utf-8"),
+                "fileUrl": "",
+                "attachOrder": str(attach_order)
             }
         )
         attach_order += 1

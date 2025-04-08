@@ -16,24 +16,23 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from business_model.models import Business, CorpType
 from flask import current_app
 from jinja2 import Template
-from business_model.models import Business, CorpType
 
 from business_emailer.email_processors import get_recipient_from_auth, substitute_template_parts
 from business_emailer.services import logger
 
 
-
 def process(email_msg: dict, token: str, flag_on: bool) -> dict:
     """Build the email for annual report reminder notification."""
-    logger.debug('ar_reminder_notification: %s', email_msg)
-    ar_fee = email_msg['arFee']
-    ar_year = email_msg['arYear']
+    logger.debug("ar_reminder_notification: %s", email_msg)
+    ar_fee = email_msg["arFee"]
+    ar_year = email_msg["arYear"]
     # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AR-REMINDER.html').read_text()
     filled_template = substitute_template_parts(template)
-    business = Business.find_by_internal_id(email_msg['businessId'])
+    business = Business.find_by_internal_id(email_msg["businessId"])
     corp_type = CorpType.find_by_id(business.legal_type)
 
     # render template with vars
@@ -43,20 +42,20 @@ def process(email_msg: dict, token: str, flag_on: bool) -> dict:
         ar_fee=ar_fee,
         ar_year=ar_year,
         entity_type=corp_type.full_desc,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') + business.identifier,
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.identifier,
         disable_specific_service_provider=flag_on
     )
 
     # get recipients
     recipients = get_recipient_from_auth(business.identifier, token)
-    subject = f'{business.legal_name} {ar_year} Annual Report Reminder'
+    subject = f"{business.legal_name} {ar_year} Annual Report Reminder"
 
     return {
-        'recipients': recipients,
-        'requestBy': 'BCRegistries@gov.bc.ca',
-        'content': {
-            'subject': subject,
-            'body': f'{html_out}',
-            'attachments': []
+        "recipients": recipients,
+        "requestBy": "BCRegistries@gov.bc.ca",
+        "content": {
+            "subject": subject,
+            "body": f"{html_out}",
+            "attachments": []
         }
     }
