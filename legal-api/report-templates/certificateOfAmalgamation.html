@@ -8,7 +8,7 @@
         <meta name="author" content="BC Registries and Online Services">
         [[common/certificateStyle.html]]
     </head>
-    <body>
+    <body class="{% if enable_sandbox %} watermark-bg {% else %} default-bg {% endif %}">
         <div class="outer-container">
             <div class="outer-container-header">
                 <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
