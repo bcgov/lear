@@ -98,7 +98,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             VersionedBusinessDetailsService.get_contact_point_revision(filing)
         ia_json['incorporationApplication']['shareStructure'] = {}
         ia_json['incorporationApplication']['shareStructure']['shareClasses'] = \
-            VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business.id)
+            VersionedBusinessDetailsService.get_share_class_revision(filing, business.id)
         ia_json['incorporationApplication']['nameTranslations'] = \
             VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business.id)
         ia_json['incorporationApplication']['incorporationAgreement'] = \
@@ -201,7 +201,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         company_profile_json['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing_id, filing.transaction_id, business_id)
         company_profile_json['shareClasses'] = \
-            VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, business_id)
+            VersionedBusinessDetailsService.get_share_class_revision(filing, business_id)
         company_profile_json['nameTranslations'] = \
             VersionedBusinessDetailsService.get_name_translations_revision(filing.transaction_id, business_id)
         company_profile_json['resolutions'] = \
@@ -389,43 +389,129 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return parties
 
     @staticmethod
-    def get_share_class_revision(transaction_id, business_id) -> dict:
+    def get_share_class_revision(filing: Filing, business_id) -> dict:
         """Consolidates all share classes upto the given transaction id."""
-        share_class_version = VersioningProxy.version_class(db.session(), ShareClass)
-        share_classes_list = db.session.query(share_class_version) \
-            .filter(share_class_version.transaction_id <= transaction_id) \
-            .filter(share_class_version.operation_type != 2) \
-            .filter(share_class_version.business_id == business_id) \
-            .filter(or_(share_class_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        share_class_version.end_transaction_id > transaction_id)) \
-            .order_by(share_class_version.transaction_id).all()
+        # Check if original tombstone share class is overwritten by alteration filed in LEAR
+        # values: [1]True, [2]False, [3]None for non-tombstone or alteration doesn't exist
+        is_after_tombstone = Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id)
+        overwritten_filing = Filing.get_first_filing_after_tombstone_by_type(business_id, 'alteration')
+        is_overwritten = bool(overwritten_filing.transaction_id > filing.transaction_id) if overwritten_filing else None
+
         share_classes = []
-        for share_class in share_classes_list:
-            share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
-            share_class_json['series'] = VersionedBusinessDetailsService.get_share_series_revision(transaction_id,
-                                                                                                   share_class.id)
-            share_class_json['type'] = 'Class'
-            share_class_json['id'] = str(share_class_json['id'])
-            share_classes.append(share_class_json)
+        share_class_version = VersioningProxy.version_class(db.session(), ShareClass)
+        # Get share class data from deleted versions if tombstone share class is deleted by alteration
+        if is_after_tombstone and is_overwritten:
+            # TODO: Get correct revision if it's updated by correction after current filing and before alteration
+            deleted_share_classes_list = db.session.query(share_class_version) \
+                .filter(share_class_version.transaction_id == overwritten_filing.transaction_id) \
+                .filter(share_class_version.operation_type == 2) \
+                .filter(share_class_version.business_id == business_id).all()
+            for share_class in deleted_share_classes_list:
+                share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
+                share_class_json['series'] = \
+                    VersionedBusinessDetailsService.get_share_series_revision(filing,
+                                                                              share_class.id,
+                                                                              business_id)
+                share_class_json['type'] = 'Class'
+                share_class_json['id'] = str(share_class_json['id'])
+                share_classes.append(share_class_json)
+        else:
+            versioned_share_classes_list = db.session.query(share_class_version) \
+                .filter(share_class_version.transaction_id <= filing.transaction_id) \
+                .filter(share_class_version.operation_type != 2) \
+                .filter(share_class_version.business_id == business_id) \
+                .filter(or_(share_class_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                            share_class_version.end_transaction_id > filing.transaction_id)) \
+                .order_by(share_class_version.transaction_id).all()
+
+            versioned_share_classes_ids = set()
+            for share_class in versioned_share_classes_list:
+                versioned_share_classes_ids.add(share_class.id)
+                share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
+                share_class_json['series'] = \
+                    VersionedBusinessDetailsService.get_share_series_revision(filing,
+                                                                              share_class.id,
+                                                                              business_id)
+                share_class_json['type'] = 'Class'
+                share_class_json['id'] = str(share_class_json['id'])
+                share_classes.append(share_class_json)
+
+            # Get current share class data not found in versioning if tombstone share class isn't deleted by alteration
+            if is_after_tombstone and is_overwritten is None:
+                current_share_classes_list = db.session.query(ShareClass) \
+                    .filter(
+                        ShareClass.business_id == business_id,
+                        ShareClass.id.notin_(versioned_share_classes_ids) if versioned_share_classes_ids else True
+                    ).all()
+                for share_class in current_share_classes_list:
+                    share_class_json = VersionedBusinessDetailsService.share_class_revision_json(share_class)
+                    share_class_json['series'] = \
+                        VersionedBusinessDetailsService.get_share_series_revision(filing,
+                                                                                  share_class.id,
+                                                                                  business_id)
+                    share_class_json['type'] = 'Class'
+                    share_class_json['id'] = str(share_class_json['id'])
+                    share_classes.append(share_class_json)
+
+        share_classes.sort(key=lambda x: x['priority'])
+
         return share_classes
 
     @staticmethod
-    def get_share_series_revision(transaction_id, share_class_id) -> dict:
+    def get_share_series_revision(filing: Filing, share_class_id, business_id) -> dict:
         """Consolidates all share series under the share class upto the given transaction id."""
+        # Check if original tombstone share series is overwritten by alteration filed in LEAR
+        # values: [1]True, [2]False, [3]None for non-tombstone or alteration doesn't exist
+        is_after_tombstone = Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id)
+        overwritten_filing = Filing.get_first_filing_after_tombstone_by_type(business_id, 'alteration')
+        is_overwritten = bool(overwritten_filing.transaction_id > filing.transaction_id) if overwritten_filing else None
+
         share_series_version = VersioningProxy.version_class(db.session(), ShareSeries)
-        share_series_list = db.session.query(share_series_version) \
-            .filter(share_series_version.transaction_id <= transaction_id) \
-            .filter(share_series_version.operation_type != 2) \
-            .filter(share_series_version.share_class_id == share_class_id) \
-            .filter(or_(share_series_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        share_series_version.end_transaction_id > transaction_id)) \
-            .order_by(share_series_version.transaction_id).all()
         share_series_arr = []
-        for share_series in share_series_list:
-            share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
-            share_series_json['type'] = 'Series'
-            share_series_json['id'] = str(share_series_json['id'])
-            share_series_arr.append(share_series_json)
+        # Get share series data from deleted versions if tombstone share series is deleted by alteration
+        if is_after_tombstone and is_overwritten:
+            # TODO: Get correct revision if it's updated by correction after current filing and before alteration
+            deleted_share_series_list = db.session.query(share_series_version) \
+                .filter(share_series_version.transaction_id == overwritten_filing.transaction_id) \
+                .filter(share_series_version.operation_type == 2) \
+                .filter(share_series_version.share_class_id == share_class_id).all()
+            for share_series in deleted_share_series_list:
+                share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
+                share_series_json['type'] = 'Series'
+                share_series_json['id'] = str(share_series_json['id'])
+                share_series_arr.append(share_series_json)
+        else:
+            versioned_share_series_list = db.session.query(share_series_version) \
+                .filter(share_series_version.transaction_id <= filing.transaction_id) \
+                .filter(share_series_version.operation_type != 2) \
+                .filter(share_series_version.share_class_id == share_class_id) \
+                .filter(or_(share_series_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
+                            share_series_version.end_transaction_id > filing.transaction_id)) \
+                .order_by(share_series_version.transaction_id).all()
+
+            versioned_share_series_ids = set()
+            for share_series in versioned_share_series_list:
+                versioned_share_series_ids.add(share_series.id)
+                share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
+                share_series_json['type'] = 'Series'
+                share_series_json['id'] = str(share_series_json['id'])
+                share_series_arr.append(share_series_json)
+
+            # Get current share series not found in versioning if tombstone share series isn't deleted by alteration
+            if is_after_tombstone and is_overwritten is None:
+                current_share_series_list = db.session.query(ShareSeries) \
+                    .filter(
+                        ShareSeries.share_class_id == share_class_id,
+                        ShareSeries.id.notin_(versioned_share_series_ids) if versioned_share_series_ids else True
+                    ).all()
+                for share_series in current_share_series_list:
+                    share_series_json = VersionedBusinessDetailsService.share_series_revision_json(share_series)
+                    share_series_json['type'] = 'Series'
+                    share_series_json['id'] = str(share_series_json['id'])
+                    share_series_arr.append(share_series_json)
+
+        share_series_arr.sort(key=lambda x: x['priority'])
+
         return share_series_arr
 
     @staticmethod

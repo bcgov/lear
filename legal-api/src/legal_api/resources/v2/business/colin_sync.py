@@ -225,7 +225,7 @@ def has_share_changed(filing: Filing) -> bool:
     if db.session.query(share_class_query).scalar():
         return True
 
-    share_classes = VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, filing.business_id)
+    share_classes = VersionedBusinessDetailsService.get_share_class_revision(filing, filing.business_id)
     series_version = VersioningProxy.version_class(db.session(), ShareSeries)
     share_series_query = (db.session.query(series_version)
                           .filter(or_(series_version.transaction_id == filing.transaction_id,
@@ -254,7 +254,7 @@ def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
 
     _set_parties(primary_or_holding_business, filing, amalgamation_filing)
     _set_offices(primary_or_holding_business, amalgamation_filing, filing.id, filing.transaction_id)
-    _set_shares(primary_or_holding_business, amalgamation_filing, filing.transaction_id)
+    _set_shares(primary_or_holding_business, amalgamation_filing, filing)
 
 
 def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
@@ -287,10 +287,10 @@ def _set_offices(primary_or_holding_business, amalgamation_filing, filing_id, tr
                                                                                          primary_or_holding_business.id)
 
 
-def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id):
+def _set_shares(primary_or_holding_business, amalgamation_filing, filing: Filing):
     """Set shares from holding/primary business."""
     # Copy shares
-    share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
+    share_classes = VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id,
                                                                              primary_or_holding_business.id)
     amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
 
@@ -298,12 +298,14 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     resolution_version = VersioningProxy.version_class(db.session(), Resolution)
     resolutions_query = (
         db.session.query(resolution_version.resolution_date)
-        .filter(resolution_version.transaction_id <= transaction_id)  # Get records valid at or before the transaction
+        .filter(
+            resolution_version.transaction_id <= filing.transaction_id
+        )  # Get records valid at or before the transaction
         .filter(resolution_version.operation_type != 2)  # Exclude deleted records
         .filter(resolution_version.business_id == primary_or_holding_business.id)
         .filter(or_(
             resolution_version.end_transaction_id.is_(None),  # Records not yet ended
-            resolution_version.end_transaction_id > transaction_id  # Records ended after our transaction
+            resolution_version.end_transaction_id > filing.transaction_id  # Records ended after our transaction
         ))
         .order_by(resolution_version.transaction_id)
         .all()

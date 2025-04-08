@@ -863,7 +863,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         share_classes = []
         if self._filing.transaction_id:
             share_classes = VersionedBusinessDetailsService.get_share_class_revision(
-                self._filing.transaction_id,
+                self._filing,
                 primary_or_holding_business.id)
         else:
             for share_class in primary_or_holding_business.share_classes.all():
@@ -1201,7 +1201,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['newShareClasses'] = []
         if filing.get('shareClasses'):
             prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(
-                prev_completed_filing.transaction_id,
+                prev_completed_filing,
                 prev_completed_filing.business_id)
             prev_share_class_ids = [x['id'] for x in prev_share_class_json]
 
@@ -1229,8 +1229,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_share_series_data(self, share_class, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
         if share_class.get('series'):
             prev_share_series_json = VersionedBusinessDetailsService.get_share_series_revision(
-                prev_completed_filing.transaction_id,
-                share_class.get('id'))
+                prev_completed_filing,
+                share_class.get('id'),
+                self._business.id)
             prev_share_series_ids = [x['id'] for x in prev_share_series_json]
             share_series_to_edit = []
             for share_series in share_class.get('series'):

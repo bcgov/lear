@@ -1252,6 +1252,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing_exists
 
     @staticmethod
+    def get_tombstone_filing(business_id: int):
+        """Return the tombstone filing for a given business if any."""
+        return (
+            db.session.query(Filing)
+            .filter(Filing.business_id == business_id)
+            .filter(Filing._status == Filing.Status.TOMBSTONE)
+            .one_or_none()
+        )
+
+    @staticmethod
     def is_filing_after_tombstone(filing_id: int, business_id: int) -> bool:
         """Determine if a filing with the given filing_id's transaction ID was after TOMBSTONE filing's transaction ID.
 
@@ -1264,10 +1274,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                   If no TOMBSTONE filing exists, returns False.
         """
         # Get the TOMBSTONE filing
-        tombstone_filing = db.session.query(Filing).\
-            filter(Filing.business_id == business_id).\
-            filter(Filing._status == Filing.Status.TOMBSTONE).\
-            one_or_none()
+        tombstone_filing = Filing.get_tombstone_filing(business_id)
 
         if not tombstone_filing or not tombstone_filing.transaction_id:
             # No TOMBSTONE filing or it has no transaction ID
@@ -1282,6 +1289,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         # Compare the transaction IDs
         return filing.transaction_id > tombstone_filing.transaction_id
+
+    @staticmethod
+    def get_first_filing_after_tombstone_by_type(business_id: int, filing_type: str):
+        """Return the first complete filing of a given filing_type after the tombstone filing."""
+        tombstone_filing = Filing.get_tombstone_filing(business_id)
+
+        if not tombstone_filing or not tombstone_filing.transaction_id:
+            return None
+
+        filing = db.session.query(Filing) \
+            .filter(Filing._filing_type == filing_type) \
+            .filter(Filing.business_id == business_id) \
+            .filter(Filing._status == Filing.Status.COMPLETED.value) \
+            .filter(Filing._source == Filing.Source.LEAR.value) \
+            .filter(Filing.transaction_id > tombstone_filing.transaction_id) \
+            .order_by(Filing.transaction_id).first()
+        return filing
 
     @staticmethod
     def get_filings_sub_type(filing_type: str, filing_json: dict):
