@@ -1,0 +1,43 @@
+name: Business Emailer CI
+
+on:
+  pull_request:
+    types: [ assigned, synchronize ]
+    paths:
+      - "queue_services/business-emailer/**"
+  workflow_dispatch:
+    inputs:
+      app_name:
+        required: true
+        type: string
+        default: "business-emailer-queue-service"
+      working_directory:
+        type: string
+        default: ".queue_services/business-emailer"
+      codecov_flag:
+        type: string
+      skip_isort:
+        type: string
+        default: "false"
+      skip_black:
+        type: string
+        default: "false"
+
+jobs:
+  setup:
+    # Only allow run the CD flow in protected branch
+    if: github.ref_protected == true
+
+    runs-on: ubuntu-24.04
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      # Checkout code
+      - name: CI
+        uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+        with:
+          app_name: ${{ inputs.app_name }}
+          working_directory: ${{ inputs.working_directory }}
