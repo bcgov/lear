@@ -236,7 +236,7 @@ def test_alteration_name_change(session):
 
     # new legal_name can be retrieved from the business (numbered company case)
     business_new = Business.find_by_internal_id(business.id)
-    assert business_new['legalName'] == numbered_company_name
+    assert business_new.legal_name == numbered_company_name
     numbered_company_report = create_alteration_report(numbered_company_filing, business, report_type)
     numbered_company_filename = numbered_company_report._get_report_filename()
     assert numbered_company_filename
