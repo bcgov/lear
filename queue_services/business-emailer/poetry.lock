@@ -254,8 +254,11 @@ registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev =
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
-type = "directory"
-url = "../../python/common/business-registry-model"
+type = "git"
+url = "https://github.com/bcgov/lear.git"
+reference = "HEAD"
+resolved_reference = "e68c75717ea48a7819d490c720d873cc0cbfc30e"
+subdirectory = "python/common/business-registry-model"
 
 [[package]]
 name = "business-registry-account"
@@ -3851,4 +3854,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "bb18a117719e0b51d70ad06a9017c1ea504c63bda855c64b990e8f98cd3f73c7"
+content-hash = "9473b9432e1b308e037be987171380337d2b6981626b2aca6c189091736f571b"
