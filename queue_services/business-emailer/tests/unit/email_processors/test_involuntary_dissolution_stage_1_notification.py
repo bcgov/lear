@@ -19,7 +19,7 @@ import pytest
 import requests
 from business_model.models import Furnishing
 
-from entity_emailer.email_processors import involuntary_dissolution_stage_1_notification
+from business_emailer.email_processors import involuntary_dissolution_stage_1_notification
 from tests.unit import create_business, create_furnishing  # noqa: I003
 
 

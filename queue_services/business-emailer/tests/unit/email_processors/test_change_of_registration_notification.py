@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 from business_model.models import Business
 
-from entity_emailer.email_processors import change_of_registration_notification
+from business_emailer.email_processors import change_of_registration_notification
 from tests.unit import prep_change_of_registration_filing
 
 
@@ -48,7 +48,7 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
     token = 'token'
     # test processor
     mocker.patch(
-        'entity_emailer.email_processors.change_of_registration_notification.get_user_email_from_auth',
+        'business_emailer.email_processors.change_of_registration_notification.get_user_email_from_auth',
         return_value='user@email.com')
     with patch.object(change_of_registration_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = change_of_registration_notification.process(

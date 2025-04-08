@@ -19,7 +19,7 @@ from typing import Final, MutableMapping, Optional
 
 from business_model.models import Business
 from business_model.models import Filing as FilingStorage
-from entity_emailer.services.versioned_business_details import VersionedBusinessDetailsService as VersionService
+from business_emailer.services.versioned_business_details import VersionedBusinessDetailsService as VersionService
 
 
 class AutoName(str, Enum):

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Email processing rules and actions for Amalgamation notifications."""
+"""Email processing rules and actions for Continuation In notifications."""
 from __future__ import annotations
 
 import base64
@@ -19,31 +19,32 @@ import re
 from http import HTTPStatus
 from pathlib import Path
 
+import pycountry
 import requests
 from flask import current_app
 from jinja2 import Template
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
-from entity_emailer.services import logger
+from business_model.models import Business, Filing, ReviewResult
 
-from entity_emailer.email_processors import (
+from business_emailer.email_processors import (
     get_entity_dashboard_url,
     get_filing_document,
     get_filing_info,
     get_recipients,
     substitute_template_parts,
 )
+from business_emailer.services import logger
 
 
 def _get_pdfs(
-        status: str,
-        token: str,
-        business: dict,
-        filing: Filing,
-        filing_date_time: str,
-        effective_date: str,
-        amalgamation_application_name: str) -> list:
+    status: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str
+) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
-    """Get the outputs for the amalgamation notification."""
+    """Get the outputs for the Continuation In notification."""
     pdfs = []
     attach_order = 1
     headers = {
@@ -53,12 +54,12 @@ def _get_pdfs(
 
     if status == Filing.Status.PAID.value:
         # add filing pdf
-        filing_pdf_type = 'amalgamationApplication'
+        filing_pdf_type = 'continuationIn'
         filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
         if filing_pdf_encoded:
             pdfs.append(
                 {
-                    'fileName': f'{amalgamation_application_name}.pdf',
+                    'fileName': 'Continuation Application - Pending.pdf',
                     'fileBytes': filing_pdf_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': str(attach_order)
@@ -95,20 +96,37 @@ def _get_pdfs(
                 }
             )
             attach_order += 1
+
+    elif status == 'RESUBMITTED':
+        # add filing pdf
+        filing_pdf_type = 'continuationIn'
+        filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
+        if filing_pdf_encoded:
+            pdfs.append(
+                {
+                    'fileName': 'Continuation Application - Resubmitted.pdf',
+                    'fileBytes': filing_pdf_encoded.decode('utf-8'),
+                    'fileUrl': '',
+                    'attachOrder': str(attach_order)
+                }
+            )
+            attach_order += 1
+
     elif status == Filing.Status.COMPLETED.value:
-        # add certificate of amalgamation
-        certificate_pdf_type = 'certificateOfAmalgamation'
+        # add certificate of continuation
+        certificate_pdf_type = 'certificateOfContinuation'
         certificate_encoded = get_filing_document(business['identifier'], filing.id, certificate_pdf_type, token)
         if certificate_encoded:
             pdfs.append(
                 {
-                    'fileName': 'Certificate Of Amalgamation.pdf',
+                    'fileName': 'Certificate of Continuation.pdf',
                     'fileBytes': certificate_encoded.decode('utf-8'),
                     'fileUrl': '',
                     'attachOrder': str(attach_order)
                 }
             )
             attach_order += 1
+
         # add notice of articles
         noa_pdf_type = 'noticeOfArticles'
         noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
@@ -122,19 +140,17 @@ def _get_pdfs(
                 }
             )
             attach_order += 1
+
     return pdfs
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
-    """Build the email for Amalgamation notification."""
+    """Build the email for Continuation notification."""
     logger.debug('filing_notification: %s', email_info)
-    amalgamation_application_names = {
-        Amalgamation.AmalgamationTypes.regular.name: 'Amalgamation Application (Regular)',
-        Amalgamation.AmalgamationTypes.vertical.name: 'Amalgamation Application Short-form (Vertical)',
-        Amalgamation.AmalgamationTypes.horizontal.name: 'Amalgamation Application Short-form (Horizontal)'
-    }
-    # get template and fill in parts
+
+    # get template vars from email info
     filing_type, status = email_info['type'], email_info['option']
+
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
@@ -142,24 +158,28 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if status == Filing.Status.PAID.value:
         business = filing_data['nameRequest']
         business['identifier'] = filing.temp_reg
-
-        if filing.filing_sub_type in [Amalgamation.AmalgamationTypes.vertical.name,
-                                      Amalgamation.AmalgamationTypes.horizontal.name]:
-            amalgamating_business = next(x for x in filing_data.get('amalgamatingBusinesses')
-                                         if x['role'] in [AmalgamatingBusiness.Role.holding.name,
-                                                          AmalgamatingBusiness.Role.primary.name])
-            primary_or_holding_business = Business.find_by_identifier(amalgamating_business['identifier'])
-            business['legalName'] = primary_or_holding_business.legal_name
-
-    amalgamation_application_name = amalgamation_application_names[filing.filing_sub_type]
-
-    template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/AMALGA-{status}.html').read_text()
-    filled_template = substitute_template_parts(template)
-    # render template with vars
     legal_type = business.get('legalType')
     numbered_description = Business.BUSINESSES.get(legal_type, {}).get('numberedDescription')
+    review_result = ReviewResult.get_last_review_result(filing.id)
+    # encode newlines in review comment only
+    latest_review_comment = review_result.comments.replace('\n', '\\n') if review_result else None
+
+    # compute Foreign Jurisdiction string as in report.py and business_document.py
+    country_code = filing_data['foreignJurisdiction']['country']
+    region_code = filing_data['foreignJurisdiction']['region']
+    country = pycountry.countries.get(alpha_2=country_code)
+    region = None
+    if region_code and region_code.upper() != 'FEDERAL':
+        region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+    foreign_jurisdiction = f'{region.name}, {country.name}' if region else country.name
+
+    # get template and fill in parts
+    template = (Path(f'{current_app.config.get("TEMPLATE_PATH")}/CONT-IN-{status}.html')
+                .read_text(encoding='utf-8'))
+    filled_template = substitute_template_parts(template)
     jnja_template = Template(filled_template, autoescape=True)
 
+    # render template with vars
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
@@ -171,8 +191,12 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         email_header=filing_name.upper(),
         filing_type=filing_type,
         numbered_description=numbered_description,
-        amalgamation_application_name=amalgamation_application_name
+        foreign_jurisdiction=foreign_jurisdiction,
+        latest_review_comment=latest_review_comment
     )
+
+    # decode newlines to <br> for html output
+    html_out = html_out.replace('\\n', '<br>')
 
     # get attachments
     pdfs = _get_pdfs(status,
@@ -180,8 +204,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
                      business,
                      filing,
                      leg_tmz_filing_date,
-                     leg_tmz_effective_date,
-                     amalgamation_application_name)
+                     leg_tmz_effective_date)
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token, filing_type)
@@ -190,11 +213,22 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # assign subject
     legal_name = business.get('legalName', None)
-    if status == Filing.Status.PAID.value:
-        subject_prefix = f'{legal_name} - ' if legal_name else ''
-        subject = f'{subject_prefix}Amalgamation'
+    if status == Filing.Status.APPROVED.value:
+        subject = 'Authorization Approved'
+    if status == Filing.Status.REJECTED.value:
+        subject = 'Authorization Rejected'
+    elif status == Filing.Status.AWAITING_REVIEW.value:
+        subject = 'Authorization Documents Received'
+    elif status == Filing.Status.CHANGE_REQUESTED.value:
+        subject = 'Changes Needed to Authorization'
+    elif status == 'RESUBMITTED':
+        subject = 'Authorization Updates Received'
     elif status == Filing.Status.COMPLETED.value:
-        subject = f'{legal_name} - Confirmation of Amalgamation'
+        subject = 'Successful Continuation into B.C.'
+    elif status == Filing.Status.PAID.value:
+        subject = 'Continuation Application Received'
+
+    subject = f'{legal_name} - {subject}' if legal_name else subject
 
     return {
         'recipients': recipients,

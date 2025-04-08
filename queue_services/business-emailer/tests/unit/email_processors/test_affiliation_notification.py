@@ -14,7 +14,7 @@
 """The Unit Tests for the Affiliation email processor."""
 from unittest.mock import patch
 
-from entity_emailer.email_processors import affiliation_notification
+from business_emailer.email_processors import affiliation_notification
 from tests.unit import prep_alteration_filing
 
 

@@ -25,7 +25,7 @@ import sqlalchemy
 from flask import Flask
 from flask_jwt_oidc import JwtManager
 from flask_migrate import Migrate, upgrade
-from entity_emailer.config import get_named_config  # noqa: I001
+from business_emailer.config import get_named_config  # noqa: I001
 from business_model.models.db import db as _db
 from sqlalchemy import event, text
 

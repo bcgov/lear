@@ -24,8 +24,8 @@ from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, Furnishing
 
-from entity_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
-from entity_emailer.services import logger
+from business_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
+from business_emailer.services import logger
 
 
 PROCESSABLE_FURNISHING_NAMES = [

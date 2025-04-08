@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 from business_model.models import Business
 
-from entity_emailer.email_processors import continuation_out_notification
+from business_emailer.email_processors import continuation_out_notification
 from tests.unit import prep_continuation_out_filing
 
 

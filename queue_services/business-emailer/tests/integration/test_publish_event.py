@@ -26,7 +26,7 @@ async def test_publish_event(app, session, stan_server, event_loop, client_id, e
     # Call back for the subscription
     from entity_queue_common.service import ServiceWorker
 
-    from entity_emailer.worker import APP_CONFIG, publish_event, qsm
+    from business_emailer.worker import APP_CONFIG, publish_event, qsm
 
     # email handler callback
     msgs = []

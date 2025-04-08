@@ -19,7 +19,7 @@ from unittest.mock import patch
 import pytest
 import requests_mock
 
-from entity_emailer.email_processors import restoration_notification
+from business_emailer.email_processors import restoration_notification
 from tests.unit import prep_restoration_filing
 
 

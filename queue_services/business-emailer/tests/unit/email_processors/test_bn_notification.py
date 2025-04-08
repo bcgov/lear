@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 from business_model.models import Business
 
-from entity_emailer.email_processors import bn_notification
+from business_emailer.email_processors import bn_notification
 from tests.unit import (
     prep_amalgamation_filing,
     prep_continuation_in_filing,
