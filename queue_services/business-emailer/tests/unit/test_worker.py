@@ -17,11 +17,11 @@ from unittest.mock import patch
 
 import pytest
 from business_model.models import Business, Furnishing
-from entity_emailer.services.namex import NameXService
+from business_emailer.services.namex import NameXService
 from business_account.AccountService import AccountService
 from business_model.utils.legislation_datetime import LegislationDatetime
 
-from entity_emailer.email_processors import (
+from business_emailer.email_processors import (
     ar_reminder_notification,
     correction_notification,
     filing_notification,
@@ -29,8 +29,8 @@ from entity_emailer.email_processors import (
     nr_notification,
     special_resolution_notification,
 )
-from entity_emailer.exceptions import EmailException, QueueException
-from entity_emailer.resources import business_emailer as worker
+from business_emailer.exceptions import EmailException, QueueException
+from business_emailer.resources import business_emailer as worker
 
 from tests import MockResponse
 from tests.unit import (
@@ -53,7 +53,7 @@ def test_process_incorp_email(app, session, mocker, option):
     token = '1'
     # test worker
     mocker.patch(
-        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
         return_value='https://dummyurl.gov.bc.ca')
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
@@ -483,10 +483,10 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
     furnishing = create_furnishing(session, business=business)
 
     mocker.patch(
-        'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification.get_jurisdictions',
+        'business_emailer.email_processors.involuntary_dissolution_stage_1_notification.get_jurisdictions',
         return_value=[])
     mocker.patch(
-        'entity_emailer.email_processors.involuntary_dissolution_stage_1_notification._get_pdfs',
+        'business_emailer.email_processors.involuntary_dissolution_stage_1_notification._get_pdfs',
         return_value=[]
     )
 

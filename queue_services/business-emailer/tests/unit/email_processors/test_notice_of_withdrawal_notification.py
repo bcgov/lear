@@ -25,7 +25,7 @@ from registry_schemas.example_data import (
     INCORPORATION,
 )
 
-from entity_emailer.email_processors import notice_of_withdrawal_notification
+from business_emailer.email_processors import notice_of_withdrawal_notification
 from helpers import generate_temp_filing
 from tests.unit import create_business, create_future_effective_filing, prep_notice_of_withdraw_filing
 

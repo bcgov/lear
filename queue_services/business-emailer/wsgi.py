@@ -35,7 +35,7 @@
 """
 import os
 
-from entity_emailer import create_app
+from business_emailer import create_app
 
 app = create_app()
 

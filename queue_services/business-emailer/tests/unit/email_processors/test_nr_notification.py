@@ -16,10 +16,10 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
-from entity_emailer.services.namex import NameXService
+from business_emailer.services.namex import NameXService
 from business_model.utils.legislation_datetime import LegislationDatetime
 
-from entity_emailer.email_processors import nr_notification
+from business_emailer.email_processors import nr_notification
 from tests import MockResponse
 
 

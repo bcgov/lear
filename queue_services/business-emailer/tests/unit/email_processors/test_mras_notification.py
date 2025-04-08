@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the mras email processor."""
-from entity_emailer.email_processors import mras_notification
+from business_emailer.email_processors import mras_notification
 from tests.unit import prep_amalgamation_filing, prep_continuation_in_filing, prep_incorp_filing
 
 

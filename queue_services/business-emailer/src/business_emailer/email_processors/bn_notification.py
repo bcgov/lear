@@ -19,9 +19,9 @@ from pathlib import Path
 from flask import current_app
 from jinja2 import Template
 from business_model.models import Business, CorpType, Filing, PartyRole
-from entity_emailer.services import logger
+from business_emailer.services import logger
 
-from entity_emailer.email_processors import get_recipient_from_auth, get_recipients, substitute_template_parts
+from business_emailer.email_processors import get_recipient_from_auth, get_recipients, substitute_template_parts
 
 
 

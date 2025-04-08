@@ -27,7 +27,7 @@ import requests
 from flask import current_app
 from business_model.models import Business, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
-from entity_emailer.services import logger
+from business_emailer.services import logger
 
 
 def get_filing_info(filing_id: str) -> Tuple[Filing, dict, dict, str, str]:

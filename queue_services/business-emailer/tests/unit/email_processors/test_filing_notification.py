@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 from business_model.models import Business
 
-from entity_emailer.email_processors import filing_notification
+from business_emailer.email_processors import filing_notification
 from tests.unit import prep_incorp_filing, prep_maintenance_filing
 
 
@@ -32,7 +32,7 @@ def test_incorp_notification(app, session, mocker, status):
     token = 'token'
     # test processor
     mocker.patch(
-        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
         return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         email = filing_notification.process(
@@ -70,7 +70,7 @@ def test_numbered_incorp_notification(app, session, mocker, legal_type):
     token = 'token'
     # test processor
     mocker.patch(
-        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
         return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]):
         email = filing_notification.process(
@@ -97,10 +97,10 @@ def test_maintenance_notification(app, session, mocker, status, filing_type, sub
     token = 'token'
     # test processor
     mocker.patch(
-        'entity_emailer.email_processors.filing_notification.get_user_email_from_auth',
+        'business_emailer.email_processors.filing_notification.get_user_email_from_auth',
         return_value='user@email.com')
     mocker.patch(
-        'entity_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
         return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
         with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \

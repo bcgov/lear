@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 from business_model.models import Business
 
-from entity_emailer.email_processors import ar_reminder_notification
+from business_emailer.email_processors import ar_reminder_notification
 from tests.unit import prep_incorp_filing
 
 

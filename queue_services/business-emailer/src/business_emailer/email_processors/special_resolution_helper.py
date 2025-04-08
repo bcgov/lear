@@ -19,8 +19,8 @@ import requests
 from flask import current_app
 from business_model.models import Business, Filing
 
-from entity_emailer.email_processors import get_filing_document
-from entity_emailer.services import logger
+from business_emailer.email_processors import get_filing_document
+from business_emailer.services import logger
 
 
 def get_completed_pdfs(

@@ -19,7 +19,7 @@ import pytest
 import requests_mock
 from business_model.models import Business
 
-from entity_emailer.email_processors import correction_notification
+from business_emailer.email_processors import correction_notification
 from tests.unit import (
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,

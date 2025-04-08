@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Email processing rules and actions for AGM Extension notifications."""
+"""Email processing rules and actions for CCO notifications."""
 from __future__ import annotations
 
 import base64
@@ -22,15 +22,15 @@ from pathlib import Path
 import requests
 from flask import current_app
 from jinja2 import Template
-from business_model.models import Business, Filing
+from business_model.models import Business, Filing, UserRoles
 
-from entity_emailer.email_processors import (
+from business_emailer.email_processors import (
     get_filing_document,
     get_filing_info,
     get_recipient_from_auth,
     substitute_template_parts,
 )
-from entity_emailer.services import logger
+from business_emailer.services import logger
 
 
 def _get_pdfs(
@@ -41,7 +41,7 @@ def _get_pdfs(
     effective_date: str
 ) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
-    """Get the pdfs for the AGM Extension output."""
+    """Get the pdfs for the Consent Continuation Out output."""
     pdfs = []
     attach_order = 1
     headers = {
@@ -50,12 +50,12 @@ def _get_pdfs(
     }
 
     # add filing pdf
-    filing_pdf_type = 'letterOfAgmExtension'
+    filing_pdf_type = 'letterOfConsent'
     filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
     if filing_pdf_encoded:
         pdfs.append(
             {
-                'fileName': 'Letter of AGM Extension Approval.pdf',
+                'fileName': 'Letter of Consent.pdf',
                 'fileBytes': filing_pdf_encoded.decode('utf-8'),
                 'fileUrl': '',
                 'attachOrder': str(attach_order)
@@ -95,8 +95,8 @@ def _get_pdfs(
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
-    """Build the email for AGM Extension notification."""
-    logger.debug('agm_extension_notification: %s', email_info)
+    """Build the email for Consent Continuation Out notification."""
+    logger.debug('consent_continuation_out_notification: %s', email_info)
     # get template and fill in parts
     filing_type, status = email_info['type'], email_info['option']
     # get template vars from filing
@@ -104,8 +104,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing_name = filing.filing_type[0].upper() + ' '.join(re.findall('[a-zA-Z][^A-Z]*', filing.filing_type[1:]))
 
     template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/AGM-EXT-{status}.html'
-    ).read_text(encoding='utf-8')
+        f'{current_app.config.get("TEMPLATE_PATH")}/CCO-{status}.html'
+    ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -130,14 +130,17 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients = []
     recipients.append(get_recipient_from_auth(identifier, token))
 
+    if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
+        # when staff file a CCO documentOptionalEmail may contain completing party email
+        recipients.append(filing.filing_json['filing']['header'].get('documentOptionalEmail'))
+
     recipients = list(set(recipients))
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject
-    subject = 'AGM Extension Documents from the Business Registry'
+    subject = 'Confirmation of Filing from the Business Registry'
 
     legal_name = business.get('legalName', None)
-    legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
     subject = f'{legal_name} - {subject}' if legal_name else subject
 
     return {

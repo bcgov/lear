@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 from business_model.models import Business
 
-from entity_emailer.email_processors import agm_location_change_notification
+from business_emailer.email_processors import agm_location_change_notification
 from tests.unit import prep_agm_location_change_filing
 
 

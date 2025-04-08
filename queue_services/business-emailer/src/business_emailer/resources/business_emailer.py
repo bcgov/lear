@@ -40,12 +40,12 @@ from http import HTTPStatus
 
 from business_account.AccountService import AccountService
 from flask import Blueprint, current_app, request
-from entity_emailer.services import logger
+from business_emailer.services import logger
 from simple_cloudevent import SimpleCloudEvent
 from business_model.models import Filing, Furnishing
 
-from entity_emailer.services import gcp_queue
-from entity_emailer.email_processors import (
+from business_emailer.services import gcp_queue
+from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
     agm_location_change_notification,
@@ -69,9 +69,9 @@ from entity_emailer.email_processors import (
     restoration_notification,
     special_resolution_notification,
 )
-from entity_emailer.exceptions import EmailException, QueueException
-from entity_emailer.services import verify_gcp_jwt
-from entity_emailer.services import flags
+from business_emailer.exceptions import EmailException, QueueException
+from business_emailer.services import verify_gcp_jwt
+from business_emailer.services import flags
 
 bp = Blueprint("worker", __name__)
 

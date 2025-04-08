@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 from flask import Blueprint
-from entity_emailer.services import logger
+from business_emailer.services import logger
 
 
 
