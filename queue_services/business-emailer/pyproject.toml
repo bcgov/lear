@@ -188,6 +188,7 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"] # used for imports
+"src/Business_emailer/services/versioned_business_details.py" = ["F401"] #
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

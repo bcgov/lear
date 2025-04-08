@@ -40,6 +40,7 @@ def _get_pdfs(
     filing_date_time: str,
     effective_date: str
 ) -> list:
+    # ruff: noqa: PLR0913
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the AGM Location Change output."""
     pdfs = []

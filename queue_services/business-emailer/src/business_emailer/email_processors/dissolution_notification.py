@@ -159,7 +159,7 @@ def _get_pdfs(
     return pdfs
 
 
-def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
+def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches, # noqa: PLR0912
     """Build the email for Dissolution notification."""
     logger.debug("dissolution_notification: %s", email_info)
     # get template and fill in parts

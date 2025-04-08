@@ -80,7 +80,6 @@ async def worker():
     """Use endpoint to process Queue Msg objects."""
     try:
         if not request.data:
-            # logger(request, "INFO", f"No incoming raw msg.")
             return {}, HTTPStatus.OK
 
         if msg := verify_gcp_jwt(request):
@@ -104,7 +103,7 @@ async def worker():
 
         process_email(email_msg)
 
-    except QueueException as err:  # noqa B902; pylint: disable=W0703;
+    except QueueException as err:  # noqa B902; pylint: disable=W0703; : # noqa: PGH004
         # Catch Exception so that any error is still caught and the message is removed from the queue
         logger.error("Queue Error: %s", json.dumps(email_msg), exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
@@ -147,10 +146,10 @@ def send_email(email: dict, token: str):
             raise EmailException
     except Exception:
         # this should log the error and put the email msg back on the queue
-        raise EmailException("Unsuccessful response when sending email.")
+        raise EmailException("Unsuccessful response when sending email.") from None
 
 
-def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-many-statements
+def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912, PLR0915
     """Process the email contained in the submission."""
     logger.debug("Attempting to process email: %s", email_msg)
     token = AccountService.get_bearer_token()
