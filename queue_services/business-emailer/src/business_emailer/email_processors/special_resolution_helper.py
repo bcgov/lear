@@ -23,7 +23,7 @@ from business_emailer.email_processors import get_filing_document
 from business_emailer.services import logger
 
 
-def get_completed_pdfs(
+def get_completed_pdfs( # noqa: PLR0913
     token: str,
     business: dict,
     filing: Filing,

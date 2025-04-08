@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """This provides the service for getting business details as of a filing."""
+# ruff: noqa: PLR2004,RUF100
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from datetime import datetime
 
@@ -218,7 +219,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(business_version.transaction_id <= transaction_id) \
             .filter(business_version.operation_type != 2) \
             .filter(business_version.id == business.id) \
-            .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         business_version.end_transaction_id > transaction_id)) \
             .order_by(business_version.transaction_id).one_or_none()
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
@@ -231,7 +232,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(business_version.transaction_id <= transaction_id) \
             .filter(business_version.operation_type != 2) \
             .filter(business_version.id == business_id) \
-            .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         business_version.end_transaction_id > transaction_id)) \
             .order_by(business_version.transaction_id).one_or_none()
         return business_revision
@@ -283,7 +284,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(offices_version.transaction_id <= transaction_id) \
             .filter(offices_version.operation_type != 2) \
             .filter(offices_version.business_id == business_id) \
-            .filter(or_(offices_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(offices_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         offices_version.end_transaction_id > transaction_id)) \
             .order_by(offices_version.transaction_id).all()
 
@@ -298,7 +299,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 .filter(address_version.transaction_id <= transaction_id) \
                 .filter(address_version.operation_type != 2) \
                 .filter(address_version.office_id == office.id) \
-                .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501, PLR2004
+                .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                             address_version.end_transaction_id > transaction_id)) \
                 .order_by(address_version.transaction_id).all()
             for address in addresses_list:
@@ -347,7 +348,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(party_role_version.transaction_id <= transaction_id) \
             .filter(party_role_version.operation_type != 2) \
             .filter(party_role_version.business_id == business_id) \
-            .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(role == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > transaction_id)) \
@@ -394,7 +395,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(share_class_version.transaction_id <= transaction_id) \
             .filter(share_class_version.operation_type != 2) \
             .filter(share_class_version.business_id == business_id) \
-            .filter(or_(share_class_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(share_class_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         share_class_version.end_transaction_id > transaction_id)) \
             .order_by(share_class_version.transaction_id).all()
         share_classes = []
@@ -435,7 +436,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(name_translations_version.operation_type != 2) \
             .filter(name_translations_version.business_id == business_id) \
             .filter(name_translations_version.type == "TRANSLATION") \
-            .filter(or_(name_translations_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(name_translations_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         name_translations_version.end_transaction_id > transaction_id)) \
             .order_by(name_translations_version.transaction_id).all()
         name_translations_arr = []
@@ -469,7 +470,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(resolution_version.operation_type != 2) \
             .filter(resolution_version.business_id == business_id) \
             .filter(resolution_version.resolution_type == "SPECIAL") \
-            .filter(or_(resolution_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(resolution_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         resolution_version.end_transaction_id > transaction_id)) \
             .order_by(resolution_version.transaction_id).all()
         resolutions_arr = []
@@ -516,7 +517,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(party_version.transaction_id <= transaction_id) \
             .filter(party_version.operation_type != 2) \
             .filter(party_version.id == party_id) \
-            .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501,PLR2004
+            .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         party_version.end_transaction_id > transaction_id)) \
             .order_by(party_version.transaction_id).one_or_none()
         return party
@@ -608,7 +609,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(address_version.transaction_id <= transaction_id) \
             .filter(address_version.operation_type != 2) \
             .filter(address_version.id == address_id) \
-            .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501, PLR2004
+            .filter(or_(address_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501
                         address_version.end_transaction_id > transaction_id)) \
             .order_by(address_version.transaction_id).one_or_none()
         return address

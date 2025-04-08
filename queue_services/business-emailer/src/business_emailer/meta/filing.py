@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Meta Filing support for the core domain used by the application."""
+from __future__ import annotations
+
 import re
 from collections.abc import MutableMapping
 from contextlib import suppress
@@ -789,12 +791,11 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 (display_name := filing.meta_data.get("colinDisplayName")):
             return display_name
         # if there is no lookup
-        if not (names := FILINGS.get(filing.filing_type, {}).get("displayName")):
-            if not (filing.filing_sub_type and
-                    (names := FILINGS.get(filing.filing_type, {}).get(filing.filing_sub_type, {}).get("displayName"))):
-                return " ".join(word.capitalize()
-                                for word in
-                                re.sub(r"([A-Z])", r":\1", filing.filing_type).split(":"))
+        if not (names := FILINGS.get(filing.filing_type, {}).get("displayName")) and not (
+            filing.filing_sub_type
+            and (FILINGS.get(filing.filing_type, {}).get(filing.filing_sub_type, {}).get("displayName"))
+        ):
+            return " ".join(word.capitalize() for word in re.sub(r"([A-Z])", r":\1", filing.filing_type).split(":"))
 
         business_revision = business
         # retrieve business revision at time of filing so legal type is correct when returned for display name
@@ -819,8 +820,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if dissolution_data and dissolution_data.get("dissolutionType") == "administrative":
                 name = "Administrative Dissolution"
 
-        elif filing.filing_type in ("adminFreeze") and filing.meta_data:
-            if filing.meta_data["adminFreeze"].get("freeze") is False:
+        elif filing.filing_type in ("adminFreeze") and filing.meta_data \
+            and filing.meta_data["adminFreeze"].get("freeze") is False:
                 name = "Admin Unfreeze"
 
         return name

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Email processing rules and actions for Amalgamation notifications."""
+# ruff: noqa: I001
 from __future__ import annotations
 
 import base64
@@ -33,8 +34,7 @@ from business_emailer.email_processors import (
 )
 from business_emailer.services import logger
 
-
-def _get_pdfs(
+def _get_pdfs( # noqa: PLR0913
         status: str,
         token: str,
         business: dict,
