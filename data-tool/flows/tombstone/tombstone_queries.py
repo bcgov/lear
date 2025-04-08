@@ -759,7 +759,7 @@ def get_offices_held_query(corp_num):
              join offices_held oh on oh.corp_party_id = cp.corp_party_id
     WHERE 1 = 1
       and cp.corp_num = '{corp_num}'
-      and cp.end_event_id is null
+      and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null))
       AND cp.party_typ_cd IN ('OFF')
     """
     return query
