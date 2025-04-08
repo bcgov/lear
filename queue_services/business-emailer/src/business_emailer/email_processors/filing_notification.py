@@ -43,7 +43,7 @@ FILING_TYPE_CONVERTER = {
 }
 
 
-def _get_pdfs(
+def _get_pdfs( # noqa: PLR0913,PLR0912,PLR0915
     status: str,
     token: str,
     business: dict,

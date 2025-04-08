@@ -33,7 +33,7 @@ from business_emailer.email_processors import (
 from business_emailer.services import logger
 
 
-def _get_pdfs(
+def _get_pdfs( # noqa: PLR0913
     status: str,
     token: str,
     business: dict,

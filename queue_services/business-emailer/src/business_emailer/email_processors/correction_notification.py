@@ -46,7 +46,7 @@ def _is_special_resolution_correction_by_meta_data(filing):
     return False
 
 
-def _get_pdfs(
+def _get_pdfs( # noqa: PLR0913
     status: str,
     token: str,
     business: dict,
@@ -144,7 +144,7 @@ def _get_pdfs(
     return pdfs
 
 
-def _get_template(prefix: str, status: str, filing_type: str, filing: Filing,  # pylint: disable=too-many-arguments
+def _get_template(prefix: str, status: str, filing_type: str, filing: Filing,  # pylint: disable=too-many-arguments  # noqa: PLR0913
                   business: dict, leg_tmz_filing_date: str, leg_tmz_effective_date: str,
                   name_changed: bool) -> str:
     """Return rendered template."""

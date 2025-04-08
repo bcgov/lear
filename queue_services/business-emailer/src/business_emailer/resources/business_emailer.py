@@ -103,7 +103,8 @@ async def worker():
 
         process_email(email_msg)
 
-    except QueueException as err:  # noqa B902; pylint: disable=W0703; : # noqa: PGH004
+    # ruff: noqa: PGH004
+    except QueueException as err:  # noqa B902; pylint: disable=W0703; :
         # Catch Exception so that any error is still caught and the message is removed from the queue
         logger.error("Queue Error: %s", json.dumps(email_msg), exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
