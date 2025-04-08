@@ -149,6 +149,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
             'common/certificateStyle',
+            'common/certificateWatermark',
             'common/addresses',
             'common/shareStructure',
             'common/correctedOnCertificate',
