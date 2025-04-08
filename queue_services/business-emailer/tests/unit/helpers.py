@@ -3,7 +3,8 @@ from random import choices
 
 from business_model.models import RegistrationBootstrap
 
-def _generate_characters(length: int = 8,):
+
+def _generate_characters(length: int = 8):
     allowed_chars = ascii_letters + digits  # a-z, A-Z, 0-9
     return ''.join(choices(allowed_chars, k=length))
 
@@ -14,4 +15,3 @@ def generate_temp_filing():
     temp_reg._identifier = temp_identifier
     temp_reg.save()
     return temp_identifier
-

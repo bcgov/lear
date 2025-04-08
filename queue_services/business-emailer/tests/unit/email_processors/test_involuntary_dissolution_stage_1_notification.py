@@ -26,6 +26,7 @@ from tests.unit import create_business, create_furnishing  # noqa: I003
 @pytest.mark.parametrize(
         'test_name, legal_type, furnishing_name', [
             ('TEST_BC_NO_AR', 'BC', Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR),
+            # next one is failing, needs more investigation why ??!?
             ('TEST_XPRO_NO_AR', 'A', Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR_XPRO),
             ('TEST_BC_NO_TR', 'BC', Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_TR),
         ]
