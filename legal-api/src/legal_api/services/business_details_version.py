@@ -72,7 +72,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if not revision_json['filing']:
             revision_json = filing.json
             revision_json['filing']['business'] = \
-                VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+                VersionedBusinessDetailsService.get_business_revision(filing, business)
 
         revision_json['filing']['header'] = VersionedBusinessDetailsService.get_header_revision(filing)
 
@@ -84,7 +84,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ia_json = {}
 
         ia_json['business'] = \
-            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+            VersionedBusinessDetailsService.get_business_revision(filing, business)
         ia_json['incorporationApplication'] = {}
         ia_json['incorporationApplication']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.id, filing.transaction_id, business.id)
@@ -124,7 +124,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         cod_json = {}
 
         cod_json['business'] = \
-            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+            VersionedBusinessDetailsService.get_business_revision(filing, business)
         cod_json['changeOfDirectors'] = {}
         cod_json['changeOfDirectors']['directors'] = \
             VersionedBusinessDetailsService.get_party_role_revision(filing,
@@ -137,7 +137,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         coa_json = {}
 
         coa_json['business'] = \
-            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+            VersionedBusinessDetailsService.get_business_revision(filing, business)
         coa_json['changeOfAddress'] = {}
         coa_json['changeOfAddress']['offices'] = \
             VersionedBusinessDetailsService.get_office_revision(filing.id, filing.transaction_id, business.id)
@@ -150,7 +150,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         ar_json = {}
 
         ar_json['business'] = \
-            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+            VersionedBusinessDetailsService.get_business_revision(filing, business)
 
         ar_json['annualReport'] = {}
         if business.last_ar_date:
@@ -195,7 +195,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         business = Business.find_by_internal_id(business_id)
         filing = Filing.find_by_id(filing_id)
         company_profile_json['business'] = \
-            VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+            VersionedBusinessDetailsService.get_business_revision(filing, business)
         company_profile_json['parties'] = \
             VersionedBusinessDetailsService.get_party_role_revision(filing, business_id)
         company_profile_json['offices'] = \
@@ -209,60 +209,57 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return company_profile_json
 
     @staticmethod
-    def get_business_revision(transaction_id, business) -> dict:
+    def get_business_revision(filing, business) -> dict:
         """Consolidates the business info as of a particular transaction."""
         business_version = VersioningProxy.version_class(db.session(), Business)
         business_revision = db.session.query(business_version) \
-            .filter(business_version.transaction_id <= transaction_id) \
+            .filter(business_version.transaction_id <= filing.transaction_id) \
             .filter(business_version.operation_type != 2) \
             .filter(business_version.id == business.id) \
             .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        business_version.end_transaction_id > transaction_id)) \
+                        business_version.end_transaction_id > filing.transaction_id)) \
             .order_by(business_version.transaction_id).one_or_none()
+
+        # Check if this is a tombstone business and if the filing is after the tombstone filing
+        if not business_revision and Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business.id):
+            # current business data if business not found in versioning
+            business_revision = business
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
-    def get_business_revision_obj(transaction_id, business_id):
+    def get_business_revision_obj(filing, business_id):
         """Return business version object associated with a given transaction id for a business."""
         business_version = VersioningProxy.version_class(db.session(), Business)
         business_revision = db.session.query(business_version) \
-            .filter(business_version.transaction_id <= transaction_id) \
+            .filter(business_version.transaction_id <= filing.transaction_id) \
             .filter(business_version.operation_type != 2) \
             .filter(business_version.id == business_id) \
             .filter(or_(business_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
-                        business_version.end_transaction_id > transaction_id)) \
+                        business_version.end_transaction_id > filing.transaction_id)) \
             .order_by(business_version.transaction_id).one_or_none()
+
+        # Check if this is a tombstone business and if the filing is after the tombstone filing
+        if not business_revision and Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id):
+            # current business data if business not found in versioning
+            business_revision = Business.find_by_internal_id(business_id)
         return business_revision
 
     @staticmethod
-    def find_last_value_from_business_revision(transaction_id, business_id,
+    def find_last_value_from_business_revision(filing,
                                                is_dissolution_date=False,
                                                is_restoration_expiry_date=False) -> dict:
         """Get business info with last value of dissolution_date or restoration_expiry_date."""
         business_version = VersioningProxy.version_class(db.session(), Business)
         query = db.session.query(business_version) \
-            .filter(business_version.transaction_id < transaction_id) \
+            .filter(business_version.transaction_id < filing.transaction_id) \
             .filter(business_version.operation_type != 2) \
-            .filter(business_version.id == business_id)
+            .filter(business_version.id == filing.business_id)
         if is_dissolution_date:
             query = query.filter(business_version.dissolution_date != None)  # pylint: disable=singleton-comparison # noqa: E711,E501;
         if is_restoration_expiry_date:
             query = query.filter(business_version.restoration_expiry_date != None)  # pylint: disable=singleton-comparison # noqa: E711,E501;
         business_revision = query.order_by(business_version.transaction_id.desc()).first()
         return business_revision
-
-    @staticmethod
-    def get_business_revision_after_filing(filing_id, business_id) -> dict:
-        """Consolidates the business info as of a particular transaction."""
-        business = Business.find_by_internal_id(business_id)
-        filing = Filing.find_by_id(filing_id)
-        business_version = VersioningProxy.version_class(db.session(), Business)
-        business_revision = db.session.query(business_version) \
-            .filter(business_version.transaction_id > filing.transaction_id) \
-            .filter(business_version.operation_type != 2) \
-            .filter(business_version.id == business.id) \
-            .order_by(business_version.transaction_id).one_or_none()
-        return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
     def get_office_revision(filing_id, transaction_id, business_id) -> dict:

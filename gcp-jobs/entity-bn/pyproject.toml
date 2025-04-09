@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "filings-notebook-report"
+name = "entity-bn"
 version = "0.1.0"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"
-packages = [{include = "notebookreport", from = "src"}]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.13.0"
@@ -12,37 +12,10 @@ jupyter = "^1.1.1"
 SQLAlchemy = "^2.0.40"
 psycopg2-binary = "^2.9.10"
 ipython-sql = "^0.5.0"
-simplejson = "^3.20.1"
-pandas = "^2.2.3"
-matplotlib = "^3.10.1"
-papermill = "^2.6.0"
-schedule = "^1.2.2"
-attrs = "^25.3.0"
-future = "^1.0.0"
-Jinja2 = "^3.1.6"
-python-dateutil = "^2.9.0.post0"
-pytz = "^2025.2"
-importlib-metadata = "^8.6.1"
-jsonschema = "^4.23.0"
-more-itertools = "^10.6.0"
-six = "^1.17.0"
-pyrsistent = "^0.20.0"
-zipp = "^3.21.0"
-Flask = "^3.1.0"
-MarkupSafe = "^3.0.2"
-aws-sam-cli = "^1.135.0"
-Click = "^8.1.8"
 python-dotenv = "^1.1.0"
-requests = "^2.32.3"
-marshmallow = "^3.26.1"
-Werkzeug = "^3.1.3"
-certifi = "^2025.1.31"
-urllib3 = "^2.3.0"
-idna = "^3.10"
+papermill = "^2.6.0"
+Flask = "^3.1.0"
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
-[tool.poetry.group.test.dependencies]
-pytest = "^8.3.5"
-freezegun = "^1.5.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"
@@ -57,17 +30,14 @@ exclude = [
     "migrations",
     "devops",
     ".history",
-    "tests",
-    "daily",
-    "monthly"
 ]
 
 # Same as Black.
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.13
+target-version = "py313"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -133,6 +103,7 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]  # used for imports
+"**/tracker-errors.ipynb" = ["F821"]  # used for imports
 
 [build-system]
 requires = ["poetry-core"]

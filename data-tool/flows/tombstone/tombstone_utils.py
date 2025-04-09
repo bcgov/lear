@@ -908,6 +908,11 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
                 'fromLegalName': old_corp_name,
                 'toLegalName': new_corp_name,
             }
+    elif filing_type == 'correction':
+        if (event_file_type := data['event_file_type']) == 'FILE_CO_LI':
+            meta_data['correction'] = {
+                'commentOnly': True
+            }
     elif filing_type == 'putBackOff':
         if (event_file_type := data['event_file_type']) == 'SYSDL_NULL':
             filing_json['filing']['putBackOff'] = {

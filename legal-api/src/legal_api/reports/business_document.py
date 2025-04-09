@@ -527,7 +527,7 @@ class BusinessDocument:
                         business_legal_name = amalgamating_business.foreign_name or 'Not Available'
                     else:
                         ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
-                            amalgamation_application.transaction_id,
+                            amalgamation_application,
                             amalgamating_business.business_id)
                         identifier = ting_business._identifier  # pylint: disable=protected-access;
                         business_legal_name = ting_business.legal_name
@@ -593,17 +593,17 @@ class BusinessDocument:
 
             # Format Jurisdiction data
             jurisdiction_info = {
-                    'id': jurisdiction.id,
-                    'jurisdiction': location_jurisdiction,
-                    'identifier': jurisdiction.identifier or 'Not Available',
-                    'legal_name': jurisdiction.legal_name or 'Not Available',
-                    'tax_id': jurisdiction.tax_id,
-                    'incorporation_date': formatted_incorporation_date,
-                    'expro_identifier': jurisdiction.expro_identifier or 'Not Available',
-                    'expro_legal_name': jurisdiction.expro_legal_name or 'Not Available',
-                    'business_id': jurisdiction.business_id,
-                    'filing_id': jurisdiction.filing_id,
-                    }
+                'id': jurisdiction.id,
+                'jurisdiction': location_jurisdiction,
+                'identifier': jurisdiction.identifier or 'Not Available',
+                'legal_name': jurisdiction.legal_name or 'Not Available',
+                'tax_id': jurisdiction.tax_id,
+                'incorporation_date': formatted_incorporation_date,
+                'expro_identifier': jurisdiction.expro_identifier or 'Not Available',
+                'expro_legal_name': jurisdiction.expro_legal_name or 'Not Available',
+                'business_id': jurisdiction.business_id,
+                'filing_id': jurisdiction.filing_id,
+            }
 
             continuation_in_info['foreignJurisdiction'] = jurisdiction_info
             business['continuationIn'] = continuation_in_info

@@ -484,7 +484,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _populate_business_info_to_filing(filing: Filing, business: Business):
         founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
         if filing.transaction_id:
-            business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+            business_json = VersionedBusinessDetailsService.get_business_revision(filing, business)
         else:
             business_json = business.json()
             business_json['legalName'] = business.legal_name  # legal name easy fix
@@ -575,15 +575,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['restoration_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_sub_type == 'limitedRestorationToFull':
             business_previous_restoration_expiry = \
-                VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing.transaction_id,
-                                                                                       self._business.id,
+                VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing,
                                                                                        is_restoration_expiry_date=True)
             restoration_expiry_datetime = LegislationDatetime.as_legislation_timezone(
                 business_previous_restoration_expiry.restoration_expiry_date)
             filing['previous_restoration_expiry_date'] = restoration_expiry_datetime.strftime(OUTPUT_DATE_FORMAT)
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+            self._filing, is_dissolution_date=True)
         filing['formatted_dissolution_date'] = \
             LegislationDatetime.format_as_report_string(business_dissolution.dissolution_date)
 
@@ -617,7 +616,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if self._filing.transaction_id:  # available when filing is COMPLETED
             business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-                self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+                self._filing, is_dissolution_date=True)
             filing['dissolutionLegalName'] = business_dissolution.legal_name
         else:
             filing['dissolutionLegalName'] = self._business.legal_name
@@ -806,7 +805,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # when TED is dissolved by staff (with court order) and TING is restored, user can modify TING data
             # which should not be reflected here
             ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
-                self._filing.transaction_id, ting_business.id)
+                self._filing, ting_business.id)
         return ting_business
 
     def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals, too-many-branches
@@ -884,7 +883,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.\
-            get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
+            get_business_revision_obj(prev_completed_filing, self._business.id)
 
         # Change of Name
         prev_legal_name = versioned_business.legal_name
@@ -1085,7 +1084,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_business = VersionedBusinessDetailsService.\
-                get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
+                get_business_revision_obj(prev_completed_filing, self._business.id)
 
             self._format_name_request_data(filing, versioned_business)
             self._format_name_translations_data(filing, prev_completed_filing)

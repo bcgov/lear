@@ -40,7 +40,7 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
-from legal_api.models import db  # noqa:I001
+from legal_api.models import Business, db  # noqa:I001
 from legal_api.models.db import VersioningProxy
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
@@ -234,10 +234,9 @@ def test_alteration_name_change(session):
     numbered_company_filing = filing_numbered_company(business, ALTERATION_FILING_TEMPLATE, numbered_company_name)
     update_business_legal_name(business, numbered_company_name)
 
-    # new legal_name can be retrieved from the versioned business (numbered company case)
-    business_revision = \
-        VersionedBusinessDetailsService.get_business_revision_after_filing(numbered_company_filing.id, business.id)
-    assert business_revision['legalName'] == numbered_company_name
+    # new legal_name can be retrieved from the business (numbered company case)
+    business_new = Business.find_by_internal_id(business.id)
+    assert business_new.legal_name == numbered_company_name
     numbered_company_report = create_alteration_report(numbered_company_filing, business, report_type)
     numbered_company_filename = numbered_company_report._get_report_filename()
     assert numbered_company_filename
@@ -384,6 +383,6 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
     expected_withdrawn_filing_effective_date = LegislationDatetime.as_legislation_timezone(withdrawn_filing.effective_date)
     expected_withdrawn_filing_effective_date = LegislationDatetime.format_as_report_string(expected_withdrawn_filing_effective_date)
     report_instance._format_notice_of_withdrawal_data(formatted_now_json)
-    assert formatted_now_json['withdrawnFilingType'] ==  formatted_filing_type
+    assert formatted_now_json['withdrawnFilingType'] == formatted_filing_type
     assert formatted_now_json['withdrawnFilingEffectiveDate'] == expected_withdrawn_filing_effective_date
     assert formatted_now_json['noticeOfWithdrawal']['filingId'] == withdrawn_filing_id
