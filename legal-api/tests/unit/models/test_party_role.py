@@ -296,3 +296,41 @@ def test_get_party_roles_by_filing(session):
 
     party_roles = PartyRole.get_party_roles_by_filing(filing.id, datetime.datetime.utcnow())
     assert len(party_roles) == 1
+
+
+def test_get_party_roles_officers(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.OFFICER.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_2.save()
+    # Find by all party roles
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
+    assert len(party_roles) == 1
+
+    # Find by party role
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), PartyRole.RoleTypes.OFFICER.value)
+    assert len(party_roles) == 1
