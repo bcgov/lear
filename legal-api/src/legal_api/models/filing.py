@@ -1296,7 +1296,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         tombstone_filing = Filing.get_tombstone_filing(business_id)
 
         if not tombstone_filing or not tombstone_filing.transaction_id:
-            return None
+            return []
 
         filings = db.session.query(Filing) \
             .filter(Filing._filing_type == filing_type) \
