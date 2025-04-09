@@ -49,7 +49,7 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'signatureImage': 'registrar_signature_4.png',
             'signatureImageAndText': 'registrar_signature_and_text_4.png',
             'startDate': '2022-06-01T00:00:00',
-            'endDate': '2025-04-17T00:00:00'
+            'endDate': '2025-04-17T23:59:59'
         },
         {
             'name': "SINEAD O\'CALLAGHAN",
