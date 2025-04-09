@@ -91,14 +91,14 @@ business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "py
 business-registry-account = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account" }
 business-registry-common = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common" }
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
 pytest-cov = "6.1.0"
 pytest-asyncio = "0.26.0"
 pytest-mock = "^3.14.0"
 requests-mock = "1.12.1"
-black = "^25.1.0"
-flake8 = "^7.1.2"
+
+[tool.poetry.group.dev.dependencies]
 freezegun = "^1.5.1"
 ruff = "^0.11.2"
 
@@ -188,7 +188,11 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"] # used for imports
-"src/Business_emailer/services/versioned_business_details.py" = ["F401"] #
+"src/Business_emailer/services/versioned_business_details.py" = [
+    "F401", # ignoring 'unordered' imports
+    "PRL2004", # ignoring magic value comparison in this file
+    "RUF100" # ignore checking unused noqa directives
+]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
