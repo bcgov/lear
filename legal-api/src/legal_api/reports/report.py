@@ -288,7 +288,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         elif self._report_key == 'restoration':
             self._format_restoration_data(filing)
         elif self._report_key in {'letterOfConsent', 'letterOfConsentAmalgamationOut'}:
-            self._format_consent_continuation_out_data(filing)
+            self._format_consent_continuation_amalgamation_out_data(filing)
         elif self._report_key == 'correction':
             self._format_correction_data(filing)
         elif self._report_key == 'transition':
@@ -626,7 +626,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
             filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_expiry_string_1159(expiry_date)
 
-    def _format_consent_continuation_out_data(self, filing):
+    def _format_consent_continuation_amalgamation_out_data(self, filing):
         cco = ConsentContinuationOut.get_by_filing_id(self._filing.id)
 
         country = pycountry.countries.get(alpha_2=cco.foreign_jurisdiction)
