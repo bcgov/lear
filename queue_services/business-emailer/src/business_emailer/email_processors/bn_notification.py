@@ -21,12 +21,11 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_recipient_from_auth, get_recipients, substitute_template_parts
-from business_emailer.services import logger
 
 
 def process(email_msg: dict) -> dict:
     """Build the email for Business Number notification."""
-    logger.debug("bn notification: %s", email_msg)
+    current_app.logger.debug("bn notification: %s", email_msg)
 
     # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-BN.html').read_text()
@@ -63,7 +62,7 @@ def process(email_msg: dict) -> dict:
 
 def process_bn_move(email_msg: dict, token: str) -> dict:
     """Build the email for Business Number move notification."""
-    logger.debug("bn move notification: %s", email_msg)
+    current_app.logger.debug("bn move notification: %s", email_msg)
 
     # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BN-MOVE.html').read_text()

@@ -28,12 +28,11 @@ from business_emailer.email_processors import (
     substitute_template_parts,
 )
 from business_emailer.email_processors.special_resolution_helper import get_completed_pdfs, get_paid_pdfs
-from business_emailer.services import logger
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
     """Build the email for Special Resolution notification."""
-    logger.debug("special_resolution_notification: %s", email_info)
+    current_app.logger.debug("special_resolution_notification: %s", email_info)
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing

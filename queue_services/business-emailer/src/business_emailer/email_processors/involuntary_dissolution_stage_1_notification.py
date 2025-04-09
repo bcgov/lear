@@ -25,7 +25,6 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
-from business_emailer.services import logger
 
 PROCESSABLE_FURNISHING_NAMES = [
     Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR.name,
@@ -37,7 +36,7 @@ PROCESSABLE_FURNISHING_NAMES = [
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Involuntary dissolution notification."""
-    logger.debug("involuntary_dissolution_stage_1_notification: %s", email_info)
+    current_app.logger.debug("involuntary_dissolution_stage_1_notification: %s", email_info)
     # get business
     furnishing_id = email_info["data"]["furnishing"]["furnishingId"]
     furnishing = Furnishing.find_by_id(furnishing_id)
@@ -138,7 +137,7 @@ def _get_pdfs(
     )
 
     if furnishing_pdf.status_code != HTTPStatus.OK:
-        logger.error("Failed to get pdf for furnishing: %s", furnishing.id)
+        current_app.logger.error("Failed to get pdf for furnishing: %s", furnishing.id)
         return []
 
     if furnishing.furnishing_name in \

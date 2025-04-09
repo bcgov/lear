@@ -21,12 +21,11 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_recipient_from_auth, substitute_template_parts
-from business_emailer.services import logger
 
 
 def process(email_msg: dict, token: str, flag_on: bool) -> dict:
     """Build the email for annual report reminder notification."""
-    logger.debug("ar_reminder_notification: %s", email_msg)
+    current_app.logger.debug("ar_reminder_notification: %s", email_msg)
     ar_fee = email_msg["arFee"]
     ar_year = email_msg["arYear"]
     # get template and fill in parts

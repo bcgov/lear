@@ -21,12 +21,11 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
-from business_emailer.services import logger
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Affiliation notification."""
-    logger.debug("filing_notification: %s", email_info)
+    current_app.logger.debug("filing_notification: %s", email_info)
 
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = \

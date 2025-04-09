@@ -23,13 +23,12 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import substitute_template_parts
-from business_emailer.services import logger
 from business_emailer.services.namex import NameXService
 
 
 def process(email_info: dict) -> dict:
     """Build the email for Name Request notification."""
-    logger.debug("NR_notification: %s", email_info)
+    current_app.logger.debug("NR_notification: %s", email_info)
     nr_number = email_info["identifier"]
     payment_token = email_info.get("data", {}).get("request", {}).get("paymentToken", "")
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-PAID.html').read_text()
@@ -43,7 +42,7 @@ def process(email_info: dict) -> dict:
     # get nr data
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
-        logger.error("Failed to get nr info for name request: %s", nr_number)
+        current_app.logger.error("Failed to get nr info for name request: %s", nr_number)
         return {}
     nr_data = nr_response.json()
 
@@ -87,7 +86,7 @@ def _get_pdfs(nr_id: str, payment_token: str) -> list:
         }
     )
     if nr_payments.status_code != HTTPStatus.OK:
-        logger.error("Failed to get payment info for name request id: %s", nr_id)
+        current_app.logger.error("Failed to get payment info for name request id: %s", nr_id)
         return []
 
     # find specific payment corresponding to payment token
@@ -96,7 +95,7 @@ def _get_pdfs(nr_id: str, payment_token: str) -> list:
         if payment_token == payment["token"]:
             payment_id = payment["id"]
     if not payment_id:
-        logger.error("No matching payment info found for name request id: %s, payment token: %s", nr_id, payment_token)
+        current_app.logger.error("No matching payment info found for name request id: %s, payment token: %s", nr_id, payment_token)
         return []
 
     # get receipt
@@ -109,7 +108,7 @@ def _get_pdfs(nr_id: str, payment_token: str) -> list:
         }
     )
     if receipt.status_code != HTTPStatus.OK:
-        logger.error("Failed to get receipt pdf for name request id: %s", nr_id)
+        current_app.logger.error("Failed to get receipt pdf for name request id: %s", nr_id)
         return []
 
     # add receipt to pdfs
@@ -140,5 +139,5 @@ def get_nr_bearer_token():
     try:
         return res.json().get("access_token")
     except Exception:
-        logger.error("Failed to get nr token")
+        current_app.logger.error("Failed to get nr token")
         return None

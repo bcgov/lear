@@ -30,7 +30,6 @@ from business_emailer.email_processors import (
     get_user_email_from_auth,
     substitute_template_parts,
 )
-from business_emailer.services import logger
 
 
 def _get_pdfs( # noqa: PLR0913
@@ -79,7 +78,7 @@ def _get_pdfs( # noqa: PLR0913
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+            current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -110,7 +109,7 @@ def _get_pdfs( # noqa: PLR0913
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Change of Registration notification."""
-    logger.debug("change_of_registration_notification: %s", email_info)
+    current_app.logger.debug("change_of_registration_notification: %s", email_info)
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing

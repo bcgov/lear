@@ -20,7 +20,6 @@ from business_model.models import Business, Filing
 from flask import current_app
 
 from business_emailer.email_processors import get_filing_document
-from business_emailer.services import logger
 
 
 def get_completed_pdfs( # noqa: PLR0913
@@ -147,7 +146,7 @@ def get_paid_pdfs(
     )
 
     if sr_receipt.status_code != HTTPStatus.CREATED:
-        logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
     else:
         receipt_encoded = base64.b64encode(sr_receipt.content)
         pdfs.append(

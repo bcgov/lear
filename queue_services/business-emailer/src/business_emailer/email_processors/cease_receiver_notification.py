@@ -28,12 +28,11 @@ from business_emailer.email_processors import (
     get_recipient_from_auth,
     substitute_template_parts,
 )
-from business_emailer.services import logger
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals
     """Build the email for Cease Receiver notification."""
-    logger.debug("cease_receiver: %s", email_info)
+    current_app.logger.debug("cease_receiver: %s", email_info)
     # get template and fill in parts
     filing_type = email_info["type"]
 
@@ -133,7 +132,7 @@ def _get_pdfs(
         }, headers=headers)
 
     if receipt.status_code != HTTPStatus.CREATED:
-        logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
     else:
         receipt_encoded = base64.b64encode(receipt.content)
         pdfs.append(
