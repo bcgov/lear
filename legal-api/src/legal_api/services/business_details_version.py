@@ -463,7 +463,10 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return share_classes
 
     @staticmethod
-    def get_share_series_revision(filing: Filing, share_class_id, business_id) -> dict:
+    def get_share_series_revision(  # pylint: disable=too-many-locals
+            filing: Filing,
+            share_class_id,
+            business_id) -> dict:
         """Consolidates all share series under the share class upto the given transaction id."""
         # Check if original tombstone share series is overwritten by alteration filed in LEAR
         # values: [1]True, [2]False, [3]None for non-tombstone or alteration doesn't exist
