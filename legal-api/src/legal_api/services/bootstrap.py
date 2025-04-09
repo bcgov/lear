@@ -77,7 +77,6 @@ class RegistrationBootstrapService:
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None) -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
-
         if not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
