@@ -25,6 +25,7 @@ from business_account.AccountService import AccountService
 from business_model.models import Filing
 from flask import current_app
 
+
 def get_str_from_json_filing(filing: dict, path: str) -> str | None:
     """Extract a str from the JSON filing, at the provided path.
 
@@ -39,28 +40,13 @@ def get_str_from_json_filing(filing: dict, path: str) -> str | None:
         'annualReport'
 
     """
-    get_str(filing, path)
-
-@DeprecationWarning
-def get_str(filing: dict, path: str) -> str | None:
-    """Extract a str from the JSON filing, at the provided path.
-
-    Args:
-        filing (Dict): A valid registry_schema filing.
-        path (str): The path to the date, which is in ISO Format.
-
-    Examples:
-        >>>get_str(
-            filing={'filing':{'header':{'name': 'annualReport'}}},
-            path='filing/header/name')
-        'annualReport'
-
-    """
     try:
         raw = dpath.util.get(filing, path)
         return str(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
+
+
 class NameXService:
     """Provides services to use the namex-api."""
 
