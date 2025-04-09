@@ -394,7 +394,12 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         # Check if original tombstone share class is overwritten by alteration filed in LEAR
         # values: [1]True, [2]False, [3]None for non-tombstone or alteration doesn't exist
         is_after_tombstone = Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id)
-        overwritten_filing = Filing.get_first_filing_after_tombstone_by_type(business_id, 'alteration')
+        alteration_filings = Filing.get_complete_filings_after_tombstone_by_type(business_id, 'alteration')
+        overwritten_filing = None
+        for f in alteration_filings:
+            if f.filing_json.get('filing', {}).get('alteration', {}).get('shareStructure', {}).get('shareClasses'):
+                overwritten_filing = f
+                break
         is_overwritten = bool(overwritten_filing.transaction_id > filing.transaction_id) if overwritten_filing else None
 
         share_classes = []
@@ -463,7 +468,12 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         # Check if original tombstone share series is overwritten by alteration filed in LEAR
         # values: [1]True, [2]False, [3]None for non-tombstone or alteration doesn't exist
         is_after_tombstone = Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id)
-        overwritten_filing = Filing.get_first_filing_after_tombstone_by_type(business_id, 'alteration')
+        alteration_filings = Filing.get_complete_filings_after_tombstone_by_type(business_id, 'alteration')
+        overwritten_filing = None
+        for f in alteration_filings:
+            if f.filing_json.get('filing', {}).get('alteration', {}).get('shareStructure', {}).get('shareClasses'):
+                overwritten_filing = f
+                break
         is_overwritten = bool(overwritten_filing.transaction_id > filing.transaction_id) if overwritten_filing else None
 
         share_series_version = VersioningProxy.version_class(db.session(), ShareSeries)
