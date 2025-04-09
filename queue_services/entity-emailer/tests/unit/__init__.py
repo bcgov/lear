@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
+    CONSENT_AMALGAMATION_OUT,
     CONSENT_CONTINUATION_OUT,
     CONTINUATION_IN_FILING_TEMPLATE,
     CONTINUATION_OUT,
@@ -221,6 +222,36 @@ def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
                 party['officer']['email'] = 'custodian@email.com'
             elif role['roleType'] == 'Completing Party':
                 party['officer']['email'] = 'cp@email.com'
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
+    filing.save()
+    return filing
+
+
+def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+    """Return a new consent amalgamation out filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'consentAmalgamationOut'
+    if submitter_role:
+        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+
+    filing_template['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
 
     filing = create_filing(
         token=payment_id,
