@@ -26,6 +26,7 @@ from jinja2 import Template
 from legal_api.models import Business, Filing
 
 from entity_emailer.email_processors import (
+    get_entity_dashboard_url,
     get_filing_document,
     get_filing_info,
     get_recipient_from_auth,
@@ -130,8 +131,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         header=(filing.json)['filing']['header'],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
-        (filing.json)['filing']['business'].get('identifier', ''),
+        entity_dashboard_url=get_entity_dashboard_url(business.get('identifier'), token),
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
@@ -156,9 +156,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     if not subject:  # fallback case - should never happen
         subject = 'Notification from the BC Business Registry'
-
-    legal_name = business.get('legalName', None)
-    subject = f'{legal_name} - {subject}' if legal_name else subject
 
     return {
         'recipients': recipients,

@@ -209,6 +209,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
             'special-resolution/resolutionApplication',
+            'transition/preExistingComapnyProvisions',
             'addresses',
             'certification',
             'directors',
@@ -1320,6 +1321,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_noa_data(self, filing):
         filing['header'] = {}
         filing['header']['filingId'] = self._filing.id
+        if self._filing.filing_type == 'transition':
+            has_provisions = self._filing.filing_json['filing'].get('transition', {}).get('hasProvisions')
+            filing['hasProvisions'] = has_provisions
 
     def _set_meta_info(self, filing):
         filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
