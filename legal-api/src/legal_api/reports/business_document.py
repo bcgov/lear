@@ -104,6 +104,7 @@ class BusinessDocument:
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
             'common/certificateStyle',
+            'common/certificateWatermark',
             'common/courtOrder',
             'common/watermark',
             'footer',
