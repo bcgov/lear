@@ -25,9 +25,6 @@ on:
 
 jobs:
   setup:
-    # Only allow run the CD flow in protected branch
-    if: github.ref_protected == true
-
     runs-on: ubuntu-24.04
 
     defaults:
