@@ -28,7 +28,6 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 from flask import current_app
 
 
-
 def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
