@@ -68,7 +68,7 @@ def run_migrations_online():
             script = directives[0]
             if script.upgrade_ops.is_empty():
                 directives[:] = []
-                logger.info('No changes in schema detected.')
+                current_app.logger.info('No changes in schema detected.')
 
     connectable = current_app.extensions['migrate'].db.engine
 

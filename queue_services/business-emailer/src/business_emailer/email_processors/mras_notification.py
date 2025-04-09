@@ -20,12 +20,11 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_filing_info, get_recipients, substitute_template_parts
-from business_emailer.services import logger
 
 
 def process(email_msg: dict) -> dict:
     """Build the email for mras notification."""
-    logger.debug("mras_notification: %s", email_msg)
+    current_app.logger.debug("mras_notification: %s", email_msg)
     filing_type = email_msg["type"]
     # get template and fill in parts
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/BC-MRAS.html').read_text()

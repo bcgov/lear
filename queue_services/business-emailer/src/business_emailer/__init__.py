@@ -20,6 +20,8 @@ from business_model.models.db import db
 from flask import Flask
 from sentry_sdk.integrations.flask import FlaskIntegration
 
+from structured_logging import StructuredLogging
+
 from .config import Config, ProdConfig
 from .resources import register_endpoints
 from .services import flags, gcp_queue
@@ -28,6 +30,7 @@ from .services import flags, gcp_queue
 def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
+    app.logger = StructuredLogging(app).get_logger()
     app.config.from_object(environment)
 
     # Configure Sentry

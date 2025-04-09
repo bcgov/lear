@@ -24,7 +24,6 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import substitute_template_parts
-from business_emailer.services import logger
 from business_emailer.services.namex import NameXService
 
 
@@ -69,12 +68,12 @@ def process(email_info: dict, option) -> dict:  # pylint: disable-msg=too-many-l
 
     valid values of option: Option
     """
-    logger.debug("NR %s notification: %s", option, email_info)
+    current_app.logger.debug("NR %s notification: %s", option, email_info)
     nr_number = email_info["identifier"]
 
     nr_response = NameXService.query_nr_number(nr_number)
     if nr_response.status_code != HTTPStatus.OK:
-        logger.error("Failed to get nr info for name request: %s", nr_number)
+        current_app.logger.error("Failed to get nr info for name request: %s", nr_number)
         return {}
 
     nr_data = nr_response.json()

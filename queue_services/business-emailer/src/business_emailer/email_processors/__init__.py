@@ -27,7 +27,6 @@ from business_model.models import Business, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
 from flask import current_app
 
-from business_emailer.services import logger
 
 
 def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
@@ -93,7 +92,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
     contacts = contact_info.json()["contacts"]
 
     if not contacts:
-        logger.error("Queue Error: No email in business (%s) profile to send output to.", identifier, exc_info=True)
+        current_app.logger.error("Queue Error: No email in business (%s) profile to send output to.", identifier, exc_info=True)
         raise Exception
 
     return contacts[0]["email"]

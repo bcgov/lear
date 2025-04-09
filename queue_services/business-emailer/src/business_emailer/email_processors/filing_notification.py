@@ -32,7 +32,6 @@ from business_emailer.email_processors import (
     get_user_email_from_auth,
     substitute_template_parts,
 )
-from business_emailer.services import logger
 
 FILING_TYPE_CONVERTER = {
     "incorporationApplication": "IA",
@@ -97,7 +96,7 @@ def _get_pdfs( # noqa: PLR0913,PLR0912,PLR0915
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+            current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -193,7 +192,7 @@ def _get_pdfs( # noqa: PLR0913,PLR0912,PLR0915
 def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-branches # noqa: PLR0912
     email_info: dict, token: str) -> dict:
     """Build the email for Business Number notification."""
-    logger.debug("filing_notification: %s", email_info)
+    current_app.logger.debug("filing_notification: %s", email_info)
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing

@@ -27,7 +27,6 @@ from jinja2 import Template
 from business_emailer.email_processors import get_filing_document, get_filing_info, substitute_template_parts
 from business_emailer.email_processors.special_resolution_helper import get_completed_pdfs
 from business_emailer.filing_helper import is_special_resolution_correction_by_filing_json
-from business_emailer.services import logger
 
 
 # copied and pasted from legal_api.core.filing_helper
@@ -95,7 +94,7 @@ def _get_pdfs( # noqa: PLR0913
             headers=headers
         )
         if receipt.status_code != HTTPStatus.CREATED:
-            logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+            current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
         else:
             receipt_encoded = base64.b64encode(receipt.content)
             pdfs.append(
@@ -209,7 +208,7 @@ def get_subject(status: str, prefix: str, business: dict) -> str:
 
 def process(email_info: dict, token: str) -> dict | None:  # pylint: disable=too-many-locals, , too-many-branches
     """Build the email for Correction notification."""
-    logger.debug("correction_notification: %s", email_info)
+    current_app.logger.debug("correction_notification: %s", email_info)
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing

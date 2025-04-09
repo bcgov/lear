@@ -68,7 +68,7 @@ from business_emailer.email_processors import (
     special_resolution_notification,
 )
 from business_emailer.exceptions import EmailException, QueueException
-from business_emailer.services import flags, gcp_queue, logger, verify_gcp_jwt
+from business_emailer.services import flags, gcp_queue, verify_gcp_jwt
 
 bp = Blueprint("worker", __name__)
 
@@ -83,35 +83,35 @@ async def worker():
             return {}, HTTPStatus.OK
 
         if msg := verify_gcp_jwt(request):
-            logger.info(msg)
+            current_app.logger.info(msg)
             return {}, HTTPStatus.FORBIDDEN
 
-        logger.info(f"Incoming raw msg: {request.data!s}")
+        current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
         # 1. Get cloud event
         if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)) and not isinstance(ce, SimpleCloudEvent):
             # todo: verify this ? this is how it is done in other GCP pub sub consumers
             # Decision here is to return a 200,
             # so the event is removed from the Queue
-            logger.debug(f"ignoring message, raw payload: {ce!s}")
+            current_app.logger.debug(f"ignoring message, raw payload: {ce!s}")
             return {}, HTTPStatus.OK
 
-        logger.info(f"received ce: {ce!s}")
+        current_app.logger.info(f"received ce: {ce!s}")
 
         email_msg = json.loads(msg.data.decode("utf-8"))
-        logger.debug("Extracted email msg: %s", email_msg)
+        current_app.logger.debug("Extracted email msg: %s", email_msg)
 
         process_email(email_msg)
 
     # ruff: noqa: PGH004
     except QueueException as err:  # noqa B902; pylint: disable=W0703; :
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        logger.error("Queue Error: %s", json.dumps(email_msg), exc_info=True)
+        current_app.logger.error("Queue Error: %s", json.dumps(email_msg), exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
     except (EmailException, Exception) as err:
         message_id = ce.id if ce else None
-        logger.error("Queue Error - Generic exception: %s \n %s",
+        current_app.logger.error("Queue Error - Generic exception: %s \n %s",
                      f"\n\nMessage with id: {message_id} has been put back on the queue for reprocessing.",
                      str(err),
                      exc_info=True)
@@ -125,13 +125,13 @@ def send_email(email: dict, token: str):
         or "recipients" not in email \
         or "content" not in email \
         or "body" not in email["content"]:
-        logger.debug("Send email: email object(s) is empty")
+        current_app.logger.debug("Send email: email object(s) is empty")
         raise QueueException("Unsuccessful sending email - required email object(s) is empty.")
 
     if not email["recipients"] \
         or not email["content"] \
         or not email["content"]["body"]:
-        logger.debug("Send email: email object(s) is missing")
+        current_app.logger.debug("Send email: email object(s) is missing")
         raise QueueException("Unsuccessful sending email - required email object(s) is missing. ")
 
     try:
@@ -152,7 +152,7 @@ def send_email(email: dict, token: str):
 
 def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912, PLR0915
     """Process the email contained in the submission."""
-    logger.debug("Attempting to process email: %s", email_msg)
+    current_app.logger.debug("Attempting to process email: %s", email_msg)
     token = AccountService.get_bearer_token()
     etype = email_msg.get("type")
     if etype and etype == "bc.registry.names.request":
@@ -190,7 +190,7 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
                                                                           Furnishing.FurnishingStatus.FAILED)
                 raise
         else:
-            logger.debug("Furnishing name is not valid. Skipping processing of email_msg: %s", email_msg)
+            current_app.logger.debug("Furnishing name is not valid. Skipping processing of email_msg: %s", email_msg)
     else:
         etype = email_msg["email"]["type"]
         option = email_msg["email"]["option"]
@@ -250,13 +250,13 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
             send_email(email, token)
         elif etype in filing_notification.FILING_TYPE_CONVERTER:
             if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
-                logger.debug("No email to send for: %s", email_msg)
+                current_app.logger.debug("No email to send for: %s", email_msg)
             else:
                 email = filing_notification.process(email_msg["email"], token)
                 if email:
                     send_email(email, token)
                 else:
                     # should only be if this was for a coops filing
-                    logger.debug("No email to send for: %s", email_msg)
+                    current_app.logger.debug("No email to send for: %s", email_msg)
         else:
-            logger.debug("No email to send for: %s", email_msg)
+            current_app.logger.debug("No email to send for: %s", email_msg)
