@@ -65,10 +65,12 @@ from entity_emailer.email_processors import (
     registration_notification,
     restoration_notification,
     special_resolution_notification,
-    transition_notification
+    transition_notification,
 )
 
 from .message_tracker import tracker as tracker_util
+
+
 # noqa:I003
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
