@@ -49,6 +49,14 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'signatureImage': 'registrar_signature_4.png',
             'signatureImageAndText': 'registrar_signature_and_text_4.png',
             'startDate': '2022-06-01T00:00:00',
+            'endDate': '2025-04-17T00:00:00'
+        },
+        {
+            'name': 'SINEAD O\'CALLAGHAN',
+            'title': 'Registrar of Companies',
+            'signatureImage': 'registrar_signature_5.png',
+            'signatureImageAndText': 'registrar_signature_and_text_5.png',
+            'startDate': '2025-04-18T00:00:00',
             'endDate': None
         }
     ]
