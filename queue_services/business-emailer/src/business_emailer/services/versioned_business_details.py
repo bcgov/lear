@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """This provides the service for getting business details as of a filing."""
-# ruff: noqa: PLR2004,RUF100
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from datetime import datetime
 
