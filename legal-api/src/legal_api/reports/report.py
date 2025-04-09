@@ -209,7 +209,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
             'special-resolution/resolutionApplication',
-            'transition/preExistingComapnyProvisions',
+            'transition/preExistingCompanyProvisions',
             'addresses',
             'certification',
             'directors',
