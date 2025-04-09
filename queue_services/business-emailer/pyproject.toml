@@ -153,21 +153,21 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint]
 select = [
-    "B",   # flake8-bugbear
-    "C4",  # flake8-comprehensions
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
     "ERA", # flake8-eradicate/eradicate
-    "Q",   # flake8-quotes
-    "I",   # isort
-    "N",   # pep8-naming
+    "Q", # flake8-quotes
+    "I", # isort
+    "N", # pep8-naming
     "PIE", # flake8-pie
-    "PL",  # pyLint
+    "PL", # pyLint
     "PGH", # pygrep
     "RUF", # ruff checks
     "SIM", # flake8-simplify
     "T20", # flake8-print
     "TCH", # flake8-type-checking
     "TID", # flake8-tidy-imports
-    "UP",  # pyupgrade
+    "UP", # pyupgrade
     "F", # pyflakes
 ]
 
@@ -181,18 +181,27 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["structured_logging"]
+known-first-party = [
+    "structured_logging",
+    "flask-jwt-oidc",
+    "business-emailer",
+    "gcp-queue",
+    "business-model",
+    "business-registry-account",
+    "business-registry-common"
+]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"] # used for imports
-"src/Business_emailer/services/versioned_business_details.py" = [
-    "F401", # ignoring 'unordered' imports
-    "PRL2004", # ignoring magic value comparison in this file
-    "RUF100" # ignore checking unused noqa directives
-]
+"src/business_emailer/services/versioned_business_details.py" = [
+    "I001", # ignoring 'unordered' imports
+    "PLR2004", # ignoring magic value comparison in this file
+    "RUF100"
+] # ignore checking unused noqa directives
+"src/business_emailer/services/namex.py" = ["I001"]  # ignoring 'unordered' imports
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
