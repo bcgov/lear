@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "notebookreport", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "3.13"
+python = "^3.13.0"
 jupyter = "^1.1.1"
 SQLAlchemy = "^2.0.40"
 psycopg2-binary = "^2.9.10"
