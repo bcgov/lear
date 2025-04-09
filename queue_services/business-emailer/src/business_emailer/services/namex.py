@@ -16,7 +16,6 @@
 import http
 from datetime import datetime
 from enum import Enum
-from typing import Dict, Optional
 
 import datedelta
 import dpath.util
@@ -26,11 +25,11 @@ from business_account.AccountService import AccountService
 from business_model.models import Filing
 from flask import current_app
 
-def get_str_from_json_filing(filing: Dict, path: str) -> Optional[str]:
+def get_str_from_json_filing(filing: dict, path: str) -> str | None:
     """Extract a str from the JSON filing, at the provided path.
 
     Args:
-        data (Dict): A valid registry_schema filing.
+        filing (Dict): A valid registry_schema filing.
         path (str): The path to the date, which is in ISO Format.
 
     Examples:
@@ -43,7 +42,7 @@ def get_str_from_json_filing(filing: Dict, path: str) -> Optional[str]:
     get_str(filing, path)
 
 @DeprecationWarning
-def get_str(filing: Dict, path: str) -> Optional[str]:
+def get_str(filing: dict, path: str) -> str | None:
     """Extract a str from the JSON filing, at the provided path.
 
     Args:
@@ -223,7 +222,7 @@ class NameXService:
         return expiration_date < date_time
 
     @staticmethod
-    def get_approved_name(nr_json) -> str:
+    def get_approved_name(nr_json) -> str | None:
         """Get an approved name from nr json, if any."""
         from . import flags  # pylint: disable=import-outside-toplevel
 
