@@ -77,7 +77,6 @@ class RegistrationBootstrapService:
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None) -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
 
         if not bootstrap:
             return {'error': babel('An account number must be provided.')}
@@ -86,8 +85,7 @@ class RegistrationBootstrapService:
                                                business_registration=bootstrap.identifier,
                                                business_name=business_name,
                                                corp_type_code=corp_type_code,
-                                               corp_sub_type_code=corp_sub_type_code,
-                                               flags=flags)
+                                               corp_sub_type_code=corp_sub_type_code)
 
         if rv == HTTPStatus.OK:
             return HTTPStatus.OK
@@ -148,8 +146,7 @@ class AccountService:
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None,
                            pass_code: str = '',
-                           details: dict = None,
-                           flags: any = None):
+                           details: dict = None):
         """Affiliate a business to an account."""
         current_app.logger.info(f'Creating affiliation of {business_registration} for {account}')
         auth_url = current_app.config.get('AUTH_SVC_URL')
@@ -180,13 +177,6 @@ class AccountService:
         )
 
         # Create an account:business affiliation
-
-        # headers with conditional sandbox override
-        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
-        if flags and flags.is_on('enable-sandbox'):
-            current_app.logger.info('Appending Environment-Override = sandbox header to create affiliation call')
-            headers['Environment-Override'] = 'sandbox'
-
         affiliate_data = {
             'businessIdentifier': business_registration,
             'passCode': pass_code
@@ -195,7 +185,8 @@ class AccountService:
             affiliate_data['entityDetails'] = details
         affiliate = requests.post(
             url=account_svc_affiliate_url,
-            headers=headers,
+            headers={**cls.CONTENT_TYPE_JSON,
+                     'Authorization': cls.BEARER + token},
             data=json.dumps(affiliate_data),
             timeout=cls.timeout
         )
@@ -277,17 +268,15 @@ class AccountService:
     @classmethod
     def get_account_by_affiliated_identifier(cls, identifier: str):
         """Return the account affiliated to the business."""
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
         token = cls.get_bearer_token()
         auth_url = current_app.config.get('AUTH_SVC_URL')
         url = f'{auth_url}/orgs?affiliation={identifier}'
 
-        # headers with conditional sandbox override
-        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
-        if flags and flags.is_on('enable-sandbox'):
-            current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
-            headers['Environment-Override'] = 'sandbox'
-        res = requests.get(url=url, headers=headers)
+        res = requests.get(
+            url=url,
+            headers={**cls.CONTENT_TYPE_JSON,
+                     'Authorization': cls.BEARER + token}
+        )
         try:
             return res.json()
         except Exception:  # noqa B902; pylint: disable=W0703;
