@@ -1,40 +1,21 @@
 name: GCP Entity BN CI
-#Note job will fail tests as a default db is not setup
+
 on:
   pull_request:
     types: [assigned, synchronize]
     paths:
       - "gcp-jobs/entity-bn/**"
   workflow_dispatch:
-    inputs:
-      app_name:
-        required: true
-        type: string
-        default: "entity-bn"
-      working_directory:
-        type: string
-        default: ".gcp-jobs/entity-bn"
-      codecov_flag:
-        type: string
-      skip_isort:
-        type: string
-        default: "false"
-      skip_black:
-        type: string
-        default: "false"
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/entity-bn
 
 jobs:
-  setup:
-    runs-on: ubuntu-24.04
-
-    defaults:
-      run:
-        shell: bash
-
-    steps:
-      # Checkout code
-      - name: CI
-        uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
-        with:
-          app_name: ${{ inputs.app_name }}
-          working_directory: ${{ inputs.working_directory }}
+  entity-bn-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "entity-bn"
+      working_directory: "./gcp-jobs/entity-bn"
+      codecov_flag: "entity-bn"
