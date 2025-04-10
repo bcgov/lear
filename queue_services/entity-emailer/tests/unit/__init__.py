@@ -45,6 +45,7 @@ from registry_schemas.example_data import (
     NOTICE_OF_WITHDRAWAL,
     REGISTRATION,
     RESTORATION,
+    TRANSITION_FILING_TEMPLATE,
 )
 
 from tests import EPOCH_DATETIME
@@ -753,6 +754,24 @@ def prep_notice_of_withdraw_filing(
     withdrawn_filing.withdrawal_pending = True
     withdrawn_filing.save()
 
+    return filing
+
+
+def prep_transition_filing(session, identifier, payment_id, legal_type, legal_name):
+    """Return a new consent transition filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+
+    filing.save()
     return filing
 
 
