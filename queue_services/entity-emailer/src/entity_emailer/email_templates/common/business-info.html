@@ -51,11 +51,7 @@
   {% endif %}
 
   <tr>
-    {% if filing_type == 'transition' %}
-      <td class="name">Filed Date and Time:</td>
-    {% else %}
-      <td class="name">Date and Time of Filing:</td>
-    {% endif %}
+    <td class="name">Date and Time of Filing:</td>
     <td class="value bold">{{ filing_date_time }}</td>
   </tr>
 
