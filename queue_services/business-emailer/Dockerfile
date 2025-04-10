@@ -34,7 +34,6 @@ ENV APP_ENV=${APP_ENV} \
   POETRY_VIRTUALENVS_CREATE=false \
   POETRY_CACHE_DIR='/var/cache/pypoetry' \
   POETRY_HOME='/usr/local' \
-  TEMPLATE_PATH='src/business_emailer/email_templates'
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
