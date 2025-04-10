@@ -15,10 +15,8 @@
 
 This module is the service worker for sending emails about entity related events.
 """
-import sentry_sdk
 from business_model.models.db import db
 from flask import Flask
-from sentry_sdk.integrations.flask import FlaskIntegration
 
 from structured_logging import StructuredLogging
 
@@ -32,14 +30,6 @@ def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
     app = Flask(__name__)
     app.logger = StructuredLogging(app).get_logger()
     app.config.from_object(environment)
-
-    # Configure Sentry
-    if dsn := app.config.get("SENTRY_DSN", None):
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            send_default_pii=False,
-        )
 
     # Configure LaunchDarkly
     if app.config.get("LD_SDK_KEY", None):

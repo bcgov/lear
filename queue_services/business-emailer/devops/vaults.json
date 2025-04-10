@@ -5,7 +5,6 @@
             "postgres-legal",
             "entity-emailer",
             "entity-service-account",
-            "sentry",
             "launchdarkly"
         ]
     },
