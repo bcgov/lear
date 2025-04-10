@@ -20,7 +20,6 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from business_model.models import Business, CorpType, Filing
 from flask import current_app
 from jinja2 import Template
 
@@ -30,6 +29,7 @@ from business_emailer.email_processors import (
     get_filing_info,
     substitute_template_parts,
 )
+from business_model.models import Business, CorpType, Filing
 
 
 def _get_pdfs( # noqa: PLR0913

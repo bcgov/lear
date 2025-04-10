@@ -16,11 +16,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from business_model.models import Business, CorpType
 from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_recipient_from_auth, substitute_template_parts
+from business_model.models import Business, CorpType
 
 
 def process(email_msg: dict, token: str, flag_on: bool) -> dict:

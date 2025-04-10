@@ -18,7 +18,6 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from business_model.models import Business, Filing
 from flask import current_app
 from jinja2 import Template
 
@@ -29,6 +28,7 @@ from business_emailer.email_processors import (
     substitute_template_parts,
 )
 from business_emailer.meta.filing import FilingMeta
+from business_model.models import Business, Filing
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals

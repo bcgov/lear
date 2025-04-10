@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
-from business_model.models import User
 from flask import current_app
 from ldclient import get as ldclient_get
 from ldclient import set_config as ldclient_set_config
 from ldclient.config import Config
 from ldclient.impl.integrations.files.file_data_source import _FileDataSource
 from ldclient.interfaces import UpdateProcessor
+
+from business_model.models import User
 
 
 class FileDataSource(UpdateProcessor):
