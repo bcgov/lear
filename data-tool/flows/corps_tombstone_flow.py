@@ -1,32 +1,33 @@
 import contextlib
+import math
+from collections import defaultdict
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 
-import math
-from datetime import datetime, timedelta
-
+from common.auth_service import AuthService
+from common.corp_processing_queue_service import \
+    CorpProcessingQueueService as CorpProcessingService
+from common.corp_processing_queue_service import ProcessingStatuses
 from common.init_utils import colin_init, get_config, lear_init
 from common.query_utils import convert_result_set_to_dict
-from common.auth_service import AuthService
-from prefect import flow, task, serve
-from prefect.futures import wait
+from prefect import flow, serve, task
 from prefect.context import get_run_context
-from prefect.task_runners import ConcurrentTaskRunner
+from prefect.futures import wait
 from prefect.states import Failed
+from prefect.task_runners import ConcurrentTaskRunner
 from prefect_dask import DaskTaskRunner
 from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
-
-from common.corp_processing_queue_service import CorpProcessingQueueService as CorpProcessingService, ProcessingStatuses
 from tombstone.tombstone_queries import (get_corp_snapshot_filings_queries,
                                          get_corp_users_query,
                                          get_total_unprocessed_count_query,
                                          get_unprocessed_corps_query)
-from tombstone.tombstone_utils import (build_epoch_filing, format_users_data,
+from tombstone.tombstone_utils import (all_unsupported_types,
+                                       build_epoch_filing, format_users_data,
                                        formatted_data_cleanup,
                                        get_data_formatters, load_data,
-                                       all_unsupported_types,
-                                       update_data)
+                                       update_data, update_versioning)
 
 
 @task
@@ -84,7 +85,7 @@ def load_corp_users(lear_engine: Engine, users_data: list) -> dict:
             for user in users_data:
                 # TODO: distinguish users of the same username but different roles
                 username = user['username']
-                user_id = load_data(conn, 'users', user, 'username')
+                user_id = load_data(conn, 'users', user, 'username', versioned=False)
                 users_mapper[username] = user_id
             conn.commit()
         except Exception as e:
@@ -124,21 +125,24 @@ def clean_snapshot_filings_data(data: dict) -> dict:
 
 
 @task(name='3.1-Corp-Snapshot-Migrate-Task')
-def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dict) -> int:
+def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dict, versioning_mapper: dict) -> int:
     """Migrate corp snapshot."""
     # Note: The business info is partially loaded for businesses table now. And it will be fully
     # updated by the following placeholder historical filings migration. But it depends on the
     # implementation of next step.
     business_id = load_data(conn, 'businesses', tombstone_data['businesses'], 'identifier', conflict_error=True)
+    versioning_mapper['businesses_version'].append(business_id)
 
     for office in tombstone_data['offices']:
         office['offices']['business_id'] = business_id
         office_id = load_data(conn, 'offices', office['offices'])
+        versioning_mapper['offices_version'].append(office_id)
 
         for address in office['addresses']:
             address['business_id'] = business_id
             address['office_id'] = office_id
-            load_data(conn, 'addresses', address)
+            address_id = load_data(conn, 'addresses', address)
+            versioning_mapper['addresses_version'].append(address_id)
 
     party_roles_map = {}
     for party in tombstone_data['parties']:
@@ -146,6 +150,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
         delivery_address_id = None
         for address in party['addresses']:
             address_id = load_data(conn, 'addresses', address)
+            versioning_mapper['addresses_version'].append(address_id)
             if address['address_type'] == 'mailing':
                 mailing_address_id = address_id
             else:
@@ -157,11 +162,13 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
         source_full_name = party['parties']['cp_full_name']
         del party['parties']['cp_full_name']
         party_id = load_data(conn, 'parties', party['parties'])
+        versioning_mapper['parties_version'].append(party_id)
 
         for party_role in party['party_roles']:
             party_role['business_id'] = business_id
             party_role['party_id'] = party_id
             party_role_id = load_data(conn, 'party_roles', party_role, expecting_id=True)
+            versioning_mapper['party_roles_version'].append(party_role_id)
 
             # Create a unique key for mapping
             key = (source_full_name, party_role['role'])
@@ -173,50 +180,55 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
         party_role_id = party_roles_map.get(key)
         office_held['party_role_id'] = party_role_id
         del office_held['cp_full_name']
-        load_data(conn,'offices_held', office_held)
+        office_held_id = load_data(conn, 'offices_held', office_held)
+        versioning_mapper['offices_held_version'].append(office_held_id)
 
     for share_class in tombstone_data['share_classes']:
         share_class['share_classes']['business_id'] = business_id
         share_class_id = load_data(conn, 'share_classes', share_class['share_classes'])
+        versioning_mapper['share_classes_version'].append(share_class_id)
 
         for share_series in share_class['share_series']:
             share_series['share_class_id'] = share_class_id
-            load_data(conn, 'share_series', share_series)
+            share_series_id = load_data(conn, 'share_series', share_series)
+            versioning_mapper['share_series_version'].append(share_series_id)
 
     for alias in tombstone_data['aliases']:
         alias['business_id'] = business_id
-        load_data(conn, 'aliases', alias)
+        alias_id = load_data(conn, 'aliases', alias)
+        versioning_mapper['aliases_version'].append(alias_id)
 
     for resolution in tombstone_data['resolutions']:
         resolution['business_id'] = business_id
-        load_data(conn, 'resolutions', resolution)
+        resolution_id = load_data(conn, 'resolutions', resolution)
+        versioning_mapper['resolutions_version'].append(resolution_id)
 
     for comment in tombstone_data['comments']:
         comment['business_id'] = business_id
         username = comment['staff_id']
         staff_id = users_mapper.get(username)
         comment['staff_id'] = staff_id
-        load_data(conn, 'comments', comment)
+        load_data(conn, 'comments', comment, versioned=False)
 
     if in_dissolution := tombstone_data['in_dissolution']:
         batch = in_dissolution['batches']
-        batch_id = load_data(conn, 'batches', batch)
+        batch_id = load_data(conn, 'batches', batch, versioned=False)
         batch_processing = in_dissolution['batch_processing']
 
         batch_processing['batch_id'] = batch_id
         batch_processing['business_id'] = business_id
-        load_data(conn, 'batch_processing', batch_processing)
+        load_data(conn, 'batch_processing', batch_processing, versioned=False)
 
         furnishing = in_dissolution['furnishings']
         furnishing['batch_id'] = batch_id
         furnishing['business_id'] = business_id
-        load_data(conn, 'furnishings', furnishing)
+        load_data(conn, 'furnishings', furnishing, versioned=False)
 
     return business_id
 
 
 @task(name='3.2.1-Placeholder-Historical-Filings-Migrate-Task')
-def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id: int, users_mapper: dict):
+def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id: int, users_mapper: dict, versioning_mapper: dict):
     """Migrate placeholder historical filings."""
     filings_data = tombstone_data['filings']
     update_info = tombstone_data['updates']
@@ -226,20 +238,20 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     # load placeholder filings
     for i, data in enumerate(filings_data):
         f = data['filings']
-        transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()})
+        transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()}, versioned=False)
         username = f['submitter_id']
-        user_id  = users_mapper.get(username)
+        user_id = users_mapper.get(username)
         f['submitter_id'] = user_id
         f['transaction_id'] = transaction_id
         f['business_id'] = business_id
         if (withdrawn_idx := f['withdrawn_filing_id']) is not None:
             f['withdrawn_filing_id'] = filing_ids_mapper[withdrawn_idx]
 
-        filing_id = load_data(conn, 'filings', f)
+        filing_id = load_data(conn, 'filings', f, versioned=False)
         filing_ids_mapper[i] = filing_id
 
         data['colin_event_ids']['filing_id'] = filing_id
-        load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False)
+        load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False, versioned=False)
 
         if i == state_filing_index:
             update_info['businesses']['state_filing_id'] = filing_id
@@ -247,11 +259,12 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
         if jurisdiction := data['jurisdiction']:
             jurisdiction['business_id'] = business_id
             jurisdiction['filing_id'] = filing_id
-            load_data(conn, 'jurisdictions', jurisdiction)
+            jurisdiction_id = load_data(conn, 'jurisdictions', jurisdiction)
+            versioning_mapper['jurisdictions_version'].append(jurisdiction_id)
 
         # load amalgamation snapshot linked to the current filing
         if amalgamation_data := data['amalgamations']:
-            load_amalgamation_snapshot(conn, amalgamation_data, business_id, filing_id)
+            load_amalgamation_snapshot(conn, amalgamation_data, business_id, filing_id, versioning_mapper)
 
         if comments_data := data['comments']:
             for comment in comments_data:
@@ -260,31 +273,34 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
                 username = comment['staff_id']
                 staff_id = users_mapper.get(username)
                 comment['staff_id'] = staff_id
-                load_data(conn, 'comments', comment)
+                load_data(conn, 'comments', comment, versioned=False)
 
         if cco_data := data['consent_continuation_out']:
             cco_data['business_id'] = business_id
             cco_data['filing_id'] = filing_id
-            load_data(conn, 'consent_continuation_outs', cco_data)
+            load_data(conn, 'consent_continuation_outs', cco_data, versioned=False)
 
     # load epoch filing
     epoch_filing_data = build_epoch_filing(business_id)
-    transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()})
+    transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()}, versioned=False)
     epoch_filing_data['transaction_id'] = transaction_id
-    load_data(conn, 'filings', epoch_filing_data)
+    load_data(conn, 'filings', epoch_filing_data, versioned=False)
 
     # load updates for business
     if update_business_data:
         update_data(conn, 'businesses', update_business_data, 'id', business_id)
 
+    return transaction_id
+
 
 @task(name='3.2.2-Amalgamation-Snapshot-Migrate-Task')
-def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, business_id: int, filing_id: int):
+def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, business_id: int, filing_id: int, versioning_mapper: dict):
     """Migrate amalgamation snapshot."""
     amalgamation = amalgamation_data['amalgamations']
     amalgamation['business_id'] = business_id
     amalgamation['filing_id'] = filing_id
     amalgamation_id = load_data(conn, 'amalgamations', amalgamation)
+    versioning_mapper['amalgamations_version'].append(amalgamation_id)
 
     for ting in amalgamation_data['amalgamating_businesses']:
         if ting_identifier := ting.get('ting_identifier'):
@@ -301,7 +317,8 @@ def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, busine
                 raise Exception(f'TING {ting_identifier} does not exist, cannot migrate TED before TING')
             ting['business_id'] = ting_business_id
         ting['amalgamation_id'] = amalgamation_id
-        load_data(conn, 'amalgamating_businesses', ting)
+        amalgamating_business_id = load_data(conn, 'amalgamating_businesses', ting)
+        versioning_mapper['amalgamating_businesses_version'].append(amalgamating_business_id)
 
 
 @task(name='3.3-Update-Auth-Task')
@@ -398,8 +415,17 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
     with lear_engine.connect() as lear_conn:
         transaction = lear_conn.begin()
         try:
-            business_id = load_corp_snapshot(lear_conn, clean_data, users_mapper)
-            load_placeholder_filings(lear_conn, clean_data, business_id, users_mapper)
+            versioning_mapper = defaultdict(list)
+            business_id = load_corp_snapshot(
+                lear_conn, clean_data, users_mapper, versioning_mapper)
+            tombstone_transaction_id = load_placeholder_filings(
+                lear_conn,
+                clean_data,
+                business_id,
+                users_mapper,
+                versioning_mapper)
+            update_versioning(
+                lear_conn, tombstone_transaction_id, versioning_mapper)
             update_auth(lear_conn, config, corp_num, clean_data)
             transaction.commit()
         except Exception as e:
