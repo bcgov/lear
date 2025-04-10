@@ -1,8 +1,10 @@
 [
     {
-        "vault": "shared",
+        "vault": "gcp-queue",
         "application": [
-            "nats"
+            "base",
+            "topics",
+            "a083gt"
         ]
     },
     {
@@ -10,9 +12,7 @@
         "application": [
             "postgres-legal",
             "filings-jobs",
-            "nats-emailer",
             "entity-service-account",
-            "sentry",
             "launchdarkly",
             "email-reminder"
         ]

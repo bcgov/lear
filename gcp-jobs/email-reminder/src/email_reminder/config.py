@@ -20,33 +20,12 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
 
-CONFIGURATION = {
-    'development': 'config.DevConfig',
-    'testing': 'config.TestConfig',
-    'production': 'config.ProdConfig',
-    'default': 'config.ProdConfig'
-}
 
-
-def get_named_config(config_name: str = 'production'):
-    """Return the configuration object based on the name."""
-    if config_name in ['production', 'staging', 'default']:
-        config = ProdConfig()
-    elif config_name == 'testing':
-        config = TestConfig()
-    elif config_name == 'development':
-        config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration '{config_name}'")
-    return config
-
-
-class _Config(object):  # pylint: disable=too-few-public-methods
+class _Config(object):
     """Base class configuration."""
 
     # used to identify versioning flag
     SERVICE_NAME = 'emailer-reminder-job'
-    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SEND_OUTSTANDING_BCOMPS = os.getenv('SEND_OUTSTANDING_BCOMPS', None)
     SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
@@ -57,12 +36,19 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
 
-    PAYMENT_SVC_FEES_URL = os.getenv('PAYMENT_SVC_FEES_URL', None)
+    PAY_API_URL = os.getenv('PAY_API_URL', '')
+    PAY_API_VERSION = os.getenv('PAY_API_VERSION', '')
+    PAYMENT_SVC_FEES_URL = PAY_API_URL + PAY_API_VERSION + '/fees'
 
-    NATS_SERVERS = os.getenv('NATS_SERVERS', None)
-    NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', None)
-    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', None)
-    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
+    # Pub/Sub
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    AUDIENCE = os.getenv(
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+    )
+    BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC")
 
     SECRET_KEY = 'a secret'
 
@@ -88,14 +74,14 @@ class _Config(object):  # pylint: disable=too-few-public-methods
     DEBUG = False
 
 
-class DevConfig(_Config):  # pylint: disable=too-few-public-methods
+class DevelopmentConfig(_Config):
     """Development environment configuration."""
 
     TESTING = False
     DEBUG = True
 
 
-class TestConfig(_Config):  # pylint: disable=too-few-public-methods
+class UnitTestingConfig(_Config):
     """In support of testing only used by the py.test suite."""
 
     DEBUG = True
@@ -115,8 +101,11 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
         name=DB_NAME,
     )
 
+    PAYMENT_SVC_FEES_URL = 'http://test.PAY_API_URL.fake/fees'
+    GCP_AUTH_KEY = 'test.GCP_AUTH_KEY'
 
-class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
+
+class ProductionConfig(_Config):
     """Production environment configuration."""
 
     SECRET_KEY = os.getenv('SECRET_KEY', None)
