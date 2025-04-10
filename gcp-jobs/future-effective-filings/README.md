@@ -1,6 +1,6 @@
 # Future Effective Filings Report
 
-Generate notebook report
+Generate future effective filings report
 
 ## Development Environment
 
