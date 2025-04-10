@@ -98,7 +98,7 @@ def _update_business_profile(business: Business, profile_info: Dict) -> Dict:
     return error
 
 
-def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
+def update_affiliation(business: Business, filing: Filing):
     """Create an affiliation for the business and remove the bootstrap."""
     try:
         current_app.logger.info('Updating affiliation for business')
@@ -124,8 +124,7 @@ def update_affiliation(business: Business, filing: Filing, flags: Flags = None):
             business_name=business.legal_name,
             corp_type_code=business.legal_type,
             pass_code=pass_code,
-            details=details,
-            flags=flags
+            details=details
         )
 
         if rv not in (HTTPStatus.OK, HTTPStatus.CREATED):

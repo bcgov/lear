@@ -439,7 +439,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 # update affiliation for new business
                 if filing_core_submission.filing_type != FilingCore.FilingTypes.CONVERSION:
-                    business_profile.update_affiliation(business, filing_submission, flags)
+                    business_profile.update_affiliation(business, filing_submission)
 
                 name_request.consume_nr(business, filing_submission, flags=flags)
                 business_profile.update_business_profile(business, filing_submission, flags=flags)
