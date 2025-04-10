@@ -126,7 +126,7 @@ class TestConfig(Config):  # pylint: disable=too-few-public-methods
     LEGAL_API_URL = "https://legal-api-url/"
     PAY_API_URL = "https://pay-api-url/"
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
-    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "src/entity_emailer/email_templates")
+    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "/src/entity_emailer/email_templates")
 
 class ProdConfig(Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
