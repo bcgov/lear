@@ -20,6 +20,9 @@ structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", r
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"
 
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.5"
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
