@@ -255,11 +255,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
     @staticmethod
     def get_office_revision(filing_id, transaction_id, business_id) -> dict:
-        """Consolidates all office changes up to the given transaction id.
-
-        For migrated (tombstone) businesses, if no versioning data exists and the filing is after
-        the tombstone filing, the current office data will be used.
-        """
+        """Consolidates all office changes up to the given transaction id."""
         # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         offices_json = {}
         address_version = VersioningProxy.version_class(db.session(), Address)
@@ -296,11 +292,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def get_party_role_revision(filing, business_id, is_ia_or_after=False, role=None) -> dict:
         """Consolidates all party changes up to the given transaction id.
 
-        For migrated (tombstone) businesses, if no versioning data exists and the filing is after
-        the tombstone filing, the current party data will be used.
-
         Args:
-            filing_id (int): The filing ID to check against tombstone filing
             transaction_id (int): The transaction ID for versioning queries
             business_id (int): The business ID to check
             is_ia_or_after (bool): Flag for incorporation application or after
