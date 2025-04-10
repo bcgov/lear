@@ -1,20 +1,24 @@
 [tool.poetry]
-name = "future-effective-filings"
+name = "future_effective_filings"
 version = "0.1.0"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"
-packages = [{include = "future-effective-filings", from = "src"}]
+packages = [{include = "future_effective_filings", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.13.0"
 Flask = "^3.1.0"
 requests = "^2.32.3"
+python-dotenv = "^1.1.0"
 gcp-queue = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/gcp-queue"}
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.5"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -92,7 +96,7 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["structured_logging"]
+known-first-party = ["structured_logging", "gcp_queue"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"

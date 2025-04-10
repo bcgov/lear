@@ -36,7 +36,7 @@ poetry install
 
 You can issue any command in the current environment, via poetry's shell
 ```shell
-poetry shell
+source $(poetry env activate)
 ```
 
 ### Aside: faster local dev?

@@ -20,17 +20,17 @@ import os
 import uuid
 from datetime import UTC, datetime
 
-import config  # pylint: disable=import-error
+from future_effective_filings.config import CONFIGURATION, get_named_config
 import requests
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask
-from flask_api import status
 from gcp_queue import GcpQueue
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
 from structured_logging import StructuredLogging
 
 DEFAULT_CONNECT_TIMEOUT = 2
+STATUS_OK = 200
 gcp_queue = GcpQueue()
 
 # this will load all the envars from a .env file located in the project root
@@ -40,9 +40,10 @@ run_mode = os.getenv("FLASK_ENV", "production")
 def create_app(run_mode=run_mode):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
-    app.config.from_object(config.CONFIGURATION[run_mode])
+    print(get_named_config(run_mode))
+    app.config.from_object(get_named_config(run_mode))
     gcp_queue.init_app(app)
-    StructuredLogging().init_app(app)
+    app.logger = StructuredLogging(app).get_logger()
 
     return app
 
@@ -77,7 +78,7 @@ def get_filing_ids(app: Flask):
         headers={"Content-Type": "application/json",
                  "Authorization": "Bearer " + token},
         timeout=timeout)
-    if not response or response.status_code != status.HTTP_200_OK:
+    if not response or response.status_code != STATUS_OK:
         app.logger.error(f"Failed to collect filings from legal-api. \
             {response} {response.json()} {response.status_code}")
         raise Exception  # pylint: disable=broad-exception-raised;
