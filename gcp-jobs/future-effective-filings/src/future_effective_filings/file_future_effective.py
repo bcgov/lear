@@ -20,13 +20,13 @@ import os
 import uuid
 from datetime import UTC, datetime
 
-from future_effective_filings.config import CONFIGURATION, get_named_config
 import requests
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask
-from gcp_queue import GcpQueue
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
+from future_effective_filings.config import get_named_config
+from gcp_queue import GcpQueue
 from structured_logging import StructuredLogging
 
 DEFAULT_CONNECT_TIMEOUT = 2
@@ -40,7 +40,6 @@ run_mode = os.getenv("FLASK_ENV", "production")
 def create_app(run_mode=run_mode):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
-    print(get_named_config(run_mode))
     app.config.from_object(get_named_config(run_mode))
     gcp_queue.init_app(app)
     app.logger = StructuredLogging(app).get_logger()
