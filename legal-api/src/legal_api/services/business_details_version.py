@@ -220,10 +220,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         business_version.end_transaction_id > filing.transaction_id)) \
             .order_by(business_version.transaction_id).one_or_none()
 
-        # Check if this is a tombstone business and if the filing is after the tombstone filing
-        if not business_revision and Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business.id):
-            # current business data if business not found in versioning
-            business_revision = business
         return VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
 
     @staticmethod
@@ -238,10 +234,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         business_version.end_transaction_id > filing.transaction_id)) \
             .order_by(business_version.transaction_id).one_or_none()
 
-        # Check if this is a tombstone business and if the filing is after the tombstone filing
-        if not business_revision and Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id):
-            # current business data if business not found in versioning
-            business_revision = Business.find_by_internal_id(business_id)
         return business_revision
 
     @staticmethod
@@ -263,11 +255,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
     @staticmethod
     def get_office_revision(filing_id, transaction_id, business_id) -> dict:
-        """Consolidates all office changes up to the given transaction id.
-
-        For migrated (tombstone) businesses, if no versioning data exists and the filing is after
-        the tombstone filing, the current office data will be used.
-        """
+        """Consolidates all office changes up to the given transaction id."""
         # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         offices_json = {}
         address_version = VersioningProxy.version_class(db.session(), Address)
@@ -283,11 +271,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .order_by(offices_version.transaction_id).all()
 
         # Track office IDs found in versioning to avoid duplicates
-        versioned_office_ids = set()
 
         # Process versioned offices
         for office in versioned_offices:
-            versioned_office_ids.add(office.id)
             offices_json[office.office_type] = {}
             addresses_list = db.session.query(address_version) \
                 .filter(address_version.transaction_id <= transaction_id) \
@@ -300,33 +286,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                 offices_json[office.office_type][f'{address.address_type}Address'] = \
                     VersionedBusinessDetailsService.address_revision_json(address)
 
-        # Check if this is a tombstone business and if the filing is after the tombstone filing
-        if Filing.is_filing_after_tombstone(filing_id=filing_id, business_id=business_id):
-            # Query current office data for any offices not found in versioning
-            current_offices = db.session.query(Office).filter(
-                Office.business_id == business_id,
-                Office.id.notin_(versioned_office_ids) if versioned_office_ids else True
-            ).all()
-
-            # Add non-versioned office data
-            for office in current_offices:
-                offices_json[office.office_type] = {}
-                addresses = office.addresses.all()
-                for address in addresses:
-                    offices_json[office.office_type][f'{address.address_type}Address'] = \
-                        VersionedBusinessDetailsService.address_revision_json(address)
-
         return offices_json
 
     @staticmethod
     def get_party_role_revision(filing, business_id, is_ia_or_after=False, role=None) -> dict:
         """Consolidates all party changes up to the given transaction id.
 
-        For migrated (tombstone) businesses, if no versioning data exists and the filing is after
-        the tombstone filing, the current party data will be used.
-
         Args:
-            filing_id (int): The filing ID to check against tombstone filing
             transaction_id (int): The transaction ID for versioning queries
             business_id (int): The business ID to check
             is_ia_or_after (bool): Flag for incorporation application or after
@@ -335,7 +301,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
         parties = []
-        versioned_party_role_ids = set()
 
         # TODO: remove filter that excludes officer when we have plans to deal with it
         # Get versioned party roles
@@ -352,29 +317,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
 
         # Process versioned party roles
         for party_role in versioned_party_roles:
-            versioned_party_role_ids.add(party_role.id)
             if party_role.cessation_date is None:
-                party_role_json = VersionedBusinessDetailsService.party_role_revision_json(filing,
-                                                                                           party_role, is_ia_or_after)
-                if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
-                                                                  == party_role_json['officer']['id']), None)):
-                    party['roles'].extend(party_role_json['roles'])
-                else:
-                    parties.append(party_role_json)
-
-        # Check if this is a tombstone business and if the filing is after the tombstone filing
-        if Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=business_id):
-            # Query current party role data for any roles not found in versioning
-            current_party_roles = db.session.query(PartyRole).filter(
-                PartyRole.business_id == business_id,
-                PartyRole.id.notin_(versioned_party_role_ids) if versioned_party_role_ids else True,
-                PartyRole.role != PartyRole.RoleTypes.OFFICER.value,
-                PartyRole.cessation_date.is_(None),
-            )
-            if role:
-                current_party_roles = current_party_roles.filter(PartyRole.role == role)
-
-            for party_role in current_party_roles.all():
                 party_role_json = VersionedBusinessDetailsService.party_role_revision_json(filing,
                                                                                            party_role, is_ia_or_after)
                 if 'roles' in party_role_json and (party := next((x for x in parties if x['officer']['id']
@@ -519,10 +462,6 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             .filter(or_(party_version.end_transaction_id == None,  # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_version.end_transaction_id > filing.transaction_id)) \
             .order_by(party_version.transaction_id).one_or_none()
-
-        if not party and Filing.is_filing_after_tombstone(filing_id=filing.id, business_id=filing.business_id):
-            # Query current party data if party not found in versioning
-            party = Party.find_by_id(party_id)
 
         return party
 
