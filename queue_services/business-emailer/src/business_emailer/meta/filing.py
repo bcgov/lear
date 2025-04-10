@@ -20,10 +20,9 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final
 
+from business_emailer.services.versioned_business_details import VersionedBusinessDetailsService as VersionService
 from business_model.models import Business
 from business_model.models import Filing as FilingStorage
-
-from business_emailer.services.versioned_business_details import VersionedBusinessDetailsService as VersionService
 
 
 class AutoName(str, Enum):

@@ -20,11 +20,11 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from business_model.models import Business, Furnishing
 from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
+from business_model.models import Business, Furnishing
 
 PROCESSABLE_FURNISHING_NAMES = [
     Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR.name,

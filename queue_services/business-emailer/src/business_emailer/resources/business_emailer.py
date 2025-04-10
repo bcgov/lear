@@ -38,11 +38,10 @@ import json
 from http import HTTPStatus
 
 import requests
-from business_account.AccountService import AccountService
-from business_model.models import Filing, Furnishing
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
 
+from business_account.AccountService import AccountService
 from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
@@ -69,6 +68,7 @@ from business_emailer.email_processors import (
 )
 from business_emailer.exceptions import EmailException, QueueException
 from business_emailer.services import flags, gcp_queue, verify_gcp_jwt
+from business_model.models import Filing, Furnishing
 
 bp = Blueprint("worker", __name__)
 

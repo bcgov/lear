@@ -23,9 +23,10 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
+from flask import current_app
+
 from business_model.models import Business, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
-from flask import current_app
 
 
 def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:

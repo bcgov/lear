@@ -17,7 +17,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from business_model.models import Filing, UserRoles
 from flask import current_app
 from jinja2 import Template
 
@@ -28,6 +27,7 @@ from business_emailer.email_processors import (
     substitute_template_parts,
 )
 from business_emailer.email_processors.special_resolution_helper import get_completed_pdfs, get_paid_pdfs
+from business_model.models import Filing, UserRoles
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches

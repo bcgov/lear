@@ -21,7 +21,6 @@ from pathlib import Path
 
 import pycountry
 import requests
-from business_model.models import Business, Filing, ReviewResult
 from flask import current_app
 from jinja2 import Template
 
@@ -32,6 +31,7 @@ from business_emailer.email_processors import (
     get_recipients,
     substitute_template_parts,
 )
+from business_model.models import Business, Filing, ReviewResult
 
 
 def _get_pdfs( # noqa: PLR0913

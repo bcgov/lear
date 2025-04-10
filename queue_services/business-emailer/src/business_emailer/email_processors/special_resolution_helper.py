@@ -16,10 +16,10 @@ import base64
 from http import HTTPStatus
 
 import requests
-from business_model.models import Business, Filing
 from flask import current_app
 
 from business_emailer.email_processors import get_filing_document
+from business_model.models import Business, Filing
 
 
 def get_completed_pdfs( # noqa: PLR0913

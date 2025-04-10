@@ -15,9 +15,9 @@
 
 This module is the service worker for sending emails about entity related events.
 """
-from business_model.models.db import db
 from flask import Flask
 
+from business_model.models.db import db
 from structured_logging import StructuredLogging
 
 from .config import Config, ProdConfig

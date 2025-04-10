@@ -20,13 +20,13 @@ from http import HTTPStatus
 from pathlib import Path
 
 import requests
-from business_model.models import Business, Filing
 from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import get_filing_document, get_filing_info, substitute_template_parts
 from business_emailer.email_processors.special_resolution_helper import get_completed_pdfs
 from business_emailer.filing_helper import is_special_resolution_correction_by_filing_json
+from business_model.models import Business, Filing
 
 
 # copied and pasted from legal_api.core.filing_helper

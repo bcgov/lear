@@ -19,12 +19,12 @@ from enum import Enum
 from http import HTTPStatus
 from pathlib import Path
 
-from business_model.utils.legislation_datetime import LegislationDatetime
 from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import substitute_template_parts
 from business_emailer.services.namex import NameXService
+from business_model.utils.legislation_datetime import LegislationDatetime
 
 
 class Option(Enum):
