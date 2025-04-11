@@ -15,7 +15,6 @@
 
 NOTE: This is copied from search-api and altered a bit for legal-api.
 This will be reworked and moved to a common service later."""
-import json
 from contextlib import suppress
 
 import ldclient

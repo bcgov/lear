@@ -34,9 +34,9 @@
 """Email Reminder Job."""
 import os
 
+from business_model.models import db
 from flask import Flask
 
-from business_model.models import db
 from email_reminder.config import DevelopmentConfig, ProductionConfig, UnitTestingConfig
 from email_reminder.services import flags, gcp_queue
 from structured_logging import StructuredLogging
@@ -65,6 +65,6 @@ def register_shellcontext(app: Flask):
     """Register shell context objects."""
     def shell_context():
         """Shell context objects."""
-        return {'app': app}
+        return {"app": app}
 
     app.shell_context_processor(shell_context)

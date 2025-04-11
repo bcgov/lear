@@ -36,13 +36,13 @@ import uuid
 from datetime import UTC, datetime
 
 import requests
-from flask import current_app
-from simple_cloudevent import SimpleCloudEvent, to_queue_message
-from flask_sqlalchemy.pagination import Pagination
-from sqlalchemy.sql.expression import text
-
 from business_account.AccountService import AccountService
 from business_model.models import Business, Filing, db
+from flask import current_app
+from flask_sqlalchemy.pagination import Pagination
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
+from sqlalchemy.sql.expression import text
+
 from email_reminder.services import gcp_queue
 from email_reminder.services.flags import Flags
 
@@ -58,52 +58,52 @@ def send_email(business_id: int, ar_fee: str, ar_year: str):
             time=datetime.now(UTC),
             type="bc.registry.reminder.annualReport",
             data = {
-                'email': {
-                    'businessId': business_id,
-                    'type': 'annualReport',
-                    'option': 'reminder',
-                    'arFee': ar_fee,
-                    'arYear': ar_year
+                "email": {
+                    "businessId": business_id,
+                    "type": "annualReport",
+                    "option": "reminder",
+                    "arFee": ar_fee,
+                    "arYear": ar_year
                 }
             }
         )
         gcp_queue.publish(topic, to_queue_message(ce))
     except Exception as err:
-        current_app.logger.error(f'Queue Error: Failed to place ar reminder email for business id {business_id} on Queue with error:{err}')
+        current_app.logger.error(f"Queue Error: Failed to place ar reminder email for business id {business_id} on Queue with error:{err}")
         raise err
 
 
 def get_ar_fee(legal_type: str, token: str) -> str:
     """Get AR fee."""
-    current_app.logger.debug(f'token: {token}')
-    current_app.logger.debug(f'legal_type: {legal_type}')
-    fee_url = current_app.config.get('PAYMENT_SVC_FEES_URL')
-    current_app.logger.debug(f'fee_url: {fee_url}')
-    filing_type_code = Filing.FILINGS['annualReport']['codes'].get(legal_type, None)
-    ar_filing = Filing.FILINGS['annualReport']
-    current_app.logger.debug(f'Filing.FILINGS: {ar_filing}')
-    current_app.logger.debug(f'filing_type_code: {filing_type_code}')
-    fee_url = ''.join([fee_url, '/', legal_type, '/', filing_type_code])
-    current_app.logger.debug(f'fee_url: {fee_url}')
+    current_app.logger.debug(f"token: {token}")
+    current_app.logger.debug(f"legal_type: {legal_type}")
+    fee_url = current_app.config.get("PAYMENT_SVC_FEES_URL")
+    current_app.logger.debug(f"fee_url: {fee_url}")
+    filing_type_code = Filing.FILINGS["annualReport"]["codes"].get(legal_type, None)
+    ar_filing = Filing.FILINGS["annualReport"]
+    current_app.logger.debug(f"Filing.FILINGS: {ar_filing}")
+    current_app.logger.debug(f"filing_type_code: {filing_type_code}")
+    fee_url = "".join([fee_url, "/", legal_type, "/", filing_type_code])
+    current_app.logger.debug(f"fee_url: {fee_url}")
     res = requests.get(url=fee_url,
                        headers={
-                           'Content-Type': 'application/json',
-                           'Authorization': 'Bearer ' + token,
-                           'App-Name': 'email-reminder-job'},
+                           "Content-Type": "application/json",
+                           "Authorization": "Bearer " + token,
+                           "App-Name": "email-reminder-job"},
                        timeout=30)
-    current_app.logger.debug(f'res: {res}')
-    current_app.logger.debug(f'res: {res.json()}')
-    ar_fee = res.json().get('filingFees')
-    current_app.logger.debug(f'ar_fee: {ar_fee}')
+    current_app.logger.debug(f"res: {res}")
+    current_app.logger.debug(f"res: {res.json()}")
+    ar_fee = res.json().get("filingFees")
+    current_app.logger.debug(f"ar_fee: {ar_fee}")
     return str(ar_fee)
 
 
 def get_businesses(legal_types: list) -> Pagination:
     """Get businesses to send AR reminder today."""
     where_clause = text(
-        'CASE WHEN last_ar_reminder_year IS NULL THEN date(founding_date)' +
-        ' ELSE date(founding_date)' +
-        ' + MAKE_INTERVAL(YEARS := last_ar_reminder_year - EXTRACT(YEAR FROM founding_date)::INTEGER)' +
+        "CASE WHEN last_ar_reminder_year IS NULL THEN date(founding_date)" +
+        " ELSE date(founding_date)" +
+        " + MAKE_INTERVAL(YEARS := last_ar_reminder_year - EXTRACT(YEAR FROM founding_date)::INTEGER)" +
         " END  + interval '1 year' <= CURRENT_DATE")
     return db.session.query(Business).filter(
         Business.legal_type.in_(legal_types),
@@ -124,7 +124,7 @@ def find_and_send_ar_reminder():
                        Business.LegalTypes.ULC_CONTINUE_IN.value,
                        Business.LegalTypes.CCC_CONTINUE_IN.value,]  # entity types to send ar reminder
 
-        if Flags.is_on('enable-bc-ccc-ulc-email-reminder'):
+        if Flags.is_on("enable-bc-ccc-ulc-email-reminder"):
             legal_types.extend(
                 [Business.LegalTypes.COMP.value,
                  Business.LegalTypes.BC_CCC.value,
@@ -138,22 +138,22 @@ def find_and_send_ar_reminder():
         for legal_type in legal_types:
             ar_fees[legal_type] = get_ar_fee(legal_type, token)
 
-        current_app.logger.debug('Getting businesses to send AR reminder today')
+        current_app.logger.debug("Getting businesses to send AR reminder today")
         pagination = get_businesses(legal_types)
         while pagination.items:
-            current_app.logger.debug('Processing businesses to send AR reminder')
+            current_app.logger.debug("Processing businesses to send AR reminder")
             for item in pagination.items:
                 business: Business = item  # setting new variable for the typing
                 ar_year = (business.last_ar_reminder_year
                            if business.last_ar_reminder_year else business.founding_date.year) + 1
                 try:
                     send_email(business.id, ar_fees[business.legal_type], str(ar_year))
-                    current_app.logger.debug(f'Successfully queued ar reminder for business id {business.id}.')
+                    current_app.logger.debug(f"Successfully queued ar reminder for business id {business.id}.")
                     business.last_ar_reminder_year = ar_year
                     business.save()
-                except Exception as err:
+                except Exception:
                     # log error for human review
-                    current_app.logger.error('Error sending email reminder for %s', business.identifier)
+                    current_app.logger.error("Error sending email reminder for %s", business.identifier)
 
             if pagination.next_num:
                 pagination = pagination.next()
@@ -171,21 +171,21 @@ def send_outstanding_bcomps_ar_reminder():
         token = AccountService.get_bearer_token()
         ar_fee = get_ar_fee(Business.LegalTypes.BCOMP.value, token)
 
-        current_app.logger.debug('Getting outstanding bcomps to send AR reminder')
+        current_app.logger.debug("Getting outstanding bcomps to send AR reminder")
         where_clause = text(
-            'CASE WHEN last_ar_date IS NULL THEN date(founding_date) ELSE date(last_ar_date) END' +
+            "CASE WHEN last_ar_date IS NULL THEN date(founding_date) ELSE date(last_ar_date) END" +
             " <= CURRENT_DATE - interval '1 year'")
         businesses = db.session.query(Business).filter(
             Business.legal_type == Business.LegalTypes.BCOMP.value,
             where_clause
         ).all()
-        current_app.logger.debug('Processing outstanding bcomps to send AR reminder')
+        current_app.logger.debug("Processing outstanding bcomps to send AR reminder")
 
         for business in businesses:
             ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
             send_email(business.id, ar_fee, str(ar_year))
-            current_app.logger.debug(f'Successfully queued ar reminder for business id {business.id} for year {ar_year}.')
+            current_app.logger.debug(f"Successfully queued ar reminder for business id {business.id} for year {ar_year}.")
 
     except Exception as err:
         current_app.logger.error(err)
@@ -193,7 +193,7 @@ def send_outstanding_bcomps_ar_reminder():
 
 def run():
     """Run the email reminder worker."""
-    if current_app.config.get('SEND_OUTSTANDING_BCOMPS') == 'send.outstanding.bcomps':
+    if current_app.config.get("SEND_OUTSTANDING_BCOMPS") == "send.outstanding.bcomps":
         send_outstanding_bcomps_ar_reminder()
     else:
         find_and_send_ar_reminder()
