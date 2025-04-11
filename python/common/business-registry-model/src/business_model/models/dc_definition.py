@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from enum import auto
+
 from sqlalchemy import text
 
 from business_model.utils.base import BaseEnum
