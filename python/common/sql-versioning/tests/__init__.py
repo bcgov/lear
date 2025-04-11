@@ -68,7 +68,15 @@ class Email(Base, Versioned):
     name = Column(String)
 
     user_id = Column(Integer, ForeignKey('users.id'))
+    settings = orm.relationship('Setting', backref='email', cascade='all, delete, delete-orphan')
 
+class Setting(Base, Versioned):
+    __tablename__ = 'settings'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+
+    email_id = Column(Integer, ForeignKey('emails.id'))
 
 class Item(Base):
     __tablename__ = 'items'

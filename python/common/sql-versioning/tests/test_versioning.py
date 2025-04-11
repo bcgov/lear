@@ -18,8 +18,7 @@ Test-Suite to ensure that the versioning extension is working as expected.
 import pytest
 
 from sql_versioning import (version_class)
-from tests import (Model, User, Address, Location, Email, Item, Transaction)
-
+from tests import (Model, User, Address, Location, Email, Setting, Item, Transaction)
 
 @pytest.mark.parametrize('test_name', ['CLASS','INSTANCE'])
 def test_version_class(db, session, test_name):
@@ -208,6 +207,40 @@ def test_versioning_relationships_remove(db, session):
             assert email_versions[i].operation_type == 0
         else:
             assert email_versions[i].operation_type == 2
+
+@pytest.mark.parametrize(
+        'parent_to_delete',
+        ['email', 'user']
+)
+def test_versioning_relationships_cascade_delete(db, session, parent_to_delete):
+    """Test cascade delete from relationship via remove."""
+    # Setup
+    user = User(name='test')
+    email = Email(name='email')
+    setting = Setting(name='setting')
+    email.settings.append(setting)
+    user.emails.append(email)
+    session.add(user)
+    session.commit()
+
+    if (parent_to_delete == 'email'):
+        user = session.query(User).one_or_none()
+        existing_email = user.emails[0]
+        user.emails.remove(existing_email)
+        session.add(user)
+        session.commit()
+    else:
+        user = session.query(User).one_or_none()
+        session.delete(user)
+        session.commit()
+
+    # Check 
+    setting_versions = session.query(version_class(Setting))\
+        .order_by(version_class(Setting).transaction_id)\
+        .all()
+    assert len(setting_versions) == 2
+    assert setting_versions[0].operation_type == 0
+    assert setting_versions[1].operation_type == 2
 
 
 def test_versioning_delete(db, session):
