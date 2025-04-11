@@ -159,15 +159,28 @@ def search_businesses():
     try:
         json_input = request.get_json()
         identifiers = json_input.get('identifiers', None)
-        if not identifiers or not isinstance(identifiers, list):
-            return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
+        search_filter_name = json_input.get('name', None)
+        search_filter_type = json_input.get('type', None)
 
-        # base business query
-        bus_query = db.session.query(Business).filter(Business._identifier.in_(identifiers))  # noqa: E501; pylint: disable=protected-access
+        filters = []
 
-        # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
-        draft_query = db.session.query(Filing).filter(
-            and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
+        # Add filters if any
+        if identifiers and isinstance(identifiers, list):
+            filters.append(Business._identifier.in_(identifiers))
+
+        if search_filter_name:
+            filters.append(Business.legal_name.ilike(f'%{search_filter_name}%'))
+
+        if search_filter_type:
+            filters.append(Business.legal_type == search_filter_type)
+
+        if not filters:
+            return {
+                'message': "'identifiers', 'name', or 'type' is required."
+            }, HTTPStatus.BAD_REQUEST
+
+        #  # base business query with filters
+        bus_query = db.session.query(Business).filter(and_(*filters))
 
         bus_results = []
 
@@ -181,32 +194,36 @@ def search_businesses():
             bus_results.append(business_json)
 
         draft_results = []
-        for draft_dao in draft_query.all():
-            draft = {
-                'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
-                'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
-                'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
-                'draftStatus': draft_dao.status
-            }
+        # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
+        if identifiers:
+            draft_query = db.session.query(Filing).filter(
+                and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
+            for draft_dao in draft_query.all():
+                draft = {
+                    'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
+                    'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
+                    'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
+                    'draftStatus': draft_dao.status
+                }
 
-            if (draft_dao.status == Filing.Status.PAID.value and
-                    draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
-                draft['effectiveDate'] = draft_dao.effective_date.isoformat()
+                if (draft_dao.status == Filing.Status.PAID.value and
+                        draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
+                    draft['effectiveDate'] = draft_dao.effective_date.isoformat()
 
-            if draft_dao.json_nr:
-                draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
-            # Retrieves the legal name from the filing JSON. Defaults to None if not found.
-            draft['legalName'] = (draft_dao.filing_json.get('filing', {})
-                                  .get(draft_dao.filing_type, {})
-                                  .get('nameRequest', {})
-                                  .get('legalName'))
+                if draft_dao.json_nr:
+                    draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
+                # Retrieves the legal name from the filing JSON. Defaults to None if not found.
+                draft['legalName'] = (draft_dao.filing_json.get('filing', {})
+                                      .get(draft_dao.filing_type, {})
+                                      .get('nameRequest', {})
+                                      .get('legalName'))
 
-            if draft['legalName'] is None:
-                # Fallback to a generic legal name based on the legal type if no specific legal name is found
-                draft['legalName'] = (Business.BUSINESSES
-                                      .get(draft_dao.json_legal_type, {})
-                                      .get('numberedDescription'))
-            draft_results.append(draft)
+                if draft['legalName'] is None:
+                    # Fallback to a generic legal name based on the legal type if no specific legal name is found
+                    draft['legalName'] = (Business.BUSINESSES
+                                          .get(draft_dao.json_legal_type, {})
+                                          .get('numberedDescription'))
+                draft_results.append(draft)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
     except Exception as err:
