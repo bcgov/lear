@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<public_notice>
+    <volume></volume>
+    <date></date>
+
+    {% for furnishing in furnishings.values() -%}
+    <filing_desc title="{{ furnishing['title'] }}" id="">
+        <category>{{ furnishing['category'] }}</category>
+        <subcategory>{{ furnishing['subcategory'] }}</subcategory>
+        <corp_class>{{ furnishing['corp_class'] }}</corp_class>
+        <description>{{ furnishing['description'] }}</description>
+        <filings>
+            {% for f in furnishing['items'] -%}
+            <filing_detail>
+                <effective_date>{{ effective_date }}</effective_date>
+                {% if f.business_identifier.startswith('A') -%}
+                <corp_num>{{ f.business_identifier }}</corp_num>
+                {%- else -%}
+                <corp_num>{{ f.business_identifier[2:] }}</corp_num>
+                {%- endif %}
+                <text>
+                    {% if furnishing['category'] == 'DISSOLUTIONS' or furnishing['category'] == 'REGISTRATIONS CANCELLED' -%}
+                    {{ f.business_name }} {{ processed_time }}
+                    {%- else -%}
+                    {{ f.business_name }}
+                    {%- endif %}
+                </text>
+            </filing_detail>
+            {%- endfor %}
+        </filings>
+    </filing_desc>
+    {%- endfor %}
+</public_notice>
