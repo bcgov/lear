@@ -1,6 +1,6 @@
-# Entity BN
+# Future Effective Filings Report
 
-Generate entity business number report
+Generate future effective filings report
 
 ## Development Environment
 
@@ -10,13 +10,13 @@ to setup your local development environment.
 ## Development Setup
 
 1. Follow the [instructions](https://github.com/bcgov/entity/blob/master/docs/setup-forking-workflow.md) to checkout the project from GitHub.
-2. Open the entity-bn directory in VS Code to treat it as a project (or WSL projec). To prevent version clashes, set up a virtual environment to install the Python packages used by this project.
+2. Open the notebook-report directory in VS Code to treat it as a project (or WSL projec). To prevent version clashes, set up a virtual environment to install the Python packages used by this project.
 3. Run `make setup` to set up the virtual environment and install libraries.
 
-## Running Entity BN
+## Running Notebook Report
 
 1. Run `. venv/bin/activate` to change to `venv` environment.
-2. Run notebook with `python entity-bn.py`
+2. Run notebook with `python notebookreport.py`
 
 ## Running Unit Tests
 
@@ -36,7 +36,7 @@ poetry install
 
 You can issue any command in the current environment, via poetry's shell
 ```shell
-poetry shell
+source $(poetry env activate)
 ```
 
 ### Aside: faster local dev?

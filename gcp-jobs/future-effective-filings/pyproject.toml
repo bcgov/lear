@@ -1,20 +1,17 @@
 [tool.poetry]
-name = "entity-bn"
+name = "future_effective_filings"
 version = "0.1.0"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"
-package-mode = false
+packages = [{include = "future_effective_filings", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.13.0"
-jupyter = "^1.1.1"
-SQLAlchemy = "^2.0.40"
-psycopg2-binary = "^2.9.10"
-ipython-sql = "^0.5.0"
-python-dotenv = "^1.1.0"
-papermill = "^2.6.0"
 Flask = "^3.1.0"
+requests = "^2.32.3"
+python-dotenv = "^1.1.0"
+gcp-queue = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/gcp-queue"}
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
 
 [tool.poetry.group.dev.dependencies]
@@ -39,8 +36,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.13
-target-version = "py313"
+# Assume Python 3.12
+target-version = "py312"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -99,14 +96,13 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["structured_logging"]
+known-first-party = ["structured_logging", "gcp_queue"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]  # used for imports
-"**/tracker-errors.ipynb" = ["F821"]  # used for imports
 
 [build-system]
 requires = ["poetry-core"]
