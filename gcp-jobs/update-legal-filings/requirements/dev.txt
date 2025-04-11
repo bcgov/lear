@@ -1,0 +1,20 @@
+# Everything the developer needs outside of the production requirements
+
+# Testing
+pytest
+pytest-mock
+requests
+pyhamcrest
+
+# Lint and code style
+flake8
+flake8-blind-except
+flake8-debugger
+flake8-docstrings
+flake8-isort
+flake8-quotes
+pep8-naming
+autopep8
+coverage
+pylint
+pylint-flask
