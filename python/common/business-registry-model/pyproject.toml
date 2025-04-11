@@ -19,6 +19,7 @@ dependencies = [
     "flask-babel (>=4.0.0,<5.0.0)",
     "croniter (>=6.0.0,<7.0.0)",
     "flask-sqlalchemy (>=3.1.1,<4.0.0)",
+    "flask (>=3.1.0,<4.0.0)",
 ]
 
 [tool.poetry]
@@ -26,14 +27,14 @@ packages = [{include = "business_model", from = "src"},
             {include = "business_model_migrations", from = "src"}
            ]
 
-[tool.poetry.group.dev.dependencies]
-flask = "^3.1.0"
-python-dotenv = "^1.0.1"
+[tool.poetry.group.test.dependencies]
 freezegun = "^1.5.1"
 pytest = "^8.3.5"
-zimports = "^0.6.1"
-black = "^25.1.0"
 pytest-cov = "^6.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.5"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
