@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <base href="/">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="origin-when-cross-origin"/>
+    <meta name="author" content="BC Registries and Online Services">
+    <title>Incorporation Documents from the Business Registry</title>
+    [[style.html]]
+  </head>
+
+  <body>
+    <table class="body-table" role="presentation">
+      <tr>
+        <td>
+          [[header.html]]
+
+          <div class="container">
+            <p class="title-message bold">
+              You have successfully registered 
+              {{ 'your Cooperative Association' if business.legalType == 'CP' else 'a business' }} 
+              with BC Business Registry.
+            </p>
+
+            [[business-info.html]]
+
+            <p>The following documents are attached to this email:</p>
+            <ul class="outputs">
+              <!-- scenarios 2 and 4 -->
+              {% if business.legalType == 'CP' %}
+                <li>Incorporation Certificate</li>
+                <li>Certified Rules</li>
+                <li>Certified Memorandum</li>
+              {% else %}
+                <li>Notice of Articles</li>
+                <li>Incorporation Certificate</li>
+              {% endif %}
+            </ul>
+
+            [[whitespace-16px.html]]
+            [[business-dashboard-link.html]]
+
+            [[whitespace-16px.html]]
+            [[pdf-notice.html]]
+
+            [[whitespace-16px.html]]
+            [[cra-notice.html]]
+
+            [[whitespace-16px.html]]
+            [[20px.html]]
+            [[footer.html]]
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

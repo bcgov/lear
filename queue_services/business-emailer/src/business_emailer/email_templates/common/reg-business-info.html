@@ -1,0 +1,40 @@
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]
+<div class="business-information">
+  <div>
+    <div class="name bold">Business name:</div>
+    {% if  filing_type == 'registration' %}
+      {% if filing.nameRequest.legalName %}
+      <!-- try to get legal name from Name Request object -->
+      <div class="value">{{ filing.nameRequest.legalName }}</div>
+      {% else %}
+      <!-- add other cases here -->
+      <div class="value">Unknown</div>
+      {% endif %}
+    {% else %}
+      <div class="value">{{ business.legalName }}</div>
+    {% endif %}
+  </div>
+
+  [[20px.html]]
+  <div>
+    <div class="name bold">Registration number:</div>
+    {% if status == 'PAID' and filing_type == 'registration' %}
+    <div class="value">Pending</div>
+    {% else %}
+    <!-- Eg, FM1234567 -->
+    <div class="value">{{ business.identifier }}</div>
+    {% endif %}
+  </div>
+  
+  [[20px.html]]
+  <div>
+    <div class="name bold">Date and time of filing:</div>
+    <div class="value">{{ filing_date_time }}</div>
+  </div>
+</div>
+
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]
