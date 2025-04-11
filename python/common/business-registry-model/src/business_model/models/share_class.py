@@ -22,7 +22,7 @@ from sqlalchemy import event
 from business_model.exceptions import BusinessException
 
 from .db import db
-from .share_series import ShareSeries  # noqa: F401 pylint: disable=unused-import
+from .share_series import ShareSeries
 
 
 class ShareClass(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes

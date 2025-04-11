@@ -466,6 +466,12 @@ def get_allowable_filings_dict():
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
+                'consentAmalgamationOut': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                    }
+                },
                 'consentContinuationOut': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {

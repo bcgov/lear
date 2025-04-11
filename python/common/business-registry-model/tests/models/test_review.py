@@ -17,12 +17,12 @@
 Test-Suite to ensure that the Review Model is working as expected.
 """
 import copy
+
 from registry_schemas.example_data import (
     CONTINUATION_IN,
 )
 
 from business_model.models import Review, ReviewStatus
-
 from tests.models import factory_filing
 
 

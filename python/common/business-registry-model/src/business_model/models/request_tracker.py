@@ -15,12 +15,10 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import List
 
 from sqlalchemy import func
 
 from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 from .db import db
@@ -89,13 +87,13 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         return request_tracker
 
     @classmethod
-    def find_by(cls,  # pylint: disable=too-many-arguments
+    def find_by(cls,  # noqa: PLR0913
                 business_id: int,
                 service_name: ServiceName,
                 request_type: RequestType = None,
                 filing_id: int = None,
                 is_admin: bool = None,
-                message_id: str = None) -> List[RequestTracker]:
+                message_id: str = None) -> list[RequestTracker]:
         """Return the request tracker matching."""
         query = db.session.query(RequestTracker). \
             filter(RequestTracker.business_id == business_id). \

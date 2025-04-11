@@ -12,11 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Date time utilities."""
-# from datetime import datetime, timezone
 import time as _time
-from datetime import date, datetime as _datetime, timedelta, timezone  # pylint: disable=unused-import # noqa: E501, F401, I001, I005
-# noqa: I003,I005
+from datetime import (  # pylint: disable=unused-import
+    date,
+    timedelta,
+    timezone,
+)
+from datetime import datetime as _datetime
 
+from .base import BaseEnum
+
+
+class DayOfWeek(BaseEnum):
+    """Enum for the days of the week."""
+
+    MONDAY = 0
+    TUESDAY = 1
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
+    
 
 class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
@@ -35,13 +52,14 @@ class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha dat
     @classmethod
     def add_business_days(cls, from_date: _datetime, num_days: int):
         """Add business days to an initial date. Only accounts for weekends, not holidays."""
+        sunday = 6
         current_date = from_date
         business_days_to_add = abs(num_days)
         inc = 1 if num_days > 0 else -1
         while business_days_to_add > 0:
             current_date += timedelta(days=inc)
             weekday = current_date.weekday()
-            if weekday >= 5:  # sunday = 6
+            if weekday >= sunday:
                 continue
             business_days_to_add -= 1
         return current_date

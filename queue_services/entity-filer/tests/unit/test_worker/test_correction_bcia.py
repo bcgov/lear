@@ -213,7 +213,7 @@ BC_CORRECTION = {
     }
 }
 
-BC_CORRECTION_SHORT = {
+BC_COMMENT_ONLY_CORRECTION = {
     'filing': {
         'header': {
             'name': 'correction',
@@ -228,7 +228,8 @@ BC_CORRECTION_SHORT = {
             'details': 'First correction',
             'correctedFilingId': '123456',
             'correctedFilingType': 'incorporationApplication',
-            'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system'
+            'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system',
+            'commentOnly': True
         }
     }
 }
@@ -850,7 +851,7 @@ async def test_worker_share_class_and_series_change(app, session, mocker, test_n
         assert [item.json for item in business.share_classes.all()[0].series] == share_class_json2['series']
         
 
-async def test_correction_ben_statement(app, session, mocker):
+async def test_comment_only_correction(app, session, mocker):
     """Assert the worker process calls the BEN correction statement correctly."""
     
     identifier = 'BC1234567'
@@ -858,9 +859,9 @@ async def test_correction_ben_statement(app, session, mocker):
     business.save()
     business_id = business.id
 
-    filing = copy.deepcopy(BC_CORRECTION_SHORT)
+    filing = copy.deepcopy(BC_COMMENT_ONLY_CORRECTION)
     
-    corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_SHORT).id
+    corrected_filing_id = factory_completed_filing(business, BC_COMMENT_ONLY_CORRECTION).id
     filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
     
     payment_id = str(random.SystemRandom().getrandbits(0x58))

@@ -20,7 +20,7 @@ from .amalgamating_business import AmalgamatingBusiness
 from .amalgamation import Amalgamation
 from .batch import Batch
 from .batch_processing import BatchProcessing
-from .business import Business  # noqa: I001
+from .business import Business
 from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .configuration import Configuration
@@ -52,7 +52,6 @@ from .xml_payload import XmlPayload
 
 
 __all__ = (
-    'db',
     'Address',
     'Alias',
     'AmalgamatingBusiness',
@@ -67,8 +66,8 @@ __all__ = (
     'CorpType',
     'DCConnection',
     'DCDefinition',
-    'DCIssuedCredential',
     'DCIssuedBusinessUserCredential',
+    'DCIssuedCredential',
     'DCRevocationReason',
     'Document',
     'DocumentType',
@@ -92,5 +91,6 @@ __all__ = (
     'ShareSeries',
     'User',
     'UserRoles',
-    'XmlPayload'
+    'XmlPayload',
+    'db'
 )

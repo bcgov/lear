@@ -109,18 +109,19 @@ def _get_pdfs(
                 attach_order += 1
         elif legal_type in Business.CORPS:
             # add notice of articles
-            noa_pdf_type = 'noticeOfArticles'
-            noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
-            if noa_encoded:
-                pdfs.append(
-                    {
-                        'fileName': 'Notice of Articles.pdf',
-                        'fileBytes': noa_encoded.decode('utf-8'),
-                        'fileUrl': '',
-                        'attachOrder': str(attach_order)
-                    }
-                )
-                attach_order += 1
+            if not bool(filing.filing_json['filing']['correction'].get('commentOnly', False)):
+                noa_pdf_type = 'noticeOfArticles'
+                noa_encoded = get_filing_document(business['identifier'], filing.id, noa_pdf_type, token)
+                if noa_encoded:
+                    pdfs.append(
+                        {
+                            'fileName': 'Notice of Articles.pdf',
+                            'fileBytes': noa_encoded.decode('utf-8'),
+                            'fileUrl': '',
+                            'attachOrder': str(attach_order)
+                        }
+                    )
+                    attach_order += 1
         elif is_cp_special_resolution:
             rules_changed = bool(filing.filing_json['filing']['correction'].get('rulesFileKey'))
             memorandum_changed = bool(filing.filing_json['filing']['correction'].get('memorandumFileKey'))

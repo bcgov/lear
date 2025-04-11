@@ -14,15 +14,12 @@
 """This module holds data for configurations."""
 from __future__ import annotations
 
-# from enum import Enum
-from typing import List
-
 from croniter import croniter
 from sqlalchemy import event
 
 from business_model.utils.base import BaseEnum
-from .db import db
 
+from .db import db
 
 EMAIL_PATTERN = (r'^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|'
                  r'(".+"))@'
@@ -70,7 +67,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         return configuration
 
     @classmethod
-    def all(cls) -> List[Configuration]:
+    def all(cls) -> list[Configuration]:
         """Return the configuration matching the id."""
         return cls.query.all()
 
@@ -87,15 +84,11 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         """Return the configuration matching the name."""
         configuration = None
         if config_name:
-            try:
-                configuration = cls.query.filter_by(name=config_name).one_or_none()
-            except Exception as exc:
-                print(exc)
-                raise exc
+            configuration = cls.query.filter_by(name=config_name).one_or_none()
         return configuration
 
     @classmethod
-    def find_by_names(cls, config_names: List[str]) -> List[Configuration]:
+    def find_by_names(cls, config_names: list[str]) -> list[Configuration]:
         """Return the configurations matching the names."""
         return cls.query.filter(cls.name.in_(config_names)).all()
 

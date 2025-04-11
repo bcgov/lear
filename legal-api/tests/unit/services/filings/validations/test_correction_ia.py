@@ -16,21 +16,43 @@
 import copy
 from http import HTTPStatus
 from unittest.mock import patch
-from tests.unit import MockResponse
 
 import pytest
 from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.services import NameXService
 from legal_api.services.filings import validate
+from tests.unit import MockResponse
 from tests.unit.models import factory_business, factory_completed_filing
 from tests.unit.services.filings.validations import lists_are_equal
+
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)
 
+BC_COMMENT_ONLY_CORRECTION = {
+    'filing': {
+        'header': {
+            'name': 'correction',
+            'date': '2025-01-01',
+            'certifiedBy': 'system'
+        },
+        'business': {
+            'identifier': 'BC1234567',
+            'legalType': 'BC'
+        },
+        'correction': {
+            'details': 'First correction',
+            'correctedFilingId': '123456',
+            'correctedFilingType': 'incorporationApplication',
+            'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system',
+            'commentOnly': True
+        }
+    }
+}
 
-def test_valid_ia_correction(session):
+
+def test_valid_ia_correction(mocker, session):
     """Test that a valid IA without NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -41,6 +63,8 @@ def test_valid_ia_correction(session):
     f = copy.deepcopy(CORRECTION)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     err = validate(business, f)
 
@@ -57,7 +81,7 @@ def test_valid_ia_correction(session):
      'Name Request legal type is not same as the business legal type.'),
     ('nr_not_approved', 'BEN', 'CP', 'BECV', 'Name Request is not approved.')
 ])
-def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+def test_nr_correction(mocker, session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -76,6 +100,7 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     f['filing']['correction']['nameRequest']['legalName'] = new_name
     f['filing']['correction']['nameRequest']['legalType'] = legal_type
     f['filing']['business']['legalType'] = legal_type
+    del f['filing']['correction']['commentOnly']
 
     nr_response_json = {
         'state': 'INPROGRESS' if new_name == 'nr_not_approved' else 'APPROVED',
@@ -88,6 +113,8 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
         }]
     }
     nr_response = MockResponse(nr_response_json)
+
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
 
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
         err = validate(business, f)
@@ -133,7 +160,7 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     ('no_roles', 'CC', 'STAFF',
      [{'error': 'Must have a minimum of 3 Director', 'path': '/filing/correction/parties/roles'}]),
 ])
-def test_parties_correction(session, test_name, legal_type, correction_type, err_msg):
+def test_parties_correction(mocker, session, test_name, legal_type, correction_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -153,6 +180,7 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
     f['filing']['correction']['nameRequest']['legalName'] = 'test'
     f['filing']['correction']['nameRequest']['legalType'] = legal_type
     f['filing']['business']['legalType'] = legal_type
+    del f['filing']['correction']['commentOnly']
 
     if test_name == 'no_roles':
         f['filing']['correction']['parties'][0]['roles'] = []
@@ -178,6 +206,11 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
     }
     nr_response = MockResponse(nr_response_json)
 
+    if correction_type == 'CLIENT':
+        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
+    else:
+        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
+
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
         err = validate(business, f)
         if err:
@@ -189,3 +222,37 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
         assert lists_are_equal(err.msg, err_msg)
     else:
         assert None is err
+
+
+@pytest.mark.parametrize('correction_type, err_msg', [
+    ('STAFF', None),
+    ('CLIENT', 'Only staff can file comment only Corrections.')
+])
+def test_valid_comment_only_correction(mocker, session, correction_type, err_msg):
+    """Test valid comment only IA validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    f = copy.deepcopy(BC_COMMENT_ONLY_CORRECTION)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    if correction_type == 'CLIENT':
+        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
+    else:
+        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
+
+    err = validate(business, f)
+
+    if err:
+        print(err.msg)
+
+    if not err_msg:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert err.msg[0]['error'] == err_msg

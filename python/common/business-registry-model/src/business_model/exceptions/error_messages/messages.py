@@ -14,7 +14,6 @@
 """Application Common Error Messages."""
 from .codes import ErrorCode
 
-
 ERROR_MESSAGES: dict = {
    ErrorCode.MISSING_BUSINESS: 'Business not found for identifier: {identifier}',
    ErrorCode.FILING_NOT_FOUND: 'Filing: {filing_id} not found for: {identifier}',

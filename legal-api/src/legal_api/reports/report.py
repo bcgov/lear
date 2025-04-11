@@ -209,6 +209,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'alteration-notice/companyProvisions',
             'special-resolution/resolution',
             'special-resolution/resolutionApplication',
+            'transition/preExistingCompanyProvisions',
             'addresses',
             'certification',
             'directors',
@@ -287,8 +288,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_restoration_data(filing)
         elif self._report_key == 'restoration':
             self._format_restoration_data(filing)
-        elif self._report_key == 'letterOfConsent':
-            self._format_consent_continuation_out_data(filing)
+        elif self._report_key in {'letterOfConsent', 'letterOfConsentAmalgamationOut'}:
+            self._format_consent_continuation_amalgamation_out_data(filing)
         elif self._report_key == 'correction':
             self._format_correction_data(filing)
         elif self._report_key == 'transition':
@@ -484,7 +485,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _populate_business_info_to_filing(filing: Filing, business: Business):
         founding_datetime = LegislationDatetime.as_legislation_timezone(business.founding_date)
         if filing.transaction_id:
-            business_json = VersionedBusinessDetailsService.get_business_revision(filing.transaction_id, business)
+            business_json = VersionedBusinessDetailsService.get_business_revision(filing, business)
         else:
             business_json = business.json()
             business_json['legalName'] = business.legal_name  # legal name easy fix
@@ -575,15 +576,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['restoration_expiry_date'] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_sub_type == 'limitedRestorationToFull':
             business_previous_restoration_expiry = \
-                VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing.transaction_id,
-                                                                                       self._business.id,
+                VersionedBusinessDetailsService.find_last_value_from_business_revision(self._filing,
                                                                                        is_restoration_expiry_date=True)
             restoration_expiry_datetime = LegislationDatetime.as_legislation_timezone(
                 business_previous_restoration_expiry.restoration_expiry_date)
             filing['previous_restoration_expiry_date'] = restoration_expiry_datetime.strftime(OUTPUT_DATE_FORMAT)
 
         business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+            self._filing, is_dissolution_date=True)
         filing['formatted_dissolution_date'] = \
             LegislationDatetime.format_as_report_string(business_dissolution.dissolution_date)
 
@@ -617,7 +617,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if self._filing.transaction_id:  # available when filing is COMPLETED
             business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-                self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+                self._filing, is_dissolution_date=True)
             filing['dissolutionLegalName'] = business_dissolution.legal_name
         else:
             filing['dissolutionLegalName'] = self._business.legal_name
@@ -626,7 +626,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
             filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_expiry_string_1159(expiry_date)
 
-    def _format_consent_continuation_out_data(self, filing):
+    def _format_consent_continuation_amalgamation_out_data(self, filing):
         cco = ConsentContinuationOut.get_by_filing_id(self._filing.id)
 
         country = pycountry.countries.get(alpha_2=cco.foreign_jurisdiction)
@@ -806,7 +806,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # when TED is dissolved by staff (with court order) and TING is restored, user can modify TING data
             # which should not be reflected here
             ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
-                self._filing.transaction_id, ting_business.id)
+                self._filing, ting_business.id)
         return ting_business
 
     def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals, too-many-branches
@@ -820,8 +820,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # copy director
         if self._filing.transaction_id:
             parties_version = VersionedBusinessDetailsService.get_party_role_revision(
-                self._filing.id,
-                self._filing.transaction_id,
+                self._filing,
                 primary_or_holding_business.id,
                 role=PartyRole.RoleTypes.DIRECTOR.value)
             for director_json in parties_version:
@@ -885,7 +884,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: E501 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.\
-            get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
+            get_business_revision_obj(prev_completed_filing, self._business.id)
 
         # Change of Name
         prev_legal_name = versioned_business.legal_name
@@ -946,7 +945,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     parties_to_edit.append(str(party['officer'].get('id')))
                     prev_party =\
                         VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing.transaction_id, party['officer'].get('id'))
+                            prev_completed_filing, party['officer'].get('id'))
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing.transaction_id, prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
@@ -964,7 +963,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.id, prev_completed_filing.transaction_id, self._business.id, True)
+                prev_completed_filing, self._business.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
@@ -1079,12 +1078,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return corp_type.full_desc if corp_type else None
 
     def _format_correction_data(self, filing):
+        if bool(filing.get('correction', {}).get('commentOnly', False)):
+            return
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')
         else:
             prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
             versioned_business = VersionedBusinessDetailsService.\
-                get_business_revision_obj(prev_completed_filing.transaction_id, self._business.id)
+                get_business_revision_obj(prev_completed_filing, self._business.id)
 
             self._format_name_request_data(filing, versioned_business)
             self._format_name_translations_data(filing, prev_completed_filing)
@@ -1166,7 +1167,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     parties_to_edit.append(str(party_id))
                     prev_party =\
                         VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing.transaction_id, party_id)
+                            prev_completed_filing, party_id)
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing.transaction_id, prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
@@ -1184,7 +1185,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
-                prev_completed_filing.id, prev_completed_filing.transaction_id, self._business.id, True)
+                prev_completed_filing, self._business.id, True)
             parties_deleted = [p for p in existing_party_json if p['officer']['id'] not in parties_to_edit]
             filing['ceasedParties'] = parties_deleted
 
@@ -1319,6 +1320,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _format_noa_data(self, filing):
         filing['header'] = {}
         filing['header']['filingId'] = self._filing.id
+        if self._filing.filing_type == 'transition':
+            has_provisions = self._filing.filing_json['filing'].get('transition', {}).get('hasProvisions')
+            filing['hasProvisions'] = has_provisions
 
     def _set_meta_info(self, filing):
         filing['environment'] = f'{self._get_environment()} FILING #{self._filing.id}'.lstrip()
@@ -1474,6 +1478,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
                 'fileName': 'firmCorrection'
             }
         },
+        'consentAmalgamationOut': {
+            'filingDescription': '6-Month Consent to Amalgamate Out',
+            'fileName': 'consentAmalgamationOut'
+        },
         'certificateOfRestoration': {
             'filingDescription': 'Certificate of Restoration',
             'fileName': 'certificateOfRestoration'
@@ -1485,6 +1493,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'letterOfConsent': {
             'filingDescription': 'Letter Of Consent',
             'fileName': 'letterOfConsent'
+        },
+        'letterOfConsentAmalgamationOut': {
+            'filingDescription': 'Letter Of Consent',
+            'fileName': 'letterOfConsentAmalgamationOut'
         },
         'letterOfAgmExtension': {
             'filingDescription': 'Letter Of AGM Extension',

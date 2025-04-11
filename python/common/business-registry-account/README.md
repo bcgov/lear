@@ -1,10 +1,6 @@
+# Business Registry Account
 
-
-
-
-# Business Registry Dissolution
-
-This library provides the dissolution service, previously available as part of the legal api
+This library provides the account service, previously available as part of the legal api
 
 ## Required env values to use
 AUTH_SVC_URL

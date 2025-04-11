@@ -18,12 +18,12 @@ from enum import Enum, auto
 class AutoName(str, Enum):
     """Replace autoname from Enum class."""
 
-    #pragma warning disable S5720; # noqa: E265
+    #pragma warning disable S5720;
     # disable sonar cloud complaining about this signature
     def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
         """Return the name of the key, but in lowercase."""
         return name.lower()
-    #pragma warning enable S5720; # noqa: E265
+    #pragma warning enable S5720;
 
 
 class ErrorCode(AutoName):

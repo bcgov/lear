@@ -14,12 +14,8 @@
 """This module holds the data about review result."""
 from __future__ import annotations
 
-from typing import List
-
 from sqlalchemy import func
 from sqlalchemy.orm import backref
-
-from business_model.utils.datetime import datetime
 
 from .db import db
 from .review import Review, ReviewStatus
@@ -51,7 +47,7 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.commit()
 
     @classmethod
-    def get_review_results(cls, review_id) -> List[ReviewResult]:
+    def get_review_results(cls, review_id) -> list[ReviewResult]:
         """Return review results by the review id."""
         review_results = None
         if review_id:

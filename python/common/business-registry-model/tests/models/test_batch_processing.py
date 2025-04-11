@@ -19,8 +19,7 @@ Test-Suite to ensure that the Batch Processing Model is working as expected.
 import json
 
 from business_model.models import BatchProcessing
-
-from tests.models import factory_business, factory_batch
+from tests.models import factory_batch, factory_business
 
 
 def test_valid_batch_processing_save(session):

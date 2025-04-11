@@ -20,7 +20,7 @@ from typing import Optional
 class BaseMeta(EnumMeta):
     """Meta class for the enum."""
 
-    def __contains__(self, other):  # pylint: disable=C0203
+    def __contains__(self, other):  # noqa: N804
         """Return True if 'in' the Enum."""
         try:
             self(other)  # pylint: disable=no-value-for-parameter

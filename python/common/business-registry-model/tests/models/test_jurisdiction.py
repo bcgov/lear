@@ -17,12 +17,12 @@
 Test-Suite to ensure that the ContinuationIn Model is working as expected.
 """
 import copy
+
 from registry_schemas.example_data import (
     CONTINUATION_IN,
 )
 
 from business_model.models import Jurisdiction
-
 from tests.models import factory_business, factory_completed_filing
 
 

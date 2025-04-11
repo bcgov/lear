@@ -13,19 +13,16 @@
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
 import contextlib
-import datetime
-import time
-from contextlib import contextmanager, suppress
-from typing import Final
+from contextlib import contextmanager
 
 import pytest
 import sqlalchemy
 from flask import Flask
 from flask_migrate import Migrate, upgrade
-from sqlalchemy import event, func, inspect, text
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import event, text
 
 from business_model.models import db as _db
-
 from config import Testing
 
 # from . import FROZEN_DATETIME
@@ -176,7 +173,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
             app,
             _db,
             directory="src/business_model_migrations",
-            **{"dialect_name": "postgres"},
+            dialect_name="postgres",
         )
         upgrade()
 
@@ -229,6 +226,16 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         # This instruction rollsback any commit that were executed in the tests.
         txn.rollback()
         conn.close()
+
+@pytest.fixture(autouse=True)
+def run_around_tests(db: SQLAlchemy):
+    # run before each test
+    yield
+    # run after each test
+    db.session.rollback()
+    db.session.execute(text("TRUNCATE TABLE businesses CASCADE"))
+    db.session.execute(text("TRUNCATE TABLE dc_definitions CASCADE"))
+    db.session.commit()
 
 # @pytest.fixture(scope='function')
 # def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name

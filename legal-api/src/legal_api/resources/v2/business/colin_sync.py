@@ -72,8 +72,7 @@ def get_completed_filings_for_colin():
 
         if not filing_json['filing'].get('business'):
             if filing.transaction_id:
-                business_revision = VersionedBusinessDetailsService.get_business_revision_obj(
-                    filing.transaction_id, business.id)
+                business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business.id)
                 filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
                     business_revision, business.json())
             else:
@@ -115,6 +114,9 @@ def get_completed_filings_for_colin():
 
 def set_correction_flags(filing_json, filing: Filing):
     """Set what section changed in this correction."""
+    if filing.meta_data.get('commentOnly', False):
+        return
+
     if filing.meta_data.get('toLegalName'):
         filing_json['filing']['correction']['nameChanged'] = True
 
@@ -172,8 +174,7 @@ def has_party_changed(filing: Filing) -> bool:
         return True
 
     # Has existing party modified
-    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing.id,
-                                                                          filing.transaction_id,
+    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                           filing.business_id,
                                                                           role=PartyRole.RoleTypes.DIRECTOR.value)
 
@@ -187,7 +188,7 @@ def has_party_changed(filing: Filing) -> bool:
         if db.session.query(parties_query).scalar():  # Modified party
             return True
 
-        party = VersionedBusinessDetailsService.get_party_revision(filing.transaction_id, party_role['id'])
+        party = VersionedBusinessDetailsService.get_party_revision(filing, party_role['id'])
         address_version = VersioningProxy.version_class(db.session(), Address)
         # Has party delivery/mailing address modified
         address_query = (db.session.query(address_version)
@@ -245,8 +246,7 @@ def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
                                                AmalgamatingBusiness.Role.primary.name])
 
     ting_business = Business.find_by_identifier(primary_or_holding['identifier'])
-    primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing.transaction_id,
-                                                                                            ting_business.id)
+    primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing, ting_business.id)
 
     amalgamation_filing['nameRequest']['legalName'] = primary_or_holding_business.legal_name
 
@@ -257,8 +257,7 @@ def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
 
 def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
     parties = []
-    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing.id,
-                                                                              filing.transaction_id,
+    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                               primary_or_holding_business.id,
                                                                               role=PartyRole.RoleTypes.DIRECTOR.value)
     # copy director

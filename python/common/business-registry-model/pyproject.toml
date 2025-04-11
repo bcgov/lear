@@ -19,6 +19,8 @@ dependencies = [
     "flask-babel (>=4.0.0,<5.0.0)",
     "croniter (>=6.0.0,<7.0.0)",
     "flask-sqlalchemy (>=3.1.1,<4.0.0)",
+    "flask (>=3.1.0,<4.0.0)",
+    "dotenv (>=0.9.9,<0.10.0)",
 ]
 
 [tool.poetry]
@@ -26,17 +28,173 @@ packages = [{include = "business_model", from = "src"},
             {include = "business_model_migrations", from = "src"}
            ]
 
-[tool.poetry.group.dev.dependencies]
-flask = "^3.1.0"
-python-dotenv = "^1.0.1"
+[tool.poetry.group.test.dependencies]
 freezegun = "^1.5.1"
 pytest = "^8.3.5"
-zimports = "^0.6.1"
-black = "^25.1.0"
+pytest-cov = "^6.0.0"
 
 
-[tool.poetry.dependencies]
-sql-versioning = {develop = true}
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.5"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".vscode",
+    "dist",
+    "htmlcov",
+    "venv",
+    "migrations",
+    "devops",
+    ".history"
+]
+
+
+# Same as Black.
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.12
+#target-version = "py312"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "ERA", # flake8-eradicate/eradicate
+    "I",   # isort
+    "N",   # pep8-naming
+    "PIE", # flake8-pie
+    "PL",  # pyLint
+    "PGH", # pygrep
+    "RUF", # ruff checks
+    "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "UP",  # pyupgrade
+]
+#ignore = [
+#    "B904", # use 'raise ... from err'
+#    "B905", # use explicit 'strict=' parameter with 'zip()'
+#    "N999"
+#]
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [
+    "B",
+    "C",
+    "ERA",
+    "N",
+    "PLR",
+    "RUF",
+    "SIM",
+    "T2",
+    ]
+"**/business_model_migrations/*" = [
+    "ERA",
+    "PLR",
+    "T",
+    ]
+#"src/business_model/utils/datetime.py" = [
+#    "N801",
+#    ]
+"**/business_model/*" = [
+    "N801",
+    "RUF012",
+    "RUF013",
+    "SIM",
+    "TC001",
+    ]
+
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = [
+    "ERA", # do not autoremove commented out code
+]
+
+# Allow unused variables when underscore-prefixed.
+#dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+known-first-party = ["business_model"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.pytest.ini_options]
+minversion = "2.0"
+testpaths = [
+   "tests",
+]
+addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+python_files = [
+   "test*.py"
+]
+norecursedirs = [
+   ".git", ".tox", "venv*", "requirements*", "build",
+]
+log_cli = true
+log_cli_level = "INFO"
+filterwarnings = [
+   "ignore::UserWarning"
+]
+markers = [
+   "slow",
+   "serial",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+   "src/business_model",
+   "src/business_model_migrations",
+]
+omit = [
+    "app.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+   "pragma: no cover",
+   "from",
+   "import",
+   "def __repr__",
+   "if self.debug:",
+   "if settings.DEBUG",
+   "raise AssertionError",
+   "raise NotImplementedError",
+   "if 0:",
+   'if __name__ == "__main__":',
+]

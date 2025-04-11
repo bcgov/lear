@@ -350,7 +350,7 @@ FILINGS: Final = {
         'additional': [
             {
                 'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
-                'outputs': ['letterOfConsent']
+                'outputs': ['letterOfConsentAmalgamationOut']
             },
         ]
     },
@@ -469,8 +469,8 @@ FILINGS: Final = {
                 'CBEN': 'COURT',
                 'CUL': 'COURT',
                 'CCC': 'COURT',
-            }
-        },
+        }
+    },
     'dissolution': {
         'name': 'dissolution',
         'additional': [
@@ -797,7 +797,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         business_revision = business
         # retrieve business revision at time of filing so legal type is correct when returned for display name
         if filing.transaction_id and \
-                (bus_rev_temp := VersionService.get_business_revision_obj(filing.transaction_id, business.id)):
+                (bus_rev_temp := VersionService.get_business_revision_obj(filing, business.id)):
             business_revision = bus_rev_temp
 
         if isinstance(names, MutableMapping):
@@ -871,6 +871,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certifiedMemorandum')
             if correction.get('hasResolution'):
                 outputs.add('specialResolution')
+            if correction.get('commentOnly'):
+                outputs.remove('noticeOfArticles')
         return outputs
 
     @staticmethod

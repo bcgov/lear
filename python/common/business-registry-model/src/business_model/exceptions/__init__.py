@@ -22,7 +22,6 @@ import functools
 from .business_exception import BusinessException
 from .error_messages import ErrorCode, get_error_message
 
-
 __all__ = (
     'BusinessException',
     'ErrorCode',

@@ -5,11 +5,12 @@ Revises:
 Create Date: 2025-03-22 23:15:49.039060
 
 """
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 from business_model.models.custom_db_types import PostgreSQLXML
+
 # revision identifiers, used by Alembic.
 revision = '1a45bff11567'
 down_revision = None

@@ -14,11 +14,10 @@
 """This module holds data for batch processing."""
 from enum import auto
 
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import JSONB
 
 from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime
 
 from .db import db
 

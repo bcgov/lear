@@ -38,6 +38,7 @@ servers:
   - url: 'https://sandbox.api.connect.gov.bc.ca/business/api/v2'
     description: Test
   - url: 'https://api.connect.gov.bc.ca/business/api/v2'
+    description: Production
 paths:
   '/businesses/{identifier}':
     parameters:
@@ -124,9 +125,6 @@ paths:
                 agm-extension-success-response:
                   summary: AGM Extension Response
                   value:
-                    errors: [
-                      null
-                    ]
                     filing:
                       agmExtension:
                         agmDueDate: '2026-06-20'
@@ -152,9 +150,10 @@ paths:
                         legalName: 882365 B.C. LTD.
                         legalType: BC
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: '2024-07-10T17:56:10.782107+00:00'
@@ -164,15 +163,16 @@ paths:
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: agmExtension
-                        status: DRAFT
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
                         submitter: mocked submitter
                 agm-location-change-success-response:
                   summary: AGM Location Change Response
                   value:
-                    errors: [
-                      null
-                    ]
                     filing:
                       agmLocationChange:
                         agmLocation: Victoria, BC, Canada
@@ -184,9 +184,10 @@ paths:
                         legalName: 882365 B.C. LTD.
                         legalType: BC
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: '2024-07-18T15:36:26.345331+00:00'
@@ -194,8 +195,12 @@ paths:
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: agmLocationChange
-                        status: DRAFT
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
                         submitter: mocked submitter
                 alteration-success-response:
                   summary: Alteration Response
@@ -206,23 +211,14 @@ paths:
                           identifier: BC0883028
                           legalType: BEN
                         contactPoint:
-                          email: APISpecs@gov.bc.ca
+                          email: no_one@never.get
                           phone: (111) 111-1111
-                        courtOrder:
-                          effectOfOrder: planOfArrangement
-                          fileNumber: '12345'
-                          hasPlanOfArrangement: true
                         nameRequest:
-                          expirationDate: '2024-09-10T06:59:00+00:00'
                           legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
                           legalType: BEN
                           nrNumber: NR 9684750
-                          submittedDate: '2024-07-15T21:57:31+00:00'
-                          submitter_userid: ''
-                          userId: user@example
                         nameTranslations:
                           - name: API Specs Trans
-                        provisionsRemoved: false
                         shareStructure:
                         resolutionDates: [
                           '2024-07-12'
@@ -236,14 +232,21 @@ paths:
                             name: Class1 Shares
                             parValue: 10
                             priority: 1
-                            series: []
-                            type: Class
+                            series:
+                              - name: Series1 Shares
+                                priority: 1
+                                hasMaximumShares: true
+                                hasRightsOrRestrictions: true
+                                maxNumberOfShares: 11
+                                hasParValue: true
+                                parValue: 10
                       business:
                         foundingDate: '2024-07-12T20:19:33.556441+00:00'
                         identifier: BC0883028
                         legalName: 0883028 B.C. LTD.
                         legalType: BC
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: API Specs
@@ -256,11 +259,11 @@ paths:
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
-                        isPaymentActionRequired: true
+                        isPaymentActionRequired: false
                         name: alteration
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 annual-report-success-response:
@@ -268,117 +271,96 @@ paths:
                   value:
                     filing:
                       annualReport:
-                        annualReportDate: '2024-07-24'
+                        annualReportDate: '2025-02-22'
                         directors:
-                          - actions: []
-                            appointmentDate: '2024-07-23'
+                            appointmentDate: '2024-02-23'
                             cessationDate: null
-                            deliveryAddress:
-                              addressCity: Victoria
+                            deliveryAddress: 
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
                               streetAddressAdditional: ''
-                            id: 1
-                            isDirectorActionable: true
-                            isFeeApplied: false
                             mailingAddress:
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
                               deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
                               streetAddressAdditional: ''
                             officer:
                               email: api.specs@api.specs
                               firstName: firstName
-                              id: 584282
                               lastName: lastName
                               partyType: person
                               middleInitial: ''
-                              prevFirstName: firstName
-                              prevLastName: lastName
+                              prevFirstName: ''
+                              prevLastName: ''
                               prevMiddleInitial: ''
-                            role: director
-                        nextARDate: '2024-07-24'
                         offices:
                           recordsOffice:
                             deliveryAddress: 
-                              actions: []
-                              addressCity: Victoria
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: ''
-                              id: 2908346
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
                               streetAddressAdditional: ''
                             mailingAddress:
-                              actions: []
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: ''
-                              id: 2908345
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
                               streetAddressAdditional: ''
                           registeredOffice:
                             deliveryAddress: 
-                              actions: []
-                              addressCity: Victoria
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: ''
-                              id: 2908348
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
                               streetAddressAdditional: ''
                             mailingAddress:
-                              actions: [] 
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: ''
-                              id: 2908347
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
                               streetAddressAdditional: ''
                       business:
-                        foundingDate: '2023-07-21T23:13:48.000+00:00'
-                        identifier: BC0883312
-                        legalName: 0883312 B.C. LTD.
+                        foundingDate: '2024-02-21T23:13:48.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
                         legalType: BEN
                       header:
-                        ARFilingYear: 2024
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-24T16:22:13.256843+00:00'
+                        date: '2025-03-21T16:22:13.256843+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-24T07:00:00+00:00'
-                        email: api.specs@api.specs
-                        filingId: 150312
+                        effectiveDate: '2025-03-21T07:00:00+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: annualReport
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
-                        waiveFees: false
                 change-of-address-success-response:
                   summary: Change Of Address Response
                   value:
@@ -399,7 +381,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 2
@@ -411,7 +392,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST M 2
@@ -424,7 +404,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST D 1
@@ -436,7 +415,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions:
                               postalCode: V8N 4R7
                               streetAddress: TEST M 1
@@ -467,189 +445,86 @@ paths:
                   value:
                     filing:
                       business:
-                        foundingDate: '2024-07-08T07:00:00.000+00:00'
-                        identifier: BC0871442
-                        legalName: JIA TEST BC TO ULC
-                        legalType: ULC
+                        foundingDate: '2025-03-25T07:00:00.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
                       changeOfDirectors:
                         directors:
-                          - actions:
+                        - officer:
+                            firstName: NEW
+                            lastName: DIRECTOR
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: ''
+                            addressCity: delivery_address city
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            addressCountry: CA
+                          mailingAddress:
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ''
+                            addressCity: mailing_address city
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            addressCountry: CA
+                          appointmentDate: '2025-03-25'
+                          cessationDate: null
+                          actions:
                             - appointed
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Doe
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
-                            - appointed
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Bob
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
-                            - appointed
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Jane
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
-                            - ceased
-                            appointmentDate: '2024-07-09'
-                            cessationDate: '2024-07-21'
-                            deliveryAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Richmond
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V7E 1V2
-                              streetAddress: 10300 4th Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Doe
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
+                        - officer:
+                            firstName: UPDATED
+                            lastName: DIRECTOR
+                            middleInitial: ''
+                            prevFirstName: 'PREVIOUS'
+                            prevLastName: 'NAME'
+                            prevMiddleInitial: ''
+                          deliveryAddress:
+                            addressCity: Vancouver
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: 200 Changed Address
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Vancouver
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: 200 Changed Address
+                            streetAddressAdditional: ''
+                          appointmentDate: '2025-03-25'
+                          cessationDate: null
+                          actions:
                             - addressChanged
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5C 3V8
-                              streetAddress: 3765 1st Ave
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5C 3V8
-                              streetAddress: 3765 1st Ave
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Jane
-                              lastName: Smith
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
-                          - actions:
                             - nameChanged
-                            appointmentDate: '2024-07-09'
-                            cessationDate: null
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: V8W 1W4
-                              streetAddress: 1-940 Blanshard
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: API
-                              lastName: Specs
-                              middleInitial: ''
-                              prevFirstName: Bob
-                              prevLastName: Smith
-                              prevMiddleInitial: ''
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-09T21:39:11.950027+00:00'
+                        date: '2025-03-25T21:39:11.950027+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-09T07:00:00+00:00'
-                        email: "no_one@never.get"
-                        filingId: 150373
+                        effectiveDate: '2025-03-25T07:00:00+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: changeOfDirectors
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
                 consent-continuation-out-success-response:
@@ -657,10 +532,10 @@ paths:
                   value:
                     filing:
                       business:
-                        legalName: 0882848 B.C. LTD.
-                        legalType: BEN
-                        identifier: BC0882848
-                        foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
+                        identifier: BC1234567
+                        foundingDate: '2025-03-25T15:34:57.844764+00:00'
                       consentContinuationOut:
                         foreignJurisdiction:
                           country: CA
@@ -669,25 +544,24 @@ paths:
                           fileNumber: '12345'
                           effectOfOrder: planOfArrangement
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: "string"
+                        certifiedBy: "First Last"
                         colinIds: []
                         comments: []
-                        date: '2024-07-18'
+                        date: '2025-03-25'
                         deletionLocked: false
-                        documentOptionalEmail: "user@example.com"
-                        effectiveDate: '2024-07-18T07:00:42.552434+00:00'
-                        email: "user@example.com"
-                        filingId: 150056
+                        effectiveDate: '2025-03-25T07:00:42.552434+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: consentContinuationOut
-                        paymentAccount: '1234'
-                        paymentStatusCode: 'CREATED'
-                        paymentToken: '12345'
+                        paymentAccount: '12345'
+                        paymentStatusCode: 'COMPLETED'
+                        paymentToken: '12345678'
                         status: 'PENDING'
                         submitter: 'mocked submitter'
                 notice-of-withdrawal-success-response:
@@ -726,83 +600,78 @@ paths:
                   value:
                     filing:
                       business:
-                        foundingDate: '2023-07-12T17:31:58.000+00:00'
-                        identifier: BC0882365
-                        legalName: 882365 B.C. LTD.
+                        foundingDate: '2025-03-25T17:31:58.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
                         legalType: BC
                       dissolution:
-                        affidavitConfirmed: true
                         courtOrder:
-                          effectOfOrder: ''
                           fileNumber: '12345'
-                          hasPlanOfArrangement: false
                         custodialOffice:
                           deliveryAddress:
-                            addressCity: Victoria
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                        dissolutionDate: '2024-07-18'
+                        dissolutionDate: '2025-03-25'
                         dissolutionType: voluntary
                         parties:
                           - party:
                               deliveryAddress:
-                                addressCity: Victoria
+                                addressCity: delivery_address city
                                 addressCountry: CA
                                 addressRegion: BC
                                 deliveryInstructions: ''
-                                postalCode: V8W 3E6
-                                streetAddress: 200-940 Blanshard St
+                                postalCode: H0H 0H0
+                                streetAddress: delivery_address - address line one
                               inheritMailingAddress: true
                               mailingAddress:
-                                addressCity: Victoria
+                                addressCity: mailing_address city
                                 addressCountry: CA
                                 addressRegion: BC
                                 deliveryInstructions: ''
-                                postalCode: V8W 3E6
-                                streetAddress: 200-940 Blanshard St
+                                postalCode: H0H 0H0
+                                streetAddress: mailing_address - address line one
                               officer:
                                 email: api.specs@example.com
-                                firstName: Firstname
-                                lastName: Lastname
+                                firstName: First
+                                lastName: Last
                                 middleName: ''
                                 organizationName: ''
                                 partyType: person
                               roles:
-                                - appointmentDate: '2024-07-18'
+                                - appointmentDate: '2025-03-25'
                                   roleType: Custodian
-                        resolution:
-                          resolutionConfirmed: true
                       header:
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: Sample Certified Person
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-18T15:36:26.345331+00:00'
+                        date: '2025-03-25T15:36:26.345331+00:00'
                         deletionLocked: false
-                        effectiveDate: '2027-07-21T07:00:00.000+00:00'
-                        filingId: 149994
+                        effectiveDate: '2025-03-25T07:00:00.000+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: dissolution
-                        paymentAccount: 1234
-                        paymentStatusCode: CREATED
-                        paymentToken: 12345
-                        priority: false
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
         '400':
@@ -1024,8 +893,9 @@ paths:
                   filing:
                     header:
                       name: agmExtension
-                      certifiedBy: Sample Certified Person
+                      certifiedBy: First Last
                       date: '2024-07-21'
+                      accountId: 1234
                     business:
                       foundingDate: '2024-06-20T17:31:58.000+00:00'
                       identifier: BC0882365
@@ -1056,7 +926,8 @@ paths:
                     header:
                       date: '2024-07-18'
                       name: agmLocationChange
-                      certifiedBy: Sample Certified Person
+                      certifiedBy: First Last
+                      accountId: 1234
                     business:
                       foundingDate: '2023-07-12T17:31:58.000+00:00'
                       identifier: BC0882365
@@ -1072,8 +943,9 @@ paths:
                   filing:
                     header:
                       name: alteration
-                      certifiedBy: Sample Certified Person
+                      certifiedBy: First Last
                       date: '2024-07-25'
+                      accountId: 1234
                     business:
                       foundingDate: '2024-07-12T20:19:33.556441+00:00'
                       identifier: BC0883028
@@ -1085,17 +957,12 @@ paths:
                         legalType: BEN
                       nameRequest:
                         legalType: BEN
-                        expirationDate: '2024-09-10T06:59:00+00:00'
-                        submittedDate: '2024-07-15T21:57:31+00:00'
-                        submitter_userid: ''
-                        userId: user@example
                         legalName: API SPEC'S NR CHANGE TEST (BEN) CORP.
                         nrNumber: NR 9684750
                       nameTranslations:
                         - name: API Specs Trans
-                      provisionsRemoved: false
                       contactPoint:
-                        email: APISpecs@gov.bc.ca
+                        email: no_one@never.get
                         phone: '(111) 111-1111'
                       shareStructure:
                         resolutionDates: [
@@ -1110,113 +977,93 @@ paths:
                             name: Class1 Shares
                             parValue: 10
                             priority: 1
-                            series: []
-                            type: Class
-                      courtOrder:
-                        fileNumber: '12345'
-                        effectOfOrder: planOfArrangement
-                        hasPlanOfArrangement: true
+                            series:
+                              - name: Series1 Shares
+                                priority: 1
+                                hasMaximumShares: true
+                                hasRightsOrRestrictions: true
+                                maxNumberOfShares: 11
+                                hasParValue: true
+                                parValue: 10
               annual-report-request:
                 summary: Annual Report Request
                 value:
                   filing:
                     header:
                       name: annualReport
-                      certifiedBy: Sample Certified Person
-                      email: api.specs@api.specs
-                      date: '2024-07-24'
-                      ARFilingYear: 2024
-                      effectiveDate: '2024-07-24T07:00:00.000+00:00'
-                      waiveFees: false
+                      certifiedBy: First Last
+                      date: '2025-03-21'
+                      accountId: 1234
                     business:
-                      foundingDate: '2023-07-21T23:13:48.000+00:00'
-                      identifier: BC0883312
-                      legalName: 0883312 B.C. LTD.
+                      foundingDate: '2024-02-21T18:05:47.466120+00:00'
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
                       legalType: BEN
                     annualReport:
-                      annualReportDate: '2024-07-24'
-                      nextARDate: '2024-07-24'
+                      annualReportDate: '2025-02-22'
                       offices:
                         registeredOffice:
                           deliveryAddress: 
-                            addressCity: Victoria
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: delivery
                             deliveryInstructions: ''
-                            id: 2908348
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: mailing
                             deliveryInstructions: ''
-                            id: 2908347
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                         recordsOffice:
                           deliveryAddress: 
-                            addressCity: Victoria
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: delivery
                             deliveryInstructions: ''
-                            id: 2908346
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
-                            addressType: mailing
                             deliveryInstructions: ''
-                            id: 2908345
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                            actions: []
                       directors:
                         - officer:
                             email: api.specs@api.specs
-                            firstName: firstName
-                            id: 584282
-                            lastName: lastName
+                            firstName: First
+                            lastName: Last
                             partyType: person
                             middleInitial: ''
-                            prevFirstName: firstName
-                            prevLastName: lastName
+                            prevFirstName: ''
+                            prevLastName: ''
                             prevMiddleInitial: ''
-                          appointmentDate: '2024-07-23'
+                          appointmentDate: '2024-02-23'
                           cessationDate: null
-                          deliveryAddress:
-                            addressCity: Victoria
+                          deliveryAddress: 
+                            addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                          role: director
-                          id: 1
-                          isFeeApplied: false
-                          isDirectorActionable: true
-                          actions: []
               change-of-address-request:
                 summary: Change Of Address
                 value:
@@ -1242,7 +1089,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST D 2
@@ -1254,7 +1100,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST M 2
@@ -1267,7 +1112,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: delivery
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST D 1
@@ -1279,7 +1123,6 @@ paths:
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: mailing
                               deliveryInstructions: 
                               postalCode: V8N 4R7
                               streetAddress: TEST M 1
@@ -1290,174 +1133,71 @@ paths:
                   filing:
                     header:
                       name: changeOfDirectors
-                      certifiedBy: Sample Certified Person
-                      email: no_one@never.get
-                      date: '2024-07-09'
-                      effectiveDate: '2024-07-09T07:00:00+00:00'
+                      certifiedBy: First Last
+                      date: '2025-03-25'
+                      effectiveDate: '2025-03-25T07:00:00+00:00'
+                      accountId: 1234
                     business:
                       foundingDate: '2024-07-08T07:00:00.000+00:00'
-                      identifier: BC0871442
-                      legalName: JIA TEST BC TO ULC
-                      legalType: ULC
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
                     changeOfDirectors:
                       directors:
                         - officer:
-                            firstName: Doe
-                            lastName: Smith
+                            firstName: NEW
+                            lastName: DIRECTOR
                             middleInitial: ''
                             prevFirstName: ''
                             prevLastName: ''
                             prevMiddleInitial: ''
                           deliveryAddress:
-                            streetAddress: 10300 4th Ave
+                            streetAddress: delivery_address - address line one
                             streetAddressAdditional: ''
-                            addressCity: Richmond
+                            addressCity: delivery_address city
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V7E 1V2
+                            postalCode: H0H 0H0
                             addressCountry: CA
                           mailingAddress:
-                            streetAddress: 10300 4th Ave
+                            streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
-                            addressCity: Richmond
+                            addressCity: mailing_address city
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V7E 1V2
+                            postalCode: H0H 0H0
                             addressCountry: CA
-                          appointmentDate: '2024-07-09'
+                          appointmentDate: '2025-03-25'
                           cessationDate: null
                           actions:
                             - appointed
                         - officer:
-                            firstName: Bob
-                            lastName: Smith
+                            firstName: UPDATED
+                            lastName: DIRECTOR
                             middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
+                            prevFirstName: 'PREVIOUS'
+                            prevLastName: 'NAME'
                             prevMiddleInitial: ''
                           deliveryAddress:
-                            addressCity: Victoria
+                            addressCity: Vancouver
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H 0H0
+                            streetAddress: 200 Changed Address
                             streetAddressAdditional: ''
                           mailingAddress:
-                            addressCity: Victoria
+                            addressCity: Vancouver
                             addressCountry: CA
                             addressRegion: BC
                             deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
+                            postalCode: H0H 0H0
+                            streetAddress: 200 Changed Address
                             streetAddressAdditional: ''
-                          appointmentDate: '2024-07-09'
-                          cessationDate: null
-                          actions:
-                            - appointed
-                        - officer:
-                            firstName: Jane
-                            lastName: Smith
-                            middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          mailingAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          appointmentDate: '2024-07-09'
-                          cessationDate: null
-                          actions:
-                            - appointed
-                        - officer:
-                            firstName: Doe
-                            lastName: Smith
-                            middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          mailingAddress:
-                            streetAddress: 10300 4th Ave
-                            streetAddressAdditional: ''
-                            addressCity: Richmond
-                            addressRegion: BC
-                            postalCode: V7E 1V2
-                            addressCountry: CA
-                          appointmentDate: '2024-07-09'
-                          cessationDate: '2024-07-21'
-                          actions:
-                            - ceased
-                        - officer:
-                            firstName: Jane
-                            lastName: Smith
-                            middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            streetAddress: 3765 1st Ave
-                            streetAddressAdditional: ''
-                            addressCity: Burnaby
-                            addressRegion: BC
-                            postalCode: V5C 3V8
-                            addressCountry: CA
-                          mailingAddress:
-                            streetAddress: 3765 1st Ave
-                            streetAddressAdditional: ''
-                            addressCity: Burnaby
-                            addressRegion: BC
-                            postalCode: V5C 3V8
-                            addressCountry: CA
-                          appointmentDate: '2024-07-09'
+                          appointmentDate: '2025-03-25'
                           cessationDate: null
                           actions:
                             - addressChanged
-                        - officer:
-                            firstName: API
-                            lastName: Specs
-                            middleInitial: ''
-                            prevFirstName: Bob
-                            prevLastName: Smith
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            addressCity: Victoria
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
-                            streetAddressAdditional: ''
-                          mailingAddress:
-                            addressCity: Victoria
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8W 1W4
-                            streetAddress: 1-940 Blanshard
-                            streetAddressAdditional: ''
-                          appointmentDate: '2024-07-09'
-                          cessationDate: null
-                          actions:
                             - nameChanged
               consent-continuation-out-request:
                 summary: Consent Continuation Out Request
@@ -1465,15 +1205,14 @@ paths:
                   filing:
                     header:
                       name: consentContinuationOut
-                      date: '2024-07-18'
-                      certifiedBy: "string"
-                      email: "user@example.com"
-                      documentOptionalEmail: "user@example.com"
+                      date: '2025-03-25'
+                      certifiedBy: "First Last"
+                      accountId: 1234
                     business:
-                      legalName: 0882848 B.C. LTD.
-                      legalType: BEN
-                      identifier: BC0882848
-                      foundingDate: '2024-07-08T15:34:57.844764+00:00'
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
+                      identifier: BC1234567
+                      foundingDate: '2025-03-25T15:34:57.844764+00:00'
                     consentContinuationOut:
                       foreignJurisdiction:
                         country: CA
@@ -1525,70 +1264,64 @@ paths:
                 value:
                   filing:
                     header:
-                      date: '2024-07-18'
-                      effectiveDate: '2027-07-21T07:00:00.000+00:00'
+                      date: '2025-03-25'
                       name: dissolution
-                      certifiedBy: Sample Certified Person
-                      priority: false
+                      certifiedBy: First Last
+                      accountId: 1234
                     business:
                       foundingDate: '2023-07-12T17:31:58.000+00:00'
-                      identifier: BC0882365
-                      legalName: 882365 B.C. LTD.
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
                       legalType: BC
                     dissolution:
-                      dissolutionDate: '2024-07-18'
-                      affidavitConfirmed: true
+                      dissolutionDate: '2025-03-25'
                       custodialOffice:
                         deliveryAddress:
-                          addressCity: Victoria
+                          addressCity: delivery_address city
                           addressCountry: CA
                           addressRegion: BC
                           deliveryInstructions: ''
-                          postalCode: V8W 3E6
-                          streetAddress: 200-940 Blanshard St
+                          postalCode: H0H 0H0
+                          streetAddress: delivery_address - address line one
                           streetAddressAdditional: ''
                         mailingAddress:
-                          addressCity: Victoria
+                          addressCity: mailing_address city
                           addressCountry: CA
                           addressRegion: BC
                           deliveryInstructions: ''
-                          postalCode: V8W 3E6
-                          streetAddress: 200-940 Blanshard St
+                          postalCode: H0H 0H0
+                          streetAddress: mailing_address - address line one
                           streetAddressAdditional: ''
                       dissolutionType: voluntary
                       parties:
                         - party:
                             deliveryAddress:
-                              addressCity: Victoria
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               deliveryInstructions: ''
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
                             inheritMailingAddress: true
                             mailingAddress:
-                              addressCity: Victoria
+                              addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
                               deliveryInstructions: ''
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
                             officer:
                               email: api.specs@example.com
-                              firstName: Firstname
-                              lastName: Lastname
+                              firstName: First
+                              lastName: Last
                               middleName: ''
                               organizationName: ''
                               partyType: person
                             roles:
-                              - appointmentDate: '2024-07-18'
+                              - appointmentDate: '2025-03-25'
                                 roleType: Custodian
-                      resolution:
-                        resolutionConfirmed: true
                       courtOrder:
                         fileNumber: '12345'
-                        effectOfOrder: ''
-                        hasPlanOfArrangement: false
       parameters:
         - schema:
             type: boolean
@@ -1601,6 +1334,263 @@ paths:
           name: only_validate
           description: This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.
         - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/filings/{filingId}':
+    description: to update a filing 
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+      - $ref: '#/components/parameters/filingId'
+    put:
+      summary: updating filings
+      tags:
+        - business
+      operationId: put-businesses-identifier-filings-filingId
+      description: Update a filing or a filing draft
+      responses:
+        '202':
+          description: ACCEPTED
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                continuation-in-after-approved-response:
+                  summary: Complete Continuation In After Approved Response
+                  value:
+                    filing:
+                      business:
+                        identifier: TO12345678
+                        legalType: C
+                      continuationIn:
+                        authorization:
+                          files:
+                            - fileKey: 123456-mock-value-1234.pdf
+                              fileName: Example_PDF.pdf
+                        contactPoint:
+                          email: test@test.com
+                          phone: 1234567890
+                        foreignJurisdiction:
+                          country: US
+                          identifier: TEST1234
+                          incorporationDate: '2024-05-01'
+                          legalName: Test business
+                          region: CA
+                        isApproved: true
+                        nameRequest:
+                          legalName: TEST CONT IN LTD.
+                          nrNumber: NR 1234567
+                          legalType: C
+                        nameTranslations: []
+                        offices:
+                          recordsOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                          registeredOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                        parties:
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-21'
+                          - roleType: Director
+                            appointmentDate: '2025-03-21'
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
+                          deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                      shareStructure:
+                        shareClasses:
+                          - name: Sample Shares
+                            priority: 1
+                            hasMaximumShares: false
+                            maxNumberOfShares: null
+                            hasParValue: false
+                            parValue: null
+                            currency: null
+                            hasRightsOrRestrictions: false
+                            series: []
+                      header:
+                        accountId: 1234
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: First Last
+                        colinIds: []
+                        comments: []
+                        date: '2025-03-21T17:36:49.462409+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2025-03-21T17:36:49.462451+00:00'
+                        filingId: 1234567
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: false
+                        name: continuationIn
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '1234567'
+                        status: PENDING
+                        submitter: mock submitter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Filing'
+            examples:
+              continuation-in-after-approved-request:
+                summary: Complete Continuation In After Approved Request
+                value:
+                  filing:
+                    header:
+                      accountId: 1234
+                      certifiedBy: First Last
+                      date: '2025-03-21'
+                      name: continuationIn
+                    continuationIn:
+                        authorization:
+                          files:
+                            - fileKey: 123456-mock-value-1234.pdf
+                              fileName: Example_PDF.pdf
+                        contactPoint:
+                          email: test@test.com
+                          phone: 1234567890
+                        foreignJurisdiction:
+                          country: US
+                          identifier: TEST1234
+                          incorporationDate: '2024-05-01'
+                          legalName: Test business
+                          region: CA
+                        nameRequest:
+                          legalName: TEST CONT IN LTD.
+                          nrNumber: NR 1234567
+                          legalType: C
+                        nameTranslations: []
+                        offices:
+                          recordsOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                          registeredOffice:
+                            deliveryAddress: 
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ""
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ""
+                        parties:
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-21'
+                          - roleType: Director
+                            appointmentDate: '2025-03-21'
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
+                          deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                        shareStructure:
+                          shareClasses:
+                            - name: Sample Shares
+                              priority: 1
+                              hasMaximumShares: false
+                              maxNumberOfShares: null
+                              hasParValue: false
+                              parValue: null
+                              currency: null
+                              hasRightsOrRestrictions: false
+                              series: []
   '/businesses/{identifier}/filings/{filingId}/documents':
     parameters:
       - $ref: '#/components/parameters/identifier'
@@ -1806,7 +1796,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2334725
                           postalCode: V8Z 5C5
@@ -1816,7 +1805,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2334724
                           postalCode: V8Z 5C5
@@ -1828,7 +1816,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317157
                           postalCode: V8Z 5C5
@@ -1839,7 +1826,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317156
                           postalCode: V8Z 5C5
@@ -1851,7 +1837,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317159
                           postalCode: V8Z 5C5
@@ -1862,7 +1847,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317158
                           postalCode: V8Z 5C5
@@ -2177,7 +2161,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2334725
                           postalCode: V8Z 5C5
@@ -2187,7 +2170,6 @@ paths:
                           addressCity: Victoria
                           addressCountry: CA
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2334724
                           postalCode: V8Z 5C5
@@ -2199,7 +2181,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317157
                           postalCode: V8Z 5C5
@@ -2210,7 +2191,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317156
                           postalCode: V8Z 5C5
@@ -2222,7 +2202,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 2317159
                           postalCode: V8Z 5C5
@@ -2233,7 +2212,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
                           id: 2317158
                           postalCode: V8Z 5C5
@@ -2461,7 +2439,6 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
                           id: 38012
                           postalCode: H4E 1G8
@@ -2472,9 +2449,7 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
-                          id: 38011
                           postalCode: H4E 1G8
                           streetAddress: 4-1900 Av De l'Église
                           streetAddressAdditional: ''
@@ -2484,9 +2459,7 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: delivery
                           deliveryInstructions: ''
-                          id: 38014
                           postalCode: H4E 1G8
                           streetAddress: 4-1900 Av De l'Église
                           streetAddressAdditional: ''
@@ -2495,9 +2468,7 @@ paths:
                           addressCountry: Canada
                           addressCountryDescription: Canada
                           addressRegion: BC
-                          addressType: mailing
                           deliveryInstructions: ''
-                          id: 38013
                           postalCode: H4E 1G8
                           streetAddress: 4-1900 Av De l'Église
                           streetAddressAdditional: ''
@@ -2556,9 +2527,9 @@ paths:
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
-                        courtApproval: null
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
                         offices: 
@@ -2567,79 +2538,74 @@ paths:
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional: 
+                              streetAddressAdditional: ''
                             mailingAddress: 
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: null
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional:
+                              streetAddressAdditional: ''
                           registeredOffice: 
                             deliveryAddress: 
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional: 
+                              streetAddressAdditional: ''
                             mailingAddress: 
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
-                              addressType: null
-                              deliveryInstructions: 
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
-                              streetAddressAdditional:
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
                               partyType: person
                               middleName: ''
                               organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
-                          - deliveryAddress:
+                          - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
-                            mailingAddress:
+                            deliveryAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Director
-                              lastName: Tester
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
                               partyType: person
                             roles:
                               - appointmentDate: '2024-07-24'
@@ -2647,18 +2613,14 @@ paths:
                         shareStructure: 
                           shareClasses:
                             - name: Classic 1 Shares
-                              priority: 0
-                              maxNumberOfShares: 0
-                              parValue: 0
-                              currency: string
-                              hasMaximumShares: true
-                              hasParValue: true
-                              hasRightsOrRestrictions: true
-                              series:
-                                - name: string
-                                  priority: 0
-                                  hasMaximumShares: true
-                                  hasRightsOrRestrictions: true
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: regular
                       business: 
                         identifier: TO12345678
@@ -2666,19 +2628,22 @@ paths:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: 2024-07-25T19:54:02.949741+00:00
                         deletionLocked: false
                         effectiveDate: 2024-07-25T19:54:02.949764+00:00
-                        email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: amalgamationApplication
-                        status: DRAFT
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
                         submitter: mocked submitter
                 amalgamation-short-form-horizontal-success-response:
                   summary: Amalgamation Short Form Horizontal Response
@@ -2691,28 +2656,100 @@ paths:
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
                               partyType: person
+                              middleName: ''
+                              organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Director
+                        shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: horizontal
                       business: 
                         identifier: TO12345678
@@ -2720,19 +2757,22 @@ paths:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: 2024-07-25T19:54:02.949741+00:00
                         deletionLocked: false
                         effectiveDate: 2024-07-25T19:54:02.949764+00:00
-                        email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: amalgamationApplication
-                        status: DRAFT
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
                         submitter: mocked submitter
                 amalgamation-short-form-vertical-success-response:
                   summary: Amalgamation Short Form Vertical Response
@@ -2745,28 +2785,100 @@ paths:
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
                               partyType: person
+                              middleName: ''
+                              organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Director
+                        shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: vertical
                       business: 
                         identifier: TO12345678
@@ -2774,30 +2886,32 @@ paths:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: 2024-07-25T19:54:02.949741+00:00
                         deletionLocked: false
                         effectiveDate: 2024-07-25T19:54:02.949764+00:00
-                        email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: amalgamationApplication
-                        status: DRAFT
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
                         submitter: mocked submitter
                 continuation-in-success-response:
-                  summary: Continuation In Response
+                  summary: Continuation In - To Be Approved Response
                   value:
                     filing:
                       continuationIn: 
                         authorization: 
-                            date: '2024-07-01'
                             files: 
-                              - fileKey: 0d41f3b2-f711-4733-88fd-8169646c7dbe.pdf
-                                fileName: TestPDFfile.pdf
+                              - fileKey: 123456-mock-value-1234.pdf.pdf
+                                fileName: Example_PDF.pdf
                         contactPoint: 
                             email: test@test.com
                             phone: 1234567890
@@ -2806,149 +2920,56 @@ paths:
                             identifier: TEST1234
                             incorporationDate: '2024-06-01'
                             legalName: Test business
-                            region: AL
+                            region: CA
                         nameRequest: 
                             legalName: TEST CONT IN LTD.
                             legalType: C
                             nrNumber: NR 1234567
-                        nameTranslations: []
-                        offices: 
-                          recordsOffice: 
-                            deliveryAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional: 
-                            mailingAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional: 
-                          registeredOffice: 
-                            deliveryAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional: 
-                            mailingAddress: 
-                                addressCity: Surrey
-                                addressCountry: CA
-                                addressRegion: BC
-                                deliveryInstructions: 
-                                postalCode: V3S 7N3
-                                streetAddress: 5656 187 St
-                                streetAddressAdditional:
-                        parties:
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Joe
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Completing Party
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          deliveryAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Director
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Director
-                        shareStructure: 
-                          shareClasses:
-                            - name: Classic 1 Shares
-                              priority: 0
-                              maxNumberOfShares: 0
-                              parValue: 0
-                              currency: string
-                              hasMaximumShares: true
-                              hasParValue: true
-                              hasRightsOrRestrictions: true
-                              series:
-                                - name: string
-                                  priority: 0
-                                  hasMaximumShares: true
-                                  hasRightsOrRestrictions: true
                       business: 
                         identifier: TO12345678
                       header:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: full name
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-25'
+                        date: '2025-03-21T19:54:02.949764+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-25T19:54:02.949764+00:00'
-                        email: no_one@never.get
-                        filingId: 150338
+                        effectiveDate: '2025-03-21T19:54:02.949764+00:00'
+                        filingId: 1234567
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
                         name: continuationIn
-                        status: DRAFT
+                        status: AWAITING_REVIEW
                         submitter: mocked submitter
                 incorporation-application-success-response:
                   summary: Incorporation Application Response  
                   value:
-                    errors:
-                      - null
                     filing:
                       business:
-                        identifier: Tqcbbbc157  
+                        identifier: T12345678  
                       header:
-                        accountId: 6164
+                        accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: API Specs
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: '2024-07-25'
+                        date: '2025-03-20T21:29:35.662445+00:00'
                         deletionLocked: false
-                        effectiveDate: '2024-07-25T16:17:57.191129+00:00'
-                        email: no_one@never.get
-                        filingId: 150333
+                        effectiveDate: '2025-03-20T16:17:57.191129+00:00'
+                        filingId: 123456
                         inColinOnly: false
                         isCorrected: false
                         isCorrectionPending: false
+                        isPaymentActionRequired: false
                         name: incorporationApplication
-                        status: DRAFT
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
                         submitter: mocked submitter
                       incorporationApplication:
                         contactPoint:
@@ -2956,77 +2977,74 @@ paths:
                           phone: 123-456-7890
                         nameRequest:
                           legalType: BEN
-                          nrNumber: 'NR 1345876'
+                        nameTranslations: []
                         offices:
                           recordsOffice:
                             deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC 
-                              postalCode: H0H0H0
+                              postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
                             mailingAddress:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              postalCode: H0H0H0 
+                              postalCode: H0H 0H0 
                               streetAddress: mailing_address - address line one
                           registeredOffice:
                             deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              postalCode: H0H0H0
+                              postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
                             mailingAddress:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              postalCode: H0H0H0
+                              postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
                         parties:
-                          - mailingAddress:
-                              addressCity: Victoria
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-20'
+                          - roleType: Incorporator
+                            appointmentDate: '2025-03-20'
+                          - roleType: Director
+                            appointmentDate: '2025-03-20'
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
+                          deliveryAddress:
+                              addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              postalCode: V8W 3E6
-                              streetAddress: 200-940 Blanshard St
-                              streetAddressAdditional: ''
-                            officer:
-                              email: severin@example.com
-                              firstName: BCREGTEST Lucille
-                              id: 'p90x2145'
-                              lastName: TWENTY
-                              middleName: ''
-                              organizationName: '' 
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2024-07-24'
-                                roleType: Completing Party
-                          - deliveryAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5E 1R9
-                              streetAddress: 6767 Burford St
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Burnaby
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V5E 1R9
-                              streetAddress: 6767 Burford St
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: Director
-                              id: 'p90x2145'
-                              lastName: Test
-                              middleName: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2024-07-24'
-                                roleType: Director
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                      shareStructure:
+                        shareClasses:
+                          - name: Sample Shares
+                            priority: 1
+                            hasMaximumShares: false
+                            maxNumberOfShares: null
+                            hasParValue: false
+                            parValue: null
+                            currency: null
+                            hasRightsOrRestrictions: false
+                            series: []
                 registration-sucess-response:
                   summary: Registartion Response
                   value:
@@ -3061,13 +3079,13 @@ paths:
                               streetAddress: delivery_address - address line one
                               addressCity: delivery_address city
                               addressCountry: Canada
-                              postalCode: H0H0H0
+                              postalCode: H0H 0H0
                               addressRegion: BC
                             mailingAddress: 
                               streetAddress: mailing_address - address line one
                               addressCity: mailing_address city
                               addressCountry: Canada
-                              postalCode: H0H0H0
+                              postalCode: H0H 0H0
                               addressRegion: BC
                         contactPoint: 
                           email: no_one@never.get
@@ -3082,14 +3100,14 @@ paths:
                               streetAddressAdditional: 
                               addressCity: mailing_address city
                               addressCountry: CA
-                              postalCode: H0H0H0
+                              postalCode: H0H 0H0
                               addressRegion: BC
                             deliveryAddress: 
                               streetAddress: delivery_address - address line one
                               streetAddressAdditional: 
                               addressCity: delivery_address city
                               addressCountry: CA
-                              postalCode: H0H0H0
+                              postalCode: H0H 0H0
                               addressRegion: BC
                             officer: 
                               firstName: Joe
@@ -3141,8 +3159,7 @@ paths:
                   filing:
                     header:
                       accountId: 1234
-                      certifiedBy: full name
-                      email: "no_one@never.get"
+                      certifiedBy: First Last
                       date: '2024-07-26'
                       name: amalgamationApplication
                     amalgamationApplication:
@@ -3152,9 +3169,9 @@ paths:
                         - identifier: BC0883230
                           role: amalgamating
                       contactPoint: 
-                        email: "contact@example.com"
+                        email: no_one@never.get
                         phone: (555) 555-5555
-                      courtApproval: null
+                      courtApproval: false
                       nameRequest: 
                           legalType: BC
                       offices: 
@@ -3163,49 +3180,49 @@ paths:
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional:
+                            streetAddressAdditional: ''
                           mailingAddress: 
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional:
+                            streetAddressAdditional: ''
                         registeredOffice: 
                           deliveryAddress: 
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional: 
+                            streetAddressAdditional: ''
                           mailingAddress: 
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: 
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
-                            streetAddressAdditional:
+                            streetAddressAdditional: ''
                       parties:
                         - mailingAddress:
                             addressCity: Victoria
-                            addressCountry: Canada
-                            addressCountryDescription: Canada
+                            addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: ''
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
                             postalCode: V8Z 5C5
                             streetAddress: 3950 Helen Rd
                             streetAddressAdditional: ''
                           officer:
-                            email: null
-                            firstName: Completing
-                            lastName: Party
+                            firstName: First
+                            lastName: Last
                             middleName: ''
                             organizationName: ''
                             partyType: person
@@ -3214,17 +3231,23 @@ paths:
                               roleType: Completing Party
                         - mailingAddress:
                             addressCity: Victoria
-                            addressCountry: Canada
-                            addressCountryDescription: Canada
+                            addressCountry: CA
                             addressRegion: BC
-                            deliveryInstructions: ''
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
                             postalCode: V8Z 5C5
                             streetAddress: 3950 Helen Rd
                             streetAddressAdditional: ''
                           officer:
-                            email: null
-                            firstName: Director
-                            lastName: Tester
+                            firstName: First
+                            lastName: Director
+                            middleName: ''
+                            organizationName: ''
                             partyType: person
                           roles:
                             - appointmentDate: '2024-07-24'
@@ -3232,18 +3255,14 @@ paths:
                       shareStructure: 
                         shareClasses:
                           - name: Classic 1 Shares
-                            priority: 0
-                            maxNumberOfShares: 0
-                            parValue: 0
-                            currency: string
-                            hasMaximumShares: true
-                            hasParValue: true
-                            hasRightsOrRestrictions: true
-                            series:
-                              - name: string
-                                priority: 0
-                                hasMaximumShares: true
-                                hasRightsOrRestrictions: true
+                            priority: 1
+                            maxNumberOfShares: null
+                            parValue: null
+                            currency: null
+                            hasMaximumShares: false
+                            hasParValue: false
+                            hasRightsOrRestrictions: false
+                            series: []
                       type: regular
               amalgamation-short-form-horizontal-request:
                   summary: Amalgamation Short Form Horizontal Request
@@ -3251,39 +3270,110 @@ paths:
                     filing:
                       header:
                         accountId: 1234
-                        certifiedBy: full name
-                        email: "no_one@never.get"
+                        certifiedBy: First Last
                         date: '2024-07-26'
                         name: amalgamationApplication
                       amalgamationApplication:
                         amalgamatingBusinesses:
                           - identifier: BC0883189
-                            role: holding
+                            role: primary
                           - identifier: BC0883230
                             role: amalgamating
                         contactPoint: 
-                          email: "contact@example.com"
+                          email: no_one@never.get
                           phone: (555) 555-5555
+                        courtApproval: false
                         nameRequest: 
                             legalType: BC
+                        offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                         parties:
                           - mailingAddress:
                               addressCity: Victoria
-                              addressCountry: Canada
-                              addressCountryDescription: Canada
+                              addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ''
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: 3950 Helen Rd
                               streetAddressAdditional: ''
                             officer:
-                              email: null
-                              firstName: Completing
-                              lastName: Party
+                              firstName: First
+                              lastName: Last
+                              middleName: ''
+                              organizationName: ''
                               partyType: person
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Director
+                        shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                         type: horizontal
               amalgamation-short-form-vertical-request:
                 summary: Amalgamation Short Form Vertical Request
@@ -3291,61 +3381,125 @@ paths:
                   filing:
                     header:
                       accountId: 1234
-                      certifiedBy: full name
-                      email: "no_one@never.get"
+                      certifiedBy: First Last
                       date: '2024-07-26'
                       name: amalgamationApplication
                     amalgamationApplication:
                       amalgamatingBusinesses:
                         - identifier: BC0883189
-                          role: primary
+                          role: holding
                         - identifier: BC0883230
                           role: amalgamating
                       contactPoint: 
-                        email: "contact@example.com"
+                        email: no_one@never.get
                         phone: (555) 555-5555
-                      courtApproval: null,
+                      courtApproval: false
                       nameRequest: 
                           legalType: BC
+                      offices:
+                          recordsOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                          registeredOffice:
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: Test rd
+                              streetAddressAdditional: ''
                       parties:
-                        - mailingAddress:
-                            addressCity: Victoria
-                            addressCountry: Canada
-                            addressCountryDescription: Canada
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: V8Z 5C5
-                            streetAddress: 3950 Helen Rd
-                            streetAddressAdditional: ''
-                          officer:
-                            email: null
-                            firstName: Completing
-                            lastName: Party
-                            partyType: person
-                          roles:
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Last
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
+                              - appointmentDate: '2024-07-24'
+                                roleType: Completing Party
+                          - mailingAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            deliveryAddress:
+                              addressCity: Victoria
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: V8Z 5C5
+                              streetAddress: 3950 Helen Rd
+                              streetAddressAdditional: ''
+                            officer:
+                              firstName: First
+                              lastName: Director
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                            roles:
                             - appointmentDate: '2024-07-24'
-                              roleType: Completing Party
+                              roleType: Director
+                      shareStructure:
+                          shareClasses:
+                            - name: Classic 1 Shares
+                              priority: 1
+                              maxNumberOfShares: null
+                              parValue: null
+                              currency: null
+                              hasMaximumShares: false
+                              hasParValue: false
+                              hasRightsOrRestrictions: false
+                              series: []
                       type: vertical
               continuation-in-request:
-                summary: Continuation In Request
+                summary: Continuation In - To Be Approved Request
                 value:
                   filing:
                     header: 
                       accountId: 1234
-                      certifiedBy: full name
-                      email: 'no_one@never.get'
-                      date: '2024-07-26'
+                      certifiedBy: First Last
+                      date: '2025-03-21'
                       name: continuationIn
                     continuationIn:
                       authorization: 
-                          date: '2024-07-01'
                           files: 
-                            - file:
-                                lastModified: 1667594705083
-                                name: TestPDFfile.pdf
-                                size: 83186
-                              fileKey: 0d41f3b2-f711-4733-88fd-8169646c7dbe.pdf
-                              fileName: TestPDFfile.pdf
+                              - fileKey: 123456-mock-value-1234.pdf
+                                fileName: Example_PDF.pdf
                       contactPoint: 
                           email: test@test.com
                           phone: 1234567890
@@ -3354,181 +3508,95 @@ paths:
                           identifier: TEST1234
                           incorporationDate: '2024-06-01'
                           legalName: Test business
-                          region: AL
+                          region: CA
                       nameRequest: 
                           nrNumber: NR 1234567
                           legalName: TEST CONT IN LTD.
                           legalType: C
-                      nameTranslations: []
-                      offices: 
-                        recordsOffice: 
-                          deliveryAddress: 
-                            streetAddress: delivery_address - address line one
-                            addressCity: delivery_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            addressCity: mailing_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                        registeredOffice: 
-                          deliveryAddress: 
-                            streetAddress: delivery_address - address line one
-                            addressCity: delivery_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            addressCity: mailing_address city
-                            addressCountry: Canada
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                      parties:
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Joe
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Completing Party
-                        - mailingAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          deliveryAddress: 
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            postalCode: H0H0H0
-                            addressRegion: BC
-                          officer: 
-                            firstName: Director
-                            lastName: Swanson
-                            middleName: P
-                            email: joe@email.com
-                            organizationName: 
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-26'
-                              roleType: Director
-                      shareStructure: 
-                        shareClasses:
-                          - name: Classic 1 Shares
-                            priority: 0
-                            maxNumberOfShares: 0
-                            parValue: 0
-                            currency: string
-                            hasMaximumShares: true
-                            hasParValue: true
-                            hasRightsOrRestrictions: true
-                            series:
-                              - name: string
-                                priority: 0
-                                hasMaximumShares: true
-                                hasRightsOrRestrictions: true
               incorporation-application-request:
                 summary: Incorporation Application Request
                 value:
                   filing:
                     header:
-                      certifiedBy: API Specs
-                      email: no_one@never.get
+                      certifiedBy: First Last
                       name: incorporationApplication
-                      date: '2024-07-25'
-                      accountId: 6164
+                      date: '2025-03-20'
+                      accountId: 1234
                     incorporationApplication:
                       nameRequest:
                         legalType: BEN
-                        nrNumber: NR 1234567
                       offices:
                         registeredOffice:
                           deliveryAddress:
                             streetAddress: delivery_address - address line one
                             addressCity: delivery_address city
                             addressCountry: CA
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                           mailingAddress:
                             streetAddress: mailing_address - address line one
                             addressCity: mailing_address city
                             addressCountry: CA
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                         recordsOffice:
                           deliveryAddress:
                             streetAddress: delivery_address - address line one
                             addressCity: delivery_address city
                             addressCountry: CA
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                           mailingAddress:
                             streetAddress: mailing_address - address line one
                             addressCity: mailing_address city
                             addressCountry: CA
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                       contactPoint:
                         email: no_one@never.get
                         phone: 123-456-7890
                       parties:
-                        - mailingAddress:
-                            addressCity: Victoria
-                            addressCountry: CA
-                            addressRegion: BC
-                            postalCode: V8W 3E6
-                            streetAddress: 200-940 Blanshard St
-                            streetAddressAdditional: ''
+                        - roles:
+                          - roleType: Completing Party
+                            appointmentDate: '2025-03-20'
+                          - roleType: Incorporator
+                            appointmentDate: '2025-03-20'
+                          - roleType: Director
+                            appointmentDate: '2025-03-20'
                           officer:
-                            email: severin@example.com
-                            firstName: BCREGTEST Lucille
-                            lastName: TWENTY
-                            middleName: ''
-                            organizationName: ''
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-24'
-                              roleType: Completing Party
-                        - deliveryAddress:
-                            addressCity: Burnaby
+                            firstName: First
+                            lastName: Last
+                            middleName: ""
+                            organizationName: ""
+                            partyType: "person"
+                            email: "apiSpec@example.com"
+                          mailingAddress: 
+                            addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
-                            postalCode: V5E 1R9
-                            streetAddress: 6767 Burford St
-                            streetAddressAdditional: ''
-                          mailingAddress:
-                            addressCity: Burnaby
-                            addressCountry: CA
-                            addressRegion: BC
-                            postalCode: V5E 1R9
-                            streetAddress: 6767 Burford St
-                            streetAddressAdditional: ''
-                          officer:
-                            firstName: Director
-                            lastName: Test
-                            middleName: ''
-                            organizationName: ''
-                            partyType: person
-                          roles:
-                            - appointmentDate: '2024-07-24'
-                              roleType: Director
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ""
+                          deliveryAddress:
+                              addressCity: delivery_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H 0H0
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ""
+                      shareStructure:
+                        shareClasses:
+                          - name: Sample Shares
+                            priority: 1
+                            hasMaximumShares: false
+                            maxNumberOfShares: null
+                            hasParValue: false
+                            parValue: null
+                            currency: null
+                            hasRightsOrRestrictions: false
+                            series: []
+                      incorporationAgreement:
+                        agreementType: sample
               registration-request:
                 summary: Registration Request
                 value:
@@ -3549,13 +3617,13 @@ paths:
                             streetAddress: delivery_address - address line one
                             addressCity: delivery_address city
                             addressCountry: Canada
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                           mailingAddress: 
                             streetAddress: mailing_address - address line one
                             addressCity: mailing_address city
                             addressCountry: Canada
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                       contactPoint: 
                         email: no_one@never.get
@@ -3570,14 +3638,14 @@ paths:
                             streetAddressAdditional: 
                             addressCity: mailing_address city
                             addressCountry: CA
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                           deliveryAddress: 
                             streetAddress: delivery_address - address line one
                             streetAddressAdditional: 
                             addressCity: delivery_address city
                             addressCountry: CA
-                            postalCode: H0H0H0
+                            postalCode: H0H 0H0
                             addressRegion: BC
                           officer: 
                             firstName: Joe
@@ -4738,6 +4806,9 @@ components:
           - parties
           - shareStructure
           properties:
+            isApproved:
+              type: boolean
+              title: Continuation In Authorization has been approved.
             business:
               $ref: '#/components/schemas/Business'
             foreignJurisdiction:
@@ -6025,11 +6096,13 @@ components:
                   $ref: '#/components/schemas/Office'
             parties:
               type: array
-              description: 'Persons having a role in the corporation eg: company officer.'
+              description: 'Persons having a role in the corporation eg: company director.'
               items:
                 $ref: '#/components/schemas/party'
             shareStructure:
               $ref: '#/components/schemas/Share_structure'
+            courtOrder:
+              $ref: '#/components/schemas/Court_order'
       required:
         - incorporationApplication
     Filing_documents:
@@ -7141,14 +7214,6 @@ components:
       description: API Gateway assigned API key for a user with the Business Registry API privilege. Required for all requests.
       name: x-apikey
       in: header
-    jwt:
-      type: oauth2
-      flows:
-        password:
-          tokenUrl: ''
-          refreshUrl: ''
-          scopes: {}
-      description: ''
   headers:
     AccessControlAllowOrigin:
       schema:

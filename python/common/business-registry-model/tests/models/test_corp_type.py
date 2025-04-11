@@ -19,9 +19,6 @@ Test-Suite to ensure that the CorpType Model is working as expected.
 
 from business_model.models import Business, CorpType
 
-from tests import EPOCH_DATETIME
-from tests.models import factory_business
-
 corp_type_json = {
     'corp_type_cd': 'BEN',
     'colin_ind': 'Y',
