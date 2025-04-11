@@ -17,7 +17,6 @@ import os
 import sys
 
 from dotenv import find_dotenv, load_dotenv
-from flask import current_app
 
 load_dotenv(find_dotenv())
 
@@ -101,7 +100,7 @@ class ProductionConfig(_Config):
 
     if not SECRET_KEY:
         SECRET_KEY = os.urandom(24)
-        current_app.logger.warning("WARNING: SECRET_KEY being set as a one-shot", file=sys.stderr)
+        print("WARNING: SECRET_KEY being set as a one-shot", file=sys.stderr)
 
     TESTING = False
     DEBUG = False

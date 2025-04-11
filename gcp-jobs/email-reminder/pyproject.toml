@@ -120,6 +120,7 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]  # used for imports
+"**/config.py" = ["T201"]  # allow print instead of logger in config
 
 [tool.pytest.ini_options]
 minversion = "2.0"
@@ -146,10 +147,10 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = [
-   "src/furnishings",
+   "src/email_reminder",
 ]
 omit = [
-    "furnish.py",
+    "run_reminders.py",
 ]
 
 [tool.coverage.report]
