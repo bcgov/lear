@@ -133,12 +133,12 @@ def format_parties_data(data: dict) -> list[dict]:
         party = copy.deepcopy(PARTY)
         party_info = group.iloc[0].to_dict()
         party['parties']['cp_full_name'] = party_info['cp_full_name']
-        party['parties']['first_name'] = party_info['cp_first_name'] or ''
-        party['parties']['middle_initial'] = party_info['cp_middle_name'] or ''
-        party['parties']['last_name'] = party_info['cp_last_name'] or ''
+        party['parties']['first_name'] = (party_info['cp_first_name'] or '').upper()
+        party['parties']['middle_initial'] = (party_info['cp_middle_name'] or '').upper()
+        party['parties']['last_name'] = (party_info['cp_last_name'] or '').upper()
         party['parties']['party_type'] = 'person' if party_info['cp_full_name'] else 'organization'
         party['parties']['title'] = ''
-        party['parties']['organization_name'] = party_info['cp_business_name'] or ''
+        party['parties']['organization_name'] = (party_info['cp_business_name'] or '').upper()
         party['parties']['email'] = ''
         party['parties']['identifier'] = ''
 
@@ -296,7 +296,7 @@ def format_aliases_data(data: dict) -> list[dict]:
         if x['cn_corp_name_typ_cd'] != 'TR':
             continue
         alias = copy.deepcopy(ALIAS)
-        alias['alias'] = x['cn_corp_name']
+        alias['alias'] = (x['cn_corp_name'] or '').upper()
         alias['type'] = 'TRANSLATION'
         formatted_aliases.append(alias)
 
