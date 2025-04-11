@@ -13,9 +13,9 @@
 # limitations under the License.
 """The Test Suites to ensure that the service is built and operating correctly."""
 import datetime
+from datetime import UTC
 
-
-EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0)
+EPOCH_DATETIME = datetime.datetime.fromtimestamp(0, UTC)
 FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362)
 
 

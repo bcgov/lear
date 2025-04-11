@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import base64
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -109,8 +109,8 @@ def post_process(email_msg: dict, status: str):
     furnishing_id = email_msg["data"]["furnishing"]["furnishingId"]
     furnishing = Furnishing.find_by_id(furnishing_id)
     furnishing.status = status
-    furnishing.processed_date = datetime.utcnow()
-    furnishing.last_modified = datetime.utcnow()
+    furnishing.processed_date = datetime.now(tz=UTC)
+    furnishing.last_modified = datetime.now(tz=UTC)
     if status == Furnishing.FurnishingStatus.FAILED:
         furnishing.notes = "Failure to send email"
     furnishing.save()
