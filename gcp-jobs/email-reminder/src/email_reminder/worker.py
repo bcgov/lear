@@ -67,7 +67,6 @@ def send_email(business_id: int, ar_fee: str, ar_year: str):
                 }
             }
         )
-        print(f'publish {business_id}')
         gcp_queue.publish(topic, to_queue_message(ce))
     except Exception as err:
         current_app.logger.error(f'Queue Error: Failed to place ar reminder email for business id {business_id} on Queue with error:{err}')

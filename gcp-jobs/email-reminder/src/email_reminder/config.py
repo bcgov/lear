@@ -102,7 +102,7 @@ class UnitTestingConfig(_Config):
     )
 
     PAYMENT_SVC_FEES_URL = 'http://test.PAY_API_URL.fake/fees'
-    GCP_AUTH_KEY = 'test.GCP_AUTH_KEY'
+    GCP_AUTH_KEY = None
 
 
 class ProductionConfig(_Config):
