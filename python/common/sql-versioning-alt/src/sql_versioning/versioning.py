@@ -20,6 +20,7 @@ from sqlalchemy import (BigInteger, Column, DateTime, Integer, SmallInteger,
 # from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.orm import declarative_base, declared_attr
 from sqlalchemy.orm import Session, Mapper, relationships
+from sqlalchemy.orm import AppenderQuery
 
 from .relationship_builder import RelationshipBuilder
 
@@ -49,6 +50,9 @@ def _is_obj_modified(obj):
 
 def _should_relationship_delete_orphan(session, obj):
     """
+    Whether this object is orphaned from a relationship. This is primarily used  when the 
+    relationship structure is something like parent->child and parent.remove(child) is used.
+
     Checks if:
         1. This relationship is a many-to-one relationship
         2. If the opposite direction one-to-many relationship parent object has changes
@@ -66,6 +70,41 @@ def _should_relationship_delete_orphan(session, obj):
             if parent_obj in session.dirty:
                 should_delete = should_delete or "delete-orphan" in inspect(reverse_rel)._cascade
     return should_delete
+
+
+def _cascade_delete_relationship_orphans(session):
+    """
+    Marks for deletion relationship orphans that have cascade=delete-orphan. This is primarily
+    used for persisting deletions down to a grandchild object (and beyond) when the relationship 
+    structure is something like parent->child->grandchild->(...) and parent.remove(child) is used.
+    
+    Iterates through changed versioned objects and checks if:
+        1. The operation type is D (delete)
+        2. This object (considered the child) is an orphan that should be deleted.
+        3. The relationship from child to grandchild is one-to-many
+        4. The relationship from child to grandchild has cascade="delete, delete-orphan"
+
+    If all conditions are met, mark the grandchild object for deletion.
+
+    :param session: The database session instance.
+    """
+    for obj in versioned_objects(session):
+        should_delete_orphan = _should_relationship_delete_orphan(session, obj)
+        operation_type = _get_operation_type(session, obj, should_delete_orphan)
+        for r in inspect(obj.__class__).relationships:
+            if (
+                operation_type == 'D' and
+                should_delete_orphan and
+                r.direction.name == 'ONETOMANY' and
+                'delete' in r._cascade and
+                'delete-orphan' in r._cascade
+            ):
+                with session.no_autoflush:
+                    relationship_objects = getattr(obj, r.key)
+                    if isinstance(relationship_objects, AppenderQuery):
+                        relationship_objects = relationship_objects.all()
+                    for r_obj in relationship_objects:
+                        session.delete(r_obj)
 
 
 def _is_session_modified(session):
@@ -267,6 +306,8 @@ def _before_flush(session, flush_context, instances):
         if 'current_transaction_id' not in session.info:
             transaction_manager = TransactionManager(session)
             transaction_manager.create_transaction()
+        
+        _cascade_delete_relationship_orphans(session)
 
     except Exception as e:
         raise e
