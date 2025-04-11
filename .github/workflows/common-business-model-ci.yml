@@ -1,0 +1,21 @@
+name: Common Business Model CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "python/common/business-registry-model/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./python/common/business-registry-model
+
+jobs:
+  business-registry-model-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-registry-model"
+      working_directory: "./python/common/business-registry-model"
+      codecov_flag: "business-registry-model"

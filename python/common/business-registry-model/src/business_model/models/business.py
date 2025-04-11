@@ -531,7 +531,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         transition_filing = aliased(Filing)
 
         restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
-        condition = exists().where(
+        condition = exists(Filing).where(
             and_(
                 self.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 self.founding_date < new_act_date,
@@ -543,7 +543,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                 restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
                 not_(
-                    exists().where(
+                    exists(Filing).where(
                         and_(
                             transition_filing.business_id == self.id,
                             (transition_filing._filing_type ==  # pylint: disable=protected-access
