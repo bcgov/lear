@@ -17,9 +17,7 @@ import os
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from .config import CONFIGURATION  # pylint: disable=import-error
 import pytz
-from business_model.models.db import init_db
 from business_common.core.filing import Filing as CoreFiling
 from business_common.core.involuntary_dissolution_types import DissolutionTypes
 from business_model.models import (
@@ -31,6 +29,7 @@ from business_model.models import (
     Furnishing,
     db,
 )
+from business_model.models.db import init_db
 from croniter import croniter
 from dissolution_service import InvoluntaryDissolutionService
 from flask import Flask
@@ -41,6 +40,7 @@ from sqlalchemy.orm import aliased
 from gcp_queue import GcpQueue
 from structured_logging import StructuredLogging
 
+from .config import CONFIGURATION  # pylint: disable=import-error
 from .utils.flags import Flags
 
 gcp_queue = GcpQueue()

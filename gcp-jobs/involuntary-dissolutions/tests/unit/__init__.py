@@ -13,13 +13,14 @@
 # limitations under the License.
 """The Test-Suite used to ensure that the Involuntary Dissolutions Job is working correctly."""
 
-from datetime import datetime as _datetime, timezone, UTC
+from datetime import UTC, timezone
+from datetime import datetime as _datetime
 
 from business_common.utils.datetime import datetime
 from business_model.models import Batch, BatchProcessing, Business
 from datedelta import datedelta
 
-EPOCH_DATETIME = datetime.from_date(_datetime(1970, 1, 1, tzinfo=timezone.utc))
+EPOCH_DATETIME = datetime.from_date(_datetime(1970, 1, 1, tzinfo=UTC))
 
 
 def factory_business(identifier,
