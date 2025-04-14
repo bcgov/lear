@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "business_common", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.9,<4.0"
 datedelta = "^1.4"
 pytz = "^2025.1"
 
