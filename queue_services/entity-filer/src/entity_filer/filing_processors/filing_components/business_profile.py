@@ -30,7 +30,6 @@ from entity_filer.filing_processors.filing_components import business_info
 
 def update_business_profile(business: Business, filing: Filing, filing_type: str = None):
     """Update business profile."""
-
     filing_type = filing_type if filing_type else filing.filing_type
     if contact_point := filing.filing_json['filing'][filing_type].get('contactPoint'):
         if err := _update_business_profile(business, contact_point):
