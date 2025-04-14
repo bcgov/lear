@@ -46,7 +46,6 @@ class DBConfig:
     database: str
     user: str  # IAM user email format: "user@project.iam"
     enable_iam_auth: bool = True
-    password: str | None = None  # Only necessary if not using GOOGLE_APPLICATION_CREDENTIALS
 
 
 class IapDbConnection:
@@ -88,8 +87,7 @@ class IapDbConnection:
         db_config = DBConfig(
             instance_connection_name=app.config["DB_CONNECTION_NAME"],
             database=app.config["DB_NAME"],
-            user=app.config["DB_USER"],
-            password=app.config["DB_PASSWORD"],
+            user=app.config["DB_USER"]
         )
         app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
