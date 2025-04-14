@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<SBNChangeStatus>
+  <header>
+    <requestMode>A</requestMode>
+    <documentSubType>113</documentSubType>
+    <senderID>CPPR</senderID>
+    <receiverID>BCSBNHUB</receiverID>
+    <partnerNote>{{business.identifier}}-{{filingId}}-{{retryNumber}}</partnerNote>
+  </header>
+  <body>
+    <statusData>
+      <businessRegistrationNumber>{{businessRegistrationNumber}}</businessRegistrationNumber>
+      <businessProgramIdentifier>{{businessProgramIdentifier}}</businessProgramIdentifier>
+      <businessProgramAccountReferenceNumber>{{businessProgramAccountReferenceNumber}}</businessProgramAccountReferenceNumber>      
+      <programAccountStatus>
+        <programAccountStatusCode>{{programAccountStatusCode}}</programAccountStatusCode>
+        {% if programAccountReasonCode is not none %}
+        <programAccountReasonCode>{{programAccountReasonCode}}</programAccountReasonCode>
+        {% endif %}
+        <effectiveDate>{{effectiveDate}}</effectiveDate>
+      </programAccountStatus>
+    </statusData>
+  </body>
+</SBNChangeStatus>
