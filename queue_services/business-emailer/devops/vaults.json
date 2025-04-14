@@ -1,0 +1,19 @@
+[
+    {
+        "vault": "entity",
+        "application": [
+            "postgres-legal",
+            "entity-emailer",
+            "entity-service-account",
+            "launchdarkly"
+        ]
+    },
+    {
+        "vault": "web-url",
+        "application": [
+            "name-request",
+            "bcregistry",
+            "auth-web"
+        ]
+    }
+]
