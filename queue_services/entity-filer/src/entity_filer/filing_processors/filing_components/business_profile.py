@@ -23,17 +23,13 @@ from entity_queue_common.service_utils import QueueException
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
 from legal_api.models import Business, Filing, RegistrationBootstrap
-from legal_api.services import Flags
 from legal_api.services.bootstrap import AccountService
 
 from entity_filer.filing_processors.filing_components import business_info
 
 
-def update_business_profile(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
+def update_business_profile(business: Business, filing: Filing, filing_type: str = None):
     """Update business profile."""
-    if flags.is_on('enable-sandbox'):
-        current_app.logger.info('Skip updating business profile')
-        return
 
     filing_type = filing_type if filing_type else filing.filing_type
     if contact_point := filing.filing_json['filing'][filing_type].get('contactPoint'):

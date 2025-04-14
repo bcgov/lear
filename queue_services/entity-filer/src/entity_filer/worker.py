@@ -374,7 +374,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     business_profile.update_affiliation(business, filing_submission)
 
                 name_request.consume_nr(business, filing_submission, flags=flags)
-                business_profile.update_business_profile(business, filing_submission, flags=flags)
+                business_profile.update_business_profile(business, filing_submission)
                 await publish_mras_email(filing_submission)
             else:
                 # post filing changes to other services
@@ -404,8 +404,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                             if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
                                 business_profile.update_business_profile(business,
                                                                          filing_submission,
-                                                                         filing_type,
-                                                                         flags=flags)
+                                                                         filing_type)
 
             # TODO: remove NATS publishing once GCP migration is complete
             if not flags.is_on('enable-sandbox'):
