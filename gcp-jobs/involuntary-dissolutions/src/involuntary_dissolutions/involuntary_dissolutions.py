@@ -16,6 +16,7 @@ import asyncio
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
+from enum import Enum
 
 import pytz
 # from business_common.core import DissolutionTypes
@@ -42,6 +43,15 @@ from structured_logging import StructuredLogging
 
 from .config import CONFIGURATION  # pylint: disable=import-error
 from .utils.flags import Flags
+
+class DissolutionTypes(str, Enum):
+    """Dissolution types."""
+
+    ADMINISTRATIVE = 'administrative'
+    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
+    INVOLUNTARY = 'involuntary'
+    VOLUNTARY = 'voluntary'
+    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
 
 gcp_queue = GcpQueue()
 
