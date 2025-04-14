@@ -1,0 +1,33 @@
+# Everything the developer needs in addition to the production requirements
+
+# Testing
+freezegun
+hypothesis
+pytest
+pytest-aiohttp
+pytest-asyncio==0.18.3
+pytest-mock
+requests
+requests_mock
+pyhamcrest
+testcontainers==4.5.1
+google-cloud-datastore
+
+# Lint and code style
+pydocstyle<4
+flake8==5.0.4
+flake8-blind-except
+flake8-debugger
+flake8-docstrings
+flake8-isort
+flake8-quotes
+pep8-naming
+autopep8
+coverage
+pylint
+pylint-flask
+isort
+pytest-cov
+
+# docker
+lovely-pytest-docker
