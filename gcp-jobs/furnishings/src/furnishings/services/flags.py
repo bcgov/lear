@@ -15,7 +15,6 @@
 
 NOTE: This is copied from search-api and altered a bit for legal-api.
 This will be reworked and moved to a common service later."""
-import json
 from contextlib import suppress
 
 import ldclient
@@ -55,12 +54,6 @@ class Flags:
         self.sdk_key = app.config.get("LD_SDK_KEY")
         if td:
             client = LDClient(config=Config("testing", update_processor_class=td))
-            with open("flags.json") as file:
-                data = file.read()
-                test_flags: dict[str, dict] = json.loads(data)
-                for flag_name, flag_value in test_flags["flagValues"].items():
-                    # NOTE: should check if isinstance dict and if so, apply each variation
-                    td.update(td.flag(flag_name).variation_for_all(flag_value))
 
         elif self.sdk_key:
             ldclient.set_config(Config(self.sdk_key))

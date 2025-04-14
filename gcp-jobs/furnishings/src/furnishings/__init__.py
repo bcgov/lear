@@ -21,7 +21,7 @@ from flask import Flask
 
 from business_model.models import db
 from furnishings.config import DevelopmentConfig, ProductionConfig, UnitTestingConfig
-from furnishings.services import flags, gcp_queue, post_processor, stage_one_processor
+from furnishings.services import flags, gcp_queue, iap_db_connector, post_processor, stage_one_processor
 from structured_logging import StructuredLogging
 
 CONFIG_MAP = {
@@ -35,6 +35,10 @@ def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **k
     app = Flask(__name__)
     app.logger = StructuredLogging(app).get_logger()
     app.config.from_object(CONFIG_MAP.get(environment, "production"))
+
+    if app.config["DB_CONNECTION_NAME"]:
+        iap_db_connector.init_app(app)
+
     flags.init_app(app, kwargs.get("ld_test_data"))
     db.init_app(app)
     gcp_queue.init_app(app)

@@ -24,6 +24,8 @@ dependencies = [
     "business-registry-dissolution @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-dissolution",
     "psycopg2 (>=2.9.10,<3.0.0)",
     "launchdarkly-server-sdk (>=9.10.0,<10.0.0)",
+    "google-auth (>=2.38.0,<3.0.0)",
+    "cloud-sql-python-connector (>=1.18.0,<2.0.0)",
 ]
 
 [build-system]

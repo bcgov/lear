@@ -1,0 +1,98 @@
+# Copyright © 2025 Province of British Columbia
+#
+# Licensed under the BSD 3 Clause License, (the "License");
+# you may not use this file except in compliance with the License.
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
+#
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+"""All of the configuration for the service is captured here."""
+from dataclasses import dataclass
+
+from flask import Flask
+from google.cloud.sql.connector import Connector
+
+
+@dataclass
+class DBConfig:
+    """Database configuration settings for IAM authentication."""
+
+    instance_connection_name: str  # Format: "project:region:instance"
+    database: str
+    user: str  # IAM user email format: "user@project.iam"
+    enable_iam_auth: bool = True
+    password: str | None = None  # Only necessary if not using GOOGLE_APPLICATION_CREDENTIALS
+
+
+class IapDbConnection:
+    """Helper class for setting up the IAP db connection."""
+    connector: Connector | None
+
+    def __init__(self, app: Flask | None = None):
+        self.connector = Connector()
+        if app:
+            self.init_app(app)
+    
+    def _get_iam_connection(self, db_config: DBConfig):
+        """Establish connection using IAM authentication."""
+        return self.connector.connect(
+            db_config.instance_connection_name,
+            "pg8000",
+            ip_type="public",
+            db=db_config.database,
+            user=db_config.user,
+            enable_iam_auth=db_config.enable_iam_auth,
+            password=db_config.password
+        )
+
+    def init_app(self, app: Flask):
+        """Intialize the connector with the app context by setting the required config."""
+        required_configs = {
+            "DB_CONNECTION_NAME": "Instance connection name",
+            "DB_NAME": "Database name",
+            "DB_USER": "IAM user email",
+        }
+
+        missing = [k for k in required_configs if not app.config.get(k)]
+        
+        if missing:
+            app.logger.warning(f"IAP db connection attempted with missing configs: {', '.join(missing)}")
+            app.logger.debug("Aborting IAP db connection initialization.")
+            return
+
+        db_config = DBConfig(
+            instance_connection_name=app.config["DB_CONNECTION_NAME"],
+            database=app.config["DB_NAME"],
+            user=app.config["DB_USER"],
+            password=app.config["DB_PASSWORD"],
+        )
+        app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql+pg8000://"
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "creator": lambda: self._get_iam_connection(db_config)
+        }
+        

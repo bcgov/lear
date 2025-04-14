@@ -13,6 +13,7 @@
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
 import contextlib
+import json
 
 import business_model_migrations
 import pytest
@@ -32,6 +33,12 @@ from furnishings.sftp import SftpConnection
 def ld():
     """LaunchDarkly TestData source."""
     td = TestData.data_source()
+    with open("flags.json") as file:
+        data = file.read()
+        test_flags: dict[str, dict] = json.loads(data)
+        for flag_name, flag_value in test_flags["flagValues"].items():
+            # NOTE: should check if isinstance dict and if so, apply each variation
+            td.update(td.flag(flag_name).variation_for_all(flag_value))
     yield td
 
 @pytest.fixture(scope="session")
