@@ -374,38 +374,36 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                     business_profile.update_affiliation(business, filing_submission)
 
                 name_request.consume_nr(business, filing_submission, flags=flags)
-                business_profile.update_business_profile(business, filing_submission, flags=flags)
+                business_profile.update_business_profile(business, filing_submission)
                 await publish_mras_email(filing_submission)
             else:
                 # post filing changes to other services
-                if not flags.is_on('enable-sandbox'):
-                    for filing_type in filing_meta.legal_filings:
-                        if filing_type in [
-                            FilingCore.FilingTypes.ALTERATION,
-                            FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                            FilingCore.FilingTypes.CORRECTION,
-                            FilingCore.FilingTypes.DISSOLUTION,
-                            FilingCore.FilingTypes.PUTBACKON,
-                            FilingCore.FilingTypes.RESTORATION
-                        ]:
-                            business_profile.update_entity(business, filing_type)
+                for filing_type in filing_meta.legal_filings:
+                    if filing_type in [
+                        FilingCore.FilingTypes.ALTERATION,
+                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                        FilingCore.FilingTypes.CORRECTION,
+                        FilingCore.FilingTypes.DISSOLUTION,
+                        FilingCore.FilingTypes.PUTBACKON,
+                        FilingCore.FilingTypes.RESTORATION
+                    ]:
+                        business_profile.update_entity(business, filing_type)
 
-                        if filing_type in [
-                            FilingCore.FilingTypes.ALTERATION,
-                            FilingCore.FilingTypes.CHANGEOFREGISTRATION,
-                            FilingCore.FilingTypes.CHANGEOFNAME,
-                            FilingCore.FilingTypes.CORRECTION,
-                            FilingCore.FilingTypes.RESTORATION,
-                        ]:
-                            name_request.consume_nr(business,
-                                                    filing_submission,
-                                                    filing_type=filing_type,
-                                                    flags=flags)
-                            if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
-                                business_profile.update_business_profile(business,
-                                                                         filing_submission,
-                                                                         filing_type,
-                                                                         flags=flags)
+                    if filing_type in [
+                        FilingCore.FilingTypes.ALTERATION,
+                        FilingCore.FilingTypes.CHANGEOFREGISTRATION,
+                        FilingCore.FilingTypes.CHANGEOFNAME,
+                        FilingCore.FilingTypes.CORRECTION,
+                        FilingCore.FilingTypes.RESTORATION,
+                    ]:
+                        name_request.consume_nr(business,
+                                                filing_submission,
+                                                filing_type=filing_type,
+                                                flags=flags)
+                        if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
+                            business_profile.update_business_profile(business,
+                                                                     filing_submission,
+                                                                     filing_type)
 
             # TODO: remove NATS publishing once GCP migration is complete
             if not flags.is_on('enable-sandbox'):
