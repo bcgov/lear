@@ -1,3 +1,5 @@
+from enum import Enum
+
 class DissolutionTypes(str, Enum):
     """Dissolution types."""
 

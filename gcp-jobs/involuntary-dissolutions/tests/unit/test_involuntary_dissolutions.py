@@ -20,8 +20,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import pytz
 from business_model.models import Batch, BatchProcessing, Configuration, Filing, Furnishing
-from business_registry_common.core.filing import Filing as CoreFiling
-from business_registry_common.core.involuntary_dissolution_types import DissolutionTypes
+from business_common.core import Filing as CoreFiling, DissolutionTypes
 from datedelta import datedelta
 
 from involuntary_dissolutions import (
