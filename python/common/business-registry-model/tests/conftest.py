@@ -19,6 +19,7 @@ import pytest
 import sqlalchemy
 from flask import Flask
 from flask_migrate import Migrate, upgrade
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event, text
 
 from business_model.models import db as _db
@@ -225,6 +226,16 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         # This instruction rollsback any commit that were executed in the tests.
         txn.rollback()
         conn.close()
+
+@pytest.fixture(autouse=True)
+def run_around_tests(db: SQLAlchemy):
+    # run before each test
+    yield
+    # run after each test
+    db.session.rollback()
+    db.session.execute(text("TRUNCATE TABLE businesses CASCADE"))
+    db.session.execute(text("TRUNCATE TABLE dc_definitions CASCADE"))
+    db.session.commit()
 
 # @pytest.fixture(scope='function')
 # def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name

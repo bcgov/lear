@@ -7,7 +7,7 @@ from typing import Final, Optional
 
 import pandas as pd
 import pytz
-from sqlalchemy import Connection, text
+from sqlalchemy import Connection, bindparam, text
 from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
                                            FILING_JSON, IN_DISSOLUTION,
                                            JURISDICTION, OFFICE, OFFICES_HELD,
@@ -24,6 +24,7 @@ from tombstone.tombstone_mappings import (EVENT_FILING_DISPLAY_NAME_MAPPING,
 
 all_unsupported_types = set()
 date_format_with_tz: Final = '%Y-%m-%d %H:%M:%S%z'
+
 
 def format_business_data(data: dict) -> dict:
     business_data = data['businesses'][0]
@@ -132,12 +133,12 @@ def format_parties_data(data: dict) -> list[dict]:
         party = copy.deepcopy(PARTY)
         party_info = group.iloc[0].to_dict()
         party['parties']['cp_full_name'] = party_info['cp_full_name']
-        party['parties']['first_name'] = party_info['cp_first_name'] or ''
-        party['parties']['middle_initial'] = party_info['cp_middle_name'] or ''
-        party['parties']['last_name'] = party_info['cp_last_name'] or ''
+        party['parties']['first_name'] = (party_info['cp_first_name'] or '').upper()
+        party['parties']['middle_initial'] = (party_info['cp_middle_name'] or '').upper()
+        party['parties']['last_name'] = (party_info['cp_last_name'] or '').upper()
         party['parties']['party_type'] = 'person' if party_info['cp_full_name'] else 'organization'
         party['parties']['title'] = ''
-        party['parties']['organization_name'] = party_info['cp_business_name'] or ''
+        party['parties']['organization_name'] = (party_info['cp_business_name'] or '').upper()
         party['parties']['email'] = ''
         party['parties']['identifier'] = ''
 
@@ -184,6 +185,7 @@ def format_parties_data(data: dict) -> list[dict]:
         formatted_parties.append(party)
 
     return formatted_parties
+
 
 def format_offices_held_data(data: dict) -> list[dict]:
     offices_held_data = data['offices_held']
@@ -282,7 +284,7 @@ def format_share_name(name: str):
 
     if name.endswith(' shares'):
         name = name.removesuffix(' shares')
-    
+
     return f'{name}{expected_suffix}'
 
 
@@ -294,7 +296,7 @@ def format_aliases_data(data: dict) -> list[dict]:
         if x['cn_corp_name_typ_cd'] != 'TR':
             continue
         alias = copy.deepcopy(ALIAS)
-        alias['alias'] = x['cn_corp_name']
+        alias['alias'] = (x['cn_corp_name'] or '').upper()
         alias['type'] = 'TRANSLATION'
         formatted_aliases.append(alias)
 
@@ -350,7 +352,7 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
         formatted_jurisdiction['country'] = other_jurisdiction_desc[:2]
         formatted_jurisdiction['region'] = other_jurisdiction_desc[4:]
     else:
-    # add placeholder for unavailable information
+        # add placeholder for unavailable information
         formatted_jurisdiction['country'] = 'UNKNOWN'
 
     return formatted_jurisdiction
@@ -518,7 +520,6 @@ def get_expiry_date(effective_date_str: str) -> datetime:
     _date += dst_offset_diff
 
     return _date.astimezone(pytz.timezone('GMT'))
-
 
 
 def format_amalgamations_data(data: dict, event_id: Decimal, amalgamation_date: str, amalgamation_type: str) -> dict:
@@ -1001,8 +1002,9 @@ def load_data(conn: Connection,
               table_name: str,
               data: dict,
               conflict_column: str = None,
-              conflict_error = False,
-              expecting_id: bool = True) -> Optional[int]:
+              conflict_error: bool = False,
+              expecting_id: bool = True,
+              versioned: bool = True) -> Optional[int]:
     columns = ', '.join(data.keys())
     placeholders = ', '.join([f':{key}' for key in data.keys()])
 
@@ -1022,14 +1024,25 @@ def load_data(conn: Connection,
 
     result = conn.execute(text(query), format_params(data))
 
-    if expecting_id:
-        id = result.scalar()
-        return id
+    id = result.scalar() if expecting_id else None
 
-    return None
+    if versioned and expecting_id:
+        data['id'] = id
+        data['transaction_id'] = -1  # placeholder value
+        data['operation_type'] = 0
+        versioned_columns = ', '.join(data.keys())
+        versioned_placeholders = ', '.join([f':{key}' for key in data.keys()])
+        versioned_query = f"""insert into {table_name}_version ({versioned_columns}) values ({versioned_placeholders})"""
+        conn.execute(text(versioned_query), format_params(data))
+
+    return id
 
 
-def update_data(conn: Connection, table_name: str, data: dict, column: str, value: any) -> int:
+def update_data(conn: Connection,
+                table_name: str,
+                data: dict, column: str,
+                value: any,
+                versioned: bool = True) -> int:
     update_pairs = [f'{k} = :{k}' for k in data.keys()]
     update_pairs_str = ', '.join(update_pairs)
     query = f"""update {table_name} set {update_pairs_str} where {column}=:condition_value returning id"""
@@ -1040,7 +1053,19 @@ def update_data(conn: Connection, table_name: str, data: dict, column: str, valu
     result = conn.execute(text(query), format_params(params))
     id = result.scalar()
 
+    if versioned:
+        versioned_query = f"""update {table_name}_version set {update_pairs_str} where {column}=:condition_value"""
+        conn.execute(text(versioned_query), format_params(params))
+
     return id
+
+
+def update_versioning(conn: Connection,
+                      transaction_id: int,
+                      versioning_mapper: dict) -> None:
+    for k, v in versioning_mapper.items():
+        query = f"""update {k} set transaction_id = {transaction_id} where id in :ids"""
+        conn.execute(text(query).bindparams(bindparam('ids', expanding=True)), {'ids': v})
 
 
 def format_value(value) -> str:
