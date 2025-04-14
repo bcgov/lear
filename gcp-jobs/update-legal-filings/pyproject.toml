@@ -14,16 +14,19 @@ python-dotenv = "^1.1.0"
 # git dependencies
 gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/gcp-queue" }
 structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging" }
-colin-api = { git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "colin-api" }
+#colin-api = { git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "colin-api" }
 business-registry-account = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account" }
-#business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model" }
-#business-registry-common = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common" }
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
+pytest-mock = "^3.14.0"
+requests-mock = "1.12.1"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

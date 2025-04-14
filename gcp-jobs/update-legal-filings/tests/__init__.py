@@ -11,3 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+class MockResponse:
+    """Mock Response."""
+
+    def __init__(self, json_data, status_code):
+        """Mock Response __init__."""
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def json(self):
+        """Mock Response json."""
+        return self.json_data

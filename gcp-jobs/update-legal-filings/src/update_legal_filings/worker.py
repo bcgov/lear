@@ -39,12 +39,11 @@ from http import HTTPStatus
 import requests
 import simple_cloudevent
 from business_account.AccountService import AccountService
-from colin_api.models.business import Business
-from colin_api.models.filing import Filing
 from flask import Flask, current_app
 from simple_cloudevent import to_queue_message
 
 from update_legal_filings import gcp_queue
+from update_legal_filings.colin_helper import ColinApiTypeCodes, COLIN_FILING_TYPES
 
 SET_EVENTS_MANUALLY = False
 CONTENT_TYPE_JSON = "application/json"
@@ -71,7 +70,7 @@ def check_for_manual_filings(token: dict = None):
     colin_events = None
     legal_url = current_app.config["LEGAL_API_URL"] + "/businesses"
     colin_url = current_app.config["COLIN_URL"]
-    corp_types = [Business.TypeCodes.COOP.value]
+    corp_types = [ColinApiTypeCodes.COOP.value]
 
     # get max colin event_id from legal
     response = requests.get(f"{legal_url}/internal/filings/colin_id",
@@ -149,9 +148,9 @@ def get_filing(event_info: dict = None, application: Flask = None, token: dict =
     # call the colin api for the filing
     legal_type = event_info["corp_num"][:2]
     filing_typ_cd = event_info["filing_typ_cd"]
-    filing_types = Filing.FILING_TYPES.keys()
+    filing_types = COLIN_FILING_TYPES.keys()
     filing_type = \
-        next((x for x in filing_types if filing_typ_cd in Filing.FILING_TYPES.get(x).get("type_code_list")), None)
+        next((x for x in filing_types if filing_typ_cd in COLIN_FILING_TYPES.get(x).get("type_code_list")), None)
 
     if not filing_type:
         # pylint: disable=consider-using-f-string
@@ -267,6 +266,7 @@ def publish_queue_events(tax_ids: dict):  # pylint: disable=redefined-outer-name
             current_app.logger.debug(err)
             # NB: error log will trigger sentry message
             current_app.logger.error("Update-legal-filings: Failed to publish bn email event for %s.", identifier)
+
         try:
             data={
                 "identifier": identifier

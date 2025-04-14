@@ -78,8 +78,12 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
 
-    COLIN_URL = os.getenv("COLIN_URL_TEST", "")
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL_TEST", "")
+    COLIN_URL = os.getenv("COLIN_URL_TEST", "https://fake-colin-url.com")
+    LEGAL_API_URL = os.getenv("LEGAL_API_URL_TEST", "https://fake-legal-api-url.com")
+
+    BUSINESS_EMAILER_TOPIC = "fake-emailer-topic"
+    BUSINESS_EVENTS_TOPIC = "fake-events-topic"
+
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
