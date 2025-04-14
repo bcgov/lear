@@ -31,43 +31,16 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Email Reminder Job."""
-import os
+"""Email reminder job."""
 
-from dotenv import find_dotenv, load_dotenv
-from flask import Flask
+from update_legal_filings import create_app
+from update_legal_filings.worker import update_business_nos
 
-from gcp_queue import GcpQueue
-from structured_logging import StructuredLogging
-from update_legal_filings.config import CONFIGURATION, DevConfig, ProdConfig, TestConfig, get_named_config
-
-CONFIG_MAP = {
-    "development": DevConfig,
-    "testing": TestConfig,
-    "production": ProdConfig
-}
-
-# this will load all the envars from a .env file located in the project root
-load_dotenv(find_dotenv())
-
-gcp_queue = GcpQueue()
-
-def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **kwargs):
-    """Return a configured Flask App using the Factory method."""
-    app = Flask(__name__)
-    app.logger = StructuredLogging(app).get_logger()
-    app.config.from_object(CONFIG_MAP.get(environment, "production"))
-    gcp_queue.init_app(app)
-
-    register_shellcontext(app)
-
-    return app
-
-
-def register_shellcontext(app: Flask):
-    """Register shell context objects."""
-    def shell_context():
-        """Shell context objects."""
-        return {"app": app}
-
-    app.shell_context_processor(shell_context)
+if __name__ == "__main__":
+    application = create_app()
+    with application.app_context():
+        try:
+            update_business_nos()
+        except Exception as err:
+            application.logger.error(err)
+            raise err
