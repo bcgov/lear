@@ -402,8 +402,8 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                                                 flags=flags)
                         if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
                             business_profile.update_business_profile(business,
-                                                                        filing_submission,
-                                                                        filing_type)
+                                                                     filing_submission,
+                                                                     filing_type)
 
             # TODO: remove NATS publishing once GCP migration is complete
             if not flags.is_on('enable-sandbox'):
