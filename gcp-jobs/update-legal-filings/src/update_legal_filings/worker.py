@@ -38,12 +38,12 @@ from http import HTTPStatus
 
 import requests
 import simple_cloudevent
-from business_account.AccountService import AccountService
 from flask import Flask, current_app
 from simple_cloudevent import to_queue_message
 
+from business_account.AccountService import AccountService
 from update_legal_filings import gcp_queue
-from update_legal_filings.colin_helper import ColinApiTypeCodes, COLIN_FILING_TYPES
+from update_legal_filings.colin_helper import COLIN_FILING_TYPES, ColinApiTypeCodes
 
 SET_EVENTS_MANUALLY = False
 CONTENT_TYPE_JSON = "application/json"
