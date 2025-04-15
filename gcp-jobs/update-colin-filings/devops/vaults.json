@@ -1,0 +1,10 @@
+[
+    {
+        "vault": "entity",
+        "application": [
+            "filings-jobs",
+            "entity-service-account",
+            "sentry"
+        ]
+    }
+]
