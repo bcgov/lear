@@ -39,7 +39,7 @@ from flask import Flask
 
 from gcp_queue import GcpQueue
 from structured_logging import StructuredLogging
-from update_legal_filings.config import CONFIGURATION, DevConfig, ProdConfig, TestConfig, get_named_config
+from update_legal_filings.config import CONFIGURATION, DevConfig, ProdConfig, TestConfig
 
 CONFIG_MAP = {
     "development": DevConfig,

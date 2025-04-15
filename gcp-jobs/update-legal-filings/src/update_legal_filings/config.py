@@ -20,26 +20,6 @@ from dotenv import find_dotenv, load_dotenv
 
 load_dotenv(find_dotenv())
 
-CONFIGURATION = {
-    "development": "config.DevConfig",
-    "testing": "config.TestConfig",
-    "production": "config.ProdConfig",
-    "default": "config.ProdConfig"
-}
-
-
-def get_named_config(config_name: str = "production"):
-    """Return the configuration object based on the name."""
-    if config_name in ["production", "staging", "default"]:
-        config = ProdConfig()
-    elif config_name == "testing":
-        config = TestConfig()
-    elif config_name == "development":
-        config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration '{config_name}'")
-    return config
-
 
 class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration."""

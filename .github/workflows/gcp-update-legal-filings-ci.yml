@@ -1,4 +1,4 @@
-name: GCP Filings Notebook Report CI
+name: GCP Update Legal Filings CI
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ defaults:
     working-directory: ./gcp-jobs/update-legal-filings
 
 jobs:
-  furnishings-ci:
+  update-legal-filings-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "update-legal-filings"

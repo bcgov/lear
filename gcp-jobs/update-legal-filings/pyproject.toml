@@ -23,10 +23,8 @@ ruff = "^0.11.2"
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
 pytest-mock = "^3.14.0"
-requests-mock = "1.12.1"
-
-[tool.pytest.ini_options]
-pythonpath = "src"
+requests-mock = "^1.12.1"
+pytest-cov = "^6.1.0"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -45,8 +43,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.13
+target-version = "py313"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -105,7 +103,7 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["structured_logging", "gcp_queue"]
+known-first-party = ["structured_logging", "gcp_queue", "business_account", "update_legal_filings"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -113,6 +111,48 @@ docstring-quotes = "double"
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]  # used for imports
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.pytest.ini_options]
+minversion = "2.0"
+testpaths = [
+    "tests",
+]
+addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+python_files = [
+    "test*.py"
+]
+norecursedirs = [
+    ".git", ".tox", "venv*", "requirements*", "build",
+]
+log_cli = true
+log_cli_level = "1"
+filterwarnings = [
+    "ignore::UserWarning"
+]
+markers = [
+    "slow",
+    "serial",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+    "src/update_legal_filings",
+]
+omit = [
+    "run.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "from",
+    "import",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    'if __name__ == "__main__":',
+]
+
