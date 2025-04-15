@@ -144,7 +144,7 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = [
-    "src/update_legal_filings",
+    "src",
 ]
 omit = [
     "run.py",
