@@ -53,7 +53,6 @@ class IapDbConnection:
     connector: Connector | None
 
     def __init__(self, app: Flask | None = None):
-        self.connector = Connector()
         if app:
             self.init_app(app)
     
@@ -84,6 +83,7 @@ class IapDbConnection:
             app.logger.debug("Aborting IAP db connection initialization.")
             return
 
+        self.connector = Connector()
         db_config = DBConfig(
             instance_connection_name=app.config["DB_CONNECTION_NAME"],
             database=app.config["DB_NAME"],

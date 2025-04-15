@@ -115,7 +115,7 @@ class UnitTestingConfig(_Config):
     DB_NAME = os.getenv("DATABASE_TEST_NAME", "")
     DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
     DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
-    DB_CONNECTION_NAME = None
+    DB_CONNECTION_NAME = os.getenv("LEAR_DB_CONNECTION_TEST_NAME")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
     # BCLaws SFTP
