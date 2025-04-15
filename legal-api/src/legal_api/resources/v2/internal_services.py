@@ -43,7 +43,7 @@ def get_identifiers_of_expired_restoration():
     """Return all identifiers (if limited restoration has expired)."""
     businesses = Business.get_expired_restoration()
     return jsonify({'businesses': [{'identifier': business.identifier,
-                                    'legal_type': business.legal_type} for business in businesses]}), HTTPStatus.OK
+                                    'legalType': business.legal_type} for business in businesses]}), HTTPStatus.OK
 
 
 @bp.route('/bnmove', methods=['POST'])

@@ -102,7 +102,7 @@ def create_put_back_off_filing(app: Flask, business):
     timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
     token = get_bearer_token(app, timeout)
     identifier = business['identifier']
-    legal_type = business['legal_type']
+    legal_type = business['legalType']
     filing_data = {
         'filing': {
             'header': {
