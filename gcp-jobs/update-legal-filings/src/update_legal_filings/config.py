@@ -39,8 +39,6 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     SECRET_KEY = "a secret"
 
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
-
     TESTING = False
     DEBUG = False
 
