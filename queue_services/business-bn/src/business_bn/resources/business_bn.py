@@ -38,7 +38,6 @@ import json
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, request
-from sentry_sdk import capture_message
 from simple_cloudevent import SimpleCloudEvent
 from sqlalchemy.exc import OperationalError
 
@@ -95,10 +94,7 @@ async def worker():
         raise err  # We don't want to handle the error, try again after sometime
     except BNRetryExceededException as err:
         current_app.logger.error("Queue BN Retry Exceeded: %s, %s", err, json.dumps(event_message), exc_info=True)
-
     except (QueueException, Exception) as err:  # pylint: disable=broad-except
-        # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message("Queue Error:" + json.dumps(event_message), level="error")
         current_app.logger.error("Queue Error: %s, %s", err, json.dumps(event_message), exc_info=True)
 
 
