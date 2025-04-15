@@ -119,6 +119,7 @@ docstring-quotes = "double"
 ]
 
 [tool.pytest.ini_options]
+pythonpath = "src"
 minversion = "2.0"
 testpaths = [
     "tests",
@@ -143,7 +144,7 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = [
-    "src",
+    "src/update_legal_filings",
 ]
 omit = [
     "run.py",
