@@ -193,8 +193,12 @@ def _update_party(party_info):
         party.identifier = party_info['officer'].get('identifier', '').upper()
         # add addresses to party
         if party_info.get('deliveryAddress', None):
+            if not party.delivery_address:
+                party.delivery_address = Address()
             update_address(party.delivery_address, party_info.get('deliveryAddress'))
         if party_info.get('mailingAddress', None):
+            if not party.mailing_address:
+                party.mailing_address = Address()
             update_address(party.mailing_address, party_info.get('mailingAddress'))
 
 
