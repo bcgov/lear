@@ -42,7 +42,8 @@ def get_future_effective_filing_ids():
 def get_identifiers_of_expired_restoration():
     """Return all identifiers (if limited restoration has expired)."""
     businesses = Business.get_expired_restoration()
-    return jsonify({'identifiers': [business.identifier for business in businesses]}), HTTPStatus.OK
+    return jsonify({'businesses': [{'identifier': business.identifier,
+                                    'legal_type': business.legal_type} for business in businesses]}), HTTPStatus.OK
 
 
 @bp.route('/bnmove', methods=['POST'])
