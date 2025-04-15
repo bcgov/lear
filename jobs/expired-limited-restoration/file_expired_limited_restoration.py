@@ -102,6 +102,7 @@ def create_put_back_off_filing(app: Flask, business):
     timeout = int(app.config.get('ACCOUNT_SVC_TIMEOUT'))
     token = get_bearer_token(app, timeout)
     identifier = business['identifier']
+    legal_type = business['legal_type']
     filing_data = {
         'filing': {
             'header': {
@@ -110,8 +111,8 @@ def create_put_back_off_filing(app: Flask, business):
                 'certifiedBy': 'system'
             },
             'business': {
-                'identifier': business['identifier'],
-                'legalType': business['legal_type']
+                'identifier': identifier,
+                'legalType': legal_type
             },
             'putBackOff': {
                 'details': 'Put back off filing due to expired limited restoration.'
