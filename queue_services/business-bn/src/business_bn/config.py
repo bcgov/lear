@@ -54,23 +54,6 @@ CONFIGURATION = {
     "default": "business_bn.config.ProdConfig",
 }
 
-
-def get_named_config(config_name: str = "production"):
-    """Return the configuration object based on the name.
-
-    :raise: KeyError: if an unknown configuration is requested
-    """
-    if config_name in ["production", "staging", "default"]:
-        app_config = ProdConfig()
-    elif config_name == "testing":
-        app_config = TestConfig()
-    elif config_name == "development":
-        app_config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration: {config_name}")
-    return app_config
-
-
 class Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
 
@@ -108,8 +91,6 @@ class Config:  # pylint: disable=too-few-public-methods
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
 
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")

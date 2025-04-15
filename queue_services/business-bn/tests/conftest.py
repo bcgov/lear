@@ -46,7 +46,7 @@ from flask_migrate import Migrate, upgrade
 from flask_jwt_oidc import JwtManager
 
 from business_model.models import db as _db
-from business_bn.config import get_named_config
+from business_bn import create_app
 
 import business_model_migrations
 
@@ -81,10 +81,7 @@ def freeze_datetime_utcnow(monkeypatch):
 @pytest.fixture(scope='session')
 def app():
     """Return a session-wide application configured in TEST mode."""
-    # _app = create_app('testing')
-    _app = Flask(__name__)
-    _app.config.from_object(get_named_config('testing'))
-    _db.init_app(_app)
+    _app = create_app('testing')
 
     return _app
 

@@ -31,29 +31,26 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""The Entity Payment service.
-
-This module applied payments against Filings, and if NOT a FED type
-puts a message onto the Filers queue to process the file.
 """
-
-from __future__ import annotations
+The Business BN service.
+"""
+import os
 
 from flask import Flask
 
 from business_model.models import db
 from structured_logging import StructuredLogging
 
-from .config import Config, ProdConfig
+from .config import CONFIGURATION
 from .resources import register_endpoints
 from .services import gcp_queue
 
 
-def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
+def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.logger = StructuredLogging(app).get_logger()
-    app.config.from_object(environment)
+    app.config.from_object(CONFIGURATION[environment])
 
     db.init_app(app)
     register_endpoints(app)
