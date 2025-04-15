@@ -32,32 +32,27 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-"""This Module processes simple cloud event messages for possible filing payments.
-"""
-import json
+"""This Module processes simple cloud event messages for possible filing payments."""
 
+import json
 from http import HTTPStatus
-from typing import Dict
 
 from flask import Blueprint, current_app, request
 from sentry_sdk import capture_message
 from simple_cloudevent import SimpleCloudEvent
-
 from sqlalchemy.exc import OperationalError
 
-from business_common.core.filing import Filing as FilingCore
-from business_model.models import Filing
-from business_model.models import Business
-
-from business_bn.services import gcp_queue, verify_gcp_jwt
-from business_bn.utils.exceptions import QueueException, BNException, BNRetryExceededException
-from business_bn.bn_processors import (  # noqa: I001
+from business_bn.bn_processors import (
     admin,
     change_of_registration,
     correction,
     dissolution_or_put_back_on,
     registration,
 )
+from business_bn.exceptions import BNException, BNRetryExceededException, QueueException
+from business_bn.services import gcp_queue, verify_gcp_jwt
+from business_common.core.filing import Filing as FilingCore
+from business_model.models import Business, Filing
 
 bp = Blueprint("worker", __name__)
 
@@ -75,63 +70,59 @@ async def worker():
             current_app.logger.info(msg)
             return {}, HTTPStatus.FORBIDDEN
 
-        current_app.logger.info(f"Incoming raw msg: {str(request.data)}")
+        current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
         # Get cloud event
-        if not (ce := gcp_queue.get_simple_cloud_event(request,
-                                                    wrapped=True)) \
-                and not isinstance(ce, SimpleCloudEvent):
+        if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)) and not isinstance(ce, SimpleCloudEvent):
             #
             # Decision here is to return a 200,
             # so the event is removed from the Queue
-            current_app.logger.debug(f"ignoring message, raw payload: {str(ce)}")
+            current_app.logger.debug(f"ignoring message, raw payload: {ce!s}")
             return {}, HTTPStatus.OK
 
-        current_app.logger.info(f"received ce: {str(ce)}")
+        current_app.logger.info(f"received ce: {ce!s}")
 
-        event_message = json.loads(msg.data.decode('utf-8'))
-        current_app.logger.debug('Event Message Received: %s', event_message)
+        event_message = json.loads(msg.data.decode("utf-8"))
+        current_app.logger.debug("Event Message Received: %s", event_message)
         await process_event(event_message)
         return {}, HTTPStatus.OK
 
     except OperationalError as err:
-        current_app.logger.error('Queue Blocked - Database Issue: %s', json.dumps(event_message), exc_info=True)
+        current_app.logger.error("Queue Blocked - Database Issue: %s", json.dumps(event_message), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except BNException as err:
-        current_app.logger.error('Queue BN Issue: %s, %s', err, json.dumps(event_message), exc_info=True)
+        current_app.logger.error("Queue BN Issue: %s, %s", err, json.dumps(event_message), exc_info=True)
         raise err  # We don't want to handle the error, try again after sometime
     except BNRetryExceededException as err:
-        current_app.logger.error('Queue BN Retry Exceeded: %s, %s', err, json.dumps(event_message), exc_info=True)
+        current_app.logger.error("Queue BN Retry Exceeded: %s, %s", err, json.dumps(event_message), exc_info=True)
 
     except (QueueException, Exception) as err:  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        capture_message('Queue Error:' + json.dumps(event_message), level='error')
-        current_app.logger.error('Queue Error: %s, %s', err, json.dumps(event_message), exc_info=True)
+        capture_message("Queue Error:" + json.dumps(event_message), level="error")
+        current_app.logger.error("Queue Error: %s, %s", err, json.dumps(event_message), exc_info=True)
 
 
-async def process_event(msg: Dict):  # pylint: disable=too-many-branches,too-many-statements
+async def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-statements
     """Process CRA request."""
-    if not msg or msg.get('type') not in [
-        'bc.registry.business.registration',
-        'bc.registry.business.changeOfRegistration',
-        'bc.registry.business.correction',
-        'bc.registry.business.dissolution',
-        'bc.registry.business.putBackOn',
-        'bc.registry.admin.bn'
+    if not msg or msg.get("type") not in [
+        "bc.registry.business.registration",
+        "bc.registry.business.changeOfRegistration",
+        "bc.registry.business.correction",
+        "bc.registry.business.dissolution",
+        "bc.registry.business.putBackOn",
+        "bc.registry.admin.bn",
     ]:
         return None
 
-    if msg['type'] == 'bc.registry.admin.bn':
+    if msg["type"] == "bc.registry.admin.bn":
         await admin.process(msg)
         return
 
-    filing_submission = Filing.find_by_id(msg['data']['filing']['header']['filingId'])
+    filing_submission = Filing.find_by_id(msg["data"]["filing"]["header"]["filingId"])
 
     if not filing_submission:
         raise QueueException
 
-
-    filing_submission = filing_submission
     business = Business.find_by_internal_id(filing_submission.business_id)
     if not business:
         raise QueueException
@@ -140,12 +131,13 @@ async def process_event(msg: Dict):  # pylint: disable=too-many-branches,too-man
         await registration.process(business)
     elif filing_submission.filing_type == FilingCore.FilingTypes.CHANGEOFREGISTRATION.value:
         change_of_registration.process(business, filing_submission)
-    elif filing_submission.filing_type == FilingCore.FilingTypes.CORRECTION.value and \
-            business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
-                                    Business.LegalTypes.PARTNERSHIP.value):
+    elif filing_submission.filing_type == FilingCore.FilingTypes.CORRECTION.value and business.legal_type in (
+        Business.LegalTypes.SOLE_PROP.value,
+        Business.LegalTypes.PARTNERSHIP.value,
+    ):
         correction.process(business, filing_submission)
-    elif filing_submission.filing_type in (FilingCore.FilingTypes.DISSOLUTION.value,
-                                            FilingCore.FilingTypes.PUTBACKON.value) and \
-            business.legal_type in (Business.LegalTypes.SOLE_PROP.value,
-                                    Business.LegalTypes.PARTNERSHIP.value):
+    elif filing_submission.filing_type in (
+        FilingCore.FilingTypes.DISSOLUTION.value,
+        FilingCore.FilingTypes.PUTBACKON.value,
+    ) and business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
         dissolution_or_put_back_on.process(business, filing_submission)

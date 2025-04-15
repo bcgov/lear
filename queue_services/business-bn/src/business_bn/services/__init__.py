@@ -32,12 +32,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Services used by Business-Pay."""
+
 from gcp_queue import GcpQueue
 
-from .flags import Flags
 from .gcp_auth import verify_gcp_jwt
 
-flags = Flags()
 gcp_queue = GcpQueue()
 
 

@@ -32,9 +32,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """GCP Auth Services."""
+
 from flask import current_app
-from google.oauth2 import id_token
 from google.auth.transport import requests
+from google.oauth2 import id_token
 
 
 def verify_gcp_jwt(flask_request):
@@ -42,20 +43,18 @@ def verify_gcp_jwt(flask_request):
     msg = ""
     try:
         bearer_token = flask_request.headers.get("Authorization")
-        current_app.logger.debug('bearer_token %s', bearer_token)
+        current_app.logger.debug("bearer_token %s", bearer_token)
         token = bearer_token.split(" ")[1]
         audience = current_app.config.get("SUB_AUDIENCE")
-        current_app.logger.debug('audience %s', audience)
-        claim = id_token.verify_oauth2_token(
-            token, requests.Request(), audience=audience
-        )
+        current_app.logger.debug("audience %s", audience)
+        claim = id_token.verify_oauth2_token(token, requests.Request(), audience=audience)
         sa_email = current_app.config.get("SUB_SERVICE_ACCOUNT")
-        current_app.logger.debug('sa_email %s', sa_email)
+        current_app.logger.debug("sa_email %s", sa_email)
         if not claim["email_verified"] or claim["email"] != sa_email:
             msg = f"Invalid service account or email not verified for email: {claim['email']}\n"
-        current_app.logger.debug('claim %s', claim)
+        current_app.logger.debug("claim %s", claim)
 
     except Exception as err:
         msg = f"Invalid token: {err}\n"
     finally:
-        return msg
+        return msg # we want to silence exception # noqa: B012

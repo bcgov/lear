@@ -18,7 +18,7 @@ import pytest
 from business_model.models import RequestTracker
 
 from business_bn.bn_processors import bn_note
-from business_bn.utils.exceptions import BNException, BNRetryExceededException
+from business_bn.exceptions import BNException, BNRetryExceededException
 from business_bn.resources.business_bn import process_event
 from tests.unit import create_filing, create_registration_data
 

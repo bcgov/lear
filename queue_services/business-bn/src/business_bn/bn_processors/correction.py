@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the correction of registration or change of registration of a business."""
+
 from contextlib import suppress
 
 import dpath
-from business_model.models import Business, Filing, RequestTracker
 
 from business_bn.bn_processors.change_of_registration import (
     change_address,
@@ -23,24 +23,24 @@ from business_bn.bn_processors.change_of_registration import (
     has_party_name_changed,
     has_previous_address,
 )
+from business_model.models import Business, Filing, RequestTracker
 
 
 def process(business: Business, filing: Filing):  # pylint: disable=too-many-branches
     """Process the incoming correction request."""
-    if filing.meta_data and filing.meta_data.get('correction', {}).get('toLegalName'):
+    if filing.meta_data and filing.meta_data.get("correction", {}).get("toLegalName"):
         change_name(business, filing, RequestTracker.RequestType.CHANGE_NAME)
 
     with suppress(KeyError, ValueError):
-        if dpath.util.get(filing.filing_json, 'filing/correction/parties') and \
-                has_party_name_changed(business, filing):
+        if dpath.util.get(filing.filing_json, "filing/correction/parties") and has_party_name_changed(business, filing):
             change_name(business, filing, RequestTracker.RequestType.CHANGE_PARTY)
 
     with suppress(KeyError, ValueError):
-        if dpath.util.get(filing.filing_json, 'filing/correction/offices/businessOffice'):
-            if has_previous_address(filing.transaction_id,
-                                    business.delivery_address.one_or_none().office_id, 'delivery'):
+        if dpath.util.get(filing.filing_json, "filing/correction/offices/businessOffice"):
+            if has_previous_address(
+                filing.transaction_id, business.delivery_address.one_or_none().office_id, "delivery"
+            ):
                 change_address(business, filing, RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS)
 
-            if has_previous_address(filing.transaction_id,
-                                    business.mailing_address.one_or_none().office_id, 'mailing'):
+            if has_previous_address(filing.transaction_id, business.mailing_address.one_or_none().office_id, "mailing"):
                 change_address(business, filing, RequestTracker.RequestType.CHANGE_MAILING_ADDRESS)

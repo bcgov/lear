@@ -36,27 +36,24 @@
 This module applied payments against Filings, and if NOT a FED type
 puts a message onto the Filers queue to process the file.
 """
+
 from __future__ import annotations
 
 from flask import Flask
+
+from business_model.models import db
 from structured_logging import StructuredLogging
 
 from .config import Config, ProdConfig
-
-from business_model.models import db
-
 from .resources import register_endpoints
-from .services import flags, gcp_queue
+from .services import gcp_queue
+
 
 def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.logger = StructuredLogging(app).get_logger()
     app.config.from_object(environment)
-
-    # Configure LaunchDarkly
-    if app.config.get("LD_SDK_KEY", None):
-        flags.init_app(app)
 
     db.init_app(app)
     register_endpoints(app)

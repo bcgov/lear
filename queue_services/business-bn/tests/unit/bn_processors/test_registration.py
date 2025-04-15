@@ -18,7 +18,7 @@ from flask import current_app
 import pytest
 from business_model.models import RequestTracker, Business
 
-from business_bn.utils.exceptions import BNException, BNRetryExceededException
+from business_bn.exceptions import BNException, BNRetryExceededException
 from business_bn.resources.business_bn import process_event
 from tests.unit import create_registration_data
 
@@ -103,7 +103,7 @@ async def test_registration(app, session, mocker, legal_type):
 
 
     assert current_app.config['BUSINESS_EVENTS_TOPIC'] in topics_in_queue
-
+    assert current_app.config['BUSINESS_EMAILER_TOPIC'] in topics_in_queue
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('request_type', [
