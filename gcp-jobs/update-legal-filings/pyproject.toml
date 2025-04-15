@@ -110,6 +110,13 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]  # used for imports
+"**/config.py" = ["T201"] # allow print instead of logger in config
+"src/worker.py" = [
+    "PLR0912" # too many pranches
+]
+"tests/**"=[
+    "PLR0913" # Too many arguments in function definition; allow as many mocks/fixures as needed in test calls
+]
 
 [tool.pytest.ini_options]
 minversion = "2.0"

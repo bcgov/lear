@@ -32,6 +32,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """This Module is main module for the legal updater."""
+from __future__ import annotations
+
 import uuid
 from datetime import UTC, datetime
 from http import HTTPStatus
@@ -63,8 +65,7 @@ def _get_ce(data):
         data=data
     )
 
-def check_for_manual_filings(token: dict = None):
-    # pylint: disable=redefined-outer-name, disable=too-many-branches, disable=too-many-locals
+def check_for_manual_filings(token: dict | None = None):
     """Check for colin filings in oracle."""
     id_list = []
     colin_events = None
@@ -80,10 +81,10 @@ def check_for_manual_filings(token: dict = None):
         current_app.logger.error(f"Error getting last updated colin id from \
             legal: {response.status_code} {response.json()}")
     else:
-        if response.status_code == 404:
-            last_event_id = "earliest"
-        else:
-            last_event_id = dict(response.json())["maxId"]
+        last_event_id = (
+            "earliest" if response.status_code == HTTPStatus.NOT_FOUND else str(response.json().get("maxId"))
+        )
+
         current_app.logger.debug(f"last_event_id: {last_event_id}")
         if last_event_id:
             last_event_id = str(last_event_id)
@@ -109,16 +110,6 @@ def check_for_manual_filings(token: dict = None):
                 current_app.logger.error("Error getting event_ids from colin: %s", repr(err), exc_info=True)
                 raise err
 
-            # for bringing in a specific filing
-            # global SET_EVENTS_MANUALLY
-            # SET_EVENTS_MANUALLY = True
-            # colin_events = {
-            #     'events': [
-            #           {'corp_num': 'CP0001489', 'event_id': 102127109, 'filing_typ_cd': 'OTCGM'}
-            #           {'corp_num': 'BC0702216', 'event_id': 6580760, 'filing_typ_cd': 'ANNBC'},
-            #       ]
-            # }
-
             # for each event_id: if not in legal db table then add event_id to list
             for info in colin_events["events"]:
                 # check that event is associated with one of the coops loaded into legal db
@@ -127,15 +118,15 @@ def check_for_manual_filings(token: dict = None):
                     headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                     timeout=AccountService.timeout
                 )
-                if response.status_code == 200:
+                if response.status_code == HTTPStatus.OK:
                     # check legal table
                     response = requests.get(
                         f'{legal_url}/internal/filings/colin_id/{info["event_id"]}',
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                         timeout=AccountService.timeout)
-                    if response.status_code == 404:
+                    if response.status_code == HTTPStatus.NOT_FOUND:
                         id_list.append(info)
-                    elif response.status_code != 200:
+                    elif response.status_code != HTTPStatus.OK:
                         current_app.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
                 else:
                     current_app.logger.error("No ids returned from colin_last_update table in legal db.")
@@ -143,7 +134,7 @@ def check_for_manual_filings(token: dict = None):
     return id_list
 
 
-def get_filing(event_info: dict = None, application: Flask = None, token: dict = None) -> dict:
+def get_filing(event_info: dict | None = None, application: Flask | None = None, token: dict | None = None) -> dict:
     """Get filing created by previous event."""
     # call the colin api for the filing
     legal_type = event_info["corp_num"][:2]
@@ -169,7 +160,7 @@ def get_filing(event_info: dict = None, application: Flask = None, token: dict =
     return filing
 
 
-def update_filings():  # pylint: disable=redefined-outer-name, too-many-branches
+def update_filings():  # noqa: PLR0912
     """Get filings in colin that are not in lear and send them to lear."""
     successful_filings = 0
     failed_filing_events = []
@@ -199,7 +190,7 @@ def update_filings():  # pylint: disable=redefined-outer-name, too-many-branches
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                         timeout=AccountService.timeout
                     )
-                    if response.status_code != 201:
+                    if response.status_code != HTTPStatus.CREATED:
                         if not first_failed_id:
                             first_failed_id = event_info["event_id"]
                         failed_filing_events.append(event_info)
@@ -235,7 +226,7 @@ def update_filings():  # pylint: disable=redefined-outer-name, too-many-branches
                 headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                 timeout=AccountService.timeout
             )
-            if response.status_code != 201:
+            if response.status_code != HTTPStatus.CREATED:
                 current_app.logger.error(
                     f"Error adding {max_event_id} colin_last_update table in legal db {response.status_code}"
                 )
@@ -296,7 +287,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
             headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
             timeout=AccountService.timeout
         )
-        if response.status_code != 200:
+        if response.status_code != HTTPStatus.OK:
             current_app.logger.error("legal-updater failed to get identifiers from legal-api.")
             raise Exception  # pylint: disable=broad-exception-raised
         business_identifiers = response.json()
@@ -316,7 +307,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                     headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                     timeout=AccountService.timeout
                 )
-                if response.status_code != 200:
+                if response.status_code != HTTPStatus.OK:
                     current_app.logger.error("legal-updater failed to get tax_ids from colin-api.")
                     raise Exception  # pylint: disable=broad-exception-raised
                 tax_ids = response.json()
@@ -329,7 +320,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                         timeout=AccountService.timeout
                     )
-                    if response.status_code != 201:
+                    if response.status_code != HTTPStatus.CREATED:
                         current_app.logger.error("legal-updater failed to update tax_ids in lear.")
                         raise Exception  # pylint: disable=broad-exception-raised
 
