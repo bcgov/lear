@@ -11,15 +11,9 @@ to setup your local development environment.
 
 1. Follow the [instructions](https://github.com/bcgov/entity/blob/master/docs/setup-forking-workflow.md) to checkout the
    project from GitHub.
-2. Open the notebook-report directory in VS Code to treat it as a project (or WSL projec). To prevent version clashes,
+2. Open the Update Legal Filings directory in VS Code to treat it as a project (or WSL projec). To prevent version
+   clashes,
    set up a virtual environment to install the Python packages used by this project.
-3. Run `make setup` to set up the virtual environment and install libraries.
-
-## Running Update Legal FIlings
-
-## Running Unit Tests
-
-1. Run `python -m pytest` or `pytest` command.
 
 ## Poetry
 
@@ -41,16 +35,20 @@ source $(poetry env activate)
 ```
 
 ### Run the job
+
 ```bash
 python run.py
 ```
 
 ### Run Linting
+
 ```bash
 ruff check
 ```
 
 ### Run unit tests
-```bash
+
+```
 pytest
 ```
+
