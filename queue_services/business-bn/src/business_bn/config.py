@@ -97,7 +97,7 @@ class Config:  # pylint: disable=too-few-public-methods
     BN_HUB_CLIENT_ID = os.getenv("BN_HUB_CLIENT_ID", None)
     BN_HUB_CLIENT_SECRET = os.getenv("BN_HUB_CLIENT_SECRET", None)
     BN_HUB_MAX_RETRY = int(os.getenv("BN_HUB_MAX_RETRY", "9"))
-    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
+    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "src/business_bn/bn_templates")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
