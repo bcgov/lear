@@ -44,6 +44,8 @@ def test_publish_queue_events_calls_correct_topics(mock_get_ce, mock_to_queue_me
 @patch("update_legal_filings.worker.current_app.logger.error")
 def test_update_business_nos_success(mock_logger_error, mock_publish_queue_events, mock_get_bearer_token, mock_requests_get, mock_requests_post, app):
     mock_get_bearer_token.return_value = "test_token"
+    number_of_get_requests = 2 # 1 for calling lear to get taxIds need updating, one to colin to get data
+    number_of_post_requests = 1 # 1 for posting data to the lear
     mock_requests_get.side_effect = [
         MagicMock(status_code=200, json=MagicMock(return_value={"identifiers": ["123", "456"]})),
         MagicMock(status_code=200, json=MagicMock(return_value={"123": "tax_id_123", "456": "tax_id_456"}))
@@ -53,7 +55,7 @@ def test_update_business_nos_success(mock_logger_error, mock_publish_queue_event
 
     update_business_nos()
 
-    assert mock_requests_get.call_count == 2
-    assert mock_requests_post.call_count == 1
+    assert mock_requests_get.call_count == number_of_get_requests
+    assert mock_requests_post.call_count == number_of_post_requests
     mock_publish_queue_events.assert_called_once()
     mock_logger_error.assert_not_called()
