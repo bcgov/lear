@@ -15,7 +15,7 @@
 
 This module is being used to process businesses with expired limited restorations.
 """
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 import requests
@@ -62,22 +62,25 @@ def get_businesses_to_process():
             {response} {response.json()} {response.status_code}")
         raise Exception  # pylint: disable=broad-exception-raised;
 
-    return response.json().get("identifiers", [])
+    return response.json().get("businesses", [])
 
 
-def create_put_back_off_filing(identifier: str):
+def create_put_back_off_filing(business: dict):
     """Create a putBackOff filing for the business."""
     timeout = int(current_app.config.get("ACCOUNT_SVC_TIMEOUT"))
     token = get_bearer_token(timeout)
+    identifier = business["identifier"]
+    legal_type = business["legalType"]
     filing_data = {
         "filing": {
             "header": {
-                "date": datetime.utcnow().date().isoformat(),
+                "date": datetime.now(tz=UTC).date().isoformat(),
                 "name": "putBackOff",
                 "certifiedBy": "system"
             },
             "business": {
-                "identifier": identifier
+                "identifier": identifier,
+                "legalType": legal_type
             },
             "putBackOff": {
                 "details": "Put back off filing due to expired limited restoration."
@@ -117,10 +120,11 @@ def run_job():  # pylint: disable=redefined-outer-name
         current_app.logger.debug(f"Processing {len(businesses)} businesses")
 
         # 2. create put back off filing for each business
-        for identifier in businesses:
+        for business in businesses:
             try:
                 # create putBackOff filing via API
-                filing = create_put_back_off_filing(identifier)
+                identifier = business["identifier"]
+                filing = create_put_back_off_filing(business)
                 filing_id = filing["filing"]["header"]["filingId"]
                 current_app.logger.debug(
                     f"Successfully created put back off filing {filing_id} for {identifier}"
