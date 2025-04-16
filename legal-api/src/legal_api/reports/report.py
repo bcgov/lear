@@ -1363,6 +1363,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Amalgamation Application',
             'fileName': 'amalgamationApplication'
         },
+        'amalgamationOut': {
+            'filingDescription': 'Notice of Amalgamation Out',
+            'fileName': 'amalgamationOut'
+        },
         'certificateOfAmalgamation': {
             'filingDescription': 'Certificate Of Amalgamation',
             'fileName': 'certificateOfAmalgamation'
@@ -1477,10 +1481,6 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'GP': {
                 'fileName': 'firmCorrection'
             }
-        },
-        'consentAmalgamationOut': {
-            'filingDescription': '6-Month Consent to Amalgamate Out',
-            'fileName': 'consentAmalgamationOut'
         },
         'certificateOfRestoration': {
             'filingDescription': 'Certificate of Restoration',
