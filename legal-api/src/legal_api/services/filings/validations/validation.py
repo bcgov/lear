@@ -27,6 +27,8 @@ from .agm_location_change import validate as agm_location_change_validate
 from .alteration import validate as alteration_validate
 from .amalgamation_application import validate as amalgamation_application_validate
 from .annual_report import validate as annual_report_validate
+from .appoint_receiver import validate as appoint_receiver_validate
+from .cease_receiver import validate as cease_receiver_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
@@ -41,6 +43,7 @@ from .dissolution import DissolutionTypes
 from .dissolution import validate as dissolution_validate
 from .incorporation_application import validate as incorporation_application_validate
 from .notice_of_withdrawal import validate as notice_of_withdrawal_validate
+from .put_back_off import validate as put_back_off_validate
 from .put_back_on import validate as put_back_on_validate
 from .registrars_notation import validate as registrars_notation_validate
 from .registrars_order import validate as registrars_order_validate
@@ -48,6 +51,7 @@ from .registration import validate as registration_validate
 from .restoration import validate as restoration_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
+from .transparency_register import validate as transparency_register_validate
 
 
 def validate(business: Business,  # pylint: disable=too-many-branches,too-many-statements
@@ -185,6 +189,18 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['noticeOfWithdrawal'].get('name'):
                     err = notice_of_withdrawal_validate(filing_json)
+
+                elif k == Filing.FILINGS['putBackOff'].get('name'):
+                    err = put_back_off_validate(business, filing_json)
+
+                elif k == Filing.FILINGS['transparencyRegister'].get('name'):
+                    err = transparency_register_validate(filing_json)  # pylint: disable=assignment-from-none
+
+                elif k == Filing.FILINGS['appointReceiver'].get('name'):
+                    err = appoint_receiver_validate(filing_json)  # pylint: disable=assignment-from-none
+
+                elif k == Filing.FILINGS['ceaseReceiver'].get('name'):
+                    err = cease_receiver_validate(filing_json)  # pylint: disable=assignment-from-none
 
                 if err:
                     return err

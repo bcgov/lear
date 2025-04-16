@@ -42,16 +42,24 @@
                  </div>
                  <div class="pt-2">{{report_date_time}}</div>
                  <div class="pt-2">
-                   <span class="capitalize-text">{{business.state}}</span>
-                   {% if business.state in ('HISTORICAL', 'LIQUIDATION') %}
-                    <span> - </span>
-                    {% if business.legalType in ['GP', 'SP'] and business.state == 'HISTORICAL' %}
-                        <span>Dissolved</span>
-                    {% else %}
-                        <span>{{stateFilings[0].filingName}}</span>
-                    {% endif %}
-                    <span> - Effective {{stateFilings[0].effectiveDateTime}}</span>
-                   {% endif %}
+                     <span class="capitalize-text">{{business.state}}</span>
+                     {% if business.state in ('HISTORICAL', 'LIQUIDATION') and stateFilings %}
+                         <span> - </span>
+                         {% if business.state == 'HISTORICAL' %}
+                             {% if business.legalType in ['GP', 'SP'] %}
+                                 <span>Dissolved</span>
+                              {% else %}
+                                 {% set filing = stateFilings[0] %}
+                                 {% if filing.filingType == 'putBackOff' %}
+                                     <span>{{filing.reason}} on {{filing.expiryDate}}</span>
+                                 {% else %}
+                                     <span>{{filing.filingName}} - Effective {{filing.effectiveDateTime}}</span>
+                                 {% endif %}
+                             {% endif %}
+                         {% endif %}
+                     {% endif %}
+                 </div>
+                 
                  </div>
               </td>
          {% elif header.reportType == 'amalgamationApplication' %}
@@ -70,8 +78,8 @@
                   <div>{{business.identifier}}</div>
                {% endif %}
                <div class="pt-2">{{effective_date_time}}</div>
-               {% if header.isFutureEffective %}
-                  <div class="pt-2">{{effective_date_time}}</div>
+               {% if not business or business.identifier.startswith('T') %}
+                  <div class="pt-2">&nbsp;</div>
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
@@ -132,8 +140,8 @@
                   <div>{{business.identifier}}</div>
                {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
-               {% if header.isFutureEffective %}
-                  <div class="pt-2">{{effective_date_time}}</div> 
+               {% if not business or business.identifier.startswith('T') %}
+                  <div class="pt-2">&nbsp;</div> 
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
@@ -328,6 +336,28 @@
                {% endif %}
                <div class="pt-2">{{report_date_time}}</div>
             </td>
+         {% elif header.name == 'noticeOfWithdrawal' %}
+            <td class="col-33">
+               {% if not business or business.identifier.startswith('T') %}
+                  <div class="bold">Filed Date and Time:</div>
+               {% else %}
+                  <div class="bold">Incorporation Number:</div>
+                  <div class="bold pt-2">Filed Date and Time:</div>
+               {% endif %}
+               <div class="bold pt-2">Recognition Date and Time:</div>
+               <div class="bold pt-2">Retrieved Date and Time:</div>
+            </td>
+            <td>
+               {% if not business or business.identifier.startswith('T') %}
+                  <div>{{ filing_date_time }}</div>
+                  <div class="pt-2">&nbsp;</div>
+               {% else %}
+                  <div>{{business.identifier}}</div>
+                  <div class="pt-2">{{ filing_date_time }}</div>
+                  <div class="pt-2">{{ recognition_date_time }}</div>
+               {% endif %}
+               <div class="pt-2">{{ report_date_time }}</div>
+            </td>
          {% endif %}
          {% if reportType != 'summary' %}
          <td class="business-details-registar-td">
@@ -359,8 +389,8 @@
         {% if business.legalType in ['SP', 'GP'] %}
             <span> | Registration #{{business.identifier}}</span>
         {% else %}
-           {% if header.name != 'incorporationApplication' %}
-             <!-- not required for incorporationApplication -->
+           {% if header.name not in ['incorporationApplication', 'noticeOfWithdrawal'] %}
+             <!-- not required for incorporationApplication and noticeOfWithdrawal -->
              <span> | Incorporation #
                {% if not business or business.identifier.startswith('T') %}
                   Pending

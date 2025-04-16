@@ -82,6 +82,14 @@ class LegislationDatetime():
         return LegislationDatetime.as_utc_timezone(_date_time)
 
     @staticmethod
+    def format_as_next_legislation_day(date_string: str) -> str:
+        """Return the next day in this format (eg: `August 5, 2021`)."""
+        input_date = datetime.fromisoformat(date_string)
+        next_day = input_date + timedelta(days=1)
+
+        return next_day.strftime('%B %d, %Y')
+
+    @staticmethod
     def format_as_report_string(date_time: datetime) -> str:
         """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
         # ensure is set to correct timezone
@@ -124,6 +132,13 @@ class LegislationDatetime():
         """
         # ensure is set to correct timezone
         date_time_str = LegislationDatetime.format_as_report_string_with_custom_time(date_time, 0, 1, 0, 0)
+        return date_time_str
+
+    @staticmethod
+    def format_as_report_expiry_string_1159(date_time: datetime) -> str:
+        """Return a datetime string in this format (eg: `August 5, 2021 at 11:59 pm Pacific time`)."""
+        # ensure is set to correct timezone
+        date_time_str = LegislationDatetime.format_as_report_string_with_custom_time(date_time, 23, 59, 0, 0)
         return date_time_str
 
     @staticmethod

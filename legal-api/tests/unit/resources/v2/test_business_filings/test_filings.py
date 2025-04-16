@@ -17,7 +17,7 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Final
 from unittest.mock import patch
@@ -44,6 +44,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
+    NOTICE_OF_WITHDRAWAL as SCHEMA_NOTICE_OF_WITHDRAWAL,
     REGISTRATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE
@@ -115,6 +116,80 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing']['header']['name'] == filing_type
     assert rv.json['filing'][filing_type] == filing_json
 
+@pytest.mark.parametrize(
+    'jwt_role, expected',
+    [
+        (UserRoles.staff, 'staff-person'),
+        (UserRoles.public_user, 'Registry Staff'),
+    ]
+)
+def test_get_withdrawn_temp_business_filing(session, client, jwt, jwt_role, expected):
+    """Assert that a withdrawn FE temp business returns the filing with the NoW embedded once available."""
+    user = factory_user('idir/staff-person')
+
+    # set-up withdrawn boostrap FE filing
+    today = datetime.utcnow().date()
+    future_effective_date = today + timedelta(days=5)
+    future_effective_date = future_effective_date.isoformat()
+
+    identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header']['name'] = 'incorporationApplication'
+    del json_data['filing']['business']
+    new_bus_filing_json = copy.deepcopy(INCORPORATION)
+    new_bus_filing_json['nameRequest']['legalType'] = 'BC'
+    json_data['filing']['incorporationApplication'] = new_bus_filing_json
+    new_business_filing = factory_pending_filing(None, json_data)
+    new_business_filing.temp_reg = identifier
+    new_business_filing.effective_date = future_effective_date
+    new_business_filing.payment_completion_date = datetime.utcnow().isoformat()
+    new_business_filing._status = Filing.Status.PAID.value
+    new_business_filing.skip_status_listener = True
+    new_business_filing.save()
+    withdrawn_filing_id = new_business_filing.id
+
+    # set-up notice of withdrawal filing
+    now_json_data = copy.deepcopy(FILING_HEADER)
+    now_json_data['filing']['header']['name'] = 'noticeOfWithdrawal'
+    del now_json_data['filing']['business']
+    now_json_data['filing']['business'] = {
+        "identifier": identifier,
+        "legalType": 'BC'
+    }
+    now_json_data['filing']['noticeOfWithdrawal'] = copy.deepcopy(SCHEMA_NOTICE_OF_WITHDRAWAL)
+    now_json_data['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing_id
+    del now_json_data['filing']['header']['filingId']
+    now_filing = factory_filing(None, now_json_data)
+    now_filing.withdrawn_filing_id = withdrawn_filing_id
+    now_filing.submitter_id = user.id
+    now_filing.submitter_roles = UserRoles.staff
+    now_filing.save()
+    new_business_filing.withdrawal_pending = True
+    new_business_filing.save()
+
+    # fetch filings once the NoW has been submitted
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    # validate that the NoW is embedded in the withdrawn filing
+    assert 'noticeOfWithdrawal' in rv.json['filing']
+
+    # withdraw bootstrap filing 
+    new_business_filing._status = Filing.Status.WITHDRAWN.value
+    new_business_filing.withdrawal_pending = False
+    new_business_filing.save()
+
+    # fetch filings after the bootstrap filing has been withdrawn
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [jwt_role], identifier))
+
+    # validate that the NoW is still embedded in the withdrawn filing
+    assert 'noticeOfWithdrawal' in rv.json['filing']
+    assert rv.json['filing']['noticeOfWithdrawal'] is not None
+    assert rv.json['filing']['noticeOfWithdrawal']['filing']['header']['submitter'] == expected
 
 def test_get_filing_not_found(session, client, jwt):
     """Assert that the request fails if the filing ID doesn't match an existing filing."""
@@ -744,6 +819,65 @@ def test_delete_filing_in_draft(session, client, jwt):
 
     assert rv.status_code == HTTPStatus.OK
 
+def test_delete_draft_now_filing(session, client, jwt):
+    """Assert that when a NoW from a temporary business is deleted, the business is unlinked and not deleted."""
+    # set-up withdrawn boostrap FE filing
+    today = datetime.utcnow().date()
+    future_effective_date = today + timedelta(days=5)
+    future_effective_date = future_effective_date.isoformat()
+
+    identifier = 'T1Li6MzdrK'
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header']['name'] = 'incorporationApplication'
+    del json_data['filing']['business']
+    temp_bus_filing_json = copy.deepcopy(INCORPORATION)
+    temp_bus_filing_json['nameRequest']['legalType'] = 'BEN'
+    json_data['filing']['incorporationApplication'] = temp_bus_filing_json
+    temp_filing = factory_pending_filing(None, json_data)
+    temp_filing.temp_reg = identifier
+    temp_filing.effective_date = future_effective_date
+    temp_filing.payment_completion_date = datetime.utcnow().isoformat()
+    temp_filing._status = Filing.Status.DRAFT.value
+    temp_filing.skip_status_listener = True
+    temp_filing.save()
+    withdrawn_filing_id = temp_filing.id
+
+    # set-up notice of withdrawal filing
+    now_json_data = copy.deepcopy(FILING_HEADER)
+    now_json_data['filing']['header']['name'] = 'noticeOfWithdrawal'
+    del now_json_data['filing']['business']
+    now_json_data['filing']['business'] = {
+        "identifier": identifier,
+        "legalType": 'BEN'
+    }
+    now_json_data['filing']['noticeOfWithdrawal'] = copy.deepcopy(SCHEMA_NOTICE_OF_WITHDRAWAL)
+    now_json_data['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing_id
+    del now_json_data['filing']['header']['filingId']
+    now_filing = factory_filing(None, now_json_data)
+    now_filing.withdrawn_filing_id = withdrawn_filing_id
+    now_filing.save()
+    temp_filing.withdrawal_pending = True
+    temp_filing.save()
+
+    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{now_filing.id}',
+                       headers=headers
+                       )
+
+    # validate that the withdrawl_pending flag is set back to False
+    assert rv.status_code == HTTPStatus.OK
+    assert temp_filing.withdrawal_pending == False
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    
+    # validate that no NoW is embedded 
+    assert rv.status_code == HTTPStatus.OK
+    assert 'noticeOfWithdrawal' not in rv.json['filing']
+
 
 def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
     """Assert that a draft filing can be deleted."""
@@ -1108,6 +1242,9 @@ RESTORATION_LIMITED_EXT_FILING['filing']['restoration']['type'] = 'limitedRestor
 RESTORATION_LIMITED_TO_FULL_FILING = copy.deepcopy(RESTORATION_FILING)
 RESTORATION_LIMITED_TO_FULL_FILING['filing']['restoration']['type'] = 'limitedRestorationToFull'
 
+AMALGAMATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
+AMALGAMATION_OUT_FILING['filing']['amalgamationOut'] = {}
+
 CONTINUATION_OUT_FILING = copy.deepcopy(FILING_HEADER)
 CONTINUATION_OUT_FILING['filing']['continuationOut'] = {}
 
@@ -1186,6 +1323,10 @@ def _get_expected_fee_code(free, filing_name, filing_json: dict, legal_type):
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.COMP.value, False, [], False),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
         ('BC1234567', RESTORATION_LIMITED_TO_FULL_FILING, 'restoration', Business.LegalTypes.BC_CCC.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BCOMP.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.COMP.value, False, [], False),
+        ('BC1234567', AMALGAMATION_OUT_FILING, 'amalgamationOut', Business.LegalTypes.BC_CCC.value, False, [], False),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BCOMP.value, False, [], False),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.BC_ULC_COMPANY.value, False, [], False),
         ('BC1234567', CONTINUATION_OUT_FILING, 'continuationOut', Business.LegalTypes.COMP.value, False, [], False),
@@ -1595,3 +1736,124 @@ def test_resubmit_filing_failed(session, client, jwt, filing_status, review_stat
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+@pytest.mark.parametrize(
+        'test_name, legal_type, filing_type, filing_json, is_temp',
+        [
+            ('T-BUSINESS-IA', 'BC', 'incorporationApplication', INCORPORATION, True),
+            ('T-BUSINESS-CONT-IN', 'BEN', 'continuationIn', CONTINUATION_IN, True),
+            ('T-BUSINESS-AMALGAMATION', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True),
+            ('REGULAR-BUSINESS-COA', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
+            ('REGULAR-BUSINESS-CONT-ALTERATION', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False),
+            ('REGULAR-BUSINESS-DISSOLUTION', 'CBEN', 'dissolution', DISSOLUTION, False)
+        ]
+)
+def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type, filing_type, filing_json, is_temp):
+    """Assert that notice of withdrawal for new business filings can be filed"""
+    today = datetime.utcnow().date()
+    future_effective_date = today + timedelta(days=5)
+    future_effective_date = future_effective_date.isoformat()
+    # create a FE new business filing
+    if is_temp:
+        identifier = 'Tb31yQIuBw'
+        temp_reg = RegistrationBootstrap()
+        temp_reg._identifier = identifier
+        temp_reg.save()
+        json_data = copy.deepcopy(FILING_HEADER)
+        json_data['filing']['header']['name'] = filing_type
+        del json_data['filing']['business']
+        new_bus_filing_json = copy.deepcopy(filing_json)
+        new_bus_filing_json['nameRequest']['legalType'] = legal_type
+        json_data['filing'][filing_type] = new_bus_filing_json
+        new_business_filing = factory_pending_filing(None, json_data)
+        new_business_filing.temp_reg = identifier
+        new_business_filing.effective_date = future_effective_date
+        new_business_filing.payment_completion_date = datetime.utcnow().isoformat()
+        new_business_filing.save()
+        withdrawn_filing_id = new_business_filing.id
+    # create a regular business and file a FE filing
+    else:
+        identifier = 'BC1234567'
+        founding_date = datetime.utcnow() - timedelta(days=5)
+        business = factory_business(identifier=identifier, founding_date=founding_date, entity_type=legal_type)
+        filing_data_reg_business = copy.deepcopy(FILING_HEADER)
+        filing_data_reg_business['filing']['header']['name'] = filing_type
+        filing_data_reg_business['filing']['business']['identifier'] = identifier
+        filing_data_reg_business['filing']['business']['legalType'] = legal_type
+        fe_filing_json = copy.deepcopy(filing_json)
+        filing_data_reg_business['filing'][filing_type] = fe_filing_json
+        fe_filing = factory_pending_filing(business, filing_data_reg_business)
+        fe_filing.effective_date = future_effective_date
+        fe_filing.payment_completion_date = datetime.utcnow().isoformat()
+        fe_filing.save()
+        withdrawn_filing_id = fe_filing.id
+
+    # test filing a notice of withdraw for a temporary business
+    now_json_data = copy.deepcopy(FILING_HEADER)
+    now_json_data['filing']['header']['name'] = 'noticeOfWithdrawal'
+    if is_temp:
+        del now_json_data['filing']['business']
+        now_json_data['filing']['business'] = {
+            "identifier": identifier,
+            "legalType": legal_type
+        }
+    else:
+        now_json_data['filing']['business']['identifier'] = identifier
+        now_json_data['filing']['business']['legalType'] = legal_type
+    now_json_data['filing']['noticeOfWithdrawal'] = copy.deepcopy(SCHEMA_NOTICE_OF_WITHDRAWAL)
+    now_json_data['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing_id
+    del now_json_data['filing']['header']['filingId']
+
+    # Test validation OK
+    rv_validation = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                     json=now_json_data,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+    
+    assert rv_validation.status_code == HTTPStatus.OK
+    assert rv_validation.json['filing']['header']['name'] == 'noticeOfWithdrawal'
+
+    # Test can create a draft
+    rv_draft = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=now_json_data,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+    
+    # validate
+    assert rv_draft.status_code == HTTPStatus.CREATED
+    assert rv_draft.json['filing']['header']['name'] == 'noticeOfWithdrawal'
+
+    # setup
+    withdrawn_filing = {}
+    identifier = ''
+
+    # validate NoW flags set on withdrawn filing
+    if is_temp:
+        withdrawn_filing = new_business_filing
+        identifier = 'Tb31yQIuBw'
+    else:
+        withdrawn_filing = fe_filing
+        identifier = 'BC1234567'
+
+    withdrawn_filing_id = withdrawn_filing.withdrawn_filing_id
+    withdrawal_pending = withdrawn_filing.withdrawal_pending
+    assert withdrawn_filing_id is None
+    assert withdrawal_pending == True
+
+    # validate NoW flags set on NoW
+    now_filing = (Filing.find_by_id(rv_draft.json['filing']['header']['filingId']))
+    assert now_filing.withdrawn_filing_id == withdrawn_filing.id
+    assert now_filing.withdrawal_pending == False
+    if is_temp:
+        assert now_filing.temp_reg == None
+
+    # update and save notice of withdrawal draft filing
+    now_json_data['filing']['header']['certifiedBy'] = 'test123'
+
+    rv_draft = client.put(f'/api/v2/businesses/{identifier}/filings/{now_filing.id}?draft=true',
+                     json=now_json_data,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+    
+    # validate
+    assert rv_draft.status_code == HTTPStatus.ACCEPTED
+    assert rv_draft.json['filing']['header']['certifiedBy'] == 'test123'
+
+

@@ -37,7 +37,7 @@ from legal_api.models import (
     PartyRole,
     db,
 )
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 from legal_api.services import flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
@@ -293,7 +293,7 @@ def test_good_standing_check_transition_filing(session, test_name, has_no_transi
         restoration_filing.save()
     elif test_name == 'TRANSITION_COMPLETED':
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
-    
+
     check_result = business._has_no_transition_filed_after_restoration()
     assert check_result == has_no_transition_filed
     with patch.object(flags, 'is_on', return_value=True):
@@ -324,12 +324,14 @@ def test_business_json(session):
     # slim json
     d_slim = {
         'adminFreeze': False,
+        'foundingDate': '1970-01-01T00:00:00+00:00',
         'goodStanding': False,  # good standing will be false because the epoch is 1970
         'identifier': 'CP1234567',
         'inDissolution': False,
         'legalName': 'legal_name',
         'legalType': Business.LegalTypes.COOP.value,
         'state': Business.State.ACTIVE.name,
+        'lastModified': EPOCH_DATETIME.isoformat(),
         'taxId': '123456789'
     }
 
@@ -721,8 +723,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         filing.save()
 
         # Versioning business
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
+        transaction_id = VersioningProxy.get_transaction_id(session())
 
         business = Business(
             legal_name='Test - Legal Name',
@@ -749,7 +750,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         db.session.add(existing_business)
         db.session.commit()
 
-        filing.transaction_id = transaction.id
+        filing.transaction_id = transaction_id
         filing.business_id = business.id
         filing.save()
 

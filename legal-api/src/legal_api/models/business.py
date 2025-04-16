@@ -27,7 +27,6 @@ from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import aliased, backref
 from sqlalchemy.sql import and_, exists, func, not_, text
-from sqlalchemy_continuum import version_class
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
@@ -37,7 +36,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
 from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .db import db  # noqa: I001
+from .db import db, VersioningProxy  # noqa: I001
 from .party import Party
 from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
 
@@ -190,11 +189,16 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         'include_properties': [
             'id',
             'admin_freeze',
+            'amalgamation_out_date',
             'association_type',
+            'continuation_out_date',
             'dissolution_date',
             'fiscal_year_end_date',
+            'foreign_jurisdiction_region',
+            'foreign_legal_name',
             'founding_date',
             'identifier',
+            'jurisdiction',
             'last_agm_date',
             'last_ar_date',
             'last_ar_year',
@@ -205,24 +209,21 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'last_ledger_timestamp',
             'last_modified',
             'last_remote_ledger_id',
+            'last_tr_year',
             'legal_name',
             'legal_type',
+            'naics_code',
+            'naics_description',
+            'naics_key',
+            'no_dissolution',
+            'restoration_expiry_date',
             'restriction_ind',
+            'send_ar_ind',
             'state',
+            'start_date',
             'state_filing_id',
             'submitter_userid',
             'tax_id',
-            'naics_key',
-            'naics_code',
-            'naics_description',
-            'no_dissolution',
-            'start_date',
-            'jurisdiction',
-            'foreign_jurisdiction_region',
-            'foreign_legal_name',
-            'send_ar_ind',
-            'restoration_expiry_date',
-            'continuation_out_date'
         ]
     }
 
@@ -242,12 +243,14 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
     dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
     continuation_out_date = db.Column('continuation_out_date', db.DateTime(timezone=True))
+    amalgamation_out_date = db.Column('amalgamation_out_date', db.DateTime(timezone=True))
     _identifier = db.Column('identifier', db.String(10), index=True)
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
     last_ar_year = db.Column('last_ar_year', db.Integer)
     last_ar_reminder_year = db.Column('last_ar_reminder_year', db.Integer)
+    last_tr_year = db.Column('last_tr_year', db.Integer)
     association_type = db.Column('association_type', db.String(50))
     state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
     state_filing_id = db.Column('state_filing_id', db.Integer)
@@ -267,9 +270,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
     # relationships
     filings = db.relationship('Filing', lazy='dynamic')
-    offices = db.relationship('Office', lazy='dynamic', cascade='all, delete, delete-orphan')
+    offices = db.relationship('Office', backref='business', lazy='dynamic', cascade='all, delete, delete-orphan')
     party_roles = db.relationship('PartyRole', lazy='dynamic')
-    share_classes = db.relationship('ShareClass', lazy='dynamic', cascade='all, delete, delete-orphan')
+    share_classes = db.relationship('ShareClass', backref='business', lazy='dynamic',
+                                    cascade='all, delete, delete-orphan')
     aliases = db.relationship('Alias', lazy='dynamic')
     resolutions = db.relationship('Resolution', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
@@ -327,11 +331,91 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
+        if not self.founding_date and not self.last_ar_date:
+            return None
         last_anniversary = self.founding_date
         if self.last_ar_date:
             last_anniversary = self.last_ar_date
 
         return last_anniversary + datedelta.datedelta(years=1)
+
+    @property
+    def next_annual_tr_due_datetime(self) -> datetime:
+        """Retrieve the next annual TR filing due datetime for the business."""
+        due_year_offset = 1
+        # NOTE: Converting to pacific time to ensure we get the right date
+        #       for comparisons and when replacing time at the end
+        founding_datetime = LegislationDatetime.as_legislation_timezone(self.founding_date)
+
+        tr_start_datetime = None
+        if tr_start_date := current_app.config.get('TR_START_DATE', None):
+            tr_start_datetime = LegislationDatetime.as_legislation_timezone_from_date(
+                datetime.fromisoformat(tr_start_date))
+
+        last_restoration_datetime = None
+        if restoration_filing := Filing.get_most_recent_filing(self.id, 'restoration'):
+            if restoration_filing.effective_date:
+                last_restoration_datetime = LegislationDatetime.as_legislation_timezone(
+                    restoration_filing.effective_date)
+            else:
+                last_restoration_datetime = LegislationDatetime.as_legislation_timezone(
+                    restoration_filing.filing_date)
+
+        if (
+            last_restoration_datetime and
+            last_restoration_datetime.year > (self.last_tr_year or tr_start_datetime.year or 0)
+        ):
+            # Set offset based on the year of the restoration
+            # NOTE: Currently could end up being due before the initial filing - policy still getting worked out
+            due_year_offset = last_restoration_datetime.year - founding_datetime.year
+            if (
+                last_restoration_datetime.month > founding_datetime.month or
+                (
+                    last_restoration_datetime.month == founding_datetime.month and
+                    last_restoration_datetime.day >= founding_datetime.day
+                )
+            ):
+                # Month/day of the founding date has already passed for this year so add 1
+                due_year_offset += 1
+
+        elif self.last_tr_year:
+            # i.e. founding_date.year=2023, last_tr_year=2024, then due_year_offset=2 and next due date for 2025
+            due_year_offset = (self.last_tr_year - founding_datetime.year) + 1
+
+        elif tr_start_datetime:
+            # Case examples:
+            # ---- Founded before TR start, month/day are earlier or the same
+            #   -> tr_start_date=2025-02-01, founding_date=2023-01-01..,
+            #      then due_year_offset=3 and next due date for 2026
+            #   -> tr_start_date=2025-02-01, founding_date=2024-01-01..,
+            #      then due_year_offset=2 and next due date for 2026
+            # ---- Founded before TR start, month/day are after
+            #   -> tr_start_date=2025-02-01, founding_date=2023-02-02..,
+            #      then due_year_offset=2 and next due date for 2025
+            #   -> tr_start_date=2025-02-01, founding_date=2024-02-02..,
+            #      then due_year_offset=1 and next due date for 2025
+            # ---- Founded after TR start, nothing needed
+            #   -> tr_start_date=2025-02-01, founding_date=2025-02-02..,
+            #      then due_year_offset=1 and next due date for 2026 (regular)
+            #   -> tr_start_date=2025-02-01, founding_date=2026-02-02..,
+            #      then due_year_offset=1 and next due date for 2027 (regular)
+            if tr_start_datetime > founding_datetime:
+                # Set offset based on the year of the tr start
+                due_year_offset = tr_start_datetime.year - founding_datetime.year
+                if (
+                    tr_start_datetime.month > founding_datetime.month or
+                    (
+                        tr_start_datetime.month == founding_datetime.month and
+                        tr_start_datetime.day >= founding_datetime.day
+                    )
+                ):
+                    # Month/day of the founding date had already passed for that year so add 1
+                    due_year_offset += 1
+
+        due_datetime = founding_datetime + datedelta.datedelta(years=due_year_offset, months=2)
+
+        # return as this date at 23:59:59
+        return due_datetime.replace(hour=23, minute=59, second=59, microsecond=0)
 
     def get_ar_dates(self, next_ar_year):
         """Get ar min and max date for the specific year."""
@@ -443,10 +527,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                     exists().where(
                         and_(
                             transition_filing.business_id == self.id,
-                            transition_filing._filing_type == \
-                            CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
-                            transition_filing._status == \
-                            Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                            (transition_filing._filing_type ==  # pylint: disable=protected-access
+                             CoreFiling.FilingTypes.TRANSITION.value),
+                            (transition_filing._status ==  # pylint: disable=protected-access
+                             Filing.Status.COMPLETED.value),
                             transition_filing.effective_date.between(
                                 restoration_filing.effective_date,
                                 restoration_filing_effective_cutoff
@@ -472,6 +556,12 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             one_or_none()
         return find_in_batch_processing is not None
 
+    @property
+    def is_tombstone(self):
+        """Return True if it's a tombstone business, otherwise False."""
+        tombstone_filing = Filing.get_filings_by_status(self.id, [Filing.Status.TOMBSTONE])
+        return bool(tombstone_filing)
+
     def save(self):
         """Render a Business to the local cache."""
         db.session.add(self)
@@ -495,29 +585,31 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if slim:
             return slim_json
 
-        ar_min_date, ar_max_date = self.get_ar_dates(
-            (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
-        )
+        ar_min_date = None
+        ar_max_date = None
+        if self.last_ar_year or self.founding_date:
+            ar_min_date, ar_max_date = self.get_ar_dates(
+                (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+            )
+
         d = {
             **slim_json,
-            'arMinDate': ar_min_date.isoformat(),
-            'arMaxDate': ar_max_date.isoformat(),
-            'foundingDate': self.founding_date.isoformat(),
+            'arMinDate': ar_min_date.isoformat() if ar_min_date else '',
+            'arMaxDate': ar_max_date.isoformat() if ar_max_date else '',
             'hasRestrictions': self.restriction_ind,
             'complianceWarnings': self.compliance_warnings,
             'warnings': self.warnings,
             'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
             'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat(),
+            'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat() if self.last_ledger_timestamp else '',
             'lastAddressChangeDate': '',
             'lastDirectorChangeDate': '',
-            'lastModified': self.last_modified.isoformat(),
             'naicsKey': self.naics_key,
             'naicsCode': self.naics_code,
             'naicsDescription': self.naics_description,
             'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
-            ).astimezone(timezone.utc).isoformat(),
+            ).astimezone(timezone.utc).isoformat() if self.next_anniversary else '',
             'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions,
@@ -531,12 +623,14 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         """Return a smaller/faster version of the business json."""
         d = {
             'adminFreeze': self.admin_freeze or False,
+            'foundingDate': self.founding_date.isoformat() if self.founding_date else '',
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
             'inDissolution': self.in_dissolution,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
-            'state': self.state.name if self.state else Business.State.ACTIVE.name
+            'state': self.state.name if self.state else Business.State.ACTIVE.name,
+            'lastModified': self.last_modified.isoformat()
         }
 
         if self.tax_id:
@@ -571,6 +665,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             d['restorationExpiryDate'] = LegislationDatetime.format_as_legislation_date(self.restoration_expiry_date)
         if self.continuation_out_date:
             d['continuationOutDate'] = LegislationDatetime.format_as_legislation_date(self.continuation_out_date)
+        if self.amalgamation_out_date:
+            d['amalgamationOutDate'] = LegislationDatetime.format_as_legislation_date(self.amalgamation_out_date)
 
         if self.jurisdiction:
             d['jurisdiction'] = self.jurisdiction
@@ -673,6 +769,14 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return businesses
 
     @classmethod
+    def get_expired_restoration(cls):
+        """Return all identifier with an expired restoration_expiry_date."""
+        businesses = (db.session.query(Business.identifier)
+                      .filter(Business.restoration_expiry_date <= datetime.utcnow())
+                      .all())
+        return businesses
+
+    @classmethod
     def get_filing_by_id(cls, business_identifier: int, filing_id: str):
         """Return the filings for a specific business and filing_id."""
         filing = db.session.query(Business, Filing). \
@@ -693,7 +797,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         alternate_names = []
 
         # Fetch aliases and related filings in a single query
-        alias_version = version_class(Alias)
+        alias_version = VersioningProxy.version_class(db.session(), Alias)
         filing_alias = aliased(Filing)
         aliases_query = db.session.query(
             alias_version.alias,
@@ -771,7 +875,14 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             self.state_filing_id and
             (state_filing := Filing.find_by_id(self.state_filing_id)) and
                 state_filing.is_amalgamation_application):
-            return Amalgamation.get_revision_json(state_filing.transaction_id, state_filing.business_id)
+            if not self.is_tombstone:
+                return Amalgamation.get_revision_json(state_filing.transaction_id, state_filing.business_id)
+            else:
+                return {
+                    'identifier': 'Not Available',
+                    'legalName': 'Not Available',
+                    'amalgamationDate': 'Not Available'
+                }
 
         return None
 

@@ -85,6 +85,10 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
             'source': 'resolutions',
             'params': {'business_id': business_ids},
         },
+        {
+            'source': 'amalgamations',
+            'params': {'business_id': business_ids},
+        },
     ]
 
     query_futures_one = []
@@ -92,7 +96,7 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
         query_futures_one.append(
             execute_query.submit(conn, plan)
         )
-    
+
     results_one = {}
     for future in query_futures_one:
         result = future.result()
@@ -114,6 +118,14 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
             'source': 'share_series',
             'params': {'share_class_id': results_one['share_classes']},
         },
+        {
+            'source': 'amalgamating_businesses',
+            'params': { 'amalgamation_id': results_one['amalgamations']},
+        },
+        {
+            'source': 'offices_held',
+            'params': {'party_role_id': results_one['party_roles']},
+        }
     ]
 
     query_futures_two = []
@@ -121,7 +133,7 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
         query_futures_two.append(
             execute_query.submit(conn, plan)
         )
-    
+
     delete_futures = []
     # delete for first query results
     for table, ids in results_one.items():
@@ -207,6 +219,10 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
                     'source': 'share_series_version',
                     'params': {'transaction_id': transaction_ids},
                 },
+                {
+                    'source': 'offices_held_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
                 # based on others
                 {
                     'source': 'batch_processing',
@@ -222,6 +238,10 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
                 {
                     'source': 'comments',
                     'params': {'filing_id': filing_ids},
+                },
+                {
+                    'source': 'furnishings',
+                    'params': {'business_id': business_ids},
                 },
                 # there're some Comment records saved by legal-api directly instead of filer
                 # some of them are linked via business_id
@@ -330,7 +350,7 @@ def auth_delete(db_engine: Engine, identifiers: list):
                     delete_futures.append(
                         execute_delete_plan.submit(conn, table, ids)
                     )
-            
+
             # delete records in entities table
             delete_futures.append(
                 execute_delete_plan.submit(conn, 'entities', entity_ids)
@@ -424,7 +444,7 @@ def delete_entities(identifiers: list, auth_svc_url, headers, timeout=None):
         else:
             failed += 1
 
-    print(f'👷 Auth entity delete complete for this round. Succeeded: {succeeded}. Failed: {failed}. Skipped: {skipped}')        
+    print(f'👷 Auth entity delete complete for this round. Succeeded: {succeeded}. Failed: {failed}. Skipped: {skipped}')
 
 
 def filter_none(values: list) -> list:
@@ -439,20 +459,20 @@ def execute_query(conn: Connection, template: dict) -> dict:
     :param template: A dictionary specifying the query structure.
 
         Expected keys in `template` include:
-        
+
         - **source** (`str`): The table to query.
-        - **columns** (`list[str]`, optional): The columns to select from the `source` table. 
+        - **columns** (`list[str]`, optional): The columns to select from the `source` table.
           Defaults to `['id']`.
-        - **params** (`dict`, optional): A dictionary with filter conditions 
+        - **params** (`dict`, optional): A dictionary with filter conditions
           for the query. Defaults to `None`.
-        - **targets** (`list[str]`, optional): A list of tables where the results will be mapped 
+        - **targets** (`list[str]`, optional): A list of tables where the results will be mapped
           to targets for delete operations. Defaults to `[source]`.
 
     :return: A dictionary containing the mapping results. The format is:
 
         `{ 'target_table_name': [id1, id2, ...] }`
-        
-        where each `target_table_name` is a table specified in `targets` or the origin table of a 
+
+        where each `target_table_name` is a table specified in `targets` or the origin table of a
         `_version` table. The associated value is a list of IDs for records to delete in that table.
     """
 
@@ -474,7 +494,10 @@ def execute_query(conn: Connection, template: dict) -> dict:
                 else:
                     # now only consider str and int in the list
                     v_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), filter_none(v)))
-                    query += f' AND {k} IN ({v_str})'
+                    if v_str:
+                        query += f' AND {k} IN ({v_str})'
+                    else:
+                        query += ' AND 1 != 1'
 
     results = conn.execute(text(query))
 
@@ -482,7 +505,7 @@ def execute_query(conn: Connection, template: dict) -> dict:
     if not rows:
         # if source table is version table and has no record, then won't generate plan for origin table
         ret = {t: [] for t in targets}
-    else:   
+    else:
         cols = zip(*rows)
         ret = defaultdict(list)
         for t, c in zip(targets, cols):
@@ -492,7 +515,7 @@ def execute_query(conn: Connection, template: dict) -> dict:
             if (origin := (t.rsplit('_version', 1)[0])) != t:
                 ret[origin].extend(c)
             ret[t].extend(c)
-    
+
     return ret
 
 
@@ -506,8 +529,9 @@ def execute_delete_plan(conn: Connection, table: str, ids: list):
 
 @task(persist_result=False)
 def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = 'id'):
+    ids = filter_none(ids)
     if ids:
-        ids_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), filter_none(ids)))
+        ids_str = ', '.join(map(lambda x: f'\'{x}\'' if isinstance(x, str) else str(x), ids))
         query_str = f'DELETE FROM {table_name} WHERE {id_name} IN ({ids_str})'
         query = text(query_str)
         results = conn.execute(query, {'ids': ids})

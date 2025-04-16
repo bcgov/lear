@@ -36,10 +36,9 @@ from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import FilingException, QueueException, logger
 from flask import Flask
 from gcp_queue import GcpQueue, SimpleCloudEvent, to_queue_message
-from legal_api import db
 from legal_api.core import Filing as FilingCore
-from legal_api.models import Business, Filing
-from legal_api.models.db import init_db, versioning_manager
+from legal_api.models import Business, Filing, db
+from legal_api.models.db import VersioningProxy, init_db
 from legal_api.services import Flags
 from legal_api.utils.datetime import datetime, timezone
 from sentry_sdk import capture_message
@@ -54,6 +53,7 @@ from entity_filer.filing_processors import (
     alteration,
     amalgamation_application,
     annual_report,
+    appoint_receiver,
     change_of_address,
     change_of_directors,
     change_of_name,
@@ -66,6 +66,8 @@ from entity_filer.filing_processors import (
     court_order,
     dissolution,
     incorporation_filing,
+    notice_of_withdrawal,
+    put_back_off,
     put_back_on,
     registrars_notation,
     registrars_order,
@@ -73,6 +75,7 @@ from entity_filer.filing_processors import (
     restoration,
     special_resolution,
     transition,
+    transparency_register,
 )
 from entity_filer.filing_processors.filing_components import business_profile, name_request
 
@@ -106,6 +109,13 @@ def get_filing_types(legal_filings: dict):
 
 async def publish_event(business: Business, filing: Filing):
     """Publish the filing message onto the NATS filing subject."""
+    temp_reg = filing.temp_reg
+    if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+        logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                     filing, filing.withdrawn_filing)
+        temp_reg = filing.withdrawn_filing.temp_reg
+    business_identifier = business.identifier if business else temp_reg
+
     try:
         payload = {
             'specversion': '1.x-wip',
@@ -113,25 +123,25 @@ async def publish_event(business: Business, filing: Filing):
             'source': ''.join([
                 APP_CONFIG.LEGAL_API_URL,
                 '/business/',
-                business.identifier,
+                business_identifier,
                 '/filing/',
                 str(filing.id)]),
             'id': str(uuid.uuid4()),
             'time': datetime.utcnow().isoformat(),
             'datacontenttype': 'application/json',
-            'identifier': business.identifier,
+            'identifier': business_identifier,
             'data': {
                 'filing': {
                     'header': {'filingId': filing.id,
                                'effectiveDate': filing.effective_date.isoformat()
                                },
-                    'business': {'identifier': business.identifier},
+                    'business': {'identifier': business_identifier},
                     'legalFilings': get_filing_types(filing.filing_json)
                 }
             }
         }
-        if filing.temp_reg:
-            payload['tempidentifier'] = filing.temp_reg
+        if temp_reg:
+            payload['tempidentifier'] = temp_reg
 
         subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
         await qsm.service.publish(subject, payload)
@@ -142,6 +152,13 @@ async def publish_event(business: Business, filing: Filing):
 
 def publish_gcp_queue_event(business: Business, filing: Filing):
     """Publish the filing message onto the GCP-QUEUE filing subject."""
+    temp_reg = filing.temp_reg
+    if filing.filing_type == FilingCore.FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
+        logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
+                     filing, filing.withdrawn_filing)
+        temp_reg = filing.withdrawn_filing.temp_reg
+    business_identifier = business.identifier if business else temp_reg
+
     try:
         subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
         data = {
@@ -150,20 +167,20 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
                     'filingId': filing.id,
                     'effectiveDate': filing.effective_date.isoformat()
                 },
-                'business': {'identifier': business.identifier},
+                'business': {'identifier': business_identifier},
                 'legalFilings': get_filing_types(filing.filing_json)
             },
-            'identifier': business.identifier
+            'identifier': business_identifier
         }
-        if filing.temp_reg:
-            data['tempidentifier'] = filing.temp_reg
+        if temp_reg:
+            data['tempidentifier'] = temp_reg
 
         ce = SimpleCloudEvent(
             id=str(uuid.uuid4()),
             source=''.join([
                 APP_CONFIG.LEGAL_API_URL,
                 '/business/',
-                business.identifier,
+                business_identifier,
                 '/filing/',
                 str(filing.id)]),
             subject=subject,
@@ -198,7 +215,8 @@ async def publish_mras_email(filing: Filing):
             )
 
 
-async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable=too-many-branches,too-many-statements
+async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+                         flask_app: Flask):
     """Render the filings contained in the submission.
 
     Start the migration to using core/Filing
@@ -215,17 +233,20 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
 
         filing_submission = filing_core_submission.storage
 
-        if filing_core_submission.status == Filing.Status.COMPLETED:
+        if filing_core_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
             logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
                            filing_submission.business_id, filing_submission.id, filing_msg)
             return None, None
+        if filing_submission.withdrawal_pending:
+            logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
+                           filing_submission.business_id, filing_submission.id, filing_msg)
+            raise QueueException
 
         # convenience flag to set that the envelope is a correction
         is_correction = filing_core_submission.filing_type == FilingCore.FilingTypes.CORRECTION
 
         if legal_filings := filing_core_submission.legal_filings():
-            uow = versioning_manager.unit_of_work(db.session)
-            transaction = uow.create_transaction(db.session)
+            VersioningProxy.get_transaction_id(db.session())
 
             business = Business.find_by_internal_id(filing_submission.business_id)
 
@@ -235,7 +256,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                                                     for item in sublist])
             if is_correction:
                 filing_meta.correction = {}
-
+            
             for filing in legal_filings:
                 if filing.get('alteration'):
                     alteration.process(business, filing_submission, filing, filing_meta, is_correction)
@@ -296,6 +317,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('changeOfRegistration'):
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
 
+                elif filing.get('putBackOff'):
+                    put_back_off.process(business, filing, filing_submission, filing_meta)
+
                 elif filing.get('putBackOn'):
                     put_back_on.process(business, filing, filing_submission, filing_meta)
 
@@ -317,6 +341,9 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 elif filing.get('agmExtension'):
                     agm_extension.process(filing, filing_meta)
 
+                elif filing.get('noticeOfWithdrawal'):
+                    notice_of_withdrawal.process(filing_submission, filing, filing_meta)
+
                 elif filing.get('amalgamationApplication'):
                     business, filing_submission, filing_meta = amalgamation_application.process(
                         business,
@@ -331,19 +358,29 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         filing_submission,
                         filing_meta)
 
+                elif filing.get('transparencyRegister'):
+                    transparency_register.process(business, filing_submission, filing_core_submission.json)
+
+                elif filing.get('appointReceiver'):
+                    appoint_receiver.process(business, filing, filing_submission, filing_meta)
+
                 if filing.get('specialResolution'):
                     special_resolution.process(business, filing, filing_submission)
 
-            filing_submission.transaction_id = transaction.id
+            transaction_id = VersioningProxy.get_transaction_id(db.session())
+            filing_submission.transaction_id = transaction_id
 
-            business_type = business.legal_type if business else filing_submission['business']['legal_type']
+            business_type = business.legal_type if business \
+                else filing_submission.filing_json.get('filing', {}).get('business', {}).get('legalType')
             filing_submission.set_processed(business_type)
+            if business:
+                business.last_modified = filing_submission.completion_date
+                db.session.add(business)
 
             filing_submission._meta_data = json.loads(  # pylint: disable=W0212
                 json.dumps(filing_meta.asjson, default=json_serial)
             )
 
-            db.session.add(business)
             db.session.add(filing_submission)
             db.session.commit()
 
@@ -375,6 +412,7 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         FilingCore.FilingTypes.CHANGEOFREGISTRATION,
                         FilingCore.FilingTypes.CORRECTION,
                         FilingCore.FilingTypes.DISSOLUTION,
+                        FilingCore.FilingTypes.PUTBACKOFF,
                         FilingCore.FilingTypes.PUTBACKON,
                         FilingCore.FilingTypes.RESTORATION
                     ]:
@@ -394,16 +432,20 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                         if filing_type != FilingCore.FilingTypes.CHANGEOFNAME:
                             business_profile.update_business_profile(business, filing_submission, filing_type)
 
-            try:
-                await publish_email_message(
-                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                capture_message(
-                    f'Queue Error: Failed to place email for filing:{filing_submission.id}'
-                    f'on Queue with error:{err}',
-                    level='error'
-                )
+            # This will be True only in the case where filing is filed by Jupyter notebook for BEN corrections
+            is_system_filed_correction = is_correction and is_system_filed_filing(filing_submission)
+
+            if not is_system_filed_correction:
+                try:
+                    await publish_email_message(
+                        qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
+                except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
+                    # mark any failure for human review
+                    capture_message(
+                        f'Queue Error: Failed to place email for filing:{filing_submission.id}'
+                        f'on Queue with error:{err}',
+                        level='error'
+                    )
 
             try:
                 await publish_event(business, filing_submission)
@@ -428,11 +470,22 @@ async def process_filing(filing_msg: Dict, flask_app: Flask):  # pylint: disable
                 )
 
 
+def is_system_filed_filing(filing_submission) -> bool:
+    """Check if filing is filed by system.
+
+    Filing filed using Jupyter Notebook will have 'certified_by' field = 'system'.
+
+    """
+    certified_by = filing_submission.json['filing']['header']['certifiedBy']
+    return certified_by == 'system' if certified_by else False
+
+
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
+# async def cb_subscription_handler(msg):
     """Use Callback to process Queue Msg objects."""
     try:
-        logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
-        filing_msg = json.loads(msg.data.decode('utf-8'))
+        # logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
+        filing_msg = msg
         logger.debug('Extracted filing msg: %s', filing_msg)
         await process_filing(filing_msg, FLASK_APP)
     except OperationalError as err:
@@ -443,7 +496,13 @@ async def cb_subscription_handler(msg: nats.aio.client.Msg):
                      '\n\nThis message has been put back on the queue for reprocessing.',
                      json.dumps(filing_msg), exc_info=True)
         raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    except (QueueException, Exception):  # pylint: disable=broad-except
+    except (QueueException, Exception) as err:  # pylint: disable=broad-except
         # Catch Exception so that any error is still caught and the message is removed from the queue
         capture_message('Queue Error:' + json.dumps(filing_msg), level='error')
         logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)
+
+# import asyncio
+# # //171009
+# if __name__ == '__main__':
+    
+#     asyncio.run(cb_subscription_handler({'filing': {'id': '172702'}}))

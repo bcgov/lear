@@ -161,6 +161,7 @@ def test_validate_existing_cco(session, test_name, expected_code, message):
     foreign_jurisdiction = filing['filing']['consentContinuationOut']['foreignJurisdiction']
 
     consent_continuation_out = ConsentContinuationOut()
+    consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
     consent_continuation_out.foreign_jurisdiction = foreign_jurisdiction.get('country')
     consent_continuation_out.foreign_jurisdiction_region = foreign_jurisdiction.get('region').upper()
     consent_continuation_out.expiry_date = get_cco_expiry_date(effective_date)

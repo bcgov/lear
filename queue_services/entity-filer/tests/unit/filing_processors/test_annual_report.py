@@ -18,6 +18,7 @@ import pytest
 import random
 from unittest.mock import patch
 
+from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
 from legal_api.models import BatchProcessing, Business, Filing
 from registry_schemas.example_data import ANNUAL_REPORT
@@ -60,11 +61,11 @@ def test_process_ar_filing_involuntary_dissolution(app, session, test_name, flag
     now = datetime.datetime.utcnow()
     if eligibility:
         # setup ar_date to """INTERVAL '26 MONTHS'"" to make the businees is eligibility
-        ar_date = datetime.date(year=now.year-4, month=now.month-1, day=now.day)
-        agm_date = datetime.date(year=now.year-4, month=now.month-2, day=now.day)
+        ar_date = (now - relativedelta(years=4, months=1)).date()
+        agm_date = (now - relativedelta(years=4, months=2)).date()
     else:
-        ar_date = datetime.date(year=now.year, month=now.month-1, day=now.day)
-        agm_date = datetime.date(year=now.year, month=now.month-2, day=now.day)
+        ar_date = (now - relativedelta(months=1)).date()
+        agm_date = (now - relativedelta(months=2)).date()
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['business']['identifier'] = identifier

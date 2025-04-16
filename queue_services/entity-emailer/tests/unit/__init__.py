@@ -14,12 +14,12 @@
 """The Unit Tests and the helper routines."""
 import copy
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from random import randrange
 from unittest.mock import Mock
 
 from legal_api.models import Batch, Business, Filing, Furnishing, Party, PartyRole, RegistrationBootstrap, User
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
@@ -41,6 +41,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
+    NOTICE_OF_WITHDRAWAL,
     REGISTRATION,
     RESTORATION,
 )
@@ -127,9 +128,8 @@ def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None)
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED', 'bn']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -193,9 +193,8 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -471,9 +470,8 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
 
     filing.save()
     if status == 'COMPLETED':
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
 
     return filing
@@ -493,9 +491,8 @@ def prep_incorporation_correction_filing(session, business, original_filing_id, 
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -600,9 +597,8 @@ def prep_cp_special_resolution_correction_filing(session, business, original_fil
     filing._meta_data = {'correction': {'uploadNewRules': True, 'toLegalName': True}}
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -628,9 +624,8 @@ def prep_cp_special_resolution_correction_upload_memorandum_filing(session, busi
     filing._meta_data = {'correction': {'uploadNewMemorandum': True}}
     filing.save()
     if option in ['COMPLETED']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -663,9 +658,8 @@ def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in [Filing.Status.COMPLETED.value, 'bn']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
 
@@ -691,11 +685,90 @@ def prep_continuation_in_filing(session, identifier, payment_id, option):
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in [Filing.Status.COMPLETED.value, 'bn']:
-        uow = versioning_manager.unit_of_work(session)
-        transaction = uow.create_transaction(session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(session())
+        filing.transaction_id = transaction_id
         filing.save()
     return filing
+
+
+def prep_notice_of_withdraw_filing(
+        identifier,
+        payment_id,
+        legal_type,
+        legal_name,
+        business_id,
+        withdrawn_filing):
+    """Return a new Notice of Withdrawal filing prepped for email notification."""
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'noticeOfWithdrawal'
+
+    filing_template['filing']['noticeOfWithdrawal'] = copy.deepcopy(NOTICE_OF_WITHDRAWAL)
+    filing_template['filing']['noticeOfWithdrawal']['filingId'] = withdrawn_filing.id
+    filing_template['filing']['business'] = {
+        'identifier': identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    # create NoW filing
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business_id,
+    )
+    # populate NoW related properties
+    filing.withdrawn_filing_id = withdrawn_filing.id
+    filing.save()
+    withdrawn_filing.withdrawal_pending = True
+    withdrawn_filing.save()
+
+    return filing
+
+
+def create_future_effective_filing(
+        identifier,
+        legal_type,
+        legal_name,
+        filing_type,
+        filing_json,
+        is_temp,
+        business_id=None):
+    """Create a future effective filing."""
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = filing_type
+    future_effective_date = EPOCH_DATETIME + timedelta(days=5)
+    future_effective_date = future_effective_date.isoformat()
+
+    if is_temp:
+        del filing_template['filing']['business']
+        new_business_filing_json = copy.deepcopy(filing_json)
+        new_business_filing_json['nameRequest']['legalType'] = legal_type
+        filing_template['filing'][filing_type] = new_business_filing_json
+        filing_template['filing'][filing_type]['contactPoint']['email'] = 'recipient@email.com'
+    else:
+        filing_template['filing']['business']['identifier'] = identifier
+        filing_template['filing']['business'] = {
+            'identifier': identifier,
+            'legalType': legal_type,
+            'legalName': legal_name
+        }
+        fe_filing_json = copy.deepcopy(filing_json)
+        filing_template['filing'][filing_type] = fe_filing_json
+
+    fe_filing = Filing()
+    fe_filing.filing_date = EPOCH_DATETIME
+    fe_filing.filing_json = filing_template
+    fe_filing.save()
+    fe_filing.payment_token = '123'
+    fe_filing.payment_completion_date = EPOCH_DATETIME.isoformat()
+    if is_temp:
+        fe_filing.temp_reg = identifier
+    else:
+        fe_filing.business_id = business_id
+    fe_filing.effective_date = future_effective_date
+    fe_filing.save()
+
+    return fe_filing
 
 
 class Obj:

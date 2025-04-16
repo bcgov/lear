@@ -24,7 +24,7 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from legal_api.core.meta.filing import FILINGS
+from legal_api.core.meta.filing import FILINGS, FilingMeta
 from legal_api.models import (
     AmalgamatingBusiness,
     Amalgamation,
@@ -38,10 +38,16 @@ from legal_api.models import (
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService, flags
+from legal_api.services import (
+    MinioService,
+    VersionedBusinessDetailsService,
+    DocumentRecordService,
+    flags
+)
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.constants import DocumentClasses
 
 
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
@@ -66,9 +72,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return self._get_report()
 
     def _get_static_report(self):
+        
         document_type = ReportMeta.static_reports[self._report_key]['documentType']
+        document_class = ReportMeta.static_reports[self._report_key]['documentType']
+        
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
-        response = MinioService.get_file(document.file_key)
+        if(flags.is_on('enable-document-records')):
+            response = DocumentRecordService.download_document(
+                document_class,
+                document.file_key
+            )
+        else:
+            response = MinioService.get_file(document.file_key)
         return current_app.response_class(
             response=response.data,
             status=response.status,
@@ -174,6 +189,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'change-of-registration/addresses',
             'change-of-registration/proprietor',
             'change-of-registration/partner',
+            'notice-of-withdrawal/recordToBeWithdrawn',
             'incorporation-application/benefitCompanyStmt',
             'incorporation-application/completingParty',
             'incorporation-application/effectiveDate',
@@ -306,6 +322,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_continuation_in_data(filing)
         elif self._report_key == 'certificateOfContinuation':
             self._format_certificate_of_continuation_in_data(filing)
+        elif self._report_key == 'noticeOfWithdrawal':
+            self._format_notice_of_withdrawal_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -351,15 +369,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_description(self, filing):
         legal_type = None
-        if self._filing.filing_type == 'alteration':
-            legal_type = self._filing.filing_json.get('filing').get('alteration').get('business', {}).get('legalType')
-        else:
-            legal_type = (self._filing.filing_json
-                          .get('filing')
-                          .get(self._filing.filing_type)
-                          .get('nameRequest', {})
-                          .get('legalType'))
+        filing_json = self._filing.filing_json.get('filing', {})
+        filing_type = self._filing.filing_type
 
+        # Check for alteration filing type
+        if filing_type == 'alteration':
+            legal_type = filing_json.get('alteration', {}).get('business', {}).get('legalType')
+        else:
+            legal_type = filing_json.get(filing_type, {}).get('nameRequest', {}).get('legalType')
+
+        # Fallback: Check the general business section
+        if not legal_type:
+            legal_type = filing_json.get('business', {}).get('legalType')
+
+        # Final fallback: Check the _business object
         if not legal_type and self._business:
             legal_type = self._business.legal_type
 
@@ -586,8 +609,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['nameRequest'] = filing['restoration'].get('nameRequest')
         filing['parties'] = filing['restoration'].get('parties')
         filing['offices'] = filing['restoration']['offices']
-        meta_data = self._filing.meta_data or {}
-        filing['fromLegalName'] = meta_data.get('restoration', {}).get('fromLegalName')
+        if self._filing.meta_data:  # available when filing is COMPLETED
+            filing['fromLegalName'] = self._filing.meta_data.get('restoration', {}).get('fromLegalName')
+        else:
+            filing['fromLegalName'] = self._business.legal_name
 
         if relationships := filing['restoration'].get('relationships'):
             filing['relationshipsDesc'] = ', '.join(relationships)
@@ -600,14 +625,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['applicationDate'] = filing['restoration'].get('applicationDate', 'Not Applicable')
             filing['noticeDate'] = filing['restoration'].get('noticeDate', 'Not Applicable')
 
-        business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
-            self._filing.transaction_id, self._business.id, is_dissolution_date=True)
-        filing['dissolutionLegalName'] = business_dissolution.legal_name
+        if self._filing.transaction_id:  # available when filing is COMPLETED
+            business_dissolution = VersionedBusinessDetailsService.find_last_value_from_business_revision(
+                self._filing.transaction_id, self._business.id, is_dissolution_date=True)
+            filing['dissolutionLegalName'] = business_dissolution.legal_name
+        else:
+            filing['dissolutionLegalName'] = self._business.legal_name
 
-        if expiry_date := meta_data.get('restoration', {}).get('expiry'):
+        if expiry_date := filing['restoration'].get('expiry'):
             expiry_date = LegislationDatetime.as_legislation_timezone_from_date_str(expiry_date)
-            expiry_date = expiry_date.replace(minute=1)
-            filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_string(expiry_date)
+            filing['restoration_expiry_date'] = LegislationDatetime.format_as_report_expiry_string_1159(expiry_date)
 
     def _format_consent_continuation_out_data(self, filing):
         cco = ConsentContinuationOut.get_by_filing_id(self._filing.id)
@@ -677,9 +704,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # Get current list of translations in alteration. None if it is deletion
         if 'nameTranslations' in filing['alteration']:
             filing['listOfTranslations'] = filing['alteration'].get('nameTranslations', [])
-            # Get previous translations for deleted translations. No record created in aliases version for deletions
-            filing['previousNameTranslations'] = VersionedBusinessDetailsService.get_name_translations_before_revision(
-                self._filing.transaction_id, self._business.id)
+            if self._filing.transaction_id:
+                # Get previous translations for deleted translations. No record created in version for deletions
+                filing['previousNameTranslations'] = (
+                    VersionedBusinessDetailsService.get_name_translations_before_revision(
+                        self._filing.transaction_id,
+                        self._business.id))
+            else:
+                filing['previousNameTranslations'] = [alias.json for alias in self._business.aliases.all()]
         if filing['alteration'].get('shareStructure', None):
             filing['shareClasses'] = filing['alteration']['shareStructure'].get('shareClasses', [])
             dates = filing['alteration']['shareStructure'].get('resolutionDates', [])
@@ -747,6 +779,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_certificate_of_amalgamation_data(self, filing):
         self._set_amalgamating_businesses(filing)
+
+    def _format_notice_of_withdrawal_data(self, filing):
+        withdrawn_filing_id = filing['noticeOfWithdrawal']['filingId']
+        withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)
+        formatted_withdrawn_filing_type = FilingMeta.get_display_name(
+            withdrawn_filing.filing_json['filing']['business']['legalType'],
+            withdrawn_filing.filing_type,
+            withdrawn_filing.filing_sub_type
+        )
+        filing['withdrawnFilingType'] = formatted_withdrawn_filing_type
+        withdrawn_filing_date = LegislationDatetime.as_legislation_timezone(withdrawn_filing.effective_date)
+        filing['withdrawnFilingEffectiveDate'] = LegislationDatetime.format_as_report_string(withdrawn_filing_date)
 
     def _set_amalgamating_businesses(self, filing):
         amalgamating_businesses = []
@@ -1058,16 +1102,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_name_request_data(self, filing, versioned_business: Business):
         name_request_json = filing.get('correction').get('nameRequest', {})
-        filing['nameRequest'] = name_request_json
-        prev_legal_name = versioned_business.legal_name
+        if name_request_json:
+            filing['nameRequest'] = name_request_json
+            prev_legal_name = versioned_business.legal_name
 
-        if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
-            new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
-                                                                   versioned_business.identifier)
+            if name_request_json and not (new_legal_name := name_request_json.get('legalName')):
+                new_legal_name = Business.generate_numbered_legal_name(name_request_json['legalType'],
+                                                                       versioned_business.identifier)
 
-        if new_legal_name and prev_legal_name != new_legal_name:
-            filing['previousLegalName'] = prev_legal_name
-            filing['newLegalName'] = new_legal_name
+            if new_legal_name and prev_legal_name != new_legal_name:
+                filing['previousLegalName'] = prev_legal_name
+                filing['newLegalName'] = new_legal_name
 
     def _format_name_translations_data(self, filing, prev_completed_filing: Filing):
         filing['listOfTranslations'] = filing['correction'].get('nameTranslations', [])
@@ -1150,6 +1195,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['ceasedParties'] = parties_deleted
 
     def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
+        if filing.get('correction').get('shareStructure') is None:
+            return
         filing['shareClasses'] = filing.get('correction').get('shareStructure', {}).get('shareClasses')
         dates = filing['correction']['shareStructure'].get('resolutionDates', [])
         formatted_dates = [
@@ -1460,20 +1507,28 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfContinuation': {
             'filingDescription': 'Certificate of Continuation',
             'fileName': 'certificateOfContinuation'
+        },
+        'noticeOfWithdrawal': {
+            'filingDescription': 'Notice of Withdrawal',
+            'fileName': 'noticeOfWithdrawal'
         }
     }
 
     static_reports = {
         'certifiedRules': {
+            'documentClass': DocumentClasses.COOP.value,
             'documentType': 'coop_rules'
         },
         'certifiedMemorandum': {
+            'documentClass': DocumentClasses.COOP.value,
             'documentType': 'coop_memorandum'
         },
         'affidavit': {
+            'documentClass': DocumentClasses.CORP.value,
             'documentType': 'affidavit'
         },
         'uploadedCourtOrder': {
+            'documentClass': DocumentClasses.CORP.value,
             'documentType': 'court_order'
         }
     }

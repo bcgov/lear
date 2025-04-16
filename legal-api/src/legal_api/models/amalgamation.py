@@ -21,10 +21,9 @@ from enum import auto
 
 from sql_versioning import Versioned
 from sqlalchemy import or_
-from sqlalchemy_continuum import version_class
 
 from ..utils.base import BaseEnum
-from .db import db
+from .db import db, VersioningProxy  # noqa: I001
 
 
 class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -37,6 +36,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         regular = auto()
         vertical = auto()
         horizontal = auto()
+        unknown = auto()
 
     __versioned__ = {}
     __tablename__ = 'amalgamations'
@@ -80,24 +80,32 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         }
 
     @classmethod
-    def get_revision_by_id(cls, transaction_id, amalgamation_id):
-        """Get amalgamation for the given id."""
+    def get_revision_by_id(cls, amalgamation_id, transaction_id=None, tombstone=False):
+        """Get amalgamation for the given id.
+
+        If tombstone is True, get all non-versioned amalgamating for the given id.
+        """
         # pylint: disable=singleton-comparison;
-        amalgamation_version = version_class(Amalgamation)
-        amalgamation = db.session.query(amalgamation_version) \
-            .filter(amalgamation_version.transaction_id <= transaction_id) \
-            .filter(amalgamation_version.operation_type == 0) \
-            .filter(amalgamation_version.id == amalgamation_id) \
-            .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
-                        amalgamation_version.end_transaction_id > transaction_id)) \
-            .order_by(amalgamation_version.transaction_id).one_or_none()
+        if tombstone:
+            amalgamation = db.session.query(Amalgamation) \
+                .filter(Amalgamation.id == amalgamation_id) \
+                .one_or_none()
+        else:
+            amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
+            amalgamation = db.session.query(amalgamation_version) \
+                .filter(amalgamation_version.transaction_id <= transaction_id) \
+                .filter(amalgamation_version.operation_type == 0) \
+                .filter(amalgamation_version.id == amalgamation_id) \
+                .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
+                            amalgamation_version.end_transaction_id > transaction_id)) \
+                .order_by(amalgamation_version.transaction_id).one_or_none()
         return amalgamation
 
     @classmethod
     def get_revision(cls, transaction_id, business_id):
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
-        amalgamation_version = version_class(Amalgamation)
+        amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
             .filter(amalgamation_version.operation_type == 0) \
@@ -108,8 +116,18 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         return amalgamation
 
     @classmethod
-    def get_revision_json(cls, transaction_id, business_id):
-        """Get amalgamation json for the given transaction id."""
+    def get_revision_json(cls, transaction_id, business_id, tombstone=False):
+        """Get amalgamation json for the given transaction id.
+
+        If tombstone is True, return placeholder amalgamation json.
+        """
+        if tombstone:
+            return {
+                'identifier': 'Not Available',
+                'legalName': 'Not Available',
+                'amalgamationDate': 'Not Available'
+            }
+
         amalgamation = Amalgamation.get_revision(transaction_id, business_id)
         from .business import Business  # pylint: disable=import-outside-toplevel
         business = Business.find_by_internal_id(amalgamation.business_id)

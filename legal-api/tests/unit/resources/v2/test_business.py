@@ -585,8 +585,20 @@ def test_get_could_file(session, client, jwt):
             "type": "horizontal"
         },
         {
+            "displayName": "Amalgamation Out",
+            "name": "amalgamationOut"
+        },
+        {
             "displayName": "Annual Report",
             "name": "annualReport"
+        },
+        {
+            "displayName": "Appoint Receiver",
+            "name": "appointReceiver"
+        },
+        {
+            "displayName": "Cease Receiver",
+            "name": "ceaseReceiver"
         },
         {
             "displayName": "Address Change",
@@ -595,6 +607,10 @@ def test_get_could_file(session, client, jwt):
         {
             "displayName": "Director Change",
             "name": "changeOfDirectors"
+        },
+        {
+            "displayName": "6-Month Consent to Amalgamate Out",
+            "name": "consentAmalgamationOut"
         },
         {
             "displayName": "6-Month Consent to Continue Out",
@@ -625,6 +641,10 @@ def test_get_could_file(session, client, jwt):
         {
             "displayName": "BC Limited Company Incorporation Application",
             "name": "incorporationApplication"
+        },
+        {
+            "displayName": "Correction - Put Back Off",
+            "name": "putBackOff",
         },
         {
             "displayName": "Registrar's Notation",

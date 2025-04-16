@@ -21,7 +21,7 @@ from hypothesis.strategies import text
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-from legal_api.services import MinioService
+from legal_api.services import MinioService, DocumentRecordService, flags
 from legal_api.services.utils import get_date, get_str
 
 
@@ -49,14 +49,28 @@ def test_get_str(f, p):
         assert isinstance(d, str)
 
 
-def _upload_file(page_size, invalid):
-    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
+def _upload_file(page_size, invalid, document_class=None, document_type=None):
+    print("TYUIUYTYUYTYYUYYTYTYYTYTYYUYTYTYTYTYTYTYTYTYTYTYTYTYTYTYTYTYTYTYTYYYTYTY")
+    if flags.is_on('enable-document-records'):
+        file_path = "tests/unit/invalid_size.pdf" if invalid else "tests/unit/valid_size.pdf"
+        raw_data = None
+        with open(file_path, "rb") as data_file:
+                raw_data = data_file.read()
+                data_file.close()
+        response = DocumentRecordService.upload_document(
+            document_class, 
+            document_type, 
+            raw_data
+        )
+        return response['documentServiceId']
+    else:
+        signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
+        key = signed_url.get('key')
+        pre_signed_put = signed_url.get('preSignedUrl')
 
-    requests.put(pre_signed_put, data=_create_pdf_file(page_size, invalid).read(),
-                 headers={'Content-Type': 'application/octet-stream'})
-    return key
+        requests.put(pre_signed_put, data=_create_pdf_file(page_size, invalid).read(),
+                    headers={'Content-Type': 'application/octet-stream'})
+        return key
 
 
 def _create_pdf_file(page_size, invalid):

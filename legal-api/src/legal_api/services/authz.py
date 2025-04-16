@@ -201,8 +201,27 @@ def get_allowable_filings_dict():
                         }
                     }
                 },
+                'amalgamationOut': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.NOT_IN_GOOD_STANDING],
+                        'completedFilings': ['consentAmalgamationOut']
+                    }
+                },
                 'annualReport': {
                     'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'appointReceiver': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'ceaseReceiver': {
+                    'legalTypes': ['BC', 'BEN', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT]
                     }
@@ -230,6 +249,12 @@ def get_allowable_filings_dict():
                     'legalTypes': ['C', 'CBEN', 'CUL', 'CCC'],
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
+                },
+                'consentAmalgamationOut': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT, BusinessBlocker.NOT_IN_GOOD_STANDING]
+                    }
                 },
                 'consentContinuationOut': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
@@ -279,6 +304,9 @@ def get_allowable_filings_dict():
                     # only show filing when providing allowable filings not specific to a business
                     'businessRequirement': BusinessRequirement.NOT_EXIST
                 },
+                'putBackOff': {
+                    'legalTypes': ['BEN', 'BC', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
+                },
                 'registrarsNotation': {
                     'legalTypes': ['SP', 'GP', 'CP', 'BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
                 },
@@ -321,7 +349,8 @@ def get_allowable_filings_dict():
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.FILING_WITHDRAWAL]
-                    }
+                    },
+                    'businessRequirement': BusinessRequirement.NO_RESTRICTION
                 }
             },
             Business.State.HISTORICAL: {
@@ -478,6 +507,29 @@ def get_allowable_filings_dict():
                 },
                 'transition': {
                     'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
+                },
+                CoreFiling.FilingTypes.TRANSPARENCY_REGISTER.value: {
+                    'annual': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
+                        }
+                    },
+                    'change': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
+                        }
+                    },
+                    'initial': {
+                        'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                        'blockerChecks': {
+                            'business': [BusinessBlocker.BUSINESS_FROZEN],
+                            'futureEffectiveFilings': [CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value]
+                        }
+                    }
                 }
             },
             Business.State.HISTORICAL: {}
@@ -504,7 +556,7 @@ def is_allowed(business: Business,
         else:
             is_ignore_draft_blockers = True
 
-    # Special case: handiling authorization for amalgamation application
+    # Special case: handling authorization for amalgamation application
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == 'amalgamationApplication' and legal_type in ['C', 'CBEN', 'CUL', 'CCC']:
         return False
@@ -746,7 +798,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
 
-    if has_notice_of_withdrawal_filing_blocker(business):
+    if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
 
     return business_blocker_checks
@@ -872,15 +924,16 @@ def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
     return warning_matches
 
 
-def has_notice_of_withdrawal_filing_blocker(business: Business):
+def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_blockers: bool = False):
     """Check if there are any blockers specific to Notice of Withdrawal."""
     if business.admin_freeze:
         return True
 
-    filing_statuses = [Filing.Status.DRAFT.value,
-                       Filing.Status.PENDING.value,
+    filing_statuses = [Filing.Status.PENDING.value,
                        Filing.Status.PENDING_CORRECTION.value,
                        Filing.Status.ERROR.value]
+    if not is_ignore_draft_blockers:
+        filing_statuses.append(Filing.Status.DRAFT.value)
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
     if any(blocker_filing_matches):
         return True

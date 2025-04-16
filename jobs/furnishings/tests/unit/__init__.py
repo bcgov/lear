@@ -21,7 +21,7 @@ from freezegun import freeze_time
 
 from legal_api.models import Address, Batch, BatchProcessing, Business, Filing, Furnishing, db
 from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.db import versioning_manager
+from legal_api.models.db import VersioningProxy
 
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
@@ -115,9 +115,8 @@ def factory_completed_filing(business,
             filing._filing_sub_type = filing_sub_type
         filing.save()
 
-        uow = versioning_manager.unit_of_work(db.session)
-        transaction = uow.create_transaction(db.session)
-        filing.transaction_id = transaction.id
+        transaction_id = VersioningProxy.get_transaction_id(db.session())
+        filing.transaction_id = transaction_id
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date

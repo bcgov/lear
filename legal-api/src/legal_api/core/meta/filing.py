@@ -137,7 +137,8 @@ FILINGS: Final = {
             'CBEN': 'ALTER',
             'CUL': 'ALTER',
             'CCC': 'ALTER',
-            'BC_TO_ULC': 'NOALU'
+            'BC_TO_ULC': 'NOALU',
+            'C_TO_CUL': 'NOALU'
         },
         'additional': [
             {
@@ -188,6 +189,21 @@ FILINGS: Final = {
             }
         }
     },
+    'amalgamationOut': {
+        'name': 'amalgamationOut',
+        'title': 'Amalgamation Out',
+        'displayName': 'Amalgamation Out',
+        'codes': {
+            'BC': 'AMALO',
+            'BEN': 'AMALO',
+            'ULC': 'AMALO',
+            'CC': 'AMALO',
+            'C': 'AMALO',
+            'CBEN': 'AMALO',
+            'CUL': 'AMALO',
+            'CCC': 'AMALO'
+        }
+    },
     'annualReport': {
         'name': 'annualReport',
         'title': 'Annual Report Filing',
@@ -202,6 +218,36 @@ FILINGS: Final = {
             'C': 'BCANN',
             'CUL': 'BCANN',
             'CCC': 'BCANN'
+        }
+    },
+    'appointReceiver': {
+        'name': 'appointReceiver',
+        'title': 'Appoint Receiver Filing',
+        'displayName': 'Appoint Receiver',
+        'codes': {
+            'BEN': 'NOARM',
+            'BC': 'NOARM',
+            'ULC': 'NOARM',
+            'CC': 'NOARM',
+            'CBEN': 'NOARM',
+            'C': 'NOARM',
+            'CUL': 'NOARM',
+            'CCC': 'NOARM'
+        }
+    },
+    'ceaseReceiver': {
+        'name': 'ceaseReceiver',
+        'title': 'Cease Receiver Filing',
+        'displayName': 'Cease Receiver',
+        'codes': {
+            'BEN': 'NOCER',
+            'BC': 'NOCER',
+            'ULC': 'NOCER',
+            'CC': 'NOCER',
+            'CBEN': 'NOCER',
+            'C': 'NOCER',
+            'CUL': 'NOCER',
+            'CCC': 'NOCER'
         }
     },
     'changeOfAddress': {
@@ -284,6 +330,27 @@ FILINGS: Final = {
             {
                 'types': ['SP', 'GP'],
                 'outputs': ['amendedRegistrationStatement']
+            },
+        ]
+    },
+    'consentAmalgamationOut': {
+        'name': 'consentAmalgamationOut',
+        'title': 'Consent Amalgamation Out',
+        'displayName': '6-Month Consent to Amalgamate Out',
+        'codes': {
+            'BC': 'IAMGO',
+            'BEN': 'IAMGO',
+            'ULC': 'IAMGO',
+            'CC': 'IAMGO',
+            'C': 'IAMGO',
+            'CBEN': 'IAMGO',
+            'CUL': 'IAMGO',
+            'CCC': 'IAMGO'
+        },
+        'additional': [
+            {
+                'types': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL'],
+                'outputs': ['letterOfConsent']
             },
         ]
     },
@@ -390,8 +457,20 @@ FILINGS: Final = {
         'name': 'courtOrder',
         'title': 'Court Order',
         'displayName': 'Court Order',
-        'code': 'NOFEE'
-    },
+        'codes': {
+                'SP': 'COURT',
+                'GP': 'COURT',
+                'CP': 'COURT',
+                'BC': 'COURT',
+                'BEN': 'COURT',
+                'CC': 'COURT',
+                'ULC': 'COURT',
+                'C': 'COURT',
+                'CBEN': 'COURT',
+                'CUL': 'COURT',
+                'CCC': 'COURT',
+            }
+        },
     'dissolution': {
         'name': 'dissolution',
         'additional': [
@@ -505,6 +584,12 @@ FILINGS: Final = {
             'CUL': 'NWITH',
             'CCC': 'NWITH'
         }
+    },
+    'putBackOff': {
+        'name': 'putBackOff',
+        'title': 'Put Back Off',
+        'displayName': 'Correction - Put Back Off',
+        'code': 'NOFEE'
     },
     'putBackOn': {
         'name': 'putBackOn',
@@ -639,7 +724,55 @@ FILINGS: Final = {
                 'outputs': ['noticeOfArticles']
             },
         ]
-    }
+    },
+    'transparencyRegister': {
+        'name': 'transparencyRegister',
+        'annual': {
+            'name': 'transparencyRegister',
+            'title': 'Transparency Register - Annual Filing',
+            'displayName': 'Transparency Register - Annual Filing',
+            'codes': {
+                'BC': 'REGSIGIN',
+                'BEN': 'REGSIGIN',
+                'ULC': 'REGSIGIN',
+                'CC': 'REGSIGIN',
+                'C': 'REGSIGIN',
+                'CBEN': 'REGSIGIN',
+                'CUL': 'REGSIGIN',
+                'CCC': 'REGSIGIN'
+            }
+        },
+        'change': {
+            'name': 'transparencyRegister',
+            'title': 'Transparency Register Filing',
+            'displayName': 'Transparency Register Filing',
+            'codes': {
+                'BC': 'REGSIGIN',
+                'BEN': 'REGSIGIN',
+                'ULC': 'REGSIGIN',
+                'CC': 'REGSIGIN',
+                'C': 'REGSIGIN',
+                'CBEN': 'REGSIGIN',
+                'CUL': 'REGSIGIN',
+                'CCC': 'REGSIGIN'
+            }
+        },
+        'initial': {
+            'name': 'transparencyRegister',
+            'title': 'Transparency Register Filing',
+            'displayName': 'Transparency Register Filing',
+            'codes': {
+                'BC': 'REGSIGIN',
+                'BEN': 'REGSIGIN',
+                'ULC': 'REGSIGIN',
+                'CC': 'REGSIGIN',
+                'C': 'REGSIGIN',
+                'CBEN': 'REGSIGIN',
+                'CUL': 'REGSIGIN',
+                'CCC': 'REGSIGIN'
+            }
+        }
+    },
 }
 
 
@@ -649,6 +782,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     @staticmethod
     def display_name(business: Business, filing: FilingStorage) -> Optional[str]:
         """Return the name of the filing to display on outputs."""
+        # if filing is imported from COLIN and has custom disaply name
+        if filing.meta_data and\
+                (display_name := filing.meta_data.get('colinDisplayName')):
+            return display_name
         # if there is no lookup
         if not (names := FILINGS.get(filing.filing_type, {}).get('displayName')):
             if not (filing.filing_sub_type and
@@ -678,8 +815,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 # overriden with the latest correction, which cause loosing the previous correction link.
                 name = FilingMeta.get_corrected_filing_name(filing, business_revision, name)
 
-        elif filing.filing_type in ('dissolution') and filing.meta_data:
-            if filing.meta_data['dissolution'].get('dissolutionType') == 'administrative':
+        elif filing.filing_type in ('dissolution'):
+            dissolution_data = filing.meta_data.get('dissolution') if filing.meta_data else None
+            if dissolution_data and dissolution_data.get('dissolutionType') == 'administrative':
                 name = 'Administrative Dissolution'
 
         elif filing.filing_type in ('adminFreeze') and filing.meta_data:

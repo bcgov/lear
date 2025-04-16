@@ -21,16 +21,20 @@ from entity_queue_common.service_utils import QueueException, logger
 from legal_api.models import BatchProcessing, Business, Document, Filing, db
 from legal_api.models.document import DocumentType
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
+from legal_api.services import Flags
+from legal_api.services.document_record import DocumentRecordService
 from legal_api.services.minio import MinioService
 from legal_api.services.pdf_service import RegistrarStampData
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.constants import DocumentClasses
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
 from entity_filer.filing_processors.filing_components.parties import update_parties
 from entity_filer.utils import replace_file_with_certified_copy
 
+flags = Flags()  # pylint: disable=invalid-name
 
 # pylint: disable=too-many-locals
 def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta, flag_on: bool = False):
@@ -117,9 +121,21 @@ def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Fi
 
     # create certified copy for affidavit document
     affidavit_file_key = dissolution_filing.get('affidavitFileKey')
-    affidavit_file = MinioService.get_file(affidavit_file_key)
+    if flags.is_on('enable-document-records'):
+        affidavit_file = DocumentRecordService.download_document(
+            DocumentClasses.COOP.value, 
+            affidavit_file_key
+        )
+    else:
+        affidavit_file = MinioService.get_file(affidavit_file_key)
+
     registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier)
-    replace_file_with_certified_copy(affidavit_file.data, affidavit_file_key, registrar_stamp_data)
+    replace_file_with_certified_copy(
+        affidavit_file.data,
+        affidavit_file_key,
+        registrar_stamp_data,
+        affidavit_file.name
+    )
 
     document = Document()
     document.type = DocumentType.AFFIDAVIT.value

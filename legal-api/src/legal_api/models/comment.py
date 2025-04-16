@@ -52,15 +52,16 @@ class Comment(db.Model):
     @property
     def json(self):
         """Return the json repressentation of a comment."""
+        from legal_api.core.constants import REDACTED_STAFF_SUBMITTER  # pylint: disable=import-outside-toplevel
         user = User.find_by_id(self.staff_id)
         return {
             'comment': {
                 'id': self.id,
-                'submitterDisplayName': user.display_name if user else None,
+                'submitterDisplayName': user.display_name if user else REDACTED_STAFF_SUBMITTER,
                 'comment': self.comment,
                 'filingId': self.filing_id,
                 'businessId': self.business_id,
-                'timestamp': self.timestamp.isoformat()
+                'timestamp': self.timestamp.isoformat() if self.timestamp else None
             }
         }
 

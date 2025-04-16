@@ -34,8 +34,9 @@ import requests
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
-from legal_api import db
+from legal_api import db  # noqa:F401,I001;pylint:disable=unused-import;
 from legal_api.models import Filing, Furnishing
+from legal_api.models.db import init_db
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.flags import Flags
 from sqlalchemy.exc import OperationalError
@@ -58,6 +59,7 @@ from entity_emailer.email_processors import (
     involuntary_dissolution_stage_1_notification,
     mras_notification,
     name_request,
+    notice_of_withdrawal_notification,
     nr_notification,
     registration_notification,
     restoration_notification,
@@ -65,14 +67,14 @@ from entity_emailer.email_processors import (
 )
 
 from .message_tracker import tracker as tracker_util
-
+# noqa:I003
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
 flags = Flags()  # pylint: disable=invalid-name
 APP_CONFIG = config.get_named_config(os.getenv('DEPLOYMENT_ENV', 'production'))
 FLASK_APP = Flask(__name__)
 FLASK_APP.config.from_object(APP_CONFIG)
-db.init_app(FLASK_APP)
+init_db(FLASK_APP)
 
 if FLASK_APP.config.get('LD_SDK_KEY', None):
     flags.init_app(FLASK_APP)
@@ -214,6 +216,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'continuationIn':
                 email = continuation_in_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'noticeOfWithdrawal' and option == Filing.Status.COMPLETED.value:
+                email = notice_of_withdrawal_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:

@@ -23,6 +23,7 @@ from croniter import croniter
 from flask import Flask
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models import Batch, BatchProcessing, Business, Configuration, Filing, Furnishing, db  # noqa: I001
+from legal_api.models.db import init_db
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 from legal_api.services.flags import Flags
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
@@ -52,7 +53,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
-    db.init_app(app)
+    init_db(app)
 
     # Configure Sentry
     if app.config.get('SENTRY_DSN', None):
@@ -106,6 +107,7 @@ def create_invountary_dissolution_filing(business_id: int):
         }
     }
 
+    filing.hide_in_ledger = True
     filing.save()
 
     return filing
@@ -199,7 +201,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
                                                step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                                                status=BatchProcessing.BatchProcessingStatus.PROCESSING,
                                                created_date=datetime.utcnow(),
-                                               trigger_date=datetime.utcnow()+stage_1_delay,
+                                               trigger_date=datetime.utcnow() + stage_1_delay,
                                                batch_id=batch.id,
                                                business_id=business.id)
 
@@ -222,10 +224,10 @@ def _check_stage_1_furnishing_entries(furnishings):
     2. only available to send mail out, and it's processed.
     """
     email_processed = any(
-            furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
-            and furnishing.status == Furnishing.FurnishingStatus.PROCESSED
-            for furnishing in furnishings
-        )
+        furnishing.furnishing_type == Furnishing.FurnishingType.EMAIL
+        and furnishing.status == Furnishing.FurnishingStatus.PROCESSED
+        for furnishing in furnishings
+    )
 
     expected_mail_status = [Furnishing.FurnishingStatus.PROCESSED]
     # if SFTP function is off, we expect the mail status will be QUEUED or PROCESSED

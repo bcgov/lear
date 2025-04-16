@@ -19,7 +19,10 @@ from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Document, Filing
 from legal_api.models.document import DocumentType
 from legal_api.services.minio import MinioService
+from legal_api.services import Flags
 from legal_api.services.pdf_service import RegistrarStampData
+from legal_api.services.document_record import DocumentRecordService
+from legal_api.constants import DocumentClasses
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, business_info, filings, shares
@@ -27,15 +30,27 @@ from entity_filer.filing_processors.filing_components.offices import update_offi
 from entity_filer.filing_processors.filing_components.parties import update_parties
 from entity_filer.utils import replace_file_with_certified_copy
 
+flags = Flags()  # pylint: disable=invalid-name
 
 def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing):
     cooperative_obj = incorp_filing.get('cooperative', None)
     if cooperative_obj:
         # create certified copy for rules document
         rules_file_key = cooperative_obj.get('rulesFileKey')
-        rules_file = MinioService.get_file(rules_file_key)
+        if flags.is_on('enable-document-records'):
+            rules_file = DocumentRecordService.download_document(
+                DocumentClasses.COOP.value, 
+                rules_file_key
+            )
+        else:
+            rules_file = MinioService.get_file(rules_file_key)
         registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
-        replace_file_with_certified_copy(rules_file.data, rules_file_key, registrar_stamp_data)
+        replace_file_with_certified_copy(
+            rules_file.data,
+            rules_file_key,
+            registrar_stamp_data,
+            rules_file.name
+        )
 
         business.association_type = cooperative_obj.get('cooperativeAssociationType')
         document = Document()
@@ -47,9 +62,20 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
 
         # create certified copy for memorandum document
         memorandum_file_key = cooperative_obj.get('memorandumFileKey')
-        memorandum_file = MinioService.get_file(memorandum_file_key)
+        if flags.is_on('enable-document-records'):
+            memorandum_file = DocumentRecordService.download_document(
+                DocumentClasses.COOP.value, 
+                memorandum_file_key
+            )
+        else:
+            memorandum_file = MinioService.get_file(memorandum_file_key)
         registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
-        replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
+        replace_file_with_certified_copy(
+            memorandum_file.data,
+            memorandum_file_key,
+            registrar_stamp_data,
+            memorandum_file.name
+        )
 
         document = Document()
         document.type = DocumentType.COOP_MEMORANDUM.value

@@ -17,6 +17,7 @@ from typing import Dict
 
 from entity_queue_common.service_utils import QueueException
 from legal_api.models import Business, Document, DocumentType, Filing, Jurisdiction
+from legal_api.services import DocumentRecordService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_filer.filing_meta import FilingMeta
@@ -160,4 +161,12 @@ def process(business: Business,  # pylint: disable=too-many-branches,too-many-lo
         filing_json['filing']['business']['legalType'] = business.legal_type
         filing_json['filing']['business']['foundingDate'] = business.founding_date.isoformat()
         filing_rec._filing_json = filing_json  # pylint: disable=protected-access; bypass to update filing data
+    # Get a file key from continuation in object.
+    files = continuation_in.get('authorization', {}).get('files', [])
+    if not len(files):
+        raise QueueException(
+            f'continuationIn {filing_rec.id}, Unable to update business identifier on Document Record Service.'
+            )
+    # Update business identifier on Document Record Service
+    DocumentRecordService.update_business_identifier(business.identifier, files[0].get('fileKey'))
     return business, filing_rec, filing_meta

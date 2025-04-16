@@ -66,9 +66,10 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
         AMALGAMATED = 'HAM'
         CONTINUE_IN = 'HCI'
         CONTINUE_OUT = 'HCO'
-        INVOLUNTARY_DISSOLUTION_NO_AR = 'HDF'
+        INVOLUNTARY_DISSOLUTION_NO_AR = 'HDF'  # this corp state is also used for Put back off
         INVOLUNTARY_DISSOLUTION_NO_TR = 'HDT'
         LIMITED_RESTORATION = 'LRS'
+        RESTORATION_EXPIRATION = 'EXR'
         VOLUNTARY_DISSOLUTION = 'HDV'
     CORPS = [TypeCodes.BCOMP.value,
              TypeCodes.BC_COMP.value,

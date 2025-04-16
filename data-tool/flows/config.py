@@ -61,6 +61,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     else:
         AFFILIATE_ENTITY_ACCOUNT_ID = None
 
+    USE_CUSTOM_CONTACT_EMAIL = os.getenv('USE_CUSTOM_CONTACT_EMAIL', 'False') == 'True'
+    CUSTOM_CONTACT_EMAIL = os.getenv('CUSTOM_CONTACT_EMAIL', '')
+
     # POSTGRESQL COLIN MIGRATION DB
     DB_USER_COLIN_MIGR = os.getenv('DATABASE_USERNAME_COLIN_MIGR', '')
     DB_PASSWORD_COLIN_MIGR = os.getenv('DATABASE_PASSWORD_COLIN_MIGR', '')
@@ -138,6 +141,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     TOMBSTONE_BATCHES = int(TOMBSTONE_BATCHES) if TOMBSTONE_BATCHES.isnumeric() else 0
     TOMBSTONE_BATCH_SIZE = os.getenv('TOMBSTONE_BATCH_SIZE')
     TOMBSTONE_BATCH_SIZE = int(TOMBSTONE_BATCH_SIZE) if TOMBSTONE_BATCH_SIZE.isnumeric() else 0
+
+    # verify flow
+    VERIFY_BATCH_SIZE = os.getenv('VERIFY_BATCH_SIZE')
+    VERIFY_BATCH_SIZE = int(VERIFY_BATCH_SIZE) if VERIFY_BATCH_SIZE.isnumeric() else 0
+    VERIFY_SUMMARY_PATH = os.getenv('VERIFY_SUMMARY_PATH')
 
     TESTING = False
     DEBUG = False

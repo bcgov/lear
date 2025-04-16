@@ -17,6 +17,28 @@ BUSINESS = {
 }
 
 
+# ======== user ========
+USER = {
+    'username': None,
+    'firstname': None,
+    'middlename': None,
+    'lastname': None,
+    'email': None,
+    'creation_date': None
+}
+
+
+# ======== comment ========
+COMMENT = {
+    'comment': None,
+    'timestamp': None,
+    # FK
+    'business_id': None,
+    'staff_id': None,
+    'filing_id': None
+}
+
+
 # ======== address ========
 ADDRESS = {
     'address_type': None,  # mailing or delivery
@@ -81,6 +103,10 @@ PARTY = {
     ]
 }
 
+OFFICES_HELD = {
+    'party_role_id': None,
+    'title': None # enum
+}
 
 # ======== share structure (composite) ========
 # insert: share_class -> share_series(if any)
@@ -104,6 +130,7 @@ SHARE_CLASSES = {
         'par_value_flag': False,
         'par_value': None,  # float
         'currency': None,
+        'currency_additional': None,
         'special_rights_flag': False,
         # FK
         'business_id': None
@@ -132,16 +159,20 @@ RESOLUTION = {
 }
 
 
-# ======== filing ========
-USER = {
-    'username': None,
-    'firstname': None,
-    'middlename': None,
-    'lastname': None,
-    'email': None,
-    'creation_date': None
+# ======== jurisdiction ========
+JURISDICTION = {
+    'country': None,
+    'region': None,
+    'identifier': None,
+    'legal_name': None,
+    'tax_id': None,
+    'incorporation_date': None,  # date
+    'expro_identifier': None,
+    'expro_legal_name': None,
 }
 
+
+# ======== filing ========
 FILING_JSON = {
     'filing': {
         'header': {}
@@ -149,25 +180,34 @@ FILING_JSON = {
 }
 
 FILING = {
-    'filing_date': None,  # timestamptz
-    'filing_json': FILING_JSON,
-    'filing_type': None,
-    'filing_sub_type': None,
-    'status': 'COMPLETED',
-    'completion_date': None,  # timestamptz
-    'effective_date': None,  # timestamptz
-    'meta_data': None,
-    # default values for now
-    'paper_only': True,
-    'source': 'COLIN',
-    'colin_only': False,
-    'deletion_locked': False,
-    # FK
-    'business_id': None,
-    'transaction_id': None,
-    'submitter_id': None,
-    # others
-    'submitter_roles': None,
+    'filings': {
+        'filing_date': None,  # timestamptz
+        'filing_json': FILING_JSON,
+        'filing_type': None,
+        'filing_sub_type': None,
+        'status': 'COMPLETED',
+        'completion_date': None,  # timestamptz
+        'effective_date': None,  # timestamptz
+        'meta_data': None,
+        # default values for now
+        'paper_only': True,
+        'source': 'COLIN',
+        'colin_only': False,
+        'deletion_locked': False,
+        'hide_in_ledger': False, # TODO: double check when doing cleanup - dissolution (invol, admin)
+        'withdrawal_pending': False,
+        # FK
+        'business_id': None,
+        'transaction_id': None,
+        'submitter_id': None,
+        'withdrawn_filing_id': None,
+        # others
+        'submitter_roles': None,
+    },
+    'jurisdiction': None,  # optional
+    'amalgamations': None,  # optional
+    'comments': None,  # optional
+    'colin_event_ids': None
 }
 
 FILING_COMBINED = {
@@ -175,7 +215,78 @@ FILING_COMBINED = {
     'update_business_info': {
         # business info to update
     },
-    'state_filing_index': -1
+    'state_filing_index': -1,
+    'unsupported_types': None,
+}
+
+AMALGAMATION = {
+    'amalgamations': {
+        'amalgamation_date': None,
+        'court_approval': None,
+        'amalgamation_type': None,
+        # FK
+        'business_id': None,
+        'filing_id': None,
+    },
+    'amalgamating_businesses': []
+}
+
+AMALGAMTING_BUSINESS = {
+    'foreign_jurisdiction': None,
+    'foreign_name': None,
+    'foreign_identifier': None,
+    'role': None,
+    'foreign_jurisdiction_region': None,
+    # FK
+    'business_id': None,
+    'amalgamation_id': None,
+}
+
+
+# ======== in_dissoluion ========
+BATCH = {
+    'batch_type': 'INVOLUNTARY_DISSOLUTION',
+    'status': 'PROCESSING',
+    'size': 1,
+    'max_size': 1,
+    'start_date': None,  # timestamptz, required
+    'notes': 'Import from COLIN',
+}
+
+BATCH_PROCESSING = {
+    'business_identifier': None,
+    'step': None,
+    'meta_data': None,
+    'created_date': None,  # timestamptz, required
+    'last_modified': None,  # timestamptz, required
+    'trigger_date': None,  # timestamptz
+    'status': 'PROCESSING',
+    'notes': 'Import from COLIN',
+    # FK
+    'batch_id': None,
+    'business_id': None,
+}
+
+FURNISHING = {
+    'business_identifier': None,
+    'furnishing_type': None,
+    'furnishing_name': None,
+    'meta_data': None,
+    'created_date': None,  # timestamptz, required
+    'last_modified': None,  # timestamptz, required
+    'processed_date': None,  # timestamptz
+    'status': 'PROCESSED',
+    'notes': 'Import from COLIN',
+    # FK
+    'batch_id': None,
+    'business_id': None,
+
+}
+
+IN_DISSOLUTION = {
+    'batches': BATCH,
+    'batch_processing': BATCH_PROCESSING,
+    'furnishings': FURNISHING,
 }
 
 
@@ -188,8 +299,11 @@ TOMBSTONE = {
     'aliases': [ALIAS],
     'resolutions': [RESOLUTION],
     'filings': [FILING],
+    'comments': [COMMENT],
+    'in_dissolution': IN_DISSOLUTION,
     'updates': {
         'businesses': BUSINESS,
         'state_filing_index': -1
-    }
+    },
+    'unsupported_types': None,
 }
