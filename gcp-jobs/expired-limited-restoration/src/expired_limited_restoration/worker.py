@@ -105,28 +105,27 @@ def create_put_back_off_filing(identifier: str):
 
 def run_job():  # pylint: disable=redefined-outer-name
     """Run the methods for processing expired limited restorations."""
-    with current_app.app_context():
-        try:
-            # 1. get businesses that need to be processed
-            businesses = get_businesses_to_process()
+    try:
+        # 1. get businesses that need to be processed
+        businesses = get_businesses_to_process()
 
-            if not businesses:
-                current_app.logger.debug("No businesses to process")
-                return
+        if not businesses:
+            current_app.logger.debug("No businesses to process")
+            return
 
-            current_app.logger.debug(f"Processing {len(businesses)} businesses")
+        current_app.logger.debug(f"Processing {len(businesses)} businesses")
 
-            # 2. create put back off filing for each business
-            for identifier in businesses:
-                try:
-                    # create putBackOff filing via API
-                    filing = create_put_back_off_filing(identifier)
-                    filing_id = filing["filing"]["header"]["filingId"]
-                    current_app.logger.debug(
-                        f"Successfully created put back off filing {filing_id} for {identifier}"
-                    )
-                except Exception as err:  # pylint: disable=broad-except;
-                    current_app.logger.error(f"Error processing business {identifier}: {err}")
-                    continue
-        except Exception as err:  # pylint: disable=broad-except;
-            current_app.logger.error(f"Job failed: {err}")
+        # 2. create put back off filing for each business
+        for identifier in businesses:
+            try:
+                # create putBackOff filing via API
+                filing = create_put_back_off_filing(identifier)
+                filing_id = filing["filing"]["header"]["filingId"]
+                current_app.logger.debug(
+                    f"Successfully created put back off filing {filing_id} for {identifier}"
+                )
+            except Exception as err:  # pylint: disable=broad-except;
+                current_app.logger.error(f"Error processing business {identifier}: {err}")
+                continue
+    except Exception as err:  # pylint: disable=broad-except;
+        current_app.logger.error(f"Job failed: {err}")

@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Hrvoje Fekete <hrvoje.fekete@mindpoweredtech.com>"]
 readme = "README.md"
-packages = [{include = "expired_limited_restoration", from = "src"}]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.13.0"

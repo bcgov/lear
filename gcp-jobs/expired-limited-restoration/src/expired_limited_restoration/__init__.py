@@ -19,9 +19,9 @@ import os
 
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask
-from structured_logging import StructuredLogging
 
-from expired_limited_restoration.config import DevConfig, TestConfig, ProdConfig
+from expired_limited_restoration.config import DevConfig, ProdConfig, TestConfig
+from structured_logging import StructuredLogging
 
 CONFIG_MAP = {
     "development": DevConfig,
