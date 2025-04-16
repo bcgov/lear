@@ -13,56 +13,39 @@
 # limitations under the License.
 """This module is a wrapper for Document Record Service."""
 
+import io
 import base64
 from typing import Optional
 import requests
-from flask import current_app, request
+from flask import current_app, request, send_file
 from flask_babel import _
 import PyPDF2
 
-from legal_api.constants import DocumentTypeEnum
+from legal_api.constants import DocumentTypes
 
 class DocumentRecordService:
     """Document Storage class."""
 
 
     @staticmethod
-    def upload_document(document_class: str, document_type: str) -> dict:
+    def upload_document(document_class: str, document_type: str, file) -> dict:
         """Upload document to Docuemtn Record Service."""
-        query_params = request.args.to_dict()
-        file = request.data.get('file')
          # Ensure file exists
         if not file:
             current_app.logger.debug('No file found in request.')
             return {'data': 'File not provided'}
-        current_app.logger.debug(f'Upload file to document record service {file.filename}')
+        
         DOC_API_URL = current_app.config.get('DOC_API_URL', '') # pylint: disable=invalid-name
-        url = f'{DOC_API_URL}/documents/{document_class}/{document_type}'
-
-        # Validate file size and encryption status before submitting to DRS.
-        validation_error = DocumentRecordService.validate_pdf(file, request.content_length, document_type)
-        if validation_error:
-            return {
-                'error': validation_error
-            }
+        url = f'https://bcregistry-dev.apigee.net/doc/api/v1/documents/{document_class}/{document_type}'
 
         try:
-             # Read and encode the file content as base64
-            file_content = file.read()
-            file_base64 = base64.b64encode(file_content).decode('utf-8')
-
             response_body = requests.post(
                 url,
-                params=query_params,
-                json={
-                    'filename': file.filename,
-                    'content': file_base64,
-                    'content_type': file.content_type,
-                },
+                data=file,
                 headers={
                     'x-apikey': current_app.config.get('DOC_API_KEY', ''),
                     'Account-Id': current_app.config.get('DOC_API_ACCOUNT_ID', ''),
-                    'Content-Type': file.content_type
+                    'Content-Type': 'application/pdf'
                 }
             ).json()
 
@@ -130,7 +113,7 @@ class DocumentRecordService:
                     'Account-Id': current_app.config.get('DOC_API_ACCOUNT_ID', ''),
                 }
             ).json()
-            current_app.logger.debug(f'Get document from document record service {response}')
+            current_app.logger.debug(f'Get document from document record service {document_service_id}')
             return response[0]
         except Exception as e:
             current_app.logger.debug(f'Error on getting a document object {e}')
@@ -144,7 +127,7 @@ class DocumentRecordService:
         response = requests.get(doc_object['documentURL']) # Download file from storage
         response.raise_for_status()  # Raise an HTTPError for bad responses (4xx and 5xx)
 
-        return response
+        return response.content
 
     @staticmethod
     def update_business_identifier(business_identifier: str, document_service_id: str):
@@ -171,8 +154,8 @@ class DocumentRecordService:
         """Validate the PDF file."""
         msg = []
         verify_paper_size = document_type in [
-            DocumentTypeEnum.CNTO,
-            DocumentTypeEnum.DIRECTOR_AFFIDAVIT
+            DocumentTypes.CNTO.value,
+            DocumentTypes.DIRECTOR_AFFIDAVIT.value
         ]
 
         try:

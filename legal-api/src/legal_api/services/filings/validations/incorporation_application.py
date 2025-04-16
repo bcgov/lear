@@ -24,13 +24,13 @@ from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
-from legal_api.constants import DocumentClassEnum
+from legal_api.constants import DocumentClasses
 
 from .common_validations import (  # noqa: I001
     validate_court_order,
     validate_name_request,
     validate_parties_names,
-    validate_file_on_drs,
+    validate_pdf,
     validate_share_structure,
 )
 
@@ -295,13 +295,21 @@ def validate_cooperative_documents(incorporation_json: dict):
 
     rules_file_key = cooperative['rulesFileKey']
     rules_file_key_path = '/filing/incorporationApplication/cooperative/rulesFileKey'
-    rules_err = validate_file_on_drs(DocumentClassEnum.COOP.value, rules_file_key, rules_file_key_path)
+    rules_err = validate_pdf(
+        file_key=rules_file_key,
+        file_key_path=rules_file_key_path,
+        document_class=DocumentClasses.COOP.value
+    )
     if rules_err:
         msg.extend(rules_err)
 
     memorandum_file_key = cooperative['memorandumFileKey']
     memorandum_file_key_path = '/filing/incorporationApplication/cooperative/memorandumFileKey'
-    memorandum_err = validate_file_on_drs(DocumentClassEnum.COOP.value, memorandum_file_key, memorandum_file_key_path)
+    memorandum_err = validate_pdf(
+        file_key=memorandum_file_key,
+        file_key_path=memorandum_file_key_path,
+        document_class=DocumentClasses.COOP.value
+    )
     if memorandum_err:
         msg.extend(memorandum_err)
 

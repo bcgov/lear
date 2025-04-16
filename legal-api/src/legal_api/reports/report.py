@@ -47,7 +47,7 @@ from legal_api.services import (
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.constants import DocumentClassEnum
+from legal_api.constants import DocumentClasses
 
 
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
@@ -76,7 +76,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         document_type = ReportMeta.static_reports[self._report_key]['documentType']
         document_class = ReportMeta.static_reports[self._report_key]['documentType']
         
-        print(document_type)
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
         if(flags.is_on('enable-document-records')):
             response = DocumentRecordService.download_document(
@@ -92,7 +91,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _get_report(self):
-        current_app.logger.debug("Came to _get_report")
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
             Report._populate_business_info_to_filing(self._filing, self._business)
@@ -1518,19 +1516,19 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
 
     static_reports = {
         'certifiedRules': {
-            'documentClass': DocumentClassEnum.COOP.value,
+            'documentClass': DocumentClasses.COOP.value,
             'documentType': 'coop_rules'
         },
         'certifiedMemorandum': {
-            'documentClass': DocumentClassEnum.COOP.value,
+            'documentClass': DocumentClasses.COOP.value,
             'documentType': 'coop_memorandum'
         },
         'affidavit': {
-            'documentClass': DocumentClassEnum.CORP.value,
+            'documentClass': DocumentClasses.CORP.value,
             'documentType': 'affidavit'
         },
         'uploadedCourtOrder': {
-            'documentClass': DocumentClassEnum.CORP.value,
+            'documentClass': DocumentClasses.CORP.value,
             'documentType': 'court_order'
         }
     }

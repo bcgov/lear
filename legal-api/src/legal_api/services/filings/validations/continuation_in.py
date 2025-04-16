@@ -26,7 +26,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_name_request,
     validate_parties_names,
     validate_share_structure,
-    validate_file_on_drs
+    validate_pdf
 )
 from legal_api.services.filings.validations.incorporation_application import (
     validate_incorporation_effective_date,
@@ -35,7 +35,7 @@ from legal_api.services.filings.validations.incorporation_application import (
 )
 from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
-from legal_api.constants import DocumentClassEnum
+from legal_api.constants import DocumentClasses
 
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
@@ -128,7 +128,12 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
           ((region := foreign_jurisdiction.get('region')) and region == 'AB')):
         affidavit_file_key_path = f'{foreign_jurisdiction_path}/affidavitFileKey'
         if file_key := foreign_jurisdiction.get('affidavitFileKey'):
-            if err := validate_file_on_drs(DocumentClassEnum.CORP.value, file_key, affidavit_file_key_path):
+            if err := validate_pdf(
+                file_key=file_key,
+                file_key_path=affidavit_file_key_path,
+                verify_paper_size=False,
+                document_class=DocumentClasses.CORP.value
+            ):
                 msg.extend(err)
         else:
             msg.append({'error': 'Affidavit from the directors is required.', 'path': affidavit_file_key_path})
@@ -158,7 +163,11 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str) 
     for index, file in enumerate(filing_json['filing'][filing_type]['authorization']['files']):
         file_key = file['fileKey']
         file_key_path = f'{authorization_path}/files/{index}/fileKey'
-        if err := validate_file_on_drs(DocumentClassEnum.CORP.value, file_key, file_key_path):
+        if err := validate_pdf(
+            file_key=file_key,
+            file_key_path=file_key_path,
+            document_class=DocumentClasses.CORP.value
+        ):
             msg.extend(err)
 
     return msg

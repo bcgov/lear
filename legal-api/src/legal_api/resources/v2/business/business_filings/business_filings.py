@@ -80,6 +80,7 @@ class QueryModel(BaseModel):
 
     draft: Optional[bool]
     only_validate: Optional[bool]
+    document_id: Optional[bool]
 
 
 FilingT = TypeVar('FilingT')
@@ -640,9 +641,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             if not filing:
                 filing = Filing()
                 filing.business_id = business.id
-        current_app.logger.error("------------------------------------------------------")
-        current_app.logger.error(filing.business_id)
-        current_app.logger.error("------------------------------------------------------")
+
         
         try:
             filing.submitter_id = user.id
