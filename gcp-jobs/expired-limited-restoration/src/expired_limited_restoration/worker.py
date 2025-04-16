@@ -16,6 +16,7 @@
 This module is being used to process businesses with expired limited restorations.
 """
 from datetime import datetime
+from http import HTTPStatus
 
 import requests
 from flask import current_app
@@ -56,7 +57,7 @@ def get_businesses_to_process():
         timeout=timeout
     )
 
-    if not response or response.status_code != 200:
+    if not response or response.status_code != HTTPStatus.OK:
         current_app.logger.error(f"Failed to get businesses from legal-api.  \
             {response} {response.json()} {response.status_code}")
         raise Exception  # pylint: disable=broad-exception-raised;
@@ -95,7 +96,7 @@ def create_put_back_off_filing(identifier: str):
         timeout=timeout
     )
 
-    if not response or response.status_code != 201:
+    if not response or response.status_code != HTTPStatus.CREATED:
         current_app.logger.error(f"Failed to create filing from legal-api. \
             {response} {response.json()} {response.status_code}")
         raise Exception  # pylint: disable=broad-exception-raised;
