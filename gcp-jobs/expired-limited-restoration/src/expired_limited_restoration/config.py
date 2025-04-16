@@ -19,38 +19,7 @@ All modules and lookups get their configuration from the Flask config, rather th
 directly or by accessing this configuration directly.
 """
 import os
-import random
 import sys
-
-from dotenv import find_dotenv, load_dotenv
-
-
-# this will load all the envars from a .env file located in the project root (api)
-load_dotenv(find_dotenv())
-
-CONFIGURATION = {
-    'development': 'config.DevConfig',
-    'testing': 'config.TestConfig',
-    'production': 'config.ProdConfig',
-    'default': 'config.ProdConfig'
-}
-
-
-def get_named_config(config_name: str = 'production'):
-    """Return the configuration object based on the name.
-
-    :raise: KeyError: if an unknown configuration is requested
-    """
-    if config_name in ['production', 'staging', 'default']:
-        config = ProdConfig()
-    elif config_name == 'testing':
-        config = TestConfig()
-    elif config_name == 'development':
-        config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration '{config_name}'")
-    return config
-
 
 class _Config(object):  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
@@ -59,13 +28,10 @@ class _Config(object):  # pylint: disable=too-few-public-methods
 
     LEGAL_API_URL = os.getenv('LEGAL_API_URL', '')
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
-    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
-
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL', None)
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID', None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET', None)
-    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT', 20)
+    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT', "20")
 
     SECRET_KEY = 'a secret'
 
@@ -87,7 +53,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     TESTING = True
 
     LEGAL_API_URL = os.getenv('LEGAL_API_URL_TEST', '')
-    SENTRY_DSN = os.getenv('SENTRY_DSN_TEST', '')
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
