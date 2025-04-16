@@ -13,11 +13,9 @@
 # limitations under the License.
 """This module is a wrapper for Document Record Service."""
 
-import io
-import base64
 from typing import Optional
 import requests
-from flask import current_app, request, send_file
+from flask import current_app
 from flask_babel import _
 import PyPDF2
 
