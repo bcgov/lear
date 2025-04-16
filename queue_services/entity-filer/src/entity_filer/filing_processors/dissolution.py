@@ -27,7 +27,7 @@ from legal_api.services.minio import MinioService
 from legal_api.services.pdf_service import RegistrarStampData
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.constants import DocumentClassEnum
+from legal_api.constants import DocumentClasses
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_office, filings
@@ -123,7 +123,7 @@ def _update_cooperative(dissolution_filing: Dict, business: Business, filing: Fi
     affidavit_file_key = dissolution_filing.get('affidavitFileKey')
     if flags.is_on('enable-document-records'):
         affidavit_file = DocumentRecordService.download_document(
-            DocumentClassEnum.COOP.value, 
+            DocumentClasses.COOP.value, 
             affidavit_file_key
         )
     else:

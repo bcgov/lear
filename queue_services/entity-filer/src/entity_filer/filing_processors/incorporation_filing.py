@@ -22,7 +22,7 @@ from legal_api.services.minio import MinioService
 from legal_api.services import Flags
 from legal_api.services.pdf_service import RegistrarStampData
 from legal_api.services.document_record import DocumentRecordService
-from legal_api.constants import DocumentClassEnum
+from legal_api.constants import DocumentClasses
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import aliases, business_info, filings, shares
@@ -39,7 +39,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         rules_file_key = cooperative_obj.get('rulesFileKey')
         if flags.is_on('enable-document-records'):
             rules_file = DocumentRecordService.download_document(
-                DocumentClassEnum.COOP.value, 
+                DocumentClasses.COOP.value, 
                 rules_file_key
             )
         else:
@@ -64,7 +64,7 @@ def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing)
         memorandum_file_key = cooperative_obj.get('memorandumFileKey')
         if flags.is_on('enable-document-records'):
             memorandum_file = DocumentRecordService.download_document(
-                DocumentClassEnum.COOP.value, 
+                DocumentClasses.COOP.value, 
                 memorandum_file_key
             )
         else:
