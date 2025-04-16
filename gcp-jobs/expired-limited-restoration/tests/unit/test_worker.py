@@ -1,11 +1,11 @@
 from unittest.mock import patch
 
-from src.expired_limited_restoration.worker import run_job
+from expired_limited_restoration.worker import run_job
 
 
-@patch("src.expired_limited_restoration.worker.create_put_back_off_filing")
-@patch("src.expired_limited_restoration.worker.get_businesses_to_process")
-@patch("src.expired_limited_restoration.worker.current_app")
+@patch("expired_limited_restoration.worker.create_put_back_off_filing")
+@patch("expired_limited_restoration.worker.get_businesses_to_process")
+@patch("expired_limited_restoration.worker.current_app")
 def test_run_job_success(mock_current_app, mock_get_businesses, mock_create_filing, app):
     business_ids = ["BUS123", "BUS456", "BUS789"]
     mock_get_businesses.return_value = business_ids
@@ -23,9 +23,9 @@ def test_run_job_success(mock_current_app, mock_get_businesses, mock_create_fili
     )
 
 
-@patch("src.expired_limited_restoration.worker.create_put_back_off_filing")
-@patch("src.expired_limited_restoration.worker.get_businesses_to_process")
-@patch("src.expired_limited_restoration.worker.current_app")
+@patch("expired_limited_restoration.worker.create_put_back_off_filing")
+@patch("expired_limited_restoration.worker.get_businesses_to_process")
+@patch("expired_limited_restoration.worker.current_app")
 def test_run_job_no_businesses(mock_current_app, mock_get_businesses, mock_create_filing, app):
     mock_get_businesses.return_value = []
 
@@ -36,9 +36,9 @@ def test_run_job_no_businesses(mock_current_app, mock_get_businesses, mock_creat
     mock_current_app.logger.debug.assert_called_with("No businesses to process")
 
 
-@patch("src.expired_limited_restoration.worker.create_put_back_off_filing")
-@patch("src.expired_limited_restoration.worker.get_businesses_to_process")
-@patch("src.expired_limited_restoration.worker.current_app")
+@patch("expired_limited_restoration.worker.create_put_back_off_filing")
+@patch("expired_limited_restoration.worker.get_businesses_to_process")
+@patch("expired_limited_restoration.worker.current_app")
 def test_run_job_filing_creation_failure(mock_current_app, mock_get_businesses, mock_create_filing, app):
     businesses = ["BUS123", "BUS456", "BUS789"]
     mock_get_businesses.return_value =businesses
@@ -56,9 +56,9 @@ def test_run_job_filing_creation_failure(mock_current_app, mock_get_businesses, 
     )
 
 
-@patch("src.expired_limited_restoration.worker.create_put_back_off_filing")
-@patch("src.expired_limited_restoration.worker.get_businesses_to_process")
-@patch("src.expired_limited_restoration.worker.current_app")
+@patch("expired_limited_restoration.worker.create_put_back_off_filing")
+@patch("expired_limited_restoration.worker.get_businesses_to_process")
+@patch("expired_limited_restoration.worker.current_app")
 def test_run_job_general_failure(mock_current_app, mock_get_businesses, mock_create_filing, app):
     mock_get_businesses.side_effect = Exception("Mocked general failure")
 
