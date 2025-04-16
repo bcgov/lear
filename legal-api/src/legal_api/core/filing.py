@@ -531,6 +531,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         no_legal_filings_in_paid_withdrawn_status = [
+            Filing.FilingTypes.AMALGAMATIONOUT.value,
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
             Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
@@ -572,6 +573,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                         legal_filings_copy.remove(Filing.FilingTypes.ALTERATION.value)
 
                 no_legal_filings = [
+                    Filing.FilingTypes.AMALGAMATIONOUT.value,
                     Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
                     Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                     Filing.FilingTypes.CONTINUATIONOUT.value,

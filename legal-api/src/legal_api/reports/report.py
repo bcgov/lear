@@ -1363,10 +1363,6 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Amalgamation Application',
             'fileName': 'amalgamationApplication'
         },
-        'amalgamationOut': {
-            'filingDescription': 'Notice of Amalgamation Out',
-            'fileName': 'amalgamationOut'
-        },
         'certificateOfAmalgamation': {
             'filingDescription': 'Certificate Of Amalgamation',
             'fileName': 'certificateOfAmalgamation'
