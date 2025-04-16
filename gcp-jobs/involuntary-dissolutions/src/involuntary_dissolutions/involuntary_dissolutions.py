@@ -12,15 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Involuntary dissolutions job."""
-import asyncio
 import os
 import uuid
 from datetime import UTC, datetime, timedelta
-from enum import Enum
 
 import pytz
-# from business_common.core import DissolutionTypes
-from business_common.core import Filing as CoreFiling
+from business_common.core.filing import Filing as CoreFiling
 from business_model.models import (
     Batch,
     BatchProcessing,
@@ -41,17 +38,9 @@ from sqlalchemy.orm import aliased
 from gcp_queue import GcpQueue
 from structured_logging import StructuredLogging
 
-from .config import CONFIGURATION  # pylint: disable=import-error
+from .config import get_named_config  # pylint: disable=import-error
+from .involuntary_dissolution_types import DissolutionTypes
 from .utils.flags import Flags
-
-class DissolutionTypes(str, Enum):
-    """Dissolution types."""
-
-    ADMINISTRATIVE = 'administrative'
-    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
-    INVOLUNTARY = 'involuntary'
-    VOLUNTARY = 'voluntary'
-    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
 
 gcp_queue = GcpQueue()
 
@@ -61,7 +50,8 @@ env = os.getenv("FLASK_ENV", "production")
 def create_app(run_mode=env):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
-    app.config.from_object(CONFIGURATION[run_mode])
+    app.config.from_object(get_named_config(run_mode))
+    app.env = run_mode
     init_db(app)
 
     if app.config.get("LD_SDK_KEY", None):
@@ -117,7 +107,7 @@ def create_invountary_dissolution_filing(business_id: int):
     return filing
 
 
-async def put_filing_on_queue(filing_id: int, app: Flask):
+def put_filing_on_queue(filing_id: int, app: Flask):
     """Send queue message to filer to dissolve business."""
     try:
         subject = app.config["FILER_SUBJECT"]
@@ -130,7 +120,7 @@ async def put_filing_on_queue(filing_id: int, app: Flask):
             time=datetime.now(UTC),
             data = msg
         )
-        await gcp_queue.publish(subject, to_queue_message(ce))
+        gcp_queue.publish(subject, to_queue_message(ce))
         app.logger.debug(f"Successfully placed filing on Filer Queue with id {filing_id}")
     except Exception as err:  # pylint: disable=broad-except
         # mark any failure for human review
@@ -158,7 +148,7 @@ def mark_eligible_batches_completed():
 
     for batch in batches:
         batch.status = Batch.BatchStatus.COMPLETED
-        batch.end_date = datetime.utcnow()
+        batch.end_date = datetime.now(UTC)
         batch.save()
 
 
@@ -166,7 +156,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
     """Initiate dissolution process for new businesses that meet dissolution criteria."""
     try:
         # check if batch has already run today
-        today_date = datetime.utcnow().date()
+        today_date = datetime.now(UTC).date()
 
         batch_today = (
             db.session.query(Batch)
@@ -219,6 +209,7 @@ def stage_1_process(app: Flask):  # pylint: disable=redefined-outer-name,too-man
             }
             batch_processing.save()
             app.logger.debug(f"New batch processing has been created with ID: {batch_processing.id}")
+
 
     except Exception as err:  # pylint: disable=redefined-outer-name; noqa: B902
         app.logger.error(err)
@@ -298,20 +289,20 @@ def stage_2_process(app: Flask):
         )
         if eligible:
             batch_processing.step = BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2
-            batch_processing.trigger_date = datetime.utcnow() + stage_2_delay
+            batch_processing.trigger_date = datetime.now(UTC) + stage_2_delay
             app.logger.debug(f"Changed Batch Processing with id: {batch_processing.id} step to level 2.")
             if batch_processing.meta_data is None:
                 batch_processing.meta_data = {}
-            batch_processing.meta_data = {**batch_processing.meta_data, "stage_2_date": datetime.utcnow().isoformat()}
+            batch_processing.meta_data = {**batch_processing.meta_data, "stage_2_date": datetime.now(UTC).isoformat()}
         else:
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN
             batch_processing.notes = "Moved back into good standing"
             app.logger.debug(f"Changed Batch Processing with id: {batch_processing.id} status to Withdrawn.")
-        batch_processing.last_modified = datetime.utcnow()
+        batch_processing.last_modified = datetime.now(UTC)
         batch_processing.save()
 
 
-async def stage_3_process(app: Flask):
+def stage_3_process(app: Flask):
     """Process actual dissolution of businesses."""
     batch_processings = (
         db.session.query(BatchProcessing)
@@ -366,10 +357,10 @@ async def stage_3_process(app: Flask):
             batch_processing.status = BatchProcessing.BatchProcessingStatus.QUEUED
             if batch_processing.meta_data is None:
                 batch_processing.meta_data = {}
-            batch_processing.meta_data = {**batch_processing.meta_data, "stage_3_date": datetime.utcnow().isoformat()}
+            batch_processing.meta_data = {**batch_processing.meta_data, "stage_3_date": datetime.now(UTC).isoformat()}
             batch_processing.save()
 
-            await put_filing_on_queue(filing.id, app)
+            put_filing_on_queue(filing.id, app)
 
             app.logger.debug(
                 f"Batch Processing with identifier: {batch_processing.business_identifier} has been marked as queued."
@@ -410,7 +401,7 @@ def check_run_schedule():
     return cron_valid_1, cron_valid_2, cron_valid_3
 
 
-async def run(application: Flask):  # pylint: disable=redefined-outer-name
+def run(application: Flask):  # pylint: disable=redefined-outer-name
     """Run the stage 1-3 methods for dissolving businesses."""
     if application is None:
         application = create_app()
@@ -440,15 +431,14 @@ async def run(application: Flask):  # pylint: disable=redefined-outer-name
                 application.logger.debug("Exiting stage 2 of involuntary dissolution job.")
             if stage_3_valid:
                 application.logger.debug("Entering stage 3 of involuntary dissolution job.")
-                await stage_3_process(application)
+                stage_3_process(application)
                 application.logger.debug("Exiting stage 3 of involuntary dissolution job.")
 
 
 if __name__ == "__main__":
     application = create_app()
     try:
-        event_loop = asyncio.get_event_loop()
-        event_loop.run_until_complete(run(application))
+        run(application)
     except Exception as err:  # pylint: disable=broad-except; Catching all errors from the frameworks
         application.logger.error(err)  # pylint: disable=no-member
         raise err

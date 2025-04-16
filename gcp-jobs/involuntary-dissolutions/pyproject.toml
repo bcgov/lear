@@ -21,12 +21,37 @@ business-registry-common = {git = "https://github.com/bcgov/lear.git", subdirect
 business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
 business-registry-dissolution = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-dissolution"}
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
+psycopg2 = "^2.9.10"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+freezegun = "^1.5.1"
+
+[tool.pytest.ini_options]
+minversion = "2.0"
+testpaths = [
+   "tests",
+]
+addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+python_files = [
+   "test*.py"
+]
+norecursedirs = [
+   ".git", ".tox", "venv*", "requirements*", "build",
+]
+log_cli = true
+log_cli_level = "1"
+filterwarnings = [
+   "ignore::UserWarning"
+]
+markers = [
+   "slow",
+   "serial",
+]
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
@@ -111,7 +136,7 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"]  # used for imports
-"**/tests/**" = ["PLR0913", "PLR2004", "C408", "T201", "UP031"]
+"**/tests/**" = ["PLR0913", "PLR2004", "C408", "T201", "UP031", "RUF013"]
 
 [build-system]
 requires = ["poetry-core"]

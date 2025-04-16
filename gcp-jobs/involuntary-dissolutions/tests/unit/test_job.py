@@ -23,11 +23,11 @@ def test_connection_failed():
 def test_database_connection_succeed():
     status = False
     try:
-        connection = psycopg2.connect(user=os.getenv("DATABASE_USERNAME", ""),
-                                      password=os.getenv("DATABASE_PASSWORD", ""),
-                                      host=os.getenv("DATABASE_HOST", ""),
-                                      port=os.getenv("DATABASE_PORT", "5432"),
-                                      database=os.getenv("DATABASE_NAME", ""))
+        connection = psycopg2.connect(user=os.getenv("DATABASE_TEST_USERNAME", ""),
+                                      password=os.getenv("DATABASE_TEST_PASSWORD", ""),
+                                      host=os.getenv("DATABASE_TEST_HOST", ""),
+                                      port=os.getenv("DATABASE_TEST_PORT", "5432"),
+                                      database=os.getenv("DATABASE_TEST_NAME", ""))
         connection.cursor()
         status = True
     except Exception:
