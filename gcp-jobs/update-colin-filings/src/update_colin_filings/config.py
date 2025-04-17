@@ -58,6 +58,7 @@ class UnitTestingConfig(_Config):
     TESTING = True
 
     JOB_TOTAL_LIMIT = 1
+    ACCOUNT_SVC_AUTH_URL = 'http://test-token-url.com'
     COLIN_SVC_URL = "http://test-colin-url.com"
     LEAR_SVC_URL = "http://test-lear-url.com"
 
