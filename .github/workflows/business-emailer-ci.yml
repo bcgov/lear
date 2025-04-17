@@ -1,0 +1,21 @@
+name: Business Emailer CI
+
+on:
+  pull_request:
+    types: [ assigned, synchronize ]
+    paths:
+      - "queue_services/business-emailer/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./queue_services/business-emailer
+
+jobs:
+  furnishings-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-emailer"
+      working_directory: "./queue_services/business-emailer"
+      codecov_flag: "business-emailer"

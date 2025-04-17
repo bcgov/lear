@@ -1,0 +1,29 @@
+[
+    {
+        "vault": "gcp-queue",
+        "application": [
+            "base",
+            "topics",
+            "a083gt"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "postgres-legal",
+            "sentry",
+            "launchdarkly",
+            "entity-service-account",
+            "furnishings",
+            "sftp-bclaws",
+            "sftp-bcmail"
+        ]
+    },
+    {
+        "vault": "api",
+        "application": [
+            "mras-api",
+            "report-api-gotenberg"
+        ]
+    }
+]

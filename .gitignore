@@ -125,3 +125,6 @@ venv.bak/
 # Notebooks
 tests/**/*setup*.ipynb
 
+# sa-secrets
+**/sa-secret/*
+

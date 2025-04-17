@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<SBNChangeName>
+  <header>
+    <requestMode>A</requestMode>
+    <documentSubType>{{documentSubType}}</documentSubType>
+    <senderID>CPPR</senderID>
+    <receiverID>BCSBNHUB</receiverID>
+    <partnerNote>{{business.identifier}}-{{filingId}}-{{documentSubType}}-{{retryNumber}}</partnerNote>
+    <CCRAHeader>
+      <userApplication>BI</userApplication>
+      <userRole>02</userRole>
+      <userCredentials>
+        <businessRegistrationNumber>{{businessRegistrationNumber}}</businessRegistrationNumber>
+      </userCredentials>
+    </CCRAHeader>
+  </header>
+  <body>
+    <businessRegistrationNumber>{{businessRegistrationNumber}}</businessRegistrationNumber>
+    <businessProgramIdentifier>{{businessProgramIdentifier}}</businessProgramIdentifier>
+    <businessProgramAccountReferenceNumber>{{businessProgramAccountReferenceNumber}}</businessProgramAccountReferenceNumber>
+    <name>
+      <clientNameTypeCode>{{clientNameTypeCode}}</clientNameTypeCode>
+      <name>{{newName}}</name>
+      <operatingNamesequenceNumber>1</operatingNamesequenceNumber>
+      <updateReasonCode>{{updateReasonCode}}</updateReasonCode>
+    </name>
+  </body>
+</SBNChangeName>
