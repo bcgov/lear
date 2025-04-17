@@ -1,4 +1,4 @@
-# Copyright © 2023 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,19 +16,21 @@
 from entity_queue_common.service_utils import logger
 from legal_api.models import Business, DCDefinition, DCRevocationReason, Filing
 
-from entity_digital_credentials.helpers import get_issued_digital_credentials, replace_issued_digital_credential
+from entity_digital_credentials.helpers import get_all_digital_credentials_for_business, replace_digital_credential
 
 
-async def process(business: Business, filing: Filing):
+async def process(business: Business, filing: Filing) -> None:
     """Process change of registration actions."""
     if filing.filing_json.get('filing').get(filing.filing_type).get('nameRequest') is not None:
 
-        issued_credentials = get_issued_digital_credentials(business=business)
-        if not (issued_credentials and len(issued_credentials)):
-            logger.warning('No issued credentials found for business: %s', business.identifier)
+        credentials = get_all_digital_credentials_for_business(business=business)
+        if not (credentials and len(credentials)):
+            logger.warning(
+                'No issued credentials found for business: %s', business.identifier)
             return None
 
-        return replace_issued_digital_credential(business=business,
-                                                 issued_credential=issued_credentials[0],
-                                                 credential_type=DCDefinition.CredentialType.business.name,
-                                                 reason=DCRevocationReason.UPDATED_INFORMATION)
+        for credential in credentials:
+            replace_digital_credential(credential=credential,
+                                       credential_type=DCDefinition.CredentialType.business.name,
+                                       reason=DCRevocationReason.UPDATED_INFORMATION)
+    return None
