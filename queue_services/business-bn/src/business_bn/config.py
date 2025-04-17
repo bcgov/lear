@@ -47,12 +47,6 @@ from dotenv import find_dotenv, load_dotenv
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
-CONFIGURATION = {
-    "development": "business_bn.config.DevConfig",
-    "testing": "business_bn.config.TestConfig",
-    "production": "business_bn.config.ProdConfig",
-    "default": "business_bn.config.ProdConfig",
-}
 
 class Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
@@ -122,6 +116,8 @@ class TestConfig(Config):  # pylint: disable=too-few-public-methods
 
     DEBUG = True
     TESTING = True
+    GCP_AUTH_KEY = None
+
     # POSTGRESQL
     DB_USER = os.getenv("DATABASE_TEST_USERNAME", "")
     DB_PASSWORD = os.getenv("DATABASE_TEST_PASSWORD", "")

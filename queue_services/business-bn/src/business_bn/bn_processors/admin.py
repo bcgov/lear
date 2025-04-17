@@ -22,14 +22,14 @@ from business_common.utils.datetime import datetime
 from business_model.models import Business, RequestTracker
 
 
-async def process(msg: dict):
+def process(msg: dict):
     """Process admin actions."""
     business = Business.find_by_identifier(msg["data"]["business"]["identifier"])
     if msg["data"]["header"]["request"] == "BN15":
-        await registration.process(business, is_admin=True, msg=msg)
+        registration.process(business, is_admin=True, msg=msg)
     elif msg["data"]["header"]["request"] == "RESUBMIT_INFORM_CRA":
         # Keeping it separate due to the colin-api call to get BN15
-        await registration.process(business, is_admin=True, msg=msg, skip_build=True)
+        registration.process(business, is_admin=True, msg=msg, skip_build=True)
     elif msg["data"]["header"]["request"] in [
         "RESUBMIT_CHANGE_DELIVERY_ADDRESS",
         "RESUBMIT_CHANGE_MAILING_ADDRESS",

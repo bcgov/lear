@@ -27,8 +27,7 @@ from tests.unit import create_filing, create_registration_data
     ('SP'),
     ('GP'),
 ])
-@pytest.mark.asyncio
-async def test_correction(app, session, mocker, legal_type):
+def test_correction(app, session, mocker, legal_type):
     """Test inform cra about correction of SP/GP."""
     filing_id, business_id = create_registration_data(legal_type, tax_id='993775204BC0001')
     json_filing = {
@@ -67,7 +66,7 @@ async def test_correction(app, session, mocker, legal_type):
     mocker.patch('business_bn.bn_processors.correction.has_previous_address', return_value=True)
     mocker.patch('business_bn.bn_processors.correction.has_party_name_changed', return_value=True)
 
-    await process_event({
+    process_event({
         'type': 'bc.registry.business.correction',
         'data': {
             'filing': {
@@ -121,8 +120,7 @@ async def test_correction(app, session, mocker, legal_type):
     ('GP', ''),
     ('GP', '993775204'),
 ])
-@pytest.mark.asyncio
-async def test_bn15_not_available_correction(app, session, mocker, legal_type, tax_id):
+def test_bn15_not_available_correction(app, session, mocker, legal_type, tax_id):
     """Skip cra call when BN15 is not available while doing a correction of SP/GP."""
     filing_id, business_id = create_registration_data(legal_type, tax_id=tax_id)
     json_filing = {
@@ -149,7 +147,7 @@ async def test_bn15_not_available_correction(app, session, mocker, legal_type, t
     mocker.patch('business_bn.bn_processors.correction.has_previous_address', return_value=True)
     mocker.patch('business_bn.bn_processors.correction.has_party_name_changed', return_value=True)
 
-    await process_event({
+    process_event({
         'type': 'bc.registry.business.correction',
         'data': {
             'filing': {
@@ -207,8 +205,7 @@ async def test_bn15_not_available_correction(app, session, mocker, legal_type, t
     (RequestTracker.RequestType.CHANGE_MAILING_ADDRESS, {'offices': {'businessOffice': {'mailingAddress': {},
                                                                                         'deliveryAddress': {}}}}),
 ])
-@pytest.mark.asyncio
-async def test_retry_correction(app, session, mocker, request_type, data):
+def test_retry_correction(app, session, mocker, request_type, data):
     """Test retry correction of SP/GP."""
     filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')
     json_filing = {
@@ -238,7 +235,7 @@ async def test_retry_correction(app, session, mocker, request_type, data):
 
     for _ in range(10):
         try:
-            await process_event({
+            process_event({
                 'type': 'bc.registry.business.correction',
                 'data': {
                     'filing': {

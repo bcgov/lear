@@ -32,7 +32,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Common setup and fixtures for the pytest suite used by this service."""
-import asyncio
 import datetime
 import random
 import contextlib
@@ -266,13 +265,6 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         conn.close()
 
 
-@pytest.fixture(scope='function')
-def future(event_loop):
-    """Return a future that is used for managing function tests."""
-    _future = asyncio.Future(loop=event_loop)
-    return _future
-
-
 @pytest.fixture
 def create_mock_coro(mocker, monkeypatch):
     """Return a mocked coroutine, and optionally patch-it in."""
@@ -296,6 +288,5 @@ def run_around_tests(db):
     yield
     # run after each test
     db.session.rollback()
-    db.session.execute(text(f'TRUNCATE TABLE batches CASCADE'))
     db.session.execute(text(f'TRUNCATE TABLE businesses CASCADE'))
     db.session.commit()

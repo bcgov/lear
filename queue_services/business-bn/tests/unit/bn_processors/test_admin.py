@@ -37,8 +37,7 @@ acknowledgement_response = """<?xml version="1.0"?>
     ('BN15', None),
     ('RESUBMIT_INFORM_CRA', None),
 ])
-@pytest.mark.asyncio
-async def test_admin_bn15(app, session, mocker, request_type, business_number):
+def test_admin_bn15(app, session, mocker, request_type, business_number):
     """Test inform cra about new SP/GP registration."""
     message_id = str(uuid.uuid4())
     filing_id, business_id = create_registration_data('SP')
@@ -73,7 +72,7 @@ async def test_admin_bn15(app, session, mocker, request_type, business_number):
     )
 
     business = Business.find_by_internal_id(business_id)
-    await process_event({
+    process_event({
         'id': message_id,
         'type': 'bc.registry.admin.bn',
         'data': {
@@ -116,8 +115,7 @@ async def test_admin_bn15(app, session, mocker, request_type, business_number):
     (RequestTracker.RequestType.CHANGE_PARTY, '<SBNChangeName></SBNChangeName>'),
     (RequestTracker.RequestType.CHANGE_STATUS, '<SBNChangeStatus></SBNChangeStatus>'),
 ])
-@pytest.mark.asyncio
-async def test_admin_resubmit(app, session, mocker, request_type, request_xml):
+def test_admin_resubmit(app, session, mocker, request_type, request_xml):
     """Test resubmit CRA request."""
     message_id = str(uuid.uuid4())
     filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')
@@ -138,7 +136,7 @@ async def test_admin_resubmit(app, session, mocker, request_type, request_xml):
     mocker.patch('business_bn.bn_processors.admin.request_bn_hub', side_effect=side_effect)
 
     business = Business.find_by_internal_id(business_id)
-    await process_event({
+    process_event({
         'id': message_id,
         'type': 'bc.registry.admin.bn',
         'data': {

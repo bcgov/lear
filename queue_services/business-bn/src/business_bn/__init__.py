@@ -41,10 +41,15 @@ from flask import Flask
 from business_model.models import db
 from structured_logging import StructuredLogging
 
-from .config import CONFIGURATION
+from .config import DevConfig, ProdConfig, TestConfig
 from .resources import register_endpoints
 from .services import gcp_queue
 
+CONFIGURATION = {
+    "development": DevConfig,
+    "testing": TestConfig,
+    "production": ProdConfig
+}
 
 def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""

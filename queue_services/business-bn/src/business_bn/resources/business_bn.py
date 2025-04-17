@@ -57,7 +57,7 @@ bp = Blueprint("worker", __name__)
 
 
 @bp.route("/", methods=("POST",))
-async def worker():
+def worker():
     """
     Process the incoming cloud event.
     """
@@ -83,7 +83,7 @@ async def worker():
 
         event_message = json.loads(msg.data.decode("utf-8"))
         current_app.logger.debug("Event Message Received: %s", event_message)
-        await process_event(event_message)
+        process_event(event_message)
         return {}, HTTPStatus.OK
 
     except OperationalError as err:
@@ -98,7 +98,7 @@ async def worker():
         current_app.logger.error("Queue Error: %s, %s", err, json.dumps(event_message), exc_info=True)
 
 
-async def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-statements
+def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-statements
     """Process CRA request."""
     if not msg or msg.get("type") not in [
         "bc.registry.business.registration",
@@ -111,7 +111,7 @@ async def process_event(msg: dict):  # pylint: disable=too-many-branches,too-man
         return None
 
     if msg["type"] == "bc.registry.admin.bn":
-        await admin.process(msg)
+        admin.process(msg)
         return
 
     filing_submission = Filing.find_by_id(msg["data"]["filing"]["header"]["filingId"])
@@ -124,7 +124,7 @@ async def process_event(msg: dict):  # pylint: disable=too-many-branches,too-man
         raise QueueException
 
     if filing_submission.filing_type == FilingCore.FilingTypes.REGISTRATION.value:
-        await registration.process(business)
+        registration.process(business)
     elif filing_submission.filing_type == FilingCore.FilingTypes.CHANGEOFREGISTRATION.value:
         change_of_registration.process(business, filing_submission)
     elif filing_submission.filing_type == FilingCore.FilingTypes.CORRECTION.value and business.legal_type in (

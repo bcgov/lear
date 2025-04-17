@@ -29,8 +29,7 @@ from tests.unit import create_filing, create_registration_data
     ('SP', 'putBackOn'),
     ('GP', 'putBackOn'),
 ])
-@pytest.mark.asyncio
-async def test_change_of_status(app, session, mocker, legal_type, filing_type):
+def test_change_of_status(app, session, mocker, legal_type, filing_type):
     """Test inform cra about change of status of SP/GP."""
     filing_id, business_id = create_registration_data(legal_type, tax_id='993775204BC0001')
 
@@ -65,7 +64,7 @@ async def test_change_of_status(app, session, mocker, legal_type, filing_type):
 
     mocker.patch('business_bn.bn_processors.dissolution_or_put_back_on.request_bn_hub', side_effect=side_effect)
 
-    await process_event({
+    process_event({
         'type': f'bc.registry.business.{filing_type}',
         'data': {
             'filing': {
@@ -99,8 +98,7 @@ async def test_change_of_status(app, session, mocker, legal_type, filing_type):
     ('GP', 'putBackOn', ''),
     ('GP', 'putBackOn', '993775204'),
 ])
-@pytest.mark.asyncio
-async def test_bn15_not_available_change_of_status(app, session, mocker, legal_type, filing_type, tax_id):
+def test_bn15_not_available_change_of_status(app, session, mocker, legal_type, filing_type, tax_id):
     """Skip cra call when BN15 is not available while doing a change of status SP/GP."""
     filing_id, business_id = create_registration_data(legal_type, tax_id=tax_id)
 
@@ -122,7 +120,7 @@ async def test_bn15_not_available_change_of_status(app, session, mocker, legal_t
     filing.save()
     filing_id = filing.id
 
-    await process_event({
+    process_event({
         'type': f'bc.registry.business.{filing_type}',
         'data': {
             'filing': {
@@ -141,8 +139,8 @@ async def test_bn15_not_available_change_of_status(app, session, mocker, legal_t
     assert request_trackers[0].response_object == bn_note
     assert request_trackers[0].retry_number == 0
 
-@pytest.mark.asyncio
-async def test_retry_change_of_status(app, session, mocker):
+
+def test_retry_change_of_status(app, session, mocker):
     """Test retry change of status of SP/GP."""
     filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')
     json_filing = {
@@ -164,7 +162,7 @@ async def test_retry_change_of_status(app, session, mocker):
 
     for _ in range(10):
         try:
-            await process_event({
+            process_event({
                 'type': 'bc.registry.business.dissolution',
                 'data': {
                     'filing': {

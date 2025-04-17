@@ -35,9 +35,7 @@ acknowledgement_response = """<?xml version="1.0"?>
     ('SP'),
     ('GP'),
 ])
-
-@pytest.mark.asyncio
-async def test_registration(app, session, mocker, legal_type):
+def test_registration(app, session, mocker, legal_type):
     """Test inform cra about new SP/GP registration."""
     filing_id, business_id = create_registration_data(
         legal_type,
@@ -70,7 +68,7 @@ async def test_registration(app, session, mocker, legal_type):
         'program_account_ref_no': program_account_ref_no})
     )
 
-    await process_event({
+    process_event({
         'type': 'bc.registry.business.registration',
         'data': {
             'filing': {
@@ -105,12 +103,12 @@ async def test_registration(app, session, mocker, legal_type):
     assert current_app.config['BUSINESS_EVENTS_TOPIC'] in topics_in_queue
     assert current_app.config['BUSINESS_EMAILER_TOPIC'] in topics_in_queue
 
-@pytest.mark.asyncio
+
 @pytest.mark.parametrize('request_type', [
     (RequestTracker.RequestType.INFORM_CRA),
     (RequestTracker.RequestType.GET_BN),
 ])
-async def test_retry_registration(app, session, mocker, request_type):
+def test_retry_registration(app, session, mocker, request_type):
     """Test retry new SP/GP registration."""
     is_inform_cra = request_type == RequestTracker.RequestType.INFORM_CRA
     filing_id, business_id = create_registration_data('SP')
@@ -128,7 +126,7 @@ async def test_retry_registration(app, session, mocker, request_type):
 
     for _ in range(10):
         try:
-            await process_event({
+            process_event({
                 'type': 'bc.registry.business.registration',
                 'data': {
                     'filing': {

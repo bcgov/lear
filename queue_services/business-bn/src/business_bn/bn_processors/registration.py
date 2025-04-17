@@ -42,7 +42,7 @@ FIRMS = ("SP", "GP")
 CORPS = ("BEN", "BC", "ULC", "CC")
 
 
-async def process( # noqa: PLR0912, PLR0915
+def process( # noqa: PLR0912, PLR0915
     business: Business,  # pylint: disable=too-many-branches, too-many-arguments, too-many-statements
     is_admin: bool = False,
     msg: dict | None = None,
