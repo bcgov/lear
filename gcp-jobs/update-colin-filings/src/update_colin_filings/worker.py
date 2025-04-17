@@ -22,6 +22,7 @@ from business_account.AccountService import AccountService
 
 def get_filings(token, limit, offset):
     """Get a filing with filing_id."""
+    print(f'{current_app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset={offset}&limit={limit}')
     req = requests.get(f'{current_app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset={offset}&limit={limit}',
                        headers={"Authorization": "Bearer " + token},
                        timeout=current_app.config["LEAR_SVC_TIMEOUT"])
@@ -84,38 +85,51 @@ def clean_none(dictionary: dict | None = None):
             dictionary[key] = ""
 
 
+def process_filing(filing: dict, token: str, job_stats: dict):
+    """Send the filing to COLIN and update LEAR."""
+    filing_id = filing["filingId"]
+    identifier = filing["filing"]["business"]["identifier"]
+    if identifier in job_stats['corps_with_failed_filing']:
+        job_stats['skipped_sync'] += 1
+        current_app.logger.debug(f'Skipping filing {filing_id} for'
+                                    f' {filing["filing"]["business"]["identifier"]}.')
+    else:
+        colin_ids = send_filing(token, filing, filing_id)
+        update = None
+        if colin_ids:
+            update = update_colin_id(token, filing_id, colin_ids)
+        if update:
+            current_app.logger.debug(f"Successfully updated filing {filing_id}")
+            job_stats['success'] += 1
+        else:
+            job_stats['corps_with_failed_filing'].append(filing["filing"]["business"]["identifier"])
+            current_app.logger.error(f"Failed to update filing {filing_id} with colin event id.")
+
+
 def run():
     """Get filings that haven't been synced with colin and send them to the colin-api."""
-    corps_with_failed_filing = []
-    failed_to_sync = 0
-    success = 0
-    limit = current_app.config["JOB_UPDATE_LIMIT"]
+    job_stats = {
+        'corps_with_failed_filing': [],
+        'skipped_sync': 0,
+        'success': 0
+    }
+    total_limit = current_app.config["JOB_TOTAL_LIMIT"]
+    limit = current_app.config["JOB_BATCH_LIMIT"]
     try:
         # get updater-job token
         token = AccountService.get_bearer_token()
-        if filings := get_filings(token, limit, failed_to_sync):
+        while filings := get_filings(token, limit, len(job_stats['corps_with_failed_filing']) + job_stats['skipped_sync']):
+            total_processed = len(job_stats['corps_with_failed_filing']) + job_stats['skipped_sync'] + job_stats['success']
+            if total_processed > total_limit:
+                current_app.logger.warning("Job hit total filing limit for run. Ending job cycle.")
+                break
             for filing in filings:
-                filing_id = filing["filingId"]
-                identifier = filing["filing"]["business"]["identifier"]
-                if identifier in corps_with_failed_filing:
-                    failed_to_sync += 1
-                    current_app.logger.debug(f'Skipping filing {filing_id} for'
-                                              f' {filing["filing"]["business"]["identifier"]}.')
-                else:
-                    colin_ids = send_filing(token, filing, filing_id)
-                    update = None
-                    if colin_ids:
-                        update = update_colin_id(token, filing_id, colin_ids)
-                    if update:
-                        current_app.logger.debug(f"Successfully updated filing {filing_id}")
-                        success += 1
-                    else:
-                        failed_to_sync += 1
-                        corps_with_failed_filing.append(filing["filing"]["business"]["identifier"])
-                        current_app.logger.error(f"Failed to update filing {filing_id} with colin event id.")
-    
-        current_app.logger.debug("No more filings to send to colin.")
-        current_app.logger.debug(f"Success: {success}, Failed: {failed_to_sync}")
+                process_filing(filing, token, job_stats)
+
+        current_app.logger.debug("Success: %s, Failed: %s, Skipped: %s",
+                                 job_stats['success'],
+                                 len(job_stats['corps_with_failed_filing']),
+                                 job_stats['skipped_sync'])
 
     except Exception as err:
         current_app.logger.error(err)

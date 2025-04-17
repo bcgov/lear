@@ -26,7 +26,8 @@ class _Config:
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
     
-    JOB_UPDATE_LIMIT = os.getenv("JOB_UPDATE_LIMIT", "50")
+    JOB_TOTAL_LIMIT = int(os.getenv("JOB_TOTAL_LIMIT", "500"))
+    JOB_BATCH_LIMIT = int(os.getenv("JOB_BATCH_LIMIT", "50"))
 
     COLIN_SVC_URL = os.getenv("COLIN_API_URL", "") + os.getenv("COLIN_API_VERSION", "")
     COLIN_SVC_TIMEOUT = int(os.getenv("COLIN_SVC_TIMEOUT", "20"))
@@ -56,6 +57,7 @@ class UnitTestingConfig(_Config):
     DEBUG = True
     TESTING = True
 
+    JOB_TOTAL_LIMIT = 1
     COLIN_SVC_URL = "http://test-colin-url.com"
     LEAR_SVC_URL = "http://test-lear-url.com"
 
