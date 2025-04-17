@@ -377,6 +377,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.CONTINUE_IN.value: 'CO_PF',
             Business.TypeCodes.ULC_CONTINUE_IN.value: 'CO_PF',
             Business.TypeCodes.CCC_CONTINUE_IN.value: 'CO_PF',
+        },
+        'consentAmalgamationOut': {
+            'type_code_list': ['IAMGO'],
+            Business.TypeCodes.BCOMP.value: 'IAMGO',
+            Business.TypeCodes.BC_COMP.value: 'IAMGO',
+            Business.TypeCodes.ULC_COMP.value: 'IAMGO',
+            Business.TypeCodes.CCC_COMP.value: 'IAMGO',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'IAMGO',
+            Business.TypeCodes.CONTINUE_IN.value: 'IAMGO',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'IAMGO',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'IAMGO',
         }
     }
 
@@ -652,7 +663,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'NOABE', 'NOALE', 'NOALR', 'NOALD',
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
                                       'CONTO', 'COUTI', 'CO_PO', 'CO_PF',
-                                      'AGMDT', 'AGMLC',
+                                      'AGMDT', 'AGMLC', 'IAMGO',
                                       'RESTF', 'RESTL', 'RESXL', 'RESXF',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
@@ -1263,9 +1274,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
                                           'amalgamationApplication', 'annualReport', 'changeOfAddress',
-                                          'changeOfDirectors', 'consentContinuationOut', 'continuationIn',
-                                          'continuationOut', 'courtOrder', 'dissolution', 'incorporationApplication',
-                                          'putBackOn', 'putBackOff', 'registrarsNotation',
+                                          'changeOfDirectors', 'consentAmalgamationOut', 'consentContinuationOut',
+                                          'continuationIn', 'continuationOut', 'courtOrder', 'dissolution',
+                                          'incorporationApplication', 'putBackOn', 'putBackOff', 'registrarsNotation',
                                           'registrarsOrder', 'restoration', 'specialResolution', 'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
@@ -1385,6 +1396,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 agm_ext_str = datetime.datetime.fromisoformat(agm_ext_dt).strftime('%B %-d, %Y')
                 agm_extension_text = f'The {year} AGM must be held by {agm_ext_str} at 11:59 pm Pacific time.'
                 cls._insert_ledger_text(cursor, filing, agm_extension_text)
+            elif filing.filing_type == 'consentAmalgamationOut':
+                authorization_text = 'AUTHORIZATION TO AMALGAMATE TO '
+                foreign_jurisdiction = filing.body.get('foreignJurisdiction')
+                country_code = foreign_jurisdiction.get('country').upper()
+                region_code = (foreign_jurisdiction.get('region') or '').upper()
+                authorization_text += (f'{country_code}, {region_code}'
+                                       if region_code
+                                       else country_code)
+                cls._insert_ledger_text(cursor, filing, authorization_text)
 
             # process voluntary dissolution
             if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
