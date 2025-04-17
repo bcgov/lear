@@ -1,3 +1,4 @@
 {
-  
+  "disable-dissolution-sftp-bcmail": true,
+  "enable-involuntary-dissolution": true
 }

@@ -18,9 +18,9 @@ import contextlib
 import business_model_migrations
 import pytest
 import sqlalchemy
-from business_model.models.db import db as _db
 from flask_migrate import Migrate, upgrade
 
+from business_model.models.db import db as _db
 from involuntary_dissolutions import create_app
 
 event = sqlalchemy.event

@@ -48,10 +48,8 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
 
-    SERVERS = os.getenv("SERVERS", None)
-    CLUSTER_ID = os.getenv("CLUSTER_ID", None)
-    CLIENT_NAME = os.getenv("CLIENT_NAME", None)
-    FILER_SUBJECT = os.getenv("FILER_SUBJECT", "entity.filer")
+    CLIENT_NAME = os.getenv("CLIENT_NAME", "involuntary-dissolutions-job")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "entity.filer")
     ENTITY_EVENTS_SUBJECT = os.getenv("ENTITY_EVENTS_SUBJECT", "entity.events")
 
     AUTH_SVC_URL = os.getenv("AUTH_URL", "http://")
@@ -72,6 +70,15 @@ class _Config:  # pylint: disable=too-few-public-methods
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+
+    # Pub/Sub
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    AUDIENCE = os.getenv(
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+    )
 
     TESTING = False
     DEBUG = False
@@ -100,6 +107,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
     DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    GCP_AUTH_KEY = None
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

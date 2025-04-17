@@ -18,6 +18,13 @@ from datetime import UTC, datetime, timedelta
 
 import pytz
 from business_common.core.filing import Filing as CoreFiling
+from croniter import croniter
+from dissolution_service import InvoluntaryDissolutionService
+from flask import Flask
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
+from sqlalchemy import Date, cast, func
+from sqlalchemy.orm import aliased
+
 from business_model.models import (
     Batch,
     BatchProcessing,
@@ -28,13 +35,6 @@ from business_model.models import (
     db,
 )
 from business_model.models.db import init_db
-from croniter import croniter
-from dissolution_service import InvoluntaryDissolutionService
-from flask import Flask
-from simple_cloudevent import SimpleCloudEvent, to_queue_message
-from sqlalchemy import Date, cast, func
-from sqlalchemy.orm import aliased
-
 from gcp_queue import GcpQueue
 from structured_logging import StructuredLogging
 
@@ -46,7 +46,7 @@ gcp_queue = GcpQueue()
 
 flags = Flags()
 
-env = os.getenv("FLASK_ENV", "production")
+env = os.getenv("DEPLOYMENT_ENV", "production")
 def create_app(run_mode=env):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
@@ -110,13 +110,13 @@ def create_invountary_dissolution_filing(business_id: int):
 def put_filing_on_queue(filing_id: int, app: Flask):
     """Send queue message to filer to dissolve business."""
     try:
-        subject = app.config["FILER_SUBJECT"]
+        subject = app.config["BUSINESS_FILER_TOPIC"]
         msg = {"filing": {"id": filing_id}}
         app.logger.debug(f"Attempting to place filing on Filer Queue with id {filing_id}")
         ce = SimpleCloudEvent(
             id=str(uuid.uuid4()),
             source=app.config.get("CLIENT_NAME"),
-            subject=subject,
+            type="bc.bcregistry.filings.dissolution",
             time=datetime.now(UTC),
             data = msg
         )
