@@ -1,27 +1,48 @@
-# Copyright © 2022 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Registration filing."""
 
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from unittest.mock import patch, call
 
 import pytest
 from business_model.models import Business, Filing, RegistrationBootstrap
 # from legal_api.services import NaicsService
-from business_filer.services import AccountService
+from business_filer.common.services.naics import NaicsService
+from business_filer.common.services.account_service import AccountService
 from registry_schemas.example_data import (
     FILING_HEADER,
     REGISTRATION
@@ -73,7 +94,7 @@ def test_registration_process(app, session, legal_type, filing):
     filing['filing']['registration']['nameRequest']['legalName'] = 'Test'
     create_filing('123', filing)
 
-    effective_date = datetime.utcnow()
+    effective_date = datetime.now(timezone.utc)
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 
@@ -83,9 +104,8 @@ def test_registration_process(app, session, legal_type, filing):
     }
 
     # test
-    # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta, None)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta, None)
 
     # Assertions
     assert business.identifier.startswith('FM')
@@ -148,10 +168,10 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
 
     # create business and filing records
     # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta, None)
-    #     business.save()
-    #     filing_rec.save()
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta, None)
+        business.save()
+        filing_rec.save()
 
     # test
     details = {

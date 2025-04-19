@@ -1,16 +1,36 @@
-# Copyright © 2020 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the incorporation of a business."""
 import copy
 from typing import Dict
@@ -27,39 +47,6 @@ from business_filer.filing_processors.filing_components import aliases, business
 from business_filer.filing_processors.filing_components.offices import update_offices
 from business_filer.filing_processors.filing_components.parties import update_parties
 # from business_filer.utils import replace_file_with_certified_copy
-
-
-def _update_cooperative(incorp_filing: Dict, business: Business, filing: Filing):
-    cooperative_obj = incorp_filing.get('cooperative', None)
-    if cooperative_obj:
-        # create certified copy for rules document
-        # rules_file_key = cooperative_obj.get('rulesFileKey')
-        # rules_file = MinioService.get_file(rules_file_key)
-        # registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
-        # replace_file_with_certified_copy(rules_file.data, rules_file_key, registrar_stamp_data)
-
-        business.association_type = cooperative_obj.get('cooperativeAssociationType')
-        document = Document()
-        document.type = DocumentType.COOP_RULES.value
-        document.file_key = rules_file_key
-        document.business_id = business.id
-        document.filing_id = filing.id
-        business.documents.append(document)
-
-        # create certified copy for memorandum document
-        # memorandum_file_key = cooperative_obj.get('memorandumFileKey')
-        # memorandum_file = MinioService.get_file(memorandum_file_key)
-        # registrar_stamp_data = RegistrarStampData(business.founding_date, business.identifier)
-        # replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
-
-        document = Document()
-        document.type = DocumentType.COOP_MEMORANDUM.value
-        document.file_key = memorandum_file_key
-        document.business_id = business.id
-        document.filing_id = filing.id
-        business.documents.append(document)
-
-    return business
 
 
 def process(business: Business,  # pylint: disable=too-many-branches,too-many-locals
@@ -91,7 +78,6 @@ def process(business: Business,  # pylint: disable=too-many-branches,too-many-lo
     # Initial insert of the business record
     business = Business()
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
-    business = _update_cooperative(incorp_filing, business, filing_rec)
     business.state = Business.State.ACTIVE
 
     if nr_number := business_info_obj.get('nrNumber', None):

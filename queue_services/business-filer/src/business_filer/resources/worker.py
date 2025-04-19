@@ -32,7 +32,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The unique worker functionality for this service is contained here."""
-import asyncio
 import re
 import traceback
 from dataclasses import dataclass
@@ -43,11 +42,11 @@ from flask import Blueprint, current_app, request
 from gcp_queue import SimpleCloudEvent
 
 from business_filer.services import gcp_queue, verify_gcp_jwt
-from business_filer.worker import process_filing
+from business_filer.services.filer import process_filing
+from business_filer.common.filing_message import get_filing_message
 
 
 bp = Blueprint('worker', __name__)
-loop = asyncio.get_event_loop()
 
 
 @bp.route('/', methods=('POST',))
@@ -97,7 +96,8 @@ def worker():
     # 3. Process Filing
     # ##
     try:
-        loop.run_until_complete(process_filing(filing_message, current_app))
+        # loop.run_until_complete(process_filing(filing_message, current_app))
+        process_filing(filing_message)
     except Exception as err:  # pylint: disable=broad-exception-caught
         current_app.logger.error(f'Error processing filing {filing_message}: {err}')
         current_app.logger.debug(traceback.format_exc())
@@ -105,38 +105,3 @@ def worker():
 
     current_app.logger.info(f'completed ce: {str(ce)}')
     return {}, HTTPStatus.OK
-
-
-@dataclass
-class FilingMessage:
-    """FilingMessage object from the cloud event."""
-
-    id: Optional[str] = None
-    status_code: Optional[str] = None
-    filing_identifier: Optional[str] = None
-    corp_type_code: Optional[str] = None
-
-
-def get_filing_message(ce: SimpleCloudEvent):
-    """Return a FilingMessage if enclosed in the cloud event."""
-    if (
-        (ce.type == 'filingMessage')
-        and isinstance(ce.data, dict)
-        and (filing_message := ce.data.get('filingMessage', {}))
-    ):
-        # TODO: return FilingMessage instance instead of dict once GCP migration is complete
-        return {
-            'filing': {
-                'id': filing_message['filingIdentifier']
-            }
-        }
-    return None
-
-
-def dict_keys_to_snake_case(d: dict):
-    """Convert the keys of a dict to snake_case."""
-    pattern = re.compile(r'(?<!^)(?=[A-Z])')
-    converted = {}
-    for k, v in d.items():
-        converted[pattern.sub('_', k).lower()] = v
-    return converted

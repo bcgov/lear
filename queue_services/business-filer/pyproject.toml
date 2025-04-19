@@ -36,6 +36,9 @@ testcontainers = "^4.10.0"
 google-cloud-datastore = "^2.20.2"
 hypothesis = "^6.131.0"
 flask-migrate = "^4.1.0"
+psycopg2-binary = "^2.9.10"
+pytest-mock = "^3.14.0"
+requests-mock = "^1.12.1"
 
 
 [tool.poetry.dependencies]
