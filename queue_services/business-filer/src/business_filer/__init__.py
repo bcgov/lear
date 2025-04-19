@@ -40,6 +40,8 @@ from flask import Flask
 from business_filer.config import DevConfig, ProdConfig, TestConfig
 from business_filer.services import flags, gcp_queue
 from structured_logging import StructuredLogging
+from business_filer.resources import register_endpoints
+
 
 CONFIG_MAP = {
     "development": DevConfig,
@@ -50,7 +52,11 @@ CONFIG_MAP = {
 def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **kwargs):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
-    app.config.from_object(CONFIG_MAP.get(environment, "production"))
+
+    if config := kwargs.get("config"):
+        app.config.from_object(config)
+    else:
+        app.config.from_object(CONFIG_MAP.get(environment, "production"))
 
     app.logger = StructuredLogging(app).get_logger()
     flags.init_app(app, kwargs.get("ld_test_data"))
@@ -58,6 +64,7 @@ def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **k
     db.init_app(app)
     gcp_queue.init_app(app)
 
+    register_endpoints(app)
     register_shellcontext(app)
 
     return app

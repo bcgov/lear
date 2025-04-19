@@ -18,7 +18,7 @@ import asyncio
 import os
 
 from business_filer.resources import register_endpoints
-from business_filer.worker import APP_CONFIG, FLASK_APP, cb_subscription_handler, flags, qsm
+from business_filer.services.filer import APP_CONFIG, FLASK_APP, cb_subscription_handler, flags, qsm
 from entity_queue_common.service_utils import logger
 from structured_logging import StructuredLogging
 

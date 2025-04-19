@@ -1,16 +1,36 @@
-# Copyright © 2020 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 """Manages the type of Business."""
 from datetime import datetime
 from typing import Dict
@@ -18,13 +38,15 @@ from typing import Dict
 import requests
 from flask import current_app
 from flask_babel import _ as babel  # noqa: N813
-# TODO: Fix this
-# from legal_api.core import BusinessIdentifier, BusinessType
-from business_model.models import Business, Filing, PartyRole
+from business_model.models import Business
+from business_model.models import BusinessIdentifier
+from business_model.models import BusinessType
+from business_model.models import Filing
+from business_model.models import PartyRole
 
-from business_filer.services import AccountService
+from business_filer.common.services import AccountService
+from business_filer.common.services import NaicsService
 from business_filer.services import Flags
-# from business_filer.services import NaicsService
 
 
 def set_corp_type(business: Business, business_info: Dict) -> Dict:
@@ -92,7 +114,7 @@ def update_naics_info(business: Business, naics: Dict):
     business.naics_description = naics.get('naicsDescription')
 
 
-def get_next_corp_num(legal_type: str, flags: Flags):
+def get_next_corp_num(legal_type: str, flags: Flags = None):
     """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
     # this gets called if the new services are generating the Business.identifier.
     if legal_type in (Business.LegalTypes.BCOMP.value,
@@ -107,34 +129,33 @@ def get_next_corp_num(legal_type: str, flags: Flags):
         legal_type = 'C'
 
     # when lear generating the identifier
-    # if (
-    #     legal_type in (BusinessType.COOPERATIVE, BusinessType.PARTNERSHIP_AND_SOLE_PROP) or
-    #     (flags.is_on('enable-sandbox') and  # only for sandbox now
-    #      legal_type in (BusinessType.CORPORATION, BusinessType.CONTINUE_IN))
-    # ):
-    #     if business_type := BusinessType.get_enum_by_value(legal_type):
-    #         # return BusinessIdentifier.next_identifier(business_type)
-    #         raise Exception
-    #     return None
+    if (
+        legal_type in (BusinessType.COOPERATIVE, BusinessType.PARTNERSHIP_AND_SOLE_PROP)
+        or
+        legal_type in (BusinessType.CORPORATION, BusinessType.CONTINUE_IN)
+    ):
+        if business_type := BusinessType.get_enum_by_value(legal_type):
+            return BusinessIdentifier.next_identifier(business_type)
+        return None
     return None
 
     # when colin generating the identifier
-    try:
-        token = AccountService.get_bearer_token()
-        resp = requests.post(
-            f'{current_app.config["COLIN_API"]}/{legal_type}',
-            headers={**AccountService.CONTENT_TYPE_JSON,
-                     'Authorization': AccountService.BEARER + token}
-        )
-    except requests.exceptions.ConnectionError:
-        current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
-        return None
+    # try:
+    #     token = AccountService.get_bearer_token()
+    #     resp = requests.post(
+    #         f'{current_app.config["COLIN_API"]}/{legal_type}',
+    #         headers={**AccountService.CONTENT_TYPE_JSON,
+    #                  'Authorization': AccountService.BEARER + token}
+    #     )
+    # except requests.exceptions.ConnectionError:
+    #     current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
+    #     return None
 
-    if resp.status_code == 200:
-        new_corpnum = int(resp.json()['corpNum'])
-        if new_corpnum and new_corpnum <= 9999999:
-            return f'{legal_type}{new_corpnum:07d}'
-    return None
+    # if resp.status_code == 200:
+    #     new_corpnum = int(resp.json()['corpNum'])
+    #     if new_corpnum and new_corpnum <= 9999999:
+    #         return f'{legal_type}{new_corpnum:07d}'
+    # return None
 
 
 def get_firm_affiliation_passcode(business_id: int):
