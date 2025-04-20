@@ -225,7 +225,7 @@ def create_mock_coro(mocker, monkeypatch):
     def _create_mock_patch_coro(to_patch=None):
         mock = mocker.Mock()
 
-        async def _coro(*args, **kwargs):
+        def _coro(*args, **kwargs):
             return mock(*args, **kwargs)
 
         if to_patch:  # <-- may not need/want to patch anything

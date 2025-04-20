@@ -42,7 +42,7 @@ from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
 
 
-async def test_transition_filing(app, session):
+def test_transition_filing(app, session):
     """Assert we can create a business based on transition filing."""
     filing_data = copy.deepcopy(FILING_HEADER)
     filing_data['filing']['transition'] = copy.deepcopy(TRANSITION)
@@ -55,7 +55,7 @@ async def test_transition_filing(app, session):
     filing_msg = {'filing': {'id': filing.id}}
 
     # Test
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     filing = Filing.find_by_id(filing.id)

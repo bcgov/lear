@@ -199,7 +199,7 @@ def publish_gcp_queue_event(business: Business, filing: Filing):
     #     current_app.logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
 
 
-async def publish_mras_email(filing: Filing):
+def publish_mras_email(filing: Filing):
     """Publish MRAS email message onto the NATS emailer subject."""
     pass
     # if flags.is_on('enable-sandbox'):
@@ -506,13 +506,14 @@ def is_system_filed_filing(filing_submission) -> bool:
     return certified_by == 'system' if certified_by else False
 
 
-async def cb_subscription_handler(msg): #  (msg: nats.aio.client.Msg):
+def cb_subscription_handler(msg): #  (msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
+    raise Exception
     try:
         current_app.logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
         filing_msg = json.loads(msg.data.decode('utf-8'))
         current_app.logger.debug('Extracted filing msg: %s', filing_msg)
-        await process_filing(filing_msg, FLASK_APP)
+        process_filing(filing_msg)
     except OperationalError as err:
         current_app.logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue

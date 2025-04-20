@@ -43,7 +43,7 @@ from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
 
 
-async def test_technical_correction_ar(app, session):
+def test_technical_correction_ar(app, session):
     """Assert we can create a business based on transition filing."""
     filing_data = copy.deepcopy(ANNUAL_REPORT)
 
@@ -74,7 +74,7 @@ async def test_technical_correction_ar(app, session):
     filing.save()
 
     # Test
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     business = Business.find_by_identifier(business_identifier)

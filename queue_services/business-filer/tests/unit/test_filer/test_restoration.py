@@ -43,6 +43,8 @@ from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
 from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
+from business_filer.common.filing_message import FilingMessage
+
 
 
 legal_name = 'old name'
@@ -55,9 +57,9 @@ legal_type = 'BC'
     ('limitedRestorationExtension'),
     ('limitedRestorationToFull'),
 ])
-async def test_restoration_business_update(app, session, mocker, restoration_type):
+def test_restoration_business_update(app, session, mocker, restoration_type):
     """Assert the worker process update business correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.state = Business.State.HISTORICAL
     business.dissolution_date = datetime(2017, 5, 17)
@@ -70,14 +72,14 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
     expiry_date = '2023-05-18'
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
         filing['filing']['restoration']['expiry'] = expiry_date
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    payment_id = str(random.randint(1000000, 9999999))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     _mock_out(mocker)
 
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)
@@ -99,7 +101,7 @@ async def test_restoration_business_update(app, session, mocker, restoration_typ
     ('name'),
     ('number'),
 ])
-async def test_restoration_legal_name(app, session, mocker, test_name):
+def test_restoration_legal_name(app, session, mocker, test_name):
     """Assert the worker process calls the legal name change correctly."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
@@ -117,11 +119,11 @@ async def test_restoration_legal_name(app, session, mocker, test_name):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     _mock_out(mocker)
 
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -140,7 +142,7 @@ async def test_restoration_legal_name(app, session, mocker, test_name):
         assert restoration.get('fromLegalName') == legal_name
 
 
-async def test_restoration_office_addresses(app, session, mocker):
+def test_restoration_office_addresses(app, session, mocker):
     """Assert the worker process calls the address change correctly."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
@@ -153,11 +155,11 @@ async def test_restoration_office_addresses(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     _mock_out(mocker)
 
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     changed_delivery_address = business.delivery_address.one_or_none()
@@ -174,9 +176,9 @@ async def test_restoration_office_addresses(app, session, mocker):
     ('registrar'),
     ('courtOrder')
 ])
-async def test_restoration_court_order(app, session, mocker, approval_type):
+def test_restoration_court_order(app, session, mocker, approval_type):
     """Assert the worker process the court order correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -187,14 +189,14 @@ async def test_restoration_court_order(app, session, mocker, approval_type):
     if approval_type == 'registrar':
         del filing['filing']['restoration']['courtOrder']
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    payment_id = str(random.randint(1000000, 9999999))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     _mock_out(mocker)
 
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -209,7 +211,7 @@ async def test_restoration_court_order(app, session, mocker, approval_type):
     ('registrar'),
     ('courtOrder')
 ])
-async def test_restoration_registrar(app, session, mocker, approval_type):
+def test_restoration_registrar(app, session, mocker, approval_type):
     """Assert the worker process the registrar correctly."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
@@ -231,11 +233,11 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     _mock_out(mocker)
 
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -250,7 +252,7 @@ async def test_restoration_registrar(app, session, mocker, approval_type):
         assert final_filing.notice_date is None
 
 
-async def test_restoration_name_translations(app, session, mocker):
+def test_restoration_name_translations(app, session, mocker):
     """Assert the worker process the name translations correctly."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
@@ -263,18 +265,18 @@ async def test_restoration_name_translations(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     _mock_out(mocker)
 
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     assert filing['filing']['restoration']['nameTranslations'] == [{'name': 'ABCD Ltd.'}]
     assert business.aliases is not None
 
 
-async def test_update_party(app, session, mocker):
+def test_update_party(app, session, mocker):
     """Assert the worker process the party correctly."""
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
@@ -287,7 +289,7 @@ async def test_update_party(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     _mock_out(mocker)
 
@@ -309,7 +311,7 @@ async def test_update_party(app, session, mocker):
     )
     party_role.save()
 
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     party_roles = Business.find_by_internal_id(business_id).party_roles.all()

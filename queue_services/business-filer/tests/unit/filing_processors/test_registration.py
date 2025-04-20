@@ -40,7 +40,7 @@ from unittest.mock import patch, call
 
 import pytest
 from business_model.models import Business, Filing, RegistrationBootstrap
-# from legal_api.services import NaicsService
+from business_filer.common.services import NaicsService
 from business_filer.common.services.naics import NaicsService
 from business_filer.common.services.account_service import AccountService
 from registry_schemas.example_data import (
