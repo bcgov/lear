@@ -40,6 +40,7 @@ from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE, FILING_HEA
 
 from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
+from business_filer.common.filing_message import FilingMessage
 
 
 def test_transition_filing(app, session):
@@ -53,6 +54,7 @@ def test_transition_filing(app, session):
     filing = (create_filing(payment_id, filing_data, business.id))
 
     filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = FilingMessage(filing_identifier=filing.id)
 
     # Test
     process_filing(filing_msg)

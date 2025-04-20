@@ -45,6 +45,7 @@ from registry_schemas.example_data import CORRECTION_CONVERSION,\
 
 from business_filer.services.filer import process_filing
 from tests.unit import create_entity, create_filing
+from business_filer.common.filing_message import FilingMessage
 
 
 @pytest.mark.parametrize(
@@ -55,14 +56,6 @@ from tests.unit import create_entity, create_filing
 )
 def test_conversion_correction(app, session, mocker, test_name, filing_template, correction_template):
     """Test the conversion correction functionality."""
-    class MockFileResponse:
-        """Mock the MinioService."""
-
-        def __init__(self, file_content):
-            self.data = io.BytesIO(file_content.encode('utf-8'))
-
-    # Mock the MinioService's get_file method to return a dictionary with 'data' pointing to an instance of MockFileResponse
-    mocker.patch('legal_api.services.minio.MinioService.get_file', return_value=MockFileResponse('fake file content'))
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
     mocker.patch('business_filer.services.filer.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
@@ -71,7 +64,7 @@ def test_conversion_correction(app, session, mocker, test_name, filing_template,
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Create business
-    identifier = 'FM1104477'
+    identifier = f'FM{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, 'SP', 'CONVERSION INC.')
     business_id = business.id
     business.save()
@@ -82,9 +75,10 @@ def test_conversion_correction(app, session, mocker, test_name, filing_template,
     conversion_filing_id = (create_filing(conversion_payment_id, conversion_filing, business_id=business_id)).id
 
     # Mock the filing message
-    conversion_filing_msg = {'filing': {'id': conversion_filing_id}}
+    conversion_filing_msg = FilingMessage(filing_identifier=conversion_filing_id)
+
     # Call the process_filing method for the original conversion
-    await process_filing(conversion_filing_msg, app)
+    process_filing(conversion_filing_msg)
 
     # Simulate a correction filing
     correction_data = copy.deepcopy(FILING_HEADER)
@@ -100,10 +94,10 @@ def test_conversion_correction(app, session, mocker, test_name, filing_template,
     correction_filing_id = (create_filing(correction_payment_id, correction_data, business_id=business_id)).id
 
     # Mock the correction filing message
-    correction_filing_msg = {'filing': {'id': correction_filing_id}}
+    correction_filing_msg = FilingMessage(filing_identifier=correction_filing_id)
 
     # Call the process_filing method for the correction
-    await process_filing(correction_filing_msg, app)
+    process_filing(correction_filing_msg)
 
     # Assertions
     origin_filing = Filing.find_by_id(correction_filing_id)

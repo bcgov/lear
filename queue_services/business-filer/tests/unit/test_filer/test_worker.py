@@ -65,6 +65,7 @@ from tests.unit import (
     create_filing,
     create_user,
 )
+from business_filer.common.filing_message import FilingMessage
 
 
 def compare_addresses(business_address: dict, filing_address: dict):
@@ -111,22 +112,6 @@ def check_directors(business, directors, director_ceased_id, ceased_directors, a
     assert active_directors == []
     # check cessation date set on ceased director
     # assert DirectorResource._get_director(business, director_ceased_id)[0]['director']['cessationDate'] is not None
-
-
-def test_process_filing_missing_app(app, session):
-    """Assert that a filling will fail with no flask app supplied."""
-    # vars
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    identifier = 'CP1234567'
-
-    # setup
-    business = create_business(identifier)
-    create_filing(payment_id, None, business.id)
-    filing_msg = {'filing': {'id': 'test_id'}}
-
-    # TEST
-    with pytest.raises(Exception):
-        await process_filing(filing_msg, flask_app=None)
 
 
 def test_process_coa_filing(app, session):
@@ -464,7 +449,7 @@ def test_publish_event():
                         _filing_type='incorporationApplication',
                         _filing_json=INCORPORATION_FILING_TEMPLATE)
 
-        await publish_event(business, filing)
+        publish_event(business, filing)
 
         payload = {
             'specversion': '1.x-wip',
