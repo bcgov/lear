@@ -41,20 +41,23 @@ from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, SPECIAL_
 
 from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
+from business_filer.common.filing_message import FilingMessage
 
 
 def test_technical_correction_ar(app, session):
     """Assert we can create a business based on transition filing."""
     filing_data = copy.deepcopy(ANNUAL_REPORT)
 
-    business = create_business(filing_data['filing']['business']['identifier'])
-    business_identifier = business.identifier
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    filing_data['filing']['business']['identifier'] = identifier
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    business = create_business(identifier)
+
+    payment_id = str(random.randint(1000000, 9999999))
     filing = (create_filing(payment_id, filing_data, business.id))
     filing_id = filing.id
 
-    filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # sanity check
     # that it is an AR, and it is based on the ANNUAL_REPORT template
@@ -77,7 +80,7 @@ def test_technical_correction_ar(app, session):
     process_filing(filing_msg)
 
     # Check outcome
-    business = Business.find_by_identifier(business_identifier)
+    business = Business.find_by_identifier(identifier)
     filing = Filing.find_by_id(filing_id)
     assert not business.last_ar_date
     assert filing.filing_type == 'annualReport'

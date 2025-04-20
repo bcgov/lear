@@ -103,7 +103,7 @@ def test_restoration_business_update(app, session, mocker, restoration_type):
 ])
 def test_restoration_legal_name(app, session, mocker, test_name):
     """Assert the worker process calls the legal name change correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -144,7 +144,7 @@ def test_restoration_legal_name(app, session, mocker, test_name):
 
 def test_restoration_office_addresses(app, session, mocker):
     """Assert the worker process calls the address change correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -213,7 +213,7 @@ def test_restoration_court_order(app, session, mocker, approval_type):
 ])
 def test_restoration_registrar(app, session, mocker, approval_type):
     """Assert the worker process the registrar correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -230,7 +230,7 @@ def test_restoration_registrar(app, session, mocker, approval_type):
         del filing['filing']['restoration']['applicationDate']
         del filing['filing']['restoration']['noticeDate']
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    payment_id = str(random.randint(1000000, 9999999))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = FilingMessage(filing_identifier=filing_id)
@@ -254,7 +254,7 @@ def test_restoration_registrar(app, session, mocker, approval_type):
 
 def test_restoration_name_translations(app, session, mocker):
     """Assert the worker process the name translations correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -262,7 +262,7 @@ def test_restoration_name_translations(app, session, mocker):
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    payment_id = str(random.randint(1000000, 9999999))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = FilingMessage(filing_identifier=filing_id)
@@ -278,7 +278,7 @@ def test_restoration_name_translations(app, session, mocker):
 
 def test_update_party(app, session, mocker):
     """Assert the worker process the party correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -286,7 +286,7 @@ def test_update_party(app, session, mocker):
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    payment_id = str(random.randint(1000000, 9999999))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = FilingMessage(filing_identifier=filing_id)

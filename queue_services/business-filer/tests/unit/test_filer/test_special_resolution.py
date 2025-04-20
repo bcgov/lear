@@ -43,6 +43,7 @@ from registry_schemas.example_data import CP_SPECIAL_RESOLUTION_TEMPLATE
 
 from business_filer.services.filer import process_filing
 from tests.unit import create_entity, create_filing
+from business_filer.common.filing_message import FilingMessage
 
 
 @pytest.mark.parametrize(
@@ -55,7 +56,7 @@ from tests.unit import create_entity, create_filing
 def test_special_resolution(app, session, mocker, test_name, legal_name, new_legal_name,
                                   legal_type, filing_template):
     """Assert the worker process calls the legal name change correctly."""
-    identifier = 'CP1234567'
+    identifier = f'CP{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, legal_name)
     business_id = business.id
     filing = copy.deepcopy(filing_template)
@@ -64,7 +65,7 @@ def test_special_resolution(app, session, mocker, test_name, legal_name, new_leg
     else:
         del filing['filing']['changeOfName']
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    payment_id = str(random.randint(1000000, 9999999))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
     filing_msg = FilingMessage(filing_identifier=filing_id)
