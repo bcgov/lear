@@ -54,17 +54,17 @@
 # @colin_api_integration
 # @integration_affiliation
 # @integration_namex_api
-# async def test_incorporation_filing(app, session, bootstrap):
+# def test_incorporation_filing(app, session, bootstrap):
 #     """Assert we can retrieve a new corp number from COLIN and incorporate a business."""
 #     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 #     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 0000021'
 #     payment_id = str(random.SystemRandom().getrandbits(0x58))
 #     filing_id = (create_filing(payment_id, filing, bootstrap_id=bootstrap)).id
 
-#     filing_msg = {'filing': {'id': filing_id}}
+#     filing_msg = FilingMessage(filing_identifier=filing_id)
 
 #     # Test
-#     await process_filing(filing_msg, app)
+#     process_filing(filing_msg)
 
 #     # Check outcome
 #     filing = Filing.find_by_id(filing_id)
@@ -151,8 +151,8 @@
 #     )
 
 # @pytest.mark.skip("AttributeError: can't set attribute")
-# @pytest.mark.asyncio
-# async def test_publish_email_message(app, session, stan_server, event_loop, client_id, entity_stan, future):
+# 
+# def test_publish_email_message(app, session, stan_server, event_loop, client_id, entity_stan, future):
 #     """Assert that payment tokens can be retrieved and decoded from the Queue."""
 #     # Call back for the subscription
 #     from entity_queue_common.service import ServiceWorker
@@ -162,7 +162,7 @@
 #     # file handler callback
 #     msgs = []
 
-#     async def cb_file_handler(msg):
+#     def cb_file_handler(msg):
 #         nonlocal msgs
 #         nonlocal future
 #         msgs.append(msg)

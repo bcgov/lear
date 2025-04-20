@@ -59,7 +59,7 @@ from tests.unit import create_entity, create_filing
          CP_SPECIAL_RESOLUTION_TEMPLATE, CORRECTION_CP_SPECIAL_RESOLUTION)
     ]
 )
-async def test_special_resolution_correction(app, session, mocker, test_name, correct_filing_type,
+def test_special_resolution_correction(app, session, mocker, test_name, correct_filing_type,
                                              filing_template, correction_template):
     """Test the special resolution correction functionality."""
     return None

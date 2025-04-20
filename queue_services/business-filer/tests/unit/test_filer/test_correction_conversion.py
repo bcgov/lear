@@ -53,7 +53,7 @@ from tests.unit import create_entity, create_filing
         ('pending_correction_status', CONVERSION_FILING_TEMPLATE, CORRECTION_CONVERSION),
     ]
 )
-async def test_conversion_correction(app, session, mocker, test_name, filing_template, correction_template):
+def test_conversion_correction(app, session, mocker, test_name, filing_template, correction_template):
     """Test the conversion correction functionality."""
     class MockFileResponse:
         """Mock the MinioService."""

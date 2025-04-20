@@ -113,7 +113,7 @@ def check_directors(business, directors, director_ceased_id, ceased_directors, a
     # assert DirectorResource._get_director(business, director_ceased_id)[0]['director']['cessationDate'] is not None
 
 
-async def test_process_filing_missing_app(app, session):
+def test_process_filing_missing_app(app, session):
     """Assert that a filling will fail with no flask app supplied."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -129,7 +129,7 @@ async def test_process_filing_missing_app(app, session):
         await process_filing(filing_msg, flask_app=None)
 
 
-async def test_process_coa_filing(app, session):
+def test_process_coa_filing(app, session):
     """Assert that a COD filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -143,10 +143,10 @@ async def test_process_coa_filing(app, session):
     business = create_business(identifier)
     business_id = business.id
     filing_id = (create_filing(payment_id, coa_filing, business.id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # TEST
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -165,7 +165,7 @@ async def test_process_coa_filing(app, session):
     compare_addresses(mailing_address, new_mailing_address)
 
 
-async def test_process_cod_filing(app, session):
+def test_process_cod_filing(app, session):
     """Assert that an AR filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -229,10 +229,10 @@ async def test_process_cod_filing(app, session):
     # create filing
     business_id = business.id
     filing_id = (create_filing(payment_id, COD_FILING, business.id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # TEST
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -247,7 +247,7 @@ async def test_process_cod_filing(app, session):
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
-async def test_process_cod_mailing_address(app, session):
+def test_process_cod_mailing_address(app, session):
     """Assert that a COD address change filling can be applied to the model correctly."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -268,9 +268,9 @@ async def test_process_cod_mailing_address(app, session):
     filing_data['filing']['changeOfDirectors']['directors'][0]['actions'] = ['appointed']
     filing_data['filing']['changeOfDirectors']['directors'][1]['actions'] = ['appointed']
     filing_id = (create_filing(payment_id, filing_data, business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
     # TEST
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     business = Business.find_by_internal_id(business_id)
 
@@ -302,8 +302,8 @@ async def test_process_cod_mailing_address(app, session):
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing_data, business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
-    await process_filing(filing_msg, app)
+    filing_msg = FilingMessage(filing_identifier=filing_id)
+    process_filing(filing_msg)
 
     business = Business.find_by_internal_id(business_id)
 
@@ -317,7 +317,7 @@ async def test_process_cod_mailing_address(app, session):
     assert filing.status == Filing.Status.COMPLETED.value
 
 
-async def test_process_combined_filing(app, session, mocker):
+def test_process_combined_filing(app, session, mocker):
     """Assert that an AR filling can be applied to the model correctly."""
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -388,10 +388,10 @@ async def test_process_combined_filing(app, session, mocker):
     assert len(directors) == 4
     business_id = business.id
     filing_id = (create_filing(payment_id, COMBINED_FILING, business.id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # TEST
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -415,7 +415,7 @@ async def test_process_combined_filing(app, session, mocker):
     check_directors(business, directors, director_ceased_id, ceased_directors, active_directors)
 
 
-async def test_process_filing_completed(app, session, mocker):
+def test_process_filing_completed(app, session, mocker):
     """Assert that an AR filling status is set to completed once processed."""
     # vars
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -429,10 +429,10 @@ async def test_process_filing_completed(app, session, mocker):
     business = create_business(identifier, legal_type='CP')
     business_id = business.id
     filing_id = (create_filing(payment_id, ANNUAL_REPORT, business.id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # TEST
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Get modified data
     filing = Filing.find_by_id(filing_id)
@@ -446,7 +446,7 @@ async def test_process_filing_completed(app, session, mocker):
     assert business.last_ar_date
 
 
-async def test_publish_event():
+def test_publish_event():
     """Assert that publish_event is called with the correct struct."""
     import uuid
     from unittest.mock import AsyncMock
@@ -499,7 +499,7 @@ async def test_publish_event():
     ('Dont process the Filing', True, 'PAID'),
     ('Dont process the Filing', True, 'WITHDRAWN'),
 ])
-async def test_skip_process_filing(app, session, mocker, test_name, withdrawal_pending, filing_status):
+def test_skip_process_filing(app, session, mocker, test_name, withdrawal_pending, filing_status):
     """Assert that an filling can be processed."""
     # vars
     filing_type = 'continuationIn'
@@ -523,9 +523,9 @@ async def test_skip_process_filing(app, session, mocker, test_name, withdrawal_p
         with patch.object(business_profile, 'update_business_profile', return_value=HTTPStatus.OK):
             if withdrawal_pending and filing_status != 'WITHDRAWN':
                 with pytest.raises(QueueException):
-                    await process_filing(filing_msg, app)
+                    process_filing(filing_msg)
             else:
-                await process_filing(filing_msg, app)
+                process_filing(filing_msg)
 
     business = Business.find_by_identifier(next_corp_num)
     if not withdrawal_pending and filing_status == 'PAID':

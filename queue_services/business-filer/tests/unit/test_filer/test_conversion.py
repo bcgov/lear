@@ -38,7 +38,6 @@ import random
 import pytest
 from datetime import datetime
 from unittest.mock import patch
-# from legal_api.services import NaicsService
 from business_model.models import Address, Business, Filing, PartyRole
 from registry_schemas.example_data import (
     CONVERSION_FILING_TEMPLATE,
@@ -49,6 +48,8 @@ from registry_schemas.example_data import (
 
 from business_filer.services.filer import process_filing
 from tests.unit import create_entity, create_filing, create_party, create_party_role
+from business_filer.common.filing_message import FilingMessage
+from business_filer.common.services import NaicsService
 
 
 CONTACT_POINT = {
@@ -91,7 +92,7 @@ SP_CONVERSION['filing']['conversion']['parties'][0]['roles'] = [
         ('conversion_sp', 'Test Firm', 'New Name', 'SP', SP_CONVERSION)
     ]
 )
-async def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
+def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
                                                  legal_type, filing_template):
     """Assert the worker process conversion  filing correctly."""
 
@@ -107,7 +108,7 @@ async def test_conversion(app, session, mocker, test_name, legal_name, new_legal
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -118,7 +119,7 @@ async def test_conversion(app, session, mocker, test_name, legal_name, new_legal
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -170,7 +171,7 @@ def tests_filer_proprietor_new_address(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -181,9 +182,8 @@ def tests_filer_proprietor_new_address(app, session, mocker):
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)

@@ -127,7 +127,7 @@ def test_regular_amalgamation_application_process(app, session):
         (Amalgamation.AmalgamationTypes.vertical.name, AmalgamatingBusiness.Role.holding.name)
     ]
 )
-async def test_short_form_amalgamation_application_process(app, session, amalgamation_type, amalgamating_role):
+def test_short_form_amalgamation_application_process(app, session, amalgamation_type, amalgamating_role):
     """Assert that the amalgamation application object is correctly populated to model objects."""
     filing_type = 'amalgamationApplication'
     amalgamating_identifier_1 = 'BC9891234'

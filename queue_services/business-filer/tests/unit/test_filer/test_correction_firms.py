@@ -40,7 +40,7 @@ from unittest.mock import patch
 
 import pytest
 from business_model.models import Address, Business, Filing, PartyRole
-# from legal_api.services import NaicsService
+from business_filer.common.services import NaicsService
 from registry_schemas.example_data import (
     CHANGE_OF_REGISTRATION_TEMPLATE,
     CORRECTION_REGISTRATION,
@@ -48,6 +48,7 @@ from registry_schemas.example_data import (
     REGISTRATION,
 )
 
+from business_filer.common.filing_message import FilingMessage
 from business_filer.services.filer import process_filing
 from tests.unit import create_entity, create_office, create_office_address, create_party, create_party_role, \
     create_filing, factory_completed_filing
@@ -86,7 +87,7 @@ naics_response = {
 }
 
 
-@pytest.mark.asyncio
+
 @pytest.mark.parametrize(
     'test_name, legal_name, new_legal_name,legal_type, filing_template',
     [
@@ -96,7 +97,7 @@ naics_response = {
         ('no_change', 'Test Firm', None, 'SP', SP_CORRECTION)
     ]
 )
-async def test_correction_name_start_date(app, session, mocker, test_name, legal_name, new_legal_name,
+def test_correction_name_start_date(app, session, mocker, test_name, legal_name, new_legal_name,
                                           legal_type, filing_template):
     """Assert the worker process calls the legal name change correctly."""
 
@@ -118,7 +119,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -129,9 +130,8 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -155,7 +155,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
     assert business.start_date == datetime.fromisoformat('2022-01-01T08:00:00+00:00')
 
 
-@pytest.mark.asyncio
+
 @pytest.mark.parametrize(
     'test_name,legal_type, legal_name, filing_template',
     [
@@ -163,7 +163,7 @@ async def test_correction_name_start_date(app, session, mocker, test_name, legal
         ('gp_address_change', 'GP', 'Test Firm', GP_CORRECTION)
     ]
 )
-async def test_correction_business_address(app, session, mocker, test_name, legal_type, legal_name,
+def test_correction_business_address(app, session, mocker, test_name, legal_type, legal_name,
                                            filing_template):
     """Assert the worker process calls the business address change correctly."""
     identifier = 'FM1234567'
@@ -194,7 +194,7 @@ async def test_correction_business_address(app, session, mocker, test_name, lega
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     ret_filing = Filing.find_by_id(filing_id)
 
@@ -207,9 +207,8 @@ async def test_correction_business_address(app, session, mocker, test_name, lega
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
 
     # Check outcome
     changed_delivery_address = Address.find_by_id(business_delivery_address_id)
@@ -222,7 +221,7 @@ async def test_correction_business_address(app, session, mocker, test_name, lega
             filing['filing']['correction']['offices']['businessOffice']['mailingAddress'][key]
 
 
-@pytest.mark.asyncio
+
 @pytest.mark.parametrize(
     'test_name, legal_type, filing_template',
     [
@@ -254,7 +253,7 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -265,9 +264,8 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
@@ -276,7 +274,7 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     assert effect_of_order == final_filing.court_order_effect_of_order
 
 
-@pytest.mark.asyncio
+
 def tests_filer_proprietor_name_and_address_change(app, session, mocker):
     """Assert the worker process process the court order correctly."""
     identifier = 'FM1234567'
@@ -305,7 +303,7 @@ def tests_filer_proprietor_name_and_address_change(app, session, mocker):
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -316,9 +314,8 @@ def tests_filer_proprietor_name_and_address_change(app, session, mocker):
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)
@@ -330,7 +327,7 @@ def tests_filer_proprietor_name_and_address_change(app, session, mocker):
         filing['filing']['correction']['parties'][0]['mailingAddress']['streetAddress']
 
 
-@pytest.mark.asyncio
+
 @pytest.mark.parametrize(
     'test_name',
     [
@@ -341,7 +338,7 @@ def tests_filer_proprietor_name_and_address_change(app, session, mocker):
 )
 def tests_filer_partner_name_and_address_change(app, session, mocker, test_name):
     """Assert the worker processes the court order correctly."""
-    identifier = 'FM1234567'
+    identifier = f'FM{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, 'GP', 'Test Entity')
     business_id = business.id
 
@@ -384,7 +381,7 @@ def tests_filer_partner_name_and_address_change(app, session, mocker, test_name)
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -395,9 +392,8 @@ def tests_filer_partner_name_and_address_change(app, session, mocker, test_name)
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    # TODO: Fix this
-    # with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-    #     await process_filing(filing_msg, app)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)

@@ -25,9 +25,10 @@ from registry_schemas.example_data import CONTINUATION_IN_FILING_TEMPLATE
 from business_filer.filing_processors.filing_components import business_info, business_profile
 from business_filer.services.filer import process_filing
 from tests.unit import create_filing
+from business_filer.common.filing_message import FilingMessage
 
 
-async def test_continuation_in_process(app, session):
+def test_continuation_in_process(app, session):
     """Assert that the continuation in object is correctly populated to model objects."""
     filing_type = 'continuationIn'
     nr_identifier = 'NR 1234567'
@@ -41,11 +42,12 @@ async def test_continuation_in_process(app, session):
     filing_rec.effective_date = effective_date
     filing_rec.save()
 
+    filing_msg = FilingMessage(filing_identifier=filing_rec.id)
+
     # test
-    filing_msg = {'filing': {'id': filing_rec.id}}
     with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num):
         with patch.object(business_profile, 'update_business_profile', return_value=HTTPStatus.OK):
-            await process_filing(filing_msg, app)
+            process_filing(filing_msg)
 
     # Assertions
     filing_rec = Filing.find_by_id(filing_rec.id)

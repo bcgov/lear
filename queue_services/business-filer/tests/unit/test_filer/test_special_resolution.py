@@ -52,7 +52,7 @@ from tests.unit import create_entity, create_filing
         ('no_change', 'Test Resolution', None, 'CP', CP_SPECIAL_RESOLUTION_TEMPLATE)
     ]
 )
-async def test_special_resolution(app, session, mocker, test_name, legal_name, new_legal_name,
+def test_special_resolution(app, session, mocker, test_name, legal_name, new_legal_name,
                                   legal_type, filing_template):
     """Assert the worker process calls the legal name change correctly."""
     identifier = 'CP1234567'
@@ -67,7 +67,7 @@ async def test_special_resolution(app, session, mocker, test_name, legal_name, n
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
     filing_id = (create_filing(payment_id, filing, business_id=business_id)).id
-    filing_msg = {'filing': {'id': filing_id}}
+    filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -75,7 +75,7 @@ async def test_special_resolution(app, session, mocker, test_name, legal_name, n
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)

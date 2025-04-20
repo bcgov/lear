@@ -43,6 +43,7 @@ from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPL
 
 from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
+from business_filer.common.filing_message import FilingMessage
 
 
 @pytest.mark.parametrize(
@@ -74,7 +75,7 @@ def tests_filer_consent_continuation_out(app, session, mocker, test_name, effect
 
     cco_filing.effective_date = LegislationDatetime.as_utc_timezone(effective_date)
     cco_filing.save()
-    filing_msg = {'filing': {'id': cco_filing.id}}
+    filing_msg = FilingMessage(filing_identifier=cco_filing.id)
 
     # mock out the email sender and event publishing
     mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
@@ -85,7 +86,7 @@ def tests_filer_consent_continuation_out(app, session, mocker, test_name, effect
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Check outcome
     final_filing = Filing.find_by_id(cco_filing.id)
