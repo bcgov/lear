@@ -197,6 +197,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
         except Exception as e:
             # Optionally log the error
-            print(f'Query error: {e}')
+            current_app.logger.Error(f'Query error: {e}')
             return []
         
