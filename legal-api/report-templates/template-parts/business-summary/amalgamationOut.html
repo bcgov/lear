@@ -1,4 +1,4 @@
-{% if filing.filingType == 'amalgamationOut' %}
+{% if amalgamationOut|length > 0 %}
 <div class="no-page-break">
   <div class="separator mt-4"></div>
   <div class="section-title mt-4">Amalgamating Businesses Information</div>
@@ -13,7 +13,7 @@
               <div class="pt-2">
                 <span>Continuation Out Date: {{ filing.amalgamationOutDate }}</span>
               </div>
-        </tr>
-    {% endfor %}
+        </div>
+    </tr>
 </table>
 {% endif %}
