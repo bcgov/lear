@@ -92,6 +92,7 @@ class BusinessDocument:
             'business-summary/liquidation',
             'business-summary/nameChanges',
             'business-summary/stateTransition',
+            'business-summary/amalgamationOut',
             'business-summary/recordKeeper',
             'business-summary/parties',
             'common/addresses',
@@ -468,6 +469,21 @@ class BusinessDocument:
                 expiry_date = expiry_date.replace(minute=1)
                 filing_info['limitedRestorationExpiryDate'] = LegislationDatetime.\
                     format_as_report_expiry_string_1159(expiry_date)
+        elif filing_type == 'amalgamationOut':
+            filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None, None)
+
+            country_code = filing_meta['amalgamationOut']['country']
+            region_code = filing_meta['amalgamationOut']['region']
+
+            country = pycountry.countries.get(alpha_2=country_code)
+            region = None
+            if region_code and region_code.upper() != 'FEDERAL':
+                region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+            filing_info['jurisdiction'] = f'{region.name}, {country.name}' if region else country.name
+            filing_info['foreignLegalName'] = filing_meta['amalgamationOut']['legalName']
+            amalgamation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                filing_meta['amalgamationOut']['amalgamationOutDate'])
+            filing_info['amalgamationOutDate'] = amalgamation_out_date.strftime(OUTPUT_DATE_FORMAT)
         elif filing_type == 'continuationOut':
             filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None, None)
 
