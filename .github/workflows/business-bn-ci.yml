@@ -1,0 +1,21 @@
+name: Business BN CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "queue_services/business-bn/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./queue_services/business-bn
+
+jobs:
+  furnishings-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-bn"
+      working_directory: "./queue_services/business-bn"
+      codecov_flag: "business-bn"

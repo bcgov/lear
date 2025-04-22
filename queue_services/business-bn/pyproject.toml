@@ -1,0 +1,185 @@
+[tool.poetry]
+name = "business-bn"
+version = "0.1.0"
+description = ""
+authors = ["Patrick Wang <peinan.wang@gov.bc.ca>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.13,<4"
+flask = { version = ">=3.1.0,<4.0.0", extras = ["async"] }
+jinja2 = ">=3.1.6,<4.0.0"
+markupsafe = ">=3.0.2,<4.0.0"
+werkzeug = ">=3.1.3,<4.0.0"
+attrs = ">=25.3.0,<26.0.0"
+blinker = ">=1.9.0,<2.0.0"
+certifi = ">=2025.1.31,<2026.0.0"
+click = ">=8.1.8,<9.0.0"
+dpath = ">=2.2.0,<3.0.0"
+itsdangerous = ">=2.2.0,<3.0.0"
+protobuf = ">=3.15,<3.20"
+python-dotenv = ">=1.1.0,<2.0.0"
+psycopg2-binary = "2.9.10"
+six = ">=1.17.0,<2.0.0"
+urllib3 = ">=2.3.0,<3.0.0"
+launchdarkly-server-sdk = "^9.10.0"
+
+# Git-based dependencies
+business-registry-account = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/business-registry-account" }
+business-model = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/business-registry-model" }
+business-registry-common = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/business-registry-common" }
+gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/gcp-queue", branch = "main" }
+registry_schemas = { git = "https://github.com/bcgov/business-schemas.git", tag = "2.18.39" }
+sql-versioning = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/sql-versioning-alt" }
+structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/structured-logging", branch = "main" }
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "6.1.0"
+pytest-mock = "^3.14.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.11.5"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".vscode",
+    "dist",
+    "htmlcov",
+    ".venv",
+    "migrations",
+    "devops",
+    ".history",
+    "tests"
+]
+
+# Same as Black.
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.13
+target-version = "py313"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "ERA", # flake8-eradicate/eradicate
+    "Q",   # flake8-quotes
+    "I",   # isort
+    "N",   # pep8-naming
+    "PIE", # flake8-pie
+    "PL",  # pyLint
+    "PGH", # pygrep
+    "RUF", # ruff checks
+    "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "UP",  # pyupgrade
+    "F", # pyflakes
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = [
+    "ERA", # do not autoremove commented out code
+]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "structured_logging",
+    "flask_jwt_oidc",
+    "business_bn",
+    "gcp_queue",
+    "business_model",
+    "business_account",
+    "business_common"
+]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"**/__init__.py" = ["F401"] # used for imports
+"src/business_bn/bn_processors/*.py" = ["PLR2004"]
+
+[tool.pytest.ini_options]
+minversion = "2.0"
+testpaths = [
+   "tests",
+]
+addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+python_files = [
+   "test*.py"
+]
+norecursedirs = [
+   ".git", ".tox", "venv*", "requirements*", "build",
+]
+log_cli = true
+log_cli_level = "1"
+filterwarnings = [
+   "ignore::UserWarning"
+]
+markers = [
+   "slow",
+   "serial",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+   "src/business_bn",
+]
+omit = [
+    "wsgi.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+   "pragma: no cover",
+   "from",
+   "import",
+   "def __repr__",
+   "if self.debug:",
+   "if settings.DEBUG",
+   "raise AssertionError",
+   "raise NotImplementedError",
+   "if 0:",
+   'if __name__ == "__main__":',
+]

@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<SBNCreateProgramAccountRequest>
+  <header>
+    <requestMode>A</requestMode>
+    <documentSubType>000</documentSubType>
+    <senderID>CPPR</senderID>
+    <receiverID>BCSBNHUB</receiverID>
+    <partnerNote>{{business.identifier}}-{{retryNumber}}</partnerNote>
+    <CCRAHeader>
+      <userApplication>BI</userApplication>
+      <userRole>{{userRole}}</userRole>
+      {% if businessNumber is not none %}
+      <userCredentials>
+        <businessRegistrationNumber>{{businessNumber}}</businessRegistrationNumber>
+      </userCredentials>
+      {% endif %}
+    </CCRAHeader>
+  </header>
+  <body>
+    {% if businessNumber is not none %}
+    <businessRegistrationNumber>{{businessNumber}}</businessRegistrationNumber>
+    {% endif %}
+    <businessProgramIdentifier>BC</businessProgramIdentifier>
+    <SBNProgramTypeCode>{{programTypeCode}}</SBNProgramTypeCode>
+    <businessCore>
+      <programAccountTypeCode>01</programAccountTypeCode>
+      <crossReferenceProgramNumber>{{business.identifier}}</crossReferenceProgramNumber>
+      <businessTypeCode>{{businessTypeCode}}</businessTypeCode>
+      <businessSubTypeCode>{{businessSubTypeCode}}</businessSubTypeCode>
+    </businessCore>
+    <programAccountStatus>
+      <programAccountStatusCode>01</programAccountStatusCode>
+      <effectiveDate>{{foundingDate}}</effectiveDate>
+    </programAccountStatus>
+    {% if isFirms %}
+    <legalName>{{legalNames}}</legalName>
+    <operatingName>
+      <operatingName>{{business.legalName}}</operatingName>
+      <operatingNamesequenceNumber>1</operatingNamesequenceNumber>
+    </operatingName>
+    {% elif isCorps %}
+    <legalName>{{business.legalName}}</legalName>
+    {% endif %}
+    <businessAddress>
+      <foreignLegacy>
+        <addressDetailLine1>{{deliveryAddress.streetAddress[0:30]}}</addressDetailLine1>
+        {% if deliveryAddress.streetAddressAdditional is not none and deliveryAddress.streetAddressAdditional|length %}
+        <addressDetailLine2>{{deliveryAddress.streetAddressAdditional[0:30]}}</addressDetailLine2>
+        {% endif %}
+      </foreignLegacy>
+      <municipality>{{deliveryAddress.addressCity[0:30]}}</municipality>
+      {% if deliveryAddress.addressRegion is not none and deliveryAddress.addressRegion|length %}
+      <provinceStateCode>{{deliveryAddress.addressRegion}}</provinceStateCode>
+      {% endif %}
+      <postalCode>{{deliveryAddress.postalCode | replace(' ', '')}}</postalCode>
+      <countryCode>{{deliveryAddress.addressCountry}}</countryCode>
+    </businessAddress>
+    <mailingAddress>
+      <foreignLegacy>
+        <addressDetailLine1>{{mailingAddress.streetAddress[0:30]}}</addressDetailLine1>
+        {% if mailingAddress.streetAddressAdditional is not none and mailingAddress.streetAddressAdditional|length %}
+        <addressDetailLine2>{{mailingAddress.streetAddressAdditional[0:30]}}</addressDetailLine2>
+        {% endif %}
+      </foreignLegacy>
+      <municipality>{{mailingAddress.addressCity[0:30]}}</municipality>
+      {% if mailingAddress.addressRegion is not none and mailingAddress.addressRegion|length %}
+      <provinceStateCode>{{mailingAddress.addressRegion}}</provinceStateCode>
+      {% endif %}
+      <postalCode>{{mailingAddress.postalCode | replace(' ', '')}}</postalCode>
+      <countryCode>{{mailingAddress.addressCountry}}</countryCode>
+    </mailingAddress>
+    {% if isCorps %}
+    <corporationCertification>
+      <incorporationDate>{{foundingDate}}</incorporationDate>
+      <incorporationCertificateIdentifier>{{business.identifier}}</incorporationCertificateIdentifier>
+      <jurisdictionCode>02</jurisdictionCode>
+      <jurisdictionProvinceCode>BC</jurisdictionProvinceCode>
+    </corporationCertification>
+    {% endif %}
+    {% if businessOwned == false %}
+    {% for party in parties %}
+    <owner>
+      <ownerIndividual>
+        {% if party.officer.partyType == 'person' %}
+        <lastName>{{party.officer.lastName}}</lastName>
+        <givenName>{{party.officer.firstName}}</givenName>
+        {% elif party.officer.partyType == 'organization' %}
+        <lastName>{{party.officer.organizationName[0:30]}}</lastName>
+        {% endif %}
+      </ownerIndividual>
+    </owner>
+    {% endfor %}
+    {% endif %}
+    {% if isFirms %}
+    <businessActivityDeclaration>
+      <businessActivityDescription>{{business.naicsDescription}}</businessActivityDescription>
+    </businessActivityDeclaration>
+    {% endif %}
+  </body>
+</SBNCreateProgramAccountRequest>
