@@ -135,6 +135,7 @@ class FilingInfo(Resource):
                     'annualReport': json_data.get('annualReport', None),
                     'changeOfAddress': json_data.get('changeOfAddress', None),
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),
+                    'consentAmalgamationOut': json_data.get('consentAmalgamationOut', None),
                     'consentContinuationOut': json_data.get('consentContinuationOut', None),
                     'continuationIn': json_data.get('continuationIn', None),
                     'continuationOut': json_data.get('continuationOut', None),
