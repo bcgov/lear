@@ -201,6 +201,10 @@ def process(email_info: dict, token: str) -> Optional[dict]:  # pylint: disable=
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
 
+    correction_ben_statement = filing.filing_json['filing']['header'].get('correctionBenStatement', False)
+    if correction_ben_statement:
+        return None
+
     prefix = 'BC'
     legal_type = business.get('legalType', None)
     name_changed = False
