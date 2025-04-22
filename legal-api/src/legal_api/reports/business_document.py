@@ -546,7 +546,7 @@ class BusinessDocument:
             # Amalgamating business can contain amalgamatedEntities when it is created through an amalgamation
             # (if a business was a TED and it is now a TING). No need to show amalgamating businesses information
             business['amalgamatedEntities'] = []
-    
+
     def _set_amalgamation_out(self, business: dict):
         filings = Filing.get_filings_by_types(self._business.id, ['amalgamationOut'])
         if filings:
