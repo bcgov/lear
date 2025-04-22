@@ -127,7 +127,7 @@ def test_has_specific_access_false_when_no_business(mock_user_has_business_party
     with app.test_request_context():
         user = User.find_by_jwt_token(jwt)
         assert rules._has_specific_access(user, None) is False
-        assert 'No buisiness is provided.' in caplog.text
+        assert 'No business is provided.' in caplog.text
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
