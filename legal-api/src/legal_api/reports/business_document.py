@@ -554,22 +554,21 @@ class BusinessDocument:
             filing_info = {}
             filing_meta = filing.meta_data
             filing_type = filing.filing_type
-            if filing.filingType == 'amalgamationOut':
-                filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None, None)
+            filing_info['filingName'] = BusinessDocument._get_summary_display_name(filing_type, None, None, None)
 
-                country_code = filing_meta['amalgamationOut']['country']
-                region_code = filing_meta['amalgamationOut']['region']
+            country_code = filing_meta['amalgamationOut']['country']
+            region_code = filing_meta['amalgamationOut']['region']
 
-                country = pycountry.countries.get(alpha_2=country_code)
-                region = None
-                if region_code and region_code.upper() != 'FEDERAL':
-                    region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
-                filing_info['jurisdiction'] = f'{region.name}, {country.name}' if region else country.name
-                filing_info['foreignLegalName'] = filing_meta['amalgamationOut']['legalName']
-                amalgamation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
-                    filing_meta['amalgamationOut']['amalgamationOutDate'])
-                filing_info['amalgamationOutDate'] = amalgamation_out_date.strftime(OUTPUT_DATE_FORMAT)
-                business['amalgamationOut'] = filing_info
+            country = pycountry.countries.get(alpha_2=country_code)
+            region = None
+            if region_code and region_code.upper() != 'FEDERAL':
+                region = pycountry.subdivisions.get(code=f'{country_code}-{region_code}')
+            filing_info['jurisdiction'] = f'{region.name}, {country.name}' if region else country.name
+            filing_info['foreignLegalName'] = filing_meta['amalgamationOut']['legalName']
+            amalgamation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                filing_meta['amalgamationOut']['amalgamationOutDate'])
+            filing_info['amalgamationOutDate'] = amalgamation_out_date.strftime(OUTPUT_DATE_FORMAT)
+            business['amalgamationOut'] = filing_info
 
     def _set_liquidation_details(self, business: dict):
         """Set partial liquidation filing data."""
@@ -719,6 +718,7 @@ class BusinessDocument:
         'putBackOff': {
             'Limited Restoration Expired': 'Dissolved due to expired Limited Restoration'
         },
+        'amalgamationOut': 'Amalgamation Out',
         'continuationOut': 'Continuation Out'
     }
 
