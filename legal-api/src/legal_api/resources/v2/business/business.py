@@ -171,7 +171,7 @@ def search_businesses():
         search_filter_status = json_input.get('state', None)
 
         if not identifiers or not isinstance(identifiers, list):
-            return {'message': "Expected a list of 1 or more for '/identifiers'"}
+            return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
 
         if identifiers:
             bus_results = BusinessSearchService.get_search_filtered_businesses_results(
