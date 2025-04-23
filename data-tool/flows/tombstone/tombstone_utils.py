@@ -120,6 +120,7 @@ def format_parties_data(data: dict) -> list[dict]:
     role_mapping = {
         'DIR': 'director',
         'OFF': 'officer',
+        'RCC': 'custodian',
         'RCM': 'receiver',
         # Additional roles can be added here in the future
     }
