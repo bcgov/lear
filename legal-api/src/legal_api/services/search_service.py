@@ -119,9 +119,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             filters.append(Business.state.in_(business_states))
 
         if not filters:
-            return {
-                'message': "'identifiers', 'name', or 'type' is required."
-            }, HTTPStatus.BAD_REQUEST
+            return {}
 
         try:
             bus_query = db.session.query(Business).filter(*filters)
