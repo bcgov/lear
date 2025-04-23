@@ -174,24 +174,25 @@ def search_businesses():
         if not identifiers or not isinstance(identifiers, list):
             return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
 
-        if identifiers:
-            for identifier in identifiers:
-                if identifier.startswith('T'):
-                    temp_identifiers.append(identifier)
-                else:
-                    business_identifiers.append(identifier)
-            bus_results = BusinessSearchService.get_search_filtered_businesses_results(
-                business_json=json_input,
-                identifiers=business_identifiers,
-                search_filter_name=search_filter_name,
-                search_filter_type=search_filter_type,
-                search_filter_status=search_filter_status)
+        for identifier in identifiers:
+            if identifier.startswith('T'):
+                temp_identifiers.append(identifier)
+            else:
+                business_identifiers.append(identifier)
+            
+        bus_results = BusinessSearchService.get_search_filtered_businesses_results(
+            business_json=json_input,
+            identifiers=business_identifiers,
+            search_filter_name=search_filter_name,
+            search_filter_type=search_filter_type,
+            search_filter_status=search_filter_status)
 
-            draft_results = BusinessSearchService.get_search_filtered_filings_results(business_json=json_input,
-                                                                                      identifiers=temp_identifiers,
-                                                                                      search_filter_name=search_filter_name,
-                                                                                      search_filter_type=search_filter_type,
-                                                                                      search_filter_status=search_filter_status)
+        draft_results = BusinessSearchService.get_search_filtered_filings_results(
+            business_json=json_input,
+            identifiers=temp_identifiers,
+            search_filter_name=search_filter_name,
+            search_filter_type=search_filter_type,
+            search_filter_status=search_filter_status)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
     except Exception as err:
