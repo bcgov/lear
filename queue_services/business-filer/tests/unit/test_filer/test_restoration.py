@@ -47,9 +47,8 @@ from business_filer.common.filing_message import FilingMessage
 
 
 
-legal_name = 'old name'
-legal_type = 'BC'
 
+legal_type = 'BC'
 
 @pytest.mark.parametrize('restoration_type', [
     ('fullRestoration'),
@@ -60,6 +59,7 @@ legal_type = 'BC'
 def test_restoration_business_update(app, session, mocker, restoration_type):
     """Assert the worker process update business correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
+    legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.state = Business.State.HISTORICAL
     business.dissolution_date = datetime(2017, 5, 17)
@@ -68,6 +68,7 @@ def test_restoration_business_update(app, session, mocker, restoration_type):
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['business']['identifier'] = identifier
     filing['filing']['header']['name'] = 'restoration'
     expiry_date = '2023-05-18'
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
@@ -104,10 +105,13 @@ def test_restoration_business_update(app, session, mocker, restoration_type):
 def test_restoration_legal_name(app, session, mocker, test_name):
     """Assert the worker process calls the legal name change correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
+    legal_name = f'{identifier} Limited'
+    legal_type = 'BC'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['business']['identifier'] = identifier
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
 
@@ -145,10 +149,13 @@ def test_restoration_legal_name(app, session, mocker, test_name):
 def test_restoration_office_addresses(app, session, mocker):
     """Assert the worker process calls the address change correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
+    legal_name = f'{identifier} Limited'
+    legal_type = 'BC'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['business']['identifier'] = identifier
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
 
@@ -179,10 +186,12 @@ def test_restoration_office_addresses(app, session, mocker):
 def test_restoration_court_order(app, session, mocker, approval_type):
     """Assert the worker process the court order correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
+    legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['business']['identifier'] = identifier
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['approvalType'] = approval_type
@@ -214,6 +223,7 @@ def test_restoration_court_order(app, session, mocker, approval_type):
 def test_restoration_registrar(app, session, mocker, approval_type):
     """Assert the worker process the registrar correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
+    legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -255,6 +265,7 @@ def test_restoration_registrar(app, session, mocker, approval_type):
 def test_restoration_name_translations(app, session, mocker):
     """Assert the worker process the name translations correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
+    legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -279,6 +290,7 @@ def test_restoration_name_translations(app, session, mocker):
 def test_update_party(app, session, mocker):
     """Assert the worker process the party correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
+    legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.save()
     business_id = business.id
@@ -332,8 +344,8 @@ def test_update_party(app, session, mocker):
 
 
 def _mock_out(mocker):
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)

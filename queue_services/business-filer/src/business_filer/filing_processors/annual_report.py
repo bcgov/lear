@@ -82,7 +82,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
             batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
             batch_processing.notes = 'Moved back into good standing'
-            batch_processing.last_modified = datetime.datetime.utcnow()
+            batch_processing.last_modified = datetime.datetime.now(datetime.timezone.utc)
 
     # save the annual report date to the filing meta info
     filing_meta.application_date = ar_date

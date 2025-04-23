@@ -40,14 +40,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', '')
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
-    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
-
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
-
-    FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
 
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
@@ -63,31 +56,6 @@ class _Config():  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = (
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
-    NATS_CONNECTION_OPTIONS = {
-        'servers': os.getenv('NATS_SERVERS', 'nats://127.0.0.1:4222').split(','),
-        'name': os.getenv('NATS_CLIENT_NAME', 'entity.filing.worker')
-
-    }
-    STAN_CONNECTION_OPTIONS = {
-        'cluster_id': os.getenv('NATS_CLUSTER_ID', 'test-cluster'),
-        'client_id': str(random.SystemRandom().getrandbits(0x58)),
-        'ping_interval': 1,
-        'ping_max_out': 5,
-    }
-
-    SUBSCRIPTION_OPTIONS = {
-        'subject': os.getenv('NATS_FILER_SUBJECT', 'error'),
-        'queue': os.getenv('NATS_QUEUE', 'error'),
-        'durable_name': os.getenv('NATS_QUEUE', 'error') + '_durable',
-    }
-
-    ENTITY_EVENT_PUBLISH_OPTIONS = {
-        'subject': os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events'),
-    }
-
-    EMAIL_PUBLISH_OPTIONS = {
-        'subject': os.getenv('NATS_EMAILER_SUBJECT', 'entity.email'),
-    }
 
     COLIN_API = os.getenv('COLIN_API', '')
 
@@ -107,18 +75,13 @@ class _Config():  # pylint: disable=too-few-public-methods
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
-    # Minio configuration values
-    MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
-    MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
-    MINIO_ACCESS_SECRET = os.getenv('MINIO_ACCESS_SECRET')
-    MINIO_BUCKET_BUSINESSES = os.getenv('MINIO_BUCKET_BUSINESSES', 'businesses')
-    MINIO_SECURE = True
-
     NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
 
     # GCP Queue Configs
     GCP_AUTH_KEY = os.getenv('BUSINESS_GCP_AUTH_KEY', None)
     BUSINESS_EVENTS_TOPIC = os.getenv('BUSINESS_EVENTS_TOPIC', 'business-event-dev')
+    BUSINESS_MAILER_TOPIC = os.getenv('BUSINESS_MAILER_TOPIC', 'business-mailer-dev')
+    BUSINESS_MRAS_TOPIC = os.getenv('BUSINESS_MRAS_TOPIC', 'business-mras-dev')
     BUSINESS_PAY_TOPIC = os.getenv('BUSINESS_PAY_TOPIC', 'business-pay-dev')
     NAMEX_PAY_TOPIC = os.getenv('NAMEX_PAY_TOPIC', 'namex-pay-dev')
     SUB_AUDIENCE = os.getenv('SUB_AUDIENCE', '')
@@ -163,6 +126,9 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     MINIO_SECURE = False
 
     NAICS_API_URL = 'https://NAICS_API_URL/api/v2/naics'
+
+    SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "test@test.test")
+    SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "test@test.test")
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

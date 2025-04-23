@@ -55,7 +55,7 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
     filing_meta.change_of_registration = {}
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(change_filing, '/changeOfRegistration/nameRequest')
+        name_request_json = dpath.get(change_filing, '/changeOfRegistration/nameRequest')
         if name_request_json.get('legalName'):
             from_legal_name = business.legal_name
             business_info.set_legal_name(business.identifier, business, name_request_json)
@@ -75,7 +75,7 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
-        business_office_json = dpath.util.get(change_filing, '/changeOfRegistration/offices/businessOffice')
+        business_office_json = dpath.get(change_filing, '/changeOfRegistration/offices/businessOffice')
         for updated_address in business_office_json.values():
             if updated_address.get('id', None):
                 address = Address.find_by_id(updated_address.get('id'))
@@ -84,19 +84,19 @@ def process(business: Business, change_filing_rec: Filing, change_filing: Dict, 
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.util.get(change_filing, '/changeOfRegistration/parties')
+        party_json = dpath.get(change_filing, '/changeOfRegistration/parties')
         update_parties(business, party_json, change_filing_rec)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(change_filing, '/changeOfRegistration/courtOrder')
+        court_order_json = dpath.get(change_filing, '/changeOfRegistration/courtOrder')
         filings.update_filing_court_order(change_filing_rec, court_order_json)
 
 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
     # Cease the party roles not present in the edit request
-    end_date_time = datetime.datetime.utcnow()
+    end_date_time = datetime.datetime.now(datetime.timezone.utc)
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())

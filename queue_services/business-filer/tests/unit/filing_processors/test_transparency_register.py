@@ -32,7 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Transparency Register filing."""
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from business_model.models import Filing

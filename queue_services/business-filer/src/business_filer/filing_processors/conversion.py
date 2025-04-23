@@ -97,7 +97,7 @@ def _process_corps_conversion(business, conversion_filing, filing, filing_rec):
 def _process_firms_conversion(business: Business, conversion_filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
     # Name change if present
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(conversion_filing, '/filing/conversion/nameRequest')
+        name_request_json = dpath.get(conversion_filing, '/filing/conversion/nameRequest')
         if name_request_json.get('legalName'):
             from_legal_name = business.legal_name
             business_info.set_legal_name(business.identifier, business, name_request_json)
@@ -112,16 +112,16 @@ def _process_firms_conversion(business: Business, conversion_filing: Dict, filin
 
     # Update business office if present
     with suppress(IndexError, KeyError, TypeError):
-        offices_json = dpath.util.get(conversion_filing, '/filing/conversion/offices')
+        offices_json = dpath.get(conversion_filing, '/filing/conversion/offices')
         update_offices(business, offices_json)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.util.get(conversion_filing, '/filing/conversion/parties')
+        party_json = dpath.get(conversion_filing, '/filing/conversion/parties')
         upsert_parties(business, party_json, filing_rec)
 
     # update business start date, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        business_start_date = dpath.util.get(conversion_filing, '/filing/conversion/startDate')
+        business_start_date = dpath.get(conversion_filing, '/filing/conversion/startDate')
         if business_start_date:
             business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)

@@ -69,7 +69,8 @@ def test_technical_correction_ar(app, session):
     
     # subvert the filing
     technical_correction_filing = copy.deepcopy(FILING_HEADER)
-    technical_correction_filing['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+    technical_correction_filing['filing']['business']['identifier'] = identifier
+    technical_correction_filing['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
     filing.tech_correction_json = technical_correction_filing 
     # over ride the state and skip state setting listeners for this test
     filing.skip_status_listener = True

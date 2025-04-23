@@ -34,7 +34,7 @@
 """The Unit Tests for the Voluntary Dissolution filing."""
 import copy
 from datedelta import datedelta
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -134,9 +134,9 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
             business_identifier=business.identifier,
             step=BatchProcessing.BatchProcessingStep.DISSOLUTION,
             status=BatchProcessing.BatchProcessingStatus.QUEUED,
-            created_date=datetime.utcnow()-datedelta(days=42),
-            trigger_date=datetime.utcnow(),
-            last_modified=datetime.utcnow()
+            created_date=datetime.now(timezone.utc)-datedelta(days=42),
+            trigger_date=datetime.now(timezone.utc),
+            last_modified=datetime.now(timezone.utc)
         )
         batch_processing.save()
 
@@ -288,8 +288,8 @@ def test_amalgamation_administrative_dissolution(app, session, mocker, dissoluti
     filing_msg = FilingMessage(filing_identifier=filing.id)
     
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # test

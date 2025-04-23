@@ -56,8 +56,8 @@ from business_filer.common.filing_message import FilingMessage
 )
 def test_conversion_correction(app, session, mocker, test_name, filing_template, correction_template):
     """Test the conversion correction functionality."""
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)

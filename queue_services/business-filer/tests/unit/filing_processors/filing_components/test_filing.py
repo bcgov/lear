@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Name Request filing component."""
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Final
 
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE

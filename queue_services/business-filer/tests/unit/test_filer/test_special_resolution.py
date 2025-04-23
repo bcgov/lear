@@ -71,8 +71,8 @@ def test_special_resolution(app, session, mocker, test_name, legal_name, new_leg
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
 
     # Test

@@ -135,6 +135,10 @@ def test_process_ar_filing_no_agm(app, session):
     ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
 
+    # mock out the email sender and event publishing
+    # mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    # mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+
     # TEST
     with freeze_time(now):
         filing = create_filing(payment_id, ar, business.id)

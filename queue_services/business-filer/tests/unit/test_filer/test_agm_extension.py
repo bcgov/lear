@@ -52,7 +52,7 @@ from tests.unit import create_business, create_filing
 )
 def test_filer_agm_extension(app, session, mocker, test_name):
     """Assert that the agm extension object is correctly populated to model objects."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='BC')
 
     filing_json = copy.deepcopy(FILING_HEADER)
@@ -76,8 +76,8 @@ def test_filer_agm_extension(app, session, mocker, test_name):
     filing_msg = FilingMessage(filing_identifier=filing.id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
 
     # test
     process_filing(filing_msg)

@@ -15,7 +15,7 @@
 
 import copy
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 from business_model.models import PartyRole
 from registry_schemas.example_data import CEASE_RECEIVER, FILING_TEMPLATE
@@ -28,7 +28,7 @@ from tests.unit import create_business, create_filing
 def test_cease_receiver_filing_process(app, session):
     """Assert that the cease receiver object is correctly populated to model objects."""
     # Setup
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='BC')
 
     party_role = PartyRole(

@@ -45,7 +45,7 @@ from business_filer.common.filing_message import FilingMessage
 
 def tests_filer_registrars_notation(app, session):
     """Assert that the registrars notation object is correctly populated to model objects."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='BC')
 
     filing = copy.deepcopy(REGISTRARS_NOTATION_FILING_TEMPLATE)

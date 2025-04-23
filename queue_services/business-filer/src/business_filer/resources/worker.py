@@ -96,12 +96,12 @@ def worker():
     # 3. Process Filing
     # ##
     try:
-        # loop.run_until_complete(process_filing(filing_message, current_app))
         process_filing(filing_message)
     except Exception as err:  # pylint: disable=broad-exception-caught
         current_app.logger.error(f'Error processing filing {filing_message}: {err}')
         current_app.logger.debug(traceback.format_exc())
         return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
+    # Completed
     current_app.logger.info(f'completed ce: {str(ce)}')
     return {}, HTTPStatus.OK

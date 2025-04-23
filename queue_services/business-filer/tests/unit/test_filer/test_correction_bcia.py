@@ -34,7 +34,7 @@
 """The Unit Tests for the Correction filing."""
 import copy
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Final
 from unittest.mock import patch
 from dateutil.parser import parse
@@ -304,8 +304,8 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -349,7 +349,7 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
 )
 def test_correction_name_translation(app, session, mocker, test_name, legal_type):
     """Assert the worker process calls the business address change correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'HAULER MEDIA INC.')
     business.save()
     business_id = business.id
@@ -374,8 +374,8 @@ def test_correction_name_translation(app, session, mocker, test_name, legal_type
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -434,8 +434,8 @@ def test_correction_business_address(app, session, mocker, test_name, legal_type
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -468,7 +468,7 @@ def test_correction_business_address(app, session, mocker, test_name, legal_type
 )
 def tests_filer_correction_court_order(app, session, mocker, test_name, legal_type, filing_template):
     """Assert the worker process process the court order correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
 
     filing = copy.deepcopy(filing_template)
@@ -493,8 +493,8 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -531,7 +531,7 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
 )
 def tests_filer_director_name_and_address_change(app, session, mocker, test_name, legal_type):
     """Assert the worker processes the court order correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
     business_id = business.id
 
@@ -540,8 +540,8 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
     party2 = create_party(BC_CORRECTION['filing']['correction']['parties'][1])
     party_id_2 = party2.id
 
-    create_party_role(business, party1, ['director'], datetime.utcnow())
-    create_party_role(business, party2, ['director'], datetime.utcnow())
+    create_party_role(business, party1, ['director'], datetime.now(timezone.utc))
+    create_party_role(business, party2, ['director'], datetime.now(timezone.utc))
 
     filing = copy.deepcopy(BC_CORRECTION)
 
@@ -577,8 +577,8 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -641,7 +641,7 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
 )
 def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_type):
     """Assert the worker processes the court order correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
     create_share_class(business, include_resolution_date=True)
     business_id = business.id
@@ -684,8 +684,8 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -751,7 +751,7 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
 )
 def tests_filer_share_class_and_series_change(app, session, mocker, test_name, legal_type):
     """Assert the worker processes the court order correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
     create_share_class(business)
     business_id = business.id
@@ -760,6 +760,7 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
     share_class_json2 = BC_CORRECTION['filing']['correction']['shareStructure']['shareClasses'][1]
 
     filing = copy.deepcopy(BC_CORRECTION)
+    filing['filing']['business']['identifier'] = identifier
     del filing['filing']['correction']['shareStructure']['shareClasses'][0]['id']
     existing_share_class = business.share_classes[0]
     filing['filing']['correction']['shareStructure']['shareClasses'].insert(0, existing_share_class.json)
@@ -781,7 +782,7 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
 
     del filing['filing']['correction']['nameRequest']
 
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    payment_id = str(random.randint(1000000, 9999999))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
     if 'update_existing_share_class' in test_name or 'update_with_new_share_class' in test_name:
@@ -819,14 +820,14 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
             filing['filing']['correction']['shareStructure']['shareClasses'][0] = updated_share_class
         else:
             filing['filing']['correction']['shareStructure']['shareClasses'] = [updated_share_class]
-        payment_id = str(random.SystemRandom().getrandbits(0x58))
+        payment_id = str(random.randint(1000000, 9999999))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -876,7 +877,7 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
 def test_comment_only_correction(app, session, mocker):
     """Assert the worker process calls the BEN correction statement correctly."""
     
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, 'BEN', 'ABC test inc.')
     business.save()
     business_id = business.id
@@ -892,7 +893,7 @@ def test_comment_only_correction(app, session, mocker):
     filing_msg = FilingMessage(filing_identifier=filing_id)
     
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)

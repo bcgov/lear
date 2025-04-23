@@ -138,7 +138,7 @@ def test_manage_parties_structure__parties(
     data = {'filing': 'not a real filing, fail validation'}
     filing = Filing()
     filing.business_id = business.id
-    filing.filing_date = datetime.datetime.utcnow()
+    filing.filing_date = datetime.datetime.now(datetime.timezone.utc)
     filing.filing_data = json.dumps(data)
     filing.save()
     assert filing.id is not None
@@ -157,7 +157,7 @@ def test_manage_parties_structure__delete_and_recreate(app, session, test_name, 
     data = {'filing': 'not a real filing, fail validation'}
     filing1 = Filing()
     filing1.business_id = business.id
-    filing1.filing_date = datetime.datetime.utcnow()
+    filing1.filing_date = datetime.datetime.now(datetime.timezone.utc)
     filing1.filing_data = json.dumps(data)
     filing1.save()
 
@@ -165,7 +165,7 @@ def test_manage_parties_structure__delete_and_recreate(app, session, test_name, 
 
     filing2 = Filing()
     filing2.business_id = business.id
-    filing2.filing_date = datetime.datetime.utcnow()
+    filing2.filing_date = datetime.datetime.now(datetime.timezone.utc)
     filing2.filing_data = json.dumps(data)
     filing2.save()
 

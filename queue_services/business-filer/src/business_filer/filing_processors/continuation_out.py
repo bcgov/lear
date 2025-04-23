@@ -47,7 +47,7 @@ def process(business: Business, continuation_out_filing: Filing, filing: Dict, f
     """Render the continuation out filing into the business model objects."""
     # update continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(filing, '/continuationOut/courtOrder')
+        court_order_json = dpath.get(filing, '/continuationOut/courtOrder')
         filings.update_filing_court_order(continuation_out_filing, court_order_json)
 
     continuation_out_json = filing['continuationOut']

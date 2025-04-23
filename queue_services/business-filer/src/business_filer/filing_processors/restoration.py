@@ -38,7 +38,7 @@ from typing import Dict
 
 import dpath
 from business_model.models import Business, Filing, PartyRole
-from business_filer.common.datetime import datetime
+from business_filer.common.datetime import datetime, timezone
 from business_filer.common.legislation_datetime import LegislationDatetime
 
 from business_filer.filing_meta import FilingMeta
@@ -98,7 +98,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     filing_rec.approval_type = restoration_filing.get('approvalType')
     if filing_rec.approval_type == 'courtOrder':
         with suppress(IndexError, KeyError, TypeError):
-            court_order_json = dpath.util.get(restoration_filing, '/courtOrder')
+            court_order_json = dpath.get(restoration_filing, '/courtOrder')
             filings.update_filing_court_order(filing_rec, court_order_json)
     elif filing_rec.approval_type == 'registrar':
         application_date = restoration_filing.get('applicationDate')
@@ -111,7 +111,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
 def cease_custodian(business: Business):
     """Cease custodian if exist."""
-    end_date_time = datetime.utcnow()
+    end_date_time = datetime.now(timezone.utc)
     custodian_party_roles = PartyRole.get_party_roles(business.id,
                                                       end_date_time.date(),
                                                       PartyRole.RoleTypes.CUSTODIAN.value)

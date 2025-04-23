@@ -16,7 +16,7 @@ import copy
 import random
 
 from business_model.models import Business, Filing
-from business_filer.common.datetime import datetime
+from business_filer.common.datetime import datetime, timezone
 from business_filer.common.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import FILING_HEADER, PUT_BACK_OFF
 
@@ -28,9 +28,9 @@ from tests.unit import create_business, create_filing
 def tests_filer_put_back_off(session):
     """Assert that the put back off filing processes correctly."""
     # Setup
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='BC')
-    expiry = datetime.utcnow()
+    expiry = datetime.now(timezone.utc)
     business.restoration_expiry_date = expiry
     
     # Create filing

@@ -61,7 +61,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
     """Render the correction filing onto the business model objects."""
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.util.get(correction_filing, '/correction/nameRequest')
+        name_request_json = dpath.get(correction_filing, '/correction/nameRequest')
         from_legal_name = business.legal_name
         business_info.set_legal_name(business.identifier, business, name_request_json)
         if from_legal_name != business.legal_name:
@@ -71,7 +71,7 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
 
     # Update cooperativeAssociationType if present
     with suppress(IndexError, KeyError, TypeError):
-        coop_association_type = dpath.util.get(correction_filing, '/correction/cooperativeAssociationType')
+        coop_association_type = dpath.get(correction_filing, '/correction/cooperativeAssociationType')
         from_association_type = business.association_type
         if coop_association_type:
             business_info.set_association_type(business, coop_association_type)
@@ -93,61 +93,61 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
 
     # update name translations, if any
     with suppress(IndexError, KeyError, TypeError):
-        alias_json = dpath.util.get(correction_filing, '/correction/nameTranslations')
+        alias_json = dpath.get(correction_filing, '/correction/nameTranslations')
         aliases.update_aliases(business, alias_json)
 
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
-        offices_structure = dpath.util.get(correction_filing, '/correction/offices')
+        offices_structure = dpath.get(correction_filing, '/correction/offices')
         _update_addresses(offices_structure)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.util.get(correction_filing, '/correction/parties')
+        party_json = dpath.get(correction_filing, '/correction/parties')
         update_parties(business, party_json, correction_filing_rec)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(correction_filing, '/correction/courtOrder')
+        court_order_json = dpath.get(correction_filing, '/correction/courtOrder')
         filings.update_filing_court_order(correction_filing_rec, court_order_json)
 
     # update business start date, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        business_start_date = dpath.util.get(correction_filing, '/correction/startDate')
+        business_start_date = dpath.get(correction_filing, '/correction/startDate')
         if business_start_date:
             business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
 
     # update share structure and resolutions, if any
     with suppress(IndexError, KeyError, TypeError):
-        share_structure = dpath.util.get(correction_filing, '/correction/shareStructure')
+        share_structure = dpath.get(correction_filing, '/correction/shareStructure')
         shares.update_share_structure_correction(business, share_structure)
 
     # update resolution, if any
     with suppress(IndexError, KeyError, TypeError):
-        resolution = dpath.util.get(correction_filing, '/correction/resolution')
+        resolution = dpath.get(correction_filing, '/correction/resolution')
         resolutions.update_resolution(business, resolution)
         if resolution:
             filing_meta.correction = {**filing_meta.correction, **{'hasResolution': True}}
 
     # update signatory, if any
     with suppress(IndexError, KeyError, TypeError):
-        signatory = dpath.util.get(correction_filing, '/correction/signatory')
+        signatory = dpath.get(correction_filing, '/correction/signatory')
         resolutions.update_signatory(business, signatory)
 
     # update business signing date, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        signing_date = dpath.util.get(correction_filing, '/correction/signingDate')
+        signing_date = dpath.get(correction_filing, '/correction/signingDate')
         resolutions.update_signing_date(business, signing_date)
 
     # update business resolution date, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        resolution_date = dpath.util.get(correction_filing, '/correction/resolutionDate')
+        resolution_date = dpath.get(correction_filing, '/correction/resolutionDate')
         resolutions.update_resolution_date(business, resolution_date)
 
     # update rules, if any
     with suppress(IndexError, KeyError, TypeError):
-        rules_file_key = dpath.util.get(correction_filing, '/correction/rulesFileKey')
-        rules_file_name = dpath.util.get(correction_filing, '/correction/rulesFileName')
+        rules_file_key = dpath.get(correction_filing, '/correction/rulesFileKey')
+        rules_file_name = dpath.get(correction_filing, '/correction/rulesFileName')
         if rules_file_key:
             rules_and_memorandum.update_rules(business, correction_filing_rec, rules_file_key, rules_file_name)
             filing_meta.correction = {**filing_meta.correction,
@@ -155,8 +155,8 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
 
     # update memorandum, if any
     with suppress(IndexError, KeyError, TypeError):
-        memorandum_file_key = dpath.util.get(correction_filing, '/correction/memorandumFileKey')
-        memorandum_file_name = dpath.util.get(correction_filing, '/correction/memorandumFileName')
+        memorandum_file_key = dpath.get(correction_filing, '/correction/memorandumFileKey')
+        memorandum_file_name = dpath.get(correction_filing, '/correction/memorandumFileName')
         if memorandum_file_key:
             rules_and_memorandum.update_memorandum(business, correction_filing_rec,
                                                    memorandum_file_key, memorandum_file_name)
@@ -164,12 +164,12 @@ def correct_business_data(business: Business,  # pylint: disable=too-many-locals
                                       **{'uploadNewMemorandum': True}}
 
     with suppress(IndexError, KeyError, TypeError):
-        if dpath.util.get(correction_filing, '/correction/memorandumInResolution'):
+        if dpath.get(correction_filing, '/correction/memorandumInResolution'):
             filing_meta.correction = {**filing_meta.correction,
                                       **{'memorandumInResolution': True}}
 
     with suppress(IndexError, KeyError, TypeError):
-        if dpath.util.get(correction_filing, '/correction/rulesInResolution'):
+        if dpath.get(correction_filing, '/correction/rulesInResolution'):
             filing_meta.correction = {**filing_meta.correction,
                                       **{'rulesInResolution': True}}
 
@@ -179,7 +179,7 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
     # Cease the party roles not present in the edit request
     if parties is None:
         return
-    end_date_time = datetime.datetime.utcnow()
+    end_date_time = datetime.datetime.now(datetime.timezone.utc)
     parties_to_update = [party.get('officer').get('id') for party in parties if
                          party.get('officer').get('id') is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())

@@ -35,7 +35,7 @@
 
 import copy
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timezone
 from unittest.mock import patch
 
 import pytest
@@ -94,7 +94,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
             del filing['filing']['incorporationApplication']['courtOrder']
         create_filing('123', filing)
 
-        effective_date = datetime.utcnow()
+        effective_date = datetime.now(timezone.utc)
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
         filing_meta = FilingMeta(application_date=effective_date)
 
@@ -137,7 +137,7 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         filing['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
         create_filing('123', filing)
 
-        effective_date = datetime.utcnow()
+        effective_date = datetime.now(timezone.utc)
         filing_rec = Filing(effective_date=effective_date, filing_json=filing)
         filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
@@ -211,7 +211,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
     filing['filing']['incorporationApplication']['nameRequest']['nrNumber'] = nr_num
     filing['filing']['incorporationApplication'].pop('shareStructure')
-    effective_date = datetime.utcnow()
+    effective_date = datetime.now(timezone.utc)
     # Create the Filing obeject in the DB
     filing_rec = Filing(effective_date=effective_date,
                         filing_json=filing)
@@ -229,7 +229,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
 
     # Assertions
     assert business.identifier == corp_num
-    assert business.founding_date.replace(tzinfo=None) == effective_date
+    assert business.founding_date == effective_date
     assert business.legal_type == filing['filing']['incorporationApplication']['nameRequest']['legalType']
     assert business.legal_name == 'Test'
     assert len(business.offices.all()) == 2  # One office is created in create_business method.

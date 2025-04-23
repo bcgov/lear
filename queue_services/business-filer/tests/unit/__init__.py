@@ -34,7 +34,7 @@
 """The Unit Tests and the helper routines."""
 import base64
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import contextmanager
 
 from datedelta import datedelta
@@ -397,8 +397,7 @@ def create_filing(token=None, json_filing=None, business_id=None, filing_date=EP
     """Return a test filing."""
     from business_model.models import Filing
     filing = Filing()
-    if token:
-        filing.payment_token = str(token)
+
     filing.filing_date = filing_date
 
     if json_filing:
@@ -407,6 +406,12 @@ def create_filing(token=None, json_filing=None, business_id=None, filing_date=EP
         filing.business_id = business_id
     if bootstrap_id:
         filing.temp_reg = bootstrap_id
+
+    if token:
+        filing.payment_token = str(token)
+        filing._status = 'PAID'
+        filing.skip_status_listener = True
+        filing.payment_completion_date = filing_date
 
     filing.save()
     return filing
@@ -645,9 +650,9 @@ def factory_batch_processing(batch_id,
                              identifier,
                              step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                              status=BatchProcessing.BatchProcessingStatus.PROCESSING,
-                             created_date=datetime.utcnow(),
-                             trigger_date=datetime.utcnow() + datedelta(days=42),
-                             last_modified=datetime.utcnow(),
+                             created_date=datetime.now(timezone.utc),
+                             trigger_date=datetime.now(timezone.utc) + datedelta(days=42),
+                             last_modified=datetime.now(timezone.utc),
                              notes=''):
     """Create a batch processing entry."""
     batch_processing = BatchProcessing(

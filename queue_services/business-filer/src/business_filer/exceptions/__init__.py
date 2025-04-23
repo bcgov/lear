@@ -42,6 +42,7 @@ import functools
 from .business_exception import BusinessException
 from .default_exception import DefaultException
 from .business_exception import FilingException
+from .business_exception import PublishException
 from .business_exception import QueueException
 from .error_messages import ErrorCode, get_error_message
 
@@ -50,6 +51,7 @@ __all__ = (
     'DefaultException',
     'FilingException',
     'ErrorCode',
+    'PublishException',
     'QueueException',
     'get_error_message',
 )

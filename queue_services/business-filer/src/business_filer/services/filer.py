@@ -38,9 +38,6 @@ import os
 import uuid
 # from typing import Dict
 
-def publish_email_message():
-    pass
-
 from business_filer.exceptions import DefaultException
 from business_filer.exceptions import QueueException
 from business_filer.exceptions import FilingException
@@ -54,6 +51,7 @@ from business_filer.common.filing import FilingTypes
 # from sentry_sdk import capture_message
 from sqlalchemy.exc import OperationalError
 
+from business_filer.services.publish_event import PublishEvent
 from business_filer import config
 from business_filer.common.filing_message import FilingMessage
 from business_filer.filing_meta import FilingMeta, json_serial
@@ -108,130 +106,11 @@ def get_filing_types(legal_filings: dict):
     return filing_types
 
 
-def publish_event(business: Business, filing: Filing):
-    """Publish the filing message onto the NATS filing subject."""
-    pass
-    # temp_reg = filing.temp_reg
-    # if filing.filing_type == FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
-    #     current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-    #                              filing, filing.withdrawn_filing)
-    #     temp_reg = filing.withdrawn_filing.temp_reg
-    # business_identifier = business.identifier if business else temp_reg
-
-    # try:
-    #     payload = {
-    #         'specversion': '1.x-wip',
-    #         'type': 'bc.registry.business.' + filing.filing_type,
-    #         'source': ''.join([
-    #             APP_CONFIG.LEGAL_API_URL,
-    #             '/business/',
-    #             business_identifier,
-    #             '/filing/',
-    #             str(filing.id)]),
-    #         'id': str(uuid.uuid4()),
-    #         'time': datetime.utcnow().isoformat(),
-    #         'datacontenttype': 'application/json',
-    #         'identifier': business_identifier,
-    #         'data': {
-    #             'filing': {
-    #                 'header': {'filingId': filing.id,
-    #                            'effectiveDate': filing.effective_date.isoformat()
-    #                            },
-    #                 'business': {'identifier': business_identifier},
-    #                 'legalFilings': get_filing_types(filing.filing_json)
-    #             }
-    #         }
-    #     }
-    #     if temp_reg:
-    #         payload['tempidentifier'] = temp_reg
-
-    #     subject = APP_CONFIG.ENTITY_EVENT_PUBLISH_OPTIONS['subject']
-    #     await qsm.service.publish(subject, payload)
-    # except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
-    #     # capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
-    #     current_app.logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
-
-
-def publish_gcp_queue_event(business: Business, filing: Filing):
-    """Publish the filing message onto the GCP-QUEUE filing subject."""
-    pass
-    # temp_reg = filing.temp_reg
-    # if filing.filing_type == FilingTypes.NOTICEOFWITHDRAWAL and filing.withdrawn_filing:
-    #     current_app.logger.debug('publish_event - notice of withdrawal filing: %s, withdrawan_filing: %s',
-    #                              filing, filing.withdrawn_filing)
-    #     temp_reg = filing.withdrawn_filing.temp_reg
-    # business_identifier = business.identifier if business else temp_reg
-
-    # try:
-    #     subject = APP_CONFIG.BUSINESS_EVENTS_TOPIC
-    #     data = {
-    #         'filing': {
-    #             'header': {
-    #                 'filingId': filing.id,
-    #                 'effectiveDate': filing.effective_date.isoformat()
-    #             },
-    #             'business': {'identifier': business_identifier},
-    #             'legalFilings': get_filing_types(filing.filing_json)
-    #         },
-    #         'identifier': business_identifier
-    #     }
-    #     if temp_reg:
-    #         data['tempidentifier'] = temp_reg
-
-    #     ce = SimpleCloudEvent(
-    #         id=str(uuid.uuid4()),
-    #         source=''.join([
-    #             APP_CONFIG.LEGAL_API_URL,
-    #             '/business/',
-    #             business_identifier,
-    #             '/filing/',
-    #             str(filing.id)]),
-    #         subject=subject,
-    #         time=datetime.now(timezone.utc),
-    #         type='bc.registry.business.' + filing.filing_type,
-    #         data=data
-    #     )
-
-    #     gcp_queue.publish(subject, to_queue_message(ce))
-
-    # except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
-    #     # capture_message('Queue Publish Event Error: filing.id=' + str(filing.id) + str(err), level='error')
-    #     current_app.logger.error('Queue Publish Event Error: filing.id=%s', filing.id, exc_info=True)
-
-
-def publish_mras_email(filing: Filing):
-    """Publish MRAS email message onto the NATS emailer subject."""
-    pass
-    # if flags.is_on('enable-sandbox'):
-    #     current_app.logger.info('Skip publishing MRAS email')
-    #     return
-
-    # if filing.filing_type in [
-    #     FilingTypes.AMALGAMATIONAPPLICATION,
-    #     FilingTypes.CONTINUATIONIN,
-    #     FilingTypes.INCORPORATIONAPPLICATION
-    # ]:
-    #     try:
-    #         await publish_email_message(
-    #             qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing, 'mras')
-    #     except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-    #         # mark any failure for human review
-    #         # capture_message(
-    #         current_app.logger.error(
-    #             f'Queue Error: Failed to place MRAS email for filing:{filing.id}'
-    #             f'on Queue with error:{err}',
-    #             level='error'
-    #         )
-
-
 def process_filing(filing_message: FilingMessage):
     """Render the filings contained in the submission."""
-    try:
-        if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
-            current_app.logger.error(f"No filing found for: {filing_message}")
-            raise DefaultException(error_text=f"filing not found for {filing_message.filing_identifier}")
-    except Exception as err:  # pylint: disable=broad-except
-        print(err)
+    if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
+        current_app.logger.error(f"No filing found for: {filing_message}")
+        raise DefaultException(error_text=f"filing not found for {filing_message.filing_identifier}")
 
     if filing_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
         current_app.logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
@@ -239,9 +118,10 @@ def process_filing(filing_message: FilingMessage):
         return None, None
 
     if filing_submission.withdrawal_pending:
+        # TODO: set this better
         current_app.logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
                                     filing_submission.business_id, filing_submission.id, filing_message)
-        raise QueueException
+        raise QueueException('withdrawal_pending', 1 )
 
     # convenience flag to set that the envelope is a correction
     is_correction = filing_submission.filing_type == FilingTypes.CORRECTION
@@ -262,11 +142,25 @@ def process_filing(filing_message: FilingMessage):
             filing_type = next(iter(filing))
 
             match filing_type:
+                case "adminFreeze":
+                    admin_freeze.process(business, filing, filing_submission, filing_meta)
+
+                case "agmExtension":
+                    agm_extension.process(filing, filing_meta)
+
                 case "agmLocationChange":
                     agm_location_change.process(filing, filing_meta)
 
                 case "alteration":
                     alteration.process(business, filing_submission, filing, filing_meta, is_correction)
+
+                case "amalgamationApplication":
+                    business, filing_submission, filing_meta = amalgamation_application.process(
+                        business,
+                        filing_submission.json,
+                        filing_submission,
+                        filing_meta,
+                        flags)
 
                 case "amalgamationOut":
                     amalgamation_out.process(business, filing_submission, filing, filing_meta)
@@ -279,12 +173,36 @@ def process_filing(filing_message: FilingMessage):
                 case "appointReceiver":
                     appoint_receiver.process(business, filing, filing_submission, filing_meta)
  
+                case "ceaseReceiver":
+                    cease_receiver.process(business, filing, filing_submission, filing_meta)
+
                 case "changeOfAddress":
                     flag_on = flags.is_on('enable-involuntary-dissolution')
                     change_of_address.process(business, filing, filing_meta, flag_on)
 
+                case "changeOfDirectors":
+                    filing['colinIds'] = filing_submission.colin_event_ids
+                    change_of_directors.process(business, filing, filing_meta)
+
                 case "changeOfName":
                     change_of_name.process(business, filing, filing_meta)
+
+                case "changeOfRegistration":
+                    change_of_registration.process(business, filing_submission, filing, filing_meta)
+
+                case "consentAmalgamationOut":
+                    consent_amalgamation_out.process(business, filing_submission, filing, filing_meta)
+
+                case "consentContinuationOut":
+                    consent_continuation_out.process(business, filing_submission, filing, filing_meta)
+
+                case "continuationIn":
+                    business, filing_submission, filing_meta = continuation_in.process(
+                        business,
+                        filing_submission.json,
+                        filing_submission,
+                        filing_meta,
+                        flags)
 
                 case "continuationOut":
                     continuation_out.process(business, filing_submission, filing, filing_meta)
@@ -294,6 +212,9 @@ def process_filing(filing_message: FilingMessage):
                                                                     filing_submission.json,
                                                                     filing_submission,
                                                                     filing_meta)
+
+                case "correction":
+                    filing_submission = correction.process(filing_submission, filing, filing_meta, business)
 
                 case "courtOrder":
                     court_order.process(business, filing_submission, filing, filing_meta)
@@ -333,6 +254,9 @@ def process_filing(filing_message: FilingMessage):
                                              filing_meta,
                                              flags)
 
+                case "restoration":
+                    restoration.process(business, filing, filing_submission, filing_meta)
+
                 case "specialResolution":
                     special_resolution.process(business, filing, filing_submission)
 
@@ -342,54 +266,7 @@ def process_filing(filing_message: FilingMessage):
                 case "transparencyRegister":
                     transparency_register.process(business, filing_submission, filing_submission.json)
 
-            if filing.get('changeOfDirectors'):
-                filing['colinIds'] = filing_submission.colin_event_ids
-                change_of_directors.process(business, filing, filing_meta)
-
-            elif filing.get('correction'):
-                filing_submission = correction.process(filing_submission, filing, filing_meta, business)
-
-            elif filing.get('changeOfRegistration'):
-                change_of_registration.process(business, filing_submission, filing, filing_meta)
-
-            elif filing.get('restoration'):
-                restoration.process(business, filing, filing_submission, filing_meta)
-
-            elif filing.get('adminFreeze'):
-                admin_freeze.process(business, filing, filing_submission, filing_meta)
-
-            elif filing.get('consentAmalgamationOut'):
-                consent_amalgamation_out.process(business, filing_submission, filing, filing_meta)
-
-
-            elif filing.get('consentContinuationOut'):
-                consent_continuation_out.process(business, filing_submission, filing, filing_meta)
-
-
-
-            elif filing.get('agmExtension'):
-                agm_extension.process(filing, filing_meta)
-
-            elif filing.get('amalgamationApplication'):
-                business, filing_submission, filing_meta = amalgamation_application.process(
-                    business,
-                    filing_submission.json,
-                    filing_submission,
-                    filing_meta,
-                    flags)
-
-            elif filing.get('continuationIn'):
-                business, filing_submission, filing_meta = continuation_in.process(
-                    business,
-                    filing_submission.json,
-                    filing_submission,
-                    filing_meta,
-                    flags)
-
-
-            elif filing.get('ceaseReceiver'):
-                cease_receiver.process(business, filing, filing_submission, filing_meta)
-
+        # Add the current transaction
         filing_submission.transaction_id = transaction_id
 
         business_type = business.legal_type if business \
@@ -425,7 +302,7 @@ def process_filing(filing_message: FilingMessage):
 
             name_request.consume_nr(business, filing_submission, flags=flags)
             business_profile.update_business_profile(business, filing_submission, flags=flags)
-            publish_mras_email(filing_submission)
+            PublishEvent.publish_mras_email(current_app, business, filing_submission)
         else:
             if not flags.is_on('enable-sandbox'):
                 for filing_type in filing_meta.legal_filings:
@@ -458,71 +335,7 @@ def process_filing(filing_message: FilingMessage):
                                                                         filing_type,
                                                                         flags=flags)
 
-        # TODO: remove NATS publishing once GCP migration is complete
         if not flags.is_on('enable-sandbox'):
-            try:
-                publish_email_message(
-                    qsm, APP_CONFIG.EMAIL_PUBLISH_OPTIONS['subject'], filing_submission, filing_submission.status)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                # capture_message(
-                current_app.logger.error(
-                    f'Queue Error: Failed to place email for filing:{filing_submission.id}'
-                    f'on Queue with error:{err}',
-                    level='error'
-                )
+            PublishEvent.publish_email_message(current_app, business, filing_submission, filing_submission.status)
 
-            try:
-                publish_event(business, filing_submission)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                # capture_message(
-                current_app.logger.error(
-                    f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
-                    f'on Queue with error:{err}',
-                    level='error'
-                )
-
-        else:
-            try:
-                publish_gcp_queue_event(business, filing_submission)
-            except Exception as err:  # pylint: disable=broad-except, unused-variable # noqa F841;
-                # mark any failure for human review
-                # capture_message(
-                current_app.logger.error(
-                    f'Queue Error: Failed to publish event for filing:{filing_submission.id}'
-                    f'on Queue with error:{err}',
-                    level='error'
-                )
-
-
-def is_system_filed_filing(filing_submission) -> bool:
-    """Check if filing is filed by system.
-
-    Filing filed using Jupyter Notebook will have 'certified_by' field = 'system'.
-
-    """
-    certified_by = filing_submission.json['filing']['header']['certifiedBy']
-    return certified_by == 'system' if certified_by else False
-
-
-def cb_subscription_handler(msg): #  (msg: nats.aio.client.Msg):
-    """Use Callback to process Queue Msg objects."""
-    raise Exception
-    try:
-        current_app.logger.info('Received raw message seq:%s, data=  %s', msg.sequence, msg.data.decode())
-        filing_msg = json.loads(msg.data.decode('utf-8'))
-        current_app.logger.debug('Extracted filing msg: %s', filing_msg)
-        process_filing(filing_msg)
-    except OperationalError as err:
-        current_app.logger.error('Queue Blocked - Database Issue: %s', json.dumps(filing_msg), exc_info=True)
-        raise err  # We don't want to handle the error, as a DB down would drain the queue
-    except FilingException as err:
-        current_app.logger.error('Queue Error - cannot find filing: %s'
-                                 '\n\nThis message has been put back on the queue for reprocessing.',
-                                 json.dumps(filing_msg), exc_info=True)
-        raise err  # we don't want to handle the error, so that the message gets put back on the queue
-    except (QueueException, Exception):  # pylint: disable=broad-except
-        # Catch Exception so that any error is still caught and the message is removed from the queue
-        # capture_message('Queue Error:' + json.dumps(filing_msg), level='error')
-        current_app.logger.error('Queue Error: %s', json.dumps(filing_msg), exc_info=True)
+        PublishEvent.publish_event(current_app, business, filing_submission)

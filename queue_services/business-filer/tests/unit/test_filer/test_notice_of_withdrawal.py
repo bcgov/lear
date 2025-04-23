@@ -48,7 +48,7 @@ def tests_filer_notice_of_withdrawal(session, test_name, filing_type, filing_tem
     else:
         business = create_business(identifier, legal_type='BC')
         withdrawn_filing = create_filing(payment_id, withdrawn_filing_json, business_id=business.id)
-    withdrawn_filing.payment_completion_date = datetime.datetime.utcnow()  # for setting the filing status PAID
+    withdrawn_filing.payment_completion_date = datetime.datetime.now(datetime.timezone.utc)  # for setting the filing status PAID
     withdrawn_filing._meta_data = {}
     withdrawn_filing.save()
 

@@ -72,8 +72,8 @@ def test_special_resolution_correction(app, session, mocker, test_name, correct_
     # # Mock the MinioService's get_file method to return a dictionary with 'data' pointing
     # # to an instance of MockFileResponse
     # mocker.patch('legal_api.services.minio.MinioService.get_file', return_value=MockFileResponse('fake file content'))
-    # mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    # mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    # mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    # mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     # mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     # mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
     #              return_value=None)
@@ -225,7 +225,7 @@ def test_special_resolution_correction(app, session, mocker, test_name, correct_
 #     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
 #     filing_submission = create_filing(
-#         payment_id, correction_filing, business_id=business.id, filing_date=datetime.datetime.utcnow()
+#         payment_id, correction_filing, business_id=business.id, filing_date=datetime.datetime.now(datetime.timezone.utc)
 #     )
 
 #     filing_meta = FilingMeta()

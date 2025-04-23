@@ -47,7 +47,7 @@ from business_filer.common.filing_message import FilingMessage
 
 def tests_filer_admin_freeze(app, session, mocker):
     """Assert that the admin freeze object is correctly populated to model objects."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='BC')
 
     filing_json = copy.deepcopy(FILING_HEADER)
@@ -60,8 +60,8 @@ def tests_filer_admin_freeze(app, session, mocker):
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
         # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     # Test
     process_filing(filing_msg)
 

@@ -59,8 +59,8 @@ def tests_filer_agm_location_change(app, session, mocker):
     filing_msg = FilingMessage(filing_identifier=filing.id)
 
         # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     # Test
     process_filing(filing_msg)
 

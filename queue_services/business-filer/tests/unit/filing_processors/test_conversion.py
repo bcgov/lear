@@ -40,7 +40,7 @@ from unittest.mock import patch
 import pytest
 from business_model.models import Filing
 from business_model.models.colin_event_id import ColinEventId
-from business_filer.common.datetime import datetime
+from business_filer.common.datetime import datetime, timezone
 from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE
 
 from business_filer.filing_meta import FilingMeta
@@ -52,14 +52,14 @@ def test_conversion_process_with_nr(app, session):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     nr_num = 'NR 1234567'
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['conversion']['nameRequest']['nrNumber'] = nr_num
     filing['filing']['conversion']['nameRequest']['legalName'] = 'Test'
     create_filing('123', filing)
 
-    effective_date = datetime.utcnow()
+    effective_date = datetime.now(timezone.utc)
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 
@@ -79,10 +79,10 @@ def test_conversion_process_no_nr(app, session):
     """Assert that the incorporation object is correctly populated to model objects."""
     # setup
     filing = copy.deepcopy(CONVERSION_FILING_TEMPLATE)
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     filing['filing']['business']['identifier'] = identifier
     create_filing('123', filing)
-    effective_date = datetime.utcnow()
+    effective_date = datetime.now(timezone.utc)
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 
@@ -114,7 +114,7 @@ def test_conversion_coop_from_colin(app, session):
     filing['filing']['conversion']['nameRequest']['legalName'] = 'Test'
     filing['filing']['conversion']['nameRequest']['nrNumber'] = nr_num
     filing['filing']['conversion'].pop('shareStructure')
-    effective_date = datetime.utcnow()
+    effective_date = datetime.now(timezone.utc)
     # Create the Filing obeject in the DB
     filing_rec = Filing(effective_date=effective_date,
                         filing_json=filing)
@@ -154,7 +154,7 @@ def test_conversion_bc_company_from_colin(app, session, legal_type, legal_name_s
     filing['filing']['business']['legalType'] = legal_type
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['conversion']['nameRequest']['legalType'] = legal_type
-    effective_date = datetime.utcnow()
+    effective_date = datetime.now(timezone.utc)
     # Create the Filing object in the DB
     filing_rec = Filing(effective_date=effective_date,
                         filing_json=filing)
