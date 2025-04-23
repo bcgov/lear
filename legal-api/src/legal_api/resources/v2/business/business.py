@@ -169,20 +169,26 @@ def search_businesses():
         search_filter_name = json_input.get('name', None)
         search_filter_type = json_input.get('type', None)
         search_filter_status = json_input.get('state', None)
-
+        temp_identifiers = []
+        business_identifiers = []
         if not identifiers or not isinstance(identifiers, list):
             return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
 
         if identifiers:
+            for identifier in identifiers:
+                if identifier.startswith('T'):
+                    temp_identifiers.append(identifier)
+                else:
+                    business_identifiers.append(identifier)
             bus_results = BusinessSearchService.get_search_filtered_businesses_results(
                 business_json=json_input,
-                identifiers=identifiers,
+                identifiers=business_identifiers,
                 search_filter_name=search_filter_name,
                 search_filter_type=search_filter_type,
                 search_filter_status=search_filter_status)
 
             draft_results = BusinessSearchService.get_search_filtered_filings_results(business_json=json_input,
-                                                                                      identifiers=identifiers,
+                                                                                      identifiers=temp_identifiers,
                                                                                       search_filter_name=search_filter_name,
                                                                                       search_filter_type=search_filter_type,
                                                                                       search_filter_status=search_filter_status)

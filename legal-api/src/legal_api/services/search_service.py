@@ -16,6 +16,7 @@
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from datetime import datetime, timezone
 from http import HTTPStatus
+from flask import current_app
 from operator import and_
 from typing import Final
 
@@ -193,6 +194,17 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                               .get(draft_dao.json_legal_type, {})
                                               .get('numberedDescription'))
                     draft_results.append(draft)
+            if search_filter_name:
+                draft_results = [
+                    draft for draft in draft_results
+                    if draft.get('legalName') and search_filter_name.lower() in draft['legalName'].lower()
+                ]
+            
+            if search_filter_type:
+                draft_results = [
+                    draft for draft in draft_results
+                    if draft.get('draftType') in search_filter_type
+                ]
             return draft_results
 
         except Exception as e:
