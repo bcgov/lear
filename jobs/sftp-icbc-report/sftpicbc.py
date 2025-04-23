@@ -3,7 +3,6 @@
 import fnmatch
 import logging
 import os
-import shutil
 import smtplib
 import sys
 import traceback
