@@ -21,7 +21,7 @@ from business_account.AccountService import AccountService
 
 
 def get_filings(token, limit, offset):
-    """Get a filing with filing_id."""
+    """Get filings from LEAR that need syncing to COLIN."""
     req = requests.get(f'{current_app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset={offset}&limit={limit}',
                        headers={"Authorization": "Bearer " + token},
                        timeout=current_app.config["LEAR_SVC_TIMEOUT"])
