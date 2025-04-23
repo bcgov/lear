@@ -204,7 +204,11 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'correction':
                 email = correction_notification.process(email_msg['email'], token)
-                send_email(email, token)
+                if email:
+                    send_email(email, token)
+                else:
+                    # should reach here only if this filing is filed for BEN corrections statement (jupyter notebook)
+                    logger.debug('No email to send for: %s', email_msg)
             elif etype == 'consentAmalgamationOut':
                 email = consent_amalgamation_out_notification.process(email_msg['email'], token)
                 send_email(email, token)

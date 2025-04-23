@@ -30,15 +30,17 @@
             [[whitespace-16px.html]]
             [[business-dashboard-link.html]]
 
-            [[whitespace-16px.html]]
-            <p>
-              Once your filing has been processed, you will receive
-              the following documents by email:
-            </p>
+            {% if not filing.commentOnly %}
+              [[whitespace-16px.html]]
+              <p>
+                Once your filing has been processed, you will receive
+                the following documents by email:
+              </p>
 
-            <ul class="outputs">
-              <li>Notice of Articles</li>
-            </ul>
+              <ul class="outputs">
+                <li>Notice of Articles</li>
+              </ul>
+            {% endif %}
 
             [[whitespace-16px.html]]
             [[pdf-notice.html]]

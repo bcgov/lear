@@ -21,10 +21,12 @@
 
             [[business-info.html]]
 
-            <p>Please find the following document attached to this email:</p>
-            <ul class="outputs">
-              <li>Notice of Articles</li>
-            </ul>
+            {% if not filing.commentOnly %}
+              <p>Please find the following document attached to this email:</p>
+              <ul class="outputs">
+                <li>Notice of Articles</li>
+              </ul>
+            {% endif %}
 
             [[whitespace-16px.html]]
             [[business-dashboard-link.html]]
