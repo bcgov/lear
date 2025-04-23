@@ -74,7 +74,7 @@ def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, bu
     corrected_filing_type = filing['correction']['correctedFilingType']
 
     # check if empty correction and set commentOnly value in filing_meta
-    if bool(dpath.util.get(filing, '/correction/commentOnly', default=None)):
+    if bool(dpath.get(filing, '/correction/commentOnly', default=None)):
         filing_meta.correction = {**filing_meta.correction, 'commentOnly': True}
         return correction_filing
 

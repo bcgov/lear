@@ -48,7 +48,7 @@ from business_filer.common.filing_message import dict_keys_to_snake_case
 
 def tests_filer_registrars_order(app, session):
     """Assert that the registrars order object is correctly populated to model objects."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='BC')
 
     filing = copy.deepcopy(REGISTRARS_ORDER_FILING_TEMPLATE)

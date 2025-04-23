@@ -35,7 +35,7 @@
 from contextlib import suppress
 from typing import Dict
 
-from dpath import util as dpath
+import dpath
 from business_model.models import Business, Filing
 
 from business_filer.filing_meta import FilingMeta

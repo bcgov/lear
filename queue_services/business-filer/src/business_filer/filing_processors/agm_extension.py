@@ -51,19 +51,19 @@ def process(filing: Dict, filing_meta: FilingMeta):
         'isFinalExtension': _check_final_extension(filing)
     }
 
-    if prev_agm_ref_date := dpath.util.get(filing, '/agmExtension/prevAgmRefDate', default=None):
+    if prev_agm_ref_date := dpath.get(filing, '/agmExtension/prevAgmRefDate', default=None):
         filing_meta.agm_extension = {
             **filing_meta.agm_extension,
             'prevAgmRefDate': prev_agm_ref_date
         }
 
-    if curr_ext_expiry_date := dpath.util.get(filing, '/agmExtension/expireDateCurrExt', default=None):
+    if curr_ext_expiry_date := dpath.get(filing, '/agmExtension/expireDateCurrExt', default=None):
         filing_meta.agm_extension = {
             **filing_meta.agm_extension,
             'expireDateCurrExt': curr_ext_expiry_date
         }
 
-    if expiry_date_approved_ext := dpath.util.get(filing, '/agmExtension/expireDateApprovedExt', default=None):
+    if expiry_date_approved_ext := dpath.get(filing, '/agmExtension/expireDateApprovedExt', default=None):
         filing_meta.agm_extension = {
             **filing_meta.agm_extension,
             'expireDateApprovedExt': expiry_date_approved_ext

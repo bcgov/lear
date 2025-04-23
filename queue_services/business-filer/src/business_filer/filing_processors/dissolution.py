@@ -44,7 +44,7 @@ from business_model.models.document import DocumentType
 from business_filer.common.filing import DissolutionTypes
 # from legal_api.services.minio import MinioService
 # from legal_api.services.pdf_service import RegistrarStampData
-from business_filer.common.datetime import datetime
+from business_filer.common.datetime import datetime, timezone
 from business_filer.common.legislation_datetime import LegislationDatetime
 
 from business_filer.filing_meta import FilingMeta
@@ -63,7 +63,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
     current_app.logger.debug('processing dissolution: %s', filing)
 
     filing_meta.dissolution = {}
-    dissolution_type = dpath.util.get(filing, '/dissolution/dissolutionType')
+    dissolution_type = dpath.get(filing, '/dissolution/dissolutionType')
 
     # hasLiabilities can be derived from dissolutionStatementType
     # FUTURE: remove hasLiabilities from schema
@@ -105,7 +105,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(dissolution_filing, '/courtOrder')
+        court_order_json = dpath.get(dissolution_filing, '/courtOrder')
         filings.update_filing_court_order(filing_rec, court_order_json)
 
     with suppress(IndexError, KeyError, TypeError):
@@ -121,7 +121,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         for batch_processing in batch_processings:
             if batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED:
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
-                batch_processing.last_modified = datetime.utcnow()
+                batch_processing.last_modified = datetime.now(timezone.utc)
                 batch_processing.save()
 
 

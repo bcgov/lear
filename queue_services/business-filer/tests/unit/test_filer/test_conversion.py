@@ -36,7 +36,7 @@ import copy
 import random
 
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 from business_model.models import Address, Business, Filing, PartyRole
 from registry_schemas.example_data import (
@@ -111,8 +111,8 @@ def test_conversion(app, session, mocker, test_name, legal_name, new_legal_name,
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -158,7 +158,7 @@ def tests_filer_proprietor_new_address(app, session, mocker):
     assert party.delivery_address_id is None
     assert party.mailing_address_id is None
 
-    create_party_role(business, party, ['proprietor'], datetime.utcnow())
+    create_party_role(business, party, ['proprietor'], datetime.now(timezone.utc))
 
     filing = copy.deepcopy(SP_CONVERSION)
     filing['filing']['conversion']['contactPoint'] = CONTACT_POINT
@@ -174,8 +174,8 @@ def tests_filer_proprietor_new_address(app, session, mocker):
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)

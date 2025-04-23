@@ -53,7 +53,7 @@ class BusinessException(Exception): # noqa: N818
 class QueueException(Exception): # noqa: N818
     """Exception that adds error code and error name, that can be used for i18n support."""
 
-    def __init__(self, error, status_code, *args, **kwargs):
+    def __init__(self, error, status_code = None, *args, **kwargs):
         """Return a valid BusinessException."""
         super().__init__(*args, **kwargs)
         self.error = error
@@ -68,3 +68,11 @@ class FilingException(Exception): # noqa: N818
         self.error = error
         self.status_code = status_code
 
+class PublishException(Exception): # noqa: N818
+    """Exception that adds error code and error name, that can be used for i18n support."""
+
+    def __init__(self, error, status_code = None, *args, **kwargs):
+        """Return a valid BusinessException."""
+        super().__init__(*args, **kwargs)
+        self.error = error
+        self.status_code = status_code

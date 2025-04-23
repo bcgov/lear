@@ -32,6 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the aliases processor."""
+import random
 from business_model.models import Alias
 
 from business_filer.filing_processors.filing_components import aliases
@@ -41,7 +42,7 @@ from tests.unit import create_business
 def test_new_aliases(app, session):
     """Assert that the new aliases are created."""
     # setup
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier)
     component = {'nameTranslations': [{'name': 'MÉDIAS DE TRANSPORT INC.'}, {'name': 'CLUDIANT MEDIA INC.'}]}
 
@@ -56,7 +57,7 @@ def test_new_aliases(app, session):
 def test_modified_aliases(app, session):
     """Assert that aliases are altered."""
     # setup
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     old_value_1 = 'A1 LTD.'
     new_value_1 = 'SOCIÉTÉ GÉNÉRALE'
     old_value_2 = 'B1 LTD.'
@@ -92,7 +93,7 @@ def test_modified_aliases(app, session):
 def test_cease_aliases(app, session):
     """Assert that aliases are removed."""
     # setup
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     alias_1 = 'A1 LTD.'
     alias_2 = 'A2 LTD.'
     alias_3 = 'A3 LTD.'
@@ -118,7 +119,7 @@ def test_cease_aliases(app, session):
 def test_all_aliases(app, session):
     """Assert that aliases are altered correctly."""
     # setup
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     alias_1 = 'A1 LTD.'
     alias_2 = 'A2 LTD.'
     alias_3 = 'A3 LTD.'

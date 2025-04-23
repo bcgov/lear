@@ -13,7 +13,7 @@
 # limitations under the License.
 """The Unit Tests for the Change of Address filing."""
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from datedelta import datedelta
@@ -64,42 +64,42 @@ def test_change_of_address_process(app, session):
         'DELAY_IN_DISSOLUTION_STAGE_1',
         BatchProcessing.BatchProcessingStatus.PROCESSING,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-        datetime.utcnow()+datedelta(days=42),
+        datetime.now(timezone.utc)+datedelta(days=42),
         True
     ),
     (
         'DELAY_IN_DISSOLUTION_STAGE_2',
         BatchProcessing.BatchProcessingStatus.PROCESSING,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2,
-        datetime.utcnow()+datedelta(days=42),
+        datetime.now(timezone.utc)+datedelta(days=42),
         True
     ),
     (
         'NO_DELAY_NOT_IN_DISSOLUTION_1',
         BatchProcessing.BatchProcessingStatus.COMPLETED,
         BatchProcessing.BatchProcessingStep.DISSOLUTION,
-        datetime.utcnow()+datedelta(days=42),
+        datetime.now(timezone.utc)+datedelta(days=42),
         False
     ),
     (
         'NO_DELAY_NOT_IN_DISSOLUTION_2',
         BatchProcessing.BatchProcessingStatus.WITHDRAWN,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-        datetime.utcnow()+datedelta(days=42),
+        datetime.now(timezone.utc)+datedelta(days=42),
         False
     ),
     (
         'NO_DELAY_TRIGGER_DATE_MORE_THAN_60_DAYS_STAGE_1',
         BatchProcessing.BatchProcessingStatus.PROCESSING,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-        datetime.utcnow()+datedelta(days=70),
+        datetime.now(timezone.utc)+datedelta(days=70),
         False
     ),
     (
         'NO_DELAY_TRIGGER_DATE_MORE_THAN_60_DAYS_STAGE_2',
         BatchProcessing.BatchProcessingStatus.PROCESSING,
         BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-        datetime.utcnow()+datedelta(days=70),
+        datetime.now(timezone.utc)+datedelta(days=70),
         False
     )
 ])
@@ -115,7 +115,7 @@ def test_change_of_address_delay_dissolution(app, session, test_name, status, st
                              step=step,
                              trigger_date=trigger_date)
 
-    utc_now = datetime.utcnow()
+    utc_now = datetime.now(timezone.utc)
     trigger_date = batch_processing.trigger_date
     delay_trigger_date = utc_now + datedelta(days=62)
     

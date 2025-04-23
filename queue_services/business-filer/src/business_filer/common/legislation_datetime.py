@@ -171,4 +171,4 @@ class LegislationDatetime:
     def is_future(date_string: str) -> bool:
         """Return the boolean for whether the date string is in the future."""
         effective_date = datetime.fromisoformat(date_string)
-        return effective_date > datetime.utcnow().replace(tzinfo=timezone.utc)
+        return effective_date > datetime.now(timezone.utc).replace(tzinfo=timezone.utc)

@@ -48,7 +48,7 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     """Render the consent continuation out filing into the business model objects."""
     # update consent continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        consent_continuation_out_json = dpath.util.get(filing, '/consentContinuationOut/courtOrder')
+        consent_continuation_out_json = dpath.get(filing, '/consentContinuationOut/courtOrder')
         filings.update_filing_court_order(cco_filing, consent_continuation_out_json)
 
     foreign_jurisdiction = filing['consentContinuationOut']['foreignJurisdiction']

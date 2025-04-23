@@ -35,6 +35,7 @@
 
 import copy
 import datetime
+import random
 
 from business_model.models import Filing
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
@@ -47,12 +48,14 @@ from tests.unit import create_business, create_filing
 def test_transition_filing_process(app, session):
     """Assert that the transition object is correctly populated to model objects."""
     # setup
+    identifier = f'BC{random.randint(1000000,9999999)}'
     filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+    filing['filing']['business']['identifier'] = identifier
 
     business = create_business(filing['filing']['business']['identifier'])
     create_filing('123', filing)
 
-    effective_date = datetime.datetime.utcnow()
+    effective_date = datetime.datetime.now(datetime.timezone.utc)
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 

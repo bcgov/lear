@@ -34,7 +34,7 @@
 """The Unit Tests for the Incorporation filing."""
 import copy
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Final
 
 import pytest
@@ -73,7 +73,7 @@ CONTACT_POINT = {
 def test_alteration_process(app, session, orig_legal_type, new_legal_type):
     """Assert that the business legal type is altered."""
     # setup
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier)
     business.legal_type = orig_legal_type
 
@@ -105,7 +105,7 @@ def test_alteration_process(app, session, orig_legal_type, new_legal_type):
 )
 def tests_filer_alteration(app, session, mocker, orig_legal_type, new_legal_type):
     """Assert the worker process calls the alteration correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type=orig_legal_type)
     business.restriction_ind = True
     business.save()
@@ -121,8 +121,8 @@ def tests_filer_alteration(app, session, mocker, orig_legal_type, new_legal_type
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -147,7 +147,7 @@ def tests_filer_alteration(app, session, mocker, orig_legal_type, new_legal_type
 )
 def test_alteration_legal_name(app, session, mocker, test_name, legal_name, new_legal_name):
     """Assert the worker process calls the alteration correctly."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier)
     business.legal_name = legal_name
     business.save()
@@ -166,8 +166,8 @@ def test_alteration_legal_name(app, session, mocker, test_name, legal_name, new_
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -181,6 +181,8 @@ def test_alteration_legal_name(app, session, mocker, test_name, legal_name, new_
     final_filing = Filing.find_by_id(filing_id)
     alteration = final_filing.meta_data.get('alteration', {})
     if new_legal_name:
+        if test_name == 'name_to_numbered':
+            new_legal_name = f'{identifier[2:]} B.C. LTD.'
         assert business.legal_name == new_legal_name
         assert alteration.get('toLegalName') == new_legal_name
         assert alteration.get('fromLegalName') == legal_name
@@ -213,8 +215,8 @@ def tests_filer_alteration_court_order(app, session, mocker):
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)

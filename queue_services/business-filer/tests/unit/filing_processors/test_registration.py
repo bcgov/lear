@@ -34,7 +34,7 @@
 """The Unit Tests for the Registration filing."""
 
 import copy
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timezone
 from http import HTTPStatus
 from unittest.mock import patch, call
 
@@ -157,7 +157,7 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
 
     create_filing('123', filing)
 
-    effective_date = datetime.utcnow()
+    effective_date = datetime.now(timezone.utc)
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 

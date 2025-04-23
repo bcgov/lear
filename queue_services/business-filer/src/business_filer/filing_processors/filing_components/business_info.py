@@ -32,7 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Manages the type of Business."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 
 import requests
@@ -161,7 +161,7 @@ def get_next_corp_num(legal_type: str, flags: Flags = None):
 def get_firm_affiliation_passcode(business_id: int):
     """Return a firm passcode for a given business identifier."""
     pass_code = None
-    end_date = datetime.utcnow().date()
+    end_date = datetime.now(timezone.utc).date()
     party_roles = PartyRole.get_party_roles(business_id, end_date)
 
     if len(party_roles) == 0:

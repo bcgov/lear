@@ -33,7 +33,7 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
 
 def update_parties(parties: dict):
     """Cease receiver party role."""
-    end_date_time = datetime.datetime.utcnow()
+    end_date_time = datetime.datetime.now(datetime.timezone.utc)
     for party in parties:
         party_role = PartyRole.find_by_internal_id(internal_id=party.get('officer').get('id'))
         party_role.cessation_date = end_date_time

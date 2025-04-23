@@ -32,6 +32,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the business filing component processors."""
+import random
+
 import pytest
 from business_model.models import Business
 
@@ -92,7 +94,8 @@ def test_manage_office_structure__offices(
         app, session,
         test_name, office_structure, expected_error):
     """Assert that the corp offices gets set."""
-    business = Business()
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = Business(identifier=identifier)
     business.save()
     update_and_validate_office(business, office_structure)
 
@@ -103,7 +106,8 @@ def test_manage_office_structure__offices(
 def test_manage_office_structure__delete_and_recreate_offices(app, session, test_name, office_structure,
                                                               expected_error):
     """Assert that the corp offices gets deleted and recreated."""
-    business = Business()
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = Business(identifier=identifier)
     business.save()
 
     update_and_validate_office(business, office_structure)

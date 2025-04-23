@@ -36,7 +36,7 @@ from typing import Dict
 
 from datedelta import datedelta
 from business_model.models import BatchProcessing, Business
-from business_filer.common.datetime import datetime
+from business_filer.common.datetime import datetime, timezone
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import create_address, update_address
@@ -69,10 +69,10 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on: 
                 if batch_processing.status not in [
                     BatchProcessing.BatchProcessingStatus.COMPLETED,
                     BatchProcessing.BatchProcessingStatus.WITHDRAWN
-                ] and datetime.utcnow() + datedelta(days=60) > batch_processing.trigger_date:
-                    batch_processing.trigger_date = datetime.utcnow() + datedelta(days=62)
+                ] and datetime.now(timezone.utc) + datedelta(days=60) > batch_processing.trigger_date:
+                    batch_processing.trigger_date = datetime.now(timezone.utc) + datedelta(days=62)
                     batch_processing.meta_data = {
                         **batch_processing.meta_data,
                         'changeOfAddressDelay': True
                     }
-                    batch_processing.last_modified = datetime.utcnow()
+                    batch_processing.last_modified = datetime.now(timezone.utc)

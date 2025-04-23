@@ -32,7 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the change of directors."""
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict
 
 from business_filer.exceptions import QueueException
@@ -116,4 +116,4 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylin
             # get name of director in database for comparison *
             director_name = director.party.first_name + director.party.middle_initial + director.party.last_name
             if director_name.upper() not in new_director_names and director.cessation_date is None:
-                director.cessation_date = datetime.utcnow()
+                director.cessation_date = datetime.now(timezone.utc)

@@ -184,7 +184,7 @@
 #     filing = Filing()
 #     filing.id = 101
 #     filing._filing_type = 'incorporationApplication'
-#     filing_date = datetime.datetime.utcnow()
+#     filing_date = datetime.datetime.now(datetime.timezone.utc)
 #     filing._filing_date = filing_date
 #     filing.effective_date = filing_date
 

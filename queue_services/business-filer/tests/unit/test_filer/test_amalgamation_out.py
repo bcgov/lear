@@ -15,7 +15,7 @@
 import copy
 import random
 
-from datetime import datetime
+from datetime import datetime, timezone
 from business_model.models import Business, Filing
 
 from registry_schemas.example_data import AMALGAMATION_OUT, FILING_TEMPLATE
@@ -28,7 +28,7 @@ from tests.unit import create_business, create_filing
 
 def tests_filer_amalgamation_out(app, session):
     """Assert that the amalgamation out object is correctly populated to model objects."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='CP')
 
     filing_json = copy.deepcopy(FILING_TEMPLATE)

@@ -34,7 +34,7 @@
 """The Unit Tests for the Change of Registration filing."""
 import copy
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Final
 from unittest.mock import patch
 
@@ -113,8 +113,8 @@ def test_change_of_registration_legal_name(app, session, mocker, test_name, lega
 
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -182,8 +182,8 @@ def test_change_of_registration_business_address(app,
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -236,8 +236,8 @@ def tests_filer_change_of_registration_court_order(app, session, mocker, test_na
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -263,7 +263,7 @@ def tests_filer_proprietor_name_and_address_change(app, session, mocker):
     party = create_party(SP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][0])
     party_id = party.id
 
-    create_party_role(business, party, ['proprietor'], datetime.utcnow())
+    create_party_role(business, party, ['proprietor'], datetime.now(timezone.utc))
 
     filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
     filing['filing']['changeOfRegistration']['contactPoint'] = CONTACT_POINT
@@ -282,8 +282,8 @@ def tests_filer_proprietor_name_and_address_change(app, session, mocker):
 
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
@@ -322,8 +322,8 @@ def tests_filer_partner_name_and_address_change(app, session, mocker, test_name)
     party2 = create_party(GP_CHANGE_OF_REGISTRATION['filing']['changeOfRegistration']['parties'][1])
     party_id_2 = party2.id
 
-    create_party_role(business, party1, ['partner'], datetime.utcnow())
-    create_party_role(business, party2, ['partner'], datetime.utcnow())
+    create_party_role(business, party1, ['partner'], datetime.now(timezone.utc))
+    create_party_role(business, party2, ['partner'], datetime.now(timezone.utc))
 
     filing = copy.deepcopy(GP_CHANGE_OF_REGISTRATION)
     filing['filing']['changeOfRegistration']['contactPoint'] = CONTACT_POINT
@@ -355,8 +355,8 @@ def tests_filer_partner_name_and_address_change(app, session, mocker, test_name)
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)

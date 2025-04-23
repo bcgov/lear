@@ -34,7 +34,7 @@
 """The Unit Tests for the Consent Continuation Out filing."""
 import copy
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from business_model.models import ConsentContinuationOut, Filing
@@ -60,7 +60,7 @@ def tests_filer_consent_continuation_out(app, session, mocker, test_name, effect
     effective_date = LegislationDatetime.as_legislation_timezone(datetime.fromisoformat(effective_date))
     expiry_date = LegislationDatetime.as_legislation_timezone(datetime.fromisoformat(expiry_date))
 
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_business(identifier, legal_type='BC')
     business.save()
     business_id = business.id
@@ -78,8 +78,8 @@ def tests_filer_consent_continuation_out(app, session, mocker, test_name, effect
     filing_msg = FilingMessage(filing_identifier=cco_filing.id)
 
     # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.filer.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.filer.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
     mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
