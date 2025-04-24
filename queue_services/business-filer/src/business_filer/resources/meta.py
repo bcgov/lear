@@ -31,34 +31,23 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Entity-Filer module.
-
-Provides the service that applies filings to the Business Database structure.
+# pylint: disable=E0611
+"""Meta information about the service.
+Currently this only provides API versioning information
 """
-from flask import Flask
+from importlib import metadata
 
-from .meta import bp as meta_endpoint
-from .ops import bp as ops_endpoint
-from .worker import bp as worker_endpoint
+from flask import Blueprint
+from flask import jsonify
+
+from business_filer.utils.version import get_run_version
+
+bp = Blueprint("META", __name__, url_prefix="/meta")
 
 
-def register_endpoints(app: Flask):
-    """Register API endpoints with the Flask application."""
-    # Allow base route to match with, and without a trailing slash
-    app.url_map.strict_slashes = False
-
-    app.register_blueprint(
-        url_prefix='/',
-        blueprint=worker_endpoint,
-    )
-
-    app.register_blueprint(
-        url_prefix="/meta",
-        blueprint=meta_endpoint,
-    )
-
-    app.register_blueprint(
-        url_prefix="/ops",
-        blueprint=ops_endpoint,
-    )
-
+@bp.route("/info")
+def info():
+    """Returns the version of the service."""
+    framework_version = metadata.version("flask")
+    version = get_run_version()
+    return jsonify(API=f"{__name__[: __name__.find('.')]}/{version}", FrameWork=f"{framework_version}")

@@ -33,12 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Voluntary Dissolution filing."""
 import copy
+import random
 from datedelta import datedelta
 from datetime import datetime, timezone
 
 import pytest
 
-from business_model.models import BatchProcessing, Batch, Business, Office, OfficeType, Party, PartyRole, Filing
+from business_model.models import BatchProcessing, Batch, Business, Office, OfficeType, Party, PartyRole, Filing, Amalgamation, AmalgamatingBusiness
 from business_model.models.document import DocumentType
 # from legal_api.services.minio import MinioService
 from business_filer.common.legislation_datetime import LegislationDatetime
@@ -269,18 +270,38 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
 ])
 def test_amalgamation_administrative_dissolution(app, session, mocker, dissolution_type):
     """Assert that the dissolution is processed."""
-    from tests.unit.test_filer.test_amalgamation_application import test_regular_amalgamation_application_process
-    identifier = test_regular_amalgamation_application_process(app, session)
+    # from tests.unit.test_filer.test_amalgamation_application import test_regular_amalgamation_application_process
+    # identifier = test_regular_amalgamation_application_process(app, session)
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_business(identifier, legal_type='BC')
+    amal_business = create_business(f'BC{random.randint(1000000, 9999999)}', legal_type='BC')
+    filing_id = (create_filing('123', FILING_HEADER, business_id=amal_business.id)).id
+
+    amalgamation = Amalgamation()
+    amalgamation.filing_id = filing_id
+    amalgamation.amalgamation_date = datetime.now()
+    amalgamation.amalgamation_type = Amalgamation.AmalgamationTypes.regular
+
+    amalgamating_business = AmalgamatingBusiness()
+    amalgamating_business.role = AmalgamatingBusiness.Role.amalgamating
+    amalgamating_business.business_id = amal_business.id
+    amalgamation.amalgamating_businesses.append(amalgamating_business)
+
+    amalgamation.save()
+    business.amalgamation.append(amalgamation)
+    business.save()
+
     # setup
     dissolution_filing_json = copy.deepcopy(FILING_HEADER)
     dissolution_filing_json['filing']['header']['name'] = 'dissolution'
+    dissolution_filing_json['filing']['business']['identifier'] = identifier
     dissolution_filing_json['filing']['dissolution'] = DISSOLUTION
     dissolution_filing_json['filing']['dissolution']['dissolutionDate'] = '2018-04-08'
     dissolution_filing_json['filing']['dissolution']['dissolutionType'] = dissolution_type
     dissolution_filing_json['filing']['dissolution']['hasLiabilities'] = False
     dissolution_filing_json['filing']['dissolution']['details'] = 'Some Details here'
 
-    business = Business.find_by_identifier(identifier)
+    # business = Business.find_by_identifier(identifier)
     filing = create_filing('123', dissolution_filing_json, business_id=business.id)
     filing.effective_date = datetime.now()
     filing.save()

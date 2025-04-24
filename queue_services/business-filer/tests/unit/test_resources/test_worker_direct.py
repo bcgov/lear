@@ -87,6 +87,10 @@ def test_worker_msg_validated(client, app, caplog, mocker):
 
 def test_worker_msg(client, app, caplog, mocker):
     """Test worker endpoint validated filing."""
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_mras_email', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
 
     # Setup
     identifier = f'CP{random.randint(1000000, 9999999)}'

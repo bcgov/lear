@@ -1,4 +1,4 @@
-# Copyright © 2025 Province of British Columbia
+# Copyright © 2023 Province of British Columbia
 #
 # Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,34 +31,41 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Entity-Filer module.
-
-Provides the service that applies filings to the Business Database structure.
 """
-from flask import Flask
+Module Name: Blueprint Ops
+Description: This module contains routes that are used to check the health and readiness of the API.
+The module includes two routes, "/healthz", and "/readyz", which respond with status messages indicating the health and
+readiness of the API respectively.
+Health is determined by the ability to execute a simple SELECT 1 query on the connected database.
+"""
+from http import HTTPStatus
 
-from .meta import bp as meta_endpoint
-from .ops import bp as ops_endpoint
-from .worker import bp as worker_endpoint
+from flask import Blueprint, current_app
+from sqlalchemy import exc, text
+
+from business_model.models import db
+
+bp = Blueprint("ops", __name__)
 
 
-def register_endpoints(app: Flask):
-    """Register API endpoints with the Flask application."""
-    # Allow base route to match with, and without a trailing slash
-    app.url_map.strict_slashes = False
+@bp.route("/healthz", methods=("GET",))
+def health():
+    """Check the health of the API."""
+    try:
+        db.session.execute(text("select 1"))
+    except exc.SQLAlchemyError as db_exception:
+        current_app.logger.error("DB connection pool unhealthy:" + repr(db_exception))
+        return {"message": "api is down"}, HTTPStatus.INTERNAL_SERVER_ERROR
+    except Exception as default_exception:  # noqa: B902; log error
+        current_app.logger.error("DB connection failed:" + repr(default_exception))
+        return {"message": "api is down"}, 500
 
-    app.register_blueprint(
-        url_prefix='/',
-        blueprint=worker_endpoint,
-    )
+    current_app.logger.info("/ops/healthz")
+    return {"message": "api is healthy"}, HTTPStatus.OK
 
-    app.register_blueprint(
-        url_prefix="/meta",
-        blueprint=meta_endpoint,
-    )
 
-    app.register_blueprint(
-        url_prefix="/ops",
-        blueprint=ops_endpoint,
-    )
-
+@bp.route("/readyz", methods=("GET",))
+def ready():
+    """Return service is setup and ready to work."""
+    current_app.logger.info("/ops/readyz")
+    return {"message": "api is ready"}, HTTPStatus.OK

@@ -31,34 +31,40 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Entity-Filer module.
+"""Tests to assure the meta end-point.
 
-Provides the service that applies filings to the Business Database structure.
+Test-Suite to ensure that the /meta endpoint is working as expected.
 """
-from flask import Flask
-
-from .meta import bp as meta_endpoint
-from .ops import bp as ops_endpoint
-from .worker import bp as worker_endpoint
+from importlib.metadata import version
 
 
-def register_endpoints(app: Flask):
-    """Register API endpoints with the Flask application."""
-    # Allow base route to match with, and without a trailing slash
-    app.url_map.strict_slashes = False
+def test_meta_no_commit_hash(client):
+    """Assert that the endpoint returns just the services __version__."""
+    PACKAGE_NAME = "business_filer"
+    ver = version(PACKAGE_NAME)
+    framework_version = version("flask")
 
-    app.register_blueprint(
-        url_prefix='/',
-        blueprint=worker_endpoint,
-    )
+    rv = client.get("/meta/info")
 
-    app.register_blueprint(
-        url_prefix="/meta",
-        blueprint=meta_endpoint,
-    )
+    assert rv.status_code == 200
+    assert rv.json == {
+        "API": f"{PACKAGE_NAME}/{ver}",
+        "FrameWork": f"{framework_version}",
+    }
 
-    app.register_blueprint(
-        url_prefix="/ops",
-        blueprint=ops_endpoint,
-    )
 
+def test_meta_with_commit_hash(monkeypatch, client):
+    """Assert that the endpoint return __version__ and the last git hash used to build the services image."""
+    PACKAGE_NAME = "business_filer"
+    ver = version(PACKAGE_NAME)
+    framework_version = version("flask")
+
+    commit_hash = "deadbeef_ha"
+    monkeypatch.setenv("VCS_REF", commit_hash)
+
+    rv = client.get("/meta/info")
+    assert rv.status_code == 200
+    assert rv.json == {
+        "API": f"{PACKAGE_NAME}/{ver}-{commit_hash}",
+        "FrameWork": f"{framework_version}",
+    }

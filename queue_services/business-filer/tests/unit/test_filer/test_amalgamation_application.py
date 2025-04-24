@@ -37,10 +37,8 @@ from tests.unit import (
 )
 
 
-def test_regular_amalgamation_application_process(app, session):
+def test_regular_amalgamation_application_process(app, session, set_publish_mocks):
     """Assert that the amalgamation application object is correctly populated to model objects."""
-    # thor
-    return
     filing_type = 'amalgamationApplication'
     amalgamating_identifier_1 = f'BC{random.randint(1000000, 9999999)}'
     amalgamating_identifier_2 = f'BC{random.randint(1000000, 9999999)}'
@@ -75,6 +73,8 @@ def test_regular_amalgamation_application_process(app, session):
 
     # test
     filing_msg = FilingMessage(filing_identifier=filing_rec.id)
+    # mocker.patch('business_filer.services.publish_event.PublishEvent.publish_mras_email', return_value=None)
+    # mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
     with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num):
         with patch.object(business_profile, 'update_business_profile', return_value=HTTPStatus.OK):
             process_filing(filing_msg)

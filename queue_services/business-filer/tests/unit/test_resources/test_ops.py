@@ -31,34 +31,18 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Entity-Filer module.
+"""Tests to assure the ops end-point.
 
-Provides the service that applies filings to the Business Database structure.
+Test-Suite to ensure that the /ops endpoint is working as expected.
 """
-from flask import Flask
-
-from .meta import bp as meta_endpoint
-from .ops import bp as ops_endpoint
-from .worker import bp as worker_endpoint
+from http import HTTPStatus
 
 
-def register_endpoints(app: Flask):
-    """Register API endpoints with the Flask application."""
-    # Allow base route to match with, and without a trailing slash
-    app.url_map.strict_slashes = False
+def test_healthz_200(client):
+    rv = client.get("/ops/healthz")
+    assert rv.status_code == HTTPStatus.OK
 
-    app.register_blueprint(
-        url_prefix='/',
-        blueprint=worker_endpoint,
-    )
 
-    app.register_blueprint(
-        url_prefix="/meta",
-        blueprint=meta_endpoint,
-    )
-
-    app.register_blueprint(
-        url_prefix="/ops",
-        blueprint=ops_endpoint,
-    )
-
+def test_readyz_200(client):
+    rv = client.get("/ops/readyz")
+    assert rv.status_code == HTTPStatus.OK
