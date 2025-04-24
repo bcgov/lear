@@ -95,11 +95,13 @@ def format_offices_data(data: dict) -> list[dict]:
         'RC': 'recordsOffice',
         'RG': 'registeredOffice',
         'LQ': 'liquidationRecordsOffice',
+        'DS': 'dcrOffice',
+        # Additional office type codes can be added here in the future
     }
 
     for x in offices_data:
         # Note: only process RC, RG, LQ now (done in SQL)
-        if (office_type := x['o_office_typ_cd']) not in ['RC', 'RG', 'LQ']:
+        if (office_type := x['o_office_typ_cd']) not in office_mapping.keys():
             continue
         office = copy.deepcopy(OFFICE)
         office['offices']['office_type'] = office_mapping[office_type]
@@ -171,7 +173,8 @@ def format_parties_data(data: dict) -> list[dict]:
 
         formatted_party_roles = party['party_roles']
         for _, r in group.iterrows():
-            if (role_code := r['cp_party_typ_cd']) not in ['DIR', 'OFF', 'RCC', 'RCM', 'LIQ']:
+
+            if (role_code := r['cp_party_typ_cd']) not in role_mapping.keys():
                 continue
 
             role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping

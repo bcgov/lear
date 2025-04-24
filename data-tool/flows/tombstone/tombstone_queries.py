@@ -359,7 +359,7 @@ def get_offices_and_addresses_query(corp_num):
 --        and e.corp_num = 'BC0043406' -- office_typ_cd: RG, RC, TH, SH
         and e.corp_num = '{corp_num}'
         and o.end_event_id is null
-        and o.office_typ_cd in ('RG', 'RC', 'LQ')
+        and o.office_typ_cd in ('RG', 'RC', 'DS', 'LQ')
     ;
     """
     return query
