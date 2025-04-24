@@ -73,7 +73,7 @@ class DigitalCredentialsRulesService:
         return list(map(lambda party_role: party_role.role, preconditions))
 
     def _has_general_access(self, user: User) -> bool:
-        """Return Ture if general access rules are met."""
+        """Return True if general access rules are met."""
         if not user:
             logging.debug('No user is provided.')
             return False
@@ -88,7 +88,7 @@ class DigitalCredentialsRulesService:
     def _has_specific_access(self, user: User, business: Business) -> bool:
         """Return True if business rules are met."""
         if not business:
-            logging.debug('No buisiness is provided.')
+            logging.debug('No business is provided.')
             return False
 
         if business.legal_type in self.valid_business_types:

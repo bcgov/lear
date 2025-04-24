@@ -383,11 +383,11 @@ def get_parties_and_addresses_query(corp_num):
             else null
         end), 'YYYY-MM-DD') as cp_appointment_dt_str,
         to_char(cp.cessation_dt, 'YYYY-MM-DD')     as cp_cessation_dt_str,
-        cp.last_name                                as cp_last_name,
-        nullif(trim(cp.middle_name), '')            as cp_middle_name,
-        cp.first_name                               as cp_first_name,
+        nullif(trim(cp.last_name), '')             as cp_last_name,
+        nullif(trim(cp.middle_name), '')           as cp_middle_name,
+        nullif(trim(cp.first_name), '')           as cp_first_name,
         concat_ws(' ', nullif(trim(cp.first_name),''), nullif(trim(cp.middle_name),''), nullif(trim(cp.last_name),'')) as cp_full_name,
-        trim(cp.business_name)    as cp_business_name,
+        nullif(trim(cp.business_name), '')    as cp_business_name,
         -- TODO: need to figure it out, thougth according to the spreadsheet, it converts to identifier
 --        case 
 --                when cp.bus_company_num = '' then NULL
@@ -459,7 +459,7 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
         and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null))
-        and cp.party_typ_cd in ('DIR', 'OFF')
+        and cp.party_typ_cd in ('DIR', 'OFF', 'RCM')
     --order by e.event_id
     order by cp_full_name, e.event_id
     ;
@@ -759,7 +759,7 @@ def get_offices_held_query(corp_num):
              join offices_held oh on oh.corp_party_id = cp.corp_party_id
     WHERE 1 = 1
       and cp.corp_num = '{corp_num}'
-      and cp.end_event_id is null
+      and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null))
       AND cp.party_typ_cd IN ('OFF')
     """
     return query

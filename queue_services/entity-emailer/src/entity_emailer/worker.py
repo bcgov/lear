@@ -51,6 +51,7 @@ from entity_emailer.email_processors import (
     bn_notification,
     cease_receiver_notification,
     change_of_registration_notification,
+    consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_in_notification,
     continuation_out_notification,
@@ -65,6 +66,7 @@ from entity_emailer.email_processors import (
     registration_notification,
     restoration_notification,
     special_resolution_notification,
+    transition_notification,
 )
 
 from .message_tracker import tracker as tracker_util
@@ -202,6 +204,13 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'correction':
                 email = correction_notification.process(email_msg['email'], token)
+                if email:
+                    send_email(email, token)
+                else:
+                    # should reach here only if this filing is filed for BEN corrections statement (jupyter notebook)
+                    logger.debug('No email to send for: %s', email_msg)
+            elif etype == 'consentAmalgamationOut':
+                email = consent_amalgamation_out_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype == 'consentContinuationOut':
                 email = consent_continuation_out_notification.process(email_msg['email'], token)
@@ -223,6 +232,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'ceaseReceiver' and option == Filing.Status.COMPLETED.value:
                 email = cease_receiver_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'transition':
+                email = transition_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype in filing_notification.FILING_TYPE_CONVERTER.keys():
                 if etype == 'annualReport' and option == Filing.Status.COMPLETED.value:

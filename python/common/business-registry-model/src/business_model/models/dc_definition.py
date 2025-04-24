@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from enum import auto
 
+from sqlalchemy import text
+
 from business_model.utils.base import BaseEnum
 
 from .db import db
@@ -98,4 +100,4 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
     @classmethod
     def deactivate(cls, credential_type: CredentialType):
         """Deactivate all definition for the specific credential type."""
-        db.session.execute(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'")
+        db.session.execute(text(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'"))

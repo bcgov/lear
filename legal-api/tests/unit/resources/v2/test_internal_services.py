@@ -90,10 +90,11 @@ def test_get_businesses_expired_restoration(session, client, jwt, test_name, exp
     if expired:
         assert rv.status_code == HTTPStatus.OK
         assert len(rv.json) == 1
-        assert rv.json['identifiers'][0] == identifier
+        assert rv.json['businesses'][0]['identifier'] == identifier
+        assert rv.json['businesses'][0]['legalType'] == business.legal_type
     else:
         assert rv.status_code == HTTPStatus.OK
-        assert len(rv.json['identifiers']) == 0
+        assert len(rv.json['businesses']) == 0
 
 
 def test_update_bn_move(session, client, jwt):

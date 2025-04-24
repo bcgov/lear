@@ -1464,7 +1464,7 @@ def test_coa_future_effective(session, client, jwt):
 @pytest.mark.parametrize(
     'test_name, submitter_role, jwt_role, username, expected',
     [
-        ('staff-staff', UserRoles.staff, UserRoles.staff, 'idir/staff-user', 'idir/staff-user'),
+        ('staff-staff', UserRoles.staff, UserRoles.staff, 'idir/staff-user', 'staff-user'),
         ('system-staff', UserRoles.system, UserRoles.staff, 'system', 'system'),
         ('unknown-staff', None, UserRoles.staff, 'some-user', 'some-user'),
         ('system-public', UserRoles.system, UserRoles.public_user, 'system', 'Registry Staff'),
@@ -1501,6 +1501,7 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 
         rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
                         headers=create_header(jwt, [jwt_role], identifier))
+        
     except Exception as err:
         print(err)
 

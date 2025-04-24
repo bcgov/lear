@@ -1,0 +1,20 @@
+[
+    {
+        "vault": "gcp-queue",
+        "application": [
+            "base",
+            "topics",
+            "a083gt"
+        ]
+    },
+    {
+        "vault": "entity",
+        "application": [
+            "postgres-legal",
+            "filings-jobs",
+            "entity-service-account",
+            "launchdarkly",
+            "email-reminder"
+        ]
+    }
+]

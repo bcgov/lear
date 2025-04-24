@@ -513,16 +513,6 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                     )
 
 
-def is_system_filed_filing(filing_submission) -> bool:
-    """Check if filing is filed by system.
-
-    Filing filed using Jupyter Notebook will have 'certified_by' field = 'system'.
-
-    """
-    certified_by = filing_submission.json['filing']['header']['certifiedBy']
-    return certified_by == 'system' if certified_by else False
-
-
 async def cb_subscription_handler(msg: nats.aio.client.Msg):
     """Use Callback to process Queue Msg objects."""
     try:

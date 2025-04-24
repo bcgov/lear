@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Consent Letter</title>
+    <meta charset="UTF-8">
+    <meta name="author" content="BC Registries and Online Services">
+    [[common/style.html]]
+    [[common/styleLetterOverride.html]]
+  </head>
+  <body>
+    <div class="header-logo">
+      [[logo.html]]
+    </div>
+    <div class="letter-copy">
+      <div>{{ report_date }}</div>
+      <div class="mt-12">{{ business.legalName }}</div>
+      {% set office = offices.registeredOffice %}
+      <div>{{ office.mailingAddress.streetAddress }}</div>
+      <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
+      <div>
+        {{ office.mailingAddress.addressCity }}
+        {{ office.mailingAddress.addressRegion }}
+        &nbsp;{{ office.mailingAddress.postalCode }}
+      </div>
+      <div class="mt-7">Dear Applicant,</div>
+      <div class="mt-5">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
+      <div class="mt-5">
+        The above company was authorized on {{effective_date}} to amalgamate with one or more foreign corporations to
+        form an amalgamated foreign corporation outside of British Columbia, under section 284 of the Business Corporations Act.
+        Please note this letter of consent expires on {{ cco_expiry_date }}.
+      </div>
+      <div class="mt-5">
+        Section 286(1) states that “the amalgamated foreign corporation must promptly file with the registrar a copy of
+        any record issued to the amalgamated foreign corporation by the amalgamated foreign corporation’s jurisdiction
+        to effect or confirm the amalgamation.”
+      </div>
+      <div class="mt-5">
+        Please forward a copy of this record in order to remove the above company from the corporate register in British Columbia.
+      </div>
+      <p class="mt-5">Yours truly,</p>
+      <div class="registrar-info">
+        <div>[[common/certificateRegistrarSignature.html]]</div>
+        <div>
+          <div class="registrar-name">{{ registrarInfo.name }}</div>
+          <div class="registrar-title">{{ registrarInfo.title }}</div>
+        </div>
+      </div>
+    </div>
+    [[common/footerMOCS.html]]
+  </body>
+</html>
