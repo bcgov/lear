@@ -120,6 +120,7 @@ def format_parties_data(data: dict) -> list[dict]:
     role_mapping = {
         'DIR': 'director',
         'OFF': 'officer',
+        'RCC': 'custodian',
         'RCM': 'receiver',
         # Additional roles can be added here in the future
     }
@@ -162,7 +163,7 @@ def format_parties_data(data: dict) -> list[dict]:
 
         formatted_party_roles = party['party_roles']
         for _, r in group.iterrows():
-            if (role_code := r['cp_party_typ_cd']) not in ['DIR', 'OFF', 'RCM']:
+            if (role_code := r['cp_party_typ_cd']) not in ['DIR', 'OFF', 'RCC', 'RCM']:
                 continue
 
             role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
