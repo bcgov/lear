@@ -1674,6 +1674,42 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             CorpInvolved.create_corp_involved(cursor, corp_involved)
 
     @classmethod
+    def _process_amalgamation_out(cls, cursor, filing):
+        """Process amalgamation out."""
+        corp_num = filing.get_corp_num()
+
+        cont_out = ContOut()
+        cont_out.corp_num = corp_num
+        cont_out.start_event_id = filing.event_id
+        cont_out.cont_out_dt = filing.body.get('amalgamationOutDate')
+        cont_out.home_company_nme = filing.body.get('legalName')
+
+        foreign_jurisdiction = filing.body.get('foreignJurisdiction')
+        country_code = foreign_jurisdiction.get('country').upper()
+        region_code = (foreign_jurisdiction.get('region') or '').upper()
+        if country_code == 'CA':
+            if region_code == 'FEDERAL':
+                cont_out.can_jur_typ_cd = 'FD'
+            else:
+                cont_out.can_jur_typ_cd = region_code
+        else:
+            cont_out.can_jur_typ_cd = 'OT'
+            cont_out.othr_juri_desc = \
+                f'{country_code}, {region_code}' if region_code else country_code
+
+        ContOut.create_cont_out(cursor, cont_out)
+
+        amalgamated_to = cont_out.othr_juri_desc if cont_out.can_jur_typ_cd == 'OT' else cont_out.can_jur_typ_cd
+        aml_out_dt_str = datetime.datetime.fromisoformat(cont_out.cont_out_dt).strftime('%B %-d, %Y')
+        cls._insert_ledger_text(
+            cursor,
+            filing,
+            f'AMALGAMATED OUT TO {amalgamated_to} EFFECTIVE {aml_out_dt_str} UNDER THE NAME "{cont_out.home_company_nme}"'
+        )
+
+        Business.update_corp_state(cursor, filing.event_id, corp_num, Business.CorpStateTypes.AMALGAMATE_OUT.value)
+
+    @classmethod
     # pylint: disable=too-many-arguments;
     def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str) -> str:
         """Process specific to annual report."""
