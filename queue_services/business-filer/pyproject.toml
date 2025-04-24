@@ -1,42 +1,48 @@
 [project]
-name = "business-model"
-version = "3.1.0"
-description = ""
+name = "business-filer"
+version = "3.0.0"
+description = "Business Registry Filer Service"
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
 ]
+license = {text = "BSD-3-Clause"}
 readme = "README.md"
 requires-python = ">=3.9,<4"
+
 dependencies = [
-    "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning-alt",
-    "registry-schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.39",
-    "flask-migrate (>=4.1.0,<5.0.0)",
-    "pg8000 (>=1.31.2,<2.0.0)",
-    "pydantic (>=2.10.6,<3.0.0)",
-    "pycountry (>=24.6.1,<25.0.0)",
-    "datedelta (>=1.4,<2.0)",
-    "pytz (>=2025.1,<2026.0)",
-    "flask-babel (>=4.0.0,<5.0.0)",
-    "croniter (>=6.0.0,<7.0.0)",
-    "flask-sqlalchemy (>=3.1.1,<4.0.0)",
+   # "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
+    "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
+    "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "flask (>=3.1.0,<4.0.0)",
-    "dotenv (>=0.9.9,<0.10.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)",
+    "flask-jwt-oidc (>=0.8.0,<0.9.0)",
+    "launchdarkly-server-sdk (>=9.10.0,<10.0.0)",
+    "flask-babel (>=4.0.0,<5.0.0)",
+    "dpath (>=2.2.0,<3.0.0)",
+    "pg8000 (>=1.31.2,<2.0.0)",
+    "business-model @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/business-registry-model",
+
 ]
 
 [tool.poetry]
-packages = [{include = "business_model", from = "src"},
-            {include = "business_model_migrations", from = "src"}
+packages = [{include = "business_filer", from = "src"}
            ]
 
-[tool.poetry.group.test.dependencies]
-freezegun = "^1.5.1"
-pytest = "^8.3.5"
-pytest-cov = "^6.0.0"
-
-
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.11.5"
+ruff = "^0.11.4"
+pytest = "^8.3.5"
+freezegun = "^1.5.1"
+testcontainers = "^4.10.0"
+google-cloud-datastore = "^2.20.2"
+hypothesis = "^6.131.0"
+flask-migrate = "^4.1.0"
+psycopg2-binary = "^2.9.10"
+pytest-mock = "^3.14.0"
+requests-mock = "^1.12.1"
 
+
+[tool.poetry.dependencies]
+business-model = {develop = true}
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -47,19 +53,19 @@ exclude = [
     ".vscode",
     "dist",
     "htmlcov",
-    "venv",
+    ".venv",
     "migrations",
     "devops",
-    ".history"
+    ".history",
+    "tests"
 ]
-
 
 # Same as Black.
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.12
-#target-version = "py312"
+# Assume Python 3.13
+target-version = "py313"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
@@ -90,53 +96,26 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint]
 select = [
+    "TID252",
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "ERA", # flake8-eradicate/eradicate
+    "Q",   # flake8-quotes
     "I",   # isort
     "N",   # pep8-naming
     "PIE", # flake8-pie
     "PL",  # pyLint
+    "PLR0913", # Too many arguments in function definition
     "PGH", # pygrep
     "RUF", # ruff checks
     "SIM", # flake8-simplify
     "T20", # flake8-print
     "TCH", # flake8-type-checking
     "TID", # flake8-tidy-imports
+    "TID252", # relative imports
     "UP",  # pyupgrade
+    "F", # pyflakes
 ]
-#ignore = [
-#    "B904", # use 'raise ... from err'
-#    "B905", # use explicit 'strict=' parameter with 'zip()'
-#    "N999"
-#]
-[tool.ruff.lint.per-file-ignores]
-"**/tests/*" = [
-    "B",
-    "C",
-    "ERA",
-    "N",
-    "PLR",
-    "RUF",
-    "SIM",
-    "T2",
-    ]
-"**/business_model_migrations/*" = [
-    "ERA",
-    "PLR",
-    "T",
-    ]
-#"src/business_model/utils/datetime.py" = [
-#    "N801",
-#    ]
-"**/business_model/*" = [
-    "N801",
-    "RUF012",
-    "RUF013",
-    "SIM",
-    "TC001",
-    ]
-
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]
@@ -145,20 +124,24 @@ unfixable = [
 ]
 
 # Allow unused variables when underscore-prefixed.
-#dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["business_model"]
+known-first-party = ["flask_jwt_oidc", "structured_logging", "gcp_queue"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"**/__init__.py" = ["F401"]  # used for imports
+"**/config.py" = ["T201"]  # allow print instead of logger in config
 
 [tool.pytest.ini_options]
 minversion = "2.0"
 testpaths = [
    "tests",
 ]
-addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+## addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
 python_files = [
    "test*.py"
 ]
@@ -166,7 +149,7 @@ norecursedirs = [
    ".git", ".tox", "venv*", "requirements*", "build",
 ]
 log_cli = true
-log_cli_level = "INFO"
+log_cli_level = "1"
 filterwarnings = [
    "ignore::UserWarning"
 ]
@@ -178,11 +161,9 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = [
-   "src/business_model",
-   "src/business_model_migrations",
+   "src/business_filer",
 ]
 omit = [
-    "app.py"
 ]
 
 [tool.coverage.report]

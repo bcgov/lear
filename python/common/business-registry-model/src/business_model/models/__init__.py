@@ -21,6 +21,8 @@ from .amalgamation import Amalgamation
 from .batch import Batch
 from .batch_processing import BatchProcessing
 from .business import Business
+from .business import BusinessIdentifier
+from .business import BusinessType
 from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .configuration import Configuration
@@ -59,6 +61,8 @@ __all__ = (
     'Batch',
     'BatchProcessing',
     'Business',
+    'BusinessIdentifier',
+    'BusinessType',
     'ColinLastUpdate',
     'Comment',
     'Configuration',
