@@ -340,7 +340,7 @@ def test_issue_digital_credential_throws_definition_not_found_error(mock_find_de
         excinfo)
 
 
-@patch('legal_api.models.DCConnection.find_active_by', return_value=None)
+@patch('legal_api.models.DCConnection.find_active_by_business_user_id', return_value=None)
 @patch('entity_digital_credentials.helpers.digital_credentials')
 def test_issue_digital_credential_throws_active_connection_not_found_error(mock_digital_credentials,
                                                                            mock_find_active_by,
