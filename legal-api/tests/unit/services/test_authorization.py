@@ -19,13 +19,11 @@ Test-Suite to ensure that the Authorization Service is working as expected.
 import random
 
 import copy
-from datetime import datetime as _datetime
 from enum import Enum
 from http import HTTPStatus
-import jwt as pyjwt
 
 import pytest
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock
 from flask import jsonify
 from registry_schemas.example_data import (
     AGM_EXTENSION,
@@ -43,18 +41,13 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from legal_api.models import Address, Filing
-from legal_api.models.business import Business, PartyRole, User
-
-from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, PUBLIC_USER, \
-    are_digital_credentials_allowed, authorized, is_allowed, is_self_registered_owner_operator, \
-    get_allowed, get_allowed_filings, get_allowable_actions
+from legal_api.models import Business, Filing
+from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, \
+    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
-from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing, \
-    factory_party_role, factory_user
-
-from .utils import helper_create_jwt
+from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
+from tests.unit.services.utils import create_business, helper_create_jwt
 
 
 def test_jwt_manager_initialized(jwt):
@@ -1074,6 +1067,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
         return headers[one]
 
     with app.test_request_context():
+        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         account_products_mock = []
@@ -2864,357 +2858,6 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
             assert allowed_filing_types == expected
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_token(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=None)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
-@patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_user(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_are_digital_credentials_allowed_false_when_user_is_staff(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='NOT_BCSC'))
-@patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_are_digital_credentials_allowed_false_when_login_source_not_bcsc(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_are_digital_credentials_allowed_false_when_wrong_business_type(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('GP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=False)
-def test_are_digital_credentials_allowed_false_when_not_owner_operator(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is False
-
-
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch('legal_api.services.authz.is_self_registered_owner_operator', return_value=True)
-def test_are_digital_credentials_allowed_true(monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        jwt.get_token_auth_header = MagicMock(return_value=token)
-        pyjwt.decode = MagicMock(return_value=token_json)
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
-        business = create_business('SP', Business.State.ACTIVE)
-        assert are_digital_credentials_allowed(business, jwt) is True
-
-
-@patch('legal_api.services.authz.get_registration_filing', return_value=None)
-def test_is_self_registered_owner_operator_false_when_no_registration_filing(app, session):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-def test_is_self_registered_owner_operator_false_when_no_proprietors(app, session):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user()
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=_datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-@patch('legal_api.models.PartyRole.get_parties_by_role',
-       return_value=[PartyRole(role=PartyRole.RoleTypes.PROPRIETOR.value)])
-def test_is_self_registered_owner_operator_false_when_no_proprietor(app, session):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user()
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=_datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-@patch('legal_api.models.PartyRole.get_party_roles_by_filing', return_value=None)
-def test_is_self_registered_owner_operator_false_when_no_completing_parties(app, session):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user()
-    )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-@patch('legal_api.models.PartyRole.get_party_roles_by_filing',
-       return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
-def test_is_self_registered_owner_operator_false_when_no_completing_party(app, session):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user()
-    )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-def test_is_self_registered_owner_operator_false_when_parties_not_matching(app, session):
-    user = factory_user(username='test', firstname='Test1', lastname='User1')
-    business = create_business('SP', Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user('1')
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=_datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user('2')
-    )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-def test_is_self_registered_owner_operator_false_when_user_not_matching(app, session):
-    user = factory_user(username='test', firstname='Test1', lastname='User1')
-    business = create_business('SP', Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user('2')
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=_datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user('2')
-    )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-def test_is_self_registered_owner_operator_false_when_proprietor_uses_middle_name_field_and_user_does_not(app, session):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user(first_name='TEST', last_name='USER')
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=_datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user(first_name='TEST', middle_initial='TU', last_name='USER')
-    )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
-
-    assert is_self_registered_owner_operator(business, user) is False
-
-
-def test_is_self_registered_owner_operator_true_when_proprietor_and_user_uses_middle_name_field(app, session):
-    user = factory_user(username='test', firstname='Test Tu', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user(first_name='TEST TU', last_name='USER')
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=_datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user(first_name='TEST', middle_initial='TU', last_name='USER')
-    )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
-
-    assert is_self_registered_owner_operator(business, user) is True
-
-
-def test_is_self_registered_owner_operator_true(app, session):
-    user = factory_user(username='test', firstname='Test', lastname='User')
-    business = create_business('SP', Business.State.ACTIVE)
-    completing_party_role = create_party_role(
-        PartyRole.RoleTypes.COMPLETING_PARTY,
-        **create_test_user(first_name='TEST', last_name='USER')
-    )
-    filing = factory_completed_filing(
-        business=business,
-        data_dict={'filing': {'header': {'name': 'registration'}}},
-        filing_date=_datetime.utcnow(), filing_type='registration'
-    )
-    filing.filing_party_roles.append(completing_party_role)
-    filing.submitter_id = user.id
-    filing.save()
-
-    proprietor_party_role = create_party_role(
-        PartyRole.RoleTypes.PROPRIETOR,
-        **create_test_user(first_name='TEST', last_name='USER')
-    )
-    proprietor_party_role.business_id = business.id
-    proprietor_party_role.save()
-    proprietor_party_role.party.middle_initial = None
-    proprietor_party_role.party.save()
-    assert is_self_registered_owner_operator(business, user) is True
-
-
-def create_business(legal_type, state):
-    """Create a business."""
-    identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
-    business = factory_business(identifier=identifier,
-                                entity_type=legal_type,
-                                state=state,
-                                founding_date=_datetime.now())
-    return business
-
-
 def create_incomplete_filing(business,
                              filing_name,
                              filing_status,
@@ -3252,40 +2895,3 @@ def create_filing(business, filing_type, filing_sub_type=None):
                                       filing_type=filing_type,
                                       filing_sub_type=filing_sub_type)
     return filing
-
-
-def create_party_role(role=PartyRole.RoleTypes.COMPLETING_PARTY,
-                      first_name=None, last_name=None, middle_initial=None):
-    completing_party_address = Address(city='Test Mailing City', address_type=Address.DELIVERY)
-    officer = {
-        'firstName': first_name or 'TEST',
-        'middleInitial': middle_initial or 'TU',
-        'lastName': last_name or 'USER',
-        'partyType': 'person',
-        'organizationName': ''
-    }
-    party_role = factory_party_role(
-        completing_party_address,
-        None,
-        officer,
-        _datetime.utcnow(),
-        None,
-        role
-    )
-    return party_role
-
-
-def create_test_user(suffix=''):
-    return {
-        'first_name': f'TEST{suffix}',
-        'last_name': f'USER{suffix}',
-        'middle_initial': f'TU{suffix}'
-    }
-
-
-def create_test_user(first_name=None, last_name=None, middle_initial=None):
-    return {
-        'first_name': first_name,
-        'last_name': last_name,
-        'middle_initial': middle_initial
-    }
