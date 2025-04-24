@@ -90,12 +90,19 @@ def format_address_data(address_data: dict, prefix: str) -> dict:
 def format_offices_data(data: dict) -> list[dict]:
     offices_data = data['offices']
     formatted_offices = []
+    # TODO: support other office types
+    office_mapping = {
+        'RC': 'recordsOffice',
+        'RG': 'registeredOffice',
+        'LQ': 'liquidationRecordsOffice',
+    }
 
     for x in offices_data:
-        # Note: only process RC and RG now (done in SQL)
-        # TODO: support other office types
+        # Note: only process RC, RG, LQ now (done in SQL)
+        if (office_type := x['o_office_typ_cd']) not in ['RC', 'RG', 'LQ']:
+            continue
         office = copy.deepcopy(OFFICE)
-        office['offices']['office_type'] = 'recordsOffice' if x['o_office_typ_cd'] == 'RC' else 'registeredOffice'
+        office['offices']['office_type'] = office_mapping[office_type]
 
         mailing_address = format_address_data(x, 'ma_')
         delivery_address = format_address_data(x, 'da_')
@@ -122,6 +129,7 @@ def format_parties_data(data: dict) -> list[dict]:
         'OFF': 'officer',
         'RCC': 'custodian',
         'RCM': 'receiver',
+        'LIQ': 'liquidator',
         # Additional roles can be added here in the future
     }
 
@@ -163,7 +171,7 @@ def format_parties_data(data: dict) -> list[dict]:
 
         formatted_party_roles = party['party_roles']
         for _, r in group.iterrows():
-            if (role_code := r['cp_party_typ_cd']) not in ['DIR', 'OFF', 'RCC', 'RCM']:
+            if (role_code := r['cp_party_typ_cd']) not in ['DIR', 'OFF', 'RCC', 'RCM', 'LIQ']:
                 continue
 
             role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
