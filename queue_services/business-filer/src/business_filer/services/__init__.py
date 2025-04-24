@@ -34,10 +34,9 @@
 """Services used by Entity-Filer."""
 from gcp_queue import GcpQueue
 
-from ..common.services.account_service import AccountService
-from ..common.services.flag_manager import Flags
+from ..common.services.account_service import AccountService  # noqa: TID252
+from ..common.services.flag_manager import Flags  # noqa: TID252
 from .gcp_auth import verify_gcp_jwt
-
 
 flags = Flags()
 gcp_queue = GcpQueue()

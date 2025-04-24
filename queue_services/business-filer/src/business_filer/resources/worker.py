@@ -32,24 +32,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The unique worker functionality for this service is contained here."""
-import re
 import traceback
-from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Optional
 
 from flask import Blueprint, current_app, request
-from gcp_queue import SimpleCloudEvent
 
+from business_filer.common.filing_message import get_filing_message
 from business_filer.services import gcp_queue, verify_gcp_jwt
 from business_filer.services.filer import process_filing
-from business_filer.common.filing_message import get_filing_message
+from gcp_queue import SimpleCloudEvent
+
+bp = Blueprint("worker", __name__)
 
 
-bp = Blueprint('worker', __name__)
-
-
-@bp.route('/', methods=('POST',))
+@bp.route("/", methods=("POST",))
 def worker():
     """Process the incoming cloud event.
 
@@ -64,14 +60,14 @@ def worker():
     - Filings that cannot be processed are knocked off the Q
     """
     if not request.data:
-        current_app.logger.debug('No incoming raw msg.')
+        current_app.logger.debug("No incoming raw msg.")
         return {}, HTTPStatus.OK
 
     if msg := verify_gcp_jwt(request):
         current_app.logger.info(msg)
         return {}, HTTPStatus.FORBIDDEN
 
-    current_app.logger.info(f'Incoming raw msg: {str(request.data)}')
+    current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
     # 1. Get cloud event
     # ##
@@ -81,27 +77,27 @@ def worker():
         #
         # Decision here is to return a 200,
         # so the event is removed from the Queue
-        current_app.logger.debug(f'ignoring message, raw payload: {str(ce)}')
+        current_app.logger.debug(f"ignoring message, raw payload: {ce!s}")
         return {}, HTTPStatus.OK
-    current_app.logger.info(f'received ce: {str(ce)}')
+    current_app.logger.info(f"received ce: {ce!s}")
 
     # 2. Get filing_message information
     # ##
     if not (filing_message := get_filing_message(ce)):
         # no filing_message info, take off Q
-        current_app.logger.debug(f'no filing_message info in: {ce}')
-        return {'message': 'no filing info in cloud event'}, HTTPStatus.OK
-    current_app.logger.info(f'Incoming filing_message: {filing_message}')
+        current_app.logger.debug(f"no filing_message info in: {ce}")
+        return {"message": "no filing info in cloud event"}, HTTPStatus.OK
+    current_app.logger.info(f"Incoming filing_message: {filing_message}")
 
     # 3. Process Filing
     # ##
     try:
         process_filing(filing_message)
     except Exception as err:  # pylint: disable=broad-exception-caught
-        current_app.logger.error(f'Error processing filing {filing_message}: {err}')
+        current_app.logger.error(f"Error processing filing {filing_message}: {err}")
         current_app.logger.debug(traceback.format_exc())
-        return {'error': f'Unable to process filing: {filing_message}'}, HTTPStatus.INTERNAL_SERVER_ERROR
+        return {"error": f"Unable to process filing: {filing_message}"}, HTTPStatus.INTERNAL_SERVER_ERROR
 
     # Completed
-    current_app.logger.info(f'completed ce: {str(ce)}')
+    current_app.logger.info(f"completed ce: {ce!s}")
     return {}, HTTPStatus.OK

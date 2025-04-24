@@ -37,8 +37,7 @@ Currently this only provides API versioning information
 """
 from importlib import metadata
 
-from flask import Blueprint
-from flask import jsonify
+from flask import Blueprint, jsonify
 
 from business_filer.utils.version import get_run_version
 

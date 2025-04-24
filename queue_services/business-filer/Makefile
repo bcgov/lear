@@ -50,7 +50,8 @@ install-dev: ## Install local application
 #################################################################################
 ci: lint test ## CI flow
 
-lint: ruff
+lint:
+	ruff --config pyproject.toml check --fix
 
 #################################################################################
 # COMMANDS -   Build

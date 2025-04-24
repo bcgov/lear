@@ -34,7 +34,6 @@
 """This module holds all of the basic data about a business."""
 
 from enum import Enum, EnumMeta
-from typing import Optional
 
 
 class BaseMeta(EnumMeta):
@@ -54,7 +53,7 @@ class BaseEnum(str, Enum, metaclass=BaseMeta):
     """Replace autoname from Enum class."""
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> Optional[str]:
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:

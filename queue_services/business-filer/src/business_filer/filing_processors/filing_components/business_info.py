@@ -32,69 +32,64 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Manages the type of Business."""
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import UTC, datetime
 
-import requests
-from flask import current_app
-from flask_babel import _ as babel  # noqa: N813
-from business_model.models import Business
-from business_model.models import BusinessIdentifier
-from business_model.models import BusinessType
-from business_model.models import Filing
-from business_model.models import PartyRole
+from business_model.models import Business, BusinessIdentifier, BusinessType, Filing, PartyRole
+from flask_babel import _ as babel
 
-from business_filer.common.services import AccountService
 from business_filer.common.services import NaicsService
 from business_filer.services import Flags
 
 
-def set_corp_type(business: Business, business_info: Dict) -> Dict:
+def set_corp_type(business: Business, business_info: dict) -> dict:
     """Set the legal type of the business."""
     if not business:
-        return {'error': babel('Business required before type can be set.')}
+        return {"error": babel("Business required before type can be set.")}
 
     try:
-        legal_type = business_info.get('legalType')
+        legal_type = business_info.get("legalType")
         if legal_type:
             business.legal_type = legal_type
     except (IndexError, KeyError, TypeError):
-        return {'error': babel('A valid legal type must be provided.')}
+        return {"error": babel("A valid legal type must be provided.")}
 
     return None
 
 
-def set_association_type(business: Business, association_type: str) -> Dict:
+def set_association_type(business: Business, association_type: str) -> dict:
     """Set the association type of business."""
     if not business:
-        return {'error': babel('Business required before type can be set.')}
+        return {"error": babel("Business required before type can be set.")}
 
     try:
         cooperative_association_type = association_type
         if cooperative_association_type:
             business.association_type = cooperative_association_type
     except (IndexError, KeyError, TypeError):
-        return {'error': babel('A valid association type must be provided.')}
+        return {"error": babel("A valid association type must be provided.")}
 
     return None
 
 
-def set_legal_name(corp_num: str, business: Business, business_info: Dict, new_legal_type: str = None):
+def set_legal_name(corp_num: str,
+                   business: Business,
+                   business_info: dict,
+                   new_legal_type: str | None = None):
     """Set the legal_name in the business object."""
-    legal_name = business_info.get('legalName', None)
+    legal_name = business_info.get("legalName")
     if legal_name:
         business.legal_name = legal_name
     else:
-        legal_type = new_legal_type or business_info.get('legalType', None)
+        legal_type = new_legal_type or business_info.get("legalType")
         business.legal_name = Business.generate_numbered_legal_name(legal_type, corp_num)
 
 
-def update_business_info(corp_num: str, business: Business, business_info: Dict, filing: Filing):
+def update_business_info(corp_num: str, business: Business, business_info: dict, filing: Filing):
     """Format and update the business entity from filing."""
     if corp_num and business and business_info and filing:
         set_legal_name(corp_num, business, business_info)
         business.identifier = corp_num
-        business.legal_type = business_info.get('legalType', None)
+        business.legal_type = business_info.get("legalType")
         business.founding_date = filing.effective_date
         business.last_coa_date = filing.effective_date
         business.last_cod_date = filing.effective_date
@@ -102,16 +97,16 @@ def update_business_info(corp_num: str, business: Business, business_info: Dict,
     return None
 
 
-def update_naics_info(business: Business, naics: Dict):
+def update_naics_info(business: Business, naics: dict):
     """Update naics info."""
-    business.naics_code = naics.get('naicsCode')
+    business.naics_code = naics.get("naicsCode")
     if business.naics_code:
         naics_structure = NaicsService.find_by_code(business.naics_code)
-        business.naics_key = naics_structure['naicsKey']
+        business.naics_key = naics_structure["naicsKey"]
     else:
         business.naics_code = None
         business.naics_key = None
-    business.naics_description = naics.get('naicsDescription')
+    business.naics_description = naics.get("naicsDescription")
 
 
 def get_next_corp_num(legal_type: str, flags: Flags = None):
@@ -121,12 +116,12 @@ def get_next_corp_num(legal_type: str, flags: Flags = None):
                       Business.LegalTypes.BC_ULC_COMPANY.value,
                       Business.LegalTypes.BC_CCC.value,
                       Business.LegalTypes.COMP.value):
-        legal_type = 'BC'
+        legal_type = "BC"
     elif legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
                         Business.LegalTypes.ULC_CONTINUE_IN.value,
                         Business.LegalTypes.CCC_CONTINUE_IN.value,
                         Business.LegalTypes.CONTINUE_IN.value):
-        legal_type = 'C'
+        legal_type = "C"
 
     # when lear generating the identifier
     if (
@@ -139,29 +134,11 @@ def get_next_corp_num(legal_type: str, flags: Flags = None):
         return None
     return None
 
-    # when colin generating the identifier
-    # try:
-    #     token = AccountService.get_bearer_token()
-    #     resp = requests.post(
-    #         f'{current_app.config["COLIN_API"]}/{legal_type}',
-    #         headers={**AccountService.CONTENT_TYPE_JSON,
-    #                  'Authorization': AccountService.BEARER + token}
-    #     )
-    # except requests.exceptions.ConnectionError:
-    #     current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
-    #     return None
-
-    # if resp.status_code == 200:
-    #     new_corpnum = int(resp.json()['corpNum'])
-    #     if new_corpnum and new_corpnum <= 9999999:
-    #         return f'{legal_type}{new_corpnum:07d}'
-    # return None
-
 
 def get_firm_affiliation_passcode(business_id: int):
     """Return a firm passcode for a given business identifier."""
     pass_code = None
-    end_date = datetime.now(timezone.utc).date()
+    end_date = datetime.now(UTC).date()
     party_roles = PartyRole.get_party_roles(business_id, end_date)
 
     if len(party_roles) == 0:
@@ -169,11 +146,11 @@ def get_firm_affiliation_passcode(business_id: int):
 
     party = party_roles[0].party
 
-    if party.party_type == 'organization':
+    if party.party_type == "organization":
         pass_code = party.organization_name
     else:
-        pass_code = party.last_name + ', ' + party.first_name
-        if hasattr(party, 'middle_initial') and party.middle_initial:
-            pass_code = pass_code + ' ' + party.middle_initial
+        pass_code = party.last_name + ", " + party.first_name
+        if hasattr(party, "middle_initial") and party.middle_initial:
+            pass_code = pass_code + " " + party.middle_initial
 
     return pass_code

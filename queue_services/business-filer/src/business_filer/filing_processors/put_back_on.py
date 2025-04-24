@@ -34,32 +34,31 @@
 """File processing rules and actions for the put back on filing."""
 
 from contextlib import suppress
-from typing import Dict
 
 import dpath
-from business_filer.exceptions import QueueException
-from flask import current_app
 from business_model.models import Business, Filing, Office, OfficeType, db
+from flask import current_app
 
+from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import restoration
 from business_filer.filing_processors.filing_components import filings
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the put back on filing unto the model objects."""
-    if not (put_back_on_filing := filing.get('putBackOn')):
-        current_app.logger.error('Could not find putBackOn in: %s', filing)
-        raise QueueException(f'legal_filing:putBackOn missing from {filing}')
+    if not (put_back_on_filing := filing.get("putBackOn")):
+        current_app.logger.error("Could not find putBackOn in: %s", filing)
+        raise QueueException(f"legal_filing:putBackOn missing from {filing}")
 
-    current_app.logger.debug('processing putBackOn: %s', filing)
+    current_app.logger.debug("processing putBackOn: %s", filing)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.get(put_back_on_filing, '/courtOrder')
+        court_order_json = dpath.get(put_back_on_filing, "/courtOrder")
         filings.update_filing_court_order(filing_rec, court_order_json)
 
-    filing_rec.order_details = put_back_on_filing.get('details')
+    filing_rec.order_details = put_back_on_filing.get("details")
 
     restoration.cease_custodian(business)
 

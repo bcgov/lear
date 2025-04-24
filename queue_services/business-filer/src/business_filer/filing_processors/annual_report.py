@@ -34,36 +34,34 @@
 """File processing rules and actions for the annual report."""
 import datetime
 from contextlib import suppress
-from typing import Dict
 
-from flask import current_app
 from business_model.models import BatchProcessing, Business
-# from legal_api.services.filings import validations
+from flask import current_app
 
+from business_filer.common.services import InvoluntaryDissolutionService
 from business_filer.exceptions import FilingException
 from business_filer.filing_meta import FilingMeta
-from business_filer.common.services import InvoluntaryDissolutionService
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
+def process(business: Business, filing: dict, filing_meta: FilingMeta, flag_on):
     """Render the annual_report onto the business model objects."""
-    legal_filing_name = 'annualReport'
+    legal_filing_name = "annualReport"
 
     # set ar_date or bail
     try:
-       ar_date = filing[legal_filing_name].get('annualReportDate')
+       ar_date = filing[legal_filing_name].get("annualReportDate")
        ar_date = datetime.date.fromisoformat(ar_date)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError) as err:
         # This should never happen
-        current_app.logger.error('No annualReportDate given for in annual report. Filing id: %s', filing.id)
-        raise FilingException('No annualReportDate given for in annual report. Filing id: %s', filing.id)
+        current_app.logger.error("No annualReportDate given for in annual report. Filing id: %s", filing.id)
+        raise FilingException("No annualReportDate given for in annual report. Filing id: %s", filing.id) from err
     business.last_ar_date = ar_date
     
     # if there's an agm date, set it
     agm_date = None
     with suppress(ValueError, TypeError):
         agm_date = datetime.date.fromisoformat(
-            filing[legal_filing_name].get('annualGeneralMeetingDate', None)
+            filing[legal_filing_name].get("annualGeneralMeetingDate", None)
         )
     business.last_agm_date = agm_date
 
@@ -81,11 +79,11 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on):
         if not eligibility:
             batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
-            batch_processing.notes = 'Moved back into good standing'
-            batch_processing.last_modified = datetime.datetime.now(datetime.timezone.utc)
+            batch_processing.notes = "Moved back into good standing"
+            batch_processing.last_modified = datetime.datetime.now(datetime.UTC)
 
     # save the annual report date to the filing meta info
     filing_meta.application_date = ar_date
-    filing_meta.annual_report = {'annualReportDate': ar_date.isoformat(),
-                                 'annualGeneralMeetingDate': agm_date,
-                                 'annualReportFilingYear': business.last_ar_year}
+    filing_meta.annual_report = {"annualReportDate": ar_date.isoformat(),
+                                 "annualGeneralMeetingDate": agm_date,
+                                 "annualReportFilingYear": business.last_ar_year}

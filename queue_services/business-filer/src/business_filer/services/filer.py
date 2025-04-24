@@ -34,26 +34,14 @@
 """The unique worker functionality for this service is contained here.
 """
 import json
-import os
-import uuid
-# from typing import Dict
 
-from business_filer.exceptions import DefaultException
-from business_filer.exceptions import QueueException
-from business_filer.exceptions import FilingException
-from flask import current_app
-from gcp_queue import SimpleCloudEvent, to_queue_message
 from business_model.models import Business, Filing, db
-from business_model.models.db import VersioningProxy, init_db
-from business_filer.services import flags
-from business_filer.common.datetime import datetime, timezone
-from business_filer.common.filing import FilingTypes
-# from sentry_sdk import capture_message
-from sqlalchemy.exc import OperationalError
+from business_model.models.db import VersioningProxy
+from flask import current_app
 
-from business_filer.services.publish_event import PublishEvent
-from business_filer import config
+from business_filer.common.filing import FilingTypes
 from business_filer.common.filing_message import FilingMessage
+from business_filer.exceptions import DefaultError, QueueException
 from business_filer.filing_meta import FilingMeta, json_serial
 from business_filer.filing_processors import (
     admin_freeze,
@@ -90,7 +78,9 @@ from business_filer.filing_processors import (
     transparency_register,
 )
 from business_filer.filing_processors.filing_components import business_profile, name_request
-from business_filer.services import gcp_queue
+from business_filer.services import flags
+from business_filer.services.publish_event import PublishEvent
+
 
 def get_filing_types(legal_filings: dict):
     """Get the filing type fee codes for the filing.
@@ -100,28 +90,28 @@ def get_filing_types(legal_filings: dict):
     }
     """
     filing_types = []
-    for k in legal_filings['filing'].keys():
+    for k in legal_filings["filing"]:
         if Filing.FILINGS.get(k, None):
             filing_types.append(k)
     return filing_types
 
 
-def process_filing(filing_message: FilingMessage):
+def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
     """Render the filings contained in the submission."""
     if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
         current_app.logger.error(f"No filing found for: {filing_message}")
-        raise DefaultException(error_text=f"filing not found for {filing_message.filing_identifier}")
+        raise DefaultError(error_text=f"filing not found for {filing_message.filing_identifier}")
 
     if filing_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
-        current_app.logger.warning('QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s',
+        current_app.logger.warning("QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s",
                                     filing_submission.business_id, filing_submission.id, filing_message)
         return None, None
 
     if filing_submission.withdrawal_pending:
         # TODO: set this better
-        current_app.logger.warning('QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s',
+        current_app.logger.warning("QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s",
                                     filing_submission.business_id, filing_submission.id, filing_message)
-        raise QueueException('withdrawal_pending', 1 )
+        raise QueueException("withdrawal_pending", 1 )
 
     # convenience flag to set that the envelope is a correction
     is_correction = filing_submission.filing_type == FilingTypes.CORRECTION
@@ -166,8 +156,8 @@ def process_filing(filing_message: FilingMessage):
                     amalgamation_out.process(business, filing_submission, filing, filing_meta)
 
                 case "annualReport":
-                    flag_on = flags.is_on('enable-involuntary-dissolution')
-                    current_app.logger.debug('enable-involuntary-dissolution flag on: %s', flag_on)
+                    flag_on = flags.is_on("enable-involuntary-dissolution")
+                    current_app.logger.debug("enable-involuntary-dissolution flag on: %s", flag_on)
                     annual_report.process(business, filing, filing_meta, flag_on)
 
                 case "appointReceiver":
@@ -177,11 +167,11 @@ def process_filing(filing_message: FilingMessage):
                     cease_receiver.process(business, filing, filing_submission, filing_meta)
 
                 case "changeOfAddress":
-                    flag_on = flags.is_on('enable-involuntary-dissolution')
+                    flag_on = flags.is_on("enable-involuntary-dissolution")
                     change_of_address.process(business, filing, filing_meta, flag_on)
 
                 case "changeOfDirectors":
-                    filing['colinIds'] = filing_submission.colin_event_ids
+                    filing["colinIds"] = filing_submission.colin_event_ids
                     change_of_directors.process(business, filing, filing_meta)
 
                 case "changeOfName":
@@ -220,7 +210,7 @@ def process_filing(filing_message: FilingMessage):
                     court_order.process(business, filing_submission, filing, filing_meta)
 
                 case "dissolution":
-                    flag_on = flags.is_on('enable-involuntary-dissolution')
+                    flag_on = flags.is_on("enable-involuntary-dissolution")
                     dissolution.process(business, filing, filing_submission, filing_meta, flag_on)
 
                 case "incorporationApplication":
@@ -270,7 +260,7 @@ def process_filing(filing_message: FilingMessage):
         filing_submission.transaction_id = transaction_id
 
         business_type = business.legal_type if business \
-            else filing_submission.filing_json.get('filing', {}).get('business', {}).get('legalType')
+            else filing_submission.filing_json.get("filing", {}).get("business", {}).get("legalType")
         filing_submission.set_processed(business_type)
         if business:
             business.last_modified = filing_submission.completion_date
@@ -303,39 +293,38 @@ def process_filing(filing_message: FilingMessage):
             name_request.consume_nr(business, filing_submission, flags=flags)
             business_profile.update_business_profile(business, filing_submission, flags=flags)
             PublishEvent.publish_mras_email(current_app, business, filing_submission)
-        else:
-            if not flags.is_on('enable-sandbox'):
-                for filing_type in filing_meta.legal_filings:
-                    if filing_type in [
-                        FilingTypes.AMALGAMATIONOUT,
-                        FilingTypes.ALTERATION,
-                        FilingTypes.CHANGEOFREGISTRATION,
-                        FilingTypes.CONTINUATIONOUT,
-                        FilingTypes.CORRECTION,
-                        FilingTypes.DISSOLUTION,
-                        FilingTypes.PUTBACKON,
-                        FilingTypes.RESTORATION
-                    ]:
-                        business_profile.update_entity(business, filing_type)
+        elif not flags.is_on("enable-sandbox"):
+            for filing_type in filing_meta.legal_filings:
+                if filing_type in [
+                    FilingTypes.AMALGAMATIONOUT,
+                    FilingTypes.ALTERATION,
+                    FilingTypes.CHANGEOFREGISTRATION,
+                    FilingTypes.CONTINUATIONOUT,
+                    FilingTypes.CORRECTION,
+                    FilingTypes.DISSOLUTION,
+                    FilingTypes.PUTBACKON,
+                    FilingTypes.RESTORATION
+                ]:
+                    business_profile.update_entity(business, filing_type)
 
-                    if filing_type in [
-                        FilingTypes.ALTERATION,
-                        FilingTypes.CHANGEOFREGISTRATION,
-                        FilingTypes.CHANGEOFNAME,
-                        FilingTypes.CORRECTION,
-                        FilingTypes.RESTORATION,
-                    ]:
-                        name_request.consume_nr(business,
-                                                filing_submission,
-                                                filing_type=filing_type,
-                                                flags=flags)
-                        if filing_type != FilingTypes.CHANGEOFNAME:
-                            business_profile.update_business_profile(business,
-                                                                        filing_submission,
-                                                                        filing_type,
-                                                                        flags=flags)
+                if filing_type in [
+                    FilingTypes.ALTERATION,
+                    FilingTypes.CHANGEOFREGISTRATION,
+                    FilingTypes.CHANGEOFNAME,
+                    FilingTypes.CORRECTION,
+                    FilingTypes.RESTORATION,
+                ]:
+                    name_request.consume_nr(business,
+                                            filing_submission,
+                                            filing_type=filing_type,
+                                            flags=flags)
+                    if filing_type != FilingTypes.CHANGEOFNAME:
+                        business_profile.update_business_profile(business,
+                                                                    filing_submission,
+                                                                    filing_type,
+                                                                    flags=flags)
 
-        if not flags.is_on('enable-sandbox'):
+        if not flags.is_on("enable-sandbox"):
             PublishEvent.publish_email_message(current_app, business, filing_submission, filing_submission.status)
 
         PublishEvent.publish_event(current_app, business, filing_submission)

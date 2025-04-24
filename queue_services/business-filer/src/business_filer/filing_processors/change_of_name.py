@@ -32,24 +32,23 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the Change of Name filing."""
-from typing import Dict
 
-from flask import current_app
 from business_model.models import Business
+from flask import current_app
 
 from business_filer.filing_meta import FilingMeta
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):
+def process(business: Business, filing: dict, filing_meta: FilingMeta):
     """Render the change of name into the business model objects."""
-    current_app.logger.debug('processing Change of Name: %s', filing)
+    current_app.logger.debug("processing Change of Name: %s", filing)
 
-    if name_request_json := filing['changeOfName'].get('nameRequest'):
-        new_name = name_request_json.get('legalName')
+    if name_request_json := filing["changeOfName"].get("nameRequest"):
+        new_name = name_request_json.get("legalName")
     else:
-        new_name = filing['changeOfName'].get('legalName')
+        new_name = filing["changeOfName"].get("legalName")
 
-    filing_meta.change_of_name = {'fromLegalName': business.legal_name,
-                                  'toLegalName': new_name}
+    filing_meta.change_of_name = {"fromLegalName": business.legal_name,
+                                  "toLegalName": new_name}
 
     business.legal_name = new_name

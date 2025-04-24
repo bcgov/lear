@@ -33,46 +33,44 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the agm extension filing."""
 
-from typing import Dict
 
 import dpath
 
 from business_filer.filing_meta import FilingMeta
 
 
-def process(filing: Dict, filing_meta: FilingMeta):
+def process(filing: dict, filing_meta: FilingMeta):
     """Render the agm extension filing onto the business model objects."""
     filing_meta.agm_extension = {
-        'year': filing['agmExtension']['year'],
-        'isFirstAgm': filing['agmExtension']['isFirstAgm'],
-        'extReqForAgmYear': filing['agmExtension']['extReqForAgmYear'],
-        'totalApprovedExt': filing['agmExtension']['totalApprovedExt'],
-        'extensionDuration': filing['agmExtension']['extensionDuration'],
-        'isFinalExtension': _check_final_extension(filing)
+        "year": filing["agmExtension"]["year"],
+        "isFirstAgm": filing["agmExtension"]["isFirstAgm"],
+        "extReqForAgmYear": filing["agmExtension"]["extReqForAgmYear"],
+        "totalApprovedExt": filing["agmExtension"]["totalApprovedExt"],
+        "extensionDuration": filing["agmExtension"]["extensionDuration"],
+        "isFinalExtension": _check_final_extension(filing)
     }
 
-    if prev_agm_ref_date := dpath.get(filing, '/agmExtension/prevAgmRefDate', default=None):
+    if prev_agm_ref_date := dpath.get(filing, "/agmExtension/prevAgmRefDate", default=None):
         filing_meta.agm_extension = {
             **filing_meta.agm_extension,
-            'prevAgmRefDate': prev_agm_ref_date
+            "prevAgmRefDate": prev_agm_ref_date
         }
 
-    if curr_ext_expiry_date := dpath.get(filing, '/agmExtension/expireDateCurrExt', default=None):
+    if curr_ext_expiry_date := dpath.get(filing, "/agmExtension/expireDateCurrExt", default=None):
         filing_meta.agm_extension = {
             **filing_meta.agm_extension,
-            'expireDateCurrExt': curr_ext_expiry_date
+            "expireDateCurrExt": curr_ext_expiry_date
         }
 
-    if expiry_date_approved_ext := dpath.get(filing, '/agmExtension/expireDateApprovedExt', default=None):
+    if expiry_date_approved_ext := dpath.get(filing, "/agmExtension/expireDateApprovedExt", default=None):
         filing_meta.agm_extension = {
             **filing_meta.agm_extension,
-            'expireDateApprovedExt': expiry_date_approved_ext
+            "expireDateApprovedExt": expiry_date_approved_ext
         }
 
 
-def _check_final_extension(filing: Dict) -> bool:
+def _check_final_extension(filing: dict) -> bool:
     """Mark final extension for current agm year."""
-    total_approved_ext = filing['agmExtension']['totalApprovedExt']
-    if total_approved_ext >= 12:
-        return True
-    return False
+    min_months = 12
+    total_approved_ext = filing["agmExtension"]["totalApprovedExt"]
+    return total_approved_ext >= min_months

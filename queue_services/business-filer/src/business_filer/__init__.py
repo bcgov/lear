@@ -38,10 +38,9 @@ from business_model.models import db
 from flask import Flask
 
 from business_filer.config import DevConfig, ProdConfig, TestConfig
+from business_filer.resources import register_endpoints
 from business_filer.services import flags, gcp_queue
 from structured_logging import StructuredLogging
-from business_filer.resources import register_endpoints
-
 
 CONFIG_MAP = {
     "development": DevConfig,

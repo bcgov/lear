@@ -35,11 +35,14 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ldclient.integrations.test_data import TestData
 
 import ldclient
 from flask import Flask, current_app
 from ldclient import Config, Context, LDClient
-from ldclient.integrations.test_data import TestData
 
 
 class Flags:
@@ -68,10 +71,7 @@ class Flags:
         self.app = app
         self.sdk_key = app.config.get("LD_SDK_KEY")
         if td:
-            try:
-                client = LDClient(config=Config("testing", update_processor_class=td))
-            except Exception as err:
-                print(err)
+            client = LDClient(config=Config("testing", update_processor_class=td))
 
         elif self.sdk_key:
             ldclient.set_config(Config(self.sdk_key))

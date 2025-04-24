@@ -34,9 +34,10 @@
 """Date time utilities."""
 import time as _time
 from datetime import (  # pylint: disable=unused-import
-    date,
+    UTC,
+    date,  # noqa: F401
     timedelta,
-    timezone,
+    timezone,  # noqa: F401
 )
 from datetime import datetime as _datetime
 
@@ -55,14 +56,14 @@ class DayOfWeek(BaseEnum):
     SUNDAY = 6
     
 
-class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
+class datetime(_datetime):  # noqa: N801 ; ha datetime is invalid??
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
 
     @classmethod
     def utcnow(cls):
         """Construct a UTC non-naive datetime, meaning it includes timezone from time.time()."""
         time_stamp = _time.time()
-        return super().utcfromtimestamp(time_stamp).replace(tzinfo=timezone.utc)
+        return super().fromtimestamp(time_stamp, UTC)
 
     @classmethod
     def from_date(cls, date_obj):

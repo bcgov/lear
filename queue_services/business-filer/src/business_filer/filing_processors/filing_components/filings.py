@@ -33,23 +33,23 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Manages the  names of a Business."""
 from contextlib import suppress
-from typing import Dict, Optional
 
-from flask_babel import _ as babel  # noqa: N813
 from business_model.models import Filing
+from flask_babel import _ as babel
+
 from business_filer.common.datetime import datetime
 
 
-def update_filing_court_order(filing_submission: Filing, court_order: Dict) -> Optional[Dict]:
+def update_filing_court_order(filing_submission: Filing, court_order: dict) -> dict | None:
     """Update the court_order info for a Filing."""
     if not Filing:
-        return {'error': babel('Filing required before alternate names can be set.')}
+        return {"error": babel("Filing required before alternate names can be set.")}
 
-    filing_submission.court_order_file_number = court_order.get('fileNumber')
-    filing_submission.court_order_effect_of_order = court_order.get('effectOfOrder')
-    filing_submission.order_details = court_order.get('orderDetails')
+    filing_submission.court_order_file_number = court_order.get("fileNumber")
+    filing_submission.court_order_effect_of_order = court_order.get("effectOfOrder")
+    filing_submission.order_details = court_order.get("orderDetails")
 
     with suppress(IndexError, KeyError, TypeError, ValueError):
-        filing_submission.court_order_date = datetime.fromisoformat(court_order.get('orderDate'))
+        filing_submission.court_order_date = datetime.fromisoformat(court_order.get("orderDate"))
 
     return None

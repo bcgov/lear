@@ -41,10 +41,9 @@ Also supporting the dynamic class behavior found in Python to make adoption easi
 import re
 from dataclasses import dataclass, field, fields
 from datetime import date, datetime
-from typing import Optional
 
 
-def to_camel(string: str) -> Optional[str]:
+def to_camel(string: str) -> str | None:
     """Convert snake_case to camelCase.
 
     This does not strip punctuation or whitespace characters.
@@ -52,12 +51,12 @@ def to_camel(string: str) -> Optional[str]:
     if not isinstance(string, str):
         return None
 
-    return ''.join(word.lower() if idx == 0 else
+    return "".join(word.lower() if idx == 0 else
                    word.capitalize()
-                   for idx, word in enumerate(string.split('_')))
+                   for idx, word in enumerate(string.split("_")))
 
 
-def to_snake(string: str) -> Optional[str]:
+def to_snake(string: str) -> str | None:
     """Convert camelCase to snake_case.
 
     This does not strip punctuation or whitespace characters.
@@ -65,21 +64,21 @@ def to_snake(string: str) -> Optional[str]:
     if not isinstance(string, str):
         return None
 
-    return re.sub(r'([A-Z])', r'_\1', string).lower()
+    return re.sub(r"([A-Z])", r"_\1", string).lower()
 
 
 def json_serial(obj):
     """JSON serializer for datetime and dates."""
-    if isinstance(obj, (datetime, date)):
+    if isinstance(obj, (datetime | date)):
         return obj.isoformat()
-    raise TypeError(f'Type {type(obj)} not serializable')
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 @dataclass
 class FilingMeta:
     """Holds the variable metadata about a filing."""
 
-    application_date: Optional[datetime] = None
+    application_date: datetime | None = None
     legal_filings: list = field(default_factory=list)
 
     @property

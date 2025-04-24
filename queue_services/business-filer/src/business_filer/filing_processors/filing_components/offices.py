@@ -34,14 +34,15 @@
 """Manages the offices for a business."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING
 
-from business_model.models import Business
+if TYPE_CHECKING:
+    from business_model.models import Business
 
 from business_filer.filing_processors.filing_components import create_office
 
 
-def update_offices(business: Business, offices_structure: Dict) -> Optional[List]:
+def update_offices(business: Business, offices_structure: dict) -> list | None:
     """Manage the office for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -57,10 +58,10 @@ def update_offices(business: Business, offices_structure: Dict) -> Optional[List
     if offices_structure:
         try:
             delete_existing_offices(business)
-        except:  # noqa:E722 pylint: disable=bare-except; catch all exceptions
+        except:
             err.append(
-                {'error_code': 'FILER_UNABLE_TO_DELETE_OFFICES',
-                 'error_message': f"Filer: unable to delete offices for :'{business.identifier}'"}
+                {"error_code": "FILER_UNABLE_TO_DELETE_OFFICES",
+                 "error_message": f"Filer: unable to delete offices for :'{business.identifier}'"}
             )
             return err
 
@@ -70,8 +71,8 @@ def update_offices(business: Business, offices_structure: Dict) -> Optional[List
                 business.offices.append(office)
         except KeyError:
             err.append(
-                {'error_code': 'FILER_UNABLE_TO_SAVE_OFFICES',
-                 'error_message': f"Filer: unable to save new offices for :'{business.identifier}'"}
+                {"error_code": "FILER_UNABLE_TO_SAVE_OFFICES",
+                 "error_message": f"Filer: unable to save new offices for :'{business.identifier}'"}
             )
     return err
 

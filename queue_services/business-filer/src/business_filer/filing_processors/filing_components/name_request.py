@@ -36,56 +36,58 @@ import json
 from http import HTTPStatus
 
 import requests
-
-from business_filer.exceptions import QueueException
+from business_model.models import Business, Filing
+from business_model.models.registration_bootstrap import RegistrationBootstrap
 from flask import current_app
-from business_model.models import Business, Filing, RegistrationBootstrap
 
-from business_filer.services import AccountService, Flags
-# from legal_api.services.utils import get_str
+from business_filer.common.services.account_service import AccountService
+from business_filer.exceptions import QueueException
+from business_filer.services import Flags
+from business_filer.services.utils import get_str
 
 
-def consume_nr(business: Business, filing: Filing, filing_type: str = None, flags: Flags = None):
+def consume_nr(business: Business,
+               filing: Filing,
+               filing_type: str | None = None,
+               flags: Flags | None = None):
     """Update the nr to a consumed state."""
-    return Exception
-    # TODO: Fix this
-    # try:
-    #     if flags.is_on('enable-sandbox'):
-    #         current_app.logger.info('Skip consuming NR')
-    #         return
+    try:
+        if flags.is_on("enable-sandbox"):
+            current_app.logger.info("Skip consuming NR")
+            return
 
-    #     filing_type = filing_type if filing_type else filing.filing_type
-    #     # skip this if none (nrNumber will not be available for numbered company)
-    #     if nr_num := get_str(filing.filing_json, f'/filing/{filing_type}/nameRequest/nrNumber'):
+        filing_type = filing_type if filing_type else filing.filing_type
+        # skip this if none (nrNumber will not be available for numbered company)
+        if nr_num := get_str(filing.filing_json, f"/filing/{filing_type}/nameRequest/nrNumber"):
 
-    #         namex_svc_url = current_app.config.get('NAMEX_API')
-    #         token = AccountService.get_bearer_token()
-    #         if flags and (flag_on := flags.is_on('namex-nro-decommissioned')):
-    #             current_app.logger.debug('namex-nro-decommissioned flag: %s', flag_on)
-    #             data = json.dumps({'state': 'CONSUMED', 'corpNum': business.identifier})
-    #         else:
-    #             data = json.dumps({'consume': {'corpNum': business.identifier}})
+            namex_svc_url = current_app.config.get("NAMEX_API")
+            token = AccountService.get_bearer_token()
+            if flags and (flag_on := flags.is_on("namex-nro-decommissioned")):
+                current_app.logger.debug("namex-nro-decommissioned flag: %s", flag_on)
+                data = json.dumps({"state": "CONSUMED", "corpNum": business.identifier})
+            else:
+                data = json.dumps({"consume": {"corpNum": business.identifier}})
 
-    #         rv = requests.patch(
-    #             url=''.join([namex_svc_url, nr_num]),
-    #             headers={**AccountService.CONTENT_TYPE_JSON,
-    #                      'Authorization': AccountService.BEARER + token},
-    #             data=data,
-    #             timeout=AccountService.timeout
-    #         )
-    #         if not rv.status_code == HTTPStatus.OK:
-    #             raise QueueException
+            rv = requests.patch(
+                url="".join([namex_svc_url, nr_num]),
+                headers={**AccountService.CONTENT_TYPE_JSON,
+                         "Authorization": AccountService.BEARER + token},
+                data=data,
+                timeout=AccountService.timeout
+            )
+            if not rv.status_code == HTTPStatus.OK:
+                raise QueueException
 
-    #         # remove the NR from the account
-    #         if filing.temp_reg and (bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)):
-    #             AccountService.delete_affiliation(bootstrap.account, nr_num)
-    # except KeyError:
-    #     pass  # return
-    # except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
-    #     current_app.logger.info(f'Queue Error: Consume NR error for filing:{filing.id}', level='error')
+            # remove the NR from the account
+            if filing.temp_reg and (bootstrap := RegistrationBootstrap.find_by_identifier(filing.temp_reg)):
+                AccountService.delete_affiliation(bootstrap.account, nr_num)
+    except KeyError:
+        pass  # return
+    except Exception:  # pylint: disable=broad-except; note out any exception, but don't fail the call
+        current_app.logger.info(f"Queue Error: Consume NR error for filing:{filing.id}", level="error")
 
 
 def set_legal_name(business: Business, name_request_info: dict):
     """Set the legal_name in the business object."""
-    if legal_name := name_request_info.get('legalName', None):
+    if legal_name := name_request_info.get("legalName"):
         business.legal_name = legal_name

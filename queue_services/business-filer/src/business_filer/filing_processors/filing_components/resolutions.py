@@ -32,18 +32,17 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Manages the resolutions of a Business."""
-from typing import Dict, Optional
 
-from dateutil.parser import parse
 from business_model.models import Business, Party
+from dateutil.parser import parse
 
 
-def find_resolution_with_largest_id(resolutions) -> Optional[Dict]:
+def find_resolution_with_largest_id(resolutions) -> dict | None:
     """Find the resolution with the largest id from the given list of resolutions."""
     return max(resolutions, key=lambda resolution: resolution.id, default=None)
 
 
-def update_resolution(business: Business, resolution_correction) -> Optional[Dict]:
+def update_resolution(business: Business, resolution_correction) -> dict | None:
     """Update the resolution with the largest id."""
     if not business or not resolution_correction:
         return None
@@ -56,7 +55,7 @@ def update_resolution(business: Business, resolution_correction) -> Optional[Dic
     return largest_resolution
 
 
-def update_signatory(business: Business, signatory: Dict) -> Optional[Dict]:
+def update_signatory(business: Business, signatory: dict) -> dict | None:
     """Update the signatory with the largest id."""
     if not business or not signatory:
         return None
@@ -67,19 +66,19 @@ def update_signatory(business: Business, signatory: Dict) -> Optional[Dict]:
 
     # Update the resolution with the largest id
     party = Party(
-        first_name=signatory.get('givenName', '').upper(),
-        last_name=signatory.get('familyName', '').upper(),
-        middle_initial=(signatory.get('additionalName', '') or '').upper(),
-        title='',
-        organization_name='',
-        email='',
-        identifier=''
+        first_name=signatory.get("givenName", "").upper(),
+        last_name=signatory.get("familyName", "").upper(),
+        middle_initial=(signatory.get("additionalName", "") or "").upper(),
+        title="",
+        organization_name="",
+        email="",
+        identifier=""
     )
     largest_resolution.party = party
     return largest_resolution
 
 
-def update_resolution_date(business: Business, date: str) -> Optional[Dict]:
+def update_resolution_date(business: Business, date: str) -> dict | None:
     """Update the resolution_date with the largest id."""
     if not business or not date:
         return None
@@ -93,7 +92,7 @@ def update_resolution_date(business: Business, date: str) -> Optional[Dict]:
     return largest_resolution
 
 
-def update_signing_date(business: Business, date: str) -> Optional[Dict]:
+def update_signing_date(business: Business, date: str) -> dict | None:
     """Update the signing_date with the largest id."""
     if not business or not date:
         return None

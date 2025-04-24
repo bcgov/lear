@@ -34,13 +34,11 @@
 """Manages the share structure for a business."""
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
-from dateutil.parser import parse
 from business_model.models import Business, Resolution, ShareClass, ShareSeries
+from dateutil.parser import parse
 
 
-def update_share_structure(business: Business, share_structure: Dict) -> Optional[List]:
+def update_share_structure(business: Business, share_structure: dict) -> list | None:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -53,7 +51,7 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
 
     err = []
 
-    if resolution_dates := share_structure.get('resolutionDates'):
+    if resolution_dates := share_structure.get("resolutionDates"):
         for resolution_dt in resolution_dates:
             try:
                 d = Resolution(
@@ -63,17 +61,17 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
                 business.resolutions.append(d)
             except (ValueError, OverflowError):
                 err.append(
-                    {'error_code': 'FILER_INVALID_RESOLUTION_DATE',
-                     'error_message': f"Filer: invalid resolution date:'{resolution_dt}'"}
+                    {"error_code": "FILER_INVALID_RESOLUTION_DATE",
+                     "error_message": f"Filer: invalid resolution date:'{resolution_dt}'"}
                 )
 
-    if share_classes := share_structure.get('shareClasses'):
+    if share_classes := share_structure.get("shareClasses"):
         try:
             delete_existing_shares(business)
-        except:  # noqa:E722 pylint: disable=bare-except; catch all exceptions
+        except:
             err.append(
-                {'error_code': 'FILER_UNABLE_TO_DELETE_SHARES',
-                 'error_message': f"Filer: unable to delete shares for :'{business.identifier}'"}
+                {"error_code": "FILER_UNABLE_TO_DELETE_SHARES",
+                 "error_message": f"Filer: unable to delete shares for :'{business.identifier}'"}
             )
             # we're FUBAR, do not load the new shares
             return err
@@ -84,21 +82,21 @@ def update_share_structure(business: Business, share_structure: Dict) -> Optiona
                 business.share_classes.append(share_class)
         except KeyError:
             err.append(
-                {'error_code': 'FILER_UNABLE_TO_SAVE_SHARES',
-                 'error_message': f"Filer: unable to save new shares for :'{business.identifier}'"}
+                {"error_code": "FILER_UNABLE_TO_SAVE_SHARES",
+                 "error_message": f"Filer: unable to save new shares for :'{business.identifier}'"}
             )
 
     return err
 
 
-def update_resolution_dates_correction(business: Business, share_structure: Dict) -> List:
+def update_resolution_dates_correction(business: Business, share_structure: dict) -> list:
     """Correct resolution dates by adding or removing."""
     err = []
 
     inclusion_entries = []
     exclusion_entries = []
     # Delete the ones that are present in db but not in the json and create the ones in json but not in db.
-    if resolution_dates := share_structure.get('resolutionDates'):
+    if resolution_dates := share_structure.get("resolutionDates"):
         # Two lists of dates in datetime format
         business_dates = [item.resolution_date for item in business.resolutions]
         parsed_dates = [parse(resolution_dt).date() for resolution_dt in resolution_dates]
@@ -125,8 +123,8 @@ def update_resolution_dates_correction(business: Business, share_structure: Dict
                 business.resolutions.append(d)
             except (ValueError, OverflowError):
                 err.append(
-                    {'error_code': 'FILER_INVALID_RESOLUTION_DATE',
-                     'error_message': f"Filer: invalid resolution date:'{resolution_dt}'"}
+                    {"error_code": "FILER_INVALID_RESOLUTION_DATE",
+                     "error_message": f"Filer: invalid resolution date:'{resolution_dt}'"}
                 )
     else:
         business.resolutions = []
@@ -134,7 +132,7 @@ def update_resolution_dates_correction(business: Business, share_structure: Dict
     return err
 
 
-def update_share_structure_correction(business: Business, share_structure: Dict) -> Optional[List]:
+def update_share_structure_correction(business: Business, share_structure: dict) -> list | None:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -147,7 +145,7 @@ def update_share_structure_correction(business: Business, share_structure: Dict)
 
     err = update_resolution_dates_correction(business, share_structure)
 
-    if share_classes := share_structure.get('shareClasses'):
+    if share_classes := share_structure.get("shareClasses"):
         # Entries in json and not in db
         exclusion_entries = []
 
@@ -160,8 +158,8 @@ def update_share_structure_correction(business: Business, share_structure: Dict)
                 business.share_classes.append(share_class)
         except KeyError:
             err.append(
-                {'error_code': 'FILER_UNABLE_TO_SAVE_SHARES',
-                 'error_message': f"Filer: unable to save new shares for :'{business.identifier}'"}
+                {"error_code": "FILER_UNABLE_TO_SAVE_SHARES",
+                 "error_message": f"Filer: unable to save new shares for :'{business.identifier}'"}
             )
 
     return err
@@ -177,23 +175,23 @@ def delete_existing_shares(business: Business):
 def create_share_class(share_class_info: dict) -> ShareClass:
     """Create a new share class and associated series."""
     share_class = ShareClass(
-        name=share_class_info['name'],
-        priority=share_class_info['priority'],
-        max_share_flag=share_class_info['hasMaximumShares'],
-        max_shares=share_class_info.get('maxNumberOfShares', None),
-        par_value_flag=share_class_info['hasParValue'],
-        par_value=share_class_info.get('parValue', None),
-        currency=share_class_info.get('currency', None),
-        special_rights_flag=share_class_info['hasRightsOrRestrictions']
+        name=share_class_info["name"],
+        priority=share_class_info["priority"],
+        max_share_flag=share_class_info["hasMaximumShares"],
+        max_shares=share_class_info.get("maxNumberOfShares"),
+        par_value_flag=share_class_info["hasParValue"],
+        par_value=share_class_info.get("parValue"),
+        currency=share_class_info.get("currency"),
+        special_rights_flag=share_class_info["hasRightsOrRestrictions"]
     )
     share_class.series = []
-    for series in share_class_info['series']:
+    for series in share_class_info["series"]:
         share_series = ShareSeries(
-            name=series['name'],
-            priority=series['priority'],
-            max_share_flag=series['hasMaximumShares'],
-            max_shares=series.get('maxNumberOfShares', None),
-            special_rights_flag=series['hasRightsOrRestrictions']
+            name=series["name"],
+            priority=series["priority"],
+            max_share_flag=series["hasMaximumShares"],
+            max_shares=series.get("maxNumberOfShares", None),
+            special_rights_flag=series["hasRightsOrRestrictions"]
         )
         share_class.series.append(share_series)
 
@@ -206,8 +204,8 @@ def update_business_share_class(share_classes: list, business: Business, exclusi
 
     inclusion_entries = []
     for share_class_info in share_classes:
-        if share_class_info.get('id') in share_class_db_ids:
-            share_class = ShareClass.find_by_share_class_id(share_class_info.get('id'))
+        if share_class_info.get("id") in share_class_db_ids:
+            share_class = ShareClass.find_by_share_class_id(share_class_info.get("id"))
             if share_class:
                 update_share_class(share_class, share_class_info)
                 inclusion_entries.append(share_class)
@@ -221,14 +219,14 @@ def update_business_share_class(share_classes: list, business: Business, exclusi
 
 def update_share_class(share_class: ShareClass, share_class_info: dict):
     """Update share class instance in db."""
-    share_class.name = share_class_info['name']
-    share_class.priority = share_class_info['priority']
-    share_class.max_share_flag = share_class_info['hasMaximumShares']
-    share_class.max_shares = share_class_info.get('maxNumberOfShares', None)
-    share_class.par_value_flag = share_class_info['hasParValue']
-    share_class.par_value = share_class_info.get('parValue', None)
-    share_class.currency = share_class_info.get('currency', None)
-    share_class.special_rights_flag = share_class_info['hasRightsOrRestrictions']
+    share_class.name = share_class_info["name"]
+    share_class.priority = share_class_info["priority"]
+    share_class.max_share_flag = share_class_info["hasMaximumShares"]
+    share_class.max_shares = share_class_info.get("maxNumberOfShares")
+    share_class.par_value_flag = share_class_info["hasParValue"]
+    share_class.par_value = share_class_info.get("parValue")
+    share_class.currency = share_class_info.get("currency")
+    share_class.special_rights_flag = share_class_info["hasRightsOrRestrictions"]
 
     # array of ids for share series instance from db
     share_class_series_ids = []
@@ -237,8 +235,8 @@ def update_share_class(share_class: ShareClass, share_class_info: dict):
 
     inclusion_series = []
     # update existing series in db and create new series if not exist
-    for series_info in share_class_info.get('series'):
-        series_id = series_info.get('id')
+    for series_info in share_class_info.get("series"):
+        series_id = series_info.get("id")
         if series_id in share_class_series_ids:
             series_index = share_class_series_ids.index(series_id)
             series = share_class.series[series_index]
@@ -253,8 +251,8 @@ def update_share_class(share_class: ShareClass, share_class_info: dict):
 
 def update_share_series(series_info: dict, series: ShareSeries):
     """Update share series."""
-    series.name = series_info['name']
-    series.priority = series_info['priority']
-    series.max_share_flag = series_info['hasMaximumShares']
-    series.max_shares = series_info.get('maxNumberOfShares', None)
-    series.special_rights_flag = series_info['hasRightsOrRestrictions']
+    series.name = series_info["name"]
+    series.priority = series_info["priority"]
+    series.max_share_flag = series_info["hasMaximumShares"]
+    series.max_shares = series_info.get("maxNumberOfShares")
+    series.special_rights_flag = series_info["hasRightsOrRestrictions"]

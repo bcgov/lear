@@ -96,6 +96,7 @@ docstring-code-line-length = "dynamic"
 
 [tool.ruff.lint]
 select = [
+    "TID252",
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "ERA", # flake8-eradicate/eradicate
@@ -104,12 +105,14 @@ select = [
     "N",   # pep8-naming
     "PIE", # flake8-pie
     "PL",  # pyLint
+    "PLR0913", # Too many arguments in function definition
     "PGH", # pygrep
     "RUF", # ruff checks
     "SIM", # flake8-simplify
     "T20", # flake8-print
     "TCH", # flake8-type-checking
     "TID", # flake8-tidy-imports
+    "TID252", # relative imports
     "UP",  # pyupgrade
     "F", # pyflakes
 ]

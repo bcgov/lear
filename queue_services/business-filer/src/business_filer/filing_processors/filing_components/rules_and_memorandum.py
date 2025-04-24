@@ -34,37 +34,28 @@
 """Manages the rules and memorandum for a business."""
 from __future__ import annotations
 
-from tokenize import String
-from typing import List, Optional
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from tokenize import String
 
 from business_model.models import Business, Document, Filing
 from business_model.models.document import DocumentType
-# from legal_api.services.minio import MinioService
-# from legal_api.services.pdf_service import RegistrarStampData
-
-# from business_filer.utils import replace_file_with_certified_copy
 
 
 def update_rules(
     business: Business,
     filing: Filing,
     rules_file_key: String,
-    file_name: String = None
-) -> Optional[List]:
+    file_name: String | None = None
+) -> list | None:
     """Updtes rules if any.
 
     Assumption: rules file key and name have already been validated
     """
-    # TODO: Fix this
-    return None
     if not business or not rules_file_key:
         # if nothing is passed in, we don't care and it's not an error
         return None
-
-    is_correction = filing.filing_type == 'correction'
-    # rules_file = MinioService.get_file(rules_file_key)
-    # registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)
-    # replace_file_with_certified_copy(rules_file.data, rules_file_key, registrar_stamp_data)
 
     document = Document()
     document.type = DocumentType.COOP_RULES.value
@@ -79,24 +70,16 @@ def update_rules(
 def update_memorandum(
     business: Business,
     filing: Filing,
-    memorandum_file_key: String,
-    file_name: String = None
-) -> Optional[List]:
+    memorandum_file_key: String | None = None,
+    file_name: String | None = None
+) -> list | None:
     """Updtes memorandum if any.
 
     Assumption: memorandum file key and name have already been validated
     """
-    # TODO: Fix this
-    return None
     if not business or not memorandum_file_key:
         # if nothing is passed in, we don't care and it's not an error
         return None
-
-    is_correction = filing.filing_type == 'correction'
-    # create certified copy for memorandum document
-    # memorandum_file = MinioService.get_file(memorandum_file_key)
-    # registrar_stamp_data = RegistrarStampData(filing.effective_date, business.identifier, file_name, is_correction)
-    # replace_file_with_certified_copy(memorandum_file.data, memorandum_file_key, registrar_stamp_data)
 
     document = Document()
     document.type = DocumentType.COOP_MEMORANDUM.value

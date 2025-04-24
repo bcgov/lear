@@ -33,7 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Application Common Error Messages."""
 from string import Formatter
-from typing import Optional
 
 from flask_babel import _ as babel
 
@@ -55,7 +54,7 @@ class MissingKeysFormatter(Formatter):
             return Formatter.get_value(key, args, kwargs)  # pylint: disable=E1120
 
 
-def get_error_message(error_code: ErrorCode, **kwargs) -> Optional[str]:
+def get_error_message(error_code: ErrorCode, **kwargs) -> str | None:
     """Get a localized, formatted error message using the templates in the ERROR_MESSAGES dict."""
     if template := ERROR_MESSAGES.get(error_code, None):
         fmt = MissingKeysFormatter()

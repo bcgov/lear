@@ -40,10 +40,9 @@ Health is determined by the ability to execute a simple SELECT 1 query on the co
 """
 from http import HTTPStatus
 
+from business_model.models import db
 from flask import Blueprint, current_app
 from sqlalchemy import exc, text
-
-from business_model.models import db
 
 bp = Blueprint("ops", __name__)
 

@@ -41,6 +41,6 @@ from .codes import ErrorCode
 from .utils import get_error_message
 
 __all__ = (
-    'ErrorCode',
-    'get_error_message',
+    "ErrorCode",
+    "get_error_message",
 )

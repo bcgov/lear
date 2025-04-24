@@ -33,31 +33,30 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the consent continuation out filing."""
 from contextlib import suppress
-from typing import Dict
 
 import datedelta
 import dpath
 from business_model.models import Business, ConsentContinuationOut, Filing
-from business_filer.common.legislation_datetime import LegislationDatetime
 
+from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import filings
 
 
-def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+def process(business: Business, cco_filing: Filing, filing: dict, filing_meta: FilingMeta):
     """Render the consent continuation out filing into the business model objects."""
     # update consent continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        consent_continuation_out_json = dpath.get(filing, '/consentContinuationOut/courtOrder')
+        consent_continuation_out_json = dpath.get(filing, "/consentContinuationOut/courtOrder")
         filings.update_filing_court_order(cco_filing, consent_continuation_out_json)
 
-    foreign_jurisdiction = filing['consentContinuationOut']['foreignJurisdiction']
+    foreign_jurisdiction = filing["consentContinuationOut"]["foreignJurisdiction"]
     consent_continuation_out = ConsentContinuationOut()
     consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
-    country = foreign_jurisdiction.get('country').upper()
+    country = foreign_jurisdiction.get("country").upper()
     consent_continuation_out.foreign_jurisdiction = country
 
-    region = foreign_jurisdiction.get('region')
+    region = foreign_jurisdiction.get("region")
     region = region.upper() if region else None
     consent_continuation_out.foreign_jurisdiction_region = region
 
@@ -69,9 +68,9 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     business.consent_continuation_outs.append(consent_continuation_out)
 
     filing_meta.consent_continuation_out = {
-        'country': country,
-        'region': region,
-        'expiry': expiry_date.isoformat()
+        "country": country,
+        "region": region,
+        "expiry": expiry_date.isoformat()
     }
 
 

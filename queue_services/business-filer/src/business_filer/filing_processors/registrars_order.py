@@ -33,20 +33,19 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the registrars order filing."""
 from contextlib import suppress
-from datetime import datetime, timezone
-from typing import Dict
+from datetime import datetime
 
 from business_model.models import Filing
 
 from business_filer.filing_meta import FilingMeta
 
 
-def process(registrars_order_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+def process(registrars_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
     """Render the registrars order filing into the business model objects."""
-    registrars_order_filing.court_order_file_number = filing['registrarsOrder'].get('fileNumber')
-    registrars_order_filing.court_order_effect_of_order = filing['registrarsOrder'].get('effectOfOrder')
-    registrars_order_filing.order_details = filing['registrarsOrder']['orderDetails']
+    registrars_order_filing.court_order_file_number = filing["registrarsOrder"].get("fileNumber")
+    registrars_order_filing.court_order_effect_of_order = filing["registrarsOrder"].get("effectOfOrder")
+    registrars_order_filing.order_details = filing["registrarsOrder"]["orderDetails"]
 
     with suppress(IndexError, KeyError, TypeError, ValueError):
         registrars_order_filing.court_order_date = datetime.fromisoformat(
-            filing['registrarsOrder'].get('orderDate'))
+            filing["registrarsOrder"].get("orderDate"))

@@ -33,15 +33,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the agm location change filing."""
 
-from typing import Dict
 
 from business_filer.filing_meta import FilingMeta
 
 
-def process(filing: Dict, filing_meta: FilingMeta):
+def process(filing: dict, filing_meta: FilingMeta):
     """Render the agm location change filing into the model objects."""
     filing_meta.agm_location_change = {
-        'year': filing['agmLocationChange']['year'],
-        'agmLocation': filing['agmLocationChange']['agmLocation'],
-        'reason': filing['agmLocationChange']['reason']
+        "year": filing["agmLocationChange"]["year"],
+        "agmLocation": filing["agmLocationChange"]["agmLocation"],
+        "reason": filing["agmLocationChange"]["reason"]
     }

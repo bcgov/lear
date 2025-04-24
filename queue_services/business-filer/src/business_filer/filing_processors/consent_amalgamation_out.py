@@ -13,7 +13,6 @@
 # limitations under the License.
 """File processing rules and actions for the consent amalgamation out filing."""
 from contextlib import suppress
-from typing import Dict
 
 import dpath
 from business_model.models import Business, ConsentContinuationOut, Filing
@@ -23,20 +22,20 @@ from business_filer.filing_processors.consent_continuation_out import get_expiry
 from business_filer.filing_processors.filing_components import filings
 
 
-def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: FilingMeta):
+def process(business: Business, cco_filing: Filing, filing: dict, filing_meta: FilingMeta):
     """Render the consent amalgamation out filing into the business model objects."""
     # update consent amalgamation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        consent_amalgamation_out_json = dpath.get(filing, '/consentAmalgamationOut/courtOrder')
+        consent_amalgamation_out_json = dpath.get(filing, "/consentAmalgamationOut/courtOrder")
         filings.update_filing_court_order(cco_filing, consent_amalgamation_out_json)
 
-    foreign_jurisdiction = filing['consentAmalgamationOut']['foreignJurisdiction']
+    foreign_jurisdiction = filing["consentAmalgamationOut"]["foreignJurisdiction"]
     consent_amalgamation_out = ConsentContinuationOut()
     consent_amalgamation_out.consent_type = ConsentContinuationOut.ConsentTypes.amalgamation_out
-    country = foreign_jurisdiction.get('country').upper()
+    country = foreign_jurisdiction.get("country").upper()
     consent_amalgamation_out.foreign_jurisdiction = country
 
-    region = foreign_jurisdiction.get('region')
+    region = foreign_jurisdiction.get("region")
     region = region.upper() if region else None
     consent_amalgamation_out.foreign_jurisdiction_region = region
 
@@ -48,7 +47,7 @@ def process(business: Business, cco_filing: Filing, filing: Dict, filing_meta: F
     business.consent_continuation_outs.append(consent_amalgamation_out)
 
     filing_meta.consent_amalgamation_out = {
-        'country': country,
-        'region': region,
-        'expiry': expiry_date.isoformat()
+        "country": country,
+        "region": region,
+        "expiry": expiry_date.isoformat()
     }

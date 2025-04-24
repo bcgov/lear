@@ -33,25 +33,24 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the admin freeze filing."""
 
-from typing import Dict
 
 import dpath
-from business_filer.exceptions import QueueException
-from flask import current_app
 from business_model.models import Business, Filing
+from flask import current_app
 
+from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 
 
-def process(business: Business,  filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business,  filing: dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the admin freeze filing unto the model objects."""
-    if not (admin_freeze_filing := filing.get('adminFreeze')):
-        current_app.logger.error('Could not find adminFreeze in: %s', filing)
-        raise QueueException(f'legal_filing:adminFreeze missing from {filing}')
+    if not (admin_freeze_filing := filing.get("adminFreeze")):
+        current_app.logger.error("Could not find adminFreeze in: %s", filing)
+        raise QueueException(f"legal_filing:adminFreeze missing from {filing}")
 
-    current_app.logger.debug('processing adminFreeze: %s', filing)
+    current_app.logger.debug("processing adminFreeze: %s", filing)
 
-    freeze = bool(dpath.get(admin_freeze_filing, '/freeze'))
+    freeze = bool(dpath.get(admin_freeze_filing, "/freeze"))
     business.admin_freeze = freeze
 
-    filing_meta.admin_freeze = {'freeze': freeze}
+    filing_meta.admin_freeze = {"freeze": freeze}

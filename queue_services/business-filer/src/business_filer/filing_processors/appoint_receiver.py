@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the appoint receiver."""
-from typing import Dict
 
 from business_model.models import Business, Filing
 
@@ -20,12 +19,12 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.parties import update_parties
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: FilingMeta):
     # pylint: disable=too-many-branches;
     """Render the appoint_receiver onto the business model objects."""
-    appoint_receiver_filing = filing.get('appointReceiver')
-    if not appoint_receiver_filing.get('parties'):
+    appoint_receiver_filing = filing.get("appointReceiver")
+    if not appoint_receiver_filing.get("parties"):
         return
 
-    if parties := appoint_receiver_filing.get('parties'):
+    if parties := appoint_receiver_filing.get("parties"):
         update_parties(business, parties, filing_rec, False)

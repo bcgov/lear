@@ -13,27 +13,26 @@
 # limitations under the License.
 """File processing rules and actions for the cease receiver."""
 import datetime
-from typing import Dict
 
 from business_model.models import Business, Filing, PartyRole
 
 from business_filer.filing_meta import FilingMeta
 
 
-def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: FilingMeta):
     # pylint: disable=too-many-branches;
     """Render the cease_receiver onto the business model objects."""
-    cease_receiver_filing = filing.get('ceaseReceiver')
-    if not cease_receiver_filing.get('parties'):
+    cease_receiver_filing = filing.get("ceaseReceiver")
+    if not cease_receiver_filing.get("parties"):
         return
 
-    if parties := cease_receiver_filing.get('parties'):
+    if parties := cease_receiver_filing.get("parties"):
         update_parties(parties)
 
 
 def update_parties(parties: dict):
     """Cease receiver party role."""
-    end_date_time = datetime.datetime.now(datetime.timezone.utc)
+    end_date_time = datetime.datetime.now(datetime.UTC)
     for party in parties:
-        party_role = PartyRole.find_by_internal_id(internal_id=party.get('officer').get('id'))
+        party_role = PartyRole.find_by_internal_id(internal_id=party.get("officer").get("id"))
         party_role.cessation_date = end_date_time

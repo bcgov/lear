@@ -35,7 +35,7 @@
 """
 
 
-class DefaultException(Exception):
+class DefaultError(Exception):
     """Default Exception that takes an error str."""
 
     def __init__(self, error_text: str, *args, **kwargs):

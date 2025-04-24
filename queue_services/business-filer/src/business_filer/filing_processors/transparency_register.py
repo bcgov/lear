@@ -32,20 +32,21 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the transparency register filing."""
-from business_filer.exceptions import QueueException
 from business_model.models import Business, Filing
+
+from business_filer.exceptions import QueueException
 
 
 def process(business: Business, filing_rec: Filing, filing: dict):
     """Process the incoming transparency register filing."""
-    if not (tr_filing := filing.get('transparencyRegister')):  # pylint: disable=superfluous-parens;
-        raise QueueException(f'legal_filing:transparencyRegister data missing from {filing_rec.id}')
-    if not (sub_type := tr_filing.get('type')):  # pylint: disable=superfluous-parens;
-        raise QueueException(f'legal_filing:transparencyRegister data missing from {filing_rec.id}')
+    if not (tr_filing := filing.get("transparencyRegister")):  # pylint: disable=superfluous-parens;
+        raise QueueException(f"legal_filing:transparencyRegister data missing from {filing_rec.id}")
+    if not (sub_type := tr_filing.get("type")):  # pylint: disable=superfluous-parens;
+        raise QueueException(f"legal_filing:transparencyRegister data missing from {filing_rec.id}")
     if not business:
-        raise QueueException(f'Business does not exist: legal_filing:transparencyRegister {filing_rec.id}')
+        raise QueueException(f"Business does not exist: legal_filing:transparencyRegister {filing_rec.id}")
 
-    if sub_type == 'annual':
+    if sub_type == "annual":
         # set the last_tr_year for the business
         business.last_tr_year = filing_rec.effective_date.year
 

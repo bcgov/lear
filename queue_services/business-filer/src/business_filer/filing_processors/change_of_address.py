@@ -32,29 +32,26 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the change of address."""
-from typing import Dict
+from datetime import UTC
 
-from datedelta import datedelta
 from business_model.models import BatchProcessing, Business
-from business_filer.common.datetime import datetime, timezone
+from datedelta import datedelta
 
+from business_filer.common.datetime import datetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import create_address, update_address
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on: bool):
+def process(business: Business, filing: dict, filing_meta: FilingMeta, flag_on: bool):
     """Render the change_of_address onto the business model objects."""
-    # offices_array = json.dumps(filing['changeOfAddress']['offices'])
-    # Only retrieve the offices component from the filing json
-    # offices = json.loads(offices_array)
-    offices = filing['changeOfAddress']['offices']
+    offices = filing["changeOfAddress"]["offices"]
 
     business.last_coa_date = filing_meta.application_date
 
-    for item in offices.keys():
+    for item in offices:
         office = business.offices.filter_by(office_type=item).one_or_none()
-        for k, new_address in offices[item].items():
-            k = k.replace('Address', '')
+        for key, new_address in offices[item].items():
+            k = key.replace("Address", "")
             address = office.addresses.filter_by(address_type=k).one_or_none()
             if address:
                 update_address(address, new_address)
@@ -62,17 +59,16 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta, flag_on: 
                 address = create_address(new_address, k)
                 office.addresses.append(address)
 
-    if flag_on:
-        if business.in_dissolution:
-            batch_processings = BatchProcessing.find_by(business_id=business.id)
-            for batch_processing in batch_processings:
-                if batch_processing.status not in [
-                    BatchProcessing.BatchProcessingStatus.COMPLETED,
-                    BatchProcessing.BatchProcessingStatus.WITHDRAWN
-                ] and datetime.now(timezone.utc) + datedelta(days=60) > batch_processing.trigger_date:
-                    batch_processing.trigger_date = datetime.now(timezone.utc) + datedelta(days=62)
-                    batch_processing.meta_data = {
-                        **batch_processing.meta_data,
-                        'changeOfAddressDelay': True
-                    }
-                    batch_processing.last_modified = datetime.now(timezone.utc)
+    if flag_on and business.in_dissolution:
+        batch_processings = BatchProcessing.find_by(business_id=business.id)
+        for batch_processing in batch_processings:
+            if batch_processing.status not in [
+                BatchProcessing.BatchProcessingStatus.COMPLETED,
+                BatchProcessing.BatchProcessingStatus.WITHDRAWN
+            ] and datetime.now(UTC) + datedelta(days=60) > batch_processing.trigger_date:
+                batch_processing.trigger_date = datetime.now(UTC) + datedelta(days=62)
+                batch_processing.meta_data = {
+                    **batch_processing.meta_data,
+                    "changeOfAddressDelay": True
+                }
+                batch_processing.last_modified = datetime.now(UTC)
