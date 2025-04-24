@@ -26,6 +26,7 @@ from registry_schemas.example_data import (
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
+    AMALGAMATION_OUT,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
@@ -248,6 +249,36 @@ def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_
         filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
 
     filing_template['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
+    filing.save()
+    return filing
+
+
+def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+    """Return a new amalgamation out filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'amalgamationOut'
+    if submitter_role:
+        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+
+    filing_template['filing']['amalgamationOut'] = copy.deepcopy(AMALGAMATION_OUT)
     filing_template['filing']['business'] = {
         'identifier': business.identifier,
         'legalType': legal_type,
