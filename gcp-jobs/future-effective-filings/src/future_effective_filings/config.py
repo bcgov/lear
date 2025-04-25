@@ -67,7 +67,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
     ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_SECRET", None)
-    ACCOUNT_SVC_TIMEOUT = int(os.getenv("ACCOUNT_SVC_TIMEOUT", '20'))
+    ACCOUNT_SVC_TIMEOUT = int(os.getenv("ACCOUNT_SVC_TIMEOUT", "20"))
 
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
