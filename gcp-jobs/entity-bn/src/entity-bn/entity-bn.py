@@ -23,6 +23,7 @@ if __name__ == "__main__":
 
     path = pathlib.Path(__file__).parent.resolve()
     file = os.path.join(path, "tracker-errors.ipynb")
+    
     pm.execute_notebook(file, data_dir+"temp.ipynb", parameters=None)
 
     shutil.rmtree(data_dir)
