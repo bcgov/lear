@@ -26,16 +26,6 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.
 # This script helps with the automated processing of Jupyter Notebooks via
 # papermill (https://github.com/nteract/papermill/)
 
-def create_app(config=Config):
-    """Create app."""
-    app = Flask(__name__)
-    app.config.from_object(config)
-    # db.init_app(app)
-    app.app_context().push()
-    current_app.logger.debug('created the Flask App and pushed the App Context')
-
-    return app
-
 def findfiles(directory, pattern):
     """Find files matched."""
     for filename in os.listdir(directory):
@@ -75,7 +65,7 @@ def processnotebooks(notebookdirectory):
     status = False
          
     logging.info('Start processing directory: %s', notebookdirectory)        
-    data_dir = os.getenv('DATA_DIR', '/opt/app-root/data') 
+    data_dir = os.getenv('DATA_DIR', '/opt/app-root/data/') 
     dest_dir = os.getenv('SFTP_ARCHIVE_DIRECTORY', '/opt/app-root/archive/')            
     
     try: 
