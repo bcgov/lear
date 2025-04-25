@@ -1713,8 +1713,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 corp_num=corp_num,
                 office_type=office_type
             )
-            office_desc = (office_type.replace('O', ' O')).title()
-            return f'Change to the {office_desc}.'
+            return ''
 
         for office_type in filing.body.get('offices', []):
             Office.create_new_office(
