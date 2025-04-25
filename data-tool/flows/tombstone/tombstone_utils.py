@@ -95,7 +95,7 @@ def format_offices_data(data: dict) -> list[dict]:
         'RC': 'recordsOffice',
         'RG': 'registeredOffice',
         'LQ': 'liquidationRecordsOffice',
-        'DS': 'dcrOffice',
+        'DS': 'custodialOffice'
         # Additional office type codes can be added here in the future
     }
 
