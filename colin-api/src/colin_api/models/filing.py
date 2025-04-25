@@ -2025,7 +2025,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'filing_type': filing.filing_type,
                                       'filing_sub_type': None})
 
-            if bool(filing.body.get('commentOnly', False)):  # only comment added
+            # only comment added or running BEN correction statement job
+            if bool(filing.body.get('commentOnly', False)) or bool(filing.header.get('correctionBenStatement', False)):
                 filing_type_code = Filing.FILING_TYPES[filing.filing_type][f'{sub_type}_COMMENT_ONLY']
                 event_id = cls._process_comment_correction(cursor, filing, corp_num, filing_type_code)
 
