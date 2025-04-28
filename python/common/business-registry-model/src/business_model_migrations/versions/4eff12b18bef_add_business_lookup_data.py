@@ -35,7 +35,10 @@ def upgrade():
             },
             {
                 'identifier':'businessOffice', 'description':'Business Office'
-            }
+            },
+            {
+                'identifier':'liquidationRecordsOffice', 'description':'Liquidation Records Office'
+            },
         ]
     )
 

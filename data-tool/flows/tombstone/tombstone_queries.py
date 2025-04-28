@@ -359,7 +359,7 @@ def get_offices_and_addresses_query(corp_num):
 --        and e.corp_num = 'BC0043406' -- office_typ_cd: RG, RC, TH, SH
         and e.corp_num = '{corp_num}'
         and o.end_event_id is null
-        and o.office_typ_cd in ('RG', 'RC')
+        and o.office_typ_cd in ('RG', 'RC', 'LQ')
     ;
     """
     return query
@@ -459,7 +459,7 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
         and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null))
-        and cp.party_typ_cd in ('DIR', 'OFF', 'RCC', 'RCM')
+        and cp.party_typ_cd in ('DIR', 'OFF', 'RCC', 'RCM', 'LIQ')
     --order by e.event_id
     order by cp_full_name, e.event_id
     ;
