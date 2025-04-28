@@ -94,7 +94,11 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         invalid_types = [t for t in input_normalized if not BusinessSearchService.try_parse_legal_type(t)]
         return valid_types, invalid_types
 
-
+    def paginate(data, page, limit):
+            start = (page - 1) * limit
+            end = start + limit
+            return data[start:end]
+    
     @staticmethod
     def get_search_filtered_businesses_results(business_json, identifiers=None, search_filter_name=None, search_filter_type=None,search_filter_status=None):
         """Return contact point from business json."""

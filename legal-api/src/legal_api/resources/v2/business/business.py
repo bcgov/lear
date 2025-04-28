@@ -169,6 +169,16 @@ def search_businesses():
         search_filter_name = json_input.get('name', None)
         search_filter_type = json_input.get('type', None)
         search_filter_status = json_input.get('state', None)
+        page = json_input.get('page', 1)
+        limit = json_input.get('limit', 100)
+
+        try:
+            page = int(page)
+            limit = int(limit)
+            if page < 1 or limit < 1:
+                raise ValueError
+        except ValueError:
+            return jsonify({'error': 'Invalid pagination parameters'}), 400
         temp_identifiers = []
         business_identifiers = []
         if not identifiers or not isinstance(identifiers, list):
@@ -194,7 +204,7 @@ def search_businesses():
             search_filter_type=search_filter_type,
             search_filter_status=search_filter_status)
 
-        return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
+        return jsonify({'businessEntities': BusinessSearchService.paginate(bus_results, page, limit), 'draftEntities': BusinessSearchService.paginate(draft_results, page, limit)}), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)
