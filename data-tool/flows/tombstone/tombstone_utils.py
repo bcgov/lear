@@ -187,7 +187,7 @@ def format_parties_data(data: dict) -> list[dict]:
             cessation_date = None
             if role_code == 'LIQ':
                 if end_event_date := r['cp_end_event_dt_str']:
-                    cessation_date = end_event_date
+                    cessation_date = end_event_date + ' 00:00:00+00:00'
             elif cessation_date := r['cp_cessation_dt_str']:
                 cessation_date = cessation_date + ' 00:00:00+00:00'
             party_role['cessation_date'] = cessation_date

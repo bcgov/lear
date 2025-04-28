@@ -374,9 +374,7 @@ def get_parties_and_addresses_query(corp_num):
         cp.party_typ_cd                                                      as cp_party_typ_cd,
         cp.start_event_id                                                    as cp_start_event_id,
         cp.end_event_id                                                      as cp_end_event_id,
-        to_char(
-            ee.event_timerstamp::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
-        )                                                                    as cp_end_event_dt_str,
+        to_char(ee.event_timerstamp, 'YYYY-MM-DD')                           as cp_end_event_dt_str,
         cp.prev_party_id                                                     as cp_prev_party_id,
         to_char(
         (case
