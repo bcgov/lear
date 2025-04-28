@@ -99,7 +99,7 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
                     source=application.config.get("CLIENT_NAME"),
                     subject=subject,
                     time=datetime.now(UTC),
-                    type='filingMessage',
+                    type="filingMessage",
                     data = msg
                 )
                 gcp_queue.publish(subject, to_queue_message(ce))
