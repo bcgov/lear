@@ -550,7 +550,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             'name': share_class_revision.name,
             'priority': share_class_revision.priority,
             'hasMaximumShares': share_class_revision.max_share_flag,
-            'maxNumberOfShares': share_class_revision.max_shares,
+            'maxNumberOfShares': int(share_class_revision.max_shares) if share_class_revision.max_shares else None,
             'hasParValue': share_class_revision.par_value_flag,
             'parValue': share_class_revision.par_value,
             'currency': share_class_revision.currency,
@@ -566,7 +566,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             'name': share_series_revision.name,
             'priority': share_series_revision.priority,
             'hasMaximumShares': share_series_revision.max_share_flag,
-            'maxNumberOfShares': share_series_revision.max_shares,
+            'maxNumberOfShares': int(share_series_revision.max_shares) if share_series_revision.max_shares else None,
             'hasRightsOrRestrictions': share_series_revision.special_rights_flag
         }
         return share_series

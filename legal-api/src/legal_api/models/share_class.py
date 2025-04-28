@@ -35,10 +35,11 @@ class ShareClass(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
     name = db.Column('name', db.String(1000), index=True)
     priority = db.Column('priority', db.Integer, nullable=True)
     max_share_flag = db.Column('max_share_flag', db.Boolean, unique=False, default=False)
-    max_shares = db.Column('max_shares', db.Integer, nullable=True)
+    max_shares = db.Column('max_shares', db.Numeric(20), nullable=True)
     par_value_flag = db.Column('par_value_flag', db.Boolean, unique=False, default=False)
     par_value = db.Column('par_value', db.Float, nullable=True)
     currency = db.Column('currency', db.String(10), nullable=True)
+    currency_additional = db.Column('currency_additional', db.String(40), nullable=True)
     special_rights_flag = db.Column('special_rights_flag', db.Boolean, unique=False, default=False)
 
     # parent keys
@@ -62,7 +63,7 @@ class ShareClass(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
             'name': self.name,
             'priority': self.priority,
             'hasMaximumShares': self.max_share_flag,
-            'maxNumberOfShares': self.max_shares,
+            'maxNumberOfShares': int(self.max_shares) if self.max_shares else None,
             'hasParValue': self.par_value_flag,
             'parValue': self.par_value,
             'currency': self.currency,
@@ -121,3 +122,4 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
     else:
         share_class.par_value = None
         share_class.currency = None
+        share_class.currency_additional = None
