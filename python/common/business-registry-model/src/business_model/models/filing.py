@@ -869,7 +869,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def set_processed(self, business_type):
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
-            self._completion_date = datetime.utcnow()
+            self._completion_date = datetime.now(timezone.utc)
+            self._status = Filing.Status.COMPLETED.value
         if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
                 self.effective_date is None or (
                     self.payment_completion_date
@@ -942,6 +943,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @property
     def json(self):
         """Return a json representation of this object."""
+        if self.tech_correction_json:
+            return self.tech_correction_json
+
         try:
             json_submission = copy.deepcopy(self.filing_json)
             json_submission['filing']['header']['date'] = self._filing_date.isoformat()
@@ -1284,6 +1288,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         db.session.delete(self)
         db.session.commit()
 
+    @property
+    def raw(self) -> None | dict:
+        """Return the raw, submitted and unprocessed version on the filing."""
+        return self._filing_json
+
     def reset_filing_to_draft(self):
         """Reset Filing to draft and remove payment token."""
         self._status = (Filing.Status.APPROVED.value
@@ -1323,11 +1332,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             list: or None of the Legal Filing JSON segments.
             }
         """
-        if not self.filing_json:
+        if not (self.filing_json
+                or
+                self.tech_correction_json
+            ):
             return None
 
         legal_filings = []
-        filing = self.filing_json
+        filing = self.tech_correction_json or self.filing_json
         for k in filing['filing'].keys():  # pylint: disable=unsubscriptable-object
             if Filing.FILINGS.get(k, None):
                 legal_filings.append(

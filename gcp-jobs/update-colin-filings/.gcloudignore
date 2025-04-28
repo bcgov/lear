@@ -1,0 +1,12 @@
+.ruff_cache
+.pytest_cache
+__pycache__
+.venv
+.env
+.env*
+.eggs
+Makefile
+devops
+manage.py
+migrations
+tests

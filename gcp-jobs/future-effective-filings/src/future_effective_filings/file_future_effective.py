@@ -93,7 +93,7 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
             if not (filing_ids := get_filing_ids(application)):
                 application.logger.debug("No filings found to apply.")
             for filing_id in filing_ids:
-                msg = {"filing": {"id": filing_id}}
+                msg = {"filingMessage": {"filingIdentifier": filing_id}}
                 ce = SimpleCloudEvent(
                     id=str(uuid.uuid4()),
                     source=application.config.get("CLIENT_NAME"),
