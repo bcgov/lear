@@ -1,4 +1,4 @@
-# Copyright © 2025 Province of British Columbia
+# Copyright © 2022 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,42 +17,36 @@
 Test-Suite to ensure that the DCConnection Model is working as expected.
 """
 
-from legal_api.models import DCConnection, DCBusinessUser
+from legal_api.models import DCConnection
 
-from tests.unit.models import factory_business, factory_user
-from tests.unit.models.test_dc_business_user import create_dc_business_user
-
-
-def setup_business_and_user(identifier='FM1234567'):
-    """Helper function to setup business and user."""
-    business = factory_business(identifier)
-    user = factory_user('test', 'Test', 'User')
-    business_user = create_dc_business_user(business, user)
-    return business, user, business_user
+from tests.unit.models import factory_business
 
 
 def test_valid_dc_connection_save(session):
     """Assert that a valid dc_connection can be saved."""
-    business, user, business_user = setup_business_and_user()
-    connection = create_dc_connection(business_user)
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+    connection = create_dc_connection(business)
     assert connection.id
 
 
 def test_find_by_id(session):
     """Assert that the method returns correct value."""
-    business, user, business_user = setup_business_and_user()
-    connection = create_dc_connection(business_user)
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+    connection = create_dc_connection(business)
 
     res = DCConnection.find_by_id(connection.id)
 
     assert res
-    assert res.id == connection.id
+    assert res.connection_id == connection.connection_id
 
 
 def test_find_dc_connection_by_connection_id(session):
     """Assert that the method returns correct value."""
-    business, user, business_user = setup_business_and_user()
-    connection = create_dc_connection(business_user)
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+    connection = create_dc_connection(business)
 
     res = DCConnection.find_by_connection_id(connection.connection_id)
 
@@ -60,44 +54,31 @@ def test_find_dc_connection_by_connection_id(session):
     assert res.id == connection.id
 
 
-def test_find_active_by_business_user_id(session):
+def test_find_active_by(session):
     """Assert that the method returns correct value."""
-    business, user, business_user = setup_business_and_user()
-    connection = create_dc_connection(business_user, is_active=True)
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+    create_dc_connection(business, is_active=True)
 
-    res = DCConnection.find_active_by_business_user_id(business_user.id)
+    res = DCConnection.find_active_by(business.id)
 
     assert res
-    assert res.id == connection.id
-    assert res.connection_state == DCConnection.State.ACTIVE.value
+    assert res.connection_state == 'active'
 
 
-def test_find_state_by_business_user_id(session):
+def test_find_by(session):
     """Assert that the method returns correct value."""
-    business, user, business_user = setup_business_and_user()
-    connection = create_dc_connection(business_user)
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+    connection = create_dc_connection(business)
 
-    res = DCConnection.find_state_by_business_user_id(
-        business_user.id, DCConnection.State.INVITATION_SENT.value)
-
-    assert res
-    assert res.id == connection.id
-
-
-def test_find_by_filters(session):
-    """Assert that the method returns correct value."""
-    business, user, business_user = setup_business_and_user()
-    connection = create_dc_connection(business_user)
-
-    filters = [DCConnection.business_id == business.id,
-               DCConnection.connection_state == DCConnection.State.INVITATION_SENT.value]
-    res = DCConnection.find_by_filters(filters)
+    res = DCConnection.find_by(business_id=business.id, connection_state='invitation')
 
     assert len(res) == 1
     assert res[0].id == connection.id
 
 
-def create_dc_connection(business_user: DCBusinessUser, is_active=False) -> DCConnection:
+def create_dc_connection(business, is_active=False):
     """Create new dc_connection object."""
     connection = DCConnection(
         connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
@@ -106,10 +87,8 @@ def create_dc_connection(business_user: DCBusinessUser, is_active=False) -> DCCo
 LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFyc2lKWjY
 iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE2OC42NS4zOjgwMjAifQ==""",
         is_active=is_active,
-        connection_state=DCConnection.State.ACTIVE.value if is_active else DCConnection.State.INVITATION_SENT.value,
-        business_user_id=business_user.id,
-        # Kept for legacy reasons, remove when possible
-        business_id=business_user.business_id
+        connection_state='active' if is_active else 'invitation',
+        business_id=business.id
     )
     connection.save()
     return connection

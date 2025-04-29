@@ -17,35 +17,30 @@
 Test-Suite to ensure that the /digitalCredentials endpoint is working as expected.
 """
 
-from datetime import datetime, timezone
 from http import HTTPStatus
 from unittest.mock import patch
 
-import jwt as pyjwt
 from legal_api.services.authz import BASIC_USER
-from legal_api.models import DCConnection, DCDefinition, User
+from legal_api.models import DCDefinition, User
 from legal_api.services.digital_credentials import DigitalCredentialsService
 
 from tests.unit.models import factory_business
-from tests.unit.models.test_dc_business_user import create_dc_business_user
 from tests.unit.models.test_dc_connection import create_dc_connection
 from tests.unit.models.test_dc_definition import create_dc_definition
-from tests.unit.models.test_dc_credential import create_dc_credential
-from tests.unit.services.utils import create_header, helper_create_jwt_json_token_claims
+from tests.unit.models.test_dc_issued_credential import create_dc_issued_credential
+from tests.unit.services.utils import create_header
 
 
 content_type = 'application/json'
-test_user = 'test-user'
-test_roles = [BASIC_USER]
+
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_create_invitation(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert create invitation endpoint returns invitation_url."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
+    headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    create_dc_business_user(factory_business(identifier),
-                            User.get_or_create_user_by_jwt(token_json))
+    factory_business(identifier)
+
     invitation_id = '0d94e18b-3a52-4122-8adf-33e2ccff681f'
     invitation_url = """http://192.168.65.3:8020?c_i=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb
 25zLzEuMC9pbnZpdGF0aW9uIiwgIkBpZCI6ICIyZjU1M2JkZS01YWJlLTRkZDctODIwZi1mNWQ2Mjc1OWQxODgi
@@ -64,15 +59,12 @@ iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_get_connections_not_found(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert get connections endpoint returns not found when there is no active connection."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
+    headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    create_dc_business_user(factory_business(identifier),
-                            User.get_or_create_user_by_jwt(token_json))
+    factory_business(identifier)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connections',
                     headers=headers, content_type=content_type)
-
     assert rv.status_code == HTTPStatus.OK
     assert rv.json.get('connections') == []
 
@@ -80,16 +72,14 @@ def test_get_connections_not_found(app, session, client, jwt):  # pylint:disable
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_get_connections(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert get connection endpoint returns connection json."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
+    headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
-    connection = create_dc_connection(business_user, is_active=True)
+    business = factory_business(identifier)
+
+    connection = create_dc_connection(business, is_active=True)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connections',
                     headers=headers, content_type=content_type)
-
     assert rv.status_code == HTTPStatus.OK
     assert rv.json.get('connections')[0].get('invitationUrl') == connection.invitation_url
     assert rv.json.get('connections')[0].get('connectionId') == connection.connection_id
@@ -98,124 +88,37 @@ def test_get_connections(app, session, client, jwt):  # pylint:disable=unused-ar
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
-def test_attest_connection(app, session, client, jwt):  # pylint:disable=unused-argument
-    """Assert attest connection endpoint sends a request."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
-    identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
-    connection = create_dc_connection(business_user)
-
-    with patch.object(DigitalCredentialsService, 'attest_connection', return_value={}):
-        rv = client.post(f'/api/v2/businesses/{identifier}/digitalCredentials/connections/{connection.connection_id}/attest',
-                         headers=headers, content_type=content_type)
-        assert rv.status_code == HTTPStatus.OK
-        assert rv.json.get('message') == 'Connection attestation request sent.'
-
-
-@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
-def test_attest_connection_fail(app, session, client, jwt):  # pylint:disable=unused-argument
-    """Assert attest connection endpoint fails to send a request."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
-    identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
-    connection = create_dc_connection(business_user)
-
-    with patch.object(DigitalCredentialsService, 'attest_connection', return_value=None):
-        rv = client.post(f'/api/v2/businesses/{identifier}/digitalCredentials/connections/{connection.connection_id}/attest',
-                         headers=headers, content_type=content_type)
-        assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-        assert rv.json.get(
-            'message') == 'Unable to request connection attestation.'
-
-
-@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_send_credential(app, session, client, jwt):  # pylint:disable=unused-argument
-    """Assert issue credentials to the connection."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
+    """Assert Issue credentials to the connection."""
+    headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
+    business = factory_business(identifier)
     definition = create_dc_definition()
-    create_dc_connection(business_user, is_active=True)
+    test_user = User(username='test-user', firstname='test', lastname='test')
+    test_user.save()
+    create_dc_connection(business, is_active=True)
     cred_ex_id = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
 
-    json_data = {}
-
-    with patch.object(DCDefinition, 'find_by', return_value=definition):
-        with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=True,
-                                                                                                     last_attested=datetime.now(timezone.utc))):
+    with patch.object(User, 'find_by_jwt_token', return_value=test_user):
+        with patch.object(DCDefinition, 'find_by', return_value=definition):
             with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
                 rv = client.post(
                     f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
-                    json=json_data, headers=headers, content_type=content_type)
+                    headers=headers, content_type=content_type)
                 assert rv.status_code == HTTPStatus.OK
                 assert rv.json.get('credentialExchangeId') == cred_ex_id
 
 
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
-def test_send_credential_attestation_not_complete_fail(app, session, client, jwt):  # pylint:disable=unused-argument
-    """Assert issue credentials to the connection fails when attestation not complete."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
-    identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
-    definition = create_dc_definition()
-    create_dc_connection(business_user, is_active=True)
-    cred_ex_id = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
-
-    with patch.object(DCDefinition, 'find_by', return_value=definition):
-        with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=False,
-                                                                                                     last_attested=None)):
-            with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
-                rv = client.post(
-                    f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
-                    headers=headers, content_type=content_type)
-                assert rv.status_code == HTTPStatus.UNAUTHORIZED
-                assert rv.json.get('message') == 'Connection not attested.'
-
-
-@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
-def test_send_credential_attestation_fail(app, session, client, jwt):  # pylint:disable=unused-argument
-    """Assert issue credentials to the connection fails attestation."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
-    identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
-    definition = create_dc_definition()
-    create_dc_connection(business_user, is_active=True)
-    cred_ex_id = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
-
-    with patch.object(DCDefinition, 'find_by', return_value=definition):
-        with patch.object(DCConnection, 'find_active_by_business_user_id', return_value=DCConnection(is_attested=False,
-                                                                                                     last_attested=datetime.now(timezone.utc))):
-            with patch.object(DigitalCredentialsService, 'issue_credential', return_value={'cred_ex_id': cred_ex_id}):
-                rv = client.post(
-                    f'/api/v2/businesses/{identifier}/digitalCredentials/{DCDefinition.CredentialType.business.name}',
-                    headers=headers, content_type=content_type)
-                assert rv.status_code == HTTPStatus.UNAUTHORIZED
-                assert rv.json.get(
-                    'message') == 'Connection failed attestation.'
-
-
-@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_get_issued_credentials(app, session, client, jwt):  # pylint:disable=unused-argument
-    """Assert get all issued credentials json."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
+    """Assert Get all issued credentials json."""
+    headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
     business = factory_business(identifier)
-    user = User.get_or_create_user_by_jwt(token_json)
-    issued_credential = create_dc_credential(business=business, user=user)
 
-    rv = client.get(
-        f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
+    issued_credential = create_dc_issued_credential(business=business)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials', headers=headers, content_type=content_type)
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('issuedCredentials')) == 1
     assert rv.json.get('issuedCredentials')[0].get('legalName') == business.legal_name
@@ -229,12 +132,11 @@ def test_get_issued_credentials(app, session, client, jwt):  # pylint:disable=un
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_webhook_connections_notification(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert webhook connection notification endpoint when connection to active."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
+    headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
-    connection = create_dc_connection(business_user)
+    business = factory_business(identifier)
+
+    connection = create_dc_connection(business)
 
     json_data = {
         'invitation': {'@id': connection.connection_id},
@@ -256,12 +158,11 @@ def test_webhook_connections_notification(app, session, client, jwt):  # pylint:
 @patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
 def test_webhook_issue_credential_notification(app, session, client, jwt):  # pylint:disable=unused-argument
     """Assert webhook issue_credential notification endpoint when credential issued."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
+    headers = create_header(jwt, [BASIC_USER])
     identifier = 'FM1234567'
     business = factory_business(identifier)
-    user = User.get_or_create_user_by_jwt(token_json)
-    issued_credential = create_dc_credential(business=business, user=user)
+
+    issued_credential = create_dc_issued_credential(business=business)
 
     json_data = {
         'cred_ex_id': issued_credential.credential_exchange_id,
@@ -279,32 +180,3 @@ def test_webhook_issue_credential_notification(app, session, client, jwt):  # py
     assert rv.json.get('issuedCredentials')[0].get('isIssued')
     assert rv.json.get('issuedCredentials')[0].get('dateOfIssue')
     assert not rv.json.get('issuedCredentials')[0].get('isRevoked')
-
-
-@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
-def test_webhook_connection_attest_notification(app, session, client, jwt):
-    """Assert webhook connection attest notification endpoint when connection attested."""
-    token_json = helper_create_jwt_json_token_claims(test_roles, test_user)
-    headers = create_header(jwt, test_roles, test_user)
-    identifier = 'FM1234567'
-    business_user = create_dc_business_user(factory_business(identifier),
-                                            User.get_or_create_user_by_jwt(token_json))
-    connection = create_dc_connection(business_user)
-
-    json_data = {
-        'connection_id': connection.connection_id,
-        'state': 'done',
-        'verified': 'true'
-    }
-    rv = client.post('/api/v2/digitalCredentials/topic/present_proof_v2_0',
-                     json=json_data,
-                     headers=headers, content_type=content_type)
-    assert rv.status_code == HTTPStatus.OK
-
-    rv = client.get(f'/api/v2/businesses/{identifier}/digitalCredentials/connections',
-                    headers=headers, content_type=content_type)
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.status_code == HTTPStatus.OK
-    assert rv.json.get('connections')[0].get('isAttested') == True
-    assert rv.json.get('connections')[0].get('lastAttested') != ''
-    assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
