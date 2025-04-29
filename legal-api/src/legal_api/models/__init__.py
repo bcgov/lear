@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """This exports all of the models and schemas used by the application."""
+from .db import db  # noqa: I001
 from .address import Address
 from .alias import Alias
 from .amalgamating_business import AmalgamatingBusiness
@@ -25,11 +26,10 @@ from .comment import Comment
 from .configuration import Configuration
 from .consent_continuation_out import ConsentContinuationOut
 from .corp_type import CorpType
-from .db import db  # noqa: I001
-from .dc_business_user import DCBusinessUser
 from .dc_connection import DCConnection
-from .dc_credential import DCCredential
 from .dc_definition import DCDefinition
+from .dc_issued_business_user_credential import DCIssuedBusinessUserCredential
+from .dc_issued_credential import DCIssuedCredential
 from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
 from .filing import Filing
@@ -67,8 +67,8 @@ __all__ = (
     'CorpType',
     'DCConnection',
     'DCDefinition',
-    'DCCredential',
-    'DCBusinessUser',
+    'DCIssuedCredential',
+    'DCIssuedBusinessUserCredential',
     'DCRevocationReason',
     'Document',
     'DocumentType',
