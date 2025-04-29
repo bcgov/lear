@@ -130,6 +130,7 @@ class EventFilings(str, Enum):
     FILE_NOCDS = 'FILE_NOCDS'
     FILE_NOCEL = 'FILE_NOCEL'
     FILE_NOCER = 'FILE_NOCER'
+    FILE_NOLDS = 'FILE_NOLDS'
 
     # TODO: Notice of Withdrawal - unsupported
     FILE_NWITH = 'FILE_NWITH'
@@ -279,6 +280,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_NOCDS: 'changeRespectingDCR',
     EventFilings.FILE_NOCEL: 'ceaseLiquidator',
     EventFilings.FILE_NOCER: 'ceaseReceiver',
+    EventFilings.FILE_NOLDS: 'locationDCR',
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
 
@@ -400,6 +402,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOCDS: 'Notice of Change Respecting Dissolved Company\'s Records',
     EventFilings.FILE_NOCEL: 'Notice of Ceasing to Act as Liquidator',
     EventFilings.FILE_NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager',
+    EventFilings.FILE_NOLDS: 'Notice of Location of Dissolved Company\'s Records',
     # LQSIN: 'Statement of Intent to Liquidate'
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
