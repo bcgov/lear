@@ -883,7 +883,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 tmp_timestamp = event['date']
         return event_id if event_id else ar_filing_event_info['event_id']
 
-    # pylint: disable=too-many-branches, too-many-locals, too-many-statements;
+    # pylint: disable=too-many-branches, too-many-locals, too-many-statements, too-many-nested-blocks;
     @classmethod
     def get_filing(cls, filing: Filing, con=None, year: int = None) -> Dict:
         """Get a Filing."""
@@ -992,8 +992,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
                 if resolution_dates := Business.get_resolutions(
                         cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id']):
-                    filing.body['shareStructure']['resolutionDates'] = [
-                        resolution_date for resolution_date in resolution_dates]
+                    filing.body['shareStructure']['resolutionDates'] = resolution_dates
 
             if 'nameTranslations' in components:
                 translations = CorpName.get_by_event(

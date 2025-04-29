@@ -76,7 +76,7 @@ def share_structure_validation(filing):
 def company_name_validation(filing, business: Business):
     """Validate company name."""
     msg = []
-    if filing['filing']['header']['source'] == 'COLIN':
+    if filing['filing']['header'].get('source') == 'COLIN':
         return msg
 
     new_legal_type = get_str(filing, '/filing/alteration/business/legalType')

@@ -14,7 +14,6 @@
 """File processing rules and actions for the change of directors."""
 import copy
 from datetime import datetime
-from typing import Dict
 
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
@@ -23,10 +22,10 @@ from legal_api.models import Business, Filing, PartyRole
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_party, create_role, update_director
 
-# pylint: disable=too-many-branches;
 
-
-def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business,  # pylint: disable=too-many-branches, too-many-locals;
+            filing_rec: Filing,
+            filing_meta: FilingMeta):
     """Render the change_of_directors onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
 
