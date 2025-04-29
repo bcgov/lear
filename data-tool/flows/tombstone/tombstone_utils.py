@@ -95,11 +95,13 @@ def format_offices_data(data: dict) -> list[dict]:
         'RC': 'recordsOffice',
         'RG': 'registeredOffice',
         'LQ': 'liquidationRecordsOffice',
+        'DS': 'custodialOffice'
+        # Additional office type codes can be added here in the future
     }
 
     for x in offices_data:
         # Note: only process RC, RG, LQ now (done in SQL)
-        if (office_type := x['o_office_typ_cd']) not in ['RC', 'RG', 'LQ']:
+        if (office_type := x['o_office_typ_cd']) not in office_mapping.keys():
             continue
         office = copy.deepcopy(OFFICE)
         office['offices']['office_type'] = office_mapping[office_type]
@@ -117,6 +119,7 @@ def format_offices_data(data: dict) -> list[dict]:
 
 def format_parties_data(data: dict) -> list[dict]:
     parties_data = data['parties']
+    offices_data = data['offices']
 
     if not parties_data:
         return []
@@ -137,6 +140,7 @@ def format_parties_data(data: dict) -> list[dict]:
     df['group_by_key'] = (df['partial_group_key'] + '_' + df['cp_party_typ_cd'] + '_' +
                           df['cp_cessation_dt_str'].fillna('active'))
 
+    # Format party
     grouped_parties = df.groupby('group_by_key')
     for _, group in grouped_parties:
         party = copy.deepcopy(PARTY)
@@ -151,27 +155,11 @@ def format_parties_data(data: dict) -> list[dict]:
         party['parties']['email'] = ''
         party['parties']['identifier'] = ''
 
-        # Note: can be index 0
-        if (ma_index := group['cp_mailing_addr_id'].first_valid_index()) is not None:
-            mailing_addr_data = group.loc[ma_index].to_dict()
-        else:
-            mailing_addr_data = None
-
-        if (da_index := group['cp_delivery_addr_id'].first_valid_index()) is not None:
-            delivery_addr_data = group.loc[da_index].to_dict()
-        else:
-            delivery_addr_data = None
-
-        if mailing_addr_data:
-            mailing_address = format_address_data(mailing_addr_data, 'ma_')
-            party['addresses'].append(mailing_address)
-        if delivery_addr_data:
-            delivery_address = format_address_data(delivery_addr_data, 'da_')
-            party['addresses'].append(delivery_address)
-
+        # Format party role
         formatted_party_roles = party['party_roles']
         for _, r in group.iterrows():
-            if (role_code := r['cp_party_typ_cd']) not in ['DIR', 'OFF', 'RCC', 'RCM', 'LIQ']:
+
+            if (role_code := r['cp_party_typ_cd']) not in role_mapping.keys():
                 continue
 
             role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
@@ -193,6 +181,42 @@ def format_parties_data(data: dict) -> list[dict]:
             party_role['cessation_date'] = cessation_date
 
             formatted_party_roles.append(party_role)
+
+        # Prepare to format party addresses 
+        # Note: can be index 0
+        if (ma_index := group['cp_mailing_addr_id'].first_valid_index()) is not None:
+            mailing_addr_data = group.loc[ma_index].to_dict()
+        else:
+            mailing_addr_data = None
+
+        if (da_index := group['cp_delivery_addr_id'].first_valid_index()) is not None:
+            delivery_addr_data = group.loc[da_index].to_dict()
+        else:
+            delivery_addr_data = None
+
+        # Special case for custodian address
+        custodian_office = next((
+            office for office in offices_data if (
+                office['o_office_typ_cd'] == 'DS' and
+                office['o_start_event_id'] == party_info['cp_start_event_id']
+            )
+        ), None)
+        if (
+            any(party_role['role'] == 'custodian' for party_role in formatted_party_roles) and 
+            not mailing_addr_data and
+            not delivery_addr_data and
+            custodian_office
+        ):
+            mailing_addr_data = custodian_office
+            delivery_addr_data = custodian_office
+
+        # Format party addresses
+        if mailing_addr_data:
+            mailing_address = format_address_data(mailing_addr_data, 'ma_')
+            party['addresses'].append(mailing_address)
+        if delivery_addr_data:
+            delivery_address = format_address_data(delivery_addr_data, 'da_')
+            party['addresses'].append(delivery_address)
 
         formatted_parties.append(party)
 
