@@ -134,7 +134,7 @@ def format_parties_data(data: dict) -> list[dict]:
     }
 
     df = pd.DataFrame(parties_data)
-    df['group_by_key'] = (df['cp_full_name'] + '_' + df['cp_party_typ_cd'] + '_' +
+    df['group_by_key'] = (df['partial_group_key'] + '_' + df['cp_party_typ_cd'] + '_' +
                           df['cp_cessation_dt_str'].fillna('active'))
 
     grouped_parties = df.groupby('group_by_key')
@@ -185,7 +185,10 @@ def format_parties_data(data: dict) -> list[dict]:
             party_role['appointment_date'] = appointment_date
 
             cessation_date = None
-            if cessation_date := r['cp_cessation_dt_str']:
+            if role_code == 'LIQ':
+                if end_event_date := r['cp_end_event_dt_str']:
+                    cessation_date = end_event_date + ' 00:00:00+00:00'
+            elif cessation_date := r['cp_cessation_dt_str']:
                 cessation_date = cessation_date + ' 00:00:00+00:00'
             party_role['cessation_date'] = cessation_date
 
