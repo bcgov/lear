@@ -1478,10 +1478,6 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
                 'fileName': 'firmCorrection'
             }
         },
-        'consentAmalgamationOut': {
-            'filingDescription': '6-Month Consent to Amalgamate Out',
-            'fileName': 'consentAmalgamationOut'
-        },
         'certificateOfRestoration': {
             'filingDescription': 'Certificate of Restoration',
             'fileName': 'certificateOfRestoration'
