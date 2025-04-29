@@ -299,8 +299,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                     change_of_address.process(business, filing, filing_meta, flag_on)
 
                 elif filing.get('changeOfDirectors'):
-                    filing['colinIds'] = filing_submission.colin_event_ids
-                    change_of_directors.process(business, filing, filing_meta)
+                    change_of_directors.process(business, filing_submission, filing_meta)
 
                 elif filing.get('changeOfName'):
                     change_of_name.process(business, filing, filing_meta)

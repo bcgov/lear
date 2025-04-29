@@ -171,8 +171,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                     change_of_address.process(business, filing, filing_meta, flag_on)
 
                 case "changeOfDirectors":
-                    filing["colinIds"] = filing_submission.colin_event_ids
-                    change_of_directors.process(business, filing, filing_meta)
+                    change_of_directors.process(business, filing_submission, filing_meta)
 
                 case "changeOfName":
                     change_of_name.process(business, filing, filing_meta)
