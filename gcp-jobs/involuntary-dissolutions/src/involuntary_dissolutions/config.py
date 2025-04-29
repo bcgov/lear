@@ -49,13 +49,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
 
     CLIENT_NAME = os.getenv("CLIENT_NAME", "involuntary-dissolutions-job")
-    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "entity.filer")
-    ENTITY_EVENTS_SUBJECT = os.getenv("ENTITY_EVENTS_SUBJECT", "entity.events")
-
-    AUTH_SVC_URL = os.getenv("AUTH_URL", "http://")
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC")
 
     SECRET_KEY = "a secret"
 
@@ -69,7 +63,10 @@ class _Config:  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
+    else:
+        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
