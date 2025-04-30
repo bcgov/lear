@@ -81,13 +81,14 @@ def setup_jwt_manager(app, jwt_manager):
         return a_dict['realm_access']['roles']  # pragma: no cover
     app.config['JWT_ROLE_CALLBACK'] = get_roles
 
-    jwt_manager.init_app(app)
-
-    @app.errorhandler(AuthError)
-    def custom_auth_error_handler(error):
-        response = make_response(jsonify(error.error), error.status_code)
+    def custom_auth_error_handler(ex):
+        response = jsonify(ex.error)
+        response.status_code = ex.status_code
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
+    app.config['JWT_OIDC_AUTH_ERROR_HANDLER'] = custom_auth_error_handler
+
+    jwt_manager.init_app(app)
 
 
 def register_shellcontext(app):
