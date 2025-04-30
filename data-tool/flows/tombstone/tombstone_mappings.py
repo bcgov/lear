@@ -18,6 +18,7 @@ class EventFilings(str, Enum):
     FILE_AM_RM = 'FILE_AM_RM'
     FILE_AM_SS = 'FILE_AM_SS'
     FILE_AM_AR = 'FILE_AM_AR'
+    FILE_AM_LQ = 'FILE_AM_LQ'
 
     FILE_IAMGO = 'FILE_IAMGO'
     FILE_AMALO = 'FILE_AMALO'
@@ -86,6 +87,7 @@ class EventFilings(str, Enum):
     FILE_CO_DI = 'FILE_CO_DI'
     FILE_CO_DO = 'FILE_CO_DO'
     FILE_CO_LI = 'FILE_CO_LI'
+    FILE_CO_LQ = 'FILE_CO_LQ'
     FILE_CO_RM = 'FILE_CO_RM'
     FILE_CO_RR = 'FILE_CO_RR'
     FILE_CO_SS = 'FILE_CO_SS'
@@ -185,6 +187,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_NOALC: 'alteration',
     EventFilings.FILE_AM_BC: 'alteration',
     EventFilings.FILE_AM_LI: 'alteration',
+    EventFilings.FILE_AM_LQ: 'alteration',
     EventFilings.FILE_AM_RM: 'alteration',
     EventFilings.FILE_AM_SS: 'alteration',
     EventFilings.FILE_AM_AR: 'alteration',
@@ -242,6 +245,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CO_DI: 'correction',
     EventFilings.FILE_CO_DO: 'correction',
     EventFilings.FILE_CO_LI: 'correction',
+    EventFilings.FILE_CO_LQ: 'correction',
     EventFilings.FILE_CO_RM: 'correction',
     EventFilings.FILE_CO_RR: 'correction',
     EventFilings.FILE_CO_SS: 'correction',
@@ -316,6 +320,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOALC: 'Notice of Alteration from a BC Company to Become a Community Contribution Company',
     EventFilings.FILE_AM_BC: 'Amendment - Translated Name',
     EventFilings.FILE_AM_LI: 'Amendment - Ledger Information',
+    EventFilings.FILE_AM_LQ: 'Amendment - Liquidator',
     EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
     EventFilings.FILE_AM_AR: 'Amendment - Annual Report',
@@ -356,6 +361,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_CO_DI: 'Correction - Director',
     EventFilings.FILE_CO_DO: 'Correction - Dissolved Office',
     EventFilings.FILE_CO_LI: 'Correction - Ledger Information',
+    EventFilings.FILE_CO_LQ: 'Correction - Liquidator',
     EventFilings.FILE_CO_RM: 'Correction - Receiver or Receiver Manager',
     EventFilings.FILE_CO_RR: 'Correction - Registered and Records Offices',
     EventFilings.FILE_CO_SS: 'Correction - Share Structure',
@@ -408,8 +414,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     # ADVLQ: 'Application for Dissolution (Voluntary Liquidation)'
     # AM_LR: 'Amendment - Liquidation Report'
     # CO_LR: 'Correction - Liquidation Report'
-    # AM_LQ: 'Amendment - Liquidator'
-    # CO_LQ: 'Correction - Liquidator'
 
     EventFilings.FILE_NWITH: 'Notice of Withdrawal',
 
