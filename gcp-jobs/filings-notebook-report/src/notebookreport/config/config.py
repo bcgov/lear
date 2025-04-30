@@ -16,12 +16,17 @@ class Config:
     ENVIRONMENT = os.getenv("ENVIRONMENT", "")
     MONTH_REPORT_DATES = os.getenv("MONTH_REPORT_DATES", "")
 
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
+
     # POSTGRESQL
     PG_USER = os.getenv("PG_USER", "")
     PG_PASSWORD = os.getenv("PG_PASSWORD", "")
     PG_NAME = os.getenv("PG_DB_NAME", "")
     PG_HOST = os.getenv("PG_HOST", "")
     PG_PORT = os.getenv("PG_PORT", "5432")
+    PG_SOCKET = os.getenv("PG_SOCKET", "")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{int(PG_PORT)}/{PG_NAME}"
-
-
+    if PG_SOCKET != "":
+        SQLALCHEMY_DATABASE_URI = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_SOCKET}"

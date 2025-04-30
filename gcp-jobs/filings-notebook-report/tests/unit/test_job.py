@@ -3,8 +3,7 @@ import os
 import shutil
 import psycopg2
 import pytest
-import ast
-from notebookreport import processnotebooks
+from notebookreport.notebookreport import processnotebooks, create_app
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -52,6 +51,7 @@ test_filings_monthly_data = [
 
 @pytest.mark.parametrize("report_type", test_filings_monthly_data)
 def test_filings_monthly_notebook_report(report_type):
+    create_app()
     data_dir = os.path.join(os.getcwd(), r'data/')
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
