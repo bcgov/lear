@@ -125,7 +125,10 @@ class EventFilings(str, Enum):
 
     # TODO: Liquidation - unsupported
     # FILE_ADCOL = 'FILE_ADCOL'
+    FILE_NOAPL = 'FILE_NOAPL'
     FILE_NOARM = 'FILE_NOARM'
+    FILE_NOCDS = 'FILE_NOCDS'
+    FILE_NOCEL = 'FILE_NOCEL'
     FILE_NOCER = 'FILE_NOCER'
 
     # TODO: Notice of Withdrawal - unsupported
@@ -271,7 +274,10 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AM_TR: 'legacyOther',
 
     # TODO: Liquidation - unsupported
+    EventFilings.FILE_NOAPL: 'appointLiquidator',
     EventFilings.FILE_NOARM: 'appointReceiver',
+    EventFilings.FILE_NOCDS: 'changeRespectingDCR',
+    EventFilings.FILE_NOCEL: 'ceaseLiquidator',
     EventFilings.FILE_NOCER: 'ceaseReceiver',
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
@@ -385,14 +391,14 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
     # NOLDS: "Notice of Location of Dissolved Company's Records"
-    # NOCDS: "Notice of Change Respecting Dissolved Company's Records"
     # NOTRA: 'Notice of Transfer of Records'
-    # NOAPL: 'Notice of Appointment of Liquidator'
     # NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office'
-    # NOCEL: 'Notice of Ceasing to Act as Liquidator'
     # LIQUR: 'Liquidation Report'
     # LQWOS: 'Notice of Withdrawal Statement of Intent to Liquidate'
+    EventFilings.FILE_NOAPL: 'Notice of Appointment of Liquidator',
     EventFilings.FILE_NOARM: 'Notice of Appointment of Receiver or Receiver Manager',
+    EventFilings.FILE_NOCDS: 'Notice of Change Respecting Dissolved Company\'s Records',
+    EventFilings.FILE_NOCEL: 'Notice of Ceasing to Act as Liquidator',
     EventFilings.FILE_NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager',
     # LQSIN: 'Statement of Intent to Liquidate'
     # LQSCO: 'Stay of Liquidation - Court Ordered'

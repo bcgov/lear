@@ -26,8 +26,10 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    COLIN_URL = os.getenv("COLIN_URL", "")
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL", "")
+    COLIN_SVC_URL = os.getenv("COLIN_API_URL", "") + os.getenv("COLIN_API_VERSION", "")
+    COLIN_SVC_TIMEOUT = int(os.getenv("COLIN_SVC_TIMEOUT", "20"))
+    LEAR_SVC_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION_2", "")
+    LEAR_SVC_TIMEOUT = int(os.getenv("LEGAL_SVC_TIMEOUT", "20"))
 
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
@@ -36,9 +38,9 @@ class _Config:  # pylint: disable=too-few-public-methods
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-bn")
     BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", None)
 
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
+    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_SECRET", None)
     ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT", "20")
 
     SECRET_KEY = "a secret"
@@ -60,8 +62,8 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
 
-    COLIN_URL = os.getenv("COLIN_URL_TEST", "https://fake-colin-url.com")
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL_TEST", "https://fake-legal-api-url.com")
+    COLIN_SVC_URL = os.getenv("COLIN_URL_TEST", "https://fake-colin-url.com")
+    LEAR_SVC_URL = os.getenv("LEGAL_API_URL_TEST", "https://fake-legal-api-url.com")
 
     BUSINESS_EMAILER_TOPIC = "fake-emailer-topic"
     BUSINESS_EVENTS_TOPIC = "fake-events-topic"

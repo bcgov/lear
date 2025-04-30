@@ -125,6 +125,13 @@ venv.bak/
 # Notebooks
 tests/**/*setup*.ipynb
 
+# Jobs data
+jobs/sftp-*/data
+jobs/sftp-*/archive
+
 # sa-secrets
 **/sa-secret/*
+
+# ruff
+**/.ruff_cache
 

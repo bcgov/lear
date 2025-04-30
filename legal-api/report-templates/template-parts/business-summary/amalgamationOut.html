@@ -1,0 +1,20 @@
+{% if amalgamationOut|length > 0 %}
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">Amalgamation Out Information</div>
+</div>
+<div class="section-data mt-2 mb-5">
+    <div class="pt-2">
+        <span class="section-sub-title">New Jurisdiction:</span>
+        <span class="section-data">{{amalgamationOut.jurisdiction}}</span>
+    </div>
+    <div class="pt-3">
+        <span class="section-sub-title">Business Name in New Jurisdiction:</span>
+        <span class="section-data">{{amalgamationOut.foreignLegalName}} </span>
+    </div>
+    <div class="pt-3">
+        <span class="section-sub-title">Amalgamation Effective Date:</span>  
+        <span class="section-data">{{amalgamationOut.amalgamationOutDate}} </span>
+    </div>
+</div>
+{% endif %}
