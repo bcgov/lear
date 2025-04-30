@@ -291,6 +291,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         search_filter_status: Optional[str] = None
         search_filter_name: Optional[str] = None
         search_filter_type: Optional[str] = None
+        page: int = 1
+        limit: int = 100
 
     @hybrid_property
     def identifier(self):

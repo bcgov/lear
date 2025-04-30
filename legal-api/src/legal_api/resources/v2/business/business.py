@@ -166,8 +166,6 @@ def search_businesses():
     try:
         json_input = request.get_json()
         identifiers = json_input.get('identifiers', None)
-        page = json_input.get('page')
-        limit = json_input.get('limit')
         temp_identifiers = []
         business_identifiers = []
         if not identifiers or not isinstance(identifiers, list):
@@ -183,7 +181,9 @@ def search_businesses():
             search_identifier = json_input.get('identifier', None),
             search_filter_name = json_input.get('name', None),
             search_filter_type = json_input.get('type', []),
-            search_filter_status = json_input.get('state', [])
+            search_filter_status = json_input.get('status', []),
+            page = int(json_input.get('page',1)),
+            limit = int(json_input.get('limit',100)),
     )
         bus_results = BusinessSearchService.get_search_filtered_businesses_results(
             business_json=json_input,
@@ -194,7 +194,7 @@ def search_businesses():
             identifiers=temp_identifiers,
             search_filters=search_filters)
         
-        return jsonify({'businessEntities': BusinessSearchService.paginate(bus_results, int(page), int(limit)), 'draftEntities': BusinessSearchService.paginate(draft_results, int(page), int(limit))}), HTTPStatus.OK
+        return jsonify({'businessEntities': bus_results, 'draftEntities':draft_results}), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)

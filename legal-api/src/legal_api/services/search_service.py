@@ -114,21 +114,30 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         valid_types = [t for t in input_normalized if BusinessSearchService.try_parse_legal_type(t)]
         invalid_types = [t for t in input_normalized if not BusinessSearchService.try_parse_legal_type(t)]
         return valid_types, invalid_types
-
-    def paginate(data, page, limit):
-            start = (page - 1) * limit
-            end = start + limit
-            return data[start:end]
     
     @staticmethod
     def get_search_filtered_businesses_results(business_json, identifiers=None, search_filters: Business.AffiliationSearchDetails = None):
         """Return contact point from business json."""
 
         search_filter_name = search_filters.search_filter_name if search_filters else None
-        search_filter_type = search_filters.search_filter_type if search_filters else None
-        search_filter_status = search_filters.search_filter_status if search_filters else None
+        search_filter_type = search_filters.search_filter_type if search_filters else []
+        search_filter_status = search_filters.search_filter_status if search_filters else []
         search_identifier = search_filters.search_identifier if search_filters else None
-
+        valid_filter_values = (
+            BusinessSearchService.separate_legal_types(search_filter_type)[0]
+            if isinstance(search_filter_type, list) and search_filter_type else []
+        )
+        #edge case: if type searched for doesnt belong to table business such as 'ATMP' Returns early
+        if search_filter_type and not valid_filter_values:
+            return []
+        
+        business_states, _ = (
+            BusinessSearchService.separate_states_by_type(search_filter_status)
+            if isinstance(search_filter_status, list) and search_filter_status else ([], [])
+        )
+        # If status was provided but none of them are valid, return no results
+        if search_filter_status and not business_states:
+            return []
         filters = [
             Business._identifier.in_(identifiers) 
             if isinstance(identifiers, list) and identifiers else None,
@@ -139,11 +148,11 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             Business.legal_name.ilike(f'%{search_filter_name}%') 
             if search_filter_name else None,
 
-            Business.legal_type.in_(BusinessSearchService.separate_legal_types(search_filter_type)[0])
-            if isinstance(search_filter_type, list) and search_filter_type and BusinessSearchService.separate_legal_types(search_filter_type)[0] else None,
+            Business.legal_type.in_(valid_filter_values)
+            if valid_filter_values else None,
 
-            Business.state.in_(BusinessSearchService.separate_states_by_type(search_filter_status)[0])
-            if isinstance(search_filter_status, list) and search_filter_status and BusinessSearchService.separate_states_by_type(search_filter_status)[0] else None
+            Business.state.in_(business_states)
+            if business_states else None
         ]
 
         # Remove any None values
@@ -153,7 +162,10 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return {}
 
         try:
-            bus_query = db.session.query(Business).filter(*filters)
+            limit = min(search_filters.limit or 100, 100)
+            page = search_filters.page or 1
+            offset = (page - 1) * limit
+            bus_query = db.session.query(Business).filter(*filters).limit(limit).offset(offset)
             bus_results = []
 
             for business in bus_query.all():
@@ -170,7 +182,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return bus_results
 
         except Exception as e:
-            # Optionally log the error
             current_app.logger.Error(f'Query error: {e}')
             return []
     
@@ -181,9 +192,26 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         search_filter_type = search_filters.search_filter_type if search_filters else []
         search_filter_status = search_filters.search_filter_status if search_filters else []
         search_identifier = search_filters.search_identifier if search_filters else None
+        valid_filter_values = (
+            BusinessSearchService.separate_legal_types(search_filter_type)[1]
+            if isinstance(search_filter_type, list) and search_filter_type else []
+        )
         
+        #edge case: if type searched for doesnt belong to table filings such as 'BC' Returns early
+        if search_filter_type and not valid_filter_values:
+            return []
+        
+        _, filing_states = (
+            BusinessSearchService.separate_states_by_type(search_filter_status)
+            if isinstance(search_filter_status, list) and search_filter_status else ([], [])
+        )
+        # If status was provided but none of them are valid, return no results
+        if search_filter_status and not filing_states:
+            return []
+    
         # Retrieve the corresponding filing name using the BUSINESS_TEMP_FILINGS_CORP_CODES mapping
-        filing_name = [filing_names for filing_names in BusinessSearchService.check_and_get_respective_values(search_filter_type).values() if filing_names is not None]
+        filing_name = [filing_names for filing_names in BusinessSearchService.check_and_get_respective_values(valid_filter_values).values() if filing_names is not None]
+        
         filters = [
             and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None))
             if isinstance(identifiers, list) and identifiers else None,
@@ -191,15 +219,24 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             Filing.temp_reg.ilike(f'%{search_identifier}%')
             if search_identifier else None,
 
-            Filing._status.in_(BusinessSearchService.separate_states_by_type(search_filter_status)[1])
-            if isinstance(search_filter_status, list) and search_filter_status and BusinessSearchService.separate_states_by_type(search_filter_status)[1] else None,
+            Filing._status.in_(filing_states)
+            if filing_states else None,
 
             Filing._filing_type.in_(filing_name)
-            if filing_name else None
+            if filing_name else None,
+            
+            func.jsonb_extract_path_text(
+                Filing._filing_json, 'filing', Filing._filing_type, 'nameRequest', 'legalName'
+            ).ilike(f'%{search_filter_name}%') if search_filter_name else None
         ]
+
+        
         filters = [f for f in filters if f is not None]
         try:
-            draft_query = db.session.query(Filing).filter(*filters)
+            limit = min(search_filters.limit or 100, 100)
+            page = search_filters.page or 1
+            offset = (page - 1) * limit
+            draft_query = db.session.query(Filing).filter(*filters).limit(limit).offset(offset)
             draft_results = []
             # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
             if identifiers:
@@ -229,11 +266,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                               .get(draft_dao.json_legal_type, {})
                                               .get('numberedDescription'))
                     draft_results.append(draft)
-            if search_filter_name:
-                draft_results = [
-                    draft for draft in draft_results
-                    if draft.get('legalName') and search_filter_name.lower() in draft['legalName'].lower()
-                ]
+           
             return draft_results
 
         except Exception as e:
