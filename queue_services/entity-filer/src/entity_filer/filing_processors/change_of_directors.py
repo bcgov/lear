@@ -12,20 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the change of directors."""
+import copy
 from datetime import datetime
-from typing import Dict
 
 from entity_queue_common.service_utils import QueueException
 from flask import current_app
-from legal_api.models import Business, PartyRole
+from legal_api.models import Business, Filing, PartyRole
 
 from entity_filer.filing_meta import FilingMeta
 from entity_filer.filing_processors.filing_components import create_party, create_role, update_director
 
 
-def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylint: disable=too-many-branches;
+def process(business: Business,  # pylint: disable=too-many-branches, too-many-locals;
+            filing_rec: Filing,
+            filing_meta: FilingMeta):
     """Render the change_of_directors onto the business model objects."""
-    if not (new_directors := filing['changeOfDirectors'].get('directors')):
+    filing_json = copy.deepcopy(filing_rec.filing_json)
+
+    if not (new_directors := filing_json['filing']['changeOfDirectors'].get('directors')):
         return
 
     business.last_cod_date = filing_meta.application_date
@@ -33,7 +37,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylin
 
     for new_director in new_directors:  # pylint: disable=too-many-nested-blocks;
         # Applies only for filings coming from colin.
-        if filing.get('colinIds'):
+        if filing_rec.colin_event_ids:
             director_found = False
             current_new_director_name = \
                 new_director['officer'].get('firstName') + new_director['officer'].get('middleInitial', '') + \
@@ -54,10 +58,12 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylin
                             new_director['actions'] = ['ceased']
                         else:
                             # For force updating address always as of now.
-                            new_director['actions'] = ['modified']
+                            new_director['actions'] = ['addressChanged']
                     break
             if not director_found:
                 new_director['actions'] = ['appointed']
+
+            filing_rec._filing_json = filing_json  # pylint: disable=protected-access; bypass to update
 
         if 'appointed' in new_director['actions']:
 
@@ -91,7 +97,7 @@ def process(business: Business, filing: Dict, filing_meta: FilingMeta):  # pylin
                     update_director(director=director, new_info=new_director)
                     break
 
-    if filing.get('colinIds'):
+    if filing_rec.colin_event_ids:
         for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
             # get name of director in database for comparison *
             director_name = director.party.first_name + director.party.middle_initial + director.party.last_name
