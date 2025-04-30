@@ -19,7 +19,8 @@ import os
 
 import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
-from flask import redirect, Flask  # noqa: I001
+from flask import Flask, make_response, jsonify  # noqa: I001
+from flask_jwt_oidc.exceptions import AuthError
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 from registry_schemas.flask import SchemaServices  # noqa: I001
 
@@ -81,6 +82,12 @@ def setup_jwt_manager(app, jwt_manager):
     app.config['JWT_ROLE_CALLBACK'] = get_roles
 
     jwt_manager.init_app(app)
+
+    @app.errorhandler(AuthError)
+    def custom_auth_error_handler(error):
+        response = make_response(jsonify(error.error), error.status_code)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
 
 def register_shellcontext(app):
