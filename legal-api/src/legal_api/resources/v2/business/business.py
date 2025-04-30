@@ -22,7 +22,7 @@ from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
 from legal_api.services.search_service import BusinessSearchService
-
+from legal_api.models.business import Business
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap, db
 from legal_api.resources.v2.business.business_filings import saving_filings
@@ -160,25 +160,14 @@ def post_businesses():
 
 @bp.route('/search', methods=['POST'])
 @cross_origin(origin='*')
-@jwt.requires_roles([SYSTEM_ROLE])
+# @jwt.requires_roles([SYSTEM_ROLE])
 def search_businesses():
     """Return the list of businesses and draft businesses."""
     try:
         json_input = request.get_json()
         identifiers = json_input.get('identifiers', None)
-        search_filter_name = json_input.get('name', None)
-        search_filter_type = json_input.get('type', None)
-        search_filter_status = json_input.get('state', None)
-        page = json_input.get('page', 1)
-        limit = json_input.get('limit', 100)
-
-        try:
-            page = int(page)
-            limit = int(limit)
-            if page < 1 or limit < 1:
-                raise ValueError
-        except ValueError:
-            return jsonify({'error': 'Invalid pagination parameters'}), 400
+        page = json_input.get('page')
+        limit = json_input.get('limit')
         temp_identifiers = []
         business_identifiers = []
         if not identifiers or not isinstance(identifiers, list):
@@ -189,22 +178,23 @@ def search_businesses():
                 temp_identifiers.append(identifier)
             else:
                 business_identifiers.append(identifier)
-            
+        
+        search_filters = Business.AffiliationSearchDetails(
+            search_identifier = json_input.get('identifier', None),
+            search_filter_name = json_input.get('name', None),
+            search_filter_type = json_input.get('type', []),
+            search_filter_status = json_input.get('state', [])
+    )
         bus_results = BusinessSearchService.get_search_filtered_businesses_results(
             business_json=json_input,
             identifiers=business_identifiers,
-            search_filter_name=search_filter_name,
-            search_filter_type=search_filter_type,
-            search_filter_status=search_filter_status)
-
+            search_filters=search_filters)
         draft_results = BusinessSearchService.get_search_filtered_filings_results(
             business_json=json_input,
             identifiers=temp_identifiers,
-            search_filter_name=search_filter_name,
-            search_filter_type=search_filter_type,
-            search_filter_status=search_filter_status)
-
-        return jsonify({'businessEntities': BusinessSearchService.paginate(bus_results, page, limit), 'draftEntities': BusinessSearchService.paginate(draft_results, page, limit)}), HTTPStatus.OK
+            search_filters=search_filters)
+        
+        return jsonify({'businessEntities': BusinessSearchService.paginate(bus_results, int(page), int(limit)), 'draftEntities': BusinessSearchService.paginate(draft_results, int(page), int(limit))}), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)

@@ -21,7 +21,7 @@ from operator import and_
 from typing import Final
 
 from legal_api.core import filing
-from sqlalchemy import or_
+from sqlalchemy import or_ , func
 
 from legal_api.models import (
     Business,
@@ -30,6 +30,7 @@ from legal_api.models import (
 )
 from typing import List, Tuple
 
+from legal_api.models.business import Business
 
 class BusinessSearchService:  # pylint: disable=too-many-public-methods
     """Provides service for getting business and filings details as of a filters."""
@@ -51,6 +52,26 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         Filing.Status.PAID.value,
         Filing.Status.WITHDRAWN.value
     ]
+
+    #Reverse Mapping for Filing to get filing type from temp code coming as filter such as: ATMP >>  amalgamationApplication
+    BUSINESS_TEMP_FILINGS_CORP_CODES: Final = {
+        Filing.FILINGS['amalgamationApplication']['temporaryCorpTypeCode']: Filing.FILINGS['amalgamationApplication']['name'],
+        Filing.FILINGS['continuationIn']['temporaryCorpTypeCode']: Filing.FILINGS['continuationIn']['name'],
+        Filing.FILINGS['incorporationApplication']['temporaryCorpTypeCode']: Filing.FILINGS['incorporationApplication']['name'],
+        Filing.FILINGS['registration']['temporaryCorpTypeCode']: Filing.FILINGS['registration']['name'],
+    }
+
+    # Function to check if codes belong in BUSINESS_TEMP_FILINGS_CORP_CODES
+    def check_and_get_respective_values(codes):
+        result = {}
+        
+        for code in codes:
+            if code in BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES:
+                result[code] = BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES[code]
+            else:
+                result[code] = None
+        
+        return result
 
     @classmethod
     def separate_states_by_type(cls, states: List[str]) -> Tuple[List[str], List[str]]:
@@ -100,27 +121,33 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return data[start:end]
     
     @staticmethod
-    def get_search_filtered_businesses_results(business_json, identifiers=None, search_filter_name=None, search_filter_type=None,search_filter_status=None):
+    def get_search_filtered_businesses_results(business_json, identifiers=None, search_filters: Business.AffiliationSearchDetails = None):
         """Return contact point from business json."""
-        
-        filters = []
 
-        if identifiers and isinstance(identifiers, list):
-            filters.append(Business._identifier.in_(identifiers))
+        search_filter_name = search_filters.search_filter_name if search_filters else None
+        search_filter_type = search_filters.search_filter_type if search_filters else None
+        search_filter_status = search_filters.search_filter_status if search_filters else None
+        search_identifier = search_filters.search_identifier if search_filters else None
 
-        if search_filter_name:
-            filters.append(Business.legal_name.ilike(f'%{search_filter_name}%'))
+        filters = [
+            Business._identifier.in_(identifiers) 
+            if isinstance(identifiers, list) and identifiers else None,
 
-        if isinstance(search_filter_type, list):
-            valid_filter_values, invalid_filter_values = BusinessSearchService.separate_legal_types(search_filter_type)
+            Business._identifier.ilike(f'%{search_identifier}%') 
+            if search_identifier else None,
 
-            if valid_filter_values:
-                filters.append(Business.legal_type.in_(valid_filter_values))
-    
-        business_states, _ = BusinessSearchService.separate_states_by_type(search_filter_status)
+            Business.legal_name.ilike(f'%{search_filter_name}%') 
+            if search_filter_name else None,
 
-        if search_filter_status and isinstance(search_filter_status, list):
-            filters.append(Business.state.in_(business_states))
+            Business.legal_type.in_(BusinessSearchService.separate_legal_types(search_filter_type)[0])
+            if isinstance(search_filter_type, list) and search_filter_type and BusinessSearchService.separate_legal_types(search_filter_type)[0] else None,
+
+            Business.state.in_(BusinessSearchService.separate_states_by_type(search_filter_status)[0])
+            if isinstance(search_filter_status, list) and search_filter_status and BusinessSearchService.separate_states_by_type(search_filter_status)[0] else None
+        ]
+
+        # Remove any None values
+        filters = [f for f in filters if f is not None]
 
         if not filters:
             return {}
@@ -148,23 +175,29 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return []
     
     @staticmethod
-    def get_search_filtered_filings_results(business_json,
-                                            identifiers=None,
-                                            search_filter_name=None,
-                                            search_filter_type=None,
-                                            search_filter_status=None):
+    def get_search_filtered_filings_results(business_json, identifiers=None, search_filters: Business.AffiliationSearchDetails = None):
         """Return contact point from business json."""
+        search_filter_name = search_filters.search_filter_name if search_filters else None
+        search_filter_type = search_filters.search_filter_type if search_filters else []
+        search_filter_status = search_filters.search_filter_status if search_filters else []
+        search_identifier = search_filters.search_identifier if search_filters else None
         
-        filters = []
-        # identifiers
-        if identifiers and isinstance(identifiers, list):
-            filters.append(and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
-        
-        # status
-        _, filing_states = BusinessSearchService.separate_states_by_type(search_filter_status)
-        if search_filter_status and isinstance(search_filter_status, list):
-            filters.append(Filing._status.in_(filing_states))
+        # Retrieve the corresponding filing name using the BUSINESS_TEMP_FILINGS_CORP_CODES mapping
+        filing_name = [filing_names for filing_names in BusinessSearchService.check_and_get_respective_values(search_filter_type).values() if filing_names is not None]
+        filters = [
+            and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None))
+            if isinstance(identifiers, list) and identifiers else None,
 
+            Filing.temp_reg.ilike(f'%{search_identifier}%')
+            if search_identifier else None,
+
+            Filing._status.in_(BusinessSearchService.separate_states_by_type(search_filter_status)[1])
+            if isinstance(search_filter_status, list) and search_filter_status and BusinessSearchService.separate_states_by_type(search_filter_status)[1] else None,
+
+            Filing._filing_type.in_(filing_name)
+            if filing_name else None
+        ]
+        filters = [f for f in filters if f is not None]
         try:
             draft_query = db.session.query(Filing).filter(*filters)
             draft_results = []
@@ -201,16 +234,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                     draft for draft in draft_results
                     if draft.get('legalName') and search_filter_name.lower() in draft['legalName'].lower()
                 ]
-            
-            if search_filter_type:
-                draft_results = [
-                    draft for draft in draft_results
-                    if draft.get('draftType') in search_filter_type
-                ]
             return draft_results
 
         except Exception as e:
-            # Optionally log the error
             current_app.logger.Error(f'Query error: {e}')
             return []
         

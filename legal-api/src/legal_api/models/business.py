@@ -15,6 +15,7 @@
 
 The Business class and Schema are held in this module
 """
+from dataclasses import dataclass
 import re
 from enum import Enum, auto
 from typing import Final, Optional
@@ -282,6 +283,14 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     amalgamation = db.relationship('Amalgamation', lazy='dynamic')
     batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
     jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
+
+    @dataclass
+    class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
+        """Used for filtering Identifiers based on filters passed."""
+        search_identifier: Optional[str] = None
+        search_filter_status: Optional[str] = None
+        search_filter_name: Optional[str] = None
+        search_filter_type: Optional[str] = None
 
     @hybrid_property
     def identifier(self):
