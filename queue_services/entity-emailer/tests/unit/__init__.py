@@ -90,7 +90,8 @@ def create_business(identifier, legal_type=None, legal_name=None, parties=None):
     return business
 
 
-def create_filing(token=None, filing_json=None, meta_data=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
+def create_filing(token=None, filing_json=None, 
+                  meta_data=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     filing = Filing()
     if token:
@@ -297,6 +298,7 @@ def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, le
     test_meta_data = {
         'amalgamationOut': {
             'amalgamationOutDate': '2025-04-29',
+            'legalName': 'test business',
             'region': None,
             'country': 'AL'
         }

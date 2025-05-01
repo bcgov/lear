@@ -44,7 +44,7 @@ def test_consent_amalgamation_out_notification(app, session, status, legal_type,
             email = consent_amalgamation_out_notification.process(
                 {'filingId': filing.id, 'type': 'consentAmalgamationOut', 'option': status}, token)
             assert email['content']['subject'] == \
-                legal_name + ' - Confirmation of Filing from the Business Registry'
+                legal_name + ' - Six Month Consent to Amalgamate Out'
 
             if submitter_role:
                 assert f'{submitter_role}@email.com' in email['recipients']
