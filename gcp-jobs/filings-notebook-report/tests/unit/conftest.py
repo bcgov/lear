@@ -41,10 +41,13 @@ from flask import Flask
 from flask_migrate import Migrate, upgrade
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event, text
+from dotenv import load_dotenv, find_dotenv
 
 import business_model_migrations
 from business_model.models import db as _db
 from notebookreport.notebookreport import create_app
+
+load_dotenv(find_dotenv())
 
 @pytest.fixture(scope="session")
 def app():
