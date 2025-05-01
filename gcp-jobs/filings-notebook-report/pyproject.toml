@@ -46,6 +46,8 @@ business-registry-account = {git = "https://github.com/bcgov/lear.git", subdirec
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
 freezegun = "^1.5.1"
+business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
+flask_migrate = "^4.0.5"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"

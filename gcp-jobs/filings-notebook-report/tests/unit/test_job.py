@@ -3,7 +3,7 @@ from unittest.mock import patch
 import shutil
 import psycopg2
 import pytest
-from notebookreport.notebookreport import processnotebooks, create_app
+from notebookreport.notebookreport import processnotebooks
 
 from dotenv import load_dotenv, find_dotenv
 
@@ -61,7 +61,6 @@ def test_filings_monthly_notebook_report(mock_get,report_type):
         days += str(i) + ","
     os.environ["MONTH_REPORT_DATES"] = "[" + days[:-1] + "]"
 
-    create_app()
     data_dir = os.path.join(os.getcwd(), r'data/')
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
