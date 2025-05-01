@@ -138,7 +138,7 @@ def db(app: Flask):
         DATABASE_TEST_NAME = os.getenv("DATABASE_TEST_NAME")
         DATABASE_TEST_HOST = os.getenv("DATABASE_TEST_HOST")
         DATABASE_TEST_PORT = os.getenv("DATABASE_TEST_PORT")
-        conn_string = f"postgresql://{DATABASE_TEST_USERNAME}:{DATABASE_TEST_PASSWORD}@{DATABASE_TEST_HOST}:{DATABASE_TEST_PORT}/{DATABASE_TEST_NAME}"
+        conn_string = f"postgresql://postgres:postgres@localhost:5432/unittesting"
         create_test_db(
             database=DATABASE_TEST_NAME,
             database_uri=conn_string,
