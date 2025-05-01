@@ -15,8 +15,8 @@
 from __future__ import annotations
 
 import base64
-from datetime import datetime
 import re
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -94,12 +94,13 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing_data = (filing.json)['filing'][f'{filing_type}']
     effective_date = leg_tmz_effective_date.split(' at ')[0]
     historical_date = datetime.strptime(filing.meta_data[f'{filing_type}']['amalgamationOutDate'], '%Y-%m-%d')
-    historical_date = historical_date.strftime(f'%B %d, %Y')
+    historical_date = historical_date.strftime('%B %d, %Y')
     jurisdiction_region_code = filing.meta_data[f'{filing_type}']['region']
     jurisdiction_country_code = filing.meta_data[f'{filing_type}']['country']
     jurisdiction_country = pycountry.countries.get(alpha_2=jurisdiction_country_code).name
     if jurisdiction_region_code and jurisdiction_region_code.upper() != 'FEDERAL':
-        jurisdiction_region = pycountry.subdivisions.get(code=f'{jurisdiction_country_code}-{jurisdiction_region_code}').name
+        subdivisions = pycountry.subdivisions.get(code=f'{jurisdiction_country_code}-{jurisdiction_region_code}')
+        jurisdiction_region = subdivisions.name
     else:
         jurisdiction_region = None
 

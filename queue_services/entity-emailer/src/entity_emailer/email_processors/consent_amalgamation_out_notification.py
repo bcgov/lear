@@ -15,8 +15,8 @@
 from __future__ import annotations
 
 import base64
-from datetime import datetime
 import re
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
@@ -114,12 +114,13 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing_data = (filing.json)['filing'][f'{filing_type}']
     expiry_date_time = datetime.fromisoformat(filing.meta_data[f'{filing_type}']['expiry'])
     expiry_date = LegislationDatetime.as_legislation_timezone(expiry_date_time)
-    expiry_date = expiry_date.strftime(f'%B %d, %Y')
+    expiry_date = expiry_date.strftime('%B %d, %Y')
     jurisdiction_region_code = filing.meta_data[f'{filing_type}']['region']
     jurisdiction_country_code = filing.meta_data[f'{filing_type}']['country']
     jurisdiction_country = pycountry.countries.get(alpha_2=jurisdiction_country_code).name
     if jurisdiction_region_code and jurisdiction_region_code.upper() != 'FEDERAL':
-        jurisdiction_region = pycountry.subdivisions.get(code=f'{jurisdiction_country_code}-{jurisdiction_region_code}').name
+        subdivisions = pycountry.subdivisions.get(code=f'{jurisdiction_country_code}-{jurisdiction_region_code}')
+        jurisdiction_region = subdivisions.name
     else:
         jurisdiction_region = None
 
