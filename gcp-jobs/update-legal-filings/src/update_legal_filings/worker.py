@@ -92,7 +92,7 @@ def check_for_manual_filings(token: dict | None = None):
             try:
                 for corp_type in corp_types:
                     current_app.logger.debug(f"corp_type: {corp_type}")
-                    url = f"{colin_url}/event/{corp_type}/{last_event_id}"
+                    url = f"{colin_url}/businesses/event/{corp_type}/{last_event_id}"
                     current_app.logger.debug(f"url: {url}")
                     # call colin api for ids + filing types list
                     response = requests.get(url,
@@ -134,7 +134,7 @@ def check_for_manual_filings(token: dict | None = None):
     return id_list
 
 
-def get_filing(event_info: dict | None = None, application: Flask | None = None, token: dict | None = None) -> dict:
+def get_filing(event_info: dict, token: str) -> dict:
     """Get filing created by previous event."""
     # call the colin api for the filing
     legal_type = event_info["corp_num"][:2]
@@ -145,13 +145,13 @@ def get_filing(event_info: dict | None = None, application: Flask | None = None,
 
     if not filing_type:
         # pylint: disable=consider-using-f-string
-        application.logger.error("Error unknown filing type: {} for event id: {}".format(
+        current_app.logger.error("Error unknown filing type: {} for event id: {}".format(
             event_info["filing_type"], event_info["event_id"]))
 
     identifier = event_info["corp_num"]
     event_id = event_info["event_id"]
     response = requests.get(
-        f'{application.config["COLIN_SVC_URL"]}/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}',
+        f'{current_app.config["COLIN_SVC_URL"]}/businesses/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}',
         headers={**AccountService.CONTENT_TYPE_JSON,
                  "Authorization": AccountService.BEARER + token},
         timeout=AccountService.timeout
@@ -302,7 +302,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                 # get tax ids that exist for above entities
                 current_app.logger.debug(f"Getting tax ids for {identifiers} from colin api...")
                 response = requests.get(
-                    current_app.config["COLIN_SVC_URL"] + "/internal/tax_ids",
+                    current_app.config["COLIN_SVC_URL"] + "/businesses/internal/tax_ids",
                     json={"identifiers": identifiers},
                     headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                     timeout=AccountService.timeout
@@ -310,7 +310,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                 if response.status_code != HTTPStatus.OK:
                     current_app.logger.error("legal-updater failed to get tax_ids from colin-api.")
                     raise Exception  # pylint: disable=broad-exception-raised
-                tax_ids = response.json()
+                tax_ids: dict = response.json()
                 if tax_ids.keys():
                     # update lear with new tax ids from colin
                     current_app.logger.debug(f"Updating tax ids for {tax_ids.keys()} in lear...")

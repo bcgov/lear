@@ -41,7 +41,7 @@ def send_filing(token: str, filing: dict, filing_id: str):
 
     response = None
     if legal_type and identifier and filing_type:
-        response = requests.post(f'{current_app.config["COLIN_SVC_URL"]}/{legal_type}/{identifier}/filings/{filing_type}',
+        response = requests.post(f'{current_app.config["COLIN_SVC_URL"]}/businesses/{legal_type}/{identifier}/filings/{filing_type}',
                                  headers={"Content-Type": "application/json",
                                           "Authorization": "Bearer " + token},
                                  json=filing,

@@ -26,15 +26,21 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+    ENABLE_BN_UPDATES = bool(os.getenv('ENABLE_BN_UPDATES', 'True'))
+
     COLIN_SVC_URL = os.getenv("COLIN_API_URL", "") + os.getenv("COLIN_API_VERSION", "")
     COLIN_SVC_TIMEOUT = int(os.getenv("COLIN_SVC_TIMEOUT", "20"))
     LEAR_SVC_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION_2", "")
     LEAR_SVC_TIMEOUT = int(os.getenv("LEGAL_SVC_TIMEOUT", "20"))
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
-    AUDIENCE = os.getenv("AUDIENCE", None)
-    PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", None)
+    GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
+    AUDIENCE = os.getenv(
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+    )
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-bn")
     BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", None)
 
