@@ -171,11 +171,8 @@ def search_businesses():
         if not identifiers or not isinstance(identifiers, list):
             return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
 
-        for identifier in identifiers:
-            if identifier.startswith('T'):
-                temp_identifiers.append(identifier)
-            else:
-                business_identifiers.append(identifier)
+        temp_identifiers.extend(i for i in identifiers if i.startswith('T'))
+        business_identifiers.extend(i for i in identifiers if not i.startswith('T'))
         search_filters = Business.AffiliationSearchDetails.from_request_args(json_input)
         bus_results = BusinessSearchService.get_search_filtered_businesses_results(
             business_json=json_input,

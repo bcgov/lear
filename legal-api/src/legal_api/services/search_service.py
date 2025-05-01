@@ -104,7 +104,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return True
         except ValueError:
             return False
-
+        
+    @staticmethod
     def separate_legal_types(legal_types: List[str]) -> Tuple[List[str], List[str]]:
         """
         Separates input legal types into valid and invalid based on the Business.LegalTypes enum.
@@ -119,157 +120,124 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     def get_search_filtered_businesses_results(business_json, identifiers=None, search_filters: Business.AffiliationSearchDetails = None):
         """Return contact point from business json."""
 
-        search_filter_name = search_filters.search_filter_name if search_filters else None
-        search_filter_type = search_filters.search_filter_type if search_filters else []
-        search_filter_status = search_filters.search_filter_status if search_filters else []
-        search_identifier = search_filters.search_identifier if search_filters else None
-        valid_filter_values = (
-            BusinessSearchService.separate_legal_types(search_filter_type)[0]
-            if isinstance(search_filter_type, list) and search_filter_type else []
-        )
+        def _get(attr, default):
+            return getattr(search_filters, attr, default) if search_filters else default
+ 
+        name = _get('search_filter_name', None)
+        types = _get('search_filter_type', [])
+        statuses = _get('search_filter_status', [])
+        identifier = _get('search_identifier', None)
+        
+        valid_types, _ = BusinessSearchService.separate_legal_types(types or [])
+
         #edge case: if type searched for doesnt belong to table business such as 'ATMP' Returns early
-        if search_filter_type and not valid_filter_values:
+        if types and not valid_types:
             return []
         
-        business_states, _ = (
-            BusinessSearchService.separate_states_by_type(search_filter_status)
-            if isinstance(search_filter_status, list) and search_filter_status else ([], [])
-        )
+        states, _ = BusinessSearchService.separate_states_by_type(statuses or [])
+
         # If status was provided but none of them are valid, return no results
-        if search_filter_status and not business_states:
+        if statuses and not states:
             return []
         filters = [
-            Business._identifier.in_(identifiers) 
-            if isinstance(identifiers, list) and identifiers else None,
-
-            Business._identifier.ilike(f'%{search_identifier}%') 
-            if search_identifier else None,
-
-            Business.legal_name.ilike(f'%{search_filter_name}%') 
-            if search_filter_name else None,
-
-            Business.legal_type.in_(valid_filter_values)
-            if valid_filter_values else None,
-
-            Business.state.in_(business_states)
-            if business_states else None
+            expr for expr in [
+                Business._identifier.in_(identifiers) if identifiers else None,
+                Business._identifier.ilike(f'%{identifier}%') if identifier else None,
+                Business.legal_name.ilike(f'%{name}%') if name else None,
+                Business.legal_type.in_(valid_types) if valid_types else None,
+                Business.state.in_(states) if states else None
+            ] if expr is not None
         ]
 
-        # Remove any None values
-        filters = [f for f in filters if f is not None]
-
         if not filters:
-            return {}
-
-        try:
-            limit = min(search_filters.limit or 100, 100)
-            page = search_filters.page or 1
-            offset = (page - 1) * limit
-            bus_query = db.session.query(Business).filter(*filters).limit(limit).offset(offset)
-            bus_results = []
-
-            for business in bus_query.all():
-                business_json = business.json(slim=True)
-
-                if business.legal_type in (
-                    Business.LegalTypes.SOLE_PROP,
-                    Business.LegalTypes.PARTNERSHIP
-                ):
-                    business_json['alternateNames'] = business.get_alternate_names()
-
-                bus_results.append(business_json)
-
-            return bus_results
-
-        except Exception as e:
-            current_app.logger.Error(f'Query error: {e}')
             return []
+
+        limit = min(_get('limit', 100), 100)
+        offset = ((_get('page', 1) - 1) * limit)
+        bus_query = db.session.query(Business).filter(*filters).limit(limit).offset(offset)
+        bus_results = []
+        for business in bus_query.all():
+            business_json = business.json(slim=True)
+
+            if business.legal_type in (
+                Business.LegalTypes.SOLE_PROP,
+                Business.LegalTypes.PARTNERSHIP
+            ):
+                business_json['alternateNames'] = business.get_alternate_names()
+
+            bus_results.append(business_json)
+        return bus_results
     
     @staticmethod
     def get_search_filtered_filings_results(business_json, identifiers=None, search_filters: Business.AffiliationSearchDetails = None):
         """Return contact point from business json."""
-        search_filter_name = search_filters.search_filter_name if search_filters else None
-        search_filter_type = search_filters.search_filter_type if search_filters else []
-        search_filter_status = search_filters.search_filter_status if search_filters else []
-        search_identifier = search_filters.search_identifier if search_filters else None
-        valid_filter_values = (
-            BusinessSearchService.separate_legal_types(search_filter_type)[1]
-            if isinstance(search_filter_type, list) and search_filter_type else []
-        )
-        
-        #edge case: if type searched for doesnt belong to table filings such as 'BC' Returns early
-        if search_filter_type and not valid_filter_values:
+        def _get(attr, default):
+            return getattr(search_filters, attr, default) if search_filters else default
+ 
+        name = _get('search_filter_name', None)
+        types = _get('search_filter_type', [])
+        statuses = _get('search_filter_status', [])
+        identifier = _get('search_identifier', None)
+
+        _, valid_types = BusinessSearchService.separate_legal_types(types or [])
+
+        #edge case: if type searched for doesnt belong to table filings such as 'bc' Returns early
+        if types and not valid_types:
             return []
         
-        _, filing_states = (
-            BusinessSearchService.separate_states_by_type(search_filter_status)
-            if isinstance(search_filter_status, list) and search_filter_status else ([], [])
-        )
+        _, filing_states = BusinessSearchService.separate_states_by_type(statuses or [])
         # If status was provided but none of them are valid, return no results
-        if search_filter_status and not filing_states:
+        if statuses and not filing_states:
             return []
     
         # Retrieve the corresponding filing name using the BUSINESS_TEMP_FILINGS_CORP_CODES mapping
-        filing_name = [filing_names for filing_names in BusinessSearchService.check_and_get_respective_values(valid_filter_values).values() if filing_names is not None]
+        filing_name = [filing_names for filing_names in BusinessSearchService.check_and_get_respective_values(valid_types).values() if filing_names is not None]
         
         filters = [
-            and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None))
-            if isinstance(identifiers, list) and identifiers else None,
-
-            Filing.temp_reg.ilike(f'%{search_identifier}%')
-            if search_identifier else None,
-
-            Filing._status.in_(filing_states)
-            if filing_states else None,
-
-            Filing._filing_type.in_(filing_name)
-            if filing_name else None,
-            
-            func.jsonb_extract_path_text(
-                Filing._filing_json, 'filing', Filing._filing_type, 'nameRequest', 'legalName'
-            ).ilike(f'%{search_filter_name}%') if search_filter_name else None
+            expr for expr in [
+                and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None))
+                if isinstance(identifiers, list) and identifiers else None,
+                Filing.temp_reg.ilike(f'%{identifier}%') if identifier else None,
+                Filing._status.in_(filing_states) if filing_states else None,
+                Filing._filing_type.in_(filing_name) if filing_name else None,
+                func.jsonb_extract_path_text(
+                    Filing._filing_json, 'filing', Filing._filing_type, 'nameRequest', 'legalName'
+                ).ilike(f'%{name}%') if name else None
+            ] if expr is not None
         ]
-
         
-        filters = [f for f in filters if f is not None]
-        try:
-            limit = min(search_filters.limit or 100, 100)
-            page = search_filters.page or 1
-            offset = (page - 1) * limit
-            draft_query = db.session.query(Filing).filter(*filters).limit(limit).offset(offset)
-            draft_results = []
-            # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
-            if identifiers:
-                for draft_dao in draft_query.all():
-                    draft = {
-                        'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
-                        'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
-                        'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
-                        'draftStatus': draft_dao.status
-                    }
 
-                    if (draft_dao.status == Filing.Status.PAID.value and
-                            draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
-                        draft['effectiveDate'] = draft_dao.effective_date.isoformat()
+        limit = min(_get('limit', 100), 100)
+        offset = ((_get('page', 1) - 1) * limit)
+        draft_query = db.session.query(Filing).filter(*filters).limit(limit).offset(offset)
+        draft_results = []
+        # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
+        if identifiers:
+            for draft_dao in draft_query.all():
+                draft = {
+                    'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
+                    'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
+                    'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
+                    'draftStatus': draft_dao.status
+                }
 
-                    if draft_dao.json_nr:
-                        draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
-                    # Retrieves the legal name from the filing JSON. Defaults to None if not found.
-                    draft['legalName'] = (draft_dao.filing_json.get('filing', {})
-                                          .get(draft_dao.filing_type, {})
-                                          .get('nameRequest', {})
-                                          .get('legalName'))
+                if (draft_dao.status == Filing.Status.PAID.value and
+                        draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
+                    draft['effectiveDate'] = draft_dao.effective_date.isoformat()
 
-                    if draft['legalName'] is None:
-                        # Fallback to a generic legal name based on the legal type if no specific legal name is found
-                        draft['legalName'] = (Business.BUSINESSES
-                                              .get(draft_dao.json_legal_type, {})
-                                              .get('numberedDescription'))
-                    draft_results.append(draft)
-           
-            return draft_results
+                if draft_dao.json_nr:
+                    draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
+                # Retrieves the legal name from the filing JSON. Defaults to None if not found.
+                draft['legalName'] = (draft_dao.filing_json.get('filing', {})
+                                        .get(draft_dao.filing_type, {})
+                                        .get('nameRequest', {})
+                                        .get('legalName'))
 
-        except Exception as e:
-            current_app.logger.Error(f'Query error: {e}')
-            return []
+                if draft['legalName'] is None:
+                    # Fallback to a generic legal name based on the legal type if no specific legal name is found
+                    draft['legalName'] = (Business.BUSINESSES
+                                            .get(draft_dao.json_legal_type, {})
+                                            .get('numberedDescription'))
+                draft_results.append(draft)
         
+        return draft_results
